@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, i18n + RTL, dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, i18n + RTL, dark mode. MIT.
 
 
 ---
@@ -461,7 +461,7 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ## Adapters
 
 `@adapttable/mantine`, `@adapttable/mui`, `@adapttable/chakra`,
-`@adapttable/unstyled` each export:
+`@adapttable/antd`, `@adapttable/unstyled` each export:
 
 - `DataTable<TRow>` — the batteries-included component (props extend
   `BaseDataTableProps` plus kit-specific extras like `slots` / `classNames`).
@@ -500,7 +500,7 @@ How AdaptTable compares to popular React table libraries.
 
 ## When to choose AdaptTable
 
-- You use **Mantine, MUI, Chakra, or Tailwind/shadcn** and want a table that
+- You use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn** and want a table that
   matches your kit without building it yourself.
 - You need **the same table for both in-memory and server-paginated data**.
 - You want **shareable, deep-linkable table state** for free.

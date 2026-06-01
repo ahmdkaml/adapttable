@@ -101,17 +101,27 @@ describe("<DataTable> (Ant Design)", () => {
     expect(adapter.getSearch()).toContain("q=ali");
   });
 
-  it("cycles sort on a header", () => {
+  it("cycles sort ascending then descending on a header", () => {
     renderHarness();
-    fireEvent.click(screen.getByRole("columnheader", { name: /name/i }));
-    expect(adapter.getSearch()).toContain("sortBy=name");
+    const header = () => screen.getByRole("columnheader", { name: /name/i });
+    fireEvent.click(header());
     expect(adapter.getSearch()).toContain("sortDir=asc");
+    fireEvent.click(header());
+    expect(adapter.getSearch()).toContain("sortDir=desc");
   });
 
   it("paginates via the antd pager", () => {
     renderHarness({}, "limit=1");
     fireEvent.click(screen.getByText("2"));
     expect(adapter.getSearch()).toContain("page=2");
+  });
+
+  it("changes the page size via the antd pager size changer", () => {
+    renderHarness();
+    // The paged footer's size changer is the only combobox in this layout.
+    fireEvent.mouseDown(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByText("50 / page"));
+    expect(adapter.getSearch()).toContain("limit=50");
   });
 
   it("changes rows-per-page and sort via the toolbar selects (infinite)", () => {
