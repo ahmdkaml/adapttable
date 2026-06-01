@@ -113,4 +113,14 @@ describe("<DataTable> (unstyled) gaps", () => {
     fireEvent.mouseEnter(row);
     expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
   });
+
+  it("renders a sort-by select and commits a sort", () => {
+    renderHarness({
+      override: { sortByOptions: [{ value: "name", label: "Name" }] },
+    });
+    fireEvent.change(screen.getByLabelText("Sort by"), {
+      target: { value: "name" },
+    });
+    expect(adapter.getSearch()).toContain("sortBy=name");
+  });
 });

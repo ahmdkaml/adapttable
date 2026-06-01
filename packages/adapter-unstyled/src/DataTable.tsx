@@ -34,6 +34,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     rowActions,
     tableLabel,
     searchPlaceholder,
+    sortByOptions,
     labels: labelOverrides,
     dir,
     isMobile: isMobileProp,
@@ -134,6 +135,30 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             data-adapttable-part="search"
             className={classNames.search}
           />
+        )}
+        {sortByOptions && sortByOptions.length > 0 && (
+          <label>
+            {labels.sortBy}{" "}
+            <select
+              aria-label={labels.sortBy}
+              data-adapttable-part="sort-select"
+              className={classNames.sortSelect}
+              value={source.sortBy ?? ""}
+              onChange={(e) =>
+                source.setSort(
+                  e.currentTarget.value || undefined,
+                  source.sortDir ?? "asc"
+                )
+              }
+            >
+              <option value="">—</option>
+              {sortByOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
         {customToolbar}
         {filters && (

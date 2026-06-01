@@ -10,6 +10,7 @@ export interface DataTableClassNames {
   root?: string;
   toolbar?: string;
   search?: string;
+  sortSelect?: string;
   filtersButton?: string;
   filtersPanel?: string;
   chips?: string;
