@@ -89,11 +89,13 @@ const source = useFrontendData({ data }); // client-side filter/sort/slice
 
 ## Customization spectrum — easy ↔ pro
 
-1. **Props** — `columns`, `source`, `searchPlaceholder`, `emptyText`, …
-2. **`slots` override map** — replace any sub-part (`SearchInput`, `Pagination`, `FilterDrawer`, `Chip`, `Row`, `Cell`, `EmptyState`, `Skeleton`).
-3. **`classNames` / `styles` per part** — restyle without replacing.
-4. **Render props** — `renderRow`, `renderCard`, `renderToolbar`.
-5. **Prop-getters** — build the entire markup yourself.
+1. **Props** — `columns`, `source`, `searchPlaceholder`, `sortByOptions`, `rowActions`, `bulkActions`, `filters`, `dir`, …
+2. **`slots`** — replace the `skeleton` and `empty` sub-parts with your own components.
+3. **`classNames` per part** — restyle without replacing (the **unstyled** adapter exposes a class hook + `data-*` state attribute for every node).
+4. **A custom `toolbar` slot** and an **injectable `confirm`** handler for action dialogs.
+5. **Prop-getters (fully headless)** — build the entire markup yourself with `@adapttable/core`.
+
+See [docs/customization.md](./docs/customization.md) for details.
 
 ## i18n, RTL & dark mode
 
