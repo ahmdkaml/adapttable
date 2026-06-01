@@ -1,6 +1,6 @@
-import { useTableChrome } from "@adapttable/core";
-import { Paper, Stack, Typography } from "@mui/material";
-import { useState } from "react";
+import { type TableBody, useTableChrome } from "@adapttable/core";
+import { Box, Stack, Text } from "@chakra-ui/react";
+import { type ReactNode, useState } from "react";
 
 import {
   BulkBar,
@@ -15,67 +15,48 @@ import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
 
 /**
- * Batteries-included Material UI data table. Drop in `columns`, a `source`,
- * and a `rowKey` for a fully styled, sortable, filterable, paginated MUI
- * table with selection, bulk actions, RTL, and dark mode — a free
- * DataGrid-style experience on the headless `@adapttable/core` engine.
+ * Batteries-included Chakra UI data table. Drop in `columns`, a `source`,
+ * and a `rowKey` for a fully styled, sortable, filterable, paginated Chakra
+ * table with selection, bulk actions, RTL, and dark mode — on the headless
+ * `@adapttable/core` engine.
  *
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, className, size = "medium" } = props;
-  const c = useTableChrome<TRow>(props);
-  const { table, confirm, getRowId } = c;
+  const { slots, colorScheme, size = "md" } = props;
+  const chrome = useTableChrome<TRow>(props);
+  const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  let body: React.ReactNode;
-  if (c.body === "skeleton") {
-    body = slots?.skeleton ?? (
+  const tableProps = {
+    table,
+    rows: source.rows,
+    rowActions: props.rowActions,
+    confirm,
+    getRowId,
+    size,
+    colorScheme,
+  };
+  const bodyByRegion: Record<TableBody, ReactNode> = {
+    skeleton: slots?.skeleton ?? (
       <LoadingState
         rows={props.skeletonRows ?? 5}
         columns={table.columns.length}
       />
-    );
-  } else if (c.body === "empty") {
-    body = slots?.empty ?? (
-      <Typography color="text.secondary" align="center" sx={{ py: 6 }}>
+    ),
+    empty: slots?.empty ?? (
+      <Text color="gray.500" textAlign="center" py={10}>
         {labels.noData}
-      </Typography>
-    );
-  } else if (c.body === "mobile") {
-    body = (
-      <MobileCards
-        table={table}
-        rows={source.rows}
-        rowActions={props.rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        size={size}
-      />
-    );
-  } else {
-    body = (
-      <DesktopTable
-        table={table}
-        rows={source.rows}
-        rowActions={props.rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        size={size}
-        prefetch={props.prefetch}
-      />
-    );
-  }
+      </Text>
+    ),
+    mobile: <MobileCards {...tableProps} />,
+    desktop: <DesktopTable {...tableProps} prefetch={props.prefetch} />,
+  };
 
   return (
-    <Paper
-      variant="outlined"
-      dir={props.dir}
-      className={className}
-      sx={{ p: 1.5 }}
-    >
-      <Stack spacing={1.5}>
+    <Box dir={props.dir} borderWidth="1px" borderRadius="md" p={3}>
+      <Stack spacing={3}>
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}
@@ -83,12 +64,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           sortByOptions={props.sortByOptions}
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
-          activeFilterCount={c.activeFilterCount}
+          activeFilterCount={chrome.activeFilterCount}
           onOpenFilters={() => setDrawerOpen(true)}
-          showRowsPerPage={!c.isPaged}
+          showRowsPerPage={!chrome.isPaged}
+          colorScheme={colorScheme}
         />
         <Chips
-          chips={c.mergedChips}
+          chips={chrome.mergedChips}
           onClearAll={props.onClearFilters}
           labels={labels}
         />
@@ -98,6 +80,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             bulkActions={props.bulkActions}
             confirm={confirm}
             labels={labels}
+            colorScheme={colorScheme}
           />
         )}
         {source.error ? (
@@ -107,9 +90,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onRetry={source.refetch ? () => void source.refetch?.() : undefined}
           />
         ) : (
-          body
+          bodyByRegion[chrome.body]
         )}
-        {c.showFooter && (
+        {chrome.showFooter && (
           <Footer
             pagination={table.pagination}
             total={source.total}
@@ -123,11 +106,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           filters={props.filters}
-          activeFilterCount={c.activeFilterCount}
+          activeFilterCount={chrome.activeFilterCount}
           onClearFilters={props.onClearFilters}
           labels={labels}
+          colorScheme={colorScheme}
         />
       )}
-    </Paper>
+    </Box>
   );
 }

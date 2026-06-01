@@ -12,6 +12,11 @@ dist/
 build/
 coverage/
 .turbo/
+
+# SonarQube / sonar-scanner local output. Never committed.
+.scannerwork/
+.sonar/
+
 *.log
 .DS_Store
 .env

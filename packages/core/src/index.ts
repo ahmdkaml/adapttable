@@ -43,8 +43,13 @@ export {
   type UseBulkActionRunnerOptions,
 } from "./actions/useBulkActionRunner";
 
-/* ── Shared prop surface ───────────────────────────────────────────── */
+/* ── Shared prop surface + orchestration ───────────────────────────── */
 export type { BaseDataTableProps } from "./props";
+export {
+  type TableBody,
+  type TableChrome,
+  useTableChrome,
+} from "./useTableChrome";
 
 /* ── Labels ────────────────────────────────────────────────────────── */
 export { defaultLabels, resolveLabels } from "./labels";
