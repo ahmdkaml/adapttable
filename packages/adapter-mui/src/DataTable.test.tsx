@@ -89,6 +89,12 @@ describe("<DataTable> (MUI)", () => {
     expect(refetch).toHaveBeenCalled();
   });
 
+  it("omits the retry button when the source has no refetch", () => {
+    renderHarness({ error: new Error("boom") });
+    expect(screen.getByText(/boom/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+  });
+
   it("commits debounced search to the URL", () => {
     renderHarness();
     fireEvent.change(screen.getByLabelText("Search"), {

@@ -1,5 +1,11 @@
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -95,6 +101,28 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("boom");
     fireEvent.click(screen.getByText("Retry"));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  it("omits the retry button when the source has no refetch", () => {
+    renderHarness({ error: new Error("boom") });
+    expect(screen.getByRole("alert")).toHaveTextContent("boom");
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
+  it("clears all active filters from the chip strip", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        override: {
+          filterLabels: { status: (v) => `Status: ${v}` },
+          onClearFilters,
+        },
+      },
+      "f_status=Active"
+    );
+    const chipStrip = screen.getByRole("list", { name: "Filters" });
+    fireEvent.click(within(chipStrip).getByText("Clear all"));
+    expect(onClearFilters).toHaveBeenCalled();
   });
 
   it("commits debounced search to the URL", () => {
