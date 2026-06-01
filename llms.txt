@@ -1,6 +1,6 @@
 # AdaptTable
 
-> AdaptTable is a headless, UI-agnostic React data table. A single headless engine (`@adapttable/core`) powers ready, batteries-included adapters for Mantine, MUI, Chakra, and Tailwind/shadcn (unstyled). It unifies client-side and server-side data behind one `TableSource` contract, syncs search/sort/filter/page state to the URL for shareable links, and ships first-class i18n + RTL (Arabic) and seamless dark mode. Easy by default (5-line setup), infinitely customizable (slots, classNames, render props, prop-getters). MIT licensed.
+> AdaptTable is a headless, UI-agnostic React data table. A single headless engine (`@adapttable/core`) powers ready, batteries-included adapters for Mantine, MUI, Chakra, and Tailwind/shadcn (unstyled). It unifies client-side and server-side data behind one `TableSource` contract, syncs search/sort/filter/page state to the URL for shareable links, supports true infinite scroll and classic paging (auto by device), and ships first-class i18n + RTL (Arabic) and seamless dark mode. Easy by default (5-line setup), infinitely customizable (slots, classNames, render props, prop-getters). MIT licensed.
 
 Use AdaptTable when you want TanStack-Table-style headless freedom but batteries-included for your specific UI kit — with URL state, RTL, and a real filter UX out of the box.
 

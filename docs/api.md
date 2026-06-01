@@ -26,14 +26,19 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ### Selection, filters, actions
 
 - `useSelection`, `useActiveFilterChips`, `useExtraChips`
+- `mergeFilterChips`, `resolveActiveFilterCount` (pure helpers behind the
+  adapter chrome)
 - `defaultConfirm`, `runRowAction`, `useBulkActionRunner`
 
 ### Utilities & hooks
 
 - `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`,
   `useColorScheme` (resolves `"light" | "dark" | "auto"`)
+- `useInfiniteScroll` — IntersectionObserver sentinel that auto-loads the
+  next page in infinite mode (returns a ref; re-arms on `itemCount`)
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
-  `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`, `defaultLabels`
+  `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`,
+  `defaultLabels`, `pageSizeOptions`
 
 ### Types
 
