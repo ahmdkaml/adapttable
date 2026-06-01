@@ -1,10 +1,12 @@
-import type { SortByOption, UseDataTableResult } from "@adapttable/core";
+import {
+  pageSizeOptions,
+  type SortByOption,
+  type UseDataTableResult,
+} from "@adapttable/core";
 import { Badge, Button, Group, Select, Text, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
 import { FiltersIcon, SearchIcon } from "../icons";
-
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 /** Props for {@link Toolbar}. */
 export interface ToolbarProps<TRow> {
@@ -95,7 +97,7 @@ export function Toolbar<TRow>({
             </Text>
             <Select
               aria-label={labels.rowsPerPage}
-              data={PAGE_SIZE_OPTIONS.map((n) => ({
+              data={pageSizeOptions(source.limit).map((n) => ({
                 value: String(n),
                 label: String(n),
               }))}

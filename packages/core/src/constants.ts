@@ -12,6 +12,23 @@ export const DEFAULT_LIMIT = 25;
 /** Page-size options offered by adapter pagination controls. */
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
+/**
+ * Page-size options to render in a rows-per-page selector, guaranteeing the
+ * currently-active `limit` is present. A `limit` that isn't one of the
+ * standard {@link PAGE_SIZE_OPTIONS} (e.g. restored from a shared URL) is
+ * prepended so the control shows a valid selection instead of going blank.
+ *
+ * @param limit - The currently-active page size.
+ * @param sizes - The standard options to offer (defaults to {@link PAGE_SIZE_OPTIONS}).
+ * @returns The options to render, with `limit` guaranteed present.
+ */
+export function pageSizeOptions(
+  limit: number,
+  sizes: readonly number[] = PAGE_SIZE_OPTIONS
+): readonly number[] {
+  return sizes.includes(limit) ? sizes : [limit, ...sizes];
+}
+
 /** Default debounce (ms) for the search input before it commits to state. */
 export const SEARCH_DEBOUNCE_MS = 300;
 

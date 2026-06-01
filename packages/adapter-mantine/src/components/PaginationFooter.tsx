@@ -1,7 +1,5 @@
-import type { TableLabels } from "@adapttable/core";
+import { pageSizeOptions, type TableLabels } from "@adapttable/core";
 import { Group, Pagination, Select, Text } from "@mantine/core";
-
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 /** Props for {@link PaginationFooter}. */
 export interface PaginationFooterProps {
@@ -30,7 +28,7 @@ export function PaginationFooter({
 }: Readonly<PaginationFooterProps>) {
   const safeTotalPages = Math.max(totalPages, 1);
   const safePage = Math.min(Math.max(page, 1), safeTotalPages);
-  const options = PAGE_SIZE_OPTIONS.map((n) => ({
+  const options = pageSizeOptions(limit).map((n) => ({
     value: String(n),
     label: String(n),
   }));

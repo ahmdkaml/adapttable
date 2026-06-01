@@ -1,5 +1,5 @@
 import { type TableBody, useTableChrome } from "@adapttable/core";
-import { Box, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
 import { type ReactNode, useState } from "react";
 
 import {
@@ -91,6 +91,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         ) : (
           bodyByRegion[chrome.body]
+        )}
+        {!chrome.isPaged && !source.error && source.hasNextPage && (
+          <Flex justify="center" py={2}>
+            <Button
+              size="sm"
+              variant="outline"
+              isLoading={source.isFetchingNextPage}
+              onClick={() => source.fetchNextPage()}
+            >
+              {labels.loadMore}
+            </Button>
+          </Flex>
         )}
         {chrome.showFooter && (
           <Footer

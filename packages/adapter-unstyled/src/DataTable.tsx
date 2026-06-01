@@ -1,6 +1,7 @@
 import {
   type ActiveFilterChip,
   defaultConfirm,
+  pageSizeOptions,
   useDataTable,
   useIsMobile,
 } from "@adapttable/core";
@@ -16,8 +17,6 @@ import {
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
-
-const PAGE_SIZES = [10, 25, 50, 100];
 
 /**
  * Headless, unstyled AdaptTable for Tailwind / shadcn / custom CSS. Renders
@@ -181,7 +180,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               value={source.limit}
               onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
             >
-              {PAGE_SIZES.map((n) => (
+              {pageSizeOptions(source.limit).map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
@@ -233,6 +232,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       ) : (
         body
+      )}
+
+      {!isPaged && !source.error && source.hasNextPage && (
+        <div data-adapttable-part="load-more" className={classNames.loadMore}>
+          <button
+            type="button"
+            disabled={source.isFetchingNextPage}
+            data-adapttable-part="load-more-button"
+            className={classNames.loadMoreButton}
+            onClick={() => source.fetchNextPage()}
+          >
+            {labels.loadMore}
+          </button>
+        </div>
       )}
 
       {isPaged && !source.error && (source.total > 0 || source.isLoading) && (

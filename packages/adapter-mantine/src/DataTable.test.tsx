@@ -35,6 +35,7 @@ const columns: ColumnDef<Row>[] = [
 
 interface HarnessProps {
   rows?: readonly Row[];
+  mode?: "paged" | "infinite";
   initialUrl?: string;
   error?: Error | null;
   refetch?: () => void;
@@ -48,7 +49,7 @@ function Harness(props: HarnessProps) {
     data: props.rows ?? ROWS,
     adapter: harnessAdapter,
     columns,
-    paginationMode: "paged",
+    paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
     refetch: props.refetch,
     isLoading: props.isLoading,
@@ -83,6 +84,13 @@ describe("<DataTable> (Mantine)", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Dubai")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("loads more rows via the Load more button in infinite mode", () => {
+    renderHarness({ mode: "infinite", initialUrl: "limit=1" });
+    expect(screen.queryByText("Bob")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /load more/i }));
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 

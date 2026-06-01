@@ -2,6 +2,7 @@ import {
   type ActiveFilterChip,
   type BulkAction,
   type ConfirmHandler,
+  pageSizeOptions,
   type PaginationInfo,
   type SelectionState,
   type SortByOption,
@@ -25,8 +26,6 @@ import {
   Typography,
 } from "@mui/material";
 import type { ReactNode } from "react";
-
-const PAGE_SIZES = [10, 25, 50, 100];
 
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
@@ -125,7 +124,7 @@ export function Toolbar<TRow>({
             onChange={(e) => source.setLimit(Number(e.target.value))}
             sx={{ minWidth: 110 }}
           >
-            {PAGE_SIZES.map((n) => (
+            {pageSizeOptions(source.limit).map((n) => (
               <MenuItem key={n} value={n}>
                 {n}
               </MenuItem>

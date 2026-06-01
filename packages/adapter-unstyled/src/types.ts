@@ -30,6 +30,8 @@ export interface DataTableClassNames {
   actionButton?: string;
   selectionCell?: string;
   checkbox?: string;
+  loadMore?: string;
+  loadMoreButton?: string;
   cards?: string;
   card?: string;
   cardRow?: string;

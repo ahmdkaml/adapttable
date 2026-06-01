@@ -61,6 +61,7 @@ export {
   DEFAULT_ROW_SIZE_PX,
   MOBILE_BREAKPOINT_PX,
   PAGE_SIZE_OPTIONS,
+  pageSizeOptions,
   SEARCH_DEBOUNCE_MS,
   VIRTUAL_OVERSCAN,
 } from "./constants";

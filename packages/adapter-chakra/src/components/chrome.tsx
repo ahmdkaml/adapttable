@@ -2,6 +2,7 @@ import {
   type ActiveFilterChip,
   type BulkAction,
   type ConfirmHandler,
+  pageSizeOptions,
   type PaginationInfo,
   type SelectionState,
   type SortByOption,
@@ -36,8 +37,6 @@ import {
   WrapItem,
 } from "@chakra-ui/react";
 import type { ReactNode } from "react";
-
-const PAGE_SIZES = [10, 25, 50, 100];
 
 /** Search + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
@@ -132,7 +131,7 @@ export function Toolbar<TRow>({
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
           >
-            {PAGE_SIZES.map((n) => (
+            {pageSizeOptions(source.limit).map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>

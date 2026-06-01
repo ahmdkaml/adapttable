@@ -275,4 +275,12 @@ describe("<DataTable> (Chakra)", () => {
     fireEvent.mouseEnter(row.getByTestId("c").closest("tr")!);
     expect(prefetch).toHaveBeenCalled();
   });
+
+  it("loads more rows via the Load more button in infinite mode", () => {
+    renderHarness({ mode: "infinite" }, "limit=1");
+    expect(screen.queryByText("Bob")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /load more/i }));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
 });

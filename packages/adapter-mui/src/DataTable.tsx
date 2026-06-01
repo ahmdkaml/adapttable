@@ -1,5 +1,5 @@
 import { useTableChrome } from "@adapttable/core";
-import { Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 
 import {
@@ -108,6 +108,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         ) : (
           body
+        )}
+        {!c.isPaged && !source.error && source.hasNextPage && (
+          <Box display="flex" justifyContent="center" py={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={source.isFetchingNextPage}
+              onClick={() => source.fetchNextPage()}
+            >
+              {labels.loadMore}
+            </Button>
+          </Box>
         )}
         {c.showFooter && (
           <Footer

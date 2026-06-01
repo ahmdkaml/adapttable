@@ -4,7 +4,7 @@ import {
   useDataTable,
   useIsMobile,
 } from "@adapttable/core";
-import { Box, Paper, Stack } from "@mantine/core";
+import { Box, Button, Group, Paper, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMemo, useRef } from "react";
 
@@ -192,6 +192,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         )}
 
         {!source.error && body}
+
+        {!isPaged && !source.error && source.hasNextPage && (
+          <Group justify="center" py="xs">
+            <Button
+              variant="default"
+              size="sm"
+              loading={source.isFetchingNextPage}
+              onClick={() => source.fetchNextPage()}
+            >
+              {table.labels.loadMore}
+            </Button>
+          </Group>
+        )}
 
         {showFooter && (
           <Box className={classNames?.footer}>

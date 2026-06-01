@@ -244,4 +244,12 @@ describe("<DataTable> (MUI)", () => {
     fireEvent.click(screen.getByLabelText("Select all"));
     expect(screen.getByText("Delete").closest("button")).toBeDisabled();
   });
+
+  it("loads more rows via the Load more button in infinite mode", () => {
+    renderHarness({ mode: "infinite" }, "limit=1");
+    expect(screen.queryByText("Bob")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /load more/i }));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
 });
