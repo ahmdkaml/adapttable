@@ -1,5 +1,6 @@
 import {
   type ActiveFilterChip,
+  defaultConfirm,
   useDataTable,
   useIsMobile,
 } from "@adapttable/core";
@@ -18,7 +19,6 @@ import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
-import { useConfirm } from "./hooks/useConfirm";
 import type { DataTableProps } from "./types";
 
 const stickyToolbarStyle = {
@@ -68,7 +68,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const autoMobile = useIsMobile();
   const isMobile = isMobileProp ?? autoMobile;
-  const confirm = useConfirm(confirmProp);
+  const confirm = confirmProp ?? defaultConfirm;
 
   const table = useDataTable<TRow>({
     source,

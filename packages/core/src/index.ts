@@ -30,6 +30,19 @@ export type {
   TableQueryParams,
 } from "./types";
 
+/* ── Actions (confirm + runners) ───────────────────────────────────── */
+export {
+  type ConfirmHandler,
+  type ConfirmRequest,
+  defaultConfirm,
+  runRowAction,
+} from "./actions/confirm";
+export {
+  type BulkActionRunner,
+  useBulkActionRunner,
+  type UseBulkActionRunnerOptions,
+} from "./actions/useBulkActionRunner";
+
 /* ── Labels ────────────────────────────────────────────────────────── */
 export { defaultLabels, resolveLabels } from "./labels";
 

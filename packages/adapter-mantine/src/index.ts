@@ -10,8 +10,6 @@
 
 export { DataTable } from "./DataTable";
 export type {
-  ConfirmHandler,
-  ConfirmRequest,
   DataTableClassNames,
   DataTableProps,
   DataTableSlots,
@@ -33,12 +31,11 @@ export {
   type TableSkeletonProps,
 } from "./components/TableSkeleton";
 
-/* Confirmation + animation helpers. */
+/* Animation helper. */
 export {
   type MountStaggerOptions,
   useMountStagger,
 } from "./animation/useMountStagger";
-export { defaultConfirm, useConfirm } from "./hooks/useConfirm";
 
 /* Re-exported headless engine — source builders, hooks, and types. */
 export {
@@ -47,6 +44,9 @@ export {
   type CellProps,
   type ColorScheme,
   type ColumnDef,
+  type ConfirmHandler,
+  type ConfirmRequest,
+  defaultConfirm,
   defaultLabels,
   type Direction,
   type ExtraFilters,

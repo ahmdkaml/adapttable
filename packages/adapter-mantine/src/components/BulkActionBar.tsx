@@ -1,8 +1,11 @@
-import type { BulkAction, SelectionState, TableLabels } from "@adapttable/core";
+import {
+  type BulkAction,
+  type ConfirmHandler,
+  type SelectionState,
+  type TableLabels,
+  useBulkActionRunner,
+} from "@adapttable/core";
 import { Button, Group, Text, Tooltip } from "@mantine/core";
-import { useCallback, useState } from "react";
-
-import type { ConfirmHandler } from "../types";
 
 /** Props for {@link BulkActionBar}. */
 export interface BulkActionBarProps {
@@ -19,40 +22,16 @@ export function BulkActionBar({
   confirm,
   labels,
 }: Readonly<BulkActionBarProps>) {
-  const [pending, setPending] = useState<string | null>(null);
   const { selectedIds, selectedCount, clear } = selection;
-
-  const run = useCallback(
-    (action: BulkAction) => {
-      const ids = [...selectedIds];
-      if (ids.length === 0) return;
-      const fire = async () => {
-        try {
-          setPending(action.key);
-          await action.onClick(ids);
-          clear();
-        } finally {
-          setPending(null);
-        }
-      };
-      if (action.confirm) {
-        confirm({
-          title: action.confirm.title,
-          message: action.confirm.message(ids.length),
-          confirmLabel: action.confirm.confirmLabel,
-          cancelLabel: labels.cancel,
-          danger: action.confirm.danger,
-          onConfirm: () => void fire(),
-        });
-      } else {
-        void fire();
-      }
-    },
-    [selectedIds, clear, confirm, labels.cancel]
-  );
+  const { pending, run } = useBulkActionRunner({
+    confirm,
+    cancelLabel: labels.cancel,
+    onComplete: clear,
+  });
 
   if (selectedCount === 0) return null;
 
+  const ids = [...selectedIds];
   return (
     <Group justify="space-between" wrap="wrap" gap="sm">
       <Text fz="sm">{labels.selectedCount(selectedCount)}</Text>
@@ -69,9 +48,9 @@ export function BulkActionBar({
           <BulkButton
             key={action.key}
             action={action}
-            ids={[...selectedIds]}
+            ids={ids}
             pending={pending}
-            onRun={run}
+            onRun={(a) => run(a, ids)}
           />
         ))}
       </Group>

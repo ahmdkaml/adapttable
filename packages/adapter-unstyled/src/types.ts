@@ -6,30 +6,53 @@ import type {
   ConfirmHandler,
   Direction,
   RowAction,
-  SortByOption,
   TableLabels,
   TableSource,
 } from "@adapttable/core";
 import type { ReactNode } from "react";
 
-/** Overridable sub-components. Each defaults to a styled Mantine part. */
-export interface DataTableSlots {
-  /** Replace the loading skeleton. */
-  skeleton?: ReactNode;
-  /** Replace the empty-state. */
-  empty?: ReactNode;
-}
-
-/** Per-part class name overrides. */
+/**
+ * Per-part class-name hooks. Every node also carries a stable
+ * `data-adapttable-part` attribute and `data-*` state attributes so you
+ * can style with Tailwind, shadcn, or your own CSS.
+ */
 export interface DataTableClassNames {
   root?: string;
   toolbar?: string;
+  search?: string;
+  filtersButton?: string;
+  filtersPanel?: string;
+  chips?: string;
+  chip?: string;
+  chipRemove?: string;
+  bulkBar?: string;
+  bulkButton?: string;
   table?: string;
+  thead?: string;
+  headerRow?: string;
+  headerCell?: string;
+  sortButton?: string;
+  tbody?: string;
+  row?: string;
+  cell?: string;
+  actionsCell?: string;
+  actionButton?: string;
+  selectionCell?: string;
+  checkbox?: string;
+  cards?: string;
   card?: string;
+  cardRow?: string;
+  cardLabel?: string;
+  cardValue?: string;
   footer?: string;
+  pageButton?: string;
+  empty?: string;
+  loading?: string;
+  error?: string;
+  retryButton?: string;
 }
 
-/** Props for the Mantine `<DataTable>`. */
+/** Props for the unstyled `<DataTable>`. */
 export interface DataTableProps<TRow> {
   /** Data + state contract from `useFrontendData` / `useBackendData`. */
   source: TableSource<TRow>;
@@ -39,61 +62,30 @@ export interface DataTableProps<TRow> {
   rowKey: (row: TRow) => string;
 
   /* ── Display ─────────────────────────────────────────────────────── */
-  /** Trailing per-row actions. */
   rowActions?: RowAction<TRow>[];
-  /** Accessible label for the table. */
   tableLabel?: string;
-  /** Placeholder for the search input. */
   searchPlaceholder?: string;
-  /** Options for the mobile sort-by select. */
-  sortByOptions?: SortByOption[];
-  /** Pre-translated label overrides. */
   labels?: TableLabels;
-  /** Text direction. Defaults to `"ltr"`. */
   dir?: Direction;
-  /** Force mobile layout (otherwise resolved from the viewport). */
   isMobile?: boolean;
-  /** Hover-prefetch callback fired on desktop row mouse-enter. */
-  prefetch?: (row: TRow) => void;
-  /** Disable the built-in search box. */
   hideSearch?: boolean;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
-  /** Filter widgets rendered inside the drawer. */
   filters?: ReactNode;
-  /** Per-filter-key chip label resolvers. */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
-  /** Extra chips driven by non-URL state, merged with the derived chips. */
   extraChips?: readonly ActiveFilterChip[];
-  /** Override the active-filter count (defaults to the chip count). */
   activeFilterCount?: number;
-  /** Clear-filters handler used by the drawer + chip strip. */
   onClearFilters?: () => void;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
-  /** Bulk actions — enabling these turns on row selection. */
   bulkActions?: BulkAction[];
-  /** Selection id extractor; defaults to `rowKey`. */
   selectionGetId?: (row: TRow) => string;
 
   /* ── Customisation ───────────────────────────────────────────────── */
-  /** Replace sub-components (skeleton, empty-state). */
-  slots?: DataTableSlots;
-  /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
-  /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
-  /** Confirmation handler for actions; defaults to `window.confirm`. */
   confirm?: ConfirmHandler;
-  /** Number of skeleton rows while loading. Defaults to 5. */
   skeletonRows?: number;
-  /**
-   * Animate rows/cards on mount with the provided stagger hook (e.g. the
-   * GSAP one from `@adapttable/mantine/animation`). Off by default; honors
-   * reduced motion.
-   */
-  animate?: boolean;
+  /** Empty-state node override. */
+  emptyState?: ReactNode;
 }
-
-/** Mantine color alias re-export for action colors. */
-export type { MantineColor } from "@mantine/core";

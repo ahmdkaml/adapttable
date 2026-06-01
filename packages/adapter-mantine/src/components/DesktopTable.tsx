@@ -1,14 +1,14 @@
-import type {
-  ColumnDef,
-  RowAction,
-  UseDataTableResult,
+import {
+  type ColumnDef,
+  type ConfirmHandler,
+  type RowAction,
+  runRowAction,
+  type UseDataTableResult,
 } from "@adapttable/core";
 import { ActionIcon, Checkbox, Group, Table, Tooltip } from "@mantine/core";
 import type { RefObject } from "react";
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
-import { runRowAction } from "../runAction";
-import type { ConfirmHandler } from "../types";
 
 /** Props for {@link DesktopTable}. */
 export interface DesktopTableProps<TRow> {
