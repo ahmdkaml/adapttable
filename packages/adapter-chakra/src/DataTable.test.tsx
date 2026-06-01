@@ -319,4 +319,36 @@ describe("<DataTable> (Chakra)", () => {
     }
   });
 
+
+  it("renders a column via the Cell render-prop", () => {
+    renderHarness({
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            Cell: ({ row }) => <span>cell-{row.name}</span>,
+          },
+        ],
+      },
+    });
+    expect(screen.getByText("cell-Alice")).toBeInTheDocument();
+  });
+
+  it("renders a Cell render-prop in mobile cards", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            Cell: ({ row }) => <span>m-{row.name}</span>,
+          },
+        ],
+      },
+    });
+    expect(screen.getByText("m-Alice")).toBeInTheDocument();
+  });
+
 });
