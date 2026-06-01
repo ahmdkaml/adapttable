@@ -20,6 +20,7 @@ packages/
   adapter-mantine/  @adapttable/mantine
   adapter-mui/      @adapttable/mui
   adapter-chakra/   @adapttable/chakra
+  adapter-antd/     @adapttable/antd       Ant Design
   adapter-unstyled/ @adapttable/unstyled   Tailwind / shadcn
   i18n/             @adapttable/i18n
   cli/              @adapttable/cli

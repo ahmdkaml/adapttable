@@ -14,7 +14,7 @@ starter:
 npx adapttable init
 ```
 
-Or install manually (Mantine shown; swap for `mui`, `chakra`, or
+Or install manually (Mantine shown; swap for `mui`, `chakra`, `antd`, or
 `unstyled`):
 
 ```bash
