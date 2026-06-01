@@ -137,6 +137,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {!source.error && showCustomSkeleton && slots?.skeleton}
         {!source.error && !showCustomSkeleton && (
           <Table<TRow>
+            aria-label={props.tableLabel}
             columns={columns}
             dataSource={source.rows}
             rowKey={getRowId}

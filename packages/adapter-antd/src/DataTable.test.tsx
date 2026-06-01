@@ -234,6 +234,11 @@ describe("<DataTable> (Ant Design)", () => {
     ).toBeDisabled();
   });
 
+  it("labels the table with tableLabel", () => {
+    renderHarness({ override: { tableLabel: "People" } });
+    expect(screen.getByRole("table", { name: "People" })).toBeInTheDocument();
+  });
+
   it("prefetches a row on hover", () => {
     const prefetch = vi.fn();
     renderHarness({ override: { prefetch } });
