@@ -23,11 +23,13 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build"
+    "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.11",
     "@eslint/js": "^9.18.0",
+    "publint": "^0.3.21",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

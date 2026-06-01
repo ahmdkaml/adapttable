@@ -20,7 +20,7 @@
   "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-mantine#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/orwamahmoud/adapttable.git",
+    "url": "git+https://github.com/orwamahmoud/adapttable.git",
     "directory": "packages/adapter-mantine"
   },
   "bugs": "https://github.com/orwamahmoud/adapttable/issues",
@@ -36,9 +36,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -72,5 +77,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

@@ -14,7 +14,7 @@
   "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/cli#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/orwamahmoud/adapttable.git",
+    "url": "git+https://github.com/orwamahmoud/adapttable.git",
     "directory": "packages/cli"
   },
   "bugs": "https://github.com/orwamahmoud/adapttable/issues",
@@ -51,5 +51,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "sideEffects": false
 }
