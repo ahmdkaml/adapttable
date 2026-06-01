@@ -142,6 +142,19 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
 
+  packages/i18n:
+    dependencies:
+      '@adapttable/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+
 packages:
 
   '@adobe/css-tools@4.5.0':
