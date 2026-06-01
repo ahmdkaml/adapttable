@@ -309,4 +309,16 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.getByText("m-Alice")).toBeInTheDocument();
   });
 
+  it("uses the column key as the mobile label for a non-string header", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        columns: [
+          { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
+        ],
+      },
+    });
+    expect(screen.getAllByText("name").length).toBeGreaterThan(0);
+  });
+
 });
