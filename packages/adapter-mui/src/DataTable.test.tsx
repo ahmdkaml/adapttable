@@ -178,6 +178,26 @@ describe("<DataTable> (MUI)", () => {
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });
 
+  it("hides and disables row actions per row", () => {
+    renderHarness({
+      override: {
+        rowActions: [
+          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "d",
+            label: "DisabledAct",
+            onClick: vi.fn(),
+            isDisabled: () => true,
+          },
+        ],
+      },
+    });
+    expect(screen.queryByRole("button", { name: "HiddenAct" })).toBeNull();
+    expect(
+      screen.getAllByRole("button", { name: "DisabledAct" })[0]!
+    ).toBeDisabled();
+  });
+
   it("applies className and dir", () => {
     const { container } = renderHarness({
       override: { className: "my-root", dir: "rtl" },

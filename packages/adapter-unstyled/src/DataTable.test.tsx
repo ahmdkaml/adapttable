@@ -243,6 +243,24 @@ describe("<DataTable> (unstyled)", () => {
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });
 
+  it("hides and disables row actions per row", () => {
+    renderHarness({
+      override: {
+        rowActions: [
+          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "d",
+            label: "DisabledAct",
+            onClick: vi.fn(),
+            isDisabled: () => true,
+          },
+        ],
+      },
+    });
+    expect(screen.queryByLabelText("HiddenAct")).toBeNull();
+    expect(screen.getAllByLabelText("DisabledAct")[0]!).toBeDisabled();
+  });
+
   it("merges extraChips with label chips", () => {
     renderHarness(
       {
