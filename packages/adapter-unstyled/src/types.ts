@@ -1,14 +1,4 @@
-import type {
-  ActiveFilterChip,
-  BulkAction,
-  ChipLabelResolver,
-  ColumnDef,
-  ConfirmHandler,
-  Direction,
-  RowAction,
-  TableLabels,
-  TableSource,
-} from "@adapttable/core";
+import type { BaseDataTableProps } from "@adapttable/core";
 import type { ReactNode } from "react";
 
 /**
@@ -53,39 +43,9 @@ export interface DataTableClassNames {
 }
 
 /** Props for the unstyled `<DataTable>`. */
-export interface DataTableProps<TRow> {
-  /** Data + state contract from `useFrontendData` / `useBackendData`. */
-  source: TableSource<TRow>;
-  /** Column definitions. */
-  columns: ColumnDef<TRow>[];
-  /** Stable React key extractor for a row. */
-  rowKey: (row: TRow) => string;
-
-  /* ── Display ─────────────────────────────────────────────────────── */
-  rowActions?: RowAction<TRow>[];
-  tableLabel?: string;
-  searchPlaceholder?: string;
-  labels?: TableLabels;
-  dir?: Direction;
-  isMobile?: boolean;
-  hideSearch?: boolean;
-
-  /* ── Filters ─────────────────────────────────────────────────────── */
-  filters?: ReactNode;
-  filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
-  extraChips?: readonly ActiveFilterChip[];
-  activeFilterCount?: number;
-  onClearFilters?: () => void;
-
-  /* ── Bulk actions ────────────────────────────────────────────────── */
-  bulkActions?: BulkAction[];
-  selectionGetId?: (row: TRow) => string;
-
-  /* ── Customisation ───────────────────────────────────────────────── */
+export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
+  /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
-  toolbar?: ReactNode;
-  confirm?: ConfirmHandler;
-  skeletonRows?: number;
   /** Empty-state node override. */
   emptyState?: ReactNode;
 }

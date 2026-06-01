@@ -43,6 +43,9 @@ export {
   type UseBulkActionRunnerOptions,
 } from "./actions/useBulkActionRunner";
 
+/* ── Shared prop surface ───────────────────────────────────────────── */
+export type { BaseDataTableProps } from "./props";
+
 /* ── Labels ────────────────────────────────────────────────────────── */
 export { defaultLabels, resolveLabels } from "./labels";
 

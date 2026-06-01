@@ -81,6 +81,7 @@ export default tseslint.config(
       "@typescript-eslint/unbound-method": "off",
       "sonarjs/no-nested-functions": "off",
       "sonarjs/prefer-read-only-props": "off",
+      "react/prop-types": "off",
     },
   },
   prettier
