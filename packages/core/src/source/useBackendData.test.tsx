@@ -116,6 +116,25 @@ describe("useBackendData", () => {
     expect(result.current.total).toBe(4);
   });
 
+  it("falls back to the row count when a paged response omits total", () => {
+    const q = makeQuery({
+      pages: [
+        page(
+          [
+            { id: "a", name: "A" },
+            { id: "b", name: "B" },
+          ],
+          0
+        ),
+      ],
+    });
+    const { result } = mount(q, {
+      selectPage: (p) => ({ items: p.items }),
+      paginationMode: "paged",
+    });
+    expect(result.current.total).toBe(2);
+  });
+
   it("uses the default selector for a PaginatedResponse page shape", () => {
     const usePaginatedQuery = (): InfiniteQueryLike<
       PaginatedResponse<Row>

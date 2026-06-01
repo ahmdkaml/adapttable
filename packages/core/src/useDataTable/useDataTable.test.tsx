@@ -135,6 +135,27 @@ describe("useDataTable", () => {
       expect((plain.style as { textAlign: string }).textAlign).toBe("end");
     });
 
+    it("reports 'descending' aria-sort for a desc-sorted column", () => {
+      const { result } = mount("sortBy=name&sortDir=desc");
+      expect(result.current.getHeaderCellProps(cols[0]!)["aria-sort"]).toBe(
+        "descending"
+      );
+    });
+
+    it("maps center alignment to a centered cell", () => {
+      const { result } = mount();
+      const centered: ColumnDef<Row> = {
+        key: "c",
+        header: "C",
+        accessor: (r) => r.name,
+        align: "center",
+      };
+      const style = result.current.getCellProps(centered).style as {
+        textAlign: string;
+      };
+      expect(style.textAlign).toBe("center");
+    });
+
     it("getHeaderCellProps reports 'none' for an unsorted sortable column", () => {
       const { result } = mount();
       expect(result.current.getHeaderCellProps(cols[0]!)["aria-sort"]).toBe(
