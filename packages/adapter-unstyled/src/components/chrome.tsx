@@ -2,6 +2,7 @@ import {
   type ActiveFilterChip,
   type BulkAction,
   type ConfirmHandler,
+  pageSizeOptions,
   type PaginationInfo,
   type SelectionState,
   type TableLabels,
@@ -10,8 +11,6 @@ import {
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
-
-const PAGE_SIZES = [10, 25, 50, 100];
 
 /** Removable filter-chip strip. Renders nothing when empty. */
 export function Chips({
@@ -141,7 +140,7 @@ export function Footer({
           value={source.limit}
           onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
         >
-          {PAGE_SIZES.map((n) => (
+          {pageSizeOptions(source.limit).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>

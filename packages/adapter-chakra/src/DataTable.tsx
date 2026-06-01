@@ -1,4 +1,8 @@
-import { type TableBody, useTableChrome } from "@adapttable/core";
+import {
+  type TableBody,
+  useInfiniteScroll,
+  useTableChrome,
+} from "@adapttable/core";
 import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
 import { type ReactNode, useState } from "react";
 
@@ -28,6 +32,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
+    hasNextPage: Boolean(source.hasNextPage),
+    isFetchingNextPage: Boolean(source.isFetchingNextPage),
+    fetchNextPage: () => source.fetchNextPage(),
+    enabled: !chrome.isPaged && !source.error,
+  });
 
   const tableProps = {
     table,
@@ -93,7 +103,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           bodyByRegion[chrome.body]
         )}
         {!chrome.isPaged && !source.error && source.hasNextPage && (
-          <Flex justify="center" py={2}>
+          <Flex ref={loadMoreRef} justify="center" py={2}>
             <Button
               size="sm"
               variant="outline"

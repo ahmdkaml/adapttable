@@ -84,6 +84,28 @@ interface ColumnDef<TRow> {
 **paged on desktop**, using the same breakpoint the table uses, so the two
 never drift. Force a mode with `paginationMode: "paged" | "infinite"`.
 
+In infinite mode the adapters auto-load the next page when the bottom of the
+list scrolls into view (via `IntersectionObserver`, prefetching ~200px
+early), and also render an explicit **Load more** button as a keyboard- and
+screen-reader-friendly fallback. The auto-load behaviour is packaged as a
+headless hook, `useInfiniteScroll`, exported from `@adapttable/core` — attach
+the returned ref to a sentinel element after your last row to get the same
+behaviour in custom markup:
+
+```tsx
+const sentinelRef = useInfiniteScroll({
+  hasNextPage: source.hasNextPage,
+  isFetchingNextPage: source.isFetchingNextPage,
+  fetchNextPage: source.fetchNextPage,
+  enabled: source.paginationMode === "infinite",
+});
+// …render rows…
+<div ref={sentinelRef} />
+```
+
+It is SSR- and test-safe: where `IntersectionObserver` is unavailable it
+no-ops, leaving the Load more button as the path forward.
+
 ## The two ways to use it
 
 1. **Batteries-included** — `import { DataTable } from "@adapttable/<kit>"`.

@@ -252,4 +252,31 @@ describe("<DataTable> (MUI)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
+
+  it("auto-loads the next page when the sentinel scrolls into view", () => {
+    let trigger: (() => void) | undefined;
+    const original = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = vi
+      .fn()
+      .mockImplementation((cb: IntersectionObserverCallback) => ({
+        observe: () => {
+          trigger = () =>
+            cb(
+              [{ isIntersecting: true } as IntersectionObserverEntry],
+              {} as IntersectionObserver
+            );
+        },
+        disconnect: () => undefined,
+        unobserve: () => undefined,
+      }));
+    try {
+      renderHarness({ mode: "infinite" }, "limit=1");
+      expect(screen.queryByText("Bob")).toBeNull();
+      act(() => trigger?.());
+      expect(screen.getByText("Bob")).toBeInTheDocument();
+    } finally {
+      globalThis.IntersectionObserver = original;
+    }
+  });
+
 });

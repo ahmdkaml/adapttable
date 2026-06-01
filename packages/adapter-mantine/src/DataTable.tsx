@@ -1,7 +1,10 @@
 import {
   type ActiveFilterChip,
   defaultConfirm,
+  mergeFilterChips,
+  resolveActiveFilterCount,
   useDataTable,
+  useInfiniteScroll,
   useIsMobile,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
@@ -86,16 +89,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const [drawerOpened, drawer] = useDisclosure(false);
   const getRowId = selectionGetId ?? rowKey;
 
-  const mergedChips = useMemo<readonly ActiveFilterChip[]>(() => {
-    if (!extraChips?.length) return table.filterChips;
-    if (table.filterChips.length === 0) return extraChips;
-    return [...table.filterChips, ...extraChips];
-  }, [table.filterChips, extraChips]);
+  const mergedChips = useMemo<readonly ActiveFilterChip[]>(
+    () => mergeFilterChips(table.filterChips, extraChips),
+    [table.filterChips, extraChips]
+  );
 
-  const activeFilterCount =
-    activeFilterCountProp && activeFilterCountProp > 0
-      ? activeFilterCountProp
-      : mergedChips.length;
+  const activeFilterCount = resolveActiveFilterCount(
+    activeFilterCountProp,
+    mergedChips.length
+  );
 
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
@@ -108,6 +110,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   );
 
   const isPaged = source.paginationMode === "paged";
+  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
+    hasNextPage: Boolean(source.hasNextPage),
+    isFetchingNextPage: Boolean(source.isFetchingNextPage),
+    fetchNextPage: () => source.fetchNextPage(),
+    enabled: !isPaged && !source.error,
+  });
   const showFooter =
     isPaged &&
     !source.error &&
@@ -194,7 +202,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {!source.error && body}
 
         {!isPaged && !source.error && source.hasNextPage && (
-          <Group justify="center" py="xs">
+          <Group ref={loadMoreRef} justify="center" py="xs">
             <Button
               variant="default"
               size="sm"

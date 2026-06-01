@@ -1,4 +1,4 @@
-import { useTableChrome } from "@adapttable/core";
+import { useInfiniteScroll, useTableChrome } from "@adapttable/core";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 
@@ -28,6 +28,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = c;
   const { labels, source } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
+    hasNextPage: Boolean(source.hasNextPage),
+    isFetchingNextPage: Boolean(source.isFetchingNextPage),
+    fetchNextPage: () => source.fetchNextPage(),
+    enabled: !c.isPaged && !source.error,
+  });
 
   let body: React.ReactNode;
   if (c.body === "skeleton") {
@@ -110,7 +116,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           body
         )}
         {!c.isPaged && !source.error && source.hasNextPage && (
-          <Box display="flex" justifyContent="center" py={1}>
+          <Box ref={loadMoreRef} display="flex" justifyContent="center" py={1}>
             <Button
               variant="outlined"
               size="small"

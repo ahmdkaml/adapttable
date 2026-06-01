@@ -1,0 +1,74 @@
+import { type RefObject, useEffect, useRef } from "react";
+
+/** Options for {@link useInfiniteScroll}. */
+export interface UseInfiniteScrollOptions {
+  /** Whether more pages remain to be fetched. */
+  hasNextPage: boolean;
+  /** Whether a page fetch is currently in flight. */
+  isFetchingNextPage: boolean;
+  /** Loads the next page; called when the sentinel scrolls into view. */
+  fetchNextPage: () => void;
+  /**
+   * Master switch. When `false` the observer is never attached (e.g. in
+   * paged mode, or when the consumer wants explicit "Load more" only).
+   * @defaultValue true
+   */
+  enabled?: boolean;
+  /**
+   * `IntersectionObserver` root margin — how far before the sentinel enters
+   * the viewport the next page is prefetched.
+   * @defaultValue "200px"
+   */
+  rootMargin?: string;
+}
+
+/**
+ * Auto-loads the next page when a sentinel element scrolls near the viewport,
+ * turning a paginated {@link TableSource} into true infinite scroll. Attach
+ * the returned ref to a small element rendered after the last row.
+ *
+ * SSR- and jsdom-safe: when `IntersectionObserver` is unavailable it no-ops,
+ * so an accompanying "Load more" button remains the fallback. The latest
+ * `fetchNextPage` is read from a ref, so passing a fresh closure each render
+ * never re-subscribes the observer.
+ *
+ * @typeParam TElement - The sentinel element type.
+ * @param options - See {@link UseInfiniteScrollOptions}.
+ * @returns A ref to attach to the sentinel element.
+ */
+export function useInfiniteScroll<TElement extends HTMLElement = HTMLDivElement>(
+  options: UseInfiniteScrollOptions
+): RefObject<TElement> {
+  const {
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    enabled = true,
+    rootMargin = "200px",
+  } = options;
+
+  const ref = useRef<TElement>(null);
+  const fetchRef = useRef(fetchNextPage);
+  fetchRef.current = fetchNextPage;
+  const fetchingRef = useRef(isFetchingNextPage);
+  fetchingRef.current = isFetchingNextPage;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!enabled || !hasNextPage || el === null) return undefined;
+    if (typeof IntersectionObserver === "undefined") return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !fetchingRef.current) {
+          fetchRef.current();
+        }
+      },
+      { rootMargin }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [enabled, hasNextPage, rootMargin]);
+
+  return ref;
+}

@@ -97,6 +97,8 @@ export {
 export {
   type ActiveFilterChip,
   type ChipLabelResolver,
+  mergeFilterChips,
+  resolveActiveFilterCount,
   useActiveFilterChips,
   type UseActiveFilterChipsOptions,
 } from "./filters/useActiveFilterChips";
@@ -129,6 +131,10 @@ export {
 /* ── Hooks ─────────────────────────────────────────────────────────── */
 export { DARK_SCHEME_QUERY, useColorScheme } from "./hooks/useColorScheme";
 export { useDebounce } from "./hooks/useDebounce";
+export {
+  useInfiniteScroll,
+  type UseInfiniteScrollOptions,
+} from "./hooks/useInfiniteScroll";
 export {
   MOBILE_MEDIA_QUERY,
   resolvePaginationMode,

@@ -15,6 +15,39 @@ export interface ActiveFilterChip {
 /** Translate a single raw filter value into a chip label. */
 export type ChipLabelResolver = (value: string) => string;
 
+/**
+ * Merge a table's derived filter chips with caller-supplied `extraChips`,
+ * avoiding a new array allocation when either side is empty. Adapters call
+ * this (memoised on the inputs) to build the final chip strip.
+ *
+ * @param filterChips - Chips derived from the table's own filter state.
+ * @param extraChips - Optional caller-provided chips to append.
+ * @returns The combined chip list (one of the inputs when the other is empty).
+ */
+export function mergeFilterChips(
+  filterChips: readonly ActiveFilterChip[],
+  extraChips: readonly ActiveFilterChip[] | undefined
+): readonly ActiveFilterChip[] {
+  if (!extraChips?.length) return filterChips;
+  if (filterChips.length === 0) return extraChips;
+  return [...filterChips, ...extraChips];
+}
+
+/**
+ * Resolve the active-filter count shown on the filters button: a positive
+ * caller `override` wins, otherwise fall back to the number of visible chips.
+ *
+ * @param override - Caller-supplied count (e.g. for server-driven filters).
+ * @param chipCount - Number of currently-visible chips.
+ * @returns The count to display.
+ */
+export function resolveActiveFilterCount(
+  override: number | undefined,
+  chipCount: number
+): number {
+  return override && override > 0 ? override : chipCount;
+}
+
 /** Options for {@link useActiveFilterChips}. */
 export interface UseActiveFilterChipsOptions {
   /** Map of filter key → current value (typically a source's `extra`). */

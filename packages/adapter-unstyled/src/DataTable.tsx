@@ -1,8 +1,11 @@
 import {
   type ActiveFilterChip,
   defaultConfirm,
+  mergeFilterChips,
   pageSizeOptions,
+  resolveActiveFilterCount,
   useDataTable,
+  useInfiniteScroll,
   useIsMobile,
 } from "@adapttable/core";
 import { useMemo, useState } from "react";
@@ -74,18 +77,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const getRowId = selectionGetId ?? rowKey;
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const mergedChips = useMemo<readonly ActiveFilterChip[]>(() => {
-    if (!extraChips?.length) return table.filterChips;
-    if (table.filterChips.length === 0) return extraChips;
-    return [...table.filterChips, ...extraChips];
-  }, [table.filterChips, extraChips]);
+  const mergedChips = useMemo<readonly ActiveFilterChip[]>(
+    () => mergeFilterChips(table.filterChips, extraChips),
+    [table.filterChips, extraChips]
+  );
 
-  const activeFilterCount =
-    activeFilterCountProp && activeFilterCountProp > 0
-      ? activeFilterCountProp
-      : mergedChips.length;
+  const activeFilterCount = resolveActiveFilterCount(
+    activeFilterCountProp,
+    mergedChips.length
+  );
 
   const isPaged = source.paginationMode === "paged";
+  const canLoadMore = !isPaged && !source.error;
+  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
+    hasNextPage: Boolean(source.hasNextPage),
+    isFetchingNextPage: Boolean(source.isFetchingNextPage),
+    fetchNextPage: () => source.fetchNextPage(),
+    enabled: canLoadMore,
+  });
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -234,8 +243,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         body
       )}
 
-      {!isPaged && !source.error && source.hasNextPage && (
-        <div data-adapttable-part="load-more" className={classNames.loadMore}>
+      {canLoadMore && source.hasNextPage && (
+        <div
+          ref={loadMoreRef}
+          data-adapttable-part="load-more"
+          className={classNames.loadMore}
+        >
           <button
             type="button"
             disabled={source.isFetchingNextPage}

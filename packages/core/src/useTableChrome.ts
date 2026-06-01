@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
-import type { ActiveFilterChip } from "./filters/useActiveFilterChips";
+import {
+  type ActiveFilterChip,
+  mergeFilterChips,
+  resolveActiveFilterCount,
+} from "./filters/useActiveFilterChips";
 import { useIsMobile } from "./hooks/useIsMobile";
 import type { BaseDataTableProps } from "./props";
 import {
@@ -80,16 +84,15 @@ export function useTableChrome<TRow>(
     filterLabels,
   });
 
-  const mergedChips = useMemo<readonly ActiveFilterChip[]>(() => {
-    if (!extraChips?.length) return table.filterChips;
-    if (table.filterChips.length === 0) return extraChips;
-    return [...table.filterChips, ...extraChips];
-  }, [table.filterChips, extraChips]);
+  const mergedChips = useMemo<readonly ActiveFilterChip[]>(
+    () => mergeFilterChips(table.filterChips, extraChips),
+    [table.filterChips, extraChips]
+  );
 
-  const activeFilterCount =
-    activeFilterCountProp && activeFilterCountProp > 0
-      ? activeFilterCountProp
-      : mergedChips.length;
+  const activeFilterCount = resolveActiveFilterCount(
+    activeFilterCountProp,
+    mergedChips.length
+  );
 
   const isPaged = source.paginationMode === "paged";
 
