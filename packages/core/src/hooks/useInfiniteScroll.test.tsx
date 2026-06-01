@@ -49,6 +49,7 @@ function Probe(props: {
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
   enabled?: boolean;
+  itemCount?: number;
 }) {
   const ref = useInfiniteScroll<HTMLDivElement>(props);
   return <div ref={ref} data-testid="sentinel" />;
@@ -151,6 +152,33 @@ describe("useInfiniteScroll", () => {
       )
     ).not.toThrow();
     expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it("re-arms the observer when itemCount grows so short content keeps loading", () => {
+    const fetchNextPage = vi.fn();
+    const { rerender } = render(
+      <Probe
+        hasNextPage
+        isFetchingNextPage={false}
+        fetchNextPage={fetchNextPage}
+        itemCount={1}
+      />
+    );
+    expect(observers).toHaveLength(1);
+    expect(observers[0]?.disconnect).not.toHaveBeenCalled();
+    rerender(
+      <Probe
+        hasNextPage
+        isFetchingNextPage={false}
+        fetchNextPage={fetchNextPage}
+        itemCount={2}
+      />
+    );
+    // Old observer torn down, a fresh one armed against the grown content.
+    expect(observers[0]?.disconnect).toHaveBeenCalledTimes(1);
+    expect(observers).toHaveLength(2);
+    intersect(true);
+    expect(fetchNextPage).toHaveBeenCalledTimes(1);
   });
 
   it("calls the latest fetchNextPage without re-subscribing", () => {

@@ -93,6 +93,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: () => source.fetchNextPage(),
+    itemCount: source.rows.length,
     enabled: canLoadMore,
   });
   const searchProps = table.getSearchInputProps(

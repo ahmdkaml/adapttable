@@ -97,6 +97,7 @@ const sentinelRef = useInfiniteScroll({
   hasNextPage: source.hasNextPage,
   isFetchingNextPage: source.isFetchingNextPage,
   fetchNextPage: source.fetchNextPage,
+  itemCount: source.rows.length, // re-arms so short pages keep loading
   enabled: source.paginationMode === "infinite",
 });
 // …render rows…

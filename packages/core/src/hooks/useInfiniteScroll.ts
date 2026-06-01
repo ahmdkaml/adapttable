@@ -20,6 +20,14 @@ export interface UseInfiniteScrollOptions {
    * @defaultValue "200px"
    */
   rootMargin?: string;
+  /**
+   * The current number of rendered rows. Pass `source.rows.length` so the
+   * observer re-arms after each page loads: when freshly-loaded content is
+   * still shorter than the viewport the sentinel stays in view, and
+   * re-observing re-fires the callback to keep loading until the viewport
+   * fills or there is no next page. Omit to disable this auto-continue.
+   */
+  itemCount?: number;
 }
 
 /**
@@ -45,6 +53,7 @@ export function useInfiniteScroll<TElement extends HTMLElement = HTMLDivElement>
     fetchNextPage,
     enabled = true,
     rootMargin = "200px",
+    itemCount,
   } = options;
 
   const ref = useRef<TElement>(null);
@@ -68,7 +77,7 @@ export function useInfiniteScroll<TElement extends HTMLElement = HTMLDivElement>
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [enabled, hasNextPage, rootMargin]);
+  }, [enabled, hasNextPage, rootMargin, itemCount]);
 
   return ref;
 }
