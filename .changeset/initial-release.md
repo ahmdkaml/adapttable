@@ -3,6 +3,7 @@
 "@adapttable/mantine": minor
 "@adapttable/mui": minor
 "@adapttable/chakra": minor
+"@adapttable/antd": minor
 "@adapttable/unstyled": minor
 "@adapttable/i18n": minor
 "@adapttable/cli": minor
@@ -17,8 +18,9 @@ table.
   pagination, true infinite scroll (`useInfiniteScroll` — an
   IntersectionObserver sentinel that auto-loads the next page), and
   dark-mode resolution.
-- Batteries-included adapters for **Mantine**, **MUI**, **Chakra**, and
-  **Tailwind/shadcn** (`@adapttable/unstyled`).
+- Batteries-included adapters for **Mantine**, **MUI**, **Chakra**, **Ant
+  Design** (on antd's high-level `<Table>`), and **Tailwind/shadcn**
+  (`@adapttable/unstyled`).
 - `@adapttable/i18n`: English + Arabic label presets and RTL helpers.
 - `@adapttable/cli`: `npx adapttable init` to detect your kit and scaffold.
 

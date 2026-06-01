@@ -16,7 +16,7 @@ How AdaptTable compares to popular React table libraries.
 
 ## When to choose AdaptTable
 
-- You use **Mantine, MUI, Chakra, or Tailwind/shadcn** and want a table that
+- You use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn** and want a table that
   matches your kit without building it yourself.
 - You need **the same table for both in-memory and server-paginated data**.
 - You want **shareable, deep-linkable table state** for free.

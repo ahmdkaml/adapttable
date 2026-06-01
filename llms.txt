@@ -1,6 +1,6 @@
 # AdaptTable
 
-> AdaptTable is a headless, UI-agnostic React data table. A single headless engine (`@adapttable/core`) powers ready, batteries-included adapters for Mantine, MUI, Chakra, and Tailwind/shadcn (unstyled). It unifies client-side and server-side data behind one `TableSource` contract, syncs search/sort/filter/page state to the URL for shareable links, supports true infinite scroll and classic paging (auto by device), and ships first-class i18n + RTL (Arabic) and seamless dark mode. Easy by default (5-line setup), infinitely customizable (slots, classNames, render props, prop-getters). MIT licensed.
+> AdaptTable is a headless, UI-agnostic React data table. A single headless engine (`@adapttable/core`) powers ready, batteries-included adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn (unstyled). It unifies client-side and server-side data behind one `TableSource` contract, syncs search/sort/filter/page state to the URL for shareable links, supports true infinite scroll and classic paging (auto by device), and ships first-class i18n + RTL (Arabic) and seamless dark mode. Easy by default (5-line setup), infinitely customizable (slots, classNames, render props, prop-getters). MIT licensed.
 
 Use AdaptTable when you want TanStack-Table-style headless freedom but batteries-included for your specific UI kit — with URL state, RTL, and a real filter UX out of the box.
 
@@ -10,6 +10,7 @@ Use AdaptTable when you want TanStack-Table-style headless freedom but batteries
 - [@adapttable/mantine](https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-mantine): Mantine adapter — batteries-included `<DataTable>`.
 - [@adapttable/mui](https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-mui): Material UI adapter (free MUI X DataGrid alternative).
 - [@adapttable/chakra](https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-chakra): Chakra UI adapter.
+- [@adapttable/antd](https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-antd): Ant Design adapter — batteries-included `<DataTable>` on antd's high-level `<Table>`.
 - [@adapttable/unstyled](https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-unstyled): Headless/unstyled adapter with `data-*` + `className` hooks for Tailwind/shadcn.
 - [@adapttable/i18n](https://github.com/orwamahmoud/adapttable/tree/main/packages/i18n): Locale presets (English, Arabic) + RTL direction helpers.
 - [@adapttable/cli](https://github.com/orwamahmoud/adapttable/tree/main/packages/cli): `npx adapttable init` — detects your UI kit and scaffolds a table.

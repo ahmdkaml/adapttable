@@ -1,14 +1,11 @@
 import {
   type ActiveFilterChip,
-  type BulkAction,
-  type ConfirmHandler,
+  type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
-  type SelectionState,
-  type SortByOption,
   type TableLabels,
+  type ToolbarChromeProps,
   useBulkActionRunner,
-  type UseDataTableResult,
 } from "@adapttable/core";
 import {
   Alert,
@@ -38,17 +35,7 @@ export function Toolbar<TRow>({
   activeFilterCount,
   onOpenFilters,
   showRowsPerPage,
-}: Readonly<{
-  table: UseDataTableResult<TRow>;
-  hideSearch?: boolean;
-  searchPlaceholder?: string;
-  sortByOptions?: SortByOption[];
-  customToolbar?: ReactNode;
-  hasFilters: boolean;
-  activeFilterCount: number;
-  onOpenFilters: () => void;
-  showRowsPerPage: boolean;
-}>) {
+}: Readonly<ToolbarChromeProps<TRow>>) {
   const { labels, source } = table;
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
@@ -186,12 +173,7 @@ export function BulkBar({
   bulkActions,
   confirm,
   labels,
-}: Readonly<{
-  selection: SelectionState;
-  bulkActions: BulkAction[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-}>) {
+}: Readonly<BulkBarChromeProps>) {
   const { selectedIds, selectedCount, clear } = selection;
   const { pending, run } = useBulkActionRunner({
     confirm,

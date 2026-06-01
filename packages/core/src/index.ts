@@ -46,8 +46,10 @@ export {
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 export type { BaseDataTableProps } from "./props";
 export {
+  type BulkBarChromeProps,
   type TableBody,
   type TableChrome,
+  type ToolbarChromeProps,
   useTableChrome,
 } from "./useTableChrome";
 

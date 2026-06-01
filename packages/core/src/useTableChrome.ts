@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
@@ -8,10 +9,57 @@ import {
 } from "./filters/useActiveFilterChips";
 import { useIsMobile } from "./hooks/useIsMobile";
 import type { BaseDataTableProps } from "./props";
+import type { SelectionState } from "./selection/useSelection";
+import type { BulkAction, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
   type UseDataTableResult,
 } from "./useDataTable/useDataTable";
+
+/**
+ * The shared prop surface every adapter's toolbar sub-component needs.
+ * Adapters render kit-specific markup from this; extracting it keeps the
+ * identical shape from being re-declared (and flagged as duplication) in
+ * each adapter.
+ *
+ * @typeParam TRow - The row type.
+ */
+export interface ToolbarChromeProps<TRow> {
+  /** The headless table state + prop-getters. */
+  table: UseDataTableResult<TRow>;
+  /** Hide the search input. */
+  hideSearch?: boolean;
+  /** Placeholder for the search input. */
+  searchPlaceholder?: string;
+  /** Options for an explicit sort-by control. */
+  sortByOptions?: SortByOption[];
+  /** Extra caller-supplied toolbar content. */
+  customToolbar?: ReactNode;
+  /** Whether a filters affordance should render. */
+  hasFilters: boolean;
+  /** Number shown on the filters badge. */
+  activeFilterCount: number;
+  /** Open the filter panel. */
+  onOpenFilters: () => void;
+  /** Whether to show the rows-per-page control (infinite mode). */
+  showRowsPerPage: boolean;
+}
+
+/**
+ * The shared prop surface every adapter's bulk-action bar needs. Extracted
+ * so the identical shape isn't re-declared (and flagged as duplication) in
+ * each adapter's chrome.
+ */
+export interface BulkBarChromeProps {
+  /** Current selection state. */
+  selection: SelectionState;
+  /** Caller-supplied bulk actions. */
+  bulkActions: BulkAction[];
+  /** Confirmation handler for actions that declare a `confirm` block. */
+  confirm: ConfirmHandler;
+  /** Resolved labels. */
+  labels: Required<TableLabels>;
+}
 
 /** Which body region a {@link DataTable} should render. */
 export type TableBody = "skeleton" | "empty" | "mobile" | "desktop";

@@ -2,7 +2,7 @@
 
 # AdaptTable
 
-### The headless React data table that works with **any** UI kit — batteries-included for Mantine, MUI, Chakra, and Tailwind/shadcn.
+### The headless React data table that works with **any** UI kit — batteries-included for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn.
 
 **Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, infinite-scroll & paging (auto by device), a real filter UX, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
@@ -63,6 +63,7 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 | `@adapttable/mantine`  | Mantine adapter — batteries-included `<DataTable>`.                      |
 | `@adapttable/mui`      | Material UI adapter.                                                     |
 | `@adapttable/chakra`   | Chakra UI adapter.                                                       |
+| `@adapttable/antd`     | Ant Design adapter — drives antd's high-level `<Table>`.                 |
 | `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                         |
 | `@adapttable/i18n`     | Optional locale presets (en, ar) + RTL helpers.                          |
 | `@adapttable/cli`      | `npx adapttable init` — detects your UI kit and scaffolds a table.       |
@@ -148,5 +149,5 @@ PRs welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md). This is a friendly, well-
 ---
 
 <div align="center">
-<sub>Keywords: react data table, headless table, server-side pagination, url state, infinite scroll table, mantine table, mui datagrid alternative, chakra table, tailwind table, shadcn table, rtl table, arabic table, typescript, dark mode.</sub>
+<sub>Keywords: react data table, headless table, server-side pagination, url state, infinite scroll table, mantine table, mui datagrid alternative, chakra table, ant design table, antd table, tailwind table, shadcn table, rtl table, arabic table, typescript, dark mode.</sub>
 </div>

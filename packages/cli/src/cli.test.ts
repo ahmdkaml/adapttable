@@ -10,6 +10,7 @@ describe("detectKit", () => {
     expect(detectKit({ "@mantine/core": "8" }).kit).toBe("mantine");
     expect(detectKit({ "@mui/material": "6" }).kit).toBe("mui");
     expect(detectKit({ "@chakra-ui/react": "2" }).kit).toBe("chakra");
+    expect(detectKit({ antd: "5" }).kit).toBe("antd");
     expect(detectKit({ tailwindcss: "3" }).kit).toBe("unstyled");
   });
 

@@ -1,5 +1,5 @@
 /** A UI kit AdaptTable can scaffold for. */
-export type Kit = "mantine" | "mui" | "chakra" | "unstyled";
+export type Kit = "mantine" | "mui" | "chakra" | "antd" | "unstyled";
 
 /** Metadata about a kit's adapter and the packages it needs. */
 export interface KitInfo {
@@ -37,6 +37,13 @@ export const KITS: readonly KitInfo[] = [
     signals: ["@chakra-ui/react"],
     extras: [],
     label: "Chakra UI",
+  },
+  {
+    kit: "antd",
+    adapter: "@adapttable/antd",
+    signals: ["antd"],
+    extras: [],
+    label: "Ant Design",
   },
   {
     kit: "unstyled",
