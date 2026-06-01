@@ -1,0 +1,309 @@
+import { useCallback, useMemo } from "react";
+
+import { visibleColumns } from "../columns/visibleColumns";
+import {
+  type ActiveFilterChip,
+  type ChipLabelResolver,
+} from "../filters/useActiveFilterChips";
+import { useExtraChips } from "../filters/useExtraChips";
+import { resolveLabels } from "../labels";
+import {
+  computePagination,
+  type PaginationInfo,
+} from "../pagination/paginationMath";
+import { type SelectionState, useSelection } from "../selection/useSelection";
+import { nextSort } from "../sort/cycleSort";
+import type { TableSource } from "../source/TableSource";
+import type {
+  BulkAction,
+  ColumnDef,
+  Direction,
+  SortDirection,
+  TableLabels,
+} from "../types";
+import { mergeProps, type Props } from "../utils/mergeProps";
+import { useSearchInput } from "./useSearchInput";
+
+const EMPTY_LABELS: Readonly<Record<string, ChipLabelResolver>> = {};
+
+/** Options for {@link useDataTable}. */
+export interface UseDataTableOptions<TRow> {
+  /** The data + state contract, from `useFrontendData` / `useBackendData`. */
+  source: TableSource<TRow>;
+  /** Column definitions. */
+  columns: ColumnDef<TRow>[];
+  /** Stable React key extractor for a row. */
+  rowKey: (row: TRow) => string;
+  /** Accessible label for the table element. */
+  tableLabel?: string;
+  /** Pre-translated label overrides (merged over English defaults). */
+  labels?: TableLabels;
+  /** Text direction. Defaults to `"ltr"`. */
+  dir?: Direction;
+  /** Whether the table is in its mobile layout. Defaults to `false`. */
+  isMobile?: boolean;
+  /** Search debounce in ms. Defaults to 300. */
+  searchDebounceMs?: number;
+  /** Bulk actions — enabling these turns on selection. */
+  bulkActions?: BulkAction[];
+  /** Selection id extractor; defaults to `rowKey` when bulk actions exist. */
+  selectionGetId?: (row: TRow) => string;
+  /** Per-filter-key chip label resolvers (drives the chip strip). */
+  filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
+}
+
+/** Everything a headless consumer needs to render a table. */
+export interface UseDataTableResult<TRow> {
+  /** The materialised rows for the current slice. */
+  rows: readonly TRow[];
+  /** Whether there are no rows and nothing is loading. */
+  isEmpty: boolean;
+  /** Columns visible for the current layout. */
+  columns: ColumnDef<TRow>[];
+  /** Resolved labels (English defaults + overrides). */
+  labels: Required<TableLabels>;
+  /** Text direction. */
+  dir: Direction;
+  /** Derived pagination figures. */
+  pagination: PaginationInfo;
+  /** Active sort column key. */
+  sortBy: string | undefined;
+  /** Active sort direction. */
+  sortDir: SortDirection | undefined;
+  /** Advance the sort cycle for a column. */
+  toggleSort: (key: string) => void;
+  /** The controlled search input value. */
+  searchValue: string;
+  /** Update the search input value. */
+  setSearchValue: (next: string) => void;
+  /** Selection state, or `null` when no bulk actions are configured. */
+  selection: SelectionState | null;
+  /** Removable filter chips derived from `filterLabels` + the source. */
+  filterChips: ActiveFilterChip[];
+  /** Number of active filter chips (drives the Filters badge). */
+  activeFilterCount: number;
+  /** The underlying source (for pagination setters, fetchNextPage, etc.). */
+  source: TableSource<TRow>;
+
+  /* ── Prop-getters (merge caller overrides) ───────────────────────── */
+  getTableProps: (props?: Props) => Props;
+  getHeaderRowProps: (props?: Props) => Props;
+  getHeaderCellProps: (column: ColumnDef<TRow>, props?: Props) => Props;
+  getSortButtonProps: (column: ColumnDef<TRow>, props?: Props) => Props;
+  getRowProps: (row: TRow, index: number, props?: Props) => Props;
+  getCellProps: (column: ColumnDef<TRow>, props?: Props) => Props;
+  getSearchInputProps: (props?: Props) => Props;
+}
+
+function textAlign(
+  align: ColumnDef<TRowAny>["align"]
+): "left" | "center" | "right" {
+  if (align === "center") return "center";
+  if (align === "end") return "right";
+  return "left";
+}
+
+function ariaSort<TRow>(
+  column: ColumnDef<TRow>,
+  sortBy: string | undefined,
+  sortDir: SortDirection | undefined
+): "ascending" | "descending" | "none" | undefined {
+  if (!column.sortable) return undefined;
+  if (sortBy !== column.key) return "none";
+  return sortDir === "asc" ? "ascending" : "descending";
+}
+
+/** A row type we don't care about here — `align` is independent of it. */
+type TRowAny = Record<string, unknown>;
+
+/**
+ * The headless entry point. Combines a {@link TableSource} with columns,
+ * sorting, a debounced search input, selection, and filter chips, and
+ * returns derived state plus accessible prop-getters so consumers can
+ * render any markup with any UI kit.
+ *
+ * @typeParam TRow - The row type.
+ * @param options - See {@link UseDataTableOptions}.
+ * @returns Derived state and prop-getters — see {@link UseDataTableResult}.
+ */
+export function useDataTable<TRow>(
+  options: UseDataTableOptions<TRow>
+): UseDataTableResult<TRow> {
+  const {
+    source,
+    columns: allColumns,
+    rowKey,
+    tableLabel,
+    labels: labelOverrides,
+    dir = "ltr",
+    isMobile = false,
+    searchDebounceMs = 300,
+    bulkActions,
+    selectionGetId,
+    filterLabels = EMPTY_LABELS,
+  } = options;
+
+  const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
+
+  const columns = useMemo(
+    () => visibleColumns(allColumns, isMobile ? "mobile" : "desktop"),
+    [allColumns, isMobile]
+  );
+
+  const { value: searchValue, setValue: setSearchValue } = useSearchInput(
+    source.search,
+    source.setSearch,
+    searchDebounceMs
+  );
+
+  const filterChips = useExtraChips({
+    extra: source.extra,
+    setExtra: source.setExtra,
+    labels: filterLabels,
+  });
+  const activeFilterCount = filterChips.length;
+
+  const pagination = useMemo(
+    () =>
+      computePagination({
+        page: source.page,
+        limit: source.limit,
+        total: source.total,
+      }),
+    [source.page, source.limit, source.total]
+  );
+
+  const hasBulk = (bulkActions?.length ?? 0) > 0;
+  const getId = selectionGetId ?? rowKey;
+  const selectionResetKey = `${source.search}|${source.page}|${activeFilterCount}`;
+  const selectionState = useSelection<TRow>({
+    rows: source.rows,
+    getId,
+    resetKey: selectionResetKey,
+  });
+  const selection = hasBulk ? selectionState : null;
+
+  const toggleSort = useCallback(
+    (key: string) => {
+      const next = nextSort({ key: source.sortBy, dir: source.sortDir }, key);
+      source.setSort(next.key, next.dir);
+    },
+    [source]
+  );
+
+  const getTableProps = useCallback(
+    (props?: Props) =>
+      mergeProps(
+        { role: "table", dir, "aria-label": tableLabel ?? labels.actions },
+        props
+      ),
+    [dir, tableLabel, labels.actions]
+  );
+
+  const getHeaderRowProps = useCallback(
+    (props?: Props) => mergeProps({ role: "row" }, props),
+    []
+  );
+
+  const getHeaderCellProps = useCallback(
+    (column: ColumnDef<TRow>, props?: Props) =>
+      mergeProps(
+        {
+          role: "columnheader",
+          "aria-sort": ariaSort(column, source.sortBy, source.sortDir),
+          style: { textAlign: textAlign(column.align), width: column.width },
+        },
+        props
+      ),
+    [source.sortBy, source.sortDir]
+  );
+
+  const getSortButtonProps = useCallback(
+    (column: ColumnDef<TRow>, props?: Props) =>
+      mergeProps(
+        {
+          type: "button",
+          disabled: !column.sortable,
+          onClick: () => column.sortable && toggleSort(column.key),
+          "aria-label": `${labels.sortBy}: ${
+            typeof column.header === "string" ? column.header : column.key
+          }`,
+        },
+        props
+      ),
+    [toggleSort, labels.sortBy]
+  );
+
+  const getRowProps = useCallback(
+    (row: TRow, index: number, props?: Props) => {
+      const id = getId(row);
+      const selected = selection?.isSelected(id) ?? false;
+      return mergeProps(
+        {
+          role: "row",
+          "data-index": index,
+          key: rowKey(row),
+          "aria-selected": hasBulk ? selected : undefined,
+        },
+        props
+      );
+    },
+    [getId, selection, hasBulk, rowKey]
+  );
+
+  const getCellProps = useCallback(
+    (column: ColumnDef<TRow>, props?: Props) =>
+      mergeProps(
+        {
+          role: "cell",
+          style: { textAlign: textAlign(column.align), width: column.width },
+        },
+        props
+      ),
+    []
+  );
+
+  const getSearchInputProps = useCallback(
+    (props?: Props) =>
+      mergeProps(
+        {
+          type: "search",
+          role: "searchbox",
+          value: searchValue,
+          placeholder: labels.searchPlaceholder,
+          "aria-label": labels.search,
+          onChange: (event: { currentTarget: { value: string } }) =>
+            setSearchValue(event.currentTarget.value),
+        },
+        props
+      ),
+    [searchValue, setSearchValue, labels.searchPlaceholder, labels.search]
+  );
+
+  return {
+    rows: source.rows,
+    isEmpty: source.rows.length === 0 && !source.isLoading,
+    columns,
+    labels,
+    dir,
+    pagination,
+    sortBy: source.sortBy,
+    sortDir: source.sortDir,
+    toggleSort,
+    searchValue,
+    setSearchValue,
+    selection,
+    filterChips,
+    activeFilterCount,
+    source,
+    getTableProps,
+    getHeaderRowProps,
+    getHeaderCellProps,
+    getSortButtonProps,
+    getRowProps,
+    getCellProps,
+    getSearchInputProps,
+  };
+}
+
+export { defaultLabels } from "../labels";

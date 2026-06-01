@@ -74,6 +74,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-return": "off",
+      // `act(() => ...)` returns a thenable that tests intentionally don't
+      // await in the synchronous fake-timer paths; and adapter methods are
+      // passed by reference in test harnesses.
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/unbound-method": "off",
       "sonarjs/no-nested-functions": "off",
     },
   },

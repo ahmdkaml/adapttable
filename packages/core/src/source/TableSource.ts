@@ -1,0 +1,63 @@
+import type {
+  ExtraFilters,
+  FilterValue,
+  ResolvedPaginationMode,
+  SortDirection,
+} from "../types";
+
+/**
+ * The uniform contract a table consumes regardless of whether its rows
+ * came from an API (`useBackendData`) or an in-memory array
+ * (`useFrontendData`). The table renders without knowing which produced
+ * it — every difference between "fetched" and "filtered locally" is
+ * captured here.
+ *
+ * @typeParam TRow - The row item type.
+ */
+export interface TableSource<TRow> {
+  /* ── Data ────────────────────────────────────────────────────────── */
+  /** The current materialised rows for the active page/slice. */
+  readonly rows: readonly TRow[];
+  /** Total row count across all pages (server total or full array length). */
+  readonly total: number;
+  /** True during the first load (no data yet). */
+  readonly isLoading: boolean;
+  /** True whenever a fetch is in flight (initial or background). */
+  readonly isFetching: boolean;
+  /** True while the next infinite page is loading. */
+  readonly isFetchingNextPage: boolean;
+  /** Whether another page can be loaded. */
+  readonly hasNextPage: boolean;
+  /** Load the next page (server fetch or in-memory slice extension). */
+  fetchNextPage: () => void;
+  /** The most recent error, or `null`. */
+  readonly error: Error | null;
+  /** Re-run the underlying query. No-op for purely in-memory sources. */
+  refetch?: () => Promise<unknown> | void;
+  /** The resolved pagination mode (after `"auto"` → device resolution). */
+  readonly paginationMode: ResolvedPaginationMode;
+
+  /* ── State (read) ────────────────────────────────────────────────── */
+  /** Current 1-based page. */
+  readonly page: number;
+  /** Current page size. */
+  readonly limit: number;
+  /** Current committed search term. */
+  readonly search: string;
+  /** Active sort column key, if any. */
+  readonly sortBy: string | undefined;
+  /** Active sort direction, if any. */
+  readonly sortDir: SortDirection | undefined;
+  /** The extra-filter bag. */
+  readonly extra: ExtraFilters;
+
+  /* ── State (write) ───────────────────────────────────────────────── */
+  setPage: (next: number) => void;
+  setLimit: (next: number) => void;
+  setSort: (key: string | undefined, dir?: SortDirection) => void;
+  setSearch: (next: string) => void;
+  setExtra: (key: string, value: FilterValue) => void;
+  setExtras: (updates: ExtraFilters) => void;
+  /** Clear search + sort + page + every extra filter in one commit. */
+  clearAll: () => void;
+}

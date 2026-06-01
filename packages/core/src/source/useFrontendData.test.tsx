@@ -1,0 +1,138 @@
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import type { ColumnDef } from "../types";
+import { createMemoryAdapter } from "../url/adapter";
+import {
+  defaultSearchText,
+  useFrontendData,
+  type UseFrontendDataOptions,
+} from "./useFrontendData";
+
+interface Row {
+  id: string;
+  name: string;
+  count: number;
+}
+
+const ROWS: Row[] = [
+  { id: "a", name: "Alice", count: 3 },
+  { id: "b", name: "Bob", count: 7 },
+  { id: "c", name: "Charlie", count: 1 },
+];
+
+const cols: ColumnDef<Row>[] = [
+  { key: "count", header: "Count", sortable: true, sortValue: (r) => r.count },
+];
+
+function render(initial = "", opts: Partial<UseFrontendDataOptions<Row>> = {}) {
+  const adapter = createMemoryAdapter(initial);
+  return renderHook(() =>
+    useFrontendData<Row>({
+      data: ROWS,
+      adapter,
+      paginationMode: "paged",
+      ...opts,
+    })
+  );
+}
+
+describe("useFrontendData", () => {
+  it("returns all rows with no search or sort", () => {
+    const { result } = render();
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+    expect(result.current.total).toBe(3);
+  });
+
+  it("filters by the search term using the default projector", () => {
+    const { result } = render("q=bob");
+    expect(result.current.rows.map((r) => r.id)).toEqual(["b"]);
+  });
+
+  it("filters with a custom getSearchText", () => {
+    const { result } = render("q=3", {
+      getSearchText: (r) => String(r.count),
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a"]);
+  });
+
+  it("sorts via a column sortValue", () => {
+    const { result } = render("sortBy=count&sortDir=asc", { columns: cols });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["c", "a", "b"]);
+  });
+
+  it("sorts via an explicit getSortValue overriding the column", () => {
+    const { result } = render("sortBy=count&sortDir=desc", {
+      columns: cols,
+      getSortValue: (r) => r.name,
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("treats a sortable column with no extractor as equal (stable order)", () => {
+    const { result } = render("sortBy=name&sortDir=asc", {
+      columns: [{ key: "name", header: "Name", sortable: true }],
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("paged mode slices to the active page", () => {
+    const { result } = render("page=2&limit=2");
+    expect(result.current.rows.map((r) => r.id)).toEqual(["c"]);
+  });
+
+  it("clamps an out-of-range page", () => {
+    const { result } = render("page=99&limit=2");
+    expect(result.current.page).toBe(2);
+  });
+
+  it("infinite mode flattens cumulatively and advances via fetchNextPage", () => {
+    const { result } = render("limit=2", { paginationMode: "infinite" });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b"]);
+    expect(result.current.hasNextPage).toBe(true);
+    act(() => result.current.fetchNextPage());
+    expect(result.current.page).toBe(2);
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("fetchNextPage is a no-op when there is no more data", () => {
+    const { result } = render("limit=10", { paginationMode: "infinite" });
+    expect(result.current.hasNextPage).toBe(false);
+    act(() => result.current.fetchNextPage());
+    expect(result.current.page).toBe(1);
+  });
+
+  it("resolves auto mode to paged on desktop and infinite on mobile", () => {
+    const desktop = render("", { paginationMode: "auto", forceMobile: false });
+    expect(desktop.result.current.paginationMode).toBe("paged");
+    const mobile = render("", { paginationMode: "auto", forceMobile: true });
+    expect(mobile.result.current.paginationMode).toBe("infinite");
+  });
+
+  it("forwards error / refetch / loading flags", () => {
+    const refetch = vi.fn();
+    const err = new Error("boom");
+    const { result } = render("", {
+      error: err,
+      refetch,
+      isFetching: true,
+      isLoading: true,
+    });
+    expect(result.current.error).toBe(err);
+    expect(result.current.refetch).toBe(refetch);
+    expect(result.current.isFetching).toBe(true);
+    expect(result.current.isLoading).toBe(true);
+  });
+});
+
+describe("defaultSearchText", () => {
+  it("flattens object values and JSON-stringifies nested ones", () => {
+    expect(defaultSearchText({ a: 1, b: { c: "x" }, d: null })).toContain(
+      '{"c":"x"}'
+    );
+  });
+  it("stringifies primitives directly", () => {
+    expect(defaultSearchText("hello")).toBe("hello");
+    expect(defaultSearchText(null)).toBe("");
+  });
+});
