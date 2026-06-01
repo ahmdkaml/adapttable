@@ -22,7 +22,10 @@ for (const pkg of readdirSync(packagesDir)) {
 
   const prefix = `packages/${pkg}/`;
   const original = readFileSync(lcovPath, "utf8");
-  const rewritten = original.replace(/^SF:(?!packages\/)(.*)$/gm, (_, p) => `SF:${prefix}${p}`);
+  const rewritten = original.replace(
+    /^SF:(?!packages\/)(.*)$/gm,
+    (_, p) => `SF:${prefix}${p}`
+  );
 
   if (rewritten !== original) {
     writeFileSync(lcovPath, rewritten, "utf8");

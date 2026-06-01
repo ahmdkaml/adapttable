@@ -31,7 +31,11 @@ pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react
 ## Your first table
 
 ```tsx
-import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/mantine";
+import {
+  DataTable,
+  useFrontendData,
+  type ColumnDef,
+} from "@adapttable/mantine";
 
 interface Person {
   id: string;
@@ -95,11 +99,20 @@ interface TableSource<TRow> {
   error: Error | null;
   paginationMode: "infinite" | "paged";
   // state
-  page: number; limit: number; search: string;
-  sortBy: string | undefined; sortDir: "asc" | "desc" | undefined;
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: string | undefined;
+  sortDir: "asc" | "desc" | undefined;
   extra: Record<string, string | string[] | number | undefined>;
   // setters
-  setPage; setLimit; setSort; setSearch; setExtra; setExtras; clearAll;
+  setPage;
+  setLimit;
+  setSort;
+  setSearch;
+  setExtra;
+  setExtras;
+  clearAll;
 }
 ```
 
@@ -132,10 +145,10 @@ const source = useBackendData({ usePaginatedQuery, selectPage, baseParams });
 
 ```ts
 interface ColumnDef<TRow> {
-  key: string;                 // unique; also the backend sortBy value
-  header: ReactNode;           // pre-translated
-  Cell?: ComponentType<{ row: TRow; rowIndex: number }>;  // stable identity
-  accessor?: (row: TRow) => ReactNode;                    // lightweight
+  key: string; // unique; also the backend sortBy value
+  header: ReactNode; // pre-translated
+  Cell?: ComponentType<{ row: TRow; rowIndex: number }>; // stable identity
+  accessor?: (row: TRow) => ReactNode; // lightweight
   sortValue?: (row: TRow) => string | number | boolean | null | undefined;
   sortable?: boolean;
   width?: number | string;
@@ -175,6 +188,10 @@ the back button all land the user on the exact same slice of data.
 Defaults are omitted from the URL to keep it clean, and changing any filter
 resets the page to 1.
 
+> **Note:** array filter values are encoded comma-separated, so individual
+> values shouldn't themselves contain a comma — use ids, codes, or enum
+> values (the common case for filters).
+
 ## Injectable URL adapter
 
 The URL layer is decoupled from any router via a tiny `UrlStateAdapter`.
@@ -182,7 +199,7 @@ Core ships two implementations and lets you supply your own:
 
 ```ts
 interface UrlStateAdapter {
-  getSearch(): string;                 // current query string (no "?")
+  getSearch(): string; // current query string (no "?")
   setSearch(search: string, opts?: { push?: boolean }): void;
   subscribe(onChange: () => void): () => void;
 }
@@ -243,9 +260,9 @@ import { getLabels, getDirection } from "@adapttable/i18n";
   source={source}
   columns={columns}
   rowKey={(r) => r.id}
-  labels={getLabels(locale)}   // "ar" → Arabic, otherwise English
-  dir={getDirection(locale)}    // "ar" → "rtl"
-/>
+  labels={getLabels(locale)} // "ar" → Arabic, otherwise English
+  dir={getDirection(locale)} // "ar" → "rtl"
+/>;
 ```
 
 Bring your own language by spreading a preset:
@@ -318,12 +335,22 @@ attributes:
 
 ```tsx
 const rowActions = [
-  { key: "edit", label: "Edit", icon: <EditIcon />, onClick: (row) => edit(row) },
+  {
+    key: "edit",
+    label: "Edit",
+    icon: <EditIcon />,
+    onClick: (row) => edit(row),
+  },
   {
     key: "delete",
     label: "Delete",
     color: "red",
-    confirm: { title: "Delete?", message: (r) => `Delete ${r.name}?`, confirmLabel: "Delete", danger: true },
+    confirm: {
+      title: "Delete?",
+      message: (r) => `Delete ${r.name}?`,
+      confirmLabel: "Delete",
+      danger: true,
+    },
     onClick: (row) => remove(row),
   },
 ];
@@ -353,7 +380,11 @@ const t = useDataTable({ source, columns, rowKey });
     <tr {...t.getHeaderRowProps()}>
       {t.columns.map((c) => (
         <th key={c.key} {...t.getHeaderCellProps(c)}>
-          {c.sortable ? <button {...t.getSortButtonProps(c)}>{c.header}</button> : c.header}
+          {c.sortable ? (
+            <button {...t.getSortButtonProps(c)}>{c.header}</button>
+          ) : (
+            c.header
+          )}
         </th>
       ))}
     </tr>
@@ -362,12 +393,14 @@ const t = useDataTable({ source, columns, rowKey });
     {t.rows.map((row, i) => (
       <tr {...t.getRowProps(row, i)}>
         {t.columns.map((c) => (
-          <td key={c.key} {...t.getCellProps(c)}>{c.accessor?.(row)}</td>
+          <td key={c.key} {...t.getCellProps(c)}>
+            {c.accessor?.(row)}
+          </td>
         ))}
       </tr>
     ))}
   </tbody>
-</table>
+</table>;
 ```
 
 Prop-getters merge your overrides: event handlers compose, `className`
@@ -414,7 +447,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ### Utilities & hooks
 
-- `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`
+- `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`,
+  `useColorScheme` (resolves `"light" | "dark" | "auto"`)
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
   `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`, `defaultLabels`
 
@@ -452,17 +486,17 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 How AdaptTable compares to popular React table libraries.
 
-| Feature | ag-grid | TanStack Table | mantine-datatable | MUI X DataGrid | **AdaptTable** |
-| --- | :---: | :---: | :---: | :---: | :---: |
-| Headless core | ✗ | ✓ | ✗ | ✗ | **✓** |
-| Works across UI kits | ✗ | ✓ (you build the UI) | Mantine only | MUI only | **✓ via ready adapters** |
-| Client **and** server data, same API | partial | wire it yourself | ✗ | partial | **✓ (`TableSource`)** |
-| URL-synced state (shareable links) | ✗ | ✗ | ✗ | ✗ | **✓** |
-| Filter drawer + removable chips | ✗ | ✗ | ✗ | partial | **✓ built-in** |
-| Virtualization + infinite **and** paged | ✓ | ✓ (manual) | ✗ | ✓ (paid) | **✓ auto by device** |
-| i18n + **RTL / Arabic** first-class | partial | ✗ | ✗ | partial | **✓** |
-| Dark mode | ✓ | n/a | ✓ | ✓ | **✓ seamless** |
-| MIT / free | paid tiers | ✓ | ✓ | paid tiers | **✓** |
+| Feature                                 |  ag-grid   |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**      |
+| --------------------------------------- | :--------: | :------------------: | :---------------: | :------------: | :----------------------: |
+| Headless core                           |     ✗      |          ✓           |         ✗         |       ✗        |          **✓**           |
+| Works across UI kits                    |     ✗      | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters** |
+| Client **and** server data, same API    |  partial   |   wire it yourself   |         ✗         |    partial     |  **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)      |     ✗      |          ✗           |         ✗         |       ✗        |          **✓**           |
+| Filter drawer + removable chips         |     ✗      |          ✗           |         ✗         |    partial     |      **✓ built-in**      |
+| Virtualization + infinite **and** paged |     ✓      |      ✓ (manual)      |         ✗         |    ✓ (paid)    |   **✓ auto by device**   |
+| i18n + **RTL / Arabic** first-class     |  partial   |          ✗           |         ✗         |    partial     |          **✓**           |
+| Dark mode                               |     ✓      |         n/a          |         ✓         |       ✓        |      **✓ seamless**      |
+| MIT / free                              | paid tiers |          ✓           |         ✓         |   paid tiers   |          **✓**           |
 
 ## When to choose AdaptTable
 

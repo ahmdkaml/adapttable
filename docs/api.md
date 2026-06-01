@@ -30,7 +30,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ### Utilities & hooks
 
-- `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`
+- `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`,
+  `useColorScheme` (resolves `"light" | "dark" | "auto"`)
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
   `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`, `defaultLabels`
 

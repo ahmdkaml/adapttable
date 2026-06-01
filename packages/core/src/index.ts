@@ -126,6 +126,7 @@ export {
 } from "./pagination/paginationMath";
 
 /* ── Hooks ─────────────────────────────────────────────────────────── */
+export { DARK_SCHEME_QUERY, useColorScheme } from "./hooks/useColorScheme";
 export { useDebounce } from "./hooks/useDebounce";
 export {
   MOBILE_MEDIA_QUERY,
