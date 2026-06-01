@@ -37,6 +37,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     labels: labelOverrides,
     dir,
     isMobile: isMobileProp,
+    prefetch,
     hideSearch,
     filters,
     filterLabels,
@@ -114,6 +115,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         classNames={classNames}
+        prefetch={prefetch}
       />
     );
   }

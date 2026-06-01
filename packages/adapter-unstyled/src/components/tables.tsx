@@ -16,6 +16,8 @@ interface SharedProps<TRow> {
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   classNames: DataTableClassNames;
+  /** Hover-prefetch callback fired on desktop row mouse-enter. */
+  prefetch?: (row: TRow) => void;
 }
 
 function RowActionButtons<TRow>({
@@ -65,6 +67,7 @@ export function DesktopTable<TRow>({
   confirm,
   getRowId,
   classNames,
+  prefetch,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -145,6 +148,7 @@ export function DesktopTable<TRow>({
               data-adapttable-part="row"
               data-selected={selection?.isSelected(id) ? "" : undefined}
               className={classNames.row}
+              onMouseEnter={prefetch ? () => prefetch(row) : undefined}
             >
               {selection && (
                 <td

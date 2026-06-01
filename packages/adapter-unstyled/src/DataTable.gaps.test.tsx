@@ -105,4 +105,12 @@ describe("<DataTable> (unstyled) gaps", () => {
     expect(btn).toBeDisabled();
     expect(btn).toHaveAttribute("title", "Referenced");
   });
+
+  it("fires prefetch on desktop row hover", () => {
+    const prefetch = vi.fn();
+    renderHarness({ override: { prefetch } });
+    const row = screen.getByText("Alice").closest("tr")!;
+    fireEvent.mouseEnter(row);
+    expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
+  });
 });
