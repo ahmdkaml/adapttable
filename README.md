@@ -32,36 +32,40 @@ function People({ rows }) {
 // Headless — full control, zero opinions, render your own markup.
 import { useDataTable } from "@adapttable/core";
 
-const { getTableProps, getRowProps, rows } = useDataTable({ source, columns, rowKey });
+const { getTableProps, getRowProps, rows } = useDataTable({
+  source,
+  columns,
+  rowKey,
+});
 ```
 
 ## Feature comparison
 
-| Feature | ag-grid | TanStack Table | mantine-datatable | MUI DataGrid | **AdaptTable** |
-| --- | :---: | :---: | :---: | :---: | :---: |
-| Headless core | ✗ | ✓ | ✗ | ✗ | **✓** |
-| Works across UI kits | ✗ | ✓ *(build UI yourself)* | Mantine only | MUI only | **✓ via ready adapters** |
-| Client **and** server data, same API | partial | wire it yourself | ✗ | partial | **✓ (`TableSource`)** |
-| URL-synced state (shareable links) | ✗ | ✗ | ✗ | ✗ | **✓** |
-| Filter drawer + removable chips | ✗ | ✗ | ✗ | partial | **✓ built-in** |
-| Virtualization + infinite **and** paged | ✓ | ✓ *(manual)* | ✗ | ✓ *(paid)* | **✓ auto by device** |
-| i18n + **RTL / Arabic** first-class | partial | ✗ | ✗ | partial | **✓** |
-| Dark mode | ✓ | n/a | ✓ | ✓ | **✓ seamless** |
-| MIT / free | paid tiers | ✓ | ✓ | paid tiers | **✓** |
+| Feature                                 |  ag-grid   |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**      |
+| --------------------------------------- | :--------: | :---------------------: | :---------------: | :----------: | :----------------------: |
+| Headless core                           |     ✗      |            ✓            |         ✗         |      ✗       |          **✓**           |
+| Works across UI kits                    |     ✗      | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters** |
+| Client **and** server data, same API    |  partial   |    wire it yourself     |         ✗         |   partial    |  **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)      |     ✗      |            ✗            |         ✗         |      ✗       |          **✓**           |
+| Filter drawer + removable chips         |     ✗      |            ✗            |         ✗         |   partial    |      **✓ built-in**      |
+| Virtualization + infinite **and** paged |     ✓      |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ auto by device**   |
+| i18n + **RTL / Arabic** first-class     |  partial   |            ✗            |         ✗         |   partial    |          **✓**           |
+| Dark mode                               |     ✓      |           n/a           |         ✓         |      ✓       |      **✓ seamless**      |
+| MIT / free                              | paid tiers |            ✓            |         ✓         |  paid tiers  |          **✓**           |
 
-> **The niche:** *TanStack-Table-style headless freedom, but batteries-included for your UI kit — with URL state, RTL, and a real filter UX out of the box.*
+> **The niche:** _TanStack-Table-style headless freedom, but batteries-included for your UI kit — with URL state, RTL, and a real filter UX out of the box._
 
 ## Packages
 
-| Package | What it is |
-| --- | --- |
-| `@adapttable/core` | Headless engine. Zero UI-kit imports. Hooks, state, prop-getters, types. |
-| `@adapttable/mantine` | Mantine adapter — batteries-included `<DataTable>`. |
-| `@adapttable/mui` | Material UI adapter. |
-| `@adapttable/chakra` | Chakra UI adapter. |
-| `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes. |
-| `@adapttable/i18n` | Optional locale presets (en, ar) + RTL helpers. |
-| `@adapttable/cli` | `npx adapttable init` — detects your UI kit and scaffolds a table. |
+| Package                | What it is                                                               |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `@adapttable/core`     | Headless engine. Zero UI-kit imports. Hooks, state, prop-getters, types. |
+| `@adapttable/mantine`  | Mantine adapter — batteries-included `<DataTable>`.                      |
+| `@adapttable/mui`      | Material UI adapter.                                                     |
+| `@adapttable/chakra`   | Chakra UI adapter.                                                       |
+| `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                         |
+| `@adapttable/i18n`     | Optional locale presets (en, ar) + RTL helpers.                          |
+| `@adapttable/cli`      | `npx adapttable init` — detects your UI kit and scaffolds a table.       |
 
 ## Install
 
@@ -78,8 +82,8 @@ pnpm add @adapttable/core @adapttable/mantine
 Every data source — in-memory or server-paginated — fulfils one contract. The table is agnostic to where rows came from:
 
 ```ts
-const source = useBackendData({ usePaginatedQuery });  // server-side, infinite or paged
-const source = useFrontendData({ data });              // client-side filter/sort/slice
+const source = useBackendData({ usePaginatedQuery }); // server-side, infinite or paged
+const source = useFrontendData({ data }); // client-side filter/sort/slice
 // Both return the same TableSource<T>. Swap freely; the UI never changes.
 ```
 
@@ -93,7 +97,7 @@ const source = useFrontendData({ data });              // client-side filter/sor
 
 ## i18n, RTL & dark mode
 
-- **Core is i18n-agnostic** — pass `labels` (or a `t` function). Use *your* i18n stack, or grab ready `en`/`ar` sets from `@adapttable/i18n`.
+- **Core is i18n-agnostic** — pass `labels` (or a `t` function). Use _your_ i18n stack, or grab ready `en`/`ar` sets from `@adapttable/i18n`.
 - **RTL** is first-class: `dir="rtl"` flows through logical CSS and each adapter's direction provider.
 - **Dark mode** follows the host app or `prefers-color-scheme`, mapped to each kit's theming.
 

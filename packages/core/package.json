@@ -1,0 +1,74 @@
+{
+  "name": "@adapttable/core",
+  "version": "0.0.0",
+  "description": "Headless, UI-agnostic React data table engine — state, hooks, prop-getters, and a unified client/server TableSource. Zero UI-kit imports.",
+  "keywords": [
+    "react",
+    "data-table",
+    "table",
+    "headless",
+    "headless-ui",
+    "datagrid",
+    "server-side-pagination",
+    "url-state",
+    "virtualized",
+    "rtl",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Orwa Mahmoud",
+  "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/core#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orwamahmoud/adapttable.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/orwamahmoud/adapttable/issues",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist coverage .turbo"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.64.1",
+    "@tanstack/react-virtual": "^3.11.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "adapttable-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AdaptTable — a headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, and Tailwind/shadcn.",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,mjs,cjs}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,mjs,cjs}\"",
+    "clean": "turbo run clean && rimraf node_modules .turbo coverage",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.11",
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-sonarjs": "^3.0.1",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "react": "18 || 19",
+        "react-dom": "18 || 19"
+      }
+    }
+  }
+}
