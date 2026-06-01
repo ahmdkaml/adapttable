@@ -206,6 +206,15 @@ describe("<DataTable> (MUI)", () => {
     expect(screen.getByText("nada")).toBeInTheDocument();
   });
 
+  it("renders a slots.skeleton override while loading", () => {
+    renderHarness({
+      rows: [],
+      isLoading: true,
+      override: { slots: { skeleton: <div>loading-custom</div> } },
+    });
+    expect(screen.getByText("loading-custom")).toBeInTheDocument();
+  });
+
   it("merges extraChips with label chips", () => {
     renderHarness(
       {
