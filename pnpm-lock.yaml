@@ -166,6 +166,9 @@ importers:
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.30))(@types/react@18.3.30)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      axe-core:
+        specifier: ^4.12.0
+        version: 4.12.0
       framer-motion:
         specifier: ^11.15.0
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -175,6 +178,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      vitest-axe:
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@2.1.9(@types/node@22.19.19)(jsdom@25.0.1))
 
   packages/adapter-mantine:
     dependencies:
@@ -237,12 +243,18 @@ importers:
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.30))(@types/react@18.3.30)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      axe-core:
+        specifier: ^4.12.0
+        version: 4.12.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      vitest-axe:
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@2.1.9(@types/node@22.19.19)(jsdom@25.0.1))
 
   packages/adapter-unstyled:
     dependencies:
