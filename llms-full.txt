@@ -1,0 +1,484 @@
+# AdaptTable — full documentation
+
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, i18n + RTL, dark mode. MIT.
+
+
+---
+
+# Getting started
+
+AdaptTable is a **headless, UI-agnostic React data table**. Pick the adapter
+for your design system and you get a fully styled, sortable, filterable,
+paginated table with URL-synced state, selection + bulk actions, RTL, and
+dark mode — in about five lines.
+
+## Install
+
+The fastest path is the CLI, which detects your UI kit and scaffolds a
+starter:
+
+```bash
+npx adapttable init
+```
+
+Or install manually (Mantine shown; swap for `mui`, `chakra`, or
+`unstyled`):
+
+```bash
+pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react react-dom
+```
+
+## Your first table
+
+```tsx
+import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/mantine";
+
+interface Person {
+  id: string;
+  name: string;
+  city: string;
+}
+
+const columns: ColumnDef<Person>[] = [
+  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
+  { key: "city", header: "City", accessor: (r) => r.city },
+];
+
+export function People({ data }: { data: Person[] }) {
+  const source = useFrontendData({ data, columns });
+  return <DataTable source={source} columns={columns} rowKey={(r) => r.id} />;
+}
+```
+
+That's it — sorting, search, pagination, empty/loading states, and a
+mobile card layout all work out of the box.
+
+## Client vs. server data
+
+`useFrontendData` filters/sorts/slices an in-memory array. To drive the same
+table from a paginated API, swap in `useBackendData` (built on TanStack
+Query's `useInfiniteQuery`). **The `<DataTable>` doesn't change** — both
+hooks return the same [`TableSource`](./concepts.md).
+
+```tsx
+const source = useBackendData({ usePaginatedQuery });
+```
+
+## Next steps
+
+- [Core concepts: the `TableSource` contract](./concepts.md)
+- [URL-synced state](./url-state.md)
+- [i18n & RTL](./i18n-rtl.md)
+- [Customization](./customization.md)
+- [API reference](./api.md)
+
+
+---
+
+# Core concepts
+
+## The `TableSource` contract
+
+Everything in AdaptTable revolves around one idea: a **`TableSource<T>`** —
+a uniform contract that a table consumes regardless of where its rows came
+from. Both built-in source hooks fulfil it, and the table renders without
+knowing which produced it.
+
+```ts
+interface TableSource<TRow> {
+  rows: readonly TRow[];
+  total: number;
+  isLoading: boolean;
+  isFetching: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => void;
+  error: Error | null;
+  paginationMode: "infinite" | "paged";
+  // state
+  page: number; limit: number; search: string;
+  sortBy: string | undefined; sortDir: "asc" | "desc" | undefined;
+  extra: Record<string, string | string[] | number | undefined>;
+  // setters
+  setPage; setLimit; setSort; setSearch; setExtra; setExtras; clearAll;
+}
+```
+
+Because the table is agnostic to the source's origin, you can switch between
+in-memory and server data — or build a custom source — without touching the
+UI.
+
+## Source builders
+
+### `useFrontendData`
+
+In-memory. Filters by a searchable-text projector, sorts by a column's
+`sortValue` (or a custom `getSortValue`), and slices for the current page.
+
+```ts
+const source = useFrontendData({ data, columns, getSearchText, getSortValue });
+```
+
+### `useBackendData`
+
+Server-paginated. Wraps a caller-supplied `useInfiniteQuery` hook and maps
+each page to rows via `selectPage`. Flattens pages in infinite mode, returns
+the latest page in paged mode, and clamps out-of-range pages.
+
+```ts
+const source = useBackendData({ usePaginatedQuery, selectPage, baseParams });
+```
+
+## Columns
+
+```ts
+interface ColumnDef<TRow> {
+  key: string;                 // unique; also the backend sortBy value
+  header: ReactNode;           // pre-translated
+  Cell?: ComponentType<{ row: TRow; rowIndex: number }>;  // stable identity
+  accessor?: (row: TRow) => ReactNode;                    // lightweight
+  sortValue?: (row: TRow) => string | number | boolean | null | undefined;
+  sortable?: boolean;
+  width?: number | string;
+  align?: "start" | "center" | "end";
+  mobileLabel?: string;
+  hideOnMobile?: boolean;
+  hideOnDesktop?: boolean;
+}
+```
+
+## Pagination modes
+
+`"auto"` (the default) resolves to **infinite scroll on mobile** and
+**paged on desktop**, using the same breakpoint the table uses, so the two
+never drift. Force a mode with `paginationMode: "paged" | "infinite"`.
+
+## The two ways to use it
+
+1. **Batteries-included** — `import { DataTable } from "@adapttable/<kit>"`.
+2. **Headless** — `import { useDataTable } from "@adapttable/core"` and render
+   your own markup with the returned prop-getters.
+
+
+---
+
+# URL-synced state
+
+AdaptTable keeps search, sort, page, page-size, and arbitrary filter values
+in the URL query string. Reloading the page, sharing the link, or pressing
+the back button all land the user on the exact same slice of data.
+
+- `?q=` — search
+- `?page=`, `?limit=` — pagination
+- `?sortBy=`, `?sortDir=` — sorting
+- `?f_<key>=` — extra filters (arrays are comma-separated, numbers parsed)
+
+Defaults are omitted from the URL to keep it clean, and changing any filter
+resets the page to 1.
+
+## Injectable URL adapter
+
+The URL layer is decoupled from any router via a tiny `UrlStateAdapter`.
+Core ships two implementations and lets you supply your own:
+
+```ts
+interface UrlStateAdapter {
+  getSearch(): string;                 // current query string (no "?")
+  setSearch(search: string, opts?: { push?: boolean }): void;
+  subscribe(onChange: () => void): () => void;
+}
+```
+
+- **`createHistoryAdapter()`** — browser History API (the default).
+- **`createMemoryAdapter()`** — in-memory; used for SSR, tests, and when URL
+  sync is disabled (the table still gets fully working local state).
+
+Integrate with an existing router by implementing the same three methods
+(e.g. wrapping react-router's `useSearchParams` or Next.js navigation).
+
+## Disabling URL sync
+
+```ts
+const state = useTableUrlState({ enabled: false });
+```
+
+State is kept in a component-local store instead of the URL — handy inside
+modals or drawers where you don't want to pollute the address bar.
+
+## Using it directly
+
+```ts
+const { page, search, sortBy, setSearch, setSort, setExtra, clearAll } =
+  useTableUrlState({ adapter, defaults, numberExtraKeys, arrayExtraKeys });
+```
+
+
+---
+
+# i18n & RTL
+
+AdaptTable is **i18n-agnostic at its core** — it never imports an i18n
+library. Strings come in through a `labels` prop, so you can use your own
+stack (i18next, react-intl, …) or the ready presets in `@adapttable/i18n`.
+
+## Injecting labels
+
+Every table accepts a partial `labels` object; missing keys fall back to the
+English defaults.
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  labels={{ search: "Buscar", noData: "Sin datos" }}
+/>
+```
+
+## Ready presets (`@adapttable/i18n`)
+
+```tsx
+import { getLabels, getDirection } from "@adapttable/i18n";
+
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  labels={getLabels(locale)}   // "ar" → Arabic, otherwise English
+  dir={getDirection(locale)}    // "ar" → "rtl"
+/>
+```
+
+Bring your own language by spreading a preset:
+
+```ts
+import { en } from "@adapttable/i18n";
+const fr = { ...en, search: "Rechercher", noData: "Aucune donnée" };
+```
+
+## RTL (right-to-left / Arabic)
+
+RTL is first-class. Pass `dir="rtl"` and the adapter applies it through its
+direction provider and logical CSS, flipping layout, alignment, and the
+filter drawer side automatically.
+
+Helpers:
+
+- `getDirection(locale)` → `"ltr" | "rtl"`
+- `isRtlLocale(locale)` — covers ar, he, fa, ur, ps, and more
+- `RTL_LANGUAGES` — the raw list
+
+## Dark mode
+
+The core is style-free, so dark mode is handled by each adapter's host
+theming — Mantine/MUI/Chakra color schemes, or `data-theme` / CSS variables
+for the unstyled adapter. Wrap your app in the kit's provider and AdaptTable
+follows it (and `prefers-color-scheme`) seamlessly.
+
+
+---
+
+# Customization
+
+AdaptTable is designed as a spectrum: a beginner ships in five lines, a
+power user controls every node. From least to most effort — all opt-in:
+
+## 1. Props
+
+`columns`, `source`, `searchPlaceholder`, `sortByOptions`, `rowActions`,
+`bulkActions`, `filters`, `dir`, and more.
+
+## 2. Slots
+
+Replace sub-parts with your own components (where the adapter supports it):
+
+```tsx
+<DataTable
+  /* … */
+  slots={{ empty: <MyEmptyState />, skeleton: <MySkeleton /> }}
+/>
+```
+
+## 3. `classNames`
+
+Restyle without replacing. The **unstyled** adapter exposes a `className`
+hook for every part plus stable `data-adapttable-part` and `data-*` state
+attributes:
+
+```tsx
+<DataTable
+  classNames={{
+    table: "w-full text-sm",
+    row: "border-b hover:bg-zinc-50 data-[selected]:bg-blue-50",
+    cell: "px-3 py-2",
+  }}
+/>
+```
+
+## 4. Row & bulk actions
+
+```tsx
+const rowActions = [
+  { key: "edit", label: "Edit", icon: <EditIcon />, onClick: (row) => edit(row) },
+  {
+    key: "delete",
+    label: "Delete",
+    color: "red",
+    confirm: { title: "Delete?", message: (r) => `Delete ${r.name}?`, confirmLabel: "Delete", danger: true },
+    onClick: (row) => remove(row),
+  },
+];
+
+const bulkActions = [
+  {
+    key: "archive",
+    label: "Archive",
+    disabledReason: (ids) => (ids.length > 100 ? "Too many" : undefined),
+    onClick: (ids) => archive(ids),
+  },
+];
+```
+
+Confirmation is injectable via the `confirm` prop (defaults to
+`window.confirm`); pass your own dialog handler for a styled experience.
+
+## 5. Prop-getters (fully headless)
+
+Build the entire markup yourself with `@adapttable/core`:
+
+```tsx
+const t = useDataTable({ source, columns, rowKey });
+
+<table {...t.getTableProps()}>
+  <thead>
+    <tr {...t.getHeaderRowProps()}>
+      {t.columns.map((c) => (
+        <th key={c.key} {...t.getHeaderCellProps(c)}>
+          {c.sortable ? <button {...t.getSortButtonProps(c)}>{c.header}</button> : c.header}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {t.rows.map((row, i) => (
+      <tr {...t.getRowProps(row, i)}>
+        {t.columns.map((c) => (
+          <td key={c.key} {...t.getCellProps(c)}>{c.accessor?.(row)}</td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+Prop-getters merge your overrides: event handlers compose, `className`
+strings concatenate, and `style` objects merge.
+
+## Animations
+
+Adapters can animate row/card entrance on mount. It is **opt-in**, honours
+`prefers-reduced-motion`, and is dependency-free by default (no GSAP
+required) — enable it with `animate` where supported.
+
+
+---
+
+# API reference
+
+A concise map of the public API. Every symbol ships full TypeScript types
+and JSDoc, so editor autocomplete is the canonical reference.
+
+## `@adapttable/core`
+
+### Source builders
+
+- `useFrontendData<TRow>(options): TableSource<TRow>`
+- `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+
+### State
+
+- `useTableUrlState(options?): { page, limit, search, sortBy, sortDir, extra, setPage, setLimit, setSort, setSearch, setExtra, setExtras, clearAll }`
+- `createHistoryAdapter()`, `createMemoryAdapter(initial?)`, `getHistoryAdapter()` → `UrlStateAdapter`
+
+### Orchestration / headless rendering
+
+- `useDataTable<TRow>(options): UseDataTableResult<TRow>` — derived state +
+  prop-getters: `getTableProps`, `getHeaderRowProps`, `getHeaderCellProps`,
+  `getSortButtonProps`, `getRowProps`, `getCellProps`, `getSearchInputProps`.
+- `useTableChrome<TRow>(props)` — shared adapter orchestration (layout,
+  confirm, chips, body region, footer).
+
+### Selection, filters, actions
+
+- `useSelection`, `useActiveFilterChips`, `useExtraChips`
+- `defaultConfirm`, `runRowAction`, `useBulkActionRunner`
+
+### Utilities & hooks
+
+- `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`
+- `compareValues`, `sortRows`, `nextSort`, `computePagination`,
+  `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`, `defaultLabels`
+
+### Types
+
+`TableSource`, `ColumnDef`, `RowAction`, `BulkAction`, `PaginatedResponse`,
+`TableLabels`, `BaseDataTableProps`, `SortDirection`, `Direction`,
+`ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`, …
+
+## Adapters
+
+`@adapttable/mantine`, `@adapttable/mui`, `@adapttable/chakra`,
+`@adapttable/unstyled` each export:
+
+- `DataTable<TRow>` — the batteries-included component (props extend
+  `BaseDataTableProps` plus kit-specific extras like `slots` / `classNames`).
+- A re-export of the core source builders and types, so you can import
+  everything from one entry point.
+
+## `@adapttable/i18n`
+
+- `getLabels(locale)`, `getDirection(locale)`, `isRtlLocale(locale)`,
+  `primarySubtag(locale)`, `RTL_LANGUAGES`, `en`, `ar`, `locales`.
+
+## `@adapttable/cli`
+
+- Binary: `adapttable init [--force]`.
+- Programmatic: `detectKit`, `choosePackageManager`, `installCommand`,
+  `scaffoldFiles`, `runInit`.
+
+
+---
+
+# Comparison
+
+How AdaptTable compares to popular React table libraries.
+
+| Feature | ag-grid | TanStack Table | mantine-datatable | MUI X DataGrid | **AdaptTable** |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Headless core | ✗ | ✓ | ✗ | ✗ | **✓** |
+| Works across UI kits | ✗ | ✓ (you build the UI) | Mantine only | MUI only | **✓ via ready adapters** |
+| Client **and** server data, same API | partial | wire it yourself | ✗ | partial | **✓ (`TableSource`)** |
+| URL-synced state (shareable links) | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Filter drawer + removable chips | ✗ | ✗ | ✗ | partial | **✓ built-in** |
+| Virtualization + infinite **and** paged | ✓ | ✓ (manual) | ✗ | ✓ (paid) | **✓ auto by device** |
+| i18n + **RTL / Arabic** first-class | partial | ✗ | ✗ | partial | **✓** |
+| Dark mode | ✓ | n/a | ✓ | ✓ | **✓ seamless** |
+| MIT / free | paid tiers | ✓ | ✓ | paid tiers | **✓** |
+
+## When to choose AdaptTable
+
+- You use **Mantine, MUI, Chakra, or Tailwind/shadcn** and want a table that
+  matches your kit without building it yourself.
+- You need **the same table for both in-memory and server-paginated data**.
+- You want **shareable, deep-linkable table state** for free.
+- You need **RTL / Arabic** done properly.
+- You want a **headless escape hatch** when the defaults aren't enough — the
+  same core powers both the batteries-included components and your own
+  custom markup.
+
+## When another library may fit better
+
+- You need a heavyweight enterprise grid with pivoting, range selection, and
+  Excel-style editing today → **ag-grid** / **MUI X DataGrid (paid)**.
+- You're on a framework other than React → **TanStack Table** (multi-
+  framework). AdaptTable is React-only for v1.
+

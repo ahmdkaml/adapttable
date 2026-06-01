@@ -103,7 +103,19 @@ const source = useFrontendData({ data }); // client-side filter/sort/slice
 
 ## Animations (optional)
 
-GSAP-powered row/card stagger is **opt-in** and pluggable. Use it, swap it for CSS, or run with no animation at all — your call. Always honours `prefers-reduced-motion`.
+Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and pluggable. Use it, swap it, or run with no animation at all — your call. Always honours `prefers-reduced-motion`.
+
+## Documentation
+
+- [Getting started](./docs/getting-started.md)
+- [Core concepts: `TableSource`](./docs/concepts.md)
+- [URL-synced state](./docs/url-state.md)
+- [i18n & RTL](./docs/i18n-rtl.md)
+- [Customization](./docs/customization.md)
+- [API reference](./docs/api.md)
+- [Comparison](./docs/comparison.md)
+- [Examples per adapter](./examples/)
+- For LLMs/agents: [`llms.txt`](./llms.txt) · [`llms-full.txt`](./llms-full.txt)
 
 ## Status
 
@@ -112,13 +124,14 @@ GSAP-powered row/card stagger is **opt-in** and pluggable. Use it, swap it for C
 ## Roadmap
 
 - [x] Headless `@adapttable/core`
-- [ ] `@adapttable/mantine` (first adapter)
-- [ ] `@adapttable/i18n` (en/ar + RTL)
-- [ ] `@adapttable/unstyled` (Tailwind/shadcn)
-- [ ] `@adapttable/mui`
-- [ ] `@adapttable/chakra`
-- [ ] `@adapttable/cli`
-- [ ] Docs site + live playground
+- [x] `@adapttable/mantine`
+- [x] `@adapttable/i18n` (en/ar + RTL)
+- [x] `@adapttable/unstyled` (Tailwind/shadcn)
+- [x] `@adapttable/mui`
+- [x] `@adapttable/chakra`
+- [x] `@adapttable/cli`
+- [x] Docs (markdown + `llms.txt`) + examples
+- [ ] Hosted docs site + live playground
 - [ ] `v1.0`
 
 ## Contributing
