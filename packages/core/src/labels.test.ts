@@ -31,5 +31,6 @@ describe("defaultLabels", () => {
       "Showing 1–10 of 50"
     );
     expect(defaultLabels.pageOf({ page: 2, total: 5 })).toBe("Page 2 of 5");
+    expect(defaultLabels.selectedCount(3)).toBe("3 selected");
   });
 });
