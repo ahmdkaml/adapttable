@@ -234,6 +234,19 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getByText("m-Alice")).toBeInTheDocument();
   });
 
+  it("uses the column key as the mobile label for a non-string header", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        columns: [
+          { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
+        ],
+      },
+    });
+    // The card label falls back to the key when the header isn't a string.
+    expect(screen.getAllByText("name").length).toBeGreaterThan(0);
+  });
+
   it("runs a row action without confirm immediately", () => {
     const onClick = vi.fn();
     renderHarness({
