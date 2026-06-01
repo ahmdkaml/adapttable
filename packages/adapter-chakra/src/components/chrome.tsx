@@ -38,6 +38,8 @@ import {
 } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
+import { subtleText } from "../styles";
+
 /** Search + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
@@ -248,12 +250,12 @@ export function Footer({
   return (
     <HStack spacing={3} justify="space-between" flexWrap="wrap">
       {total > 0 && (
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" {...subtleText}>
           {labels.showing({ from: fromIndex, to: toIndex, total })}
         </Text>
       )}
       <HStack spacing={2}>
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" {...subtleText}>
           {labels.pageOf({ page: safePage, total: totalPages })}
         </Text>
         <Button

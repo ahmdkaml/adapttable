@@ -24,6 +24,8 @@ import {
   Tr,
 } from "@chakra-ui/react";
 
+import { subtleText } from "../styles";
+
 interface SharedProps<TRow> {
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -252,7 +254,7 @@ export function MobileCards<TRow>({
                 <Box key={column.key} mb={2}>
                   <Text
                     fontSize="xs"
-                    color="gray.500"
+                    {...subtleText}
                     textTransform="uppercase"
                   >
                     {mobileLabel(column)}

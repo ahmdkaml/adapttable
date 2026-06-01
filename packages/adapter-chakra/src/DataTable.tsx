@@ -16,6 +16,7 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { DesktopTable, MobileCards } from "./components/tables";
+import { subtleText } from "./styles";
 import type { DataTableProps } from "./types";
 
 /**
@@ -57,7 +58,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     ),
     empty: slots?.empty ?? (
-      <Text color="gray.500" textAlign="center" py={10}>
+      <Text {...subtleText} textAlign="center" py={10}>
         {labels.noData}
       </Text>
     ),
