@@ -132,7 +132,7 @@ describe("useDataTable", () => {
       expect(sorted["aria-sort"]).toBe("ascending");
       const plain = result.current.getHeaderCellProps(cols[1]!);
       expect(plain["aria-sort"]).toBeUndefined();
-      expect((plain.style as { textAlign: string }).textAlign).toBe("right");
+      expect((plain.style as { textAlign: string }).textAlign).toBe("end");
     });
 
     it("getHeaderCellProps reports 'none' for an unsorted sortable column", () => {
@@ -163,10 +163,10 @@ describe("useDataTable", () => {
       expect(props["data-index"]).toBe(0);
     });
 
-    it("getCellProps applies alignment", () => {
+    it("getCellProps applies logical (RTL-aware) alignment", () => {
       const { result } = mount();
       const props = result.current.getCellProps(cols[1]!);
-      expect((props.style as { textAlign: string }).textAlign).toBe("right");
+      expect((props.style as { textAlign: string }).textAlign).toBe("end");
     });
 
     it("getSearchInputProps wires value + onChange", () => {

@@ -97,10 +97,10 @@ export interface UseDataTableResult<TRow> {
 
 function textAlign(
   align: ColumnDef<TRowAny>["align"]
-): "left" | "center" | "right" {
+): "start" | "center" | "end" {
   if (align === "center") return "center";
-  if (align === "end") return "right";
-  return "left";
+  if (align === "end") return "end";
+  return "start";
 }
 
 function ariaSort<TRow>(

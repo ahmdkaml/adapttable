@@ -32,12 +32,17 @@ interface SharedProps<TRow> {
   prefetch?: (row: TRow) => void;
 }
 
+/**
+ * Logical (RTL-aware) `text-align` for a column. Applied via `sx` rather
+ * than MUI's physical `align` prop so `"end"` follows the writing direction
+ * (right in LTR, left in RTL).
+ */
 function muiAlign(
   align: ColumnDef<unknown>["align"]
-): "left" | "center" | "right" {
+): "start" | "center" | "end" {
   if (align === "center") return "center";
-  if (align === "end") return "right";
-  return "left";
+  if (align === "end") return "end";
+  return "start";
 }
 
 function RowActionButtons<TRow>({
@@ -118,9 +123,8 @@ export function DesktopTable<TRow>({
               return (
                 <TableCell
                   key={column.key}
-                  align={muiAlign(column.align)}
                   sortDirection={active ? table.sortDir : false}
-                  style={{ width: column.width }}
+                  sx={{ textAlign: muiAlign(column.align), width: column.width }}
                 >
                   {column.sortable ? (
                     <TableSortLabel
@@ -137,7 +141,7 @@ export function DesktopTable<TRow>({
               );
             })}
             {showActions && (
-              <TableCell align="right">{labels.actions}</TableCell>
+              <TableCell sx={{ textAlign: "end" }}>{labels.actions}</TableCell>
             )}
           </TableRow>
         </TableHead>
@@ -162,7 +166,10 @@ export function DesktopTable<TRow>({
                   </TableCell>
                 )}
                 {columns.map((column) => (
-                  <TableCell key={column.key} align={muiAlign(column.align)}>
+                  <TableCell
+                    key={column.key}
+                    sx={{ textAlign: muiAlign(column.align) }}
+                  >
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (
@@ -171,7 +178,7 @@ export function DesktopTable<TRow>({
                   </TableCell>
                 ))}
                 {showActions && (
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "end" }}>
                     <RowActionButtons
                       row={row}
                       actions={rowActions!}

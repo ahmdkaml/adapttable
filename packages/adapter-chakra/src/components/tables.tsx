@@ -132,6 +132,7 @@ export function DesktopTable<TRow>({
                 <Th
                   key={column.key}
                   textAlign={chakraAlign(column.align)}
+                  width={column.width}
                   aria-sort={ariaSort}
                   cursor={column.sortable ? "pointer" : undefined}
                   onClick={
