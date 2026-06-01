@@ -1,0 +1,76 @@
+{
+  "name": "@adapttable/mantine",
+  "version": "0.0.0",
+  "description": "Mantine adapter for AdaptTable — a batteries-included, themeable React data table with sorting, filtering, URL state, RTL, dark mode, and virtualization-ready rendering.",
+  "keywords": [
+    "react",
+    "mantine",
+    "data-table",
+    "table",
+    "datagrid",
+    "mantine-datatable",
+    "server-side-pagination",
+    "url-state",
+    "rtl",
+    "dark-mode",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Orwa Mahmoud",
+  "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/adapter-mantine#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orwamahmoud/adapttable.git",
+    "directory": "packages/adapter-mantine"
+  },
+  "bugs": "https://github.com/orwamahmoud/adapttable/issues",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@adapttable/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@mantine/core": "^7.0.0 || ^8.0.0",
+    "@mantine/hooks": "^7.0.0 || ^8.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@mantine/core": "^8.1.3",
+    "@mantine/hooks": "^8.1.3",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

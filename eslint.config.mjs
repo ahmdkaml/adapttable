@@ -80,6 +80,7 @@ export default tseslint.config(
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/unbound-method": "off",
       "sonarjs/no-nested-functions": "off",
+      "sonarjs/prefer-read-only-props": "off",
     },
   },
   prettier
