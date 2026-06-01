@@ -160,6 +160,7 @@ export function Footer({
       <span>{labels.pageOf({ page: safePage, total: totalPages })}</span>
       <button
         type="button"
+        aria-label={labels.previousPage}
         data-adapttable-part="page-prev"
         className={classNames.pageButton}
         disabled={safePage <= 1}
@@ -169,6 +170,7 @@ export function Footer({
       </button>
       <button
         type="button"
+        aria-label={labels.nextPage}
         data-adapttable-part="page-next"
         className={classNames.pageButton}
         disabled={safePage >= totalPages}

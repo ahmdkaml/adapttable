@@ -187,6 +187,10 @@ export interface TableLabels {
   retry?: string;
   errorTitle?: string;
   errorMessage?: string;
+  /** Accessible label for the previous-page control. */
+  previousPage?: string;
+  /** Accessible label for the next-page control. */
+  nextPage?: string;
   /** Builds the "selected N" label. */
   selectedCount?: (count: number) => string;
   /** Builds the "showing X–Y of Z" label. */

@@ -22,6 +22,8 @@ export const defaultLabels: Required<TableLabels> = {
   retry: "Retry",
   errorTitle: "Something went wrong",
   errorMessage: "We couldn't load this data.",
+  previousPage: "Previous page",
+  nextPage: "Next page",
   selectedCount: (count) => `${count} selected`,
   showing: ({ from, to, total }) => `Showing ${from}–${to} of ${total}`,
   pageOf: ({ page, total }) => `Page ${page} of ${total}`,

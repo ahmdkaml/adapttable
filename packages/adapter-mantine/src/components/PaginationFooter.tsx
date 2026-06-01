@@ -68,6 +68,12 @@ export function PaginationFooter({
           size="sm"
           siblings={1}
           boundaries={1}
+          getControlProps={(control) => {
+            if (control === "previous")
+              return { "aria-label": labels.previousPage };
+            if (control === "next") return { "aria-label": labels.nextPage };
+            return {};
+          }}
         />
       </Group>
     </Group>

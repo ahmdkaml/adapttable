@@ -81,7 +81,7 @@ describe("<DataTable> (unstyled) gaps", () => {
 
   it("footer: previous button goes back a page", () => {
     renderHarness({}, "limit=1&page=2");
-    fireEvent.click(screen.getByRole("button", { name: "‹" }));
+    fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
     // page=1 is the default and is dropped from the URL.
     expect(adapter.getSearch()).not.toContain("page=2");
   });

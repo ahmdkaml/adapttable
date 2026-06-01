@@ -19,6 +19,8 @@ export const ar: Required<TableLabels> = {
   retry: "إعادة المحاولة",
   errorTitle: "حدث خطأ ما",
   errorMessage: "تعذّر تحميل هذه البيانات.",
+  previousPage: "الصفحة السابقة",
+  nextPage: "الصفحة التالية",
   selectedCount: (count) => `${count} محدد`,
   showing: ({ from, to, total }) => `عرض ${from}–${to} من ${total}`,
   pageOf: ({ page, total }) => `صفحة ${page} من ${total}`,

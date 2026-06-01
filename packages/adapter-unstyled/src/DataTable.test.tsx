@@ -117,7 +117,7 @@ describe("<DataTable> (unstyled)", () => {
 
   it("paginates via the footer next button", () => {
     renderHarness({}, "limit=1");
-    const next = screen.getByRole("button", { name: "›" });
+    const next = screen.getByRole("button", { name: "Next page" });
     fireEvent.click(next);
     expect(adapter.getSearch()).toContain("page=2");
   });

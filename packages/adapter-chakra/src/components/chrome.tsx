@@ -259,7 +259,7 @@ export function Footer({
         </Text>
         <Button
           size="xs"
-          aria-label="previous"
+          aria-label={labels.previousPage}
           isDisabled={safePage <= 1}
           onClick={() => setPage(safePage - 1)}
         >
@@ -267,7 +267,7 @@ export function Footer({
         </Button>
         <Button
           size="xs"
-          aria-label="next"
+          aria-label={labels.nextPage}
           isDisabled={safePage >= totalPages}
           onClick={() => setPage(safePage + 1)}
         >

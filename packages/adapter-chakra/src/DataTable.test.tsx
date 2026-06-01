@@ -107,7 +107,7 @@ describe("<DataTable> (Chakra)", () => {
 
   it("paginates via prev/next", () => {
     renderHarness({}, "limit=1");
-    fireEvent.click(screen.getByRole("button", { name: "next" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(adapter.getSearch()).toContain("page=2");
   });
 

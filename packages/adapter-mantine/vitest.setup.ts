@@ -1,5 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 
+import { expect } from "vitest";
+import * as axeMatchers from "vitest-axe/matchers";
+
+expect.extend(axeMatchers);
+
 // jsdom doesn't implement matchMedia; Mantine and AdaptTable's media hooks
 // read it. Provide a non-matching stub so components render in their
 // desktop layout by default.

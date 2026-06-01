@@ -280,6 +280,12 @@ export function Footer({
         page={pagination.safePage}
         onChange={(_, page) => setPage(page)}
         size="small"
+        getItemAriaLabel={(type, page) => {
+          if (type === "previous") return labels.previousPage;
+          if (type === "next") return labels.nextPage;
+          if (type === "page") return `Go to page ${page}`;
+          return "";
+        }}
       />
     </Stack>
   );

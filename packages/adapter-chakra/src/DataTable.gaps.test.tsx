@@ -52,7 +52,7 @@ function mount(
 describe("Chakra gaps", () => {
   it("footer previous button goes back a page", () => {
     mount({}, "limit=1&page=2");
-    fireEvent.click(screen.getByRole("button", { name: "previous" }));
+    fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
     expect(adapter.getSearch()).not.toContain("page=2");
   });
 
