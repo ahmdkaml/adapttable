@@ -1,0 +1,55 @@
+{
+  "name": "@adapttable/cli",
+  "version": "0.0.0",
+  "description": "Scaffolding CLI for AdaptTable — `npx adapttable init` detects your UI kit (Mantine, MUI, Chakra, Tailwind) and sets up a data table.",
+  "keywords": [
+    "adapttable",
+    "cli",
+    "scaffold",
+    "data-table",
+    "init"
+  ],
+  "license": "MIT",
+  "author": "Orwa Mahmoud",
+  "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orwamahmoud/adapttable.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/orwamahmoud/adapttable/issues",
+  "type": "module",
+  "bin": {
+    "adapttable": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist coverage .turbo"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
