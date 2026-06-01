@@ -146,6 +146,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             rowSelection={rowSelection}
             pagination={pagination}
             onChange={handleChange}
+            onRow={
+              props.prefetch
+                ? (record) => ({
+                    onMouseEnter: () => props.prefetch?.(record),
+                  })
+                : undefined
+            }
             scroll={{ x: "max-content" }}
             locale={{ emptyText: slots?.empty ?? labels.noData }}
           />

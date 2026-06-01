@@ -234,6 +234,13 @@ describe("<DataTable> (Ant Design)", () => {
     ).toBeDisabled();
   });
 
+  it("prefetches a row on hover", () => {
+    const prefetch = vi.fn();
+    renderHarness({ override: { prefetch } });
+    fireEvent.mouseEnter(screen.getByText("Alice").closest("tr")!);
+    expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("renders a column via the Cell render-prop", () => {
     renderHarness({
       override: {
