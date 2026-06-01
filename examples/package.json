@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@adapttable/antd": "workspace:*",
     "@adapttable/chakra": "workspace:*",
     "@adapttable/core": "workspace:*",
     "@adapttable/i18n": "workspace:*",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@chakra-ui/react": "^2.10.4",
+    "antd": "^5.22.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mantine/core": "^8.1.3",

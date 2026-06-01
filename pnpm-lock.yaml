@@ -92,6 +92,9 @@ importers:
 
   examples:
     dependencies:
+      '@adapttable/antd':
+        specifier: workspace:*
+        version: link:../packages/adapter-antd
       '@adapttable/chakra':
         specifier: workspace:*
         version: link:../packages/adapter-chakra
@@ -135,6 +138,9 @@ importers:
       '@types/react':
         specifier: ^18.3.18
         version: 18.3.30
+      antd:
+        specifier: ^5.22.0
+        version: 5.29.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1

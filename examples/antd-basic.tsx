@@ -1,0 +1,66 @@
+import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/antd";
+import { ConfigProvider, theme } from "antd";
+
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+}
+
+const PRODUCTS: Product[] = [
+  { id: "1", name: "Keyboard", category: "Peripherals", price: 80 },
+  { id: "2", name: "Monitor", category: "Displays", price: 320 },
+  { id: "3", name: "Mouse", category: "Peripherals", price: 40 },
+];
+
+const columns: ColumnDef<Product>[] = [
+  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
+  { key: "category", header: "Category", accessor: (r) => r.category },
+  {
+    key: "price",
+    header: "Price",
+    accessor: (r) => `$${r.price}`,
+    sortValue: (r) => r.price,
+    sortable: true,
+    align: "end",
+  },
+];
+
+/**
+ * Ant Design table with dark mode (via `ConfigProvider` `darkAlgorithm`),
+ * row actions, and a confirm-guarded delete — on the same headless source
+ * as every other adapter.
+ */
+export function AntdBasicExample() {
+  const source = useFrontendData({ data: PRODUCTS, columns });
+  return (
+    <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+      <DataTable
+        source={source}
+        columns={columns}
+        rowKey={(r) => r.id}
+        bordered
+        rowActions={[
+          {
+            key: "edit",
+            label: "Edit",
+            onClick: (row) => alert(`Edit ${row.name}`),
+          },
+          {
+            key: "delete",
+            label: "Delete",
+            color: "danger",
+            confirm: {
+              title: "Delete product?",
+              message: (count) => `Permanently delete ${count} product(s)?`,
+              confirmLabel: "Delete",
+              danger: true,
+            },
+            onClick: (row) => alert(`Deleted ${row.name}`),
+          },
+        ]}
+      />
+    </ConfigProvider>
+  );
+}
