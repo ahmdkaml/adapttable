@@ -1,0 +1,64 @@
+name: 🐛 Bug report
+description: Report a defect in AdaptTable
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug! Please fill out the sections below so we can reproduce it quickly.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package?
+      options:
+        - "@adapttable/core"
+        - "@adapttable/mantine"
+        - "@adapttable/mui"
+        - "@adapttable/chakra"
+        - "@adapttable/unstyled"
+        - "@adapttable/i18n"
+        - "@adapttable/cli"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce, ideally a minimal StackBlitz/CodeSandbox or a short code snippet.
+      placeholder: |
+        1. Render `<DataTable …>` with …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AdaptTable version
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: React version, UI-kit version, bundler, browser, SSR framework (if any).
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: I'm using a supported React version (18+).
+          required: true
