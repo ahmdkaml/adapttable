@@ -11,7 +11,7 @@
     "datagrid",
     "server-side-pagination",
     "url-state",
-    "virtualized",
+    "infinite-scroll",
     "rtl",
     "typescript"
   ],

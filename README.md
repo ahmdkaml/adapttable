@@ -4,7 +4,7 @@
 
 ### The headless React data table that works with **any** UI kit — batteries-included for Mantine, MUI, Chakra, and Tailwind/shadcn.
 
-**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, virtualization, a real filter UX, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
+**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, infinite-scroll & paging (auto by device), a real filter UX, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
@@ -41,17 +41,17 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 
 ## Feature comparison
 
-| Feature                                 |  ag-grid   |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**      |
-| --------------------------------------- | :--------: | :---------------------: | :---------------: | :----------: | :----------------------: |
-| Headless core                           |     ✗      |            ✓            |         ✗         |      ✗       |          **✓**           |
-| Works across UI kits                    |     ✗      | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters** |
-| Client **and** server data, same API    |  partial   |    wire it yourself     |         ✗         |   partial    |  **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)      |     ✗      |            ✗            |         ✗         |      ✗       |          **✓**           |
-| Filter drawer + removable chips         |     ✗      |            ✗            |         ✗         |   partial    |      **✓ built-in**      |
-| Virtualization + infinite **and** paged |     ✓      |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ auto by device**   |
-| i18n + **RTL / Arabic** first-class     |  partial   |            ✗            |         ✗         |   partial    |          **✓**           |
-| Dark mode                               |     ✓      |           n/a           |         ✓         |      ✓       |      **✓ seamless**      |
-| MIT / free                              | paid tiers |            ✓            |         ✓         |  paid tiers  |          **✓**           |
+| Feature                                        |  ag-grid   |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**      |
+| ---------------------------------------------- | :--------: | :---------------------: | :---------------: | :----------: | :----------------------: |
+| Headless core                                  |     ✗      |            ✓            |         ✗         |      ✗       |          **✓**           |
+| Works across UI kits                           |     ✗      | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters** |
+| Client **and** server data, same API           |  partial   |    wire it yourself     |         ✗         |   partial    |  **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)             |     ✗      |            ✗            |         ✗         |      ✗       |          **✓**           |
+| Filter drawer + removable chips                |     ✗      |            ✗            |         ✗         |   partial    |      **✓ built-in**      |
+| Infinite scroll **and** paged (auto by device) |     ✓      |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**   |
+| i18n + **RTL / Arabic** first-class            |  partial   |            ✗            |         ✗         |   partial    |          **✓**           |
+| Dark mode                                      |     ✓      |           n/a           |         ✓         |      ✓       |      **✓ seamless**      |
+| MIT / free                                     | paid tiers |            ✓            |         ✓         |  paid tiers  |          **✓**           |
 
 > **The niche:** _TanStack-Table-style headless freedom, but batteries-included for your UI kit — with URL state, RTL, and a real filter UX out of the box._
 
@@ -132,6 +132,7 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 - [x] `@adapttable/cli`
 - [x] Docs (markdown + `llms.txt`) + examples
 - [ ] Hosted docs site + live playground
+- [ ] Row virtualization (windowing) for very large lists
 - [ ] `v1.0`
 
 ## Contributing
@@ -145,5 +146,5 @@ PRs welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md). This is a friendly, well-
 ---
 
 <div align="center">
-<sub>Keywords: react data table, headless table, server-side pagination, url state, virtualized table, mantine table, mui datagrid alternative, chakra table, tailwind table, shadcn table, rtl table, arabic table, typescript, dark mode.</sub>
+<sub>Keywords: react data table, headless table, server-side pagination, url state, infinite scroll table, mantine table, mui datagrid alternative, chakra table, tailwind table, shadcn table, rtl table, arabic table, typescript, dark mode.</sub>
 </div>
