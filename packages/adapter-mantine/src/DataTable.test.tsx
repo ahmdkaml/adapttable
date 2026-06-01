@@ -162,7 +162,7 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.getByText("Per page")).toBeInTheDocument();
   });
 
-  it("renders selection + a bulk action and runs it after confirm", () => {
+  it("renders selection + a bulk action and runs it after confirm", async () => {
     const onClick = vi.fn();
     const confirm = vi.fn((req: { onConfirm: () => void }) => req.onConfirm());
     renderHarness({
@@ -185,7 +185,10 @@ describe("<DataTable> (Mantine)", () => {
     });
     fireEvent.click(screen.getByLabelText("Select all"));
     expect(screen.getByText("2 selected")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Delete"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
     expect(confirm).toHaveBeenCalled();
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });

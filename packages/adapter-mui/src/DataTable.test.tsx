@@ -112,7 +112,7 @@ describe("<DataTable> (MUI)", () => {
     expect(adapter.getSearch()).toContain("page=2");
   });
 
-  it("runs a bulk action after confirm", () => {
+  it("runs a bulk action after confirm", async () => {
     const onClick = vi.fn();
     const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());
     renderHarness({
@@ -134,7 +134,10 @@ describe("<DataTable> (MUI)", () => {
     });
     fireEvent.click(screen.getByLabelText("Select all"));
     expect(screen.getByText("2 selected")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Delete"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
