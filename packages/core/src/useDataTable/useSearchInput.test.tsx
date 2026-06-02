@@ -36,4 +36,22 @@ describe("useSearchInput", () => {
     rerender({ s: "external" });
     expect(result.current.value).toBe("external");
   });
+
+  it("keeps later typing when the committed value echoes back (no clobber)", () => {
+    let search = "";
+    const setSearch = vi.fn((s: string) => {
+      search = s;
+    });
+    const { result, rerender } = renderHook(() =>
+      useSearchInput(search, setSearch, 300)
+    );
+    act(() => result.current.setValue("ab"));
+    act(() => vi.advanceTimersByTime(300));
+    expect(setSearch).toHaveBeenCalledWith("ab");
+    // User types more before the committed "ab" re-render arrives.
+    act(() => result.current.setValue("abc"));
+    rerender();
+    // The echoed "ab" must NOT reset the live "abc".
+    expect(result.current.value).toBe("abc");
+  });
 });

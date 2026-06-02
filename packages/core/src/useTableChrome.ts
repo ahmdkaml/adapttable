@@ -151,7 +151,9 @@ export function useTableChrome<TRow>(
   else body = "desktop";
 
   const showFooter =
-    isPaged && !source.error && (source.total > 0 || source.isLoading);
+    isPaged &&
+    !source.error &&
+    (source.total > 0 || source.isLoading || source.isFetching);
 
   return {
     table,

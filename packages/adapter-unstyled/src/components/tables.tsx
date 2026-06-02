@@ -45,6 +45,7 @@ function RowActionButtons<TRow>({
             disabled={disabled}
             aria-label={action.label}
             data-adapttable-part="action-button"
+            data-color={action.color}
             className={classNames.actionButton}
             onClick={(e) => {
               e.stopPropagation();

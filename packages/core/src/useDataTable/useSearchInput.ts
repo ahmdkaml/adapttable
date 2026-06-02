@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -28,17 +28,28 @@ export function useSearchInput(
 ): SearchInputState {
   const [value, setValue] = useState(search);
   const debounced = useDebounce(value, debounceMs);
+  // The last value we committed, so we can tell our own echo (the committed
+  // value coming back as `search`) from a genuine external change.
+  const committedRef = useRef(search);
 
-  // External change → mirror into the input (setting the same string is a
-  // no-op, so this never fights in-flight typing).
+  // Mirror only *external* changes (back button, deep link, clear-all) into
+  // the input. Skipping our own echo avoids clobbering in-flight typing:
+  // a keystroke landing between commit and the committed-value re-render
+  // must not be reset to the just-committed string.
   useEffect(() => {
-    setValue(search);
+    if (search !== committedRef.current) {
+      committedRef.current = search;
+      setValue(search);
+    }
   }, [search]);
 
   // Debounced input → commit, skipping when already in sync.
   useEffect(() => {
     const trimmed = debounced.trim();
-    if (trimmed !== search) setSearch(trimmed);
+    if (trimmed !== search) {
+      committedRef.current = trimmed;
+      setSearch(trimmed);
+    }
   }, [debounced, search, setSearch]);
 
   return { value, setValue };

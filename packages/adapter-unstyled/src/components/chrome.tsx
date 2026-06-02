@@ -102,6 +102,7 @@ export function BulkBar({
             title={reason}
             disabled={reason !== undefined || pending !== null}
             data-adapttable-part="bulk-button"
+            data-color={action.color}
             className={classNames.bulkButton}
             onClick={() => run(action, ids)}
           >
