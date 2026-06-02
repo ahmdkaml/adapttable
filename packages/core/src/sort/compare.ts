@@ -1,16 +1,25 @@
 import type { SortableValue, SortDirection } from "../types";
 
+/** `null` / `undefined` / `NaN` are unorderable and always sort last. */
+function sortsLast(value: SortableValue): boolean {
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "number" && Number.isNaN(value))
+  );
+}
+
 /**
- * Compare two sortable primitives for ascending order. `null` /
- * `undefined` sort last. Numbers compare numerically; everything else
- * compares via locale-aware string comparison.
+ * Compare two sortable primitives for ascending order. `null` / `undefined` /
+ * `NaN` sort last. Numbers compare numerically; everything else compares via
+ * locale-aware string comparison.
  *
  * @returns Negative if `a < b`, positive if `a > b`, `0` if equal.
  */
 export function compareValues(a: SortableValue, b: SortableValue): number {
   if (a === b) return 0;
-  if (a === null || a === undefined) return 1;
-  if (b === null || b === undefined) return -1;
+  if (sortsLast(a)) return 1;
+  if (sortsLast(b)) return -1;
   if (typeof a === "number" && typeof b === "number") return a - b;
   if (typeof a === "boolean" && typeof b === "boolean") {
     return Number(a) - Number(b);
@@ -35,14 +44,13 @@ export function sortRows<TRow>(
   direction: SortDirection
 ): TRow[] {
   const factor = direction === "asc" ? 1 : -1;
-  const isNullish = (v: SortableValue) => v === null || v === undefined;
   return [...rows]
     .map((row, index) => ({ row, index, value: getValue(row) }))
     .sort((x, y) => {
-      // `null` / `undefined` always sort last, regardless of direction —
-      // they must not be flipped to the top by a descending sort.
-      const xNull = isNullish(x.value);
-      const yNull = isNullish(y.value);
+      // `null` / `undefined` / `NaN` always sort last, regardless of
+      // direction — they must not be flipped to the top by a descending sort.
+      const xNull = sortsLast(x.value);
+      const yNull = sortsLast(y.value);
       if (xNull || yNull) {
         if (xNull && yNull) return x.index - y.index;
         return xNull ? 1 : -1;

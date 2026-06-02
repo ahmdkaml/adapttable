@@ -24,6 +24,7 @@ import type {
   TableLabels,
 } from "../types";
 import { mergeProps, type Props } from "../utils/mergeProps";
+import { stableKey } from "../utils/stableKey";
 import { useSearchInput } from "./useSearchInput";
 
 const EMPTY_LABELS: Readonly<Record<string, ChipLabelResolver>> = {};
@@ -189,8 +190,10 @@ export function useDataTable<TRow>(
   const getId = selectionGetId ?? rowKey;
   // Selection is keyed by id, so it persists across page / sort / page-size
   // changes (the rows still exist); it only resets when the result *set*
-  // changes — i.e. a new search term or a filter change.
-  const selectionResetKey = `${source.search}|${activeFilterCount}`;
+  // changes — i.e. a new search term or a filter change. Keyed on the filter
+  // *values* (not just the active count) so swapping one filter value for
+  // another — same count, different rows — still clears the stale selection.
+  const selectionResetKey = `${source.search}|${stableKey(source.extra)}`;
   const selectionState = useSelection<TRow>({
     rows: source.rows,
     getId,

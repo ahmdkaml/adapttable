@@ -58,7 +58,8 @@ Query's `useInfiniteQuery`). **The `<DataTable>` doesn't change** — both
 hooks return the same [`TableSource`](./concepts.md).
 
 ```tsx
-const source = useBackendData({ usePaginatedQuery });
+// Pass the row type; the default page shape is `{ items, total }`.
+const source = useBackendData<Person>({ usePaginatedQuery });
 ```
 
 ## Next steps

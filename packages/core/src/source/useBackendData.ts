@@ -76,7 +76,7 @@ const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
  */
 export function useBackendData<
   TRow,
-  TParams extends TableQueryParams,
+  TParams extends TableQueryParams = TableQueryParams,
   TPage = PaginatedResponse<TRow>,
 >(options: UseBackendDataOptions<TRow, TParams, TPage>): TableSource<TRow> {
   const {

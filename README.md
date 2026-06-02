@@ -22,10 +22,20 @@ Most React tables force a choice: **headless freedom** (you build all the UI you
 
 ```tsx
 // Batteries-included — 5 lines to a fully styled, sortable, filterable, paginated table.
-import { DataTable, useFrontendData } from "@adapttable/mantine";
+import {
+  DataTable,
+  useFrontendData,
+  type ColumnDef,
+} from "@adapttable/mantine";
 
-function People({ rows }) {
-  const source = useFrontendData({ data: rows });
+const columns: ColumnDef<Person>[] = [
+  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
+  { key: "email", header: "Email", accessor: (r) => r.email },
+];
+
+function People({ rows }: { rows: Person[] }) {
+  // Pass `columns` here too — it's what client-side sorting reads to order rows.
+  const source = useFrontendData({ data: rows, columns });
   return <DataTable source={source} columns={columns} rowKey={(r) => r.id} />;
 }
 ```

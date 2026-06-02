@@ -6,10 +6,12 @@ describe("compareValues", () => {
   it("returns 0 for equal values", () => {
     expect(compareValues(5, 5)).toBe(0);
   });
-  it("sorts null / undefined last", () => {
+  it("sorts null / undefined / NaN last", () => {
     expect(compareValues(null, 5)).toBe(1);
     expect(compareValues(5, undefined)).toBe(-1);
     expect(compareValues(undefined, null)).toBe(1);
+    expect(compareValues(NaN, 5)).toBe(1);
+    expect(compareValues(5, NaN)).toBe(-1);
   });
   it("compares numbers numerically", () => {
     expect(compareValues(2, 10)).toBeLessThan(0);
@@ -46,6 +48,24 @@ describe("sortRows", () => {
       "a",
       "c",
       "b",
+    ]);
+  });
+
+  it("sorts NaN values last in both directions", () => {
+    const withNaN = [
+      { id: "a", n: NaN },
+      { id: "b", n: 1 },
+      { id: "c", n: 2 },
+    ];
+    expect(sortRows(withNaN, (r) => r.n, "asc").map((r) => r.id)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+    expect(sortRows(withNaN, (r) => r.n, "desc").map((r) => r.id)).toEqual([
+      "c",
+      "b",
+      "a",
     ]);
   });
 
