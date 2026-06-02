@@ -274,6 +274,7 @@ export function MobileCards<TRow>({
           <li
             key={key}
             ref={measureElement}
+            data-index={index}
             data-adapttable-part="card"
             data-selected={selection?.isSelected(id) ? "" : undefined}
             className={classNames.card}

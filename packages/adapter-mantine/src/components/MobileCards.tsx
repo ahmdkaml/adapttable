@@ -77,6 +77,7 @@ export function MobileCards<TRow>({
           <Card
             key={key}
             ref={measureElement}
+            data-index={index}
             withBorder
             radius="md"
             padding="md"

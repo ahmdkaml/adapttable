@@ -210,6 +210,7 @@ export function DesktopTable<TRow>({
               <Tr
                 key={key}
                 ref={measureElement}
+                data-index={index}
                 bg={selected ? "blackAlpha.100" : undefined}
                 _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -288,6 +289,7 @@ export function MobileCards<TRow>({
           <Card
             key={key}
             ref={measureElement}
+            data-index={index}
             variant="outline"
             role="listitem"
           >

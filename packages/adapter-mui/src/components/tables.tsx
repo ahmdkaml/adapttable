@@ -197,6 +197,7 @@ export function DesktopTable<TRow>({
               <TableRow
                 key={key}
                 ref={measureElement}
+                data-index={index}
                 hover
                 selected={selected}
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -279,6 +280,7 @@ export function MobileCards<TRow>({
           <Card
             key={key}
             ref={measureElement}
+            data-index={index}
             variant="outlined"
             role="listitem"
           >
