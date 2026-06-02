@@ -23,6 +23,7 @@ export const de: Required<TableLabels> = {
   nextPage: "Nächste Seite",
   goToPage: (page) => `Zur Seite ${page}`,
   selectedCount: (count) => `${count} ausgewählt`,
-  showing: ({ from, to, total }) => `${from}–${to} von ${total} werden angezeigt`,
+  showing: ({ from, to, total }) =>
+    `${from}–${to} von ${total} werden angezeigt`,
   pageOf: ({ page, total }) => `Seite ${page} von ${total}`,
 };

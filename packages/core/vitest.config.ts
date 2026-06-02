@@ -9,6 +9,12 @@ export default mergeConfig(sharedConfig, {
       // Pure type-only modules (interfaces only) compile to nothing and
       // would otherwise report as 0% covered.
       exclude: ["src/source/TableSource.ts", "src/props.ts"],
+      thresholds: {
+        statements: 99,
+        lines: 99,
+        functions: 95,
+        branches: 97,
+      },
     },
   },
 });

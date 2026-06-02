@@ -44,9 +44,9 @@ export interface UseInfiniteScrollOptions {
  * @param options - See {@link UseInfiniteScrollOptions}.
  * @returns A ref to attach to the sentinel element.
  */
-export function useInfiniteScroll<TElement extends HTMLElement = HTMLDivElement>(
-  options: UseInfiniteScrollOptions
-): RefObject<TElement> {
+export function useInfiniteScroll<
+  TElement extends HTMLElement = HTMLDivElement,
+>(options: UseInfiniteScrollOptions): RefObject<TElement> {
   const {
     hasNextPage,
     isFetchingNextPage,

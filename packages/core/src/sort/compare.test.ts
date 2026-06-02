@@ -75,9 +75,9 @@ describe("sortRows", () => {
       { id: "d", n: undefined as number | null | undefined },
     ];
     // ascending: values asc, nullish last (stable among themselves)
-    expect(sortRows(withNulls, (r) => r.n ?? null, "asc").map((r) => r.id)).toEqual(
-      ["c", "a", "b", "d"]
-    );
+    expect(
+      sortRows(withNulls, (r) => r.n ?? null, "asc").map((r) => r.id)
+    ).toEqual(["c", "a", "b", "d"]);
     // descending: values desc, nullish STILL last (must not flip to top)
     expect(
       sortRows(withNulls, (r) => r.n ?? null, "desc").map((r) => r.id)

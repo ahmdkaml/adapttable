@@ -131,7 +131,10 @@ export function DesktopTable<TRow>({
                 <TableCell
                   key={column.key}
                   aria-sort={ariaSort}
-                  sx={{ textAlign: muiAlign(column.align), width: column.width }}
+                  sx={{
+                    textAlign: muiAlign(column.align),
+                    width: column.width,
+                  }}
                 >
                   {column.sortable ? (
                     <TableSortLabel

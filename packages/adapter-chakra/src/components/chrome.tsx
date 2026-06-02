@@ -221,9 +221,7 @@ export function BulkBar({
               <Button
                 size="xs"
                 colorScheme={action.color ?? colorScheme}
-                leftIcon={
-                  isValidElement(action.icon) ? action.icon : undefined
-                }
+                leftIcon={isValidElement(action.icon) ? action.icon : undefined}
                 isDisabled={reason !== undefined || pending !== null}
                 onClick={() => run(action, ids)}
               >

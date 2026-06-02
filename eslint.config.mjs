@@ -65,6 +65,16 @@ export default tseslint.config(
     },
   },
   {
+    // Root build tooling (lcov path fixer, shared vitest config) lives
+    // outside any package's TS project, so the type-aware rules can't
+    // resolve it. Lint it with the syntactic rules only.
+    files: ["scripts/**/*.{js,mjs,cjs,ts}", "vitest.shared.ts"],
+    languageOptions: {
+      parserOptions: { projectService: false, project: false },
+    },
+    rules: tseslint.configs.disableTypeChecked.rules,
+  },
+  {
     files: [
       "**/*.{test,spec}.{ts,tsx}",
       "**/*.gaps.test.{ts,tsx}",

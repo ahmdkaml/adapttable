@@ -16,22 +16,20 @@ let originalIO: typeof IntersectionObserver | undefined;
 
 function installFakeObserver() {
   originalIO = globalThis.IntersectionObserver;
-  globalThis.IntersectionObserver = vi
-    .fn()
-    .mockImplementation(function (
-      this: unknown,
-      callback: IntersectionObserverCallback,
-      options?: IntersectionObserverInit
-    ) {
-      const instance: FakeObserver = {
-        callback,
-        observe: vi.fn(),
-        disconnect: vi.fn(),
-        options,
-      };
-      observers.push(instance);
-      return instance;
-    });
+  globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+    this: unknown,
+    callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit
+  ) {
+    const instance: FakeObserver = {
+      callback,
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+      options,
+    };
+    observers.push(instance);
+    return instance;
+  });
 }
 
 /** Fire an intersection event on the most recently created observer. */
@@ -128,11 +126,7 @@ describe("useInfiniteScroll", () => {
 
   it("disconnects the observer on unmount", () => {
     const { unmount } = render(
-      <Probe
-        hasNextPage
-        isFetchingNextPage={false}
-        fetchNextPage={vi.fn()}
-      />
+      <Probe hasNextPage isFetchingNextPage={false} fetchNextPage={vi.fn()} />
     );
     const observer = observers.at(-1);
     unmount();

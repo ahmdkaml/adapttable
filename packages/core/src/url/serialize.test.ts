@@ -111,7 +111,10 @@ describe("writeExtra", () => {
 
 describe("extra-filter round-trips", () => {
   // Simulate the real URLSearchParams encode/decode the adapter performs.
-  const roundTrip = (extra: Record<string, FilterValue>, arrayKeys: string[]) => {
+  const roundTrip = (
+    extra: Record<string, FilterValue>,
+    arrayKeys: string[]
+  ) => {
     const p = new URLSearchParams();
     writeExtra(p, extra);
     return readExtra(new URLSearchParams(p.toString()), [], arrayKeys);

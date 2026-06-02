@@ -301,7 +301,6 @@ describe("<DataTable> (Chakra)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
-
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
@@ -327,7 +326,6 @@ describe("<DataTable> (Chakra)", () => {
       globalThis.IntersectionObserver = original;
     }
   });
-
 
   it("renders a column via the Cell render-prop", () => {
     renderHarness({
@@ -371,5 +369,4 @@ describe("<DataTable> (Chakra)", () => {
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
-
 });

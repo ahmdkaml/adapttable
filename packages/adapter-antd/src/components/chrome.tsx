@@ -6,7 +6,17 @@ import {
   type ToolbarChromeProps,
   useBulkActionRunner,
 } from "@adapttable/core";
-import { Alert, Badge, Button, Drawer, Flex, Input, Select, Space, Tag } from "antd";
+import {
+  Alert,
+  Badge,
+  Button,
+  Drawer,
+  Flex,
+  Input,
+  Select,
+  Space,
+  Tag,
+} from "antd";
 import type { ReactNode } from "react";
 
 import { isDangerColor } from "../colors";
@@ -96,7 +106,13 @@ export function Chips({
 }>) {
   if (chips.length === 0) return null;
   return (
-    <Flex gap={4} wrap align="center" component="ul" aria-label={labels.filters}>
+    <Flex
+      gap={4}
+      wrap
+      align="center"
+      component="ul"
+      aria-label={labels.filters}
+    >
       {chips.map((chip) => (
         <li key={chip.key} style={{ listStyle: "none" }}>
           <Tag closable onClose={chip.onRemove} aria-label={chip.label}>

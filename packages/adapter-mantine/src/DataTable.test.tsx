@@ -327,5 +327,4 @@ describe("<DataTable> (Mantine)", () => {
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
-
 });

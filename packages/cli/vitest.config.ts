@@ -8,6 +8,12 @@ export default mergeConfig(sharedConfig, {
     coverage: {
       // The bin wrapper is a thin IO shell exercised via run().
       exclude: ["src/cli.ts"],
+      thresholds: {
+        statements: 99,
+        lines: 99,
+        functions: 99,
+        branches: 95,
+      },
     },
   },
 });

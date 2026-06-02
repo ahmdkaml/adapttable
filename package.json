@@ -14,6 +14,7 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "lint": "turbo run lint",
+    "lint:root": "eslint scripts vitest.shared.ts",
     "lint:fix": "turbo run lint -- --fix",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,mjs,cjs}\"",
@@ -24,7 +25,7 @@
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint"
+    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.11",

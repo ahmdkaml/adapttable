@@ -1,11 +1,5 @@
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -269,7 +263,12 @@ describe("<DataTable> (unstyled)", () => {
     renderHarness({
       override: {
         rowActions: [
-          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "h",
+            label: "HiddenAct",
+            onClick: vi.fn(),
+            isHidden: () => true,
+          },
           {
             key: "d",
             label: "DisabledAct",

@@ -101,7 +101,7 @@ const sentinelRef = useInfiniteScroll({
   enabled: source.paginationMode === "infinite",
 });
 // …render rows…
-<div ref={sentinelRef} />
+<div ref={sentinelRef} />;
 ```
 
 It is SSR- and test-safe: where `IntersectionObserver` is unavailable it

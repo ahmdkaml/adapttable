@@ -260,11 +260,7 @@ export function MobileCards<TRow>({
               )}
               {columns.map((column) => (
                 <Box key={column.key} mb={2}>
-                  <Text
-                    fontSize="xs"
-                    {...subtleText}
-                    textTransform="uppercase"
-                  >
+                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
                     {mobileLabel(column)}
                   </Text>
                   <Text fontSize="sm">

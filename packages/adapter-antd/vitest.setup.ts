@@ -37,5 +37,5 @@ if (typeof globalThis.ResizeObserver !== "function") {
 // pseudo-element argument. Drop it so jsdom returns the base style instead
 // of logging "Not implemented".
 const realGetComputedStyle = globalThis.getComputedStyle.bind(globalThis);
-globalThis.getComputedStyle = ((element: Element) =>
-  realGetComputedStyle(element));
+globalThis.getComputedStyle = (element: Element) =>
+  realGetComputedStyle(element);

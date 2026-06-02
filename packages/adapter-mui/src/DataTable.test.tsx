@@ -182,7 +182,12 @@ describe("<DataTable> (MUI)", () => {
     renderHarness({
       override: {
         rowActions: [
-          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "h",
+            label: "HiddenAct",
+            onClick: vi.fn(),
+            isHidden: () => true,
+          },
           {
             key: "d",
             label: "DisabledAct",
@@ -290,7 +295,6 @@ describe("<DataTable> (MUI)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
-
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
@@ -316,7 +320,6 @@ describe("<DataTable> (MUI)", () => {
       globalThis.IntersectionObserver = original;
     }
   });
-
 
   it("renders a column via the Cell render-prop", () => {
     renderHarness({
@@ -360,5 +363,4 @@ describe("<DataTable> (MUI)", () => {
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
-
 });

@@ -133,7 +133,9 @@ describe("<DataTable> (Ant Design)", () => {
       mode: "infinite",
       override: { sortByOptions: [{ value: "name", label: "Name" }] },
     });
-    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Rows per page" }));
+    fireEvent.mouseDown(
+      screen.getByRole("combobox", { name: "Rows per page" })
+    );
     fireEvent.click(screen.getByTitle("50"));
     expect(adapter.getSearch()).toContain("limit=50");
 
@@ -144,9 +146,10 @@ describe("<DataTable> (Ant Design)", () => {
 
   it("exposes aria-sort on sortable headers", () => {
     renderHarness({}, "sortBy=name&sortDir=asc");
-    expect(
-      screen.getByRole("columnheader", { name: /name/i })
-    ).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("columnheader", { name: /name/i })).toHaveAttribute(
+      "aria-sort",
+      "ascending"
+    );
     // The non-sortable City column gets no aria-sort.
     expect(
       screen.getByRole("columnheader", { name: /city/i })
@@ -233,7 +236,12 @@ describe("<DataTable> (Ant Design)", () => {
     renderHarness({
       override: {
         rowActions: [
-          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "h",
+            label: "HiddenAct",
+            onClick: vi.fn(),
+            isHidden: () => true,
+          },
           {
             key: "d",
             label: "DisabledAct",
@@ -260,9 +268,9 @@ describe("<DataTable> (Ant Design)", () => {
     });
     // antd's scroll measure row clones the header (incl. the select-all), but
     // it's aria-hidden, so role queries (and screen readers) see only one.
-    expect(screen.getAllByRole("checkbox", { name: "Select all" })).toHaveLength(
-      1
-    );
+    expect(
+      screen.getAllByRole("checkbox", { name: "Select all" })
+    ).toHaveLength(1);
   });
 
   it("prefetches a row on hover", () => {
@@ -317,7 +325,12 @@ describe("<DataTable> (Ant Design)", () => {
       override: {
         isMobile: true,
         rowActions: [
-          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+          {
+            key: "h",
+            label: "HiddenAct",
+            onClick: vi.fn(),
+            isHidden: () => true,
+          },
         ],
         columns: [
           { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
