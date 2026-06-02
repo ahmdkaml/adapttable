@@ -2,9 +2,14 @@
  * Gap-fill: mobile selection + row actions, footer interactions, and the
  * bulk disabled-reason path.
  */
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  createMemoryAdapter,
+  useFrontendData,
+  useTableVirtualization,
+  type VirtualTableRow,
+} from "@adapttable/core";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
@@ -21,7 +26,28 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name },
 ];
 
+vi.mock("@adapttable/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as object),
+    useTableVirtualization: vi.fn(),
+  };
+});
+
 let adapter: ReturnType<typeof createMemoryAdapter>;
+
+beforeEach(() => {
+  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
+    enabled: false,
+    rows: rows.map((row, index) => ({
+      row,
+      index,
+      key: rowKey(row),
+    })),
+    paddingTop: 0,
+    paddingBottom: 0,
+  }));
+});
 
 function Harness(props: {
   isMobile?: boolean;
@@ -129,5 +155,50 @@ describe("<DataTable> (unstyled) gaps", () => {
       override: { filters: <div>filter body</div> },
     });
     expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+  });
+
+  it("virtualizes desktop rows when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "b", name: "Bob" },
+          index: 1,
+          key: "b",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 40,
+      paddingBottom: 40,
+      measureElement: vi.fn(),
+    });
+    renderHarness({
+      mode: "infinite",
+      override: { virtualize: true, estimateRowSize: 40 },
+    });
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("virtualizes mobile cards when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "b", name: "Bob" },
+          index: 1,
+          key: "b",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 132,
+      paddingBottom: 0,
+      measureElement: vi.fn(),
+    });
+    renderHarness({
+      isMobile: true,
+      mode: "infinite",
+      override: { virtualize: true, estimateCardSize: 132 },
+    });
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 });

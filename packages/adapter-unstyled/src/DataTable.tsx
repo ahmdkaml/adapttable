@@ -1,9 +1,12 @@
 import {
+  DEFAULT_CARD_SIZE_PX,
+  DEFAULT_ROW_SIZE_PX,
   pageSizeOptions,
   useInfiniteScroll,
   useTableChrome,
+  useTableVirtualization,
 } from "@adapttable/core";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   BulkBar,
@@ -16,6 +19,20 @@ import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
 
+function canVirtualizeBody(body: string): boolean {
+  return body === "desktop" || body === "mobile";
+}
+
+function virtualEstimateSize(
+  isMobile: boolean,
+  estimateRowSize: number | undefined,
+  estimateCardSize: number | undefined
+): number {
+  return isMobile
+    ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+    : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+}
+
 /**
  * Headless, unstyled AdaptTable for Tailwind / shadcn / custom CSS. Renders
  * semantic HTML with `data-adapttable-part` hooks and `className` overrides;
@@ -26,6 +43,7 @@ import type { DataTableProps } from "./types";
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
+    rowKey,
     rowActions,
     searchPlaceholder,
     sortByOptions,
@@ -40,12 +58,39 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     skeletonRows,
     emptyState,
     loadingState,
+    virtualize = false,
+    estimateRowSize,
+    estimateCardSize,
+    virtualOverscan,
+    virtualScrollMargin,
   } = props;
 
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const handleVirtualEndReached = useCallback(() => {
+    if (source.hasNextPage && !source.isFetchingNextPage) {
+      source.fetchNextPage();
+    }
+  }, [source]);
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey,
+    enabled:
+      virtualize &&
+      !chrome.isPaged &&
+      !source.error &&
+      canVirtualizeBody(chrome.body),
+    estimateSize: virtualEstimateSize(
+      chrome.isMobile,
+      estimateRowSize,
+      estimateCardSize
+    ),
+    overscan: virtualOverscan,
+    scrollMargin: virtualScrollMargin,
+    onEndReached: handleVirtualEndReached,
+  });
 
   const canLoadMore = !chrome.isPaged && !source.error;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
@@ -89,6 +134,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         classNames={classNames}
         prefetch={prefetch}
+        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+        paddingTop={virtualization.paddingTop}
+        paddingBottom={virtualization.paddingBottom}
+        measureElement={virtualization.measureElement}
       />
     );
   }

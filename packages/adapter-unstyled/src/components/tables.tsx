@@ -4,6 +4,7 @@ import {
   type RowAction,
   runRowAction,
   type UseDataTableResult,
+  type VirtualTableRow,
 } from "@adapttable/core";
 
 import { cx } from "../cx";
@@ -18,6 +19,10 @@ interface SharedProps<TRow> {
   classNames: DataTableClassNames;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
+  rowEntries?: readonly VirtualTableRow<TRow>[];
+  paddingTop?: number;
+  paddingBottom?: number;
+  measureElement?: (element: Element | null) => void;
 }
 
 function RowActionButtons<TRow>({
@@ -69,9 +74,22 @@ export function DesktopTable<TRow>({
   getRowId,
   classNames,
   prefetch,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: getRowId(row),
+    }));
+  const columnSpan =
+    columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
 
   return (
     <table
@@ -139,13 +157,23 @@ export function DesktopTable<TRow>({
         </tr>
       </thead>
       <tbody data-adapttable-part="tbody" className={classNames.tbody}>
-        {rows.map((row, index) => {
+        {paddingTop > 0 && (
+          <tr aria-hidden data-adapttable-part="virtual-spacer">
+            <td
+              colSpan={columnSpan}
+              style={{ height: paddingTop, padding: 0 }}
+            />
+          </tr>
+        )}
+        {entries.map(({ row, index, key }) => {
           const id = getRowId(row);
-          const { key, ...rowProps } = table.getRowProps(row, index);
+          const rowProps = { ...table.getRowProps(row, index) };
+          delete rowProps.key;
           return (
             <tr
-              key={key as string}
+              key={key}
               {...rowProps}
+              ref={measureElement}
               data-adapttable-part="row"
               data-selected={selection?.isSelected(id) ? "" : undefined}
               className={classNames.row}
@@ -196,6 +224,14 @@ export function DesktopTable<TRow>({
             </tr>
           );
         })}
+        {paddingBottom > 0 && (
+          <tr aria-hidden data-adapttable-part="virtual-spacer">
+            <td
+              colSpan={columnSpan}
+              style={{ height: paddingBottom, padding: 0 }}
+            />
+          </tr>
+        )}
       </tbody>
     </table>
   );
@@ -209,8 +245,19 @@ export function MobileCards<TRow>({
   confirm,
   getRowId,
   classNames,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: getRowId(row),
+    }));
   return (
     <ul
       {...table.getTableProps({ role: undefined })}
@@ -218,11 +265,19 @@ export function MobileCards<TRow>({
       className={classNames.cards}
       style={{ listStyle: "none", margin: 0, padding: 0 }}
     >
-      {rows.map((row, index) => {
+      {paddingTop > 0 && (
+        <li
+          aria-hidden
+          data-adapttable-part="virtual-spacer"
+          style={{ height: paddingTop }}
+        />
+      )}
+      {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
         return (
           <li
-            key={getRowId(row)}
+            key={key}
+            ref={measureElement}
             data-adapttable-part="card"
             data-selected={selection?.isSelected(id) ? "" : undefined}
             className={classNames.card}
@@ -277,6 +332,13 @@ export function MobileCards<TRow>({
           </li>
         );
       })}
+      {paddingBottom > 0 && (
+        <li
+          aria-hidden
+          data-adapttable-part="virtual-spacer"
+          style={{ height: paddingBottom }}
+        />
+      )}
     </ul>
   );
 }
