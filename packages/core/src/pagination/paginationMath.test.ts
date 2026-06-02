@@ -40,4 +40,20 @@ describe("computePagination", () => {
     const info = computePagination({ page: 1, limit: 0, total: 5 });
     expect(info.totalPages).toBe(5);
   });
+
+  it("never yields NaN for non-finite inputs", () => {
+    for (const input of [
+      { page: Number.NaN, limit: 10, total: 50 },
+      { page: 1, limit: Number.NaN, total: 50 },
+      { page: 1, limit: 10, total: Number.NaN },
+      { page: Infinity, limit: 10, total: 50 },
+    ]) {
+      const info = computePagination(input);
+      for (const v of Object.values(info)) {
+        expect(Number.isFinite(v)).toBe(true);
+      }
+      expect(info.safePage).toBeGreaterThanOrEqual(1);
+      expect(info.safePage).toBeLessThanOrEqual(info.totalPages);
+    }
+  });
 });
