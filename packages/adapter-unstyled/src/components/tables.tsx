@@ -161,7 +161,7 @@ export function DesktopTable<TRow>({
       </thead>
       <tbody data-adapttable-part="tbody" className={classNames.tbody}>
         {paddingTop > 0 && (
-          <tr role="presentation" data-adapttable-part="virtual-spacer">
+          <tr data-adapttable-part="virtual-spacer">
             <td
               colSpan={columnSpan}
               style={{ height: paddingTop, padding: 0 }}
@@ -228,7 +228,7 @@ export function DesktopTable<TRow>({
           );
         })}
         {paddingBottom > 0 && (
-          <tr role="presentation" data-adapttable-part="virtual-spacer">
+          <tr data-adapttable-part="virtual-spacer">
             <td
               colSpan={columnSpan}
               style={{ height: paddingBottom, padding: 0 }}
