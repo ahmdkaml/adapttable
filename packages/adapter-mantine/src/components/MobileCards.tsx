@@ -7,6 +7,7 @@ import {
 } from "@adapttable/core";
 import {
   ActionIcon,
+  Button,
   Card,
   Checkbox,
   Group,
@@ -91,7 +92,12 @@ export function MobileCards<TRow>({
                   {rowActions.map((action) => {
                     if (action.isHidden?.(row)) return null;
                     const disabled = action.isDisabled?.(row) ?? false;
-                    return (
+                    const run = () => {
+                      if (!disabled) {
+                        runRowAction(action, row, confirm, labels.cancel);
+                      }
+                    };
+                    return action.icon ? (
                       <Tooltip
                         key={action.key}
                         label={action.label}
@@ -104,15 +110,22 @@ export function MobileCards<TRow>({
                           size="sm"
                           disabled={disabled}
                           aria-label={action.label}
-                          onClick={() => {
-                            if (!disabled) {
-                              runRowAction(action, row, confirm, labels.cancel);
-                            }
-                          }}
+                          onClick={run}
                         >
                           {action.icon}
                         </ActionIcon>
                       </Tooltip>
+                    ) : (
+                      <Button
+                        key={action.key}
+                        variant="subtle"
+                        color={action.color}
+                        size="compact-sm"
+                        disabled={disabled}
+                        onClick={run}
+                      >
+                        {action.label}
+                      </Button>
                     );
                   })}
                 </Group>

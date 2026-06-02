@@ -103,7 +103,7 @@ describe("<DataTable> gaps", () => {
       />
     );
     expect(screen.getAllByLabelText("Select row").length).toBe(2);
-    fireEvent.click(screen.getAllByLabelText("Delete")[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]!);
     expect(confirm).toHaveBeenCalled();
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });

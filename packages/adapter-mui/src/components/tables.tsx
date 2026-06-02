@@ -22,6 +22,13 @@ import {
   Typography,
 } from "@mui/material";
 
+/** Map a destructive colour token to MUI's `"error"` palette, else default. */
+function muiColor(color: string | undefined): "default" | "error" {
+  return color === "danger" || color === "red" || color === "error"
+    ? "error"
+    : "default";
+}
+
 interface SharedProps<TRow> {
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -66,7 +73,7 @@ function RowActionButtons<TRow>({
             <span>
               <IconButton
                 size="small"
-                color={action.color as "default" | undefined}
+                color={muiColor(action.color)}
                 disabled={disabled}
                 aria-label={action.label}
                 onClick={(e) => {

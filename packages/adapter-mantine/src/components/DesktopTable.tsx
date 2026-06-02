@@ -5,7 +5,15 @@ import {
   runRowAction,
   type UseDataTableResult,
 } from "@adapttable/core";
-import { ActionIcon, Checkbox, Group, Table, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Group,
+  Table,
+  Tooltip,
+} from "@mantine/core";
+import type { MouseEvent } from "react";
 import type { RefObject } from "react";
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
@@ -90,7 +98,13 @@ function RowActions<TRow>({
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
         const disabled = action.isDisabled?.(row) ?? false;
-        return (
+        const handleClick = (e: MouseEvent) => {
+          e.stopPropagation();
+          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
+        };
+        // Icon-only actions render as an ActionIcon; without an icon, fall
+        // back to a text button so the label is actually visible.
+        return action.icon ? (
           <Tooltip
             key={action.key}
             label={action.label}
@@ -103,14 +117,22 @@ function RowActions<TRow>({
               size="sm"
               disabled={disabled}
               aria-label={action.label}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-              }}
+              onClick={handleClick}
             >
               {action.icon}
             </ActionIcon>
           </Tooltip>
+        ) : (
+          <Button
+            key={action.key}
+            variant="subtle"
+            color={action.color}
+            size="compact-sm"
+            disabled={disabled}
+            onClick={handleClick}
+          >
+            {action.label}
+          </Button>
         );
       })}
     </Group>

@@ -239,7 +239,7 @@ describe("<DataTable> (Mantine)", () => {
         rowActions: [{ key: "edit", label: "Edit", onClick }],
       },
     });
-    fireEvent.click(screen.getAllByLabelText("Edit")[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });
 
