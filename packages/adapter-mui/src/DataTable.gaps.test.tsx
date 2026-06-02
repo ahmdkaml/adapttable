@@ -1,8 +1,13 @@
 /** Gap-fill: MUI select onChange handlers and chip delete. */
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  createMemoryAdapter,
+  useFrontendData,
+  useTableVirtualization,
+  type VirtualTableRow,
+} from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
@@ -20,7 +25,28 @@ const columns: ColumnDef<Row>[] = [
 ];
 const theme = createTheme();
 
+vi.mock("@adapttable/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as object),
+    useTableVirtualization: vi.fn(),
+  };
+});
+
 let adapter: ReturnType<typeof createMemoryAdapter>;
+
+beforeEach(() => {
+  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
+    enabled: false,
+    rows: rows.map((row, index) => ({
+      row,
+      index,
+      key: rowKey(row),
+    })),
+    paddingTop: 0,
+    paddingBottom: 0,
+  }));
+});
 
 function mount(
   override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
@@ -127,5 +153,43 @@ describe("MUI gaps", () => {
     ];
     mount({ columns: cellCols });
     expect(screen.getAllByTestId("cell")[0]).toHaveTextContent("ALICE");
+  });
+
+  it("virtualizes desktop rows when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "b", name: "Bob" },
+          index: 1,
+          key: "b",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 40,
+      paddingBottom: 40,
+      measureElement: vi.fn(),
+    });
+    mount({ virtualize: true, estimateRowSize: 40 }, "infinite");
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("virtualizes mobile cards when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "b", name: "Bob" },
+          index: 1,
+          key: "b",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 132,
+      paddingBottom: 0,
+      measureElement: vi.fn(),
+    });
+    mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 });

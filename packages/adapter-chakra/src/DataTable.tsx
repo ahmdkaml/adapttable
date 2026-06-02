@@ -1,10 +1,13 @@
 import {
+  DEFAULT_CARD_SIZE_PX,
+  DEFAULT_ROW_SIZE_PX,
   type TableBody,
   useInfiniteScroll,
   useTableChrome,
+  useTableVirtualization,
 } from "@adapttable/core";
 import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 
 import {
   BulkBar,
@@ -28,11 +31,40 @@ import type { DataTableProps } from "./types";
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, colorScheme, size = "md" } = props;
+  const {
+    slots,
+    colorScheme,
+    size = "md",
+    virtualize = false,
+    estimateRowSize,
+    estimateCardSize,
+    virtualOverscan,
+    virtualScrollMargin,
+  } = props;
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const handleVirtualEndReached = useCallback(() => {
+    if (source.hasNextPage && !source.isFetchingNextPage) {
+      source.fetchNextPage();
+    }
+  }, [source]);
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey: props.rowKey,
+    enabled:
+      virtualize &&
+      !chrome.isPaged &&
+      !source.error &&
+      (chrome.body === "desktop" || chrome.body === "mobile"),
+    estimateSize: chrome.isMobile
+      ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+      : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
+    overscan: virtualOverscan,
+    scrollMargin: virtualScrollMargin,
+    onEndReached: handleVirtualEndReached,
+  });
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
@@ -49,6 +81,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     getRowId,
     size,
     colorScheme,
+    rowEntries: virtualization.enabled ? virtualization.rows : undefined,
+    paddingTop: virtualization.paddingTop,
+    paddingBottom: virtualization.paddingBottom,
+    measureElement: virtualization.measureElement,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (

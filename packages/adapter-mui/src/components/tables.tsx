@@ -4,6 +4,7 @@ import {
   type RowAction,
   runRowAction,
   type UseDataTableResult,
+  type VirtualTableRow,
 } from "@adapttable/core";
 import {
   Box,
@@ -37,6 +38,10 @@ interface SharedProps<TRow> {
   getRowId: (row: TRow) => string;
   size: "small" | "medium";
   prefetch?: (row: TRow) => void;
+  rowEntries?: readonly VirtualTableRow<TRow>[];
+  paddingTop?: number;
+  paddingBottom?: number;
+  measureElement?: (element: Element | null) => void;
 }
 
 /**
@@ -103,9 +108,22 @@ export function DesktopTable<TRow>({
   getRowId,
   size,
   prefetch,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: getRowId(row),
+    }));
+  const columnSpan =
+    columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
 
   return (
     <Box sx={{ overflowX: "auto" }}>
@@ -163,12 +181,21 @@ export function DesktopTable<TRow>({
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row, index) => {
+          {paddingTop > 0 && (
+            <TableRow aria-hidden>
+              <TableCell
+                colSpan={columnSpan}
+                sx={{ height: paddingTop, p: 0 }}
+              />
+            </TableRow>
+          )}
+          {entries.map(({ row, index, key }) => {
             const id = getRowId(row);
             const selected = selection?.isSelected(id) ?? false;
             return (
               <TableRow
-                key={getRowId(row)}
+                key={key}
+                ref={measureElement}
                 hover
                 selected={selected}
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -207,6 +234,14 @@ export function DesktopTable<TRow>({
               </TableRow>
             );
           })}
+          {paddingBottom > 0 && (
+            <TableRow aria-hidden>
+              <TableCell
+                colSpan={columnSpan}
+                sx={{ height: paddingBottom, p: 0 }}
+              />
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </Box>
@@ -227,14 +262,31 @@ export function MobileCards<TRow>({
   rowActions,
   confirm,
   getRowId,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: getRowId(row),
+    }));
   return (
     <Stack spacing={1.5} role="list">
-      {rows.map((row, index) => {
+      {paddingTop > 0 && <Box aria-hidden sx={{ height: paddingTop }} />}
+      {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
         return (
-          <Card key={getRowId(row)} variant="outlined" role="listitem">
+          <Card
+            key={key}
+            ref={measureElement}
+            variant="outlined"
+            role="listitem"
+          >
             <CardContent>
               {selection && (
                 <Checkbox
@@ -273,6 +325,7 @@ export function MobileCards<TRow>({
           </Card>
         );
       })}
+      {paddingBottom > 0 && <Box aria-hidden sx={{ height: paddingBottom }} />}
     </Stack>
   );
 }
