@@ -67,3 +67,18 @@ export {
   type UseFrontendDataOptions,
   useTableUrlState,
 } from "@adapttable/core";
+
+/* Router / custom-source integration types (re-exported from core). */
+export {
+  type ActionConfirm,
+  createHistoryAdapter,
+  createMemoryAdapter,
+  deriveSortByOptions,
+  getHistoryAdapter,
+  type InfiniteQueryLike,
+  type PageSelector,
+  type SortableValue,
+  type UrlStateAdapter,
+  type UseTableUrlStateOptions,
+  type UseTableUrlStateResult,
+} from "@adapttable/core";

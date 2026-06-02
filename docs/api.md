@@ -49,7 +49,7 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ## Adapters
 
 `@adapttable/mantine`, `@adapttable/mui`, `@adapttable/chakra`,
-`@adapttable/unstyled` each export:
+`@adapttable/antd`, and `@adapttable/unstyled` each export:
 
 - `DataTable<TRow>` — the batteries-included component (props extend
   `BaseDataTableProps` plus kit-specific extras like `slots` / `classNames`).
