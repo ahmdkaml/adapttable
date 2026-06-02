@@ -8,6 +8,8 @@ import {
 } from "@adapttable/core";
 import { Button, type TableColumnsType, Tooltip } from "antd";
 
+import { isDangerColor } from "./colors";
+
 /** Logical (RTL-aware) text alignment for a column. */
 function logicalAlign(
   align: ColumnDef<unknown>["align"]
@@ -96,7 +98,7 @@ export function buildColumns<TRow>({
                 <Button
                   size="small"
                   type="text"
-                  danger={action.color === "danger"}
+                  danger={isDangerColor(action.color)}
                   disabled={action.isDisabled?.(row) ?? false}
                   aria-label={action.label}
                   onClick={(e) => {

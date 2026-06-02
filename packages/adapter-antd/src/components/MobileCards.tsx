@@ -8,6 +8,8 @@ import {
 } from "@adapttable/core";
 import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 
+import { isDangerColor } from "../colors";
+
 /** The mobile-card label for a column: explicit `mobileLabel`, else a string
  * `header`, else the column key. */
 function cardLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -34,7 +36,7 @@ function CardActions<TRow>({
           <Button
             key={action.key}
             size="small"
-            danger={action.color === "danger"}
+            danger={isDangerColor(action.color)}
             disabled={action.isDisabled?.(row) ?? false}
             aria-label={action.label}
             onClick={() => runRowAction(action, row, confirm, labels.cancel)}
@@ -61,6 +63,7 @@ export function MobileCards<TRow>({
   confirm,
   getRowId,
   prefetch,
+  tableLabel,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -68,11 +71,13 @@ export function MobileCards<TRow>({
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   prefetch?: (row: TRow) => void;
+  tableLabel?: string;
 }>) {
   const { labels, selection, columns } = table;
   return (
     <ul
       data-adapttable-part="cards"
+      aria-label={tableLabel}
       style={{
         listStyle: "none",
         margin: 0,
@@ -82,7 +87,7 @@ export function MobileCards<TRow>({
         gap: 8,
       }}
     >
-      {rows.map((row) => {
+      {rows.map((row, rowIndex) => {
         const id = getRowId(row);
         return (
           <li key={id}>
@@ -113,7 +118,7 @@ export function MobileCards<TRow>({
                 {columns.map((column) => (
                   <Descriptions.Item key={column.key} label={cardLabel(column)}>
                     {column.Cell ? (
-                      <column.Cell row={row} rowIndex={rows.indexOf(row)} />
+                      <column.Cell row={row} rowIndex={rowIndex} />
                     ) : (
                       column.accessor?.(row)
                     )}

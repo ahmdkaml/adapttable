@@ -9,6 +9,8 @@ import {
 import { Alert, Badge, Button, Drawer, Flex, Input, Select, Space, Tag } from "antd";
 import type { ReactNode } from "react";
 
+import { isDangerColor } from "../colors";
+
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
@@ -139,7 +141,8 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
               key={action.key}
               size="small"
               type="primary"
-              danger={action.color === "danger"}
+              danger={isDangerColor(action.color)}
+              icon={action.icon}
               title={action.disabledReason?.(ids)}
               disabled={action.disabledReason?.(ids) !== undefined || busy}
               onClick={() => runner.run(action, ids)}

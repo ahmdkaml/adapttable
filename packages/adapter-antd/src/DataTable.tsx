@@ -136,6 +136,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         prefetch={props.prefetch}
+        tableLabel={props.tableLabel}
       />
     );
   } else {
