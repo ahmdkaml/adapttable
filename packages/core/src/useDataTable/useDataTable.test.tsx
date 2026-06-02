@@ -117,6 +117,29 @@ describe("useDataTable", () => {
     expect(withBulk.result.current.selection?.selectedCount).toBe(2);
   });
 
+  it("keeps the id-based selection across page changes", () => {
+    const bulkActions: BulkAction[] = [
+      { key: "del", label: "Delete", onClick: vi.fn() },
+    ];
+    const { result } = mount("limit=1", { bulkActions });
+    act(() => result.current.selection?.toggle("a"));
+    expect(result.current.selection?.selectedCount).toBe(1);
+    act(() => result.current.source.setPage(2));
+    // Selection survives the page navigation (it is keyed by row id).
+    expect(result.current.selection?.isSelected("a")).toBe(true);
+  });
+
+  it("resets the selection when the search term changes", () => {
+    const bulkActions: BulkAction[] = [
+      { key: "del", label: "Delete", onClick: vi.fn() },
+    ];
+    const { result } = mount("", { bulkActions });
+    act(() => result.current.selection?.toggle("a"));
+    expect(result.current.selection?.selectedCount).toBe(1);
+    act(() => result.current.source.setSearch("zzz"));
+    expect(result.current.selection?.selectedCount).toBe(0);
+  });
+
   describe("prop-getters", () => {
     it("getTableProps carries role, dir and aria-label", () => {
       const { result } = mount("", { dir: "rtl", tableLabel: "People" });

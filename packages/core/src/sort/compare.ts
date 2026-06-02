@@ -32,10 +32,19 @@ export function sortRows<TRow>(
   direction: SortDirection
 ): TRow[] {
   const factor = direction === "asc" ? 1 : -1;
+  const isNullish = (v: SortableValue) => v === null || v === undefined;
   return [...rows]
-    .map((row, index) => ({ row, index }))
+    .map((row, index) => ({ row, index, value: getValue(row) }))
     .sort((x, y) => {
-      const cmp = compareValues(getValue(x.row), getValue(y.row));
+      // `null` / `undefined` always sort last, regardless of direction —
+      // they must not be flipped to the top by a descending sort.
+      const xNull = isNullish(x.value);
+      const yNull = isNullish(y.value);
+      if (xNull || yNull) {
+        if (xNull && yNull) return x.index - y.index;
+        return xNull ? 1 : -1;
+      }
+      const cmp = compareValues(x.value, y.value);
       return cmp === 0 ? x.index - y.index : cmp * factor;
     })
     .map((entry) => entry.row);

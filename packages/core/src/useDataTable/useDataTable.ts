@@ -175,7 +175,10 @@ export function useDataTable<TRow>(
 
   const hasBulk = (bulkActions?.length ?? 0) > 0;
   const getId = selectionGetId ?? rowKey;
-  const selectionResetKey = `${source.search}|${source.page}|${activeFilterCount}`;
+  // Selection is keyed by id, so it persists across page / sort / page-size
+  // changes (the rows still exist); it only resets when the result *set*
+  // changes — i.e. a new search term or a filter change.
+  const selectionResetKey = `${source.search}|${activeFilterCount}`;
   const selectionState = useSelection<TRow>({
     rows: source.rows,
     getId,
