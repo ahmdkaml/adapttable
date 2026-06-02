@@ -19,6 +19,10 @@ export default tseslint.config(
       "**/node_modules/**",
       "reference/**",
       "**/*.config.{js,cjs,mjs}",
+      // tsup writes a transient `tsup.config.bundled_<hash>.mjs` while
+      // building and deletes it; with lint running alongside build, eslint
+      // must never try to read these or it crashes (ENOENT, exit 2).
+      "**/*.bundled_*.mjs",
     ],
   },
   js.configs.recommended,

@@ -21,3 +21,6 @@ coverage/
 .DS_Store
 .env
 .env.*
+
+# tsup transient bundled config
+*.bundled_*.mjs
