@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, i18n + RTL, dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, responsive mobile cards, optional row/card virtualization, filter drawers with chips, i18n + RTL, dark mode. MIT.
 
 
 ---
@@ -9,8 +9,9 @@
 
 AdaptTable is a **headless, UI-agnostic React data table**. Pick the adapter
 for your design system and you get a fully styled, sortable, filterable,
-paginated table with URL-synced state, selection + bulk actions, RTL, and
-dark mode — in about five lines.
+paginated or infinite table with URL-synced state, selection + bulk actions,
+optional virtualization, automatic responsive mobile cards, RTL, and dark mode
+— in about five lines.
 
 ## Install
 
