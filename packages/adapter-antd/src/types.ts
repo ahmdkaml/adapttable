@@ -19,4 +19,8 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   size?: "small" | "middle" | "large";
   /** Render the table with cell borders. Defaults to `false`. */
   bordered?: boolean;
+  /** Vertical scroll height used when `virtualize` is true. Defaults to 480. */
+  virtualHeight?: number;
+  /** Horizontal scroll width used when `virtualize` is true. Defaults to 960. */
+  virtualWidth?: number;
 }

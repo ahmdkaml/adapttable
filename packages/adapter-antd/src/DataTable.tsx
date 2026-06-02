@@ -39,6 +39,16 @@ const SR_ONLY: CSSProperties = {
   border: 0,
 };
 
+function tableScrollConfig(
+  virtualize: boolean,
+  virtualWidth: number,
+  virtualHeight: number
+): TableProps<unknown>["scroll"] {
+  return virtualize
+    ? { x: virtualWidth, y: virtualHeight }
+    : { x: "max-content" };
+}
+
 /**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully wired antd `<Table>` — sorting, selection,
@@ -50,7 +60,15 @@ const SR_ONLY: CSSProperties = {
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, className, size = "middle", bordered = false } = props;
+  const {
+    slots,
+    className,
+    size = "middle",
+    bordered = false,
+    virtualize = false,
+    virtualHeight = 480,
+    virtualWidth = 960,
+  } = props;
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
@@ -169,6 +187,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowKey={getRowId}
         size={size}
         bordered={bordered}
+        virtual={virtualize}
         rowSelection={rowSelection}
         pagination={pagination}
         onChange={handleChange}
@@ -177,7 +196,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
             : undefined
         }
-        scroll={{ x: "max-content" }}
+        scroll={tableScrollConfig(virtualize, virtualWidth, virtualHeight)}
         locale={{ emptyText: labels.noData }}
       />
     );

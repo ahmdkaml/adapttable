@@ -407,6 +407,19 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getAllByLabelText("Rows per page").length).toBeGreaterThan(0);
   });
 
+  it("enables antd virtual scrolling when virtualize is true", () => {
+    const { container } = renderHarness({
+      override: {
+        virtualize: true,
+        virtualHeight: 240,
+        virtualWidth: 720,
+      },
+    });
+    expect(
+      container.querySelector(".ant-table-tbody-virtual")
+    ).toBeInTheDocument();
+  });
+
   it("loads more rows via the Load more button in infinite mode", () => {
     renderHarness({ mode: "infinite" }, "limit=1");
     expect(screen.queryByText("Bob")).toBeNull();
