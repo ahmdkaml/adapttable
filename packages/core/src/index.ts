@@ -58,11 +58,14 @@ export { defaultLabels, resolveLabels } from "./labels";
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 export {
+  DEFAULT_CARD_SIZE_PX,
   DEFAULT_LIMIT,
+  DEFAULT_ROW_SIZE_PX,
   MOBILE_BREAKPOINT_PX,
   PAGE_SIZE_OPTIONS,
   pageSizeOptions,
   SEARCH_DEBOUNCE_MS,
+  VIRTUAL_OVERSCAN,
 } from "./constants";
 
 /* ── URL state ─────────────────────────────────────────────────────── */
@@ -156,6 +159,14 @@ export {
   type SearchInputState,
   useSearchInput,
 } from "./useDataTable/useSearchInput";
+
+/* ── Virtualization ───────────────────────────────────────────────── */
+export {
+  type TableVirtualization,
+  useTableVirtualization,
+  type UseTableVirtualizationOptions,
+  type VirtualTableRow,
+} from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */
 export { mergeProps, type Props } from "./utils/mergeProps";

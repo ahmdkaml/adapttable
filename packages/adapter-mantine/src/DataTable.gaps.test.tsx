@@ -3,10 +3,15 @@
  * rows-per-page, sort-by select, custom toolbar, hideSearch) and the
  * mobile card layout (selection + row actions + confirm).
  */
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  createMemoryAdapter,
+  useFrontendData,
+  useTableVirtualization,
+  type VirtualTableRow,
+} from "@adapttable/core";
 import { MantineProvider } from "@mantine/core";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
@@ -23,13 +28,35 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
 ];
 
+vi.mock("@adapttable/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as object),
+    useTableVirtualization: vi.fn(),
+  };
+});
+
+beforeEach(() => {
+  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
+    enabled: false,
+    rows: rows.map((row, index) => ({
+      row,
+      index,
+      key: rowKey(row),
+    })),
+    paddingTop: 0,
+    paddingBottom: 0,
+  }));
+});
+
 function Harness(props: {
+  rows?: Row[];
   mode?: "paged" | "infinite";
   isMobile?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
 }) {
   const source = useFrontendData<Row>({
-    data: ROWS,
+    data: props.rows ?? ROWS,
     adapter: createMemoryAdapter(),
     columns,
     paginationMode: props.mode ?? "paged",
@@ -185,5 +212,70 @@ describe("<DataTable> gaps", () => {
     }
     render(<LoadingHarness />);
     expect(screen.getByText("loading custom")).toBeInTheDocument();
+  });
+
+  it("virtualizes desktop rows when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "b", name: "Bob" },
+          index: 1,
+          key: "b",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 48,
+      paddingBottom: 48,
+      measureElement: vi.fn(),
+    });
+
+    render(
+      <Harness
+        mode="infinite"
+        rows={[
+          { id: "a", name: "Alice" },
+          { id: "b", name: "Bob" },
+          { id: "c", name: "Charlie" },
+        ]}
+        override={{ virtualize: true, estimateRowSize: 48 }}
+      />
+    );
+
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByText("Charlie")).toBeNull();
+  });
+
+  it("virtualizes mobile cards when enabled", () => {
+    vi.mocked(useTableVirtualization).mockReturnValue({
+      enabled: true,
+      rows: [
+        {
+          row: { id: "c", name: "Charlie" },
+          index: 2,
+          key: "c",
+        } satisfies VirtualTableRow<Row>,
+      ],
+      paddingTop: 264,
+      paddingBottom: 0,
+      measureElement: vi.fn(),
+    });
+
+    render(
+      <Harness
+        mode="infinite"
+        isMobile
+        rows={[
+          { id: "a", name: "Alice" },
+          { id: "b", name: "Bob" },
+          { id: "c", name: "Charlie" },
+        ]}
+        override={{ virtualize: true, estimateCardSize: 132 }}
+      />
+    );
+
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.queryByText("Bob")).toBeNull();
+    expect(screen.getByText("Charlie")).toBeInTheDocument();
   });
 });

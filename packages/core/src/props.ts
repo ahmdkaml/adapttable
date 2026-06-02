@@ -50,6 +50,18 @@ export interface BaseDataTableProps<TRow> {
   /** Disable the built-in search box. */
   hideSearch?: boolean;
 
+  /* ── Virtualization ──────────────────────────────────────────────── */
+  /** Virtualize long infinite lists. Defaults to false. */
+  virtualize?: boolean;
+  /** Desktop row-size estimate in px. */
+  estimateRowSize?: number;
+  /** Mobile card-size estimate in px. */
+  estimateCardSize?: number;
+  /** Extra rows/cards rendered before and after the virtual window. */
+  virtualOverscan?: number;
+  /** Scroll margin for window virtualization, usually sticky chrome height. */
+  virtualScrollMargin?: number;
+
   /* ── Filters ─────────────────────────────────────────────────────── */
   /** Filter widgets rendered in the drawer / panel. */
   filters?: ReactNode;

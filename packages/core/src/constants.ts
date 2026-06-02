@@ -31,3 +31,12 @@ export function pageSizeOptions(
 
 /** Default debounce (ms) for the search input before it commits to state. */
 export const SEARCH_DEBOUNCE_MS = 300;
+
+/** Default row-height estimate (px) for virtualized desktop tables. */
+export const DEFAULT_ROW_SIZE_PX = 56;
+
+/** Default card-height estimate (px) for virtualized mobile layouts. */
+export const DEFAULT_CARD_SIZE_PX = 132;
+
+/** Default extra rows/cards rendered above and below the virtual window. */
+export const VIRTUAL_OVERSCAN = 8;

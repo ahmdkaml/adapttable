@@ -1,7 +1,13 @@
-import { useInfiniteScroll, useTableChrome } from "@adapttable/core";
+import {
+  DEFAULT_CARD_SIZE_PX,
+  DEFAULT_ROW_SIZE_PX,
+  useInfiniteScroll,
+  useTableChrome,
+  useTableVirtualization,
+} from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
@@ -35,6 +41,7 @@ const stickyToolbarStyle = {
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
+    rowKey,
     rowActions,
     searchPlaceholder,
     sortByOptions,
@@ -48,6 +55,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     classNames,
     toolbar: customToolbar,
     skeletonRows,
+    virtualize = false,
+    estimateRowSize,
+    estimateCardSize,
+    virtualOverscan,
+    virtualScrollMargin,
     animate = false,
   } = props;
 
@@ -55,11 +67,33 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, isMobile, confirm, getRowId } = chrome;
   const [drawerOpened, drawer] = useDisclosure(false);
 
+  const handleVirtualEndReached = useCallback(() => {
+    if (source.hasNextPage && !source.isFetchingNextPage) {
+      source.fetchNextPage();
+    }
+  }, [source]);
+
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey,
+    enabled:
+      virtualize &&
+      !chrome.isPaged &&
+      !source.error &&
+      (chrome.body === "desktop" || chrome.body === "mobile"),
+    estimateSize: isMobile
+      ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+      : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
+    overscan: virtualOverscan,
+    scrollMargin: virtualScrollMargin,
+    onEndReached: handleVirtualEndReached,
+  });
+
   useMountStagger(
     isMobile ? mobileBodyRef : desktopBodyRef,
-    [source.rows.length, isMobile],
+    [virtualization.rows.length, isMobile],
     { enabled: animate }
   );
 
@@ -92,6 +126,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
+        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+        paddingTop={virtualization.paddingTop}
+        paddingBottom={virtualization.paddingBottom}
+        measureElement={virtualization.measureElement}
       />
     );
   } else {
@@ -105,6 +143,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}
+        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+        paddingTop={virtualization.paddingTop}
+        paddingBottom={virtualization.paddingBottom}
+        measureElement={virtualization.measureElement}
       />
     );
   }

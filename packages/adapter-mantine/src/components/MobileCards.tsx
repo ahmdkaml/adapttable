@@ -4,6 +4,7 @@ import {
   type RowAction,
   runRowAction,
   type UseDataTableResult,
+  type VirtualTableRow,
 } from "@adapttable/core";
 import {
   ActionIcon,
@@ -26,6 +27,10 @@ export interface MobileCardsProps<TRow> {
   getRowId: (row: TRow) => string;
   bodyRef: RefObject<HTMLDivElement>;
   className?: string;
+  rowEntries?: readonly VirtualTableRow<TRow>[];
+  paddingTop?: number;
+  paddingBottom?: number;
+  measureElement?: (element: Element | null) => void;
 }
 
 function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -44,8 +49,19 @@ export function MobileCards<TRow>({
   getRowId,
   bodyRef,
   className,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: getRowId(row),
+    }));
 
   return (
     <Stack
@@ -54,11 +70,13 @@ export function MobileCards<TRow>({
       className={className}
       {...table.getTableProps({ role: "list" })}
     >
-      {rows.map((row, index) => {
+      {paddingTop > 0 && <div aria-hidden style={{ height: paddingTop }} />}
+      {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
         return (
           <Card
-            key={id}
+            key={key}
+            ref={measureElement}
             withBorder
             radius="md"
             padding="md"
@@ -134,6 +152,9 @@ export function MobileCards<TRow>({
           </Card>
         );
       })}
+      {paddingBottom > 0 && (
+        <div aria-hidden style={{ height: paddingBottom }} />
+      )}
     </Stack>
   );
 }

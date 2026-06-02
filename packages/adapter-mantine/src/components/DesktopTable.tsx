@@ -4,6 +4,7 @@ import {
   type RowAction,
   runRowAction,
   type UseDataTableResult,
+  type VirtualTableRow,
 } from "@adapttable/core";
 import {
   ActionIcon,
@@ -27,6 +28,10 @@ export interface DesktopTableProps<TRow> {
   getRowId: (row: TRow) => string;
   bodyRef: RefObject<HTMLTableSectionElement>;
   className?: string;
+  rowEntries?: readonly VirtualTableRow<TRow>[];
+  paddingTop?: number;
+  paddingBottom?: number;
+  measureElement?: (element: Element | null) => void;
 }
 
 function SortIcon({
@@ -148,9 +153,22 @@ export function DesktopTable<TRow>({
   getRowId,
   bodyRef,
   className,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  const entries =
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: table.getRowProps(row, index).key as string,
+    }));
+  const columnSpan =
+    columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
 
   return (
     <div style={{ overflowX: "auto", width: "100%" }}>
@@ -186,14 +204,24 @@ export function DesktopTable<TRow>({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody ref={bodyRef}>
-          {rows.map((row, index) => {
+          {paddingTop > 0 && (
+            <Table.Tr aria-hidden>
+              <Table.Td
+                colSpan={columnSpan}
+                style={{ height: paddingTop, padding: 0 }}
+              />
+            </Table.Tr>
+          )}
+          {entries.map(({ row, index, key }) => {
             const id = getRowId(row);
-            // `key` is handled explicitly — spreading it would warn.
-            const { key, ...rowProps } = table.getRowProps(row, index);
+            const rowProps = { ...table.getRowProps(row, index) };
+            // React handles `key` explicitly below; spreading it would warn.
+            delete rowProps.key;
             return (
               <Table.Tr
-                key={key as string}
+                key={key}
                 {...rowProps}
+                ref={measureElement}
                 data-stagger=""
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               >
@@ -228,6 +256,14 @@ export function DesktopTable<TRow>({
               </Table.Tr>
             );
           })}
+          {paddingBottom > 0 && (
+            <Table.Tr aria-hidden>
+              <Table.Td
+                colSpan={columnSpan}
+                style={{ height: paddingBottom, padding: 0 }}
+              />
+            </Table.Tr>
+          )}
         </Table.Tbody>
       </Table>
     </div>
