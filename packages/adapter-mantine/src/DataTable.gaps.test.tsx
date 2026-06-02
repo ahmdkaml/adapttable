@@ -105,6 +105,14 @@ describe("<DataTable> gaps", () => {
     expect(screen.queryByRole("searchbox")).toBeNull();
   });
 
+  it("applies a custom sticky toolbar offset", () => {
+    const { container } = render(<Harness override={{ stickyTop: 42 }} />);
+    const toolbar = container.querySelector<HTMLElement>(
+      '[style*="position: sticky"]'
+    );
+    expect(toolbar?.style.top).toBe("42px");
+  });
+
   it("mobile: renders selection checkboxes and row actions with confirm", () => {
     const onClick = vi.fn();
     const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());

@@ -87,4 +87,10 @@ export interface BaseDataTableProps<TRow> {
   confirm?: ConfirmHandler;
   /** Number of skeleton rows while loading. Defaults to the page size. */
   skeletonRows?: number;
+  /** Sticky toolbar top offset in px. Defaults to 0. */
+  stickyTop?: number;
+  /** Scroll back to the table when search/filter/page changes. Defaults to true. */
+  scrollToTopOnChange?: boolean;
+  /** Extra gap below sticky chrome when scrolling back. Defaults to 8. */
+  scrollTopGap?: number;
 }

@@ -2,11 +2,12 @@ import {
   DEFAULT_CARD_SIZE_PX,
   DEFAULT_ROW_SIZE_PX,
   useInfiniteScroll,
+  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useElementSize } from "@mantine/hooks";
 import { useCallback, useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
@@ -22,13 +23,13 @@ import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
-const stickyToolbarStyle = {
+const stickyToolbarStyle = (top: number) => ({
   position: "sticky" as const,
-  top: 0,
+  top,
   zIndex: 3,
   background: "var(--mantine-color-body)",
   paddingBottom: "var(--mantine-spacing-xs)",
-};
+});
 
 /**
  * Batteries-included Mantine data table. Drop in `columns`, a `source`
@@ -60,12 +61,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     estimateCardSize,
     virtualOverscan,
     virtualScrollMargin,
+    stickyTop = 0,
+    scrollToTopOnChange = true,
+    scrollTopGap,
     animate = false,
   } = props;
 
   const chrome = useTableChrome<TRow>(props);
   const { table, isMobile, confirm, getRowId } = chrome;
   const [drawerOpened, drawer] = useDisclosure(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
 
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
@@ -89,6 +95,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     overscan: virtualOverscan,
     scrollMargin: virtualScrollMargin,
     onEndReached: handleVirtualEndReached,
+  });
+  useScrollToTableTop({
+    ref: rootRef,
+    deps: [
+      source.search,
+      source.sortBy ?? "",
+      source.sortDir ?? "",
+      source.page,
+      chrome.activeFilterCount,
+    ],
+    enabled: scrollToTopOnChange,
+    offset: stickyTop,
+    gap: scrollTopGap,
   });
 
   useMountStagger(
@@ -147,14 +166,26 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
         measureElement={virtualization.measureElement}
+        stickyHeaderOffset={stickyTop + toolbarHeight}
       />
     );
   }
 
   return (
-    <Paper p="xs" radius="md" withBorder dir={dir} className={classNames?.root}>
+    <Paper
+      ref={rootRef}
+      p="xs"
+      radius="md"
+      withBorder
+      dir={dir}
+      className={classNames?.root}
+    >
       <Stack gap="xs">
-        <Box style={stickyToolbarStyle} className={classNames?.toolbar}>
+        <Box
+          ref={toolbarRef}
+          style={stickyToolbarStyle(stickyTop)}
+          className={classNames?.toolbar}
+        >
           <Stack gap="xs">
             <Toolbar
               table={table}

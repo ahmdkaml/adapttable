@@ -32,6 +32,7 @@ export interface DesktopTableProps<TRow> {
   paddingTop?: number;
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
+  stickyHeaderOffset?: number;
 }
 
 function SortIcon({
@@ -157,6 +158,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  stickyHeaderOffset = 0,
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -179,6 +181,7 @@ export function DesktopTable<TRow>({
         verticalSpacing="sm"
         horizontalSpacing="md"
         stickyHeader
+        stickyHeaderOffset={stickyHeaderOffset}
         miw={480}
       >
         <Table.Thead>

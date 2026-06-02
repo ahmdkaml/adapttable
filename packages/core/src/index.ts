@@ -148,6 +148,10 @@ export {
   REDUCED_MOTION_QUERY,
   usePrefersReducedMotion,
 } from "./hooks/usePrefersReducedMotion";
+export {
+  useScrollToTableTop,
+  type UseScrollToTableTopOptions,
+} from "./hooks/useScrollToTableTop";
 
 /* ── Orchestrator ──────────────────────────────────────────────────── */
 export {
