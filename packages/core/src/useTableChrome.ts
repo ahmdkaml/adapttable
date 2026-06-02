@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
 import {
@@ -107,6 +107,7 @@ export function useTableChrome<TRow>(
     labels,
     dir,
     isMobile: isMobileProp,
+    onRowsChange,
     bulkActions,
     selectionGetId,
     filterLabels,
@@ -131,6 +132,10 @@ export function useTableChrome<TRow>(
     selectionGetId,
     filterLabels,
   });
+
+  useEffect(() => {
+    onRowsChange?.(table.rows);
+  }, [onRowsChange, table.rows]);
 
   const mergedChips = useMemo<readonly ActiveFilterChip[]>(
     () => mergeFilterChips(table.filterChips, extraChips),

@@ -47,6 +47,8 @@ export interface BaseDataTableProps<TRow> {
   isMobile?: boolean;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
+  /** Called whenever the materialized source rows change. */
+  onRowsChange?: (rows: readonly TRow[]) => void;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
 

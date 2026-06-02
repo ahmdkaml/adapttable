@@ -25,6 +25,7 @@ function mount(
     extraChips?: { key: string; label: string; onRemove: () => void }[];
     filterLabels?: Record<string, (v: string) => string>;
     activeFilterCount?: number;
+    onRowsChange?: (rows: readonly Row[]) => void;
   } = {}
 ) {
   const adapter = createMemoryAdapter(initial);
@@ -44,6 +45,7 @@ function mount(
       extraChips: opts.extraChips,
       filterLabels: opts.filterLabels,
       activeFilterCount: opts.activeFilterCount,
+      onRowsChange: opts.onRowsChange,
     });
   });
 }
@@ -105,5 +107,14 @@ describe("useTableChrome", () => {
     expect(result.current.table.rows).toHaveLength(2);
     expect(result.current.getRowId(ROWS[0]!)).toBe("a");
     act(() => result.current.table.toggleSort("name"));
+  });
+
+  it("notifies callers when the materialized rows change", () => {
+    const onRowsChange = vi.fn();
+    const { rerender } = mount("", { onRowsChange });
+    expect(onRowsChange).toHaveBeenLastCalledWith(ROWS);
+
+    rerender();
+    expect(onRowsChange).toHaveBeenCalledTimes(1);
   });
 });
