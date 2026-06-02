@@ -90,6 +90,20 @@ describe("useFrontendData", () => {
     expect(result.current.rows.map((r) => r.id)).toEqual(["c", "b", "a"]);
   });
 
+  it("applies filterFn against the extra bag, after search", () => {
+    const { result } = render("f_only=Bob", {
+      filterFn: (row, extra) => extra.only == null || row.name === extra.only,
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["b"]);
+  });
+
+  it("filterFn with an empty extra bag keeps every row", () => {
+    const { result } = render("", {
+      filterFn: (row, extra) => extra.only == null || row.name === extra.only,
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+  });
+
   it("paged mode slices to the active page", () => {
     const { result } = render("page=2&limit=2");
     expect(result.current.rows.map((r) => r.id)).toEqual(["c"]);

@@ -24,3 +24,7 @@ coverage/
 
 # tsup transient bundled config
 *.bundled_*.mjs
+
+# Playwright MCP scratch output (screenshots, snapshots) — never committed.
+.playwright-mcp/
+pg-*.png

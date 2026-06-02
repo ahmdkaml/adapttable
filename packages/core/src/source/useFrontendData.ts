@@ -2,7 +2,12 @@ import { useCallback, useMemo } from "react";
 
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import { sortRows } from "../sort/compare";
-import type { ColumnDef, PaginationMode, SortableValue } from "../types";
+import type {
+  ColumnDef,
+  ExtraFilters,
+  PaginationMode,
+  SortableValue,
+} from "../types";
 import {
   useTableUrlState,
   type UseTableUrlStateOptions,
@@ -36,6 +41,12 @@ export interface UseFrontendDataOptions<TRow> extends Pick<
   getSortValue?: (row: TRow, columnKey: string) => SortableValue;
   /** Columns — read for per-column `sortValue` when sorting. */
   columns?: readonly ColumnDef<TRow>[];
+  /**
+   * Client-side filter predicate applied after search. Receives the active
+   * `extra` filter bag (driven by the filter drawer's `setExtra` calls), so a
+   * filter UI filters the rows with no extra wiring. Omit for no filtering.
+   */
+  filterFn?: (row: TRow, extra: ExtraFilters) => boolean;
   /** Pagination mode. Defaults to `"auto"` (mobile → infinite). */
   paginationMode?: PaginationMode;
   /** Forwarded error to display (e.g. from the query that produced `data`). */
@@ -84,6 +95,7 @@ export function useFrontendData<TRow>(
     getSearchText = defaultSearchText,
     getSortValue,
     columns,
+    filterFn,
     paginationMode = "auto",
     error = null,
     refetch,
@@ -103,11 +115,13 @@ export function useFrontendData<TRow>(
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return data;
-    return data.filter((row) =>
-      getSearchText(row).toLowerCase().includes(term)
-    );
-  }, [data, search, getSearchText]);
+    const bySearch = term
+      ? data.filter((row) => getSearchText(row).toLowerCase().includes(term))
+      : data;
+    return filterFn
+      ? bySearch.filter((row) => filterFn(row, state.extra))
+      : bySearch;
+  }, [data, search, getSearchText, filterFn, state.extra]);
 
   const sorted = useMemo(() => {
     if (!sortBy || !sortDir) return filtered;
