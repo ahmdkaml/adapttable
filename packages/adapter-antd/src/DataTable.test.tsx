@@ -73,9 +73,13 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("No data")).toBeInTheDocument();
   });
 
-  it("renders the loading state", () => {
-    const { container } = renderHarness({ rows: [], isLoading: true });
-    expect(container.querySelector(".ant-spin")).toBeInTheDocument();
+  it("renders the loading skeleton honoring skeletonRows", () => {
+    const { container } = renderHarness({
+      rows: [],
+      isLoading: true,
+      override: { skeletonRows: 3 },
+    });
+    expect(container.querySelector(".ant-skeleton")).toBeInTheDocument();
   });
 
   it("surfaces an error and retries", () => {

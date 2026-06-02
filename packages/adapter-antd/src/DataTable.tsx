@@ -3,8 +3,16 @@ import {
   useInfiniteScroll,
   useTableChrome,
 } from "@adapttable/core";
-import { Button, Checkbox, Flex, Space, Table, type TableProps } from "antd";
-import { useState } from "react";
+import {
+  Button,
+  Checkbox,
+  Flex,
+  Skeleton,
+  Space,
+  Table,
+  type TableProps,
+} from "antd";
+import { type ReactNode, useState } from "react";
 
 import { buildColumns } from "./columns";
 import {
@@ -82,8 +90,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       }
     : undefined;
 
-  const showCustomSkeleton = c.body === "skeleton" && Boolean(slots?.skeleton);
-
   const pagination: TableProps<TRow>["pagination"] = c.isPaged
     ? {
         current: table.pagination.safePage,
@@ -99,6 +105,45 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         },
       }
     : false;
+
+  let bodyRegion: ReactNode;
+  if (source.error) {
+    bodyRegion = (
+      <ErrorState
+        error={source.error}
+        labels={labels}
+        onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+      />
+    );
+  } else if (c.body === "skeleton") {
+    bodyRegion = slots?.skeleton ?? (
+      <Skeleton
+        active
+        title={false}
+        paragraph={{ rows: props.skeletonRows ?? 5 }}
+      />
+    );
+  } else {
+    bodyRegion = (
+      <Table<TRow>
+        aria-label={props.tableLabel}
+        columns={columns}
+        dataSource={source.rows}
+        rowKey={getRowId}
+        size={size}
+        bordered={bordered}
+        rowSelection={rowSelection}
+        pagination={pagination}
+        onChange={handleChange}
+        onRow={
+          props.prefetch
+            ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
+            : undefined
+        }
+        locale={{ emptyText: slots?.empty ?? labels.noData }}
+      />
+    );
+  }
 
   return (
     <div dir={props.dir} className={className}>
@@ -127,36 +172,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
           />
         )}
-        {source.error && (
-          <ErrorState
-            error={source.error}
-            labels={labels}
-            onRetry={source.refetch ? () => void source.refetch?.() : undefined}
-          />
-        )}
-        {!source.error && showCustomSkeleton && slots?.skeleton}
-        {!source.error && !showCustomSkeleton && (
-          <Table<TRow>
-            aria-label={props.tableLabel}
-            columns={columns}
-            dataSource={source.rows}
-            rowKey={getRowId}
-            size={size}
-            bordered={bordered}
-            loading={c.body === "skeleton"}
-            rowSelection={rowSelection}
-            pagination={pagination}
-            onChange={handleChange}
-            onRow={
-              props.prefetch
-                ? (record) => ({
-                    onMouseEnter: () => props.prefetch?.(record),
-                  })
-                : undefined
-            }
-            locale={{ emptyText: slots?.empty ?? labels.noData }}
-          />
-        )}
+        {bodyRegion}
         {!c.isPaged && !source.error && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center">
             <Button
