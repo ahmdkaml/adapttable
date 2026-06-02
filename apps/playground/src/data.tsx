@@ -39,12 +39,20 @@ interface Strings {
   email: string;
   role: string;
   team: string;
+  status: string;
+  startDate: string;
+  dueDate: string;
+  budget: string;
+  utilization: string;
   allocations: string;
   allocationFilter: string;
+  budgetFilter: string;
   countOperator: string;
   countValue: string;
   countFrom: string;
   countTo: string;
+  dateFrom: string;
+  dateTo: string;
   edit: string;
   remove: string;
   confirmMessage: (name: string) => string;
@@ -58,12 +66,20 @@ const STRINGS: Record<Locale, Strings> = {
     email: "Email",
     role: "Role",
     team: "Team",
+    status: "Status",
+    startDate: "Start",
+    dueDate: "Due",
+    budget: "Budget",
+    utilization: "Utilization",
     allocations: "Allocations",
     allocationFilter: "Allocation count",
+    budgetFilter: "Budget",
     countOperator: "Operator",
     countValue: "Count",
     countFrom: "From",
     countTo: "To",
+    dateFrom: "Start from",
+    dateTo: "Start to",
     edit: "Edit",
     remove: "Delete",
     confirmTitle: "Delete person?",
@@ -75,12 +91,20 @@ const STRINGS: Record<Locale, Strings> = {
     email: "البريد الإلكتروني",
     role: "الدور",
     team: "الفريق",
+    status: "الحالة",
+    startDate: "البداية",
+    dueDate: "الاستحقاق",
+    budget: "الميزانية",
+    utilization: "الاستخدام",
     allocations: "التخصيصات",
     allocationFilter: "عدد التخصيصات",
+    budgetFilter: "الميزانية",
     countOperator: "المعامل",
     countValue: "العدد",
     countFrom: "من",
     countTo: "إلى",
+    dateFrom: "البداية من",
+    dateTo: "البداية إلى",
     edit: "تعديل",
     remove: "حذف",
     confirmTitle: "حذف الشخص؟",
@@ -103,6 +127,34 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
   { key: "role", accessor: (r) => r.role, sortable: true, header: "" },
   { key: "team", accessor: (r) => r.team, sortable: true, header: "" },
   {
+    key: "status",
+    accessor: (r) => personStatus(r),
+    sortValue: (r) => personStatus(r),
+    sortable: true,
+    header: "",
+  },
+  {
+    key: "startDate",
+    accessor: (r) => formatDate(startDate(r)),
+    sortValue: (r) => startDate(r).getTime(),
+    sortable: true,
+    header: "",
+  },
+  {
+    key: "budget",
+    accessor: (r) => formatMoney(budget(r)),
+    sortValue: (r) => budget(r),
+    sortable: true,
+    header: "",
+  },
+  {
+    key: "utilization",
+    accessor: (r) => formatPercent(utilization(r)),
+    sortValue: (r) => utilization(r),
+    sortable: true,
+    header: "",
+  },
+  {
     key: "allocations",
     accessor: (r) => allocationCount(r),
     sortValue: (r) => allocationCount(r),
@@ -118,6 +170,51 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
     { key: "email", header: s.email, accessor: (r) => r.email },
     { key: "role", header: s.role, accessor: (r) => r.role, sortable: true },
     { key: "team", header: s.team, accessor: (r) => r.team, sortable: true },
+    {
+      key: "status",
+      header: s.status,
+      accessor: (r) => personStatus(r),
+      sortValue: (r) => personStatus(r),
+      sortable: true,
+      mobileLabel: s.status,
+    },
+    {
+      key: "startDate",
+      header: s.startDate,
+      accessor: (r) => formatDate(startDate(r), locale),
+      sortValue: (r) => startDate(r).getTime(),
+      sortable: true,
+      mobileLabel: s.startDate,
+    },
+    {
+      key: "dueDate",
+      header: s.dueDate,
+      accessor: (r) => formatDate(dueDate(r), locale),
+      sortValue: (r) => dueDate(r).getTime(),
+      sortable: true,
+      hideOnMobile: true,
+      mobileLabel: s.dueDate,
+    },
+    {
+      key: "budget",
+      header: s.budget,
+      accessor: (r) => formatMoney(budget(r), locale),
+      sortValue: (r) => budget(r),
+      sortable: true,
+      align: "end",
+      hideOnMobile: true,
+      mobileLabel: s.budget,
+    },
+    {
+      key: "utilization",
+      header: s.utilization,
+      accessor: (r) => formatPercent(utilization(r), locale),
+      sortValue: (r) => utilization(r),
+      sortable: true,
+      align: "end",
+      hideOnMobile: true,
+      mobileLabel: s.utilization,
+    },
     {
       key: "allocations",
       header: s.allocations,
@@ -159,13 +256,19 @@ export function makeActions(locale: Locale): RowAction<Person>[] {
 /* ── Team filter (used by every adapter demo + the mock API) ────────── */
 
 export const TEAMS = ["Core", "Platform", "Data", "Web", "Mobile"];
+export const STATUSES = ["Active", "Planned", "Blocked", "Archived"] as const;
+export type DemoStatus = (typeof STATUSES)[number];
 const ALLOCATION_BUCKET = "allocations";
+const BUDGET_BUCKET = "budget";
 export const COUNT_NUMBER_EXTRA_KEYS = [
   "allocationsValue",
   "allocationsFrom",
   "allocationsTo",
+  "budgetValue",
+  "budgetFrom",
+  "budgetTo",
 ] as const;
-const COUNT_OPTIONS = COUNT_OPERATORS.map((op) => ({
+export const COUNT_OPTIONS = COUNT_OPERATORS.map((op) => ({
   op,
   label: COUNT_OPERATOR_SYMBOL[op],
 }));
@@ -174,12 +277,63 @@ export function allocationCount(row: Person): number {
   return ((Number(row.id) * 3) % 9) + 1;
 }
 
+export function budget(row: Person): number {
+  return 18_000 + ((Number(row.id) * 7300) % 95_000);
+}
+
+export function utilization(row: Person): number {
+  return 45 + ((Number(row.id) * 11) % 55);
+}
+
+export function startDate(row: Person): Date {
+  const day = 1 + ((Number(row.id) * 7) % 26);
+  const month = (Number(row.id) * 2) % 12;
+  return new Date(Date.UTC(2026, month, day));
+}
+
+export function dueDate(row: Person): Date {
+  const date = startDate(row);
+  return new Date(date.getTime() + 1000 * 60 * 60 * 24 * 45);
+}
+
+export function personStatus(row: Person): DemoStatus {
+  return STATUSES[Number(row.id) % STATUSES.length];
+}
+
+export function formatDate(date: Date, locale: Locale = "en"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+export function formatMoney(value: number, locale: Locale = "en"): string {
+  return new Intl.NumberFormat(locale === "ar" ? "ar" : "en", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatPercent(value: number, locale: Locale = "en"): string {
+  return new Intl.NumberFormat(locale === "ar" ? "ar" : "en", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(value / 100);
+}
+
 /** Localized chip label resolvers for the `team` filter. */
 export function makeFilterLabels(
   locale: Locale
 ): Record<string, (value: string) => string> {
   const s = STRINGS[locale];
-  return { team: (value) => `${s.team}: ${value}` };
+  return {
+    team: (value) => `${s.team}: ${value}`,
+    status: (value) => `${s.status}: ${value}`,
+    startFrom: (value) => `${s.dateFrom}: ${value}`,
+    startTo: (value) => `${s.dateTo}: ${value}`,
+  };
 }
 
 /** Normalise the `team` extra value (string | string[] | …) to a string[]. */
@@ -187,6 +341,12 @@ export function selectedTeams(value: FilterValue): string[] {
   if (Array.isArray(value)) return value;
   if (value != null) return [String(value)];
   return [];
+}
+
+export function selectedStatuses(value: FilterValue): string[] {
+  return selectedTeams(value).filter((status) =>
+    STATUSES.includes(status as DemoStatus)
+  );
 }
 
 /** Client-side predicate; the mock API applies the same logic server-side. */
@@ -216,23 +376,39 @@ function compareCount(count: number, state: CountFilterState): boolean {
   }
 }
 
+function matchesDateRange(
+  date: Date,
+  extra: Readonly<Record<string, FilterValue>>
+): boolean {
+  const from = extra.startFrom ? new Date(String(extra.startFrom)) : undefined;
+  const to = extra.startTo ? new Date(String(extra.startTo)) : undefined;
+  if (from && date < from) return false;
+  if (to && date > to) return false;
+  return true;
+}
+
 export function matchesDemoFilters(
   row: Person,
   extra: Readonly<Record<string, FilterValue>>
 ): boolean {
+  const selectedStatus = selectedStatuses(extra.status);
   return (
     matchesTeam(row, extra) &&
+    (selectedStatus.length === 0 ||
+      selectedStatus.includes(personStatus(row))) &&
+    matchesDateRange(startDate(row), extra) &&
     compareCount(
       allocationCount(row),
       countFilterStateFromExtra(ALLOCATION_BUCKET, extra)
-    )
+    ) &&
+    compareCount(budget(row), countFilterStateFromExtra(BUDGET_BUCKET, extra))
   );
 }
 
 export function sanitizeDemoParams<P extends Record<string, unknown>>(
   params: P
 ): P {
-  return sanitizeCountFilterParams(params, [ALLOCATION_BUCKET]);
+  return sanitizeCountFilterParams(params, [ALLOCATION_BUCKET, BUDGET_BUCKET]);
 }
 
 /** Flip a team in/out of the selection (for kits without a checkbox group). */
@@ -247,26 +423,68 @@ export function demoFilterChips(
   locale: Locale
 ): ActiveFilterChip[] {
   const s = STRINGS[locale];
-  const label = countFilterChipLabel(
+  const allocationLabel = countFilterChipLabel(
     s.allocationFilter,
     countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra)
   );
-  return label
-    ? [
-        {
+  const budgetLabel = countFilterChipLabel(
+    s.budgetFilter,
+    countFilterStateFromExtra(BUDGET_BUCKET, source.extra)
+  );
+  return [
+    allocationLabel
+      ? {
           key: "count:allocations",
-          label,
+          label: allocationLabel,
           onRemove: () =>
             source.setExtras(clearCountFilterExtra(ALLOCATION_BUCKET)),
-        },
-      ]
-    : [];
+        }
+      : undefined,
+    budgetLabel
+      ? {
+          key: "count:budget",
+          label: budgetLabel,
+          onRemove: () =>
+            source.setExtras(clearCountFilterExtra(BUDGET_BUCKET)),
+        }
+      : undefined,
+  ].filter((chip): chip is ActiveFilterChip => chip !== undefined);
+}
+
+export function allocationFilterState(
+  source: TableSource<Person>
+): CountFilterState {
+  return countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra);
+}
+
+export function budgetFilterState(
+  source: TableSource<Person>
+): CountFilterState {
+  return countFilterStateFromExtra(BUDGET_BUCKET, source.extra);
+}
+
+export function setAllocationFilter(
+  source: TableSource<Person>,
+  next: CountFilterState
+): void {
+  source.setExtras(countFilterExtra(ALLOCATION_BUCKET, next));
+}
+
+export function setBudgetFilter(
+  source: TableSource<Person>,
+  next: CountFilterState
+): void {
+  source.setExtras(countFilterExtra(BUDGET_BUCKET, next));
 }
 
 export function clearDemoFilters(source: TableSource<Person>): void {
   source.setExtras({
     team: undefined,
+    status: undefined,
+    startFrom: undefined,
+    startTo: undefined,
     ...clearCountFilterExtra(ALLOCATION_BUCKET),
+    ...clearCountFilterExtra(BUDGET_BUCKET),
   });
 }
 
@@ -279,9 +497,13 @@ export function DemoFilters({
 }>) {
   const s = STRINGS[locale];
   const selected = selectedTeams(source.extra.team);
+  const statuses = selectedStatuses(source.extra.status);
   const countState = countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra);
+  const budgetState = countFilterStateFromExtra(BUDGET_BUCKET, source.extra);
   const setCount = (next: CountFilterState) =>
     source.setExtras(countFilterExtra(ALLOCATION_BUCKET, next));
+  const setBudget = (next: CountFilterState) =>
+    source.setExtras(countFilterExtra(BUDGET_BUCKET, next));
   return (
     <div className="demo-filter-panel">
       <fieldset>
@@ -299,6 +521,55 @@ export function DemoFilters({
               <span>{team}</span>
             </label>
           ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{s.status}</legend>
+        <div className="demo-filter-options">
+          {STATUSES.map((status) => (
+            <label key={status}>
+              <input
+                type="checkbox"
+                checked={statuses.includes(status)}
+                onChange={() =>
+                  source.setExtra(
+                    "status",
+                    statuses.includes(status)
+                      ? statuses.filter((item) => item !== status)
+                      : [...statuses, status]
+                  )
+                }
+              />
+              <span>{status}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{s.startDate}</legend>
+        <div className="demo-count-filter">
+          <label>
+            <span>{s.dateFrom}</span>
+            <input
+              type="date"
+              value={String(source.extra.startFrom ?? "")}
+              onChange={(event) =>
+                source.setExtra("startFrom", event.currentTarget.value)
+              }
+            />
+          </label>
+          <label>
+            <span>{s.dateTo}</span>
+            <input
+              type="date"
+              value={String(source.extra.startTo ?? "")}
+              onChange={(event) =>
+                source.setExtra("startTo", event.currentTarget.value)
+              }
+            />
+          </label>
         </div>
       </fieldset>
 
@@ -383,6 +654,52 @@ export function DemoFilters({
               />
             </label>
           )}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{s.budgetFilter}</legend>
+        <div className="demo-count-filter">
+          <label>
+            <span>{s.countOperator}</span>
+            <select
+              value={budgetState.op ?? ""}
+              onChange={(event) => {
+                const op = (event.currentTarget.value || undefined) as
+                  | CountOperator
+                  | undefined;
+                setBudget({
+                  op,
+                  value: op && op !== "between" ? budgetState.value : undefined,
+                  from: op === "between" ? budgetState.from : undefined,
+                  to: op === "between" ? budgetState.to : undefined,
+                });
+              }}
+            >
+              <option value="">-</option>
+              {COUNT_OPTIONS.map((option) => (
+                <option key={option.op} value={option.op}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>{s.countValue}</span>
+            <input
+              type="number"
+              min={0}
+              value={budgetState.value ?? ""}
+              onChange={(event) =>
+                setBudget({
+                  ...budgetState,
+                  value: event.currentTarget.value
+                    ? Number(event.currentTarget.value)
+                    : undefined,
+                })
+              }
+            />
+          </label>
         </div>
       </fieldset>
     </div>

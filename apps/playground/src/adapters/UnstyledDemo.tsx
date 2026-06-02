@@ -6,25 +6,26 @@ import { UnstyledLike } from "./UnstyledLike";
 
 // Plain Tailwind utilities — the generic "bring your own classes" look.
 const TAILWIND: DataTableClassNames = {
-  root: "rounded-lg border border-zinc-200 p-3",
-  toolbar: "flex items-center gap-2 mb-2 flex-wrap",
-  search: "rounded border border-zinc-300 px-2 py-1 text-sm",
-  sortSelect: "rounded border border-zinc-300 px-2 py-1 text-sm",
-  filtersButton:
-    "rounded border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-50",
-  filtersPanel:
-    "mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 shadow-xl ring-1 ring-amber-100",
-  table: "w-full text-sm",
-  headerCell: "text-start font-medium text-zinc-500 px-3 py-2",
-  sortButton: "inline-flex items-center gap-1",
-  row: "border-t border-zinc-100 hover:bg-zinc-50 data-[selected]:bg-blue-50",
-  cell: "px-3 py-2",
-  actionButton:
-    "inline-flex items-center rounded p-1 text-zinc-600 hover:bg-zinc-100 data-[color=red]:text-red-600",
-  footer: "flex items-center gap-2 mt-2 text-sm flex-wrap",
-  pageButton: "rounded border border-zinc-300 px-2 py-1 disabled:opacity-40",
-  chips: "flex items-center gap-2 flex-wrap mb-2",
-  chip: "inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs",
+  root: "ut-root",
+  toolbar: "ut-toolbar",
+  search: "ut-search",
+  sortSelect: "ut-select",
+  filtersButton: "ut-filter-button",
+  filtersPanel: "ut-filter-panel",
+  table: "ut-table",
+  headerCell: "ut-header-cell",
+  sortButton: "ut-sort-button",
+  row: "ut-row",
+  cell: "ut-cell",
+  actionButton: "ut-action-button",
+  footer: "ut-footer",
+  pageButton: "ut-page-button",
+  chips: "ut-chips",
+  chip: "ut-chip",
+  card: "ut-card",
+  cardRow: "ut-card-row",
+  cardLabel: "ut-card-label",
+  cardValue: "ut-card-value",
 };
 
 export function UnstyledDemo({
