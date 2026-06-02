@@ -1,6 +1,8 @@
 import type {
   ActiveFilterChip,
   ColumnDef,
+  ConfirmHandler,
+  ConfirmRequest,
   CountFilterState,
   CountOperator,
   FilterValue,
@@ -21,6 +23,14 @@ import {
 import { EditIcon, TrashIcon } from "./icons";
 import people from "./people.json";
 
+export const DEMO_NOTICE_EVENT = "adapttable-demo-notice";
+export const DEMO_CONFIRM_EVENT = "adapttable-demo-confirm";
+
+export interface DemoNotice {
+  message: string;
+  tone?: "info" | "danger";
+}
+
 export interface Person {
   id: string;
   name: string;
@@ -36,6 +46,7 @@ export type Locale = "en" | "ar";
 interface Strings {
   search: string;
   name: string;
+  person: string;
   email: string;
   role: string;
   team: string;
@@ -45,6 +56,8 @@ interface Strings {
   budget: string;
   utilization: string;
   allocations: string;
+  timeline: string;
+  load: string;
   allocationFilter: string;
   budgetFilter: string;
   countOperator: string;
@@ -63,6 +76,7 @@ const STRINGS: Record<Locale, Strings> = {
   en: {
     search: "Search people…",
     name: "Name",
+    person: "Person",
     email: "Email",
     role: "Role",
     team: "Team",
@@ -72,6 +86,8 @@ const STRINGS: Record<Locale, Strings> = {
     budget: "Budget",
     utilization: "Utilization",
     allocations: "Allocations",
+    timeline: "Timeline",
+    load: "Load",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
     countOperator: "Operator",
@@ -88,6 +104,7 @@ const STRINGS: Record<Locale, Strings> = {
   ar: {
     search: "ابحث عن الأشخاص…",
     name: "الاسم",
+    person: "الشخص",
     email: "البريد الإلكتروني",
     role: "الدور",
     team: "الفريق",
@@ -97,6 +114,8 @@ const STRINGS: Record<Locale, Strings> = {
     budget: "الميزانية",
     utilization: "الاستخدام",
     allocations: "التخصيصات",
+    timeline: "الجدول الزمني",
+    load: "الحمل",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
     countOperator: "المعامل",
@@ -116,16 +135,31 @@ export function strings(locale: Locale): Strings {
   return STRINGS[locale];
 }
 
+export function notifyDemo(notice: DemoNotice): void {
+  window.dispatchEvent(
+    new CustomEvent<DemoNotice>(DEMO_NOTICE_EVENT, { detail: notice })
+  );
+}
+
+export const demoConfirm: ConfirmHandler = (request: ConfirmRequest) => {
+  window.dispatchEvent(
+    new CustomEvent<ConfirmRequest>(DEMO_CONFIRM_EVENT, { detail: request })
+  );
+};
+
 /**
  * Stable columns (keys + accessors) for the data hooks — locale-independent,
  * so sorting/keys never change with the language. The display columns
  * ({@link makeColumns}) add localized headers on top.
  */
 export const BASE_COLUMNS: ColumnDef<Person>[] = [
-  { key: "name", accessor: (r) => r.name, sortable: true, header: "" },
-  { key: "email", accessor: (r) => r.email, header: "" },
-  { key: "role", accessor: (r) => r.role, sortable: true, header: "" },
-  { key: "team", accessor: (r) => r.team, sortable: true, header: "" },
+  {
+    key: "person",
+    accessor: (r) => r.name,
+    sortValue: (r) => r.name,
+    sortable: true,
+    header: "",
+  },
   {
     key: "status",
     accessor: (r) => personStatus(r),
@@ -134,7 +168,7 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     header: "",
   },
   {
-    key: "startDate",
+    key: "timeline",
     accessor: (r) => formatDate(startDate(r)),
     sortValue: (r) => startDate(r).getTime(),
     sortable: true,
@@ -148,16 +182,9 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     header: "",
   },
   {
-    key: "utilization",
+    key: "load",
     accessor: (r) => formatPercent(utilization(r)),
     sortValue: (r) => utilization(r),
-    sortable: true,
-    header: "",
-  },
-  {
-    key: "allocations",
-    accessor: (r) => allocationCount(r),
-    sortValue: (r) => allocationCount(r),
     sortable: true,
     header: "",
   },
@@ -166,34 +193,47 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
 export function makeColumns(locale: Locale): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   return [
-    { key: "name", header: s.name, accessor: (r) => r.name, sortable: true },
-    { key: "email", header: s.email, accessor: (r) => r.email },
-    { key: "role", header: s.role, accessor: (r) => r.role, sortable: true },
-    { key: "team", header: s.team, accessor: (r) => r.team, sortable: true },
+    {
+      key: "person",
+      header: s.person,
+      sortable: true,
+      sortValue: (r) => r.name,
+      width: "34%",
+      accessor: (row) => (
+        <span className="demo-person-cell">
+          <strong>{row.name}</strong>
+          <small>{row.email}</small>
+          <em>
+            {row.role} · {row.team}
+          </em>
+        </span>
+      ),
+      mobileLabel: s.person,
+    },
     {
       key: "status",
       header: s.status,
       accessor: (r) => personStatus(r),
       sortValue: (r) => personStatus(r),
       sortable: true,
+      width: "14%",
       mobileLabel: s.status,
     },
     {
-      key: "startDate",
-      header: s.startDate,
-      accessor: (r) => formatDate(startDate(r), locale),
+      key: "timeline",
+      header: s.timeline,
       sortValue: (r) => startDate(r).getTime(),
       sortable: true,
-      mobileLabel: s.startDate,
-    },
-    {
-      key: "dueDate",
-      header: s.dueDate,
-      accessor: (r) => formatDate(dueDate(r), locale),
-      sortValue: (r) => dueDate(r).getTime(),
-      sortable: true,
-      hideOnMobile: true,
-      mobileLabel: s.dueDate,
+      width: "18%",
+      accessor: (row) => (
+        <span className="demo-stack-cell">
+          <strong>{formatDate(startDate(row), locale)}</strong>
+          <small>
+            {s.dueDate}: {formatDate(dueDate(row), locale)}
+          </small>
+        </span>
+      ),
+      mobileLabel: s.timeline,
     },
     {
       key: "budget",
@@ -202,28 +242,25 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
       sortValue: (r) => budget(r),
       sortable: true,
       align: "end",
-      hideOnMobile: true,
+      width: "14%",
       mobileLabel: s.budget,
     },
     {
-      key: "utilization",
-      header: s.utilization,
-      accessor: (r) => formatPercent(utilization(r), locale),
+      key: "load",
+      header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
       align: "end",
-      hideOnMobile: true,
-      mobileLabel: s.utilization,
-    },
-    {
-      key: "allocations",
-      header: s.allocations,
-      accessor: (r) => allocationCount(r),
-      sortValue: (r) => allocationCount(r),
-      sortable: true,
-      align: "end",
-      hideOnMobile: true,
-      mobileLabel: s.allocations,
+      width: "12%",
+      accessor: (row) => (
+        <span className="demo-stack-cell demo-stack-cell-end">
+          <strong>{formatPercent(utilization(row), locale)}</strong>
+          <small>
+            {s.allocations}: {allocationCount(row)}
+          </small>
+        </span>
+      ),
+      mobileLabel: s.load,
     },
   ];
 }
@@ -235,7 +272,7 @@ export function makeActions(locale: Locale): RowAction<Person>[] {
       key: "edit",
       label: s.edit,
       icon: <EditIcon />,
-      onClick: (row) => alert(`${s.edit}: ${row.name}`),
+      onClick: (row) => notifyDemo({ message: `${s.edit}: ${row.name}` }),
     },
     {
       key: "delete",
@@ -248,7 +285,8 @@ export function makeActions(locale: Locale): RowAction<Person>[] {
         confirmLabel: s.remove,
         danger: true,
       },
-      onClick: (row) => alert(`${s.remove}: ${row.name}`),
+      onClick: (row) =>
+        notifyDemo({ message: `${s.remove}: ${row.name}`, tone: "danger" }),
     },
   ];
 }

@@ -24,6 +24,9 @@ The responsive story is a first-class feature: desktop users get a real table,
 while narrow screens automatically switch to readable cards so your app does
 not ship the broken horizontal-scroll tables users hate on phones.
 
+Filters are adapter-native too: each ready UI kit renders its own drawer and
+controls, while the core keeps URL state, chips, and backend params aligned.
+
 ```tsx
 // Batteries-included — 5 lines to a fully styled, sortable, filterable, paginated table.
 import {

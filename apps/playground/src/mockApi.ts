@@ -1,6 +1,14 @@
 import type { FilterValue } from "@adapttable/core";
 
-import { matchesDemoFilters, PEOPLE, type Person } from "./data";
+import {
+  budget,
+  matchesDemoFilters,
+  PEOPLE,
+  type Person,
+  personStatus,
+  startDate,
+  utilization,
+} from "./data";
 
 /** One page of a server response. */
 export interface PeoplePage {
@@ -21,6 +29,25 @@ export interface PeopleParams extends Record<string, FilterValue> {
   allocationsValue?: number;
   allocationsFrom?: number;
   allocationsTo?: number;
+}
+
+const padNumber = (value: number): string => String(value).padStart(12, "0");
+
+function sortValue(row: Person, key: string): string {
+  switch (key) {
+    case "person":
+      return row.name;
+    case "status":
+      return personStatus(row);
+    case "timeline":
+      return padNumber(startDate(row).getTime());
+    case "budget":
+      return padNumber(budget(row));
+    case "load":
+      return padNumber(utilization(row));
+    default:
+      return String(row[key as keyof Person] ?? "");
+  }
 }
 
 /**
@@ -44,11 +71,15 @@ export async function fetchPeople(params: PeopleParams): Promise<PeoplePage> {
   rows = rows.filter((r) => matchesDemoFilters(r, params));
 
   if (params.sortBy && params.sortDir) {
-    const key = params.sortBy as keyof Person;
     const dir = params.sortDir === "asc" ? 1 : -1;
     rows = rows
       .slice()
-      .sort((a, b) => String(a[key]).localeCompare(String(b[key])) * dir);
+      .sort(
+        (a, b) =>
+          sortValue(a, params.sortBy!).localeCompare(
+            sortValue(b, params.sortBy!)
+          ) * dir
+      );
   }
 
   const total = rows.length;

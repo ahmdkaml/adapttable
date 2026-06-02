@@ -3,6 +3,7 @@ import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
 
 import {
   clearDemoFilters,
+  demoConfirm,
   demoFilterChips,
   DemoFilters,
   type Locale,
@@ -41,6 +42,7 @@ export function UnstyledLike({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            confirm={demoConfirm}
             virtualize
             estimateRowSize={56}
             estimateCardSize={140}

@@ -16,6 +16,7 @@ import {
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  demoConfirm,
   demoFilterChips,
   type Locale,
   makeActions,
@@ -203,10 +204,12 @@ export function MantineDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            confirm={demoConfirm}
             virtualize
             estimateRowSize={56}
             estimateCardSize={140}
             stickyTop={12}
+            stickyHeader={false}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}

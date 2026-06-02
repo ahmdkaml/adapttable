@@ -196,6 +196,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}
           labels={labels}
+          dir={props.dir}
         />
       )}
     </Paper>

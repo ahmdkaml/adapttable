@@ -1,3 +1,4 @@
+import type { Direction } from "@adapttable/core";
 import {
   type ActiveFilterChip,
   type BulkAction,
@@ -365,6 +366,7 @@ export function FilterDrawer({
   onClearFilters,
   labels,
   colorScheme,
+  dir = "ltr",
 }: Readonly<{
   open: boolean;
   onClose: () => void;
@@ -373,9 +375,15 @@ export function FilterDrawer({
   onClearFilters?: () => void;
   labels: Required<TableLabels>;
   colorScheme?: string;
+  dir?: Direction;
 }>) {
   return (
-    <Drawer isOpen={open} onClose={onClose} placement="right" size="sm">
+    <Drawer
+      isOpen={open}
+      onClose={onClose}
+      placement={dir === "rtl" ? "left" : "right"}
+      size="sm"
+    >
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton aria-label={labels.cancel} />

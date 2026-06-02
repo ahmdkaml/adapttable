@@ -1,4 +1,5 @@
 import type { TableLabels } from "@adapttable/core";
+import type { Direction } from "@adapttable/core";
 import { Button, Drawer, Group, Stack } from "@mantine/core";
 import type { ReactNode } from "react";
 
@@ -10,6 +11,7 @@ export interface FilterDrawerProps {
   activeFilterCount: number;
   onClearFilters?: () => void;
   labels: Required<TableLabels>;
+  dir?: Direction;
 }
 
 /** Right-side drawer holding the caller's filter widgets + apply/clear. */
@@ -20,12 +22,13 @@ export function FilterDrawer({
   activeFilterCount,
   onClearFilters,
   labels,
+  dir = "ltr",
 }: Readonly<FilterDrawerProps>) {
   return (
     <Drawer
       opened={opened}
       onClose={onClose}
-      position="right"
+      position={dir === "rtl" ? "left" : "right"}
       size={380}
       title={labels.filters}
       overlayProps={{ opacity: 0.4, blur: 2 }}

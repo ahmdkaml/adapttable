@@ -1,3 +1,4 @@
+import type { Direction } from "@adapttable/core";
 import {
   type ActiveFilterChip,
   type BulkBarChromeProps,
@@ -217,6 +218,7 @@ export function FilterDrawer({
   activeFilterCount,
   onClearFilters,
   labels,
+  dir = "ltr",
 }: Readonly<{
   open: boolean;
   onClose: () => void;
@@ -224,13 +226,14 @@ export function FilterDrawer({
   activeFilterCount: number;
   onClearFilters?: () => void;
   labels: Required<TableLabels>;
+  dir?: Direction;
 }>) {
   return (
     <Drawer
       open={open}
       onClose={onClose}
       title={labels.filters}
-      placement="right"
+      placement={dir === "rtl" ? "left" : "right"}
       width={360}
       footer={
         <Flex justify="space-between">

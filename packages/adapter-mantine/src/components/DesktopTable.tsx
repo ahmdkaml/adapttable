@@ -14,7 +14,7 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import type { MouseEvent, RefObject } from "react";
+import type { CSSProperties, MouseEvent, RefObject } from "react";
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 
@@ -33,6 +33,7 @@ export interface DesktopTableProps<TRow> {
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
   stickyHeaderOffset?: number;
+  stickyHeader?: boolean;
 }
 
 function SortIcon({
@@ -58,13 +59,22 @@ function HeaderCell<TRow>({
   column: ColumnDef<TRow>;
 }>) {
   const cellProps = table.getHeaderCellProps(column);
+  const headerStyle = {
+    ...(cellProps.style as CSSProperties | undefined),
+    background: "var(--mantine-color-body)",
+    zIndex: 2,
+  };
   if (!column.sortable) {
-    return <Table.Th {...cellProps}>{column.header}</Table.Th>;
+    return (
+      <Table.Th {...cellProps} style={headerStyle}>
+        {column.header}
+      </Table.Th>
+    );
   }
   const active = table.sortBy === column.key;
   const buttonProps = table.getSortButtonProps(column);
   return (
-    <Table.Th {...cellProps}>
+    <Table.Th {...cellProps} style={headerStyle}>
       <Group
         component="button"
         gap={6}
@@ -161,6 +171,7 @@ export function DesktopTable<TRow>({
   paddingBottom = 0,
   measureElement,
   stickyHeaderOffset = 0,
+  stickyHeader = true,
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -182,14 +193,32 @@ export function DesktopTable<TRow>({
         highlightOnHover
         verticalSpacing="sm"
         horizontalSpacing="md"
-        stickyHeader
+        stickyHeader={stickyHeader}
         stickyHeaderOffset={stickyHeaderOffset}
         miw={480}
       >
-        <Table.Thead>
-          <Table.Tr {...table.getHeaderRowProps()}>
+        <Table.Thead
+          style={{
+            background: "var(--mantine-color-body)",
+            position: "sticky",
+            top: stickyHeaderOffset,
+            zIndex: 4,
+            boxShadow: "0 1px 0 var(--mantine-color-default-border)",
+          }}
+        >
+          <Table.Tr
+            {...table.getHeaderRowProps()}
+            style={{
+              background: "var(--mantine-color-body)",
+              zIndex: 3,
+            }}
+          >
             {selection && (
-              <Table.Th w={40} ta="center">
+              <Table.Th
+                w={40}
+                ta="center"
+                style={{ background: "var(--mantine-color-body)", zIndex: 2 }}
+              >
                 <Checkbox
                   aria-label={labels.selectAll}
                   checked={selection.headerState === "all"}
@@ -202,7 +231,11 @@ export function DesktopTable<TRow>({
               <HeaderCell key={column.key} table={table} column={column} />
             ))}
             {showActions && (
-              <Table.Th ta="end" w={120}>
+              <Table.Th
+                ta="end"
+                w={120}
+                style={{ background: "var(--mantine-color-body)", zIndex: 2 }}
+              >
                 {labels.actions}
               </Table.Th>
             )}

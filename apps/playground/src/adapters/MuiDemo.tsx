@@ -16,6 +16,7 @@ import {
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  demoConfirm,
   demoFilterChips,
   type Locale,
   makeActions,
@@ -219,6 +220,7 @@ export function MuiDemo({
           dir={getDirection(locale)}
           searchPlaceholder={s.search}
           rowActions={makeActions(locale)}
+          confirm={demoConfirm}
           virtualize
           estimateRowSize={56}
           estimateCardSize={140}

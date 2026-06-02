@@ -49,6 +49,44 @@ function tableScrollConfig(
     : { x: "max-content" };
 }
 
+function SkeletonTable({
+  columnCount,
+  rowCount,
+  loadingLabel,
+  size,
+  bordered,
+}: Readonly<{
+  columnCount: number;
+  rowCount: number;
+  loadingLabel: string;
+  size: "small" | "middle" | "large";
+  bordered: boolean;
+}>) {
+  const skeletonColumns = Array.from(
+    { length: Math.max(columnCount, 1) },
+    (_, i) => ({
+      key: `skeleton-${i}`,
+      title: <Skeleton.Input active size="small" block />,
+      render: () => <Skeleton.Input active size="small" block />,
+    })
+  );
+  const rows = Array.from({ length: rowCount }, (_, i) => ({
+    key: `row-${i}`,
+  }));
+  return (
+    <div role="status" aria-busy="true" aria-live="polite">
+      <Table
+        columns={skeletonColumns}
+        dataSource={rows}
+        pagination={false}
+        size={size}
+        bordered={bordered}
+      />
+      <span style={SR_ONLY}>{loadingLabel}</span>
+    </div>
+  );
+}
+
 /**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully wired antd `<Table>` — sorting, selection,
@@ -151,14 +189,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (c.body === "skeleton") {
     bodyRegion = slots?.skeleton ?? (
-      <div role="status" aria-busy="true" aria-live="polite">
-        <Skeleton
-          active
-          title={false}
-          paragraph={{ rows: props.skeletonRows ?? source.limit }}
-        />
-        <span style={SR_ONLY}>{labels.loading}</span>
-      </div>
+      <SkeletonTable
+        columnCount={columns.length}
+        rowCount={props.skeletonRows ?? source.limit}
+        loadingLabel={labels.loading}
+        size={size}
+        bordered={bordered}
+      />
     );
   } else if (c.body === "empty") {
     bodyRegion = slots?.empty ?? (
@@ -249,6 +286,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}
           labels={labels}
+          dir={props.dir}
         />
       )}
     </div>

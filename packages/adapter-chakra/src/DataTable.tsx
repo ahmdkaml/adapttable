@@ -173,6 +173,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearFilters={props.onClearFilters}
           labels={labels}
           colorScheme={colorScheme}
+          dir={props.dir}
         />
       )}
     </Box>

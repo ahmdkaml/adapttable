@@ -217,13 +217,19 @@ export function ErrorState({
 /** Skeleton-ish loading placeholder (semantic, unstyled). */
 export function LoadingState({
   rows,
+  columns,
+  variant,
   labels,
   classNames,
 }: Readonly<{
   rows: number;
+  columns: number;
+  variant: "table" | "cards";
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
 }>) {
+  const rowKeys = Array.from({ length: rows }, (_, i) => i);
+  const columnKeys = Array.from({ length: Math.max(columns, 1) }, (_, i) => i);
   return (
     <div
       role="status"
@@ -232,9 +238,31 @@ export function LoadingState({
       data-adapttable-part="loading"
       className={cx(classNames.loading)}
     >
-      {Array.from({ length: rows }, (_, i) => (
-        <div key={i} data-adapttable-part="loading-row" aria-hidden />
-      ))}
+      {variant === "table" ? (
+        <table data-adapttable-part="loading-table">
+          <tbody>
+            {rowKeys.map((row) => (
+              <tr key={row} data-adapttable-part="loading-row">
+                {columnKeys.map((column) => (
+                  <td key={column} data-adapttable-part="loading-cell">
+                    <span data-adapttable-part="loading-line" />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div data-adapttable-part="loading-cards">
+          {rowKeys.map((row) => (
+            <div key={row} data-adapttable-part="loading-card">
+              {columnKeys.slice(0, 3).map((column) => (
+                <span key={column} data-adapttable-part="loading-line" />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
       <span className="adapttable-sr-only">{labels.loading}</span>
     </div>
   );

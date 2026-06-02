@@ -1,7 +1,8 @@
 import "./App.css";
 
+import type { ConfirmRequest } from "@adapttable/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { AntdDemo } from "./adapters/AntdDemo";
 import { ChakraDemo } from "./adapters/ChakraDemo";
@@ -9,7 +10,12 @@ import { MantineDemo } from "./adapters/MantineDemo";
 import { MuiDemo } from "./adapters/MuiDemo";
 import { ShadcnDemo } from "./adapters/ShadcnDemo";
 import { UnstyledDemo } from "./adapters/UnstyledDemo";
-import { type Locale } from "./data";
+import {
+  DEMO_CONFIRM_EVENT,
+  DEMO_NOTICE_EVENT,
+  type DemoNotice,
+  type Locale,
+} from "./data";
 import { type DataMode } from "./Demo";
 
 const queryClient = new QueryClient();
@@ -121,6 +127,10 @@ function Segmented<T extends string>({
 }
 
 export function App() {
+  const [notice, setNotice] = useState<DemoNotice | null>(null);
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(
+    null
+  );
   const [active, setActive] = useState(() =>
     readParam(
       "adapter",
@@ -143,22 +153,69 @@ export function App() {
     )
   );
   const current = ADAPTERS.find((a) => a.key === active) ?? ADAPTERS[0];
+  const direction = locale === "ar" ? "rtl" : "ltr";
+
+  useEffect(() => {
+    const onNotice = (event: Event) => {
+      const detail = (event as CustomEvent<DemoNotice>).detail;
+      setNotice(detail);
+      window.setTimeout(() => setNotice(null), 2600);
+    };
+    const onConfirm = (event: Event) => {
+      setConfirmRequest((event as CustomEvent<ConfirmRequest>).detail);
+    };
+    window.addEventListener(DEMO_NOTICE_EVENT, onNotice);
+    window.addEventListener(DEMO_CONFIRM_EVENT, onConfirm);
+    return () => {
+      window.removeEventListener(DEMO_NOTICE_EVENT, onNotice);
+      window.removeEventListener(DEMO_CONFIRM_EVENT, onConfirm);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="playground-shell">
-        <section className="hero">
-          <div className="hero-copy">
-            <p className="eyebrow">Live capability lab</p>
-            <h1>Switch adapters. Stress the same table.</h1>
-            <p className="hero-text">
-              Use the controls below to test client/server data, URL filters,
-              operator count filters, virtualization, RTL, and the automatic
-              table-to-card responsive layout.
-            </p>
+      <div className={`playground-shell locale-${locale}`} dir={direction}>
+        {notice && (
+          <div
+            className={
+              notice.tone === "danger"
+                ? "demo-toast demo-toast-danger"
+                : "demo-toast"
+            }
+            role="status"
+          >
+            {notice.message}
           </div>
-        </section>
-
+        )}
+        {confirmRequest && (
+          <div className="demo-modal-backdrop" role="presentation">
+            <section
+              className="demo-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={confirmRequest.title}
+            >
+              <p className="eyebrow">Confirm action</p>
+              <h2>{confirmRequest.title}</h2>
+              <p>{confirmRequest.message}</p>
+              <div className="demo-modal-actions">
+                <button type="button" onClick={() => setConfirmRequest(null)}>
+                  {confirmRequest.cancelLabel}
+                </button>
+                <button
+                  type="button"
+                  className={confirmRequest.danger ? "danger" : "primary"}
+                  onClick={() => {
+                    confirmRequest.onConfirm();
+                    setConfirmRequest(null);
+                  }}
+                >
+                  {confirmRequest.confirmLabel}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
         <section className="switchboard" aria-label="Playground controls">
           <Segmented
             label="Adapter"

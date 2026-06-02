@@ -6,6 +6,7 @@ import {
   useTableChrome,
   useTableVirtualization,
 } from "@adapttable/core";
+import type { ReactElement } from "react";
 import { useCallback, useState } from "react";
 
 import {
@@ -18,6 +19,16 @@ import {
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
+
+interface DataTableBodyProps<TRow> {
+  chrome: ReturnType<typeof useTableChrome<TRow>>;
+  props: Readonly<DataTableProps<TRow>>;
+  classNames: NonNullable<DataTableProps<TRow>["classNames"]>;
+  confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
+  getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
+  virtualization: ReturnType<typeof useTableVirtualization<TRow>>;
+  labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
+}
 
 function canVirtualizeBody(body: string): boolean {
   return body === "desktop" || body === "mobile";
@@ -33,6 +44,61 @@ function virtualEstimateSize(
     : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
 }
 
+function DataTableBody<TRow>({
+  chrome,
+  props,
+  classNames,
+  confirm,
+  getRowId,
+  virtualization,
+  labels,
+}: Readonly<DataTableBodyProps<TRow>>): ReactElement {
+  if (chrome.body === "skeleton") {
+    return (
+      <>
+        {props.loadingState ?? (
+          <LoadingState
+            rows={props.skeletonRows ?? props.source.limit}
+            columns={chrome.table.columns.length}
+            variant={chrome.isMobile ? "cards" : "table"}
+            labels={labels}
+            classNames={classNames}
+          />
+        )}
+      </>
+    );
+  }
+  if (chrome.body === "empty") {
+    return (
+      <>
+        {props.emptyState ?? (
+          <output data-adapttable-part="empty" className={classNames.empty}>
+            {labels.noData}
+          </output>
+        )}
+      </>
+    );
+  }
+  const Renderer = chrome.isMobile ? MobileCards : DesktopTable;
+  return (
+    <>
+      <Renderer
+        table={chrome.table}
+        rows={props.source.rows}
+        rowActions={props.rowActions}
+        confirm={confirm}
+        getRowId={getRowId}
+        classNames={classNames}
+        prefetch={props.prefetch}
+        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+        paddingTop={virtualization.paddingTop}
+        paddingBottom={virtualization.paddingBottom}
+        measureElement={virtualization.measureElement}
+      />
+    </>
+  );
+}
+
 /**
  * Headless, unstyled AdaptTable for Tailwind / shadcn / custom CSS. Renders
  * semantic HTML with `data-adapttable-part` hooks and `className` overrides;
@@ -44,20 +110,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
     rowKey,
-    rowActions,
     searchPlaceholder,
     sortByOptions,
     dir,
-    prefetch,
     hideSearch,
     filters,
     onClearFilters,
     bulkActions,
     classNames = {},
     toolbar: customToolbar,
-    skeletonRows,
-    emptyState,
-    loadingState,
     virtualize = false,
     estimateRowSize,
     estimateCardSize,
@@ -107,40 +168,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // layout has no clickable headers to sort by.
   const sortOptions =
     sortByOptions ?? (chrome.isMobile ? table.sortByOptions : undefined);
-
-  let body: React.ReactNode;
-  if (chrome.body === "skeleton") {
-    body = loadingState ?? (
-      <LoadingState
-        rows={skeletonRows ?? source.limit}
-        labels={labels}
-        classNames={classNames}
-      />
-    );
-  } else if (chrome.body === "empty") {
-    body = emptyState ?? (
-      <output data-adapttable-part="empty" className={classNames.empty}>
-        {labels.noData}
-      </output>
-    );
-  } else {
-    const Renderer = chrome.isMobile ? MobileCards : DesktopTable;
-    body = (
-      <Renderer
-        table={table}
-        rows={source.rows}
-        rowActions={rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        classNames={classNames}
-        prefetch={prefetch}
-        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-        paddingTop={virtualization.paddingTop}
-        paddingBottom={virtualization.paddingBottom}
-        measureElement={virtualization.measureElement}
-      />
-    );
-  }
 
   return (
     <div
@@ -255,7 +282,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           classNames={classNames}
         />
       ) : (
-        body
+        <DataTableBody
+          chrome={chrome}
+          props={props}
+          classNames={classNames}
+          confirm={confirm}
+          getRowId={getRowId}
+          virtualization={virtualization}
+          labels={labels}
+        />
       )}
 
       {canLoadMore && source.hasNextPage && (

@@ -15,6 +15,7 @@ import {
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  demoConfirm,
   demoFilterChips,
   type Locale,
   makeActions,
@@ -168,6 +169,7 @@ export function AntdDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            confirm={demoConfirm}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}

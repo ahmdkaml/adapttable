@@ -65,6 +65,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollToTopOnChange = true,
     scrollTopGap,
     animate = false,
+    stickyHeader = true,
   } = props;
 
   const chrome = useTableChrome<TRow>(props);
@@ -167,6 +168,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paddingBottom={virtualization.paddingBottom}
         measureElement={virtualization.measureElement}
         stickyHeaderOffset={stickyTop + toolbarHeight}
+        stickyHeader={stickyHeader}
       />
     );
   }
@@ -266,6 +268,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={onClearFilters}
           labels={table.labels}
+          dir={dir}
         />
       )}
     </Paper>
