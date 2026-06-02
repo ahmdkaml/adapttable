@@ -12,7 +12,20 @@ permissions:
   id-token: write
 
 jobs:
+  # Skip cleanly until an NPM_TOKEN secret is configured, so pushes don't fail
+  # before the project is set up to publish. Add the secret (Settings →
+  # Secrets → Actions → NPM_TOKEN) and this activates automatically.
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        run: echo "enabled=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
   release:
+    needs: guard
+    if: ${{ needs.guard.outputs.enabled == 'true' }}
     name: Version or Publish
     runs-on: ubuntu-latest
     steps:
