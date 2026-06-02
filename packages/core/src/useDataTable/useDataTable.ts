@@ -45,6 +45,8 @@ export interface UseDataTableOptions<TRow> {
   dir?: Direction;
   /** Whether the table is in its mobile layout. Defaults to `false`. */
   isMobile?: boolean;
+  /** Number of leading desktop-visible columns always shown on mobile cards. */
+  mobileIdentityColumns?: number;
   /** Search debounce in ms. Defaults to 300. */
   searchDebounceMs?: number;
   /** Bulk actions — enabling these turns on selection. */
@@ -148,6 +150,7 @@ export function useDataTable<TRow>(
     labels: labelOverrides,
     dir = "ltr",
     isMobile = false,
+    mobileIdentityColumns = 3,
     searchDebounceMs = 300,
     bulkActions,
     selectionGetId,
@@ -157,8 +160,13 @@ export function useDataTable<TRow>(
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
 
   const columns = useMemo(
-    () => visibleColumns(allColumns, isMobile ? "mobile" : "desktop"),
-    [allColumns, isMobile]
+    () =>
+      visibleColumns(
+        allColumns,
+        isMobile ? "mobile" : "desktop",
+        mobileIdentityColumns
+      ),
+    [allColumns, isMobile, mobileIdentityColumns]
   );
 
   const sortByOptions = useMemo(() => deriveSortByOptions(columns), [columns]);

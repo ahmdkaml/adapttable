@@ -33,4 +33,11 @@ describe("visibleColumns", () => {
       "c",
     ]);
   });
+
+  it("lets callers customize how many identity columns mobile keeps", () => {
+    expect(visibleColumns(cols, "mobile", 1).map((c) => c.key)).toEqual([
+      "a",
+      "c",
+    ]);
+  });
 });

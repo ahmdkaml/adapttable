@@ -45,6 +45,8 @@ export interface BaseDataTableProps<TRow> {
   dir?: Direction;
   /** Force the mobile layout (otherwise resolved from the viewport). */
   isMobile?: boolean;
+  /** Leading desktop-visible columns kept on mobile even if hideOnMobile. */
+  mobileIdentityColumns?: number;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
   /** Called whenever the materialized source rows change. */

@@ -18,10 +18,15 @@ export type TableLayout = "desktop" | "mobile";
  */
 export function visibleColumns<TRow>(
   columns: readonly ColumnDef<TRow>[],
-  layout: TableLayout
+  layout: TableLayout,
+  mobileIdentityColumns = 3
 ): ColumnDef<TRow>[] {
   const desktopVisible = columns.filter((c) => !c.hideOnDesktop);
   if (layout === "desktop") return desktopVisible;
-  const alwaysShow = new Set(desktopVisible.slice(0, 3).map((c) => c.key));
+  const alwaysShow = new Set(
+    desktopVisible
+      .slice(0, Math.max(0, mobileIdentityColumns))
+      .map((c) => c.key)
+  );
   return desktopVisible.filter((c) => alwaysShow.has(c.key) || !c.hideOnMobile);
 }
