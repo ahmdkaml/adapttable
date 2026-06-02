@@ -12,11 +12,11 @@ pnpm --filter @adapttable/playground dev
 # open http://localhost:5173
 ```
 
-Edit [src/App.tsx](src/App.tsx) to try different data, columns, row/bulk
-actions, or filters. To demo a different adapter, swap the import
-(`@adapttable/mui`, `@adapttable/chakra`, `@adapttable/antd`,
-`@adapttable/unstyled`) and its provider — every alias is already wired in
-[vite.config.ts](vite.config.ts).
+Use the switcher at the top to flip between all five adapters — Mantine,
+MUI, Chakra, Ant Design, and Unstyled+Tailwind — each rendering the same
+headless source. Shared rows and column defs live in [src/data.ts](src/data.ts);
+each adapter demo is in [src/adapters/](src/adapters/). Edit those to try
+different data, columns, row/bulk actions, or filters.
 
 Not published, but still lint- and typecheck-gated like every other
 workspace package.
