@@ -76,6 +76,20 @@ describe("useFrontendData", () => {
     expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
   });
 
+  it("falls back to the accessor when a sortable column has no sortValue", () => {
+    const { result } = render("sortBy=name&sortDir=desc", {
+      columns: [
+        {
+          key: "name",
+          header: "Name",
+          accessor: (r) => r.name,
+          sortable: true,
+        },
+      ],
+    });
+    expect(result.current.rows.map((r) => r.id)).toEqual(["c", "b", "a"]);
+  });
+
   it("paged mode slices to the active page", () => {
     const { result } = render("page=2&limit=2");
     expect(result.current.rows.map((r) => r.id)).toEqual(["c"]);

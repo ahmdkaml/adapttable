@@ -9,6 +9,14 @@ import {
 } from "../url/useTableUrlState";
 import type { TableSource } from "./TableSource";
 
+/** Narrows an accessor's `ReactNode` to a sortable primitive, else `null`. */
+const toSortable = (value: unknown): SortableValue =>
+  typeof value === "string" ||
+  typeof value === "number" ||
+  typeof value === "boolean"
+    ? value
+    : null;
+
 /** Options for {@link useFrontendData}. */
 export interface UseFrontendDataOptions<TRow> extends Pick<
   UseTableUrlStateOptions,
@@ -104,10 +112,14 @@ export function useFrontendData<TRow>(
   const sorted = useMemo(() => {
     if (!sortBy || !sortDir) return filtered;
     const column = columns?.find((c) => c.key === sortBy);
+    // Resolve a row's sort key: explicit `getSortValue`, else the column's
+    // `sortValue`, else the accessor when it yields a sortable primitive — so
+    // `sortable: true` works out of the box for plain string/number/boolean
+    // cells while JSX accessors safely no-op.
     const resolve = (row: TRow): SortableValue =>
       getSortValue
         ? getSortValue(row, sortBy)
-        : (column?.sortValue?.(row) ?? null);
+        : (column?.sortValue?.(row) ?? toSortable(column?.accessor?.(row)));
     return sortRows(filtered, resolve, sortDir);
   }, [filtered, sortBy, sortDir, getSortValue, columns]);
 
