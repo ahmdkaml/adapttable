@@ -43,17 +43,19 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 
 ## Feature comparison
 
-| Feature                                        |  ag-grid   |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**      |
-| ---------------------------------------------- | :--------: | :---------------------: | :---------------: | :----------: | :----------------------: |
-| Headless core                                  |     ✗      |            ✓            |         ✗         |      ✗       |          **✓**           |
-| Works across UI kits                           |     ✗      | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters** |
-| Client **and** server data, same API           |  partial   |    wire it yourself     |         ✗         |   partial    |  **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)             |     ✗      |            ✗            |         ✗         |      ✗       |          **✓**           |
-| Filter drawer + removable chips                |     ✗      |            ✗            |         ✗         |   partial    |      **✓ built-in**      |
-| Infinite scroll **and** paged (auto by device) |     ✓      |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**   |
-| i18n + **RTL / Arabic** first-class            |  partial   |            ✗            |         ✗         |   partial    |          **✓**           |
-| Dark mode                                      |     ✓      |           n/a           |         ✓         |      ✓       |      **✓ seamless**      |
-| MIT / free                                     | paid tiers |            ✓            |         ✓         |  paid tiers  |          **✓**           |
+| Feature                                        |  ag-grid  |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**      |
+| ---------------------------------------------- | :-------: | :---------------------: | :---------------: | :----------: | :----------------------: |
+| Headless core                                  |     ✗     |            ✓            |         ✗         |      ✗       |          **✓**           |
+| Works across UI kits                           |     ✗     | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters** |
+| Client **and** server data, same API           |  partial  |    wire it yourself     |         ✗         |   partial    |  **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)             |     ✗     |            ✗            |         ✗         |      ✗       |          **✓**           |
+| Filter drawer + removable chips                |     ✗     |            ✗            |         ✗         |   partial    |      **✓ built-in**      |
+| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**   |
+| i18n + **RTL / Arabic** first-class            |  partial  |            ✗            |         ✗         |   partial    |          **✓**           |
+| Dark mode                                      |     ✓     |           n/a           |         ✓         |      ✓       |      **✓ seamless**      |
+| MIT / free                                     | open-core |            ✓            |         ✓         |  open-core   |          **✓**           |
+
+<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" = a free MIT/community edition plus paid tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium), where the advanced server-side and infinite-loading features live.</sub>
 
 > **The niche:** _TanStack-Table-style headless freedom, but batteries-included for your UI kit — with URL state, RTL, and a real filter UX out of the box._
 

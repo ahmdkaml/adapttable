@@ -496,7 +496,9 @@ How AdaptTable compares to popular React table libraries.
 | Infinite scroll **and** paged (auto by device) |     ✓      |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**   |
 | i18n + **RTL / Arabic** first-class            |  partial   |          ✗           |         ✗         |    partial     |          **✓**           |
 | Dark mode                                      |     ✓      |         n/a          |         ✓         |       ✓        |      **✓ seamless**      |
-| MIT / free                                     | paid tiers |          ✓           |         ✓         |   paid tiers   |          **✓**           |
+| MIT / free                                     | open-core  |          ✓           |         ✓         |   open-core    |          **✓**           |
+
+Comparison as of June 2026, based on each project's public documentation. "Open-core" = a free MIT/community edition plus paid tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium), where the advanced server-side and infinite-loading features live.
 
 ## When to choose AdaptTable
 

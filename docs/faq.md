@@ -23,10 +23,11 @@ exposes semantic HTML with `data-*` and `className` hooks, and the headless
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 
-Yes — AdaptTable is **MIT-licensed and free**, including server-side
-pagination, infinite scroll, filtering, and selection, which are paid tiers in
-MUI X DataGrid and ag-Grid. The MUI adapter gives a DataGrid-style experience
-at no cost.
+Yes — AdaptTable is **MIT-licensed and fully free**, including server-side
+data, infinite scroll, filtering, and selection. MUI X DataGrid and ag-Grid are
+**open-core**: their advanced server-side data and infinite-loading
+capabilities sit behind paid Pro/Premium or Enterprise tiers. The MUI adapter
+gives a DataGrid-style experience at no cost.
 
 ## How do I use the same table for client-side and server-side data?
 

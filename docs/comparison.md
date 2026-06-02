@@ -2,17 +2,19 @@
 
 How AdaptTable compares to popular React table libraries.
 
-| Feature                                        |  ag-grid   |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**      |
-| ---------------------------------------------- | :--------: | :------------------: | :---------------: | :------------: | :----------------------: |
-| Headless core                                  |     ✗      |          ✓           |         ✗         |       ✗        |          **✓**           |
-| Works across UI kits                           |     ✗      | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters** |
-| Client **and** server data, same API           |  partial   |   wire it yourself   |         ✗         |    partial     |  **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)             |     ✗      |          ✗           |         ✗         |       ✗        |          **✓**           |
-| Filter drawer + removable chips                |     ✗      |          ✗           |         ✗         |    partial     |      **✓ built-in**      |
-| Infinite scroll **and** paged (auto by device) |     ✓      |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**   |
-| i18n + **RTL / Arabic** first-class            |  partial   |          ✗           |         ✗         |    partial     |          **✓**           |
-| Dark mode                                      |     ✓      |         n/a          |         ✓         |       ✓        |      **✓ seamless**      |
-| MIT / free                                     | paid tiers |          ✓           |         ✓         |   paid tiers   |          **✓**           |
+| Feature                                        |  ag-grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**      |
+| ---------------------------------------------- | :-------: | :------------------: | :---------------: | :------------: | :----------------------: |
+| Headless core                                  |     ✗     |          ✓           |         ✗         |       ✗        |          **✓**           |
+| Works across UI kits                           |     ✗     | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters** |
+| Client **and** server data, same API           |  partial  |   wire it yourself   |         ✗         |    partial     |  **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)             |     ✗     |          ✗           |         ✗         |       ✗        |          **✓**           |
+| Filter drawer + removable chips                |     ✗     |          ✗           |         ✗         |    partial     |      **✓ built-in**      |
+| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**   |
+| i18n + **RTL / Arabic** first-class            |  partial  |          ✗           |         ✗         |    partial     |          **✓**           |
+| Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**      |
+| MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |          **✓**           |
+
+<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers.</sub>
 
 ## When to choose AdaptTable
 
