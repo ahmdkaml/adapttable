@@ -203,6 +203,24 @@ describe("<DataTable> (MUI)", () => {
     ).toBeDisabled();
   });
 
+  it("disables row actions with a disabledReason", () => {
+    renderHarness({
+      override: {
+        rowActions: [
+          {
+            key: "delete",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "Referenced elsewhere",
+          },
+        ],
+      },
+    });
+    expect(
+      screen.getAllByRole("button", { name: "Delete" })[0]!
+    ).toBeDisabled();
+  });
+
   it("applies className and dir", () => {
     const { container } = renderHarness({
       override: { className: "my-root", dir: "rtl" },

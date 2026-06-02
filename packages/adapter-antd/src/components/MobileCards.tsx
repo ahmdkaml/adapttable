@@ -33,13 +33,16 @@ function CardActions<TRow>({
     <Space size="small" wrap>
       {rowActions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const disabled = action.isDisabled?.(row) ?? false;
+        const reason = action.disabledReason?.(row);
+        const disabled =
+          reason !== undefined || (action.isDisabled?.(row) ?? false);
         return (
           <Button
             key={action.key}
             size="small"
             danger={isDangerColor(action.color)}
             disabled={disabled}
+            title={reason}
             aria-label={action.label}
             onClick={() => {
               if (!disabled) runRowAction(action, row, confirm, labels.cancel);

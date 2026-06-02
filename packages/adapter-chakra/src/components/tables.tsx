@@ -73,7 +73,9 @@ function RowActionButtons<TRow>({
     <HStack spacing={1} justify="flex-end">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const disabled = action.isDisabled?.(row) ?? false;
+        const reason = action.disabledReason?.(row);
+        const disabled =
+          reason !== undefined || (action.isDisabled?.(row) ?? false);
         const handleClick = (e: React.MouseEvent) => {
           e.stopPropagation();
           if (!disabled) runRowAction(action, row, confirm, cancelLabel);
@@ -82,7 +84,7 @@ function RowActionButtons<TRow>({
         // text actions use a real Button so the label actually renders
         // (IconButton ignores children).
         return action.icon ? (
-          <Tooltip key={action.key} label={action.label}>
+          <Tooltip key={action.key} label={reason ?? action.label}>
             <IconButton
               size="sm"
               variant="ghost"
@@ -94,16 +96,17 @@ function RowActionButtons<TRow>({
             />
           </Tooltip>
         ) : (
-          <Button
-            key={action.key}
-            size="sm"
-            variant="ghost"
-            colorScheme={action.color ?? colorScheme}
-            isDisabled={disabled}
-            onClick={handleClick}
-          >
-            {action.label}
-          </Button>
+          <Tooltip key={action.key} label={reason ?? action.label}>
+            <Button
+              size="sm"
+              variant="ghost"
+              colorScheme={action.color ?? colorScheme}
+              isDisabled={disabled}
+              onClick={handleClick}
+            >
+              {action.label}
+            </Button>
+          </Tooltip>
         );
       })}
     </HStack>

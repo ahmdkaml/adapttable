@@ -109,7 +109,10 @@ export function MobileCards<TRow>({
                 <Group gap={4} justify="flex-end" pt={4}>
                   {rowActions.map((action) => {
                     if (action.isHidden?.(row)) return null;
-                    const disabled = action.isDisabled?.(row) ?? false;
+                    const reason = action.disabledReason?.(row);
+                    const disabled =
+                      reason !== undefined ||
+                      (action.isDisabled?.(row) ?? false);
                     const run = () => {
                       if (!disabled) {
                         runRowAction(action, row, confirm, labels.cancel);
@@ -118,7 +121,7 @@ export function MobileCards<TRow>({
                     return action.icon ? (
                       <Tooltip
                         key={action.key}
-                        label={action.label}
+                        label={reason ?? action.label}
                         withArrow
                         openDelay={200}
                       >

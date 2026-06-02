@@ -111,6 +111,11 @@ export interface RowAction<TRow> {
   color?: string;
   /** Disable conditionally — e.g. delete when the row is referenced. */
   isDisabled?: (row: TRow) => boolean;
+  /**
+   * Disable conditionally and explain why. A non-empty string disables the
+   * action and adapters surface it as tooltip/title copy where possible.
+   */
+  disabledReason?: (row: TRow) => string | undefined;
   /** Hide entirely when the action is structurally inapplicable. */
   isHidden?: (row: TRow) => boolean;
   /** Optional confirmation dialog wiring. */

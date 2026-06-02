@@ -42,12 +42,15 @@ function RowActionButtons<TRow>({
     <>
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const disabled = action.isDisabled?.(row) ?? false;
+        const reason = action.disabledReason?.(row);
+        const disabled =
+          reason !== undefined || (action.isDisabled?.(row) ?? false);
         return (
           <button
             key={action.key}
             type="button"
             disabled={disabled}
+            title={reason}
             aria-label={action.label}
             data-adapttable-part="action-button"
             data-color={action.color}

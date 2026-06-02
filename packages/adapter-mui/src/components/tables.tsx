@@ -72,9 +72,11 @@ function RowActionButtons<TRow>({
     <Stack direction="row" spacing={0.5} justifyContent="flex-end">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const disabled = action.isDisabled?.(row) ?? false;
+        const reason = action.disabledReason?.(row);
+        const disabled =
+          reason !== undefined || (action.isDisabled?.(row) ?? false);
         return (
-          <Tooltip key={action.key} title={action.label}>
+          <Tooltip key={action.key} title={reason ?? action.label}>
             <span>
               <IconButton
                 size="small"

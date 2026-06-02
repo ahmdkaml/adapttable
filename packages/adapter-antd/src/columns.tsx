@@ -109,14 +109,17 @@ export function buildColumns<TRow>({
         <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
           {rowActions.map((action) => {
             if (action.isHidden?.(row)) return null;
-            const disabled = action.isDisabled?.(row) ?? false;
+            const reason = action.disabledReason?.(row);
+            const disabled =
+              reason !== undefined || (action.isDisabled?.(row) ?? false);
             return (
-              <Tooltip key={action.key} title={action.label}>
+              <Tooltip key={action.key} title={reason ?? action.label}>
                 <Button
                   size="small"
                   type="text"
                   danger={isDangerColor(action.color)}
                   disabled={disabled}
+                  title={reason}
                   aria-label={action.label}
                   onClick={(e) => {
                     e.stopPropagation();

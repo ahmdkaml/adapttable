@@ -102,7 +102,9 @@ function RowActions<TRow>({
     <Group gap={4} justify="flex-end" wrap="nowrap">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const disabled = action.isDisabled?.(row) ?? false;
+        const reason = action.disabledReason?.(row);
+        const disabled =
+          reason !== undefined || (action.isDisabled?.(row) ?? false);
         const handleClick = (e: MouseEvent) => {
           e.stopPropagation();
           if (!disabled) runRowAction(action, row, confirm, cancelLabel);
@@ -112,7 +114,7 @@ function RowActions<TRow>({
         return action.icon ? (
           <Tooltip
             key={action.key}
-            label={action.label}
+            label={reason ?? action.label}
             withArrow
             openDelay={200}
           >
