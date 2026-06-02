@@ -1,4 +1,6 @@
-import { matchesTeam, PEOPLE, type Person } from "./data";
+import type { FilterValue } from "@adapttable/core";
+
+import { matchesDemoFilters, PEOPLE, type Person } from "./data";
 
 /** One page of a server response. */
 export interface PeoplePage {
@@ -8,13 +10,17 @@ export interface PeoplePage {
 }
 
 /** Query params the table sends to the "server". */
-export interface PeopleParams {
+export interface PeopleParams extends Record<string, FilterValue> {
   page?: number;
   limit?: number;
   search?: string;
   sortBy?: string;
   sortDir?: "asc" | "desc";
   team?: string | string[];
+  allocationsOp?: string;
+  allocationsValue?: number;
+  allocationsFrom?: number;
+  allocationsTo?: number;
 }
 
 /**
@@ -35,7 +41,7 @@ export async function fetchPeople(params: PeopleParams): Promise<PeoplePage> {
     );
   }
 
-  rows = rows.filter((r) => matchesTeam(r, { team: params.team }));
+  rows = rows.filter((r) => matchesDemoFilters(r, params));
 
   if (params.sortBy && params.sortDir) {
     const key = params.sortBy as keyof Person;

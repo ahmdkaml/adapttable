@@ -59,31 +59,6 @@ const LOCALES: { key: Locale; label: string }[] = [
   { key: "ar", label: "العربية (RTL)" },
 ];
 
-const PROOFS = [
-  {
-    label: "Responsive by design",
-    value: "Table -> cards",
-    detail:
-      "Narrow screens get readable cards instead of broken horizontal scroll.",
-  },
-  {
-    label: "Same data contract",
-    value: "Client + server",
-    detail:
-      "Flip between in-memory and mock API without changing table markup.",
-  },
-  {
-    label: "Performance path",
-    value: "Virtual rows",
-    detail: "Long infinite lists can opt into windowed row/card rendering.",
-  },
-  {
-    label: "Global-ready",
-    value: "RTL + i18n",
-    detail: "Arabic direction and labels run through the exact same demo.",
-  },
-];
-
 /** Read a selection param from the URL, falling back when missing/invalid. */
 function readParam<T extends string>(
   key: string,
@@ -174,22 +149,13 @@ export function App() {
       <div className="playground-shell">
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">AdaptTable laboratory</p>
-            <h1>One table engine. Every UI kit. No broken mobile tables.</h1>
+            <p className="eyebrow">Live capability lab</p>
+            <h1>Switch adapters. Stress the same table.</h1>
             <p className="hero-text">
-              Test the same headless source through Mantine, MUI, Chakra, Ant
-              Design, and class-driven Tailwind/shadcn styling. Switch data
-              mode, locale, and adapter without changing the table contract.
+              Use the controls below to test client/server data, URL filters,
+              operator count filters, virtualization, RTL, and the automatic
+              table-to-card responsive layout.
             </p>
-          </div>
-          <div className="proof-grid" aria-label="AdaptTable proof points">
-            {PROOFS.map((proof) => (
-              <article key={proof.label} className="proof-card">
-                <span>{proof.label}</span>
-                <strong>{proof.value}</strong>
-                <p>{proof.detail}</p>
-              </article>
-            ))}
           </div>
         </section>
 
@@ -230,8 +196,9 @@ export function App() {
               <h2>{current.label}</h2>
             </div>
             <p>
-              Virtualization is enabled where the adapter supports custom
-              rendering; AntD uses its native virtual table mode.
+              This playground exercises responsive cards, live filters, count
+              operators, row actions, URL state, RTL, and virtualization support
+              across the adapter set.
             </p>
           </div>
 

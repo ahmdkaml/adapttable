@@ -2,14 +2,14 @@ import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
 
 import {
+  clearDemoFilters,
+  demoFilterChips,
+  DemoFilters,
   type Locale,
   makeActions,
   makeColumns,
   makeFilterLabels,
-  selectedTeams,
   strings,
-  TEAMS,
-  toggleTeam,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
@@ -32,7 +32,6 @@ export function UnstyledLike({
     <DemoBody
       mode={mode}
       render={(source) => {
-        const selected = selectedTeams(source.extra.team);
         return (
           <DataTable
             source={source}
@@ -46,25 +45,10 @@ export function UnstyledLike({
             estimateRowSize={56}
             estimateCardSize={140}
             filterLabels={makeFilterLabels(locale)}
-            onClearFilters={() => source.setExtra("team", undefined)}
+            extraChips={demoFilterChips(source, locale)}
+            onClearFilters={() => clearDemoFilters(source)}
             classNames={classNames}
-            filters={
-              <fieldset className="flex flex-col gap-1.5">
-                <legend className="mb-1 font-medium">{s.team}</legend>
-                {TEAMS.map((t) => (
-                  <label key={t} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(t)}
-                      onChange={() =>
-                        source.setExtra("team", toggleTeam(selected, t))
-                      }
-                    />
-                    {t}
-                  </label>
-                ))}
-              </fieldset>
-            }
+            filters={<DemoFilters source={source} locale={locale} />}
           />
         );
       }}

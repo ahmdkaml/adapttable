@@ -16,7 +16,8 @@ const SHADCN: DataTableClassNames = {
     "h-9 rounded-md border border-zinc-300 bg-transparent px-2 text-sm",
   filtersButton:
     "inline-flex h-9 items-center rounded-md border border-zinc-300 bg-transparent px-3 text-sm font-medium shadow-sm hover:bg-zinc-100",
-  filtersPanel: "mt-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-md",
+  filtersPanel:
+    "mt-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl ring-1 ring-zinc-100",
   table: "w-full text-sm",
   headerCell: "h-10 text-start align-middle font-medium text-zinc-500 px-3",
   sortButton: "inline-flex items-center gap-1",

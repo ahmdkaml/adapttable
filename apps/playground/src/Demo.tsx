@@ -6,7 +6,14 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { BASE_COLUMNS, matchesTeam, PEOPLE, type Person } from "./data";
+import {
+  BASE_COLUMNS,
+  COUNT_NUMBER_EXTRA_KEYS,
+  matchesDemoFilters,
+  PEOPLE,
+  type Person,
+  sanitizeDemoParams,
+} from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
 export type DataMode = "frontend" | "backend";
@@ -31,7 +38,8 @@ function Frontend({ render }: Readonly<{ render: TableRender }>) {
     data: PEOPLE,
     columns: BASE_COLUMNS,
     arrayExtraKeys: ["team"],
-    filterFn: matchesTeam,
+    numberExtraKeys: COUNT_NUMBER_EXTRA_KEYS,
+    filterFn: matchesDemoFilters,
     defaults: DEFAULTS,
   });
   return <>{render(source)}</>;
@@ -41,7 +49,9 @@ function Backend({ render }: Readonly<{ render: TableRender }>) {
   const source = useBackendData<Person, PeopleParams, PeoplePage>({
     usePaginatedQuery: usePeopleQuery,
     arrayExtraKeys: ["team"],
+    numberExtraKeys: COUNT_NUMBER_EXTRA_KEYS,
     defaults: DEFAULTS,
+    sanitizeParams: sanitizeDemoParams,
   });
   return <>{render(source)}</>;
 }

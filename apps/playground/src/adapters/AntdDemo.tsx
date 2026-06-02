@@ -1,15 +1,16 @@
 import { DataTable } from "@adapttable/antd";
 import { getDirection, getLabels } from "@adapttable/i18n";
-import { Checkbox, ConfigProvider } from "antd";
+import { ConfigProvider } from "antd";
 
 import {
+  clearDemoFilters,
+  demoFilterChips,
+  DemoFilters,
   type Locale,
   makeActions,
   makeColumns,
   makeFilterLabels,
-  selectedTeams,
   strings,
-  TEAMS,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
@@ -31,19 +32,10 @@ export function AntdDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
-            virtualize
-            virtualHeight={420}
-            virtualWidth={960}
             filterLabels={makeFilterLabels(locale)}
-            onClearFilters={() => source.setExtra("team", undefined)}
-            filters={
-              <Checkbox.Group
-                style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                options={TEAMS}
-                value={selectedTeams(source.extra.team)}
-                onChange={(value) => source.setExtra("team", value)}
-              />
-            }
+            extraChips={demoFilterChips(source, locale)}
+            onClearFilters={() => clearDemoFilters(source)}
+            filters={<DemoFilters source={source} locale={locale} />}
           />
         )}
       />

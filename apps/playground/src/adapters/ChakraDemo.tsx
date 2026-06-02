@@ -1,21 +1,16 @@
 import { DataTable } from "@adapttable/chakra";
 import { getDirection, getLabels } from "@adapttable/i18n";
-import {
-  ChakraProvider,
-  Checkbox,
-  CheckboxGroup,
-  FormLabel,
-  Stack,
-} from "@chakra-ui/react";
+import { ChakraProvider } from "@chakra-ui/react";
 
 import {
+  clearDemoFilters,
+  demoFilterChips,
+  DemoFilters,
   type Locale,
   makeActions,
   makeColumns,
   makeFilterLabels,
-  selectedTeams,
   strings,
-  TEAMS,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
@@ -41,26 +36,9 @@ export function ChakraDemo({
             estimateRowSize={56}
             estimateCardSize={140}
             filterLabels={makeFilterLabels(locale)}
-            onClearFilters={() => source.setExtra("team", undefined)}
-            filters={
-              <>
-                <FormLabel>{s.team}</FormLabel>
-                <CheckboxGroup
-                  value={selectedTeams(source.extra.team)}
-                  onChange={(value) =>
-                    source.setExtra("team", value as string[])
-                  }
-                >
-                  <Stack>
-                    {TEAMS.map((t) => (
-                      <Checkbox key={t} value={t}>
-                        {t}
-                      </Checkbox>
-                    ))}
-                  </Stack>
-                </CheckboxGroup>
-              </>
-            }
+            extraChips={demoFilterChips(source, locale)}
+            onClearFilters={() => clearDemoFilters(source)}
+            filters={<DemoFilters source={source} locale={locale} />}
           />
         )}
       />

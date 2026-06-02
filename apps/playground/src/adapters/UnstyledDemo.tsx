@@ -12,7 +12,8 @@ const TAILWIND: DataTableClassNames = {
   sortSelect: "rounded border border-zinc-300 px-2 py-1 text-sm",
   filtersButton:
     "rounded border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-50",
-  filtersPanel: "mt-2 rounded-lg border border-zinc-200 bg-white p-3",
+  filtersPanel:
+    "mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 shadow-xl ring-1 ring-amber-100",
   table: "w-full text-sm",
   headerCell: "text-start font-medium text-zinc-500 px-3 py-2",
   sortButton: "inline-flex items-center gap-1",
