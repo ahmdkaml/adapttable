@@ -31,6 +31,9 @@ export function AntdDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            virtualize
+            virtualHeight={420}
+            virtualWidth={960}
             filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={

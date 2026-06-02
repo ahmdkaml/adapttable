@@ -37,6 +37,9 @@ export function ChakraDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            virtualize
+            estimateRowSize={56}
+            estimateCardSize={140}
             filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={

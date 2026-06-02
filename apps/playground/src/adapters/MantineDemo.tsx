@@ -31,6 +31,10 @@ export function MantineDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
+            virtualize
+            estimateRowSize={56}
+            estimateCardSize={140}
+            stickyTop={12}
             filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={

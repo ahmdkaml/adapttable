@@ -1,3 +1,5 @@
+import "./App.css";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 
@@ -57,6 +59,31 @@ const LOCALES: { key: Locale; label: string }[] = [
   { key: "ar", label: "العربية (RTL)" },
 ];
 
+const PROOFS = [
+  {
+    label: "Responsive by design",
+    value: "Table -> cards",
+    detail:
+      "Narrow screens get readable cards instead of broken horizontal scroll.",
+  },
+  {
+    label: "Same data contract",
+    value: "Client + server",
+    detail:
+      "Flip between in-memory and mock API without changing table markup.",
+  },
+  {
+    label: "Performance path",
+    value: "Virtual rows",
+    detail: "Long infinite lists can opt into windowed row/card rendering.",
+  },
+  {
+    label: "Global-ready",
+    value: "RTL + i18n",
+    detail: "Arabic direction and labels run through the exact same demo.",
+  },
+];
+
 /** Read a selection param from the URL, falling back when missing/invalid. */
 function readParam<T extends string>(
   key: string,
@@ -88,36 +115,32 @@ function Segmented<T extends string>({
   options,
   value,
   onChange,
-  accent,
+  label,
 }: Readonly<{
   options: { key: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  accent: string;
+  label: string;
 }>) {
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      {options.map((o) => {
-        const selected = o.key === value;
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onChange(o.key)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 8,
-              border: "1px solid #e4e4e7",
-              background: selected ? accent : "#fff",
-              color: selected ? "#fff" : "#18181b",
-              cursor: "pointer",
-              fontWeight: selected ? 600 : 400,
-            }}
-          >
-            {o.label}
-          </button>
-        );
-      })}
+    <div className="control-group">
+      <span className="control-label">{label}</span>
+      <div className="segmented" role="list" aria-label={label}>
+        {options.map((o) => {
+          const selected = o.key === value;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              aria-pressed={selected}
+              className={selected ? "segment segment-active" : "segment"}
+              onClick={() => onChange(o.key)}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -148,56 +171,74 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div
-        style={{
-          maxWidth: 980,
-          margin: "0 auto",
-          padding: "32px 16px",
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        <h1 style={{ fontSize: 24, marginBottom: 4 }}>
-          AdaptTable · playground
-        </h1>
-        <p style={{ color: "#71717a", marginTop: 0 }}>
-          One headless source, every adapter, both data paths, two languages.
-          Search, sort, filter, paging, and RTL behave identically across all of
-          them.
-        </p>
+      <div className="playground-shell">
+        <section className="hero">
+          <div className="hero-copy">
+            <p className="eyebrow">AdaptTable laboratory</p>
+            <h1>One table engine. Every UI kit. No broken mobile tables.</h1>
+            <p className="hero-text">
+              Test the same headless source through Mantine, MUI, Chakra, Ant
+              Design, and class-driven Tailwind/shadcn styling. Switch data
+              mode, locale, and adapter without changing the table contract.
+            </p>
+          </div>
+          <div className="proof-grid" aria-label="AdaptTable proof points">
+            {PROOFS.map((proof) => (
+              <article key={proof.label} className="proof-card">
+                <span>{proof.label}</span>
+                <strong>{proof.value}</strong>
+                <p>{proof.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-        <div style={{ display: "grid", gap: 10, margin: "16px 0" }}>
+        <section className="switchboard" aria-label="Playground controls">
           <Segmented
+            label="Adapter"
             options={ADAPTERS}
             value={active}
             onChange={(v) => {
               writeSelection(v, mode, locale);
               setActive(v);
             }}
-            accent="#6c5ce7"
           />
           <Segmented
+            label="Data source"
             options={MODES}
             value={mode}
             onChange={(v) => {
               writeSelection(active, v, locale);
               setMode(v);
             }}
-            accent="#0ea5e9"
           />
           <Segmented
+            label="Locale"
             options={LOCALES}
             value={locale}
             onChange={(v) => {
               writeSelection(active, mode, v);
               setLocale(v);
             }}
-            accent="#10b981"
           />
-        </div>
+        </section>
 
-        {/* Remount on any switch so each starts from a clean source. */}
-        <div key={`${current.key}-${mode}-${locale}`}>
-          {current.render(mode, locale)}
+        <div className="demo-shell">
+          <div className="demo-header">
+            <div>
+              <p className="eyebrow">Live adapter</p>
+              <h2>{current.label}</h2>
+            </div>
+            <p>
+              Virtualization is enabled where the adapter supports custom
+              rendering; AntD uses its native virtual table mode.
+            </p>
+          </div>
+
+          {/* Remount on any switch so each starts from a clean source. */}
+          <div className="demo-stage" key={`${current.key}-${mode}-${locale}`}>
+            {current.render(mode, locale)}
+          </div>
         </div>
       </div>
     </QueryClientProvider>
