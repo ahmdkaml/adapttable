@@ -55,10 +55,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <LoadingState
         rows={props.skeletonRows ?? source.limit}
         columns={table.columns.length}
+        loadingLabel={labels.loading}
       />
     ),
     empty: slots?.empty ?? (
-      <Text {...subtleText} textAlign="center" py={10}>
+      <Text role="status" {...subtleText} textAlign="center" py={10}>
         {labels.noData}
       </Text>
     ),

@@ -31,20 +31,24 @@ function CardActions<TRow>({
 }>) {
   return (
     <Space size="small" wrap>
-      {rowActions.map((action) =>
-        action.isHidden?.(row) ? null : (
+      {rowActions.map((action) => {
+        if (action.isHidden?.(row)) return null;
+        const disabled = action.isDisabled?.(row) ?? false;
+        return (
           <Button
             key={action.key}
             size="small"
             danger={isDangerColor(action.color)}
-            disabled={action.isDisabled?.(row) ?? false}
+            disabled={disabled}
             aria-label={action.label}
-            onClick={() => runRowAction(action, row, confirm, labels.cancel)}
+            onClick={() => {
+              if (!disabled) runRowAction(action, row, confirm, labels.cancel);
+            }}
           >
             {action.icon ?? action.label}
           </Button>
-        )
-      )}
+        );
+      })}
     </Space>
   );
 }

@@ -13,7 +13,7 @@ import {
   Table,
   type TableProps,
 } from "antd";
-import { type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { buildColumns } from "./columns";
 import {
@@ -25,6 +25,19 @@ import {
 } from "./components/chrome";
 import { MobileCards } from "./components/MobileCards";
 import type { DataTableProps } from "./types";
+
+/** Visually-hidden style for the screen-reader loading announcement. */
+const SR_ONLY: CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
 
 /**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
@@ -119,14 +132,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (c.body === "skeleton") {
     bodyRegion = slots?.skeleton ?? (
-      <Skeleton
-        active
-        title={false}
-        paragraph={{ rows: props.skeletonRows ?? source.limit }}
-      />
+      <div role="status" aria-busy="true" aria-live="polite">
+        <Skeleton
+          active
+          title={false}
+          paragraph={{ rows: props.skeletonRows ?? source.limit }}
+        />
+        <span style={SR_ONLY}>{labels.loading}</span>
+      </div>
     );
   } else if (c.body === "empty") {
-    bodyRegion = slots?.empty ?? <Empty description={labels.noData} />;
+    bodyRegion = slots?.empty ?? (
+      <div role="status">
+        <Empty description={labels.noData} />
+      </div>
+    );
   } else if (c.body === "mobile") {
     bodyRegion = (
       <MobileCards

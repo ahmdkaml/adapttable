@@ -1,0 +1,3 @@
+# Run the full quality gate before every commit so nothing that would fail
+# CI gets committed. Turbo caches keep re-runs fast when nothing changed.
+pnpm check

@@ -25,9 +25,11 @@
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint"
+    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "@changesets/cli": "^2.27.11",
     "@eslint/js": "^9.18.0",
     "publint": "^0.3.21",

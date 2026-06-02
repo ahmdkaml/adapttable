@@ -42,11 +42,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <LoadingState
         rows={props.skeletonRows ?? source.limit}
         columns={table.columns.length}
+        loadingLabel={labels.loading}
       />
     );
   } else if (c.body === "empty") {
     body = slots?.empty ?? (
-      <Typography color="text.secondary" align="center" sx={{ py: 6 }}>
+      <Typography
+        role="status"
+        color="text.secondary"
+        align="center"
+        sx={{ py: 6 }}
+      >
         {labels.noData}
       </Typography>
     );

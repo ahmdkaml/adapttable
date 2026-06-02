@@ -24,6 +24,19 @@ import {
 } from "@mui/material";
 import type { ReactNode } from "react";
 
+/** Inline equivalent of `@mui/utils` visuallyHidden (avoids an extra dep). */
+const srOnly = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+} as const;
+
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
@@ -325,9 +338,15 @@ export function ErrorState({
 export function LoadingState({
   rows,
   columns,
-}: Readonly<{ rows: number; columns: number }>) {
+  loadingLabel,
+}: Readonly<{ rows: number; columns: number; loadingLabel?: string }>) {
   return (
-    <Box aria-busy="true" data-testid="adapttable-loading">
+    <Box
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      data-testid="adapttable-loading"
+    >
       {Array.from({ length: rows }, (_, r) => (
         <Stack key={r} direction="row" spacing={2} sx={{ py: 1 }}>
           {Array.from({ length: Math.max(columns, 1) }, (_, c) => (
@@ -335,6 +354,11 @@ export function LoadingState({
           ))}
         </Stack>
       ))}
+      {loadingLabel ? (
+        <Box component="span" sx={srOnly}>
+          {loadingLabel}
+        </Box>
+      ) : null}
     </Box>
   );
 }

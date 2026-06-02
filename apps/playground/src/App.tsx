@@ -15,12 +15,36 @@ const queryClient = new QueryClient();
 type Render = (mode: DataMode, locale: Locale) => ReactNode;
 
 const ADAPTERS: { key: string; label: string; render: Render }[] = [
-  { key: "mantine", label: "Mantine", render: (m, l) => <MantineDemo mode={m} locale={l} /> }, // prettier-ignore
-  { key: "mui", label: "MUI", render: (m, l) => <MuiDemo mode={m} locale={l} /> }, // prettier-ignore
-  { key: "chakra", label: "Chakra", render: (m, l) => <ChakraDemo mode={m} locale={l} /> }, // prettier-ignore
-  { key: "antd", label: "Ant Design", render: (m, l) => <AntdDemo mode={m} locale={l} /> }, // prettier-ignore
-  { key: "unstyled", label: "Unstyled + Tailwind", render: (m, l) => <UnstyledDemo mode={m} locale={l} /> }, // prettier-ignore
-  { key: "shadcn", label: "shadcn", render: (m, l) => <ShadcnDemo mode={m} locale={l} /> }, // prettier-ignore
+  {
+    key: "mantine",
+    label: "Mantine",
+    render: (m, l) => <MantineDemo mode={m} locale={l} />,
+  },
+  {
+    key: "mui",
+    label: "MUI",
+    render: (m, l) => <MuiDemo mode={m} locale={l} />,
+  },
+  {
+    key: "chakra",
+    label: "Chakra",
+    render: (m, l) => <ChakraDemo mode={m} locale={l} />,
+  },
+  {
+    key: "antd",
+    label: "Ant Design",
+    render: (m, l) => <AntdDemo mode={m} locale={l} />,
+  },
+  {
+    key: "unstyled",
+    label: "Unstyled + Tailwind",
+    render: (m, l) => <UnstyledDemo mode={m} locale={l} />,
+  },
+  {
+    key: "shadcn",
+    label: "shadcn",
+    render: (m, l) => <ShadcnDemo mode={m} locale={l} />,
+  },
 ];
 
 const MODES: { key: DataMode; label: string }[] = [
@@ -32,6 +56,33 @@ const LOCALES: { key: Locale; label: string }[] = [
   { key: "en", label: "English" },
   { key: "ar", label: "العربية (RTL)" },
 ];
+
+/** Read a selection param from the URL, falling back when missing/invalid. */
+function readParam<T extends string>(
+  key: string,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  const value = new URLSearchParams(window.location.search).get(key);
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+/**
+ * Persist the demo selection (adapter / mode / locale) to the URL — and only
+ * those — so a refresh restores the UI, while switching drops all table state
+ * (search / sort / filter / page) from the URL for a clean slate.
+ */
+function writeSelection(adapter: string, mode: DataMode, locale: Locale) {
+  const params = new URLSearchParams();
+  params.set("adapter", adapter);
+  params.set("mode", mode);
+  params.set("locale", locale);
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}?${params.toString()}`
+  );
+}
 
 function Segmented<T extends string>({
   options,
@@ -72,16 +123,28 @@ function Segmented<T extends string>({
 }
 
 export function App() {
-  const [active, setActive] = useState(ADAPTERS[0].key);
-  const [mode, setMode] = useState<DataMode>("frontend");
-  const [locale, setLocale] = useState<Locale>("en");
+  const [active, setActive] = useState(() =>
+    readParam(
+      "adapter",
+      ADAPTERS.map((a) => a.key),
+      ADAPTERS[0].key
+    )
+  );
+  const [mode, setMode] = useState<DataMode>(() =>
+    readParam(
+      "mode",
+      MODES.map((m) => m.key),
+      "frontend"
+    )
+  );
+  const [locale, setLocale] = useState<Locale>(() =>
+    readParam(
+      "locale",
+      LOCALES.map((l) => l.key),
+      "en"
+    )
+  );
   const current = ADAPTERS.find((a) => a.key === active) ?? ADAPTERS[0];
-
-  // Switching adapter / mode / locale starts from a clean slate: drop all
-  // table state from the URL so search, sort, filter, and page don't leak
-  // across demos. The keyed remount below then reads the cleared URL.
-  const reset = () =>
-    window.history.replaceState(null, "", window.location.pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -107,7 +170,7 @@ export function App() {
             options={ADAPTERS}
             value={active}
             onChange={(v) => {
-              reset();
+              writeSelection(v, mode, locale);
               setActive(v);
             }}
             accent="#6c5ce7"
@@ -116,7 +179,7 @@ export function App() {
             options={MODES}
             value={mode}
             onChange={(v) => {
-              reset();
+              writeSelection(active, v, locale);
               setMode(v);
             }}
             accent="#0ea5e9"
@@ -125,7 +188,7 @@ export function App() {
             options={LOCALES}
             value={locale}
             onChange={(v) => {
-              reset();
+              writeSelection(active, mode, v);
               setLocale(v);
             }}
             accent="#10b981"

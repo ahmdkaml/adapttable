@@ -33,6 +33,7 @@ import {
   TagLabel,
   Text,
   Tooltip,
+  VisuallyHidden,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -334,9 +335,15 @@ export function ErrorState({
 export function LoadingState({
   rows,
   columns,
-}: Readonly<{ rows: number; columns: number }>) {
+  loadingLabel,
+}: Readonly<{ rows: number; columns: number; loadingLabel?: string }>) {
   return (
-    <Stack data-testid="adapttable-loading" aria-busy="true">
+    <Stack
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      data-testid="adapttable-loading"
+    >
       {Array.from({ length: rows }, (_, r) => (
         <HStack key={r} spacing={4}>
           {Array.from({ length: Math.max(columns, 1) }, (_, c) => (
@@ -344,6 +351,7 @@ export function LoadingState({
           ))}
         </HStack>
       ))}
+      {loadingLabel ? <VisuallyHidden>{loadingLabel}</VisuallyHidden> : null}
     </Stack>
   );
 }

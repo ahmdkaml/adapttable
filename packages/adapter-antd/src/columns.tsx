@@ -109,17 +109,20 @@ export function buildColumns<TRow>({
         <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
           {rowActions.map((action) => {
             if (action.isHidden?.(row)) return null;
+            const disabled = action.isDisabled?.(row) ?? false;
             return (
               <Tooltip key={action.key} title={action.label}>
                 <Button
                   size="small"
                   type="text"
                   danger={isDangerColor(action.color)}
-                  disabled={action.isDisabled?.(row) ?? false}
+                  disabled={disabled}
                   aria-label={action.label}
                   onClick={(e) => {
                     e.stopPropagation();
-                    runRowAction(action, row, confirm, labels.cancel);
+                    if (!disabled) {
+                      runRowAction(action, row, confirm, labels.cancel);
+                    }
                   }}
                 >
                   {action.icon ?? action.label}

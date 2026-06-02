@@ -32,7 +32,12 @@ describe("deriveSortByOptions", () => {
 
   it("falls back to mobileLabel when the header is not a string", () => {
     const columns: ColumnDef<Row>[] = [
-      { key: "name", header: <span>Name</span>, mobileLabel: "Name", sortable: true }, // prettier-ignore
+      {
+        key: "name",
+        header: <span>Name</span>,
+        mobileLabel: "Name",
+        sortable: true,
+      },
     ];
     expect(deriveSortByOptions(columns)).toEqual([
       { value: "name", label: "Name" },

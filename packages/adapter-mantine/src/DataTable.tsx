@@ -103,10 +103,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const mobileBodyRef = useRef<HTMLDivElement>(null);
   useMountStagger(
     isMobile ? mobileBodyRef : desktopBodyRef,
-    [source.rows, isMobile],
-    {
-      enabled: animate,
-    }
+    [source.rows.length, isMobile],
+    { enabled: animate }
   );
 
   const isPaged = source.paginationMode === "paged";
@@ -128,6 +126,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <TableSkeleton
         columns={table.columns.length || 1}
         rows={skeletonRows ?? source.limit}
+        loadingLabel={table.labels.loading}
       />
     );
   } else if (table.isEmpty) {

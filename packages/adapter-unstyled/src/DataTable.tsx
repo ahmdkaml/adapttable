@@ -116,7 +116,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (table.isEmpty) {
     body = emptyState ?? (
-      <div data-adapttable-part="empty" className={classNames.empty}>
+      <div
+        role="status"
+        data-adapttable-part="empty"
+        className={classNames.empty}
+      >
         {labels.noData}
       </div>
     );

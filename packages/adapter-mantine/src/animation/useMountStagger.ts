@@ -28,6 +28,10 @@ export function useMountStagger(
 ): void {
   const reduced = usePrefersReducedMotion();
   const { enabled, step = 40, duration = 320 } = options;
+  // Collapse the caller's deps to a primitive key so the effect's dependency
+  // array stays a literal (no spread) and `exhaustive-deps` can verify it.
+  // Pass primitive deps (e.g. a row count), not large objects.
+  const depsKey = deps.map(String).join("|");
 
   useEffect(() => {
     if (!enabled || reduced) return;
@@ -49,6 +53,5 @@ export function useMountStagger(
         }
       );
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, reduced, step, duration, ref, ...deps]);
+  }, [enabled, reduced, step, duration, ref, depsKey]);
 }

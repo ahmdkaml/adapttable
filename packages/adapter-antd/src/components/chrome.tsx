@@ -154,6 +154,14 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
       message={labels.selectedCount(selection.selectedCount)}
       action={
         <Space size="small" wrap>
+          <Button
+            size="small"
+            type="text"
+            disabled={busy}
+            onClick={selection.clear}
+          >
+            {labels.clearAll}
+          </Button>
           {bulkActions.map((action) => (
             <Button
               key={action.key}
@@ -168,14 +176,6 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
               {action.label}
             </Button>
           ))}
-          <Button
-            size="small"
-            type="text"
-            disabled={busy}
-            onClick={selection.clear}
-          >
-            {labels.clearAll}
-          </Button>
         </Space>
       }
     />

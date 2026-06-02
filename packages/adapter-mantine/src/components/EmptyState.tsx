@@ -20,7 +20,14 @@ export function EmptyState({
   icon,
 }: Readonly<EmptyStateProps>) {
   return (
-    <Stack align="center" justify="center" gap={6} py={48} px={16}>
+    <Stack
+      role="status"
+      align="center"
+      justify="center"
+      gap={6}
+      py={48}
+      px={16}
+    >
       <Text c="dimmed" aria-hidden>
         {icon ?? <InboxIcon size={40} />}
       </Text>
