@@ -1,6 +1,6 @@
 # @adapttable/unstyled
 
-The **headless, unstyled** adapter for [AdaptTable](https://github.com/orwamahmoud/adapttable).
+The **headless, unstyled** adapter for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).
 Renders semantic HTML with `data-adapttable-part` + `data-*` state hooks
 and per-part `className` overrides — style it with **Tailwind**, **shadcn/ui**,
 or your own CSS. Ships zero styles.

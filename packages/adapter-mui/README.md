@@ -1,6 +1,6 @@
 # @adapttable/mui
 
-The **Material UI adapter** for [AdaptTable](https://github.com/orwamahmoud/adapttable) —
+The **Material UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included MUI data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, and dark mode. A free, headless
 **alternative to MUI X DataGrid** built on `@adapttable/core`.

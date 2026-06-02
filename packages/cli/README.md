@@ -1,6 +1,6 @@
 # @adapttable/cli
 
-The scaffolding CLI for [AdaptTable](https://github.com/orwamahmoud/adapttable).
+The scaffolding CLI for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).
 One command detects your UI kit, picks your package manager, writes a
 starter table, and tells you exactly what to install.
 

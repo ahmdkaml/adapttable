@@ -1,6 +1,6 @@
 # @adapttable/mantine
 
-The **Mantine adapter** for [AdaptTable](https://github.com/orwamahmoud/adapttable) —
+The **Mantine adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included React data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, dark mode, and optional entrance
 animation. Built on the headless `@adapttable/core` engine.

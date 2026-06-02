@@ -1,6 +1,6 @@
 # @adapttable/chakra
 
-The **Chakra UI adapter** for [AdaptTable](https://github.com/orwamahmoud/adapttable) —
+The **Chakra UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included Chakra data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, and dark mode. Built on the headless
 `@adapttable/core` engine. (Targets Chakra UI **v2**.)

@@ -10,7 +10,7 @@ minor version. Once 1.0 ships, this policy will list the supported range.
 Please **do not open a public issue** for security vulnerabilities.
 
 Instead, report privately via GitHub's
-[**Report a vulnerability**](https://github.com/orwamahmoud/adapttable/security/advisories/new)
+[**Report a vulnerability**](https://github.com/orwa-mahmoud/adapttable/security/advisories/new)
 flow (Security → Advisories). If that is unavailable, you can open a regular
 issue asking the maintainers to contact you, without disclosing details.
 

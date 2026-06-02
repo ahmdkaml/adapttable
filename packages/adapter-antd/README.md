@@ -1,6 +1,6 @@
 # @adapttable/antd
 
-The **Ant Design adapter** for [AdaptTable](https://github.com/orwamahmoud/adapttable) —
+The **Ant Design adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included antd data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, and dark mode. It drives antd's
 high-level `<Table>` from the headless `@adapttable/core` engine, so you get

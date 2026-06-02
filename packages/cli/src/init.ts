@@ -100,7 +100,7 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   }
   io.log("");
   io.log(
-    "3. Render <PeopleTable /> and you're done. Docs: https://github.com/orwamahmoud/adapttable"
+    "3. Render <PeopleTable /> and you're done. Docs: https://github.com/orwa-mahmoud/adapttable"
   );
 
   return {

@@ -15,13 +15,13 @@
   ],
   "license": "MIT",
   "author": "Orwa Mahmoud",
-  "homepage": "https://github.com/orwamahmoud/adapttable/tree/main/packages/i18n#readme",
+  "homepage": "https://github.com/orwa-mahmoud/adapttable/tree/main/packages/i18n#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/orwamahmoud/adapttable.git",
+    "url": "git+https://github.com/orwa-mahmoud/adapttable.git",
     "directory": "packages/i18n"
   },
-  "bugs": "https://github.com/orwamahmoud/adapttable/issues",
+  "bugs": "https://github.com/orwa-mahmoud/adapttable/issues",
   "type": "module",
   "sideEffects": false,
   "files": [
