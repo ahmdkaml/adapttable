@@ -6,7 +6,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { columns, matchesTeam, PEOPLE, type Person } from "./data";
+import { BASE_COLUMNS, matchesTeam, PEOPLE, type Person } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
 export type DataMode = "frontend" | "backend";
@@ -29,7 +29,7 @@ function usePeopleQuery(params: PeopleParams) {
 function Frontend({ render }: Readonly<{ render: TableRender }>) {
   const source = useFrontendData<Person>({
     data: PEOPLE,
-    columns,
+    columns: BASE_COLUMNS,
     arrayExtraKeys: ["team"],
     filterFn: matchesTeam,
     defaults: DEFAULTS,

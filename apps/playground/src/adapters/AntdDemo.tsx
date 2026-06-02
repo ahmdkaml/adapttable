@@ -1,28 +1,37 @@
 import { DataTable } from "@adapttable/antd";
+import { getDirection, getLabels } from "@adapttable/i18n";
 import { Checkbox, ConfigProvider } from "antd";
 
 import {
-  columns,
-  editAction,
+  type Locale,
+  makeActions,
+  makeColumns,
+  makeFilterLabels,
   selectedTeams,
-  TEAM_FILTER_LABELS,
+  strings,
   TEAMS,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
-export function AntdDemo({ mode }: Readonly<{ mode: DataMode }>) {
+export function AntdDemo({
+  mode,
+  locale,
+}: Readonly<{ mode: DataMode; locale: Locale }>) {
+  const s = strings(locale);
   return (
-    <ConfigProvider>
+    <ConfigProvider direction={getDirection(locale)}>
       <DemoBody
         mode={mode}
         render={(source) => (
           <DataTable
             source={source}
-            columns={columns}
+            columns={makeColumns(locale)}
             rowKey={(r) => r.id}
-            searchPlaceholder="Search people…"
-            rowActions={[editAction]}
-            filterLabels={TEAM_FILTER_LABELS}
+            labels={getLabels(locale)}
+            dir={getDirection(locale)}
+            searchPlaceholder={s.search}
+            rowActions={makeActions(locale)}
+            filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={
               <Checkbox.Group

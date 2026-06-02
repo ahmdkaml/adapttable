@@ -5,27 +5,32 @@ import { AntdDemo } from "./adapters/AntdDemo";
 import { ChakraDemo } from "./adapters/ChakraDemo";
 import { MantineDemo } from "./adapters/MantineDemo";
 import { MuiDemo } from "./adapters/MuiDemo";
+import { ShadcnDemo } from "./adapters/ShadcnDemo";
 import { UnstyledDemo } from "./adapters/UnstyledDemo";
+import { type Locale } from "./data";
 import { type DataMode } from "./Demo";
 
 const queryClient = new QueryClient();
 
-const ADAPTERS: {
-  key: string;
-  label: string;
-  render: (m: DataMode) => ReactNode;
-}[] = [
-  // prettier-ignore
-  { key: "mantine", label: "Mantine", render: (m) => <MantineDemo mode={m} /> },
-  { key: "mui", label: "MUI", render: (m) => <MuiDemo mode={m} /> },
-  { key: "chakra", label: "Chakra", render: (m) => <ChakraDemo mode={m} /> },
-  { key: "antd", label: "Ant Design", render: (m) => <AntdDemo mode={m} /> },
-  { key: "unstyled", label: "Unstyled + Tailwind", render: (m) => <UnstyledDemo mode={m} /> }, // prettier-ignore
+type Render = (mode: DataMode, locale: Locale) => ReactNode;
+
+const ADAPTERS: { key: string; label: string; render: Render }[] = [
+  { key: "mantine", label: "Mantine", render: (m, l) => <MantineDemo mode={m} locale={l} /> }, // prettier-ignore
+  { key: "mui", label: "MUI", render: (m, l) => <MuiDemo mode={m} locale={l} /> }, // prettier-ignore
+  { key: "chakra", label: "Chakra", render: (m, l) => <ChakraDemo mode={m} locale={l} /> }, // prettier-ignore
+  { key: "antd", label: "Ant Design", render: (m, l) => <AntdDemo mode={m} locale={l} /> }, // prettier-ignore
+  { key: "unstyled", label: "Unstyled + Tailwind", render: (m, l) => <UnstyledDemo mode={m} locale={l} /> }, // prettier-ignore
+  { key: "shadcn", label: "shadcn", render: (m, l) => <ShadcnDemo mode={m} locale={l} /> }, // prettier-ignore
 ];
 
 const MODES: { key: DataMode; label: string }[] = [
   { key: "frontend", label: "Frontend (in-memory)" },
   { key: "backend", label: "Backend (mock API)" },
+];
+
+const LOCALES: { key: Locale; label: string }[] = [
+  { key: "en", label: "English" },
+  { key: "ar", label: "العربية (RTL)" },
 ];
 
 function Segmented<T extends string>({
@@ -69,13 +74,20 @@ function Segmented<T extends string>({
 export function App() {
   const [active, setActive] = useState(ADAPTERS[0].key);
   const [mode, setMode] = useState<DataMode>("frontend");
+  const [locale, setLocale] = useState<Locale>("en");
   const current = ADAPTERS.find((a) => a.key === active) ?? ADAPTERS[0];
+
+  // Switching adapter / mode / locale starts from a clean slate: drop all
+  // table state from the URL so search, sort, filter, and page don't leak
+  // across demos. The keyed remount below then reads the cleared URL.
+  const reset = () =>
+    window.history.replaceState(null, "", window.location.pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
       <div
         style={{
-          maxWidth: 960,
+          maxWidth: 980,
           margin: "0 auto",
           padding: "32px 16px",
           fontFamily: "system-ui, sans-serif",
@@ -85,27 +97,45 @@ export function App() {
           AdaptTable · playground
         </h1>
         <p style={{ color: "#71717a", marginTop: 0 }}>
-          One headless source, every adapter, both data paths. Search, sort,
-          filter, and paging behave identically across all of them.
+          One headless source, every adapter, both data paths, two languages.
+          Search, sort, filter, paging, and RTL behave identically across all of
+          them.
         </p>
 
         <div style={{ display: "grid", gap: 10, margin: "16px 0" }}>
           <Segmented
             options={ADAPTERS}
             value={active}
-            onChange={setActive}
+            onChange={(v) => {
+              reset();
+              setActive(v);
+            }}
             accent="#6c5ce7"
           />
           <Segmented
             options={MODES}
             value={mode}
-            onChange={setMode}
+            onChange={(v) => {
+              reset();
+              setMode(v);
+            }}
             accent="#0ea5e9"
+          />
+          <Segmented
+            options={LOCALES}
+            value={locale}
+            onChange={(v) => {
+              reset();
+              setLocale(v);
+            }}
+            accent="#10b981"
           />
         </div>
 
-        {/* Remount on adapter/mode change so each starts from a clean source. */}
-        <div key={`${current.key}-${mode}`}>{current.render(mode)}</div>
+        {/* Remount on any switch so each starts from a clean source. */}
+        <div key={`${current.key}-${mode}-${locale}`}>
+          {current.render(mode, locale)}
+        </div>
       </div>
     </QueryClientProvider>
   );

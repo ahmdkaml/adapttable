@@ -1,4 +1,5 @@
 import { DataTable } from "@adapttable/chakra";
+import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   ChakraProvider,
   Checkbox,
@@ -8,15 +9,21 @@ import {
 } from "@chakra-ui/react";
 
 import {
-  columns,
-  editAction,
+  type Locale,
+  makeActions,
+  makeColumns,
+  makeFilterLabels,
   selectedTeams,
-  TEAM_FILTER_LABELS,
+  strings,
   TEAMS,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
-export function ChakraDemo({ mode }: Readonly<{ mode: DataMode }>) {
+export function ChakraDemo({
+  mode,
+  locale,
+}: Readonly<{ mode: DataMode; locale: Locale }>) {
+  const s = strings(locale);
   return (
     <ChakraProvider>
       <DemoBody
@@ -24,15 +31,17 @@ export function ChakraDemo({ mode }: Readonly<{ mode: DataMode }>) {
         render={(source) => (
           <DataTable
             source={source}
-            columns={columns}
+            columns={makeColumns(locale)}
             rowKey={(r) => r.id}
-            searchPlaceholder="Search people…"
-            rowActions={[editAction]}
-            filterLabels={TEAM_FILTER_LABELS}
+            labels={getLabels(locale)}
+            dir={getDirection(locale)}
+            searchPlaceholder={s.search}
+            rowActions={makeActions(locale)}
+            filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={
               <>
-                <FormLabel>Team</FormLabel>
+                <FormLabel>{s.team}</FormLabel>
                 <CheckboxGroup
                   value={selectedTeams(source.extra.team)}
                   onChange={(value) =>

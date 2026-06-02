@@ -1,16 +1,23 @@
+import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mantine";
 import { Checkbox, MantineProvider, Stack } from "@mantine/core";
 
 import {
-  columns,
-  editAction,
+  type Locale,
+  makeActions,
+  makeColumns,
+  makeFilterLabels,
   selectedTeams,
-  TEAM_FILTER_LABELS,
+  strings,
   TEAMS,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
-export function MantineDemo({ mode }: Readonly<{ mode: DataMode }>) {
+export function MantineDemo({
+  mode,
+  locale,
+}: Readonly<{ mode: DataMode; locale: Locale }>) {
+  const s = strings(locale);
   return (
     <MantineProvider>
       <DemoBody
@@ -18,15 +25,17 @@ export function MantineDemo({ mode }: Readonly<{ mode: DataMode }>) {
         render={(source) => (
           <DataTable
             source={source}
-            columns={columns}
+            columns={makeColumns(locale)}
             rowKey={(r) => r.id}
-            searchPlaceholder="Search people…"
-            rowActions={[editAction]}
-            filterLabels={TEAM_FILTER_LABELS}
+            labels={getLabels(locale)}
+            dir={getDirection(locale)}
+            searchPlaceholder={s.search}
+            rowActions={makeActions(locale)}
+            filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={
               <Checkbox.Group
-                label="Team"
+                label={s.team}
                 value={selectedTeams(source.extra.team)}
                 onChange={(value) => source.setExtra("team", value)}
               >

@@ -1,3 +1,4 @@
+import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mui";
 import {
   Checkbox,
@@ -7,16 +8,22 @@ import {
 } from "@mui/material";
 
 import {
-  columns,
-  editAction,
+  type Locale,
+  makeActions,
+  makeColumns,
+  makeFilterLabels,
   selectedTeams,
-  TEAM_FILTER_LABELS,
+  strings,
   TEAMS,
   toggleTeam,
 } from "../data";
 import { type DataMode, DemoBody } from "../Demo";
 
-export function MuiDemo({ mode }: Readonly<{ mode: DataMode }>) {
+export function MuiDemo({
+  mode,
+  locale,
+}: Readonly<{ mode: DataMode; locale: Locale }>) {
+  const s = strings(locale);
   return (
     <DemoBody
       mode={mode}
@@ -25,15 +32,17 @@ export function MuiDemo({ mode }: Readonly<{ mode: DataMode }>) {
         return (
           <DataTable
             source={source}
-            columns={columns}
+            columns={makeColumns(locale)}
             rowKey={(r) => r.id}
-            searchPlaceholder="Search people…"
-            rowActions={[editAction]}
-            filterLabels={TEAM_FILTER_LABELS}
+            labels={getLabels(locale)}
+            dir={getDirection(locale)}
+            searchPlaceholder={s.search}
+            rowActions={makeActions(locale)}
+            filterLabels={makeFilterLabels(locale)}
             onClearFilters={() => source.setExtra("team", undefined)}
             filters={
               <FormGroup>
-                <FormLabel>Team</FormLabel>
+                <FormLabel>{s.team}</FormLabel>
                 {TEAMS.map((t) => (
                   <FormControlLabel
                     key={t}
