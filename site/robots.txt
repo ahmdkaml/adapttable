@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://orwamahmoud.github.io/adapttable/sitemap.xml
