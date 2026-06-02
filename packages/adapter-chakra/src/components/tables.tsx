@@ -7,6 +7,7 @@ import {
 } from "@adapttable/core";
 import {
   Box,
+  Button,
   Card,
   CardBody,
   Checkbox,
@@ -68,7 +69,14 @@ function RowActionButtons<TRow>({
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
         const disabled = action.isDisabled?.(row) ?? false;
-        return (
+        const handleClick = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
+        };
+        // Icon-only actions use IconButton (with a tooltip for the name);
+        // text actions use a real Button so the label actually renders
+        // (IconButton ignores children).
+        return action.icon ? (
           <Tooltip key={action.key} label={action.label}>
             <IconButton
               size="sm"
@@ -76,15 +84,21 @@ function RowActionButtons<TRow>({
               colorScheme={action.color ?? colorScheme}
               isDisabled={disabled}
               aria-label={action.label}
-              icon={(action.icon as React.ReactElement) ?? undefined}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-              }}
-            >
-              {action.icon ? undefined : action.label}
-            </IconButton>
+              icon={action.icon as React.ReactElement}
+              onClick={handleClick}
+            />
           </Tooltip>
+        ) : (
+          <Button
+            key={action.key}
+            size="sm"
+            variant="ghost"
+            colorScheme={action.color ?? colorScheme}
+            isDisabled={disabled}
+            onClick={handleClick}
+          >
+            {action.label}
+          </Button>
         );
       })}
     </HStack>
@@ -136,26 +150,18 @@ export function DesktopTable<TRow>({
                   textAlign={chakraAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}
-                  cursor={column.sortable ? "pointer" : undefined}
-                  onClick={
-                    column.sortable
-                      ? () => table.toggleSort(column.key)
-                      : undefined
-                  }
                 >
                   {column.sortable ? (
                     <Box
                       as="button"
                       type="button"
+                      cursor="pointer"
                       aria-label={`${labels.sortBy}: ${
                         typeof column.header === "string"
                           ? column.header
                           : column.key
                       }`}
-                      onClick={(e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        table.toggleSort(column.key);
-                      }}
+                      onClick={() => table.toggleSort(column.key)}
                     >
                       {column.header}
                       <Text as="span" aria-hidden>
@@ -174,10 +180,12 @@ export function DesktopTable<TRow>({
         <Tbody>
           {rows.map((row, index) => {
             const id = getRowId(row);
+            const selected = selection?.isSelected(id);
             return (
               <Tr
                 key={getRowId(row)}
-                bg={selection?.isSelected(id) ? "blackAlpha.50" : undefined}
+                bg={selected ? "blackAlpha.100" : undefined}
+                _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               >
                 {selection && (
