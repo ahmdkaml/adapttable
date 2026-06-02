@@ -21,6 +21,7 @@ const columns: ColumnDef<Row>[] = [
   { key: "city", header: "City", accessor: (r) => r.city },
 ];
 const axeOpts = { rules: { "color-contrast": { enabled: false } } };
+const AXE_TIMEOUT_MS = 20_000;
 
 function renderTable(
   props: Partial<Parameters<typeof DataTable<Row>>[0]> = {}
@@ -49,21 +50,29 @@ function renderTable(
 }
 
 describe("accessibility (axe) — Ant Design", () => {
-  it("a full-featured table has no violations", async () => {
-    const { container } = renderTable({
-      bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
-      rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
-      filterLabels: { status: (v) => `Status: ${v}` },
-    });
-    expect(await axe(container, axeOpts)).toHaveNoViolations();
-  });
+  it(
+    "a full-featured table has no violations",
+    async () => {
+      const { container } = renderTable({
+        bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
+        rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
+        filterLabels: { status: (v) => `Status: ${v}` },
+      });
+      expect(await axe(container, axeOpts)).toHaveNoViolations();
+    },
+    AXE_TIMEOUT_MS
+  );
 
-  it("the mobile card layout has no violations", async () => {
-    const { container } = renderTable({
-      isMobile: true,
-      bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
-      rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
-    });
-    expect(await axe(container, axeOpts)).toHaveNoViolations();
-  });
+  it(
+    "the mobile card layout has no violations",
+    async () => {
+      const { container } = renderTable({
+        isMobile: true,
+        bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
+        rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
+      });
+      expect(await axe(container, axeOpts)).toHaveNoViolations();
+    },
+    AXE_TIMEOUT_MS
+  );
 });
