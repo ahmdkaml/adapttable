@@ -1,66 +1,66 @@
-import {
-  type ColumnDef,
-  DataTable,
-  useFrontendData,
-} from "@adapttable/mantine";
-import { Container, MantineProvider, Title } from "@mantine/core";
+import { type ReactNode, useState } from "react";
 
-interface Person {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  team: string;
-}
+import { AntdDemo } from "./adapters/AntdDemo";
+import { ChakraDemo } from "./adapters/ChakraDemo";
+import { MantineDemo } from "./adapters/MantineDemo";
+import { MuiDemo } from "./adapters/MuiDemo";
+import { UnstyledDemo } from "./adapters/UnstyledDemo";
 
-const PEOPLE: Person[] = [
-  { id: "1", name: "Ada Lovelace", email: "ada@example.com", role: "Engineer", team: "Core" }, // prettier-ignore
-  { id: "2", name: "Alan Turing", email: "alan@example.com", role: "Founder", team: "Core" }, // prettier-ignore
-  { id: "3", name: "Grace Hopper", email: "grace@example.com", role: "Admiral", team: "Platform" }, // prettier-ignore
-  { id: "4", name: "Katherine Johnson", email: "katherine@example.com", role: "Mathematician", team: "Data" }, // prettier-ignore
-  { id: "5", name: "Margaret Hamilton", email: "margaret@example.com", role: "Engineer", team: "Platform" }, // prettier-ignore
-  { id: "6", name: "Barbara Liskov", email: "barbara@example.com", role: "Researcher", team: "Core" }, // prettier-ignore
-  { id: "7", name: "Donald Knuth", email: "don@example.com", role: "Author", team: "Data" }, // prettier-ignore
-  { id: "8", name: "Linus Torvalds", email: "linus@example.com", role: "Engineer", team: "Platform" }, // prettier-ignore
-  { id: "9", name: "Edsger Dijkstra", email: "edsger@example.com", role: "Researcher", team: "Core" }, // prettier-ignore
-  { id: "10", name: "Tim Berners-Lee", email: "tim@example.com", role: "Founder", team: "Web" }, // prettier-ignore
-  { id: "11", name: "Radia Perlman", email: "radia@example.com", role: "Engineer", team: "Web" }, // prettier-ignore
-  { id: "12", name: "Vint Cerf", email: "vint@example.com", role: "Founder", team: "Web" }, // prettier-ignore
+const ADAPTERS: { key: string; label: string; render: () => ReactNode }[] = [
+  { key: "mantine", label: "Mantine", render: () => <MantineDemo /> },
+  { key: "mui", label: "MUI", render: () => <MuiDemo /> },
+  { key: "chakra", label: "Chakra", render: () => <ChakraDemo /> },
+  { key: "antd", label: "Ant Design", render: () => <AntdDemo /> },
+  { key: "unstyled", label: "Unstyled + Tailwind", render: () => <UnstyledDemo /> }, // prettier-ignore
 ];
 
-const columns: ColumnDef<Person>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "email", header: "Email", accessor: (r) => r.email },
-  { key: "role", header: "Role", accessor: (r) => r.role, sortable: true },
-  { key: "team", header: "Team", accessor: (r) => r.team, sortable: true },
-];
-
-/**
- * Local dev harness — search, sort, paginate, and a row action, running the
- * Mantine adapter straight from the workspace source.
- */
 export function App() {
-  const source = useFrontendData({ data: PEOPLE, columns });
+  const [active, setActive] = useState(ADAPTERS[0].key);
+  const current = ADAPTERS.find((a) => a.key === active) ?? ADAPTERS[0];
+
   return (
-    <MantineProvider>
-      <Container size="md" py="xl">
-        <Title order={2} mb="md">
-          AdaptTable · Mantine
-        </Title>
-        <DataTable
-          source={source}
-          columns={columns}
-          rowKey={(r) => r.id}
-          searchPlaceholder="Search people…"
-          rowActions={[
-            {
-              key: "edit",
-              label: "Edit",
-              onClick: (row) => alert(`Edit ${row.name}`),
-            },
-          ]}
-        />
-      </Container>
-    </MantineProvider>
+    <div
+      style={{
+        maxWidth: 960,
+        margin: "0 auto",
+        padding: "32px 16px",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>AdaptTable · playground</h1>
+      <p style={{ color: "#71717a", marginTop: 0 }}>
+        The same headless source, one adapter at a time. Search, sort, and page
+        work identically across all of them.
+      </p>
+
+      <div
+        style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0" }}
+      >
+        {ADAPTERS.map((a) => {
+          const selected = a.key === active;
+          return (
+            <button
+              key={a.key}
+              type="button"
+              onClick={() => setActive(a.key)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 8,
+                border: "1px solid #e4e4e7",
+                background: selected ? "#6c5ce7" : "#fff",
+                color: selected ? "#fff" : "#18181b",
+                cursor: "pointer",
+                fontWeight: selected ? 600 : 400,
+              }}
+            >
+              {a.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Remount on switch so each adapter's provider starts clean. */}
+      <div key={current.key}>{current.render()}</div>
+    </div>
   );
 }

@@ -10,10 +10,21 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@adapttable/antd": "workspace:*",
+    "@adapttable/chakra": "workspace:*",
     "@adapttable/core": "workspace:*",
+    "@adapttable/i18n": "workspace:*",
     "@adapttable/mantine": "workspace:*",
+    "@adapttable/mui": "workspace:*",
+    "@adapttable/unstyled": "workspace:*",
+    "@chakra-ui/react": "^2.10.4",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@mantine/core": "^8.1.3",
     "@mantine/hooks": "^8.1.3",
+    "@mui/material": "^6.3.1",
+    "antd": "^5.22.0",
+    "framer-motion": "^11.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
