@@ -97,6 +97,18 @@ export {
 
 /* ── Filters / chips ───────────────────────────────────────────────── */
 export {
+  clearCountFilterExtra,
+  COUNT_OPERATOR_SYMBOL,
+  COUNT_OPERATORS,
+  countFilterChipLabel,
+  countFilterExtra,
+  type CountFilterState,
+  countFilterStateFromExtra,
+  type CountOperator,
+  isCountFilterComplete,
+  sanitizeCountFilterParams,
+} from "./filters/countFilters";
+export {
   type ActiveFilterChip,
   type ChipLabelResolver,
   mergeFilterChips,
