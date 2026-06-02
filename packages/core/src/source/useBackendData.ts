@@ -133,13 +133,15 @@ export function useBackendData<
       };
     }
     const acc: TRow[] = [];
-    let lastTotal = 0;
+    let lastTotal: number | undefined;
     for (const pg of pages) {
       const projected = project(pg);
       acc.push(...projected.items);
       if (projected.total !== undefined) lastTotal = projected.total;
     }
-    return { rows: acc, total: lastTotal };
+    // Mirror the paged branch / useFrontendData: when the source reports no
+    // grand total, fall back to the accumulated row count rather than 0.
+    return { rows: acc, total: lastTotal ?? acc.length };
   }, [query.data, paged]);
 
   // Clamp out-of-range pages (hand-edited / stale shared links) once the

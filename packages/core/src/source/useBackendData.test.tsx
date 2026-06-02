@@ -104,6 +104,21 @@ describe("useBackendData", () => {
     expect(result.current.total).toBe(3);
   });
 
+  it("falls back to the row count when an infinite source reports no total", () => {
+    const q = makeQuery({
+      pages: [
+        page([{ id: "a", name: "A" }], 0),
+        page([{ id: "b", name: "B" }], 0),
+      ],
+    });
+    const { result } = mount(q, {
+      selectPage: (p) => ({ items: p.items }),
+      paginationMode: "infinite",
+    });
+    expect(result.current.rows).toHaveLength(2);
+    expect(result.current.total).toBe(2);
+  });
+
   it("paged mode returns only the last fetched page", () => {
     const q = makeQuery({
       pages: [

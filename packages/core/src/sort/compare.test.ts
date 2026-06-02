@@ -20,6 +20,14 @@ describe("compareValues", () => {
   });
 });
 
+describe("compareValues — booleans", () => {
+  it("sorts booleans numerically (false before true)", () => {
+    expect(compareValues(false, true)).toBeLessThan(0);
+    expect(compareValues(true, false)).toBeGreaterThan(0);
+    expect(compareValues(true, true)).toBe(0);
+  });
+});
+
 describe("sortRows", () => {
   const rows = [
     { id: "a", n: 3 },
