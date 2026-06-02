@@ -212,10 +212,10 @@ export function useDataTable<TRow>(
   const getTableProps = useCallback(
     (props?: Props) =>
       mergeProps(
-        { role: "table", dir, "aria-label": tableLabel ?? labels.actions },
+        { role: "table", dir, "aria-label": tableLabel ?? labels.table },
         props
       ),
-    [dir, tableLabel, labels.actions]
+    [dir, tableLabel, labels.table]
   );
 
   const getHeaderRowProps = useCallback(

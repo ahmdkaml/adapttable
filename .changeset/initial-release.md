@@ -22,7 +22,8 @@ table.
   Design** (on antd's high-level `<Table>`), and **Tailwind/shadcn**
   (`@adapttable/unstyled`).
 - `@adapttable/i18n`: English + Arabic label presets and RTL helpers.
-- `@adapttable/cli`: `npx adapttable init` to detect your kit and scaffold.
+- `@adapttable/cli`: `npx @adapttable/cli init` to detect your kit and
+  scaffold.
 
 Highlights: one API for client and server data, shareable URL state,
 infinite scroll **and** paging (auto by device), first-class RTL, seamless

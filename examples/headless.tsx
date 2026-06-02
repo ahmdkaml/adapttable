@@ -47,15 +47,18 @@ export function HeadlessExample() {
           </tr>
         </thead>
         <tbody>
-          {t.rows.map((row, i) => (
-            <tr {...t.getRowProps(row, i)} key={row.id}>
-              {t.columns.map((c) => (
-                <td key={c.key} {...t.getCellProps(c)}>
-                  {c.accessor?.(row)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {t.rows.map((row, i) => {
+            const { key, ...rowProps } = t.getRowProps(row, i);
+            return (
+              <tr key={key as string} {...rowProps}>
+                {t.columns.map((c) => (
+                  <td key={c.key} {...t.getCellProps(c)}>
+                    {c.accessor?.(row)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

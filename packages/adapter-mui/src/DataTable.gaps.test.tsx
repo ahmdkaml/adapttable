@@ -98,6 +98,24 @@ describe("MUI gaps", () => {
     expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
   });
 
+  it("maps destructive row action colors to MUI error buttons", () => {
+    const onClick = vi.fn();
+    mount({
+      rowActions: [
+        {
+          key: "delete",
+          label: "Delete",
+          color: "danger",
+          onClick,
+        },
+      ],
+    });
+    const button = screen.getAllByRole("button", { name: "Delete" })[0]!;
+    expect(button.className).toContain("MuiIconButton-colorError");
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("renders a custom Cell and a center-aligned column", () => {
     const cellCols: ColumnDef<Row>[] = [
       {

@@ -26,6 +26,6 @@
     <rect x="804" y="404" width="170" height="58" rx="29" fill="#16121f" stroke="#3a3550"/>
     <text x="889" y="441" fill="#e4e4e7" text-anchor="middle">Tailwind</text>
   </g>
-  <text x="100" y="540" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24" fill="#8b7cf6">npx adapttable init</text>
+  <text x="100" y="540" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24" fill="#8b7cf6">npx @adapttable/cli init</text>
   <text x="1100" y="560" font-family="system-ui, sans-serif" font-size="22" fill="#71717a" text-anchor="end">MIT · TypeScript · React 18+</text>
 </svg>

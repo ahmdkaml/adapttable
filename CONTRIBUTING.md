@@ -24,7 +24,7 @@ packages/
   adapter-unstyled/ @adapttable/unstyled   Tailwind / shadcn
   i18n/             @adapttable/i18n
   cli/              @adapttable/cli
-apps/docs           docs site + live playground
+apps/playground     local adapter playground
 examples/           one runnable example per adapter
 ```
 

@@ -38,6 +38,26 @@ describe("useTableUrlState", () => {
     expect(result.current.sortDir).toBe("asc");
   });
 
+  it("applies default extra filters and lets URL values override them", () => {
+    const withDefaults = renderWith("", {
+      defaults: { extra: { status: "Active", team: ["Core"] } },
+      arrayExtraKeys: ["team"],
+    });
+    expect(withDefaults.result.current.extra).toEqual({
+      status: "Active",
+      team: ["Core"],
+    });
+
+    const overridden = renderWith("f_status=Archived&f_team=Platform", {
+      defaults: { extra: { status: "Active", team: ["Core"] } },
+      arrayExtraKeys: ["team"],
+    });
+    expect(overridden.result.current.extra).toEqual({
+      status: "Archived",
+      team: ["Platform"],
+    });
+  });
+
   it("setPage writes >1 and drops the param at 1", () => {
     const { result, adapter } = renderWith();
     act(() => result.current.setPage(3));

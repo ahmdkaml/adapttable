@@ -9,6 +9,14 @@ import simpleImportSort from "eslint-plugin-simple-import-sort";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
 
+// The default export types `.configs` as optional and its `recommended` entry
+// as a loose config union, neither of which matches the `config()` parameter
+// type. Guard the access and cast (via `unknown`) to the shape it accepts.
+const sonarRecommended =
+  /** @type {import("typescript-eslint").ConfigWithExtends} */ (
+    /** @type {unknown} */ (sonarjs.configs?.recommended ?? {})
+  );
+
 export default tseslint.config(
   {
     ignores: [
@@ -28,7 +36,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  sonarjs.configs.recommended,
+  sonarRecommended,
   {
     languageOptions: {
       ecmaVersion: 2022,

@@ -24,7 +24,7 @@ export const RTL_LANGUAGES = [
 
 /** The primary language subtag of a BCP-47 locale, lower-cased. */
 export function primarySubtag(locale: string): string {
-  return locale.toLowerCase().split(/[-_]/)[0] ?? "";
+  return locale.toLowerCase().split(/[-_]/, 1).join("");
 }
 
 /**

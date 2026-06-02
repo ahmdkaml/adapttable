@@ -36,9 +36,9 @@ function mount(opts: Partial<UseDataTableOptions<Row>> = {}) {
 }
 
 describe("useDataTable — gap fill", () => {
-  it("getTableProps falls back to the actions label when no tableLabel", () => {
+  it("getTableProps falls back to the table label when no tableLabel", () => {
     const { result } = mount();
-    expect(result.current.getTableProps()["aria-label"]).toBe("Actions");
+    expect(result.current.getTableProps()["aria-label"]).toBe("Data table");
   });
 
   it("getSortButtonProps uses the column key when the header isn't a string", () => {

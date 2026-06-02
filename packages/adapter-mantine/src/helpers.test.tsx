@@ -37,4 +37,13 @@ describe("useMountStagger", () => {
     });
     expect(animate).not.toHaveBeenCalled();
   });
+
+  it("does nothing when the Web Animations API is unavailable", () => {
+    act(() => {
+      render(<StaggerHarness enabled />);
+    });
+    expect(
+      (Element.prototype as { animate?: unknown }).animate
+    ).toBeUndefined();
+  });
 });

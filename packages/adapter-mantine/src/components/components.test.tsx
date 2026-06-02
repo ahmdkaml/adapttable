@@ -8,6 +8,7 @@ import { ActiveFilterChips } from "./ActiveFilterChips";
 import { BulkActionBar } from "./BulkActionBar";
 import { EmptyState } from "./EmptyState";
 import { PaginationFooter } from "./PaginationFooter";
+import { TableSkeleton } from "./TableSkeleton";
 
 const labels = defaultLabels;
 
@@ -73,6 +74,25 @@ describe("PaginationFooter", () => {
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
 
+  it("labels the next-page control", () => {
+    renderMantine(
+      <PaginationFooter
+        page={1}
+        totalPages={5}
+        limit={25}
+        total={120}
+        fromIndex={1}
+        toIndex={25}
+        onPageChange={vi.fn()}
+        onLimitChange={vi.fn()}
+        labels={labels}
+      />
+    );
+    expect(
+      screen.getByRole("button", { name: labels.nextPage })
+    ).toBeInTheDocument();
+  });
+
   it("hides the showing-range when total is 0", () => {
     renderMantine(
       <PaginationFooter
@@ -88,6 +108,14 @@ describe("PaginationFooter", () => {
       />
     );
     expect(screen.queryByText(/Showing/)).toBeNull();
+  });
+});
+
+describe("TableSkeleton", () => {
+  it("renders without an optional loading label", () => {
+    renderMantine(<TableSkeleton columns={0} rows={1} />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByText(labels.loading)).toBeNull();
   });
 });
 

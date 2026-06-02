@@ -1,15 +1,7 @@
-import {
-  type ActiveFilterChip,
-  defaultConfirm,
-  mergeFilterChips,
-  resolveActiveFilterCount,
-  useDataTable,
-  useInfiniteScroll,
-  useIsMobile,
-} from "@adapttable/core";
+import { useInfiniteScroll, useTableChrome } from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
@@ -43,61 +35,25 @@ const stickyToolbarStyle = {
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
-    columns,
-    rowKey,
     rowActions,
-    tableLabel,
     searchPlaceholder,
     sortByOptions,
-    labels,
     dir,
-    isMobile: isMobileProp,
     prefetch,
     hideSearch,
     filters,
-    filterLabels,
-    extraChips,
-    activeFilterCount: activeFilterCountProp,
     onClearFilters,
     bulkActions,
-    selectionGetId,
     slots,
     classNames,
     toolbar: customToolbar,
-    confirm: confirmProp,
     skeletonRows,
     animate = false,
   } = props;
 
-  const autoMobile = useIsMobile();
-  const isMobile = isMobileProp ?? autoMobile;
-  const confirm = confirmProp ?? defaultConfirm;
-
-  const table = useDataTable<TRow>({
-    source,
-    columns,
-    rowKey,
-    tableLabel,
-    labels,
-    dir,
-    isMobile,
-    bulkActions,
-    selectionGetId,
-    filterLabels,
-  });
-
+  const chrome = useTableChrome<TRow>(props);
+  const { table, isMobile, confirm, getRowId } = chrome;
   const [drawerOpened, drawer] = useDisclosure(false);
-  const getRowId = selectionGetId ?? rowKey;
-
-  const mergedChips = useMemo<readonly ActiveFilterChip[]>(
-    () => mergeFilterChips(table.filterChips, extraChips),
-    [table.filterChips, extraChips]
-  );
-
-  const activeFilterCount = resolveActiveFilterCount(
-    activeFilterCountProp,
-    mergedChips.length
-  );
 
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
@@ -107,21 +63,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     { enabled: animate }
   );
 
-  const isPaged = source.paginationMode === "paged";
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: () => source.fetchNextPage(),
     itemCount: source.rows.length,
-    enabled: !isPaged && !source.error,
+    enabled: !chrome.isPaged && !source.error,
   });
-  const showFooter =
-    isPaged &&
-    !source.error &&
-    (source.total > 0 || source.isLoading || source.isFetching);
 
   let body: React.ReactNode;
-  if (source.isLoading && source.rows.length === 0) {
+  if (chrome.body === "skeleton") {
     body = slots?.skeleton ?? (
       <TableSkeleton
         columns={table.columns.length || 1}
@@ -129,9 +80,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         loadingLabel={table.labels.loading}
       />
     );
-  } else if (table.isEmpty) {
+  } else if (chrome.body === "empty") {
     body = slots?.empty ?? <EmptyState title={table.labels.noData} />;
-  } else if (isMobile) {
+  } else if (chrome.body === "mobile") {
     body = (
       <MobileCards
         table={table}
@@ -170,12 +121,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               sortByOptions={sortByOptions}
               customToolbar={customToolbar}
               hasFilters={Boolean(filters)}
-              activeFilterCount={activeFilterCount}
+              activeFilterCount={chrome.activeFilterCount}
               onOpenFilters={drawer.open}
-              showRowsPerPage={!isPaged}
+              showRowsPerPage={!chrome.isPaged}
             />
             <ActiveFilterChips
-              chips={mergedChips}
+              chips={chrome.mergedChips}
               onClearAll={onClearFilters}
               label={table.labels.filters}
               clearAllLabel={table.labels.clearAll}
@@ -204,7 +155,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
         {!source.error && body}
 
-        {!isPaged && !source.error && source.hasNextPage && (
+        {!chrome.isPaged && !source.error && source.hasNextPage && (
           <Group ref={loadMoreRef} justify="center" py="xs">
             <Button
               variant="default"
@@ -217,7 +168,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Group>
         )}
 
-        {showFooter && (
+        {chrome.showFooter && (
           <Box className={classNames?.footer}>
             <PaginationFooter
               page={table.pagination.safePage}
@@ -239,7 +190,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           opened={drawerOpened}
           onClose={drawer.close}
           filters={filters}
-          activeFilterCount={activeFilterCount}
+          activeFilterCount={chrome.activeFilterCount}
           onClearFilters={onClearFilters}
           labels={table.labels}
         />

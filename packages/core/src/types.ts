@@ -170,6 +170,8 @@ export interface PaginatedResponse<TRow> {
  * the gaps — see {@link defaultLabels}.
  */
 export interface TableLabels {
+  /** Accessible label for an unlabeled table. */
+  table?: string;
   search?: string;
   searchPlaceholder?: string;
   noData?: string;
@@ -177,6 +179,7 @@ export interface TableLabels {
   loadMore?: string;
   filters?: string;
   clearAll?: string;
+  /** Label for the filter panel action that accepts the current live filters. */
   applyFilters?: string;
   sortBy?: string;
   rowsPerPage?: string;

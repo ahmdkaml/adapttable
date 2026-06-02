@@ -12,9 +12,12 @@ the back button all land the user on the exact same slice of data.
 Defaults are omitted from the URL to keep it clean, and changing any filter
 resets the page to 1.
 
-> **Note:** array filter values are encoded comma-separated, so individual
-> values shouldn't themselves contain a comma — use ids, codes, or enum
-> values (the common case for filters).
+`defaults.extra` provides default extra-filter values when the URL has no
+matching `f_<key>` entry. A shared URL value wins over the default for that key.
+
+> **Note:** array filter values are stored as comma-separated entries. Each
+> entry is encoded before joining, so ids, enum values, and even labels that
+> contain commas round-trip safely.
 
 ## Injectable URL adapter
 

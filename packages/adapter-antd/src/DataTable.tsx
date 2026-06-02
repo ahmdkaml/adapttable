@@ -55,6 +55,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
@@ -143,9 +144,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (c.body === "empty") {
     bodyRegion = slots?.empty ?? (
-      <div role="status">
+      <output>
         <Empty description={labels.noData} />
-      </div>
+      </output>
     );
   } else if (c.body === "mobile") {
     bodyRegion = (
@@ -156,13 +157,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         prefetch={props.prefetch}
-        tableLabel={props.tableLabel}
+        tableLabel={resolvedTableLabel}
       />
     );
   } else {
     bodyRegion = (
       <Table<TRow>
-        aria-label={props.tableLabel}
+        aria-label={resolvedTableLabel}
         columns={columns}
         dataSource={source.rows}
         rowKey={getRowId}

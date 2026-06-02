@@ -2,6 +2,7 @@ import type { TableLabels } from "@adapttable/core";
 
 /** Japanese (`ja`) label preset. */
 export const ja: Required<TableLabels> = {
+  table: "データテーブル",
   search: "検索",
   searchPlaceholder: "検索…",
   noData: "データがありません",
@@ -9,7 +10,7 @@ export const ja: Required<TableLabels> = {
   loadMore: "さらに読み込む",
   filters: "フィルター",
   clearAll: "すべてクリア",
-  applyFilters: "フィルターを適用",
+  applyFilters: "完了",
   sortBy: "並べ替え",
   rowsPerPage: "1ページの行数",
   actions: "操作",

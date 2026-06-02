@@ -2,6 +2,7 @@ import type { TableLabels } from "@adapttable/core";
 
 /** Hebrew (`he`) label preset. Pairs with `dir="rtl"`. */
 export const he: Required<TableLabels> = {
+  table: "טבלת נתונים",
   search: "חיפוש",
   searchPlaceholder: "חיפוש…",
   noData: "אין נתונים",
@@ -9,7 +10,7 @@ export const he: Required<TableLabels> = {
   loadMore: "טען עוד",
   filters: "מסננים",
   clearAll: "נקה הכול",
-  applyFilters: "החל מסננים",
+  applyFilters: "סיום",
   sortBy: "מיין לפי",
   rowsPerPage: "שורות לעמוד",
   actions: "פעולות",

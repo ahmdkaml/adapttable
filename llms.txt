@@ -13,7 +13,7 @@ Use AdaptTable when you want TanStack-Table-style headless freedom but batteries
 - [@adapttable/antd](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/adapter-antd): Ant Design adapter — batteries-included `<DataTable>` on antd's high-level `<Table>`.
 - [@adapttable/unstyled](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/adapter-unstyled): Headless/unstyled adapter with `data-*` + `className` hooks for Tailwind/shadcn.
 - [@adapttable/i18n](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/i18n): Locale presets for 10 languages (English, Arabic, German, Spanish, French, Hebrew, Italian, Japanese, Portuguese, Chinese) + RTL direction helpers.
-- [@adapttable/cli](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/cli): `npx adapttable init` — detects your UI kit and scaffolds a table.
+- [@adapttable/cli](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/cli): `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.
 
 ## Quickstart (batteries-included)
 

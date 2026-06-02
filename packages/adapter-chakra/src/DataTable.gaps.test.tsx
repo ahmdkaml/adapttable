@@ -73,4 +73,20 @@ describe("Chakra gaps", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     expect(screen.queryByText("2 selected")).toBeNull();
   });
+
+  it("desktop: renders icon row actions and fires them", () => {
+    const onClick = vi.fn();
+    mount({
+      rowActions: [
+        {
+          key: "view",
+          label: "View",
+          icon: <span aria-hidden>i</span>,
+          onClick,
+        },
+      ],
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "View" })[0]!);
+    expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
 });

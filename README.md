@@ -80,13 +80,13 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 | `@adapttable/antd`     | Ant Design adapter — drives antd's high-level `<Table>`.                 |
 | `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                         |
 | `@adapttable/i18n`     | Optional locale presets (10 languages, incl. RTL) + direction helpers.   |
-| `@adapttable/cli`      | `npx adapttable init` — detects your UI kit and scaffolds a table.       |
+| `@adapttable/cli`      | `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.  |
 
 ## Install
 
 ```bash
 # Pick your adapter — the CLI can auto-detect and do this for you:
-npx adapttable init
+npx @adapttable/cli init
 
 # …or install manually:
 pnpm add @adapttable/core @adapttable/mantine

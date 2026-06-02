@@ -5,6 +5,7 @@ import type { TableLabels } from "./types";
  * `labels` option; {@link resolveLabels} merges their overrides on top.
  */
 export const defaultLabels: Required<TableLabels> = {
+  table: "Data table",
   search: "Search",
   searchPlaceholder: "Search…",
   noData: "No data",
@@ -12,7 +13,7 @@ export const defaultLabels: Required<TableLabels> = {
   loadMore: "Load more",
   filters: "Filters",
   clearAll: "Clear all",
-  applyFilters: "Apply filters",
+  applyFilters: "Done",
   sortBy: "Sort by",
   rowsPerPage: "Rows per page",
   actions: "Actions",

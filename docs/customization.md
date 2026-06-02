@@ -35,7 +35,14 @@ attributes:
 />
 ```
 
-## 4. Row & bulk actions
+## 4. Filter panels
+
+Filter panels are live by default: your filter controls call
+`source.setExtra(...)` as the user changes them, and the drawer action simply
+accepts the current state and closes the panel. If you prefer staged filters,
+keep draft state in your filter component and commit it with `setExtras`.
+
+## 5. Row & bulk actions
 
 ```tsx
 const rowActions = [
@@ -72,7 +79,7 @@ const bulkActions = [
 Confirmation is injectable via the `confirm` prop (defaults to
 `window.confirm`); pass your own dialog handler for a styled experience.
 
-## 5. Prop-getters (fully headless)
+## 6. Prop-getters (fully headless)
 
 Build the entire markup yourself with `@adapttable/core`:
 

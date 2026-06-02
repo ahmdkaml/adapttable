@@ -2,6 +2,7 @@ import type { TableLabels } from "@adapttable/core";
 
 /** Italian (`it`) label preset. */
 export const it: Required<TableLabels> = {
+  table: "Tabella dati",
   search: "Cerca",
   searchPlaceholder: "Cerca…",
   noData: "Nessun dato",
@@ -9,7 +10,7 @@ export const it: Required<TableLabels> = {
   loadMore: "Carica altro",
   filters: "Filtri",
   clearAll: "Cancella tutto",
-  applyFilters: "Applica filtri",
+  applyFilters: "Fine",
   sortBy: "Ordina per",
   rowsPerPage: "Righe per pagina",
   actions: "Azioni",

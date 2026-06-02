@@ -5,7 +5,7 @@ One command detects your UI kit, picks your package manager, writes a
 starter table, and tells you exactly what to install.
 
 ```bash
-npx adapttable init
+npx @adapttable/cli init
 ```
 
 ```

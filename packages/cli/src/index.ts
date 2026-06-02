@@ -1,7 +1,7 @@
 /**
  * `@adapttable/cli` — the scaffolding CLI for AdaptTable.
  *
- * `npx adapttable init` detects your UI kit, picks your package manager,
+ * `npx @adapttable/cli init` detects your UI kit, picks your package manager,
  * writes a starter table, and prints the install command. This module
  * exposes the pure building blocks (also usable programmatically).
  *

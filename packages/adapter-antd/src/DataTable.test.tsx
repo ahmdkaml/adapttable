@@ -262,6 +262,13 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByRole("table", { name: "People" })).toBeInTheDocument();
   });
 
+  it("labels the table with the default table label when tableLabel is omitted", () => {
+    renderHarness();
+    expect(
+      screen.getByRole("table", { name: "Data table" })
+    ).toBeInTheDocument();
+  });
+
   it("exposes exactly one select-all to the accessibility tree", () => {
     renderHarness({
       override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },

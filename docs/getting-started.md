@@ -11,7 +11,7 @@ The fastest path is the CLI, which detects your UI kit and scaffolds a
 starter:
 
 ```bash
-npx adapttable init
+npx @adapttable/cli init
 ```
 
 Or install manually (Mantine shown; swap for `mui`, `chakra`, `antd`, or

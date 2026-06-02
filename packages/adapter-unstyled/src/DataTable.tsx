@@ -1,14 +1,9 @@
 import {
-  type ActiveFilterChip,
-  defaultConfirm,
-  mergeFilterChips,
   pageSizeOptions,
-  resolveActiveFilterCount,
-  useDataTable,
   useInfiniteScroll,
-  useIsMobile,
+  useTableChrome,
 } from "@adapttable/core";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   BulkBar,
@@ -31,65 +26,28 @@ import type { DataTableProps } from "./types";
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
-    columns,
-    rowKey,
     rowActions,
-    tableLabel,
     searchPlaceholder,
     sortByOptions,
-    labels: labelOverrides,
     dir,
-    isMobile: isMobileProp,
     prefetch,
     hideSearch,
     filters,
-    filterLabels,
-    extraChips,
-    activeFilterCount: activeFilterCountProp,
     onClearFilters,
     bulkActions,
-    selectionGetId,
     classNames = {},
     toolbar: customToolbar,
-    confirm: confirmProp,
     skeletonRows,
     emptyState,
     loadingState,
   } = props;
 
-  const autoMobile = useIsMobile();
-  const isMobile = isMobileProp ?? autoMobile;
-  const confirm = confirmProp ?? defaultConfirm;
-
-  const table = useDataTable<TRow>({
-    source,
-    columns,
-    rowKey,
-    tableLabel,
-    labels: labelOverrides,
-    dir,
-    isMobile,
-    bulkActions,
-    selectionGetId,
-    filterLabels,
-  });
-
+  const chrome = useTableChrome<TRow>(props);
+  const { table, confirm, getRowId } = chrome;
   const { labels } = table;
-  const getRowId = selectionGetId ?? rowKey;
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const mergedChips = useMemo<readonly ActiveFilterChip[]>(
-    () => mergeFilterChips(table.filterChips, extraChips),
-    [table.filterChips, extraChips]
-  );
-
-  const activeFilterCount = resolveActiveFilterCount(
-    activeFilterCountProp,
-    mergedChips.length
-  );
-
-  const isPaged = source.paginationMode === "paged";
-  const canLoadMore = !isPaged && !source.error;
+  const canLoadMore = !chrome.isPaged && !source.error;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
@@ -103,10 +61,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Explicit options win; otherwise auto-derive on mobile, where the card
   // layout has no clickable headers to sort by.
   const sortOptions =
-    sortByOptions ?? (isMobile ? table.sortByOptions : undefined);
+    sortByOptions ?? (chrome.isMobile ? table.sortByOptions : undefined);
 
   let body: React.ReactNode;
-  if (source.isLoading && source.rows.length === 0) {
+  if (chrome.body === "skeleton") {
     body = loadingState ?? (
       <LoadingState
         rows={skeletonRows ?? source.limit}
@@ -114,18 +72,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         classNames={classNames}
       />
     );
-  } else if (table.isEmpty) {
+  } else if (chrome.body === "empty") {
     body = emptyState ?? (
-      <div
-        role="status"
-        data-adapttable-part="empty"
-        className={classNames.empty}
-      >
+      <output data-adapttable-part="empty" className={classNames.empty}>
         {labels.noData}
-      </div>
+      </output>
     );
   } else {
-    const Renderer = isMobile ? MobileCards : DesktopTable;
+    const Renderer = chrome.isMobile ? MobileCards : DesktopTable;
     body = (
       <Renderer
         table={table}
@@ -143,7 +97,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <div
       dir={dir}
       data-adapttable-part="root"
-      data-mobile={isMobile || undefined}
+      data-mobile={chrome.isMobile || undefined}
       className={cx("adapttable", classNames.root)}
     >
       <div data-adapttable-part="toolbar" className={classNames.toolbar}>
@@ -188,10 +142,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onClick={() => setFiltersOpen((o) => !o)}
           >
             {labels.filters}
-            {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            {chrome.activeFilterCount > 0
+              ? ` (${chrome.activeFilterCount})`
+              : ""}
           </button>
         )}
-        {!isPaged && (
+        {!chrome.isPaged && (
           <label>
             {labels.rowsPerPage}{" "}
             <select
@@ -218,7 +174,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           <button
             type="button"
             onClick={() => onClearFilters?.()}
-            disabled={activeFilterCount === 0}
+            disabled={chrome.activeFilterCount === 0}
           >
             {labels.clearAll}
           </button>
@@ -226,7 +182,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       )}
 
       <Chips
-        chips={mergedChips}
+        chips={chrome.mergedChips}
         onClearAll={onClearFilters}
         labels={labels}
         classNames={classNames}
@@ -271,7 +227,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         </div>
       )}
 
-      {isPaged && !source.error && (source.total > 0 || source.isLoading) && (
+      {chrome.showFooter && (
         <Footer
           pagination={table.pagination}
           source={source}

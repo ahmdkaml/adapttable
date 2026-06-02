@@ -13,8 +13,7 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import type { MouseEvent } from "react";
-import type { RefObject } from "react";
+import type { MouseEvent, RefObject } from "react";
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 

@@ -2,6 +2,7 @@ import type { TableLabels } from "@adapttable/core";
 
 /** Arabic (`ar`) label preset. Pairs with `dir="rtl"`. */
 export const ar: Required<TableLabels> = {
+  table: "جدول البيانات",
   search: "بحث",
   searchPlaceholder: "ابحث…",
   noData: "لا توجد بيانات",
@@ -9,7 +10,7 @@ export const ar: Required<TableLabels> = {
   loadMore: "تحميل المزيد",
   filters: "عوامل التصفية",
   clearAll: "مسح الكل",
-  applyFilters: "تطبيق التصفية",
+  applyFilters: "تم",
   sortBy: "ترتيب حسب",
   rowsPerPage: "صفوف لكل صفحة",
   actions: "إجراءات",

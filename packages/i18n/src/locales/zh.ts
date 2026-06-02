@@ -2,6 +2,7 @@ import type { TableLabels } from "@adapttable/core";
 
 /** Simplified Chinese (`zh`) label preset. */
 export const zh: Required<TableLabels> = {
+  table: "数据表",
   search: "搜索",
   searchPlaceholder: "搜索…",
   noData: "暂无数据",
@@ -9,7 +10,7 @@ export const zh: Required<TableLabels> = {
   loadMore: "加载更多",
   filters: "筛选",
   clearAll: "清除全部",
-  applyFilters: "应用筛选",
+  applyFilters: "完成",
   sortBy: "排序方式",
   rowsPerPage: "每页行数",
   actions: "操作",

@@ -1,10 +1,7 @@
 # Private working context (plans, notes). Never committed.
 ai_docs/
 
-# Local-only refactoring reference copied from a private/work project.
-# NEVER commit or publish this — it exists only to mine ideas from while we
-# write the clean, original implementation. The shipped package must be a fresh
-# reimplementation (see ai_docs/PLAN.md → "Licensing & IP").
+# Local-only reference notes or scratch material. Never committed or published.
 reference/
 
 node_modules/

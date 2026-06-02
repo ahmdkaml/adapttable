@@ -126,9 +126,13 @@ export function useTableUrlState(
   const searchTerm = (params.get(PARAM_SEARCH) ?? defaults.search ?? "").trim();
   const sortBy = params.get(PARAM_SORT_BY) ?? defaults.sortBy;
   const sortDir = readSortDir(params) ?? defaults.sortDir;
-  const extra = useMemo(
+  const urlExtra = useMemo(
     () => readExtra(params, numberExtraKeys, arrayExtraKeys),
     [params, numberExtraKeys, arrayExtraKeys]
+  );
+  const extra = useMemo<ExtraFilters>(
+    () => (defaults.extra ? { ...defaults.extra, ...urlExtra } : urlExtra),
+    [defaults.extra, urlExtra]
   );
 
   const commit = useCallback(

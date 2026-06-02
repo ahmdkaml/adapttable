@@ -9,12 +9,7 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   splitting: false,
-  external: [
-    "react",
-    "react-dom",
-    "@tanstack/react-query",
-    "@tanstack/react-virtual",
-  ],
+  external: ["react", "react-dom", "@tanstack/react-query"],
   outExtension({ format }) {
     return { js: format === "cjs" ? ".cjs" : ".js" };
   },

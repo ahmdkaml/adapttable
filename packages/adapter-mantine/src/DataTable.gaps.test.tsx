@@ -108,6 +108,47 @@ describe("<DataTable> gaps", () => {
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });
 
+  it("desktop: renders icon row actions and fires them", () => {
+    const onClick = vi.fn();
+    render(
+      <Harness
+        override={{
+          rowActions: [
+            {
+              key: "view",
+              label: "View",
+              icon: <span aria-hidden>i</span>,
+              onClick,
+            },
+          ],
+        }}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "View" })[0]!);
+    expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("mobile: renders icon row actions and fires them", () => {
+    const onClick = vi.fn();
+    render(
+      <Harness
+        isMobile
+        override={{
+          rowActions: [
+            {
+              key: "view",
+              label: "View",
+              icon: <span aria-hidden>i</span>,
+              onClick,
+            },
+          ],
+        }}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "View" })[0]!);
+    expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("mobile: uses mobileLabel / key fallback for non-string headers", () => {
     const nodeCols: ColumnDef<Row>[] = [
       {

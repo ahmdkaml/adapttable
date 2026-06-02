@@ -53,7 +53,7 @@ Hebrew, Italian, Japanese, Portuguese, and Chinese — plus `getDirection` /
 ## Does it have dark mode?
 
 Dark mode is **seamless** — it's inherited from your UI kit's theme, with
-AA-contrast text throughout and no hardcoded colors that break in the dark.
+logical color choices and no hardcoded surfaces that fight the host theme.
 
 ## Can I animate rows? Do I need GSAP?
 
@@ -92,7 +92,7 @@ zero UI-kit dependencies.
 ## How do I get started quickly?
 
 ```bash
-npx adapttable init   # detects your UI kit and scaffolds a table
+npx @adapttable/cli init   # detects your UI kit and scaffolds a table
 ```
 
 Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See

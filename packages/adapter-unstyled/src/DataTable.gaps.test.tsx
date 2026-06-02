@@ -123,4 +123,11 @@ describe("<DataTable> (unstyled) gaps", () => {
     });
     expect(adapter.getSearch()).toContain("sortBy=name");
   });
+
+  it("renders the filters button without a count when no filters are active", () => {
+    renderHarness({
+      override: { filters: <div>filter body</div> },
+    });
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+  });
 });
