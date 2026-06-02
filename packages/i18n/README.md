@@ -1,9 +1,10 @@
 # @adapttable/i18n
 
 Locale presets and **RTL** helpers for [AdaptTable](https://github.com/orwamahmoud/adapttable).
-The core stays i18n-agnostic; this optional package gives you ready
-English and Arabic label sets plus direction utilities so you get
-bilingual, right-to-left support for free.
+The core stays i18n-agnostic; this optional package gives you ready label
+sets for **10 languages** — English, Arabic, German, Spanish, French,
+Hebrew, Italian, Japanese, Portuguese, and Chinese — plus direction
+utilities, so you get multilingual, right-to-left support for free.
 
 ```bash
 pnpm add @adapttable/i18n
@@ -22,8 +23,8 @@ function LocalizedTable({ locale }: { locale: string }) {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      labels={getLabels(locale)} // "ar" → Arabic, otherwise English
-      dir={getDirection(locale)} // "ar" → "rtl"
+      labels={getLabels(locale)} // primary subtag → preset; unknown → English
+      dir={getDirection(locale)} // "ar" / "he" → "rtl"
     />
   );
 }
@@ -32,10 +33,11 @@ function LocalizedTable({ locale }: { locale: string }) {
 ## API
 
 - `getLabels(locale)` — the label preset for a locale (matches the primary
-  subtag, e.g. `"ar-EG"` → Arabic); falls back to English.
+  subtag, e.g. `"de-AT"` → German); falls back to English.
 - `getDirection(locale)` → `"ltr" | "rtl"`.
 - `isRtlLocale(locale)` / `primarySubtag(locale)` / `RTL_LANGUAGES`.
-- `en`, `ar` — the raw preset objects. `locales` — the keyed map.
+- Raw preset objects: `en`, `ar`, `de`, `es`, `fr`, `he`, `it`, `ja`, `pt`,
+  `zh`. `locales` — the keyed map; `hasLocale(locale)` — membership check.
 
 Bring your own languages by spreading a preset and overriding strings:
 

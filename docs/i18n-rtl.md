@@ -20,6 +20,10 @@ English defaults.
 
 ## Ready presets (`@adapttable/i18n`)
 
+Ten languages ship out of the box — **en, ar, de, es, fr, he, it, ja, pt,
+zh** (Arabic and Hebrew are right-to-left). `getLabels` matches the primary
+subtag (e.g. `"de-AT"` → German) and falls back to English.
+
 ```tsx
 import { getLabels, getDirection } from "@adapttable/i18n";
 
@@ -27,16 +31,16 @@ import { getLabels, getDirection } from "@adapttable/i18n";
   source={source}
   columns={columns}
   rowKey={(r) => r.id}
-  labels={getLabels(locale)} // "ar" → Arabic, otherwise English
-  dir={getDirection(locale)} // "ar" → "rtl"
+  labels={getLabels(locale)} // e.g. "de-AT" → German; unknown → English
+  dir={getDirection(locale)} // "ar" / "he" → "rtl"
 />;
 ```
 
-Bring your own language by spreading a preset:
+Need another language? Spread a preset and override the few strings you want:
 
 ```ts
 import { en } from "@adapttable/i18n";
-const fr = { ...en, search: "Rechercher", noData: "Aucune donnée" };
+const sw = { ...en, search: "Tafuta", noData: "Hakuna data" };
 ```
 
 ## RTL (right-to-left / Arabic)

@@ -1,0 +1,28 @@
+import type { TableLabels } from "@adapttable/core";
+
+/** Simplified Chinese (`zh`) label preset. */
+export const zh: Required<TableLabels> = {
+  search: "搜索",
+  searchPlaceholder: "搜索…",
+  noData: "暂无数据",
+  loading: "加载中…",
+  loadMore: "加载更多",
+  filters: "筛选",
+  clearAll: "清除全部",
+  applyFilters: "应用筛选",
+  sortBy: "排序方式",
+  rowsPerPage: "每页行数",
+  actions: "操作",
+  selectAll: "全选",
+  selectRow: "选择行",
+  cancel: "取消",
+  retry: "重试",
+  errorTitle: "出错了",
+  errorMessage: "无法加载此数据。",
+  previousPage: "上一页",
+  nextPage: "下一页",
+  goToPage: (page) => `转到第 ${page} 页`,
+  selectedCount: (count) => `已选择 ${count} 项`,
+  showing: ({ from, to, total }) => `显示第 ${from}–${to} 条，共 ${total} 条`,
+  pageOf: ({ page, total }) => `第 ${page} 页，共 ${total} 页`,
+};

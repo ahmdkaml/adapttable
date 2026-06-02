@@ -1,0 +1,28 @@
+import type { TableLabels } from "@adapttable/core";
+
+/** Hebrew (`he`) label preset. Pairs with `dir="rtl"`. */
+export const he: Required<TableLabels> = {
+  search: "חיפוש",
+  searchPlaceholder: "חיפוש…",
+  noData: "אין נתונים",
+  loading: "טוען…",
+  loadMore: "טען עוד",
+  filters: "מסננים",
+  clearAll: "נקה הכול",
+  applyFilters: "החל מסננים",
+  sortBy: "מיין לפי",
+  rowsPerPage: "שורות לעמוד",
+  actions: "פעולות",
+  selectAll: "בחר הכול",
+  selectRow: "בחר שורה",
+  cancel: "ביטול",
+  retry: "נסה שוב",
+  errorTitle: "משהו השתבש",
+  errorMessage: "לא ניתן היה לטעון נתונים אלה.",
+  previousPage: "העמוד הקודם",
+  nextPage: "העמוד הבא",
+  goToPage: (page) => `עבור לעמוד ${page}`,
+  selectedCount: (count) => `${count} נבחרו`,
+  showing: ({ from, to, total }) => `מציג ${from}–${to} מתוך ${total}`,
+  pageOf: ({ page, total }) => `עמוד ${page} מתוך ${total}`,
+};

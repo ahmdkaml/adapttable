@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getLabels, hasLocale } from "./getLabels";
+import { getLabels, hasLocale, locales } from "./getLabels";
 import { ar } from "./locales/ar";
+import { de } from "./locales/de";
 import { en } from "./locales/en";
+import { he } from "./locales/he";
+import { zh } from "./locales/zh";
 
 describe("getLabels", () => {
   it("returns the English preset for en", () => {
@@ -15,8 +18,14 @@ describe("getLabels", () => {
     expect(getLabels("ar-EG")).toBe(ar);
   });
 
-  it("falls back to English for unknown locales", () => {
-    expect(getLabels("fr")).toBe(en);
+  it("resolves the other bundled locales by primary subtag", () => {
+    expect(getLabels("de-AT")).toBe(de);
+    expect(getLabels("zh-CN")).toBe(zh);
+    expect(getLabels("he-IL")).toBe(he);
+  });
+
+  it("falls back to English for unbundled locales", () => {
+    expect(getLabels("ko")).toBe(en);
     expect(getLabels("zz-ZZ")).toBe(en);
   });
 });
@@ -25,19 +34,31 @@ describe("hasLocale", () => {
   it("reports bundled locales", () => {
     expect(hasLocale("ar-EG")).toBe(true);
     expect(hasLocale("en")).toBe(true);
-    expect(hasLocale("de")).toBe(false);
+    expect(hasLocale("de")).toBe(true);
+    expect(hasLocale("ja")).toBe(true);
+    expect(hasLocale("ko")).toBe(false);
   });
 });
 
 describe("presets", () => {
   const cmp = (a: string, b: string) => a.localeCompare(b);
+  const enKeys = Object.keys(en).sort(cmp);
 
-  it("every English key has an Arabic counterpart", () => {
-    expect(Object.keys(ar).sort(cmp)).toEqual(Object.keys(en).sort(cmp));
+  it("bundles at least 10 locales", () => {
+    expect(Object.keys(locales).length).toBeGreaterThanOrEqual(10);
   });
 
-  it("all label builders produce non-empty strings in both locales", () => {
-    for (const preset of [en, ar]) {
+  it("every locale has exactly the English key set", () => {
+    for (const [key, preset] of Object.entries(locales)) {
+      expect({ key, keys: Object.keys(preset).sort(cmp) }).toEqual({
+        key,
+        keys: enKeys,
+      });
+    }
+  });
+
+  it("all label builders produce non-empty strings in every locale", () => {
+    for (const preset of Object.values(locales)) {
       expect(preset.selectedCount(3).length).toBeGreaterThan(0);
       expect(
         preset.showing({ from: 1, to: 10, total: 50 }).length

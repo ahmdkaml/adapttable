@@ -2,10 +2,29 @@ import type { TableLabels } from "@adapttable/core";
 
 import { primarySubtag } from "./direction";
 import { ar } from "./locales/ar";
+import { de } from "./locales/de";
 import { en } from "./locales/en";
+import { es } from "./locales/es";
+import { fr } from "./locales/fr";
+import { he } from "./locales/he";
+import { it } from "./locales/it";
+import { ja } from "./locales/ja";
+import { pt } from "./locales/pt";
+import { zh } from "./locales/zh";
 
 /** The bundled locale presets, keyed by primary language subtag. */
-export const locales = { en, ar } as const;
+export const locales = {
+  en,
+  ar,
+  de,
+  es,
+  fr,
+  he,
+  it,
+  ja,
+  pt,
+  zh,
+} as const;
 
 /** A key of {@link locales}. */
 export type LocaleKey = keyof typeof locales;

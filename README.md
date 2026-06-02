@@ -65,7 +65,7 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 | `@adapttable/chakra`   | Chakra UI adapter.                                                       |
 | `@adapttable/antd`     | Ant Design adapter — drives antd's high-level `<Table>`.                 |
 | `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                         |
-| `@adapttable/i18n`     | Optional locale presets (en, ar) + RTL helpers.                          |
+| `@adapttable/i18n`     | Optional locale presets (10 languages, incl. RTL) + direction helpers.   |
 | `@adapttable/cli`      | `npx adapttable init` — detects your UI kit and scaffolds a table.       |
 
 ## Install
