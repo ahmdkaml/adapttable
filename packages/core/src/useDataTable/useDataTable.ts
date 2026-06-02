@@ -13,11 +13,13 @@ import {
 } from "../pagination/paginationMath";
 import { type SelectionState, useSelection } from "../selection/useSelection";
 import { nextSort } from "../sort/cycleSort";
+import { deriveSortByOptions } from "../sort/sortByOptions";
 import type { TableSource } from "../source/TableSource";
 import type {
   BulkAction,
   ColumnDef,
   Direction,
+  SortByOption,
   SortDirection,
   TableLabels,
 } from "../types";
@@ -60,6 +62,14 @@ export interface UseDataTableResult<TRow> {
   isEmpty: boolean;
   /** Columns visible for the current layout. */
   columns: ColumnDef<TRow>[];
+  /** Whether the mobile (card) layout is active. */
+  isMobile: boolean;
+  /**
+   * Sort-by select options auto-derived from the sortable columns. Adapters
+   * render these as the mobile sort affordance (no clickable headers there)
+   * when the caller passes no explicit `sortByOptions`.
+   */
+  sortByOptions: SortByOption[];
   /** Resolved labels (English defaults + overrides). */
   labels: Required<TableLabels>;
   /** Text direction. */
@@ -149,6 +159,8 @@ export function useDataTable<TRow>(
     () => visibleColumns(allColumns, isMobile ? "mobile" : "desktop"),
     [allColumns, isMobile]
   );
+
+  const sortByOptions = useMemo(() => deriveSortByOptions(columns), [columns]);
 
   const { value: searchValue, setValue: setSearchValue } = useSearchInput(
     source.search,
@@ -287,6 +299,8 @@ export function useDataTable<TRow>(
     rows: source.rows,
     isEmpty: source.rows.length === 0 && !source.isLoading,
     columns,
+    isMobile,
+    sortByOptions,
     labels,
     dir,
     pagination,

@@ -65,6 +65,8 @@ export function Toolbar<TRow>({
   colorScheme?: string;
 }>) {
   const { labels, source } = table;
+  const sortOptions =
+    sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -88,7 +90,7 @@ export function Toolbar<TRow>({
         />
       )}
       <HStack spacing={2} flexWrap="wrap" align="center">
-        {sortByOptions && sortByOptions.length > 0 && (
+        {sortOptions && sortOptions.length > 0 && (
           <Select
             size="sm"
             w="160px"
@@ -102,7 +104,7 @@ export function Toolbar<TRow>({
               )
             }
           >
-            {sortByOptions.map((o) => (
+            {sortOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

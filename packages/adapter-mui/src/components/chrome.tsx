@@ -37,6 +37,8 @@ export function Toolbar<TRow>({
   showRowsPerPage,
 }: Readonly<ToolbarChromeProps<TRow>>) {
   const { labels, source } = table;
+  const sortOptions =
+    sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -72,7 +74,7 @@ export function Toolbar<TRow>({
         flexWrap="wrap"
         useFlexGap
       >
-        {sortByOptions && sortByOptions.length > 0 && (
+        {sortOptions && sortOptions.length > 0 && (
           <TextField
             select
             size="small"
@@ -87,7 +89,7 @@ export function Toolbar<TRow>({
             sx={{ minWidth: 160 }}
           >
             <MenuItem value="">—</MenuItem>
-            {sortByOptions.map((o) => (
+            {sortOptions.map((o) => (
               <MenuItem key={o.value} value={o.value}>
                 {o.label}
               </MenuItem>

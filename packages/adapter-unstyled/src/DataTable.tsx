@@ -100,6 +100,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
+  // Explicit options win; otherwise auto-derive on mobile, where the card
+  // layout has no clickable headers to sort by.
+  const sortOptions =
+    sortByOptions ?? (isMobile ? table.sortByOptions : undefined);
 
   let body: React.ReactNode;
   if (source.isLoading && source.rows.length === 0) {
@@ -146,7 +150,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             className={classNames.search}
           />
         )}
-        {sortByOptions && sortByOptions.length > 0 && (
+        {sortOptions && sortOptions.length > 0 && (
           <label>
             {labels.sortBy}{" "}
             <select
@@ -162,7 +166,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               }
             >
               <option value="">—</option>
-              {sortByOptions.map((o) => (
+              {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>

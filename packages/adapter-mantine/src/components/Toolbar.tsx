@@ -39,6 +39,10 @@ export function Toolbar<TRow>({
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
+  // Explicit options win; otherwise auto-derive on mobile, where the card
+  // layout has no clickable headers to sort by.
+  const sortOptions =
+    sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
 
   return (
     <Group
@@ -57,11 +61,11 @@ export function Toolbar<TRow>({
         />
       )}
       <Group gap="xs" wrap="wrap" align="center">
-        {sortByOptions && sortByOptions.length > 0 && (
+        {sortOptions && sortOptions.length > 0 && (
           <Select
             aria-label={labels.sortBy}
             placeholder={labels.sortBy}
-            data={sortByOptions}
+            data={sortOptions}
             value={source.sortBy ?? null}
             onChange={(v) =>
               source.setSort(v ?? undefined, source.sortDir ?? "asc")

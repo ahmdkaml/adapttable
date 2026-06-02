@@ -120,6 +120,7 @@ export {
 /* ── Sorting ───────────────────────────────────────────────────────── */
 export { compareValues, sortRows } from "./sort/compare";
 export { nextSort, type SortState } from "./sort/cycleSort";
+export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";

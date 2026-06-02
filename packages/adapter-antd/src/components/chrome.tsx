@@ -34,6 +34,8 @@ export function Toolbar<TRow>({
   showRowsPerPage,
 }: Readonly<ToolbarChromeProps<TRow>>) {
   const { labels, source } = table;
+  const sortOptions =
+    sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -55,14 +57,14 @@ export function Toolbar<TRow>({
         />
       )}
       <Flex gap="small" wrap align="center">
-        {sortByOptions && sortByOptions.length > 0 && (
+        {sortOptions && sortOptions.length > 0 && (
           <Select
             style={{ minWidth: 160 }}
             aria-label={labels.sortBy}
             placeholder={labels.sortBy}
             allowClear
             value={source.sortBy ?? undefined}
-            options={sortByOptions.map((o) => ({
+            options={sortOptions.map((o) => ({
               value: o.value,
               label: o.label,
             }))}
