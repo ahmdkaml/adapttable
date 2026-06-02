@@ -52,7 +52,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     classNames = {},
     toolbar: customToolbar,
     confirm: confirmProp,
-    skeletonRows = 5,
+    skeletonRows,
     emptyState,
     loadingState,
   } = props;
@@ -109,7 +109,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   if (source.isLoading && source.rows.length === 0) {
     body = loadingState ?? (
       <LoadingState
-        rows={skeletonRows}
+        rows={skeletonRows ?? source.limit}
         labels={labels}
         classNames={classNames}
       />

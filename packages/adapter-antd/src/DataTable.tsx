@@ -122,7 +122,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <Skeleton
         active
         title={false}
-        paragraph={{ rows: props.skeletonRows ?? 5 }}
+        paragraph={{ rows: props.skeletonRows ?? source.limit }}
       />
     );
   } else if (c.body === "empty") {

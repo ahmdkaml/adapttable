@@ -241,22 +241,44 @@ export function BulkBar({
 export function Footer({
   pagination,
   total,
+  limit,
   setPage,
+  setLimit,
   labels,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
+  limit: number;
   setPage: (n: number) => void;
+  setLimit: (n: number) => void;
   labels: Required<TableLabels>;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
     <HStack spacing={3} justify="space-between" flexWrap="wrap">
-      {total > 0 && (
+      <HStack spacing={2}>
         <Text fontSize="xs" {...subtleText}>
-          {labels.showing({ from: fromIndex, to: toIndex, total })}
+          {labels.rowsPerPage}
         </Text>
-      )}
+        <Select
+          size="xs"
+          w="72px"
+          aria-label={labels.rowsPerPage}
+          value={String(limit)}
+          onChange={(e) => setLimit(Number(e.target.value))}
+        >
+          {pageSizeOptions(limit).map((n) => (
+            <option key={n} value={String(n)}>
+              {n}
+            </option>
+          ))}
+        </Select>
+        {total > 0 && (
+          <Text fontSize="xs" {...subtleText}>
+            {labels.showing({ from: fromIndex, to: toIndex, total })}
+          </Text>
+        )}
+      </HStack>
       <HStack spacing={2}>
         <Text fontSize="xs" {...subtleText}>
           {labels.pageOf({ page: safePage, total: totalPages })}

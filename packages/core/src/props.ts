@@ -73,6 +73,6 @@ export interface BaseDataTableProps<TRow> {
   toolbar?: ReactNode;
   /** Confirmation handler for actions; defaults to `window.confirm`. */
   confirm?: ConfirmHandler;
-  /** Number of skeleton rows while loading. Defaults to 5. */
+  /** Number of skeleton rows while loading. Defaults to the page size. */
   skeletonRows?: number;
 }

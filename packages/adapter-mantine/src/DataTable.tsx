@@ -65,7 +65,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     classNames,
     toolbar: customToolbar,
     confirm: confirmProp,
-    skeletonRows = 5,
+    skeletonRows,
     animate = false,
   } = props;
 
@@ -125,7 +125,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   let body: React.ReactNode;
   if (source.isLoading && source.rows.length === 0) {
     body = slots?.skeleton ?? (
-      <TableSkeleton columns={table.columns.length || 1} rows={skeletonRows} />
+      <TableSkeleton
+        columns={table.columns.length || 1}
+        rows={skeletonRows ?? source.limit}
+      />
     );
   } else if (table.isEmpty) {
     body = slots?.empty ?? <EmptyState title={table.labels.noData} />;

@@ -40,7 +40,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   if (c.body === "skeleton") {
     body = slots?.skeleton ?? (
       <LoadingState
-        rows={props.skeletonRows ?? 5}
+        rows={props.skeletonRows ?? source.limit}
         columns={table.columns.length}
       />
     );
@@ -132,7 +132,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           <Footer
             pagination={table.pagination}
             total={source.total}
+            limit={source.limit}
             setPage={source.setPage}
+            setLimit={source.setLimit}
             labels={labels}
           />
         )}

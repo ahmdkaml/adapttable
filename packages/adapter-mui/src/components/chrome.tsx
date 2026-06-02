@@ -229,16 +229,20 @@ export function BulkBar({
   );
 }
 
-/** Paged footer with a MUI Pagination control. */
+/** Paged footer: rows-per-page + range on the left, pager on the right. */
 export function Footer({
   pagination,
   total,
+  limit,
   setPage,
+  setLimit,
   labels,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
+  limit: number;
   setPage: (n: number) => void;
+  setLimit: (n: number) => void;
   labels: Required<TableLabels>;
 }>) {
   return (
@@ -250,15 +254,31 @@ export function Footer({
       flexWrap="wrap"
       useFlexGap
     >
-      {total > 0 && (
-        <Typography variant="caption" color="text.secondary">
-          {labels.showing({
-            from: pagination.fromIndex,
-            to: pagination.toIndex,
-            total,
-          })}
-        </Typography>
-      )}
+      <Stack direction="row" spacing={1.5} alignItems="center" useFlexGap>
+        <TextField
+          select
+          size="small"
+          label={labels.rowsPerPage}
+          value={String(limit)}
+          onChange={(e) => setLimit(Number(e.target.value))}
+          sx={{ minWidth: 100 }}
+        >
+          {pageSizeOptions(limit).map((n) => (
+            <MenuItem key={n} value={String(n)}>
+              {n}
+            </MenuItem>
+          ))}
+        </TextField>
+        {total > 0 && (
+          <Typography variant="caption" color="text.secondary">
+            {labels.showing({
+              from: pagination.fromIndex,
+              to: pagination.toIndex,
+              total,
+            })}
+          </Typography>
+        )}
+      </Stack>
       <Pagination
         count={pagination.totalPages}
         page={pagination.safePage}
