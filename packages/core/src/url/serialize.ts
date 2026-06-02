@@ -5,10 +5,20 @@
  * Conventions (compatible with shareable links):
  * - `page`, `limit`, `q`, `sortBy`, `sortDir` are top-level params.
  * - Extra (caller-defined) filters live under the `f_` prefix.
- * - Arrays serialise as comma-separated values; numbers are parsed back.
+ * - Arrays serialise as comma-separated, percent-encoded values (so a value
+ *   may itself contain a comma); numbers are parsed back.
  * - Default values are omitted to keep the URL clean.
  */
 import type { ExtraFilters, FilterValue, SortDirection } from "../types";
+
+/** Decode a URI component, tolerating malformed input from hand-edited URLs. */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 export const PARAM_PAGE = "page";
 export const PARAM_LIMIT = "limit";
@@ -56,7 +66,7 @@ export function readExtra(
     if (arrayKeys.includes(bare)) {
       const arr = raw
         .split(",")
-        .map((v) => v.trim())
+        .map((v) => safeDecode(v).trim())
         .filter(Boolean);
       if (arr.length > 0) out[bare] = arr;
     } else if (numberKeys.includes(bare)) {
@@ -90,6 +100,13 @@ export function writeExtra(params: URLSearchParams, extra: ExtraFilters): void {
   for (const [key, value] of Object.entries(extra)) {
     if (isEmptyFilterValue(value)) continue;
     const param = `${FILTER_PREFIX}${key}`;
-    params.set(param, Array.isArray(value) ? value.join(",") : String(value));
+    // Percent-encode each array element so a value may contain the comma
+    // delimiter (and survives a single URLSearchParams decode round-trip).
+    params.set(
+      param,
+      Array.isArray(value)
+        ? value.map((v) => encodeURIComponent(String(v))).join(",")
+        : String(value)
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { FilterValue } from "../types";
 import {
   isEmptyFilterValue,
   readExtra,
@@ -105,5 +106,33 @@ describe("writeExtra", () => {
     const p = ps("f_a=1&f_b=2");
     writeExtra(p, {});
     expect(p.toString()).toBe("");
+  });
+});
+
+describe("extra-filter round-trips", () => {
+  // Simulate the real URLSearchParams encode/decode the adapter performs.
+  const roundTrip = (extra: Record<string, FilterValue>, arrayKeys: string[]) => {
+    const p = new URLSearchParams();
+    writeExtra(p, extra);
+    return readExtra(new URLSearchParams(p.toString()), [], arrayKeys);
+  };
+
+  it("round-trips array values that contain the comma delimiter", () => {
+    expect(roundTrip({ tags: ["a,b", "c"] }, ["tags"])).toEqual({
+      tags: ["a,b", "c"],
+    });
+  });
+
+  it("round-trips array values with spaces, unicode, and reserved chars", () => {
+    expect(roundTrip({ tags: ["a & b", "café 🚀", "x=y"] }, ["tags"])).toEqual({
+      tags: ["a & b", "café 🚀", "x=y"],
+    });
+  });
+
+  it("tolerates a malformed percent-escape in a hand-edited array param", () => {
+    // A lone '%' would make decodeURIComponent throw; safeDecode falls back.
+    expect(readExtra(ps("f_tags=a,100%,c"), [], ["tags"])).toEqual({
+      tags: ["a", "100%", "c"],
+    });
   });
 });
