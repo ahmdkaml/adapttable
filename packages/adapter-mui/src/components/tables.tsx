@@ -120,10 +120,17 @@ export function DesktopTable<TRow>({
             )}
             {columns.map((column) => {
               const active = table.sortBy === column.key;
+              // Core reports aria-sort="none" for sortable-but-inactive
+              // columns so screen readers announce them as sortable.
+              const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
+                | "ascending"
+                | "descending"
+                | "none"
+                | undefined;
               return (
                 <TableCell
                   key={column.key}
-                  sortDirection={active ? table.sortDir : false}
+                  aria-sort={ariaSort}
                   sx={{ textAlign: muiAlign(column.align), width: column.width }}
                 >
                   {column.sortable ? (

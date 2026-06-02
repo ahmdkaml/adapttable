@@ -43,6 +43,7 @@ describe("presets", () => {
         preset.showing({ from: 1, to: 10, total: 50 }).length
       ).toBeGreaterThan(0);
       expect(preset.pageOf({ page: 2, total: 5 }).length).toBeGreaterThan(0);
+      expect(preset.goToPage(2).length).toBeGreaterThan(0);
     }
   });
 });

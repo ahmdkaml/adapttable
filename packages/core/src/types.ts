@@ -191,6 +191,8 @@ export interface TableLabels {
   previousPage?: string;
   /** Accessible label for the next-page control. */
   nextPage?: string;
+  /** Builds the accessible "go to page N" label for numbered pagers. */
+  goToPage?: (page: number) => string;
   /** Builds the "selected N" label. */
   selectedCount?: (count: number) => string;
   /** Builds the "showing X–Y of Z" label. */

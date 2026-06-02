@@ -265,7 +265,7 @@ export function Footer({
         getItemAriaLabel={(type, page) => {
           if (type === "previous") return labels.previousPage;
           if (type === "next") return labels.nextPage;
-          if (type === "page") return `Go to page ${page}`;
+          if (type === "page") return labels.goToPage(page ?? 1);
           return "";
         }}
       />

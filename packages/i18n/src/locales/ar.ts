@@ -21,6 +21,7 @@ export const ar: Required<TableLabels> = {
   errorMessage: "تعذّر تحميل هذه البيانات.",
   previousPage: "الصفحة السابقة",
   nextPage: "الصفحة التالية",
+  goToPage: (page) => `الانتقال إلى الصفحة ${page}`,
   selectedCount: (count) => `${count} محدد`,
   showing: ({ from, to, total }) => `عرض ${from}–${to} من ${total}`,
   pageOf: ({ page, total }) => `صفحة ${page} من ${total}`,

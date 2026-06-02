@@ -24,6 +24,7 @@ export const defaultLabels: Required<TableLabels> = {
   errorMessage: "We couldn't load this data.",
   previousPage: "Previous page",
   nextPage: "Next page",
+  goToPage: (page) => `Go to page ${page}`,
   selectedCount: (count) => `${count} selected`,
   showing: ({ from, to, total }) => `Showing ${from}–${to} of ${total}`,
   pageOf: ({ page, total }) => `Page ${page} of ${total}`,

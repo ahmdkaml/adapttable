@@ -95,6 +95,15 @@ describe("<DataTable> (unstyled)", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders a loadingState override", () => {
+    renderHarness({
+      rows: [],
+      isLoading: true,
+      override: { loadingState: <div>load-custom</div> },
+    });
+    expect(screen.getByText("load-custom")).toBeInTheDocument();
+  });
+
   it("renders an error with a working retry", () => {
     const refetch = vi.fn();
     renderHarness({ error: new Error("boom"), refetch });

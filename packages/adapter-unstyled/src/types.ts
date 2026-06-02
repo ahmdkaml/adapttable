@@ -51,4 +51,6 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   classNames?: DataTableClassNames;
   /** Empty-state node override. */
   emptyState?: ReactNode;
+  /** Loading-state node override (replaces the skeleton on first load). */
+  loadingState?: ReactNode;
 }

@@ -142,6 +142,17 @@ describe("<DataTable> (Ant Design)", () => {
     expect(adapter.getSearch()).toContain("sortBy=name");
   });
 
+  it("exposes aria-sort on sortable headers", () => {
+    renderHarness({}, "sortBy=name&sortDir=asc");
+    expect(
+      screen.getByRole("columnheader", { name: /name/i })
+    ).toHaveAttribute("aria-sort", "ascending");
+    // The non-sortable City column gets no aria-sort.
+    expect(
+      screen.getByRole("columnheader", { name: /city/i })
+    ).not.toHaveAttribute("aria-sort");
+  });
+
   it("clears the sort when antd cycles past descending", () => {
     renderHarness({}, "sortBy=name&sortDir=desc");
     // Already descending; antd's next click cycles to unsorted.

@@ -36,6 +36,16 @@ function sortOrderFor(
   return sortDir === "desc" ? "descend" : "ascend";
 }
 
+/** `aria-sort` for a sortable header — antd's `<Table>` doesn't emit it. */
+function ariaSortFor(
+  columnKey: string,
+  sortBy: string | undefined,
+  sortDir: SortDirection | undefined
+): "ascending" | "descending" | "none" {
+  if (sortBy !== columnKey) return "none";
+  return sortDir === "desc" ? "descending" : "ascending";
+}
+
 /** Options for {@link buildColumns}. */
 export interface BuildColumnsOptions<TRow> {
   columns: readonly ColumnDef<TRow>[];
@@ -73,7 +83,13 @@ export function buildColumns<TRow>({
       : undefined,
     showSorterTooltip: false,
     onCell: () => cellStyle(column.align),
-    onHeaderCell: () => cellStyle(column.align),
+    onHeaderCell: () =>
+      column.sortable
+        ? {
+            ...cellStyle(column.align),
+            "aria-sort": ariaSortFor(column.key, sortBy, sortDir),
+          }
+        : cellStyle(column.align),
     render: (_value: unknown, row: TRow, index: number) =>
       column.Cell ? (
         <column.Cell row={row} rowIndex={index} />

@@ -54,6 +54,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     confirm: confirmProp,
     skeletonRows = 5,
     emptyState,
+    loadingState,
   } = props;
 
   const autoMobile = useIsMobile();
@@ -102,7 +103,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   let body: React.ReactNode;
   if (source.isLoading && source.rows.length === 0) {
-    body = (
+    body = loadingState ?? (
       <LoadingState
         rows={skeletonRows}
         labels={labels}
