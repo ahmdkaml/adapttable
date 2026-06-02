@@ -107,6 +107,39 @@ const sentinelRef = useInfiniteScroll({
 It is SSR- and test-safe: where `IntersectionObserver` is unavailable it
 no-ops, leaving the Load more button as the path forward.
 
+## Optional virtualization
+
+Long infinite lists can opt into row/card windowing with `virtualize`. The
+core exports `useTableVirtualization`, and the ready adapters wire it into
+their desktop rows and mobile cards. Ant Design maps the same `virtualize`
+prop to antd's native virtual table mode.
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(row) => row.id}
+  paginationMode="infinite"
+  virtualize
+  estimateRowSize={56}
+  estimateCardSize={140}
+/>
+```
+
+Virtualization is optional. Leave it off for small lists or paged tables; turn
+it on for long infinite lists.
+
+## Responsive cards
+
+Adapters automatically switch from table rows to mobile cards at the shared
+mobile breakpoint. `hideOnMobile` can hide low-value columns, while
+`mobileIdentityColumns` preserves a configurable number of leading
+desktop-visible columns so every card keeps enough identity to be useful.
+
+```tsx
+<DataTable mobileIdentityColumns={2} />
+```
+
 ## The two ways to use it
 
 1. **Batteries-included** — `import { DataTable } from "@adapttable/<kit>"`.

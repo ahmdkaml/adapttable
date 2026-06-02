@@ -1,7 +1,7 @@
 {
   "name": "@adapttable/core",
   "version": "0.0.0",
-  "description": "Headless, UI-agnostic React data table engine — state, hooks, prop-getters, and a unified client/server TableSource. Zero UI-kit imports.",
+  "description": "Headless, UI-agnostic React data table engine — state, URL sync, virtualization, prop-getters, and a unified client/server TableSource. Zero UI-kit imports.",
   "keywords": [
     "react",
     "data-table",
@@ -12,6 +12,8 @@
     "server-side-pagination",
     "url-state",
     "infinite-scroll",
+    "virtualized-table",
+    "responsive-table",
     "rtl",
     "typescript"
   ],

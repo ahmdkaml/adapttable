@@ -6,7 +6,8 @@ power user controls every node. From least to most effort — all opt-in:
 ## 1. Props
 
 `columns`, `source`, `searchPlaceholder`, `sortByOptions`, `rowActions`,
-`bulkActions`, `filters`, `dir`, and more.
+`bulkActions`, `filters`, `dir`, `virtualize`, `mobileIdentityColumns`,
+`stickyTop`, and more.
 
 ## 2. Slots
 
@@ -79,7 +80,32 @@ const bulkActions = [
 Confirmation is injectable via the `confirm` prop (defaults to
 `window.confirm`); pass your own dialog handler for a styled experience.
 
-## 6. Prop-getters (fully headless)
+Row actions can use `disabledReason(row)` when an action should be disabled
+and explain why. Bulk actions have the same pattern for selected ids.
+
+## 6. Virtualization and sticky polish
+
+Virtualization is opt-in:
+
+```tsx
+<DataTable
+  virtualize
+  estimateRowSize={56}
+  estimateCardSize={140}
+  virtualOverscan={8}
+/>
+```
+
+Mantine also supports sticky offset and scroll restoration knobs:
+
+```tsx
+<DataTable stickyTop={56} scrollToTopOnChange scrollTopGap={8} />
+```
+
+Consumers rendering their own markup can use the headless
+`useTableVirtualization` and `useScrollToTableTop` hooks directly.
+
+## 7. Prop-getters (fully headless)
 
 Build the entire markup yourself with `@adapttable/core`:
 

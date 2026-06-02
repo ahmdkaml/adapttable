@@ -9,11 +9,11 @@
     </title>
     <meta
       name="description"
-      content="AdaptTable is a headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. One API for client and server data, URL-synced state, infinite scroll, first-class i18n + RTL, and seamless dark mode. MIT, TypeScript, free."
+      content="AdaptTable is a headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. One API for client and server data, URL-synced state, responsive mobile cards, optional virtualization, first-class i18n + RTL, and seamless dark mode. MIT, TypeScript, free."
     />
     <meta
       name="keywords"
-      content="react data table, headless table, react table library, tanstack table alternative, mantine table, mui datagrid alternative, chakra table, ant design table, tailwind table, shadcn table, react table rtl, arabic table, react table dark mode, server-side pagination react, url state table, infinite scroll table, typescript table, react table component"
+      content="react data table, headless table, react table library, tanstack table alternative, mantine table, mui datagrid alternative, chakra table, ant design table, tailwind table, shadcn table, responsive table, virtualized table, react table rtl, arabic table, react table dark mode, server-side pagination react, url state table, infinite scroll table, typescript table, react table component"
     />
     <meta name="author" content="Orwa Mahmoud" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -29,9 +29,12 @@
     />
     <meta
       property="og:description"
-      content="One headless engine, ready adapters for Mantine, MUI, Chakra, Ant Design & Tailwind/shadcn. Client + server data, URL state, infinite scroll, i18n/RTL, dark mode. MIT."
+      content="One headless engine, ready adapters for Mantine, MUI, Chakra, Ant Design & Tailwind/shadcn. Client + server data, URL state, responsive cards, virtualization, i18n/RTL, dark mode. MIT."
     />
-    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/" />
+    <meta
+      property="og:url"
+      content="https://orwa-mahmoud.github.io/adapttable/"
+    />
     <meta property="og:site_name" content="AdaptTable" />
     <meta
       property="og:image"
@@ -59,14 +62,14 @@
         "@context": "https://schema.org",
         "@type": "SoftwareSourceCode",
         "name": "AdaptTable",
-        "description": "A headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unifies client-side and server-side data behind one TableSource contract, with URL-synced state, infinite scroll, i18n + RTL, and seamless dark mode.",
+        "description": "A headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unifies client-side and server-side data behind one TableSource contract, with URL-synced state, responsive mobile cards, optional virtualization, i18n + RTL, and seamless dark mode.",
         "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
         "url": "https://orwa-mahmoud.github.io/adapttable/",
         "programmingLanguage": "TypeScript",
         "runtimePlatform": "React 18+",
         "license": "https://opensource.org/licenses/MIT",
         "author": { "@type": "Person", "name": "Orwa Mahmoud" },
-        "keywords": "react, data table, headless, datagrid, mantine, mui, chakra, ant design, tailwind, shadcn, rtl, i18n, dark mode, server-side pagination, url state, infinite scroll, typescript"
+        "keywords": "react, data table, headless, datagrid, mantine, mui, chakra, ant design, tailwind, shadcn, responsive table, virtualized table, rtl, i18n, dark mode, server-side pagination, url state, infinite scroll, typescript"
       }
     </script>
 
@@ -152,7 +155,12 @@
         margin: 0;
         background: var(--bg);
         color: var(--fg);
-        font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
         -webkit-font-smoothing: antialiased;
       }
       a {
@@ -271,7 +279,11 @@
         border-radius: 12px;
         padding: 18px 20px;
         overflow-x: auto;
-        font: 13.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+        font:
+          13.5px/1.6 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
       }
       table {
         width: 100%;
@@ -334,11 +346,13 @@
             One headless engine, batteries-included adapters for
             <b>Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn</b>. The
             same API for client <em>and</em> server data, URL-synced shareable
-            state, infinite scroll, first-class i18n + RTL, and seamless dark
-            mode — MIT-licensed and free.
+            state, responsive mobile cards, optional virtualization, first-class
+            i18n + RTL, and seamless dark mode — MIT-licensed and free.
           </p>
           <div class="cta">
-            <a class="btn primary" href="https://github.com/orwa-mahmoud/adapttable"
+            <a
+              class="btn primary"
+              href="https://github.com/orwa-mahmoud/adapttable"
               >Get started on GitHub</a
             >
             <a
@@ -348,8 +362,8 @@
             >
           </div>
           <p class="kits">
-            <b>npx @adapttable/cli init</b> — detects your UI kit and scaffolds a
-            fully-featured table.
+            <b>npx @adapttable/cli init</b> — detects your UI kit and scaffolds
+            a fully-featured table.
           </p>
         </section>
 
@@ -366,15 +380,16 @@
             <div class="feature">
               <h3>Client &amp; server data, one API</h3>
               <p>
-                Swap <code>useFrontendData</code> for <code>useBackendData</code>
-                (a <code>useInfiniteQuery</code> hook) — the table doesn't change.
+                Swap <code>useFrontendData</code> for
+                <code>useBackendData</code> (a
+                <code>useInfiniteQuery</code> hook) — the table doesn't change.
               </p>
             </div>
             <div class="feature">
               <h3>Shareable URL state</h3>
               <p>
-                Search, sort, filters, and page sync to the URL via an injectable
-                adapter — deep-link and restore any table view.
+                Search, sort, filters, and page sync to the URL via an
+                injectable adapter — deep-link and restore any table view.
               </p>
             </div>
             <div class="feature">
@@ -387,15 +402,15 @@
             <div class="feature">
               <h3>Seamless dark mode</h3>
               <p>
-                Inherits your kit's theme with accessible contrast targets. No flashes, no
-                hardcoded colors.
+                Inherits your kit's theme with accessible contrast targets. No
+                flashes, no hardcoded colors.
               </p>
             </div>
             <div class="feature">
-              <h3>Infinite scroll &amp; paging</h3>
+              <h3>Responsive, virtualized, paged</h3>
               <p>
-                Auto by device: real IntersectionObserver infinite scroll on
-                mobile, classic pagination on desktop.
+                Readable cards on mobile, classic pagination on desktop, and
+                optional virtualized rows/cards for long infinite lists.
               </p>
             </div>
           </div>
@@ -490,10 +505,10 @@ function People({ rows }) {
             </summary>
             <p>
               AdaptTable is a headless React data table whose single core engine
-              powers ready, batteries-included adapters for Mantine, MUI, Chakra,
-              Ant Design, and Tailwind/shadcn. You get TanStack-Table-style
-              headless freedom without building the UI yourself for your specific
-              design system.
+              powers ready, batteries-included adapters for Mantine, MUI,
+              Chakra, Ant Design, and Tailwind/shadcn. You get
+              TanStack-Table-style headless freedom without building the UI
+              yourself for your specific design system.
             </p>
           </details>
           <details>
@@ -510,12 +525,14 @@ function People({ rows }) {
             </p>
           </details>
           <details>
-            <summary>Does AdaptTable support right-to-left (RTL) and Arabic?</summary>
+            <summary>
+              Does AdaptTable support right-to-left (RTL) and Arabic?
+            </summary>
             <p>
               Yes — RTL is first-class. Column alignment uses logical CSS so it
               flips automatically under <code>dir="rtl"</code>, and the i18n
-              package ships 10 locales including Arabic and Hebrew with direction
-              helpers.
+              package ships 10 locales including Arabic and Hebrew with
+              direction helpers.
             </p>
           </details>
           <details>
@@ -526,12 +543,15 @@ function People({ rows }) {
               Yes. One <code>TableSource</code> contract backs both
               <code>useFrontendData</code> (in-memory) and
               <code>useBackendData</code> (server-paginated via a
-              <code>useInfiniteQuery</code> hook). The <code>&lt;DataTable&gt;</code>
+              <code>useInfiniteQuery</code> hook). The
+              <code>&lt;DataTable&gt;</code>
               component doesn't change between them.
             </p>
           </details>
           <details>
-            <summary>Does AdaptTable have seamless dark mode and animations?</summary>
+            <summary>
+              Does AdaptTable have seamless dark mode and animations?
+            </summary>
             <p>
               Dark mode is inherited from your UI kit's theme and is seamless.
               Entrance animation is opt-in and dependency-free (Web Animations
@@ -556,10 +576,10 @@ function People({ rows }) {
           · MIT © Orwa Mahmoud
         </p>
         <p style="font-size: 12px">
-          Keywords: react data table, headless table, tanstack table alternative,
-          mantine table, mui datagrid alternative, chakra table, ant design
-          table, tailwind table, shadcn table, react table RTL, dark mode,
-          server-side pagination, URL state, infinite scroll, TypeScript.
+          Keywords: react data table, headless table, tanstack table
+          alternative, mantine table, mui datagrid alternative, chakra table,
+          ant design table, tailwind table, shadcn table, react table RTL, dark
+          mode, server-side pagination, URL state, infinite scroll, TypeScript.
         </p>
       </footer>
     </div>

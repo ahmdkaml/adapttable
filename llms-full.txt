@@ -517,7 +517,6 @@ Comparison as of June 2026, based on each project's public documentation. "Open-
   Excel-style editing today → **ag-grid** / **MUI X DataGrid (paid)**.
 - You're on a framework other than React → **TanStack Table** (multi-
   framework). AdaptTable is React-only for v1.
-- You render tens of thousands of rows at once and need **row
-  virtualization** today. AdaptTable does paging and infinite scroll, but
-  windowing is on the roadmap, not shipped yet.
+- You need a spreadsheet-like editing surface today, not a responsive data
+  table for application lists.
 

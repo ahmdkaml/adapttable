@@ -26,6 +26,10 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ### Selection, filters, actions
 
 - `useSelection`, `useActiveFilterChips`, `useExtraChips`
+- Count filter helpers: `COUNT_OPERATORS`, `COUNT_OPERATOR_SYMBOL`,
+  `countFilterExtra`, `clearCountFilterExtra`,
+  `countFilterStateFromExtra`, `countFilterChipLabel`,
+  `isCountFilterComplete`, `sanitizeCountFilterParams`
 - `mergeFilterChips`, `resolveActiveFilterCount` (pure helpers behind the
   adapter chrome)
 - `defaultConfirm`, `runRowAction`, `useBulkActionRunner`
@@ -36,6 +40,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
   `useColorScheme` (resolves `"light" | "dark" | "auto"`)
 - `useInfiniteScroll` — IntersectionObserver sentinel that auto-loads the
   next page in infinite mode (returns a ref; re-arms on `itemCount`)
+- `useTableVirtualization` — headless window virtualization for rows/cards.
+- `useScrollToTableTop` — optional sticky-chrome scroll restoration.
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
   `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`,
   `defaultLabels`, `pageSizeOptions`
@@ -44,7 +50,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 `TableSource`, `ColumnDef`, `RowAction`, `BulkAction`, `PaginatedResponse`,
 `TableLabels`, `BaseDataTableProps`, `SortDirection`, `Direction`,
-`ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`, …
+`ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`,
+`VirtualTableRow`, `CountFilterState`, `CountOperator`, …
 
 ## Adapters
 

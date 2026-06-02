@@ -16,10 +16,10 @@ already use — from the same core.
 
 If you use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
-infinite scroll, URL state, i18n/RTL, dark mode) that matches your kit without
-building the UI yourself. If you're on a different kit, the unstyled adapter
-exposes semantic HTML with `data-*` and `className` hooks, and the headless
-`useDataTable` core works with any markup.
+infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
+matches your kit without building the UI yourself. If you're on a different
+kit, the unstyled adapter exposes semantic HTML with `data-*` and `className`
+hooks, and the headless `useDataTable` core works with any markup.
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 
@@ -28,6 +28,14 @@ data, infinite scroll, filtering, and selection. MUI X DataGrid and ag-Grid are
 **open-core**: their advanced server-side data and infinite-loading
 capabilities sit behind paid Pro/Premium or Enterprise tiers. The MUI adapter
 gives a DataGrid-style experience at no cost.
+
+## How does it handle responsive tables on mobile?
+
+It does not try to squeeze desktop columns into a tiny viewport. The adapters
+automatically switch to mobile cards, with labels per value and a tunable
+`mobileIdentityColumns` option so the most important columns remain visible.
+This avoids the horizontal-scroll table pattern that breaks many responsive
+apps.
 
 ## How do I use the same table for client-side and server-side data?
 
@@ -63,6 +71,12 @@ or Framer Motion? Every row/card is tagged with `data-stagger`, so you can
 drive the animation yourself (see
 [customization.md](./customization.md#animations)). Or run with no animation at
 all — your call.
+
+## Does it support virtualization?
+
+Yes. Long infinite lists can opt into row/card virtualization with
+`virtualize`, `estimateRowSize`, `estimateCardSize`, and `virtualOverscan`.
+Ant Design uses its native virtual table mode via the same `virtualize` prop.
 
 ## How do I add URL-synced (shareable, deep-linkable) table state?
 
@@ -103,5 +117,5 @@ Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
 - You need a heavyweight enterprise grid with pivoting, range selection, and
   Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
 - You're not on React → TanStack Table (multi-framework).
-- You must virtualize tens of thousands of rows _today_ → AdaptTable does
-  paging and infinite scroll; row virtualization is on the roadmap.
+- You need spreadsheet-grade enterprise features like pivoting, Excel-style
+  editing, or range selection _today_.
