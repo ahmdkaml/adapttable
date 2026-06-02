@@ -51,6 +51,31 @@ export interface UseTableVirtualizationOptions<TRow> {
   onEndReached?: () => void;
 }
 
+/** Resolve either virtual entries or the full source rows into render entries. */
+export function resolveVirtualRows<TRow>(
+  rows: readonly TRow[],
+  rowKey: (row: TRow) => string,
+  rowEntries?: readonly VirtualTableRow<TRow>[]
+): readonly VirtualTableRow<TRow>[] {
+  return (
+    rowEntries ??
+    rows.map((row, index) => ({
+      row,
+      index,
+      key: rowKey(row),
+    }))
+  );
+}
+
+/** Column span for virtual spacer cells in table-based adapters. */
+export function virtualColumnSpan(
+  columnCount: number,
+  hasSelection: boolean,
+  hasActions: boolean
+): number {
+  return columnCount + (hasSelection ? 1 : 0) + (hasActions ? 1 : 0);
+}
+
 /**
  * Headless window virtualization for adapter tables. When disabled, it returns
  * every row and no spacer/measurement data, so adapters can use the same render

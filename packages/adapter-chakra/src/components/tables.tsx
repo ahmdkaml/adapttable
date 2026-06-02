@@ -1,9 +1,11 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  resolveVirtualRows,
   type RowAction,
   runRowAction,
   type UseDataTableResult,
+  virtualColumnSpan,
   type VirtualTableRow,
 } from "@adapttable/core";
 import {
@@ -130,15 +132,12 @@ export function DesktopTable<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
-  const entries =
-    rowEntries ??
-    rows.map((row, index) => ({
-      row,
-      index,
-      key: getRowId(row),
-    }));
-  const columnSpan =
-    columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
+  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const columnSpan = virtualColumnSpan(
+    columns.length,
+    Boolean(selection),
+    showActions
+  );
 
   return (
     <TableContainer>
@@ -279,13 +278,7 @@ export function MobileCards<TRow>({
   measureElement,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
-  const entries =
-    rowEntries ??
-    rows.map((row, index) => ({
-      row,
-      index,
-      key: getRowId(row),
-    }));
+  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   return (
     <Stack spacing={3} role="list">
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}

@@ -2,7 +2,11 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useTableVirtualization } from "./useTableVirtualization";
+import {
+  resolveVirtualRows,
+  useTableVirtualization,
+  virtualColumnSpan,
+} from "./useTableVirtualization";
 
 vi.mock("@tanstack/react-virtual", () => ({
   useWindowVirtualizer: vi.fn(),
@@ -142,5 +146,25 @@ describe("useTableVirtualization", () => {
     );
 
     expect(onEndReached).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves fallback render entries when no virtual entries are provided", () => {
+    expect(resolveVirtualRows(rows, rowKey).map((entry) => entry.key)).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+  });
+
+  it("uses provided virtual entries unchanged", () => {
+    const entry = { row: rows[1]!, index: 1, key: "custom" };
+    expect(resolveVirtualRows(rows, rowKey, [entry])).toEqual([entry]);
+  });
+
+  it("computes table spacer column spans", () => {
+    expect(virtualColumnSpan(3, false, false)).toBe(3);
+    expect(virtualColumnSpan(3, true, true)).toBe(5);
   });
 });

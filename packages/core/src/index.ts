@@ -178,9 +178,11 @@ export {
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
+  resolveVirtualRows,
   type TableVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
+  virtualColumnSpan,
   type VirtualTableRow,
 } from "./virtual/useTableVirtualization";
 
