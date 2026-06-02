@@ -10,6 +10,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
+**[🌐 Website](https://orwamahmoud.github.io/adapttable/)** · **[Docs](./docs/getting-started.md)** · **[Compare](./docs/comparison.md)** · **[FAQ](./docs/faq.md)**
+
 </div>
 
 ---
