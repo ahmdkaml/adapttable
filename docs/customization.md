@@ -114,4 +114,41 @@ strings concatenate, and `style` objects merge.
 
 Adapters can animate row/card entrance on mount. It is **opt-in**, honours
 `prefers-reduced-motion`, and is dependency-free by default (no GSAP
-required) — enable it with `animate` where supported.
+required) — enable it with `animate` where supported (Mantine):
+
+```tsx
+<DataTable source={source} columns={columns} rowKey={(r) => r.id} animate />
+```
+
+### Bring your own animation (GSAP, Framer Motion, anything)
+
+Every animatable row/card is tagged with a `data-stagger` attribute, so you
+can drive the entrance with whatever library you prefer. Leave the built-in
+off (`animate` defaults to `false`) and target the elements yourself:
+
+```tsx
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { DataTable, useFrontendData } from "@adapttable/mantine";
+
+function People({ data }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const source = useFrontendData({ data, columns });
+
+  useEffect(() => {
+    const items = ref.current?.querySelectorAll("[data-stagger]");
+    if (items?.length) {
+      gsap.from(items, { opacity: 0, y: 8, duration: 0.32, stagger: 0.04 });
+    }
+  }, [source.rows]);
+
+  return (
+    <div ref={ref}>
+      <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
+    </div>
+  );
+}
+```
+
+So the choice is yours: the built-in WAAPI stagger, your own GSAP/Framer
+timeline via `data-stagger`, or no animation at all.

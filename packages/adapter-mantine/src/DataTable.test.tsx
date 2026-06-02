@@ -225,6 +225,13 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.queryByRole("button", { name: /sort by/i })).toBeNull();
   });
 
+  it("tags rows with data-stagger so custom animation (e.g. GSAP) can target them", () => {
+    const { container } = renderHarness();
+    // The documented contract: every row carries [data-stagger], regardless
+    // of the built-in `animate` flag, so a GSAP/Framer timeline can drive it.
+    expect(container.querySelectorAll("[data-stagger]")).toHaveLength(2);
+  });
+
   it("runs a row action immediately when there is no confirm", () => {
     const onClick = vi.fn();
     renderHarness({
