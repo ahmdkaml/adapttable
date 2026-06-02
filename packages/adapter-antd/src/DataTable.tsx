@@ -154,7 +154,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                   })
                 : undefined
             }
-            scroll={{ x: "max-content" }}
             locale={{ emptyText: slots?.empty ?? labels.noData }}
           />
         )}

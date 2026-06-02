@@ -38,4 +38,4 @@ if (typeof globalThis.ResizeObserver !== "function") {
 // of logging "Not implemented".
 const realGetComputedStyle = globalThis.getComputedStyle.bind(globalThis);
 globalThis.getComputedStyle = ((element: Element) =>
-  realGetComputedStyle(element)) as typeof globalThis.getComputedStyle;
+  realGetComputedStyle(element));

@@ -239,6 +239,15 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByRole("table", { name: "People" })).toBeInTheDocument();
   });
 
+  it("renders exactly one select-all checkbox (no phantom measure-row clone)", () => {
+    renderHarness({
+      override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+    });
+    // A duplicated, focusable select-all in antd's aria-hidden measure row
+    // would be a keyboard trap; there must be only one.
+    expect(screen.getAllByLabelText("Select all")).toHaveLength(1);
+  });
+
   it("prefetches a row on hover", () => {
     const prefetch = vi.fn();
     renderHarness({ override: { prefetch } });
