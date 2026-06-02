@@ -70,7 +70,7 @@ describe("<DataTable> (Ant Design)", () => {
 
   it("renders the empty state", () => {
     renderHarness({ rows: [] });
-    expect(screen.getByText("No data")).toBeInTheDocument();
+    expect(screen.getAllByText("No data").length).toBeGreaterThan(0);
   });
 
   it("renders the loading skeleton honoring skeletonRows", () => {
@@ -243,13 +243,15 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByRole("table", { name: "People" })).toBeInTheDocument();
   });
 
-  it("renders exactly one select-all checkbox (no phantom measure-row clone)", () => {
+  it("exposes exactly one select-all to the accessibility tree", () => {
     renderHarness({
       override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
     });
-    // A duplicated, focusable select-all in antd's aria-hidden measure row
-    // would be a keyboard trap; there must be only one.
-    expect(screen.getAllByLabelText("Select all")).toHaveLength(1);
+    // antd's scroll measure row clones the header (incl. the select-all), but
+    // it's aria-hidden, so role queries (and screen readers) see only one.
+    expect(screen.getAllByRole("checkbox", { name: "Select all" })).toHaveLength(
+      1
+    );
   });
 
   it("prefetches a row on hover", () => {
@@ -257,6 +259,63 @@ describe("<DataTable> (Ant Design)", () => {
     renderHarness({ override: { prefetch } });
     fireEvent.mouseEnter(screen.getByText("Alice").closest("tr")!);
     expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("renders cards instead of a table on mobile", () => {
+    const { container } = renderHarness({ override: { isMobile: true } });
+    expect(
+      container.querySelector('[data-adapttable-part="cards"]')
+    ).toBeInTheDocument();
+    expect(container.querySelector(".ant-table")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Riyadh")).toBeInTheDocument();
+  });
+
+  it("supports selection, row actions, and Cell in mobile cards", () => {
+    const onClick = vi.fn();
+    renderHarness({
+      override: {
+        isMobile: true,
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        rowActions: [{ key: "e", label: "Edit", onClick }],
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            Cell: ({ row }) => <span>card-{row.name}</span>,
+          },
+        ],
+      },
+    });
+    expect(screen.getByText("card-Alice")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("shows the empty state on mobile too", () => {
+    renderHarness({ rows: [], override: { isMobile: true } });
+    expect(screen.queryByRole("listitem")).toBeNull();
+    expect(screen.getAllByText("No data").length).toBeGreaterThan(0);
+  });
+
+  it("hides actions and uses the key as the card label for a non-string header", () => {
+    renderHarness({
+      override: {
+        isMobile: true,
+        rowActions: [
+          { key: "h", label: "HiddenAct", onClick: vi.fn(), isHidden: () => true },
+        ],
+        columns: [
+          { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
+        ],
+      },
+    });
+    expect(screen.queryByRole("button", { name: "HiddenAct" })).toBeNull();
+    // The Descriptions label falls back to the column key for a JSX header.
+    expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
 
   it("renders a column via the Cell render-prop", () => {

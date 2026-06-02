@@ -47,7 +47,10 @@ component doesn't change.
 - antd `Pagination` (with page-size changer) in paged mode; **infinite
   scroll** (IntersectionObserver auto-load + a "Load more" fallback) in
   infinite mode.
-- antd `Spin` loading, `Alert` error with retry, built-in empty state.
+- **Responsive:** a horizontally-scrollable `<Table>` on desktop, and an
+  antd `Card` + `Descriptions` layout on mobile (auto by viewport).
+- antd `Skeleton` loading (honouring `skeletonRows`), `Alert` error with
+  retry, and an `Empty` state.
 - Logical (RTL-aware) column alignment, column `width`, custom `Cell`
   renderers, and conditional row actions (`isHidden` / `isDisabled`).
 - `slots` (skeleton, empty), `className`, `size`, `bordered`, injectable

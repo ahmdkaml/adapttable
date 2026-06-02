@@ -6,6 +6,7 @@ import {
 import {
   Button,
   Checkbox,
+  Empty,
   Flex,
   Skeleton,
   Space,
@@ -22,6 +23,7 @@ import {
   FilterDrawer,
   Toolbar,
 } from "./components/chrome";
+import { MobileCards } from "./components/MobileCards";
 import type { DataTableProps } from "./types";
 
 /**
@@ -123,6 +125,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paragraph={{ rows: props.skeletonRows ?? 5 }}
       />
     );
+  } else if (c.body === "empty") {
+    bodyRegion = slots?.empty ?? <Empty description={labels.noData} />;
+  } else if (c.body === "mobile") {
+    bodyRegion = (
+      <MobileCards
+        table={table}
+        rows={source.rows}
+        rowActions={props.rowActions}
+        confirm={confirm}
+        getRowId={getRowId}
+        prefetch={props.prefetch}
+      />
+    );
   } else {
     bodyRegion = (
       <Table<TRow>
@@ -140,7 +155,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
             : undefined
         }
-        locale={{ emptyText: slots?.empty ?? labels.noData }}
+        scroll={{ x: "max-content" }}
+        locale={{ emptyText: labels.noData }}
       />
     );
   }

@@ -57,4 +57,13 @@ describe("accessibility (axe) — Ant Design", () => {
     });
     expect(await axe(container, axeOpts)).toHaveNoViolations();
   });
+
+  it("the mobile card layout has no violations", async () => {
+    const { container } = renderTable({
+      isMobile: true,
+      bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
+      rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
+    });
+    expect(await axe(container, axeOpts)).toHaveNoViolations();
+  });
 });
