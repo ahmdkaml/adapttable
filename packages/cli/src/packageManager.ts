@@ -5,6 +5,7 @@ export type PackageManager = "pnpm" | "yarn" | "bun" | "npm";
 const LOCKFILES: readonly [string, PackageManager][] = [
   ["pnpm-lock.yaml", "pnpm"],
   ["yarn.lock", "yarn"],
+  ["bun.lock", "bun"],
   ["bun.lockb", "bun"],
   ["package-lock.json", "npm"],
 ];

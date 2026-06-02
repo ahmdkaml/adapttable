@@ -105,6 +105,7 @@ export function BulkBar({
             className={classNames.bulkButton}
             onClick={() => run(action, ids)}
           >
+            {action.icon}
             {action.label}
           </button>
         );

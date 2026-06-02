@@ -44,6 +44,7 @@ describe("choosePackageManager", () => {
     expect(choosePackageManager(["pnpm-lock.yaml"])).toBe("pnpm");
     expect(choosePackageManager(["yarn.lock"])).toBe("yarn");
     expect(choosePackageManager(["bun.lockb"])).toBe("bun");
+    expect(choosePackageManager(["bun.lock"])).toBe("bun");
     expect(choosePackageManager(["package-lock.json"])).toBe("npm");
   });
   it("defaults to npm when no lockfile is present", () => {

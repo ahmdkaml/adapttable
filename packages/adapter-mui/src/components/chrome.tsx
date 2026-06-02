@@ -212,6 +212,7 @@ export function BulkBar({
                   size="small"
                   variant="contained"
                   color={action.color as "primary" | undefined}
+                  startIcon={action.icon}
                   disabled={reason !== undefined || pending !== null}
                   onClick={() => run(action, ids)}
                 >
