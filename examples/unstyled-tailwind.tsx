@@ -1,9 +1,9 @@
+import { getDirection, getLabels } from "@adapttable/i18n";
 import {
+  type ColumnDef,
   DataTable,
   useFrontendData,
-  type ColumnDef,
 } from "@adapttable/unstyled";
-import { getDirection, getLabels } from "@adapttable/i18n";
 
 interface Product {
   id: string;
@@ -34,9 +34,9 @@ const columns: ColumnDef<Product>[] = [
  */
 export function UnstyledTailwindExample({
   locale = "en",
-}: {
+}: Readonly<{
   locale?: string;
-}) {
+}>) {
   const source = useFrontendData({ data: PRODUCTS, columns });
   return (
     <DataTable

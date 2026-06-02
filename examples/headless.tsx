@@ -1,7 +1,7 @@
 import {
+  type ColumnDef,
   useDataTable,
   useFrontendData,
-  type ColumnDef,
 } from "@adapttable/core";
 
 interface Row {

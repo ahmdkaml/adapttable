@@ -1,4 +1,4 @@
-import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/antd";
+import { type ColumnDef, DataTable, useFrontendData } from "@adapttable/antd";
 import { ConfigProvider, theme } from "antd";
 
 interface Product {
@@ -53,7 +53,7 @@ export function AntdBasicExample() {
             color: "danger",
             confirm: {
               title: "Delete product?",
-              message: (count) => `Permanently delete ${count} product(s)?`,
+              message: (row) => `Permanently delete "${row.name}"?`,
               confirmLabel: "Delete",
               danger: true,
             },

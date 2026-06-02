@@ -1,4 +1,4 @@
-import { DataTable, useBackendData, type ColumnDef } from "@adapttable/mui";
+import { type ColumnDef, DataTable, useBackendData } from "@adapttable/mui";
 import {
   QueryClient,
   QueryClientProvider,

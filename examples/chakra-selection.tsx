@@ -1,4 +1,4 @@
-import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/chakra";
+import { type ColumnDef, DataTable, useFrontendData } from "@adapttable/chakra";
 import { ChakraProvider } from "@chakra-ui/react";
 
 interface Invoice {

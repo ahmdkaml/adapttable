@@ -1,9 +1,9 @@
 import "@mantine/core/styles.css";
 
 import {
+  type ColumnDef,
   DataTable,
   useFrontendData,
-  type ColumnDef,
 } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
 
