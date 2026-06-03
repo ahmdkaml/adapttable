@@ -33,4 +33,5 @@ export const ja: Required<TableLabels> = {
   moveLeft: "左へ移動",
   moveRight: "右へ移動",
   resetColumns: "列をリセット",
+  resizeColumn: "列のサイズ変更",
 };

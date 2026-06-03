@@ -5,11 +5,14 @@ export const MIN_COLUMN_WIDTH = 60;
 /** Keyboard resize step (px) per arrow press. */
 export const COLUMN_RESIZE_STEP = 16;
 
-/** Props for a column-resize handle element. */
+/**
+ * Props for a column-resize handle element. Modeled as a `button` (a focusable
+ * `separator`/splitter would require `aria-valuenow/min/max`); ArrowLeft/Right
+ * resize it for keyboard users.
+ */
 export interface ColumnResizeHandleProps {
-  role: "separator";
+  role: "button";
   tabIndex: 0;
-  "aria-orientation": "vertical";
   "aria-label": string;
   onPointerDown: (event: PointerEvent<HTMLElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
@@ -36,9 +39,8 @@ export function columnResizeHandleProps(
   label: string
 ): ColumnResizeHandleProps {
   return {
-    role: "separator",
+    role: "button",
     tabIndex: 0,
-    "aria-orientation": "vertical",
     "aria-label": label,
     onPointerDown: (event) => {
       event.preventDefault();

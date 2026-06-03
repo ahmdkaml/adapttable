@@ -266,6 +266,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     confirm,
     labels,
     pinned: c.columnLayout.state.pinned,
+    setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
+    columnWidths: c.columnLayout.state.widths,
+    resizeLabel: labels.resizeColumn,
   });
   const hasPinned = Object.keys(c.columnLayout.state.pinned).length > 0;
 

@@ -21,6 +21,14 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
 
+/** The width setter only when column resize is enabled (opt-in). */
+function resizeSetter(
+  enabled: boolean | undefined,
+  setWidth: (key: string, width: number) => void
+): ((key: string, width: number) => void) | undefined {
+  return enabled ? setWidth : undefined;
+}
+
 /**
  * Batteries-included Material UI data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully styled, sortable, filterable, paginated MUI
@@ -125,6 +133,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         stickyTop={props.stickyTop}
         pinOffset={c.columnLayout.pinOffset}
         maxHeight={props.maxHeight}
+        setWidth={resizeSetter(props.resizableColumns, c.columnLayout.setWidth)}
+        columnWidths={c.columnLayout.state.widths}
+        resizeLabel={labels.resizeColumn}
       />
     );
   }

@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
   pinnedCellStyle,
   resolveDisabledReason,
@@ -32,6 +33,18 @@ import type { CSSProperties } from "react";
 
 import { subtleText } from "../styles";
 
+/** Inline style for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_STYLE: CSSProperties = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+};
+
 interface SharedProps<TRow> {
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -51,6 +64,9 @@ interface SharedProps<TRow> {
     key: string
   ) => { side: "left" | "right"; inset: number } | undefined;
   maxHeight?: number;
+  setWidth?: (key: string, width: number) => void;
+  columnWidths?: Readonly<Record<string, number>>;
+  resizeLabel?: string;
 }
 
 function chakraAlign(
@@ -141,6 +157,9 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -169,6 +188,19 @@ export function DesktopTable<TRow>({
       ? { ...pin, background: "var(--chakra-colors-chakra-body-bg)" }
       : undefined;
   };
+  // Header-cell style merging pin + user width; the resize handle is absolute,
+  // so add a positioning context when the cell is not already sticky/pinned.
+  const headCellStyle = (key: string): CSSProperties | undefined => {
+    const pin = pinStyle(key, 2);
+    const width = columnWidths?.[key];
+    if (!pin && width == null && !setWidth) return undefined;
+    const style: CSSProperties = { ...pin };
+    if (width != null) style.width = width;
+    if (setWidth && !stickyHeader && !pin) style.position = "relative";
+    return style;
+  };
+  const columnName = (column: ColumnDef<TRow>): string =>
+    typeof column.header === "string" ? column.header : column.key;
 
   return (
     <Box
@@ -205,18 +237,14 @@ export function DesktopTable<TRow>({
                   width={column.width}
                   aria-sort={ariaSort}
                   {...stickyTh}
-                  style={pinStyle(column.key, 2)}
+                  style={headCellStyle(column.key)}
                 >
                   {column.sortable ? (
                     <Box
                       as="button"
                       type="button"
                       cursor="pointer"
-                      aria-label={`${labels.sortBy}: ${
-                        typeof column.header === "string"
-                          ? column.header
-                          : column.key
-                      }`}
+                      aria-label={`${labels.sortBy}: ${columnName(column)}`}
                       onClick={() => table.toggleSort(column.key)}
                     >
                       {column.header}
@@ -226,6 +254,17 @@ export function DesktopTable<TRow>({
                     </Box>
                   ) : (
                     column.header
+                  )}
+                  {setWidth && (
+                    <Box
+                      as="span"
+                      style={RESIZE_HANDLE_STYLE}
+                      {...columnResizeHandleProps(
+                        column.key,
+                        setWidth,
+                        `${resizeLabel}: ${columnName(column)}`
+                      )}
+                    />
                   )}
                 </Th>
               );

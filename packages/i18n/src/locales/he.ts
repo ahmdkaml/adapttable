@@ -33,4 +33,5 @@ export const he: Required<TableLabels> = {
   moveLeft: "הזז שמאלה",
   moveRight: "הזז ימינה",
   resetColumns: "אפס עמודות",
+  resizeColumn: "שנה גודל עמודה",
 };

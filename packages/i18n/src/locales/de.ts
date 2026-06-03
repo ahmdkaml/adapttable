@@ -34,4 +34,5 @@ export const de: Required<TableLabels> = {
   moveLeft: "Nach links",
   moveRight: "Nach rechts",
   resetColumns: "Spalten zurücksetzen",
+  resizeColumn: "Spalte anpassen",
 };

@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
   pinnedCellStyle,
   resolveDisabledReason,
@@ -16,7 +17,19 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import type { CSSProperties, MouseEvent, RefObject } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, RefObject } from "react";
+
+/** Inline style for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_STYLE: CSSProperties = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+};
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 
@@ -40,6 +53,9 @@ export interface DesktopTableProps<TRow> {
     key: string
   ) => { side: "left" | "right"; inset: number } | undefined;
   maxHeight?: number;
+  setWidth?: (key: string, width: number) => void;
+  columnWidths?: Readonly<Record<string, number>>;
+  resizeLabel?: string;
 }
 
 function SortIcon({
@@ -61,10 +77,12 @@ function HeaderCell<TRow>({
   table,
   column,
   stickyStyle,
+  resizeHandle,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
   stickyStyle: CSSProperties;
+  resizeHandle?: ReactNode;
 }>) {
   const cellProps = table.getHeaderCellProps(column);
   const headerStyle = {
@@ -75,6 +93,7 @@ function HeaderCell<TRow>({
     return (
       <Table.Th {...cellProps} style={headerStyle}>
         {column.header}
+        {resizeHandle}
       </Table.Th>
     );
   }
@@ -100,6 +119,7 @@ function HeaderCell<TRow>({
         <span>{column.header}</span>
         <SortIcon active={active} dir={table.sortDir} />
       </Group>
+      {resizeHandle}
     </Table.Th>
   );
 }
@@ -181,6 +201,9 @@ export function DesktopTable<TRow>({
   stickyHeader = false,
   pinOffset,
   maxHeight,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -211,10 +234,28 @@ export function DesktopTable<TRow>({
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
   // which also sticks to the top). They need an opaque background.
   const pinBg = "var(--mantine-color-body)";
-  const headerStyleFor = (key: string): CSSProperties => ({
-    ...headerCellStyle,
-    ...pinnedCellStyle(pinOffset?.(key), 2),
-  });
+  const headerStyleFor = (key: string): CSSProperties => {
+    const merged: CSSProperties = {
+      ...headerCellStyle,
+      ...pinnedCellStyle(pinOffset?.(key), 2),
+      width: columnWidths?.[key],
+    };
+    if (setWidth && !merged.position) merged.position = "relative";
+    return merged;
+  };
+  const columnName = (column: ColumnDef<TRow>): string =>
+    typeof column.header === "string" ? column.header : column.key;
+  const resizeHandleFor = (column: ColumnDef<TRow>): ReactNode =>
+    setWidth ? (
+      <span
+        {...columnResizeHandleProps(
+          column.key,
+          setWidth,
+          `${resizeLabel}: ${columnName(column)}`
+        )}
+        style={RESIZE_HANDLE_STYLE}
+      />
+    ) : undefined;
   const bodyPinStyle = (key: string): CSSProperties | undefined => {
     const pin = pinnedCellStyle(pinOffset?.(key), 1);
     return pin ? { ...pin, background: pinBg } : undefined;
@@ -254,6 +295,7 @@ export function DesktopTable<TRow>({
                 table={table}
                 column={column}
                 stickyStyle={headerStyleFor(column.key)}
+                resizeHandle={resizeHandleFor(column)}
               />
             ))}
             {showActions && (

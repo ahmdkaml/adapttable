@@ -58,6 +58,8 @@ export interface BaseDataTableProps<TRow> {
   /* ── Column management ───────────────────────────────────────────── */
   /** Render the built-in "Columns" menu (show/hide, pin, reorder). */
   enableColumnMenu?: boolean;
+  /** Enable drag/keyboard column resize handles. Defaults to false (opt-in). */
+  resizableColumns?: boolean;
   /** Controlled column layout (hidden/order/pinned/widths). */
   columnLayout?: ColumnLayoutState;
   /** Change handler for the controlled column layout. */

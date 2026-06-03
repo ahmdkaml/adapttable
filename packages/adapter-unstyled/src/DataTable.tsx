@@ -101,6 +101,11 @@ function DataTableBody<TRow>({
         stickyTop={props.stickyTop}
         pinOffset={chrome.columnLayout.pinOffset}
         maxHeight={props.maxHeight}
+        setWidth={
+          props.resizableColumns ? chrome.columnLayout.setWidth : undefined
+        }
+        columnWidths={chrome.columnLayout.state.widths}
+        resizeLabel={labels.resizeColumn}
       />
     </>
   );

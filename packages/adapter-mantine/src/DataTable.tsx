@@ -173,6 +173,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         stickyHeader={stickyHeader}
         pinOffset={chrome.columnLayout.pinOffset}
         maxHeight={props.maxHeight}
+        setWidth={
+          props.resizableColumns ? chrome.columnLayout.setWidth : undefined
+        }
+        columnWidths={chrome.columnLayout.state.widths}
+        resizeLabel={table.labels.resizeColumn}
       />
     );
   }

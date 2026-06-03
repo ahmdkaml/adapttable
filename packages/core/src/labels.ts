@@ -36,6 +36,7 @@ export const defaultLabels: Required<TableLabels> = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  resizeColumn: "Resize column",
 };
 
 /**

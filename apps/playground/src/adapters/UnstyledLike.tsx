@@ -44,6 +44,7 @@ export function UnstyledLike({
             rowActions={makeActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            resizableColumns
             stickyHeader
             virtualize
             estimateRowSize={56}

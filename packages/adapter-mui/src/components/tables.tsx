@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
   pinnedCellStyle,
   resolveDisabledReason,
@@ -10,6 +11,18 @@ import {
   virtualColumnSpan,
   type VirtualTableRow,
 } from "@adapttable/core";
+
+/** Sx for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_SX = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+} as const;
 import {
   Box,
   Card,
@@ -52,6 +65,9 @@ interface SharedProps<TRow> {
     key: string
   ) => { side: "left" | "right"; inset: number } | undefined;
   maxHeight?: number;
+  setWidth?: (key: string, width: number) => void;
+  columnWidths?: Readonly<Record<string, number>>;
+  resizeLabel?: string;
 }
 
 /**
@@ -128,6 +144,9 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -148,10 +167,21 @@ export function DesktopTable<TRow>({
         bgcolor: "background.paper",
       }
     : undefined;
-  const headSxFor = (key: string) => {
-    const pin = pinnedCellStyle(pinOffset?.(key), 2);
-    if (!headSx && !pin) return undefined;
-    return { ...headSx, ...pin, bgcolor: "background.paper" };
+  // Built with conditional spreads so no key is ever `undefined` — that keeps
+  // the object assignable to MUI's strict `sx` index signature with no cast.
+  const headCellSx = (column: ColumnDef<TRow>) => {
+    const pin = pinnedCellStyle(pinOffset?.(column.key), 2);
+    const width = columnWidths?.[column.key] ?? column.width;
+    // The resize handle is absolute; an un-pinned/un-sticky cell still needs a
+    // positioning context for it.
+    const needsRelative = Boolean(setWidth) && !headSx && !pin;
+    return {
+      ...headSx,
+      ...(pin && { ...pin, bgcolor: "background.paper" }),
+      ...(needsRelative && { position: "relative" as const }),
+      textAlign: muiAlign(column.align),
+      ...(width != null && { width }),
+    };
   };
   const bodyPinSx = (key: string) => {
     const pin = pinnedCellStyle(pinOffset?.(key), 1);
@@ -189,11 +219,7 @@ export function DesktopTable<TRow>({
                 <TableCell
                   key={column.key}
                   aria-sort={ariaSort}
-                  sx={{
-                    ...headSxFor(column.key),
-                    textAlign: muiAlign(column.align),
-                    width: column.width,
-                  }}
+                  sx={headCellSx(column)}
                 >
                   {column.sortable ? (
                     <TableSortLabel
@@ -205,6 +231,21 @@ export function DesktopTable<TRow>({
                     </TableSortLabel>
                   ) : (
                     column.header
+                  )}
+                  {setWidth && (
+                    <Box
+                      component="span"
+                      sx={RESIZE_HANDLE_SX}
+                      {...columnResizeHandleProps(
+                        column.key,
+                        setWidth,
+                        `${resizeLabel}: ${
+                          typeof column.header === "string"
+                            ? column.header
+                            : column.key
+                        }`
+                      )}
+                    />
                   )}
                 </TableCell>
               );

@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
   pinnedCellStyle,
   resolveDisabledReason,
@@ -11,6 +12,18 @@ import {
   type VirtualTableRow,
 } from "@adapttable/core";
 import type { CSSProperties } from "react";
+
+/** Inline style for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_STYLE: CSSProperties = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+};
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
@@ -34,6 +47,9 @@ interface SharedProps<TRow> {
     key: string
   ) => { side: "left" | "right"; inset: number } | undefined;
   maxHeight?: number;
+  setWidth?: (key: string, width: number) => void;
+  columnWidths?: Readonly<Record<string, number>>;
+  resizeLabel?: string;
 }
 
 function RowActionButtons<TRow>({
@@ -96,6 +112,9 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -118,9 +137,16 @@ export function DesktopTable<TRow>({
     pinnedCellStyle(pinOffset?.(key), 2);
   const headStyle = (key: string): CSSProperties | undefined => {
     const pin = pinStyle(key);
-    if (!stickyStyle && !pin) return undefined;
-    return { ...stickyStyle, ...pin };
+    const width = columnWidths?.[key];
+    if (!stickyStyle && !pin && width == null && !setWidth) return undefined;
+    const merged: CSSProperties = { ...stickyStyle, ...pin, width };
+    // The resize handle is absolutely positioned, so the cell needs a
+    // positioning context when it is not already sticky/pinned.
+    if (setWidth && !merged.position) merged.position = "relative";
+    return merged;
   };
+  const columnName = (column: ColumnDef<TRow>): string =>
+    typeof column.header === "string" ? column.header : column.key;
 
   const tableEl = (
     <table
@@ -178,6 +204,18 @@ export function DesktopTable<TRow>({
                   </button>
                 ) : (
                   column.header
+                )}
+                {setWidth && (
+                  <span
+                    {...columnResizeHandleProps(
+                      column.key,
+                      setWidth,
+                      `${resizeLabel}: ${columnName(column)}`
+                    )}
+                    data-adapttable-part="resize-handle"
+                    className={classNames.resizeHandle}
+                    style={RESIZE_HANDLE_STYLE}
+                  />
                 )}
               </th>
             );

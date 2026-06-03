@@ -206,6 +206,7 @@ export function MantineDemo({
             rowActions={makeActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            resizableColumns
             stickyHeader
             virtualize
             estimateRowSize={56}

@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
   resolveDisabledReason,
   type RowAction,
@@ -8,8 +9,26 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import { Button, type TableColumnsType, Tooltip } from "antd";
+import type { CSSProperties } from "react";
 
 import { isDangerColor } from "./colors";
+
+/** Inline style for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_STYLE: CSSProperties = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+};
+
+/** Readable column label for the resize handle's accessible name. */
+function columnLabel<TRow>(column: ColumnDef<TRow>): string {
+  return typeof column.header === "string" ? column.header : column.key;
+}
 
 /** Logical (RTL-aware) text alignment for a column. */
 function logicalAlign(
@@ -57,6 +76,12 @@ export interface BuildColumnsOptions<TRow> {
   labels: Required<TableLabels>;
   /** Per-column edge pinning, mapped to antd's native `fixed`. */
   pinned?: Readonly<Record<string, "left" | "right">>;
+  /** Layout width mutator; enables a resize handle when provided. */
+  setWidth?: (key: string, width: number) => void;
+  /** Per-column pixel widths from the layout state. */
+  columnWidths?: Readonly<Record<string, number>>;
+  /** Accessible label prefix for the resize handle. */
+  resizeLabel?: string;
 }
 
 /**
@@ -76,11 +101,28 @@ export function buildColumns<TRow>({
   confirm,
   labels,
   pinned,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
 }: BuildColumnsOptions<TRow>): TableColumnsType<TRow> {
   const cols: TableColumnsType<TRow> = columns.map((column) => ({
     key: column.key,
-    title: column.header,
-    width: column.width,
+    title: setWidth ? (
+      <>
+        {column.header}
+        <span
+          {...columnResizeHandleProps(
+            column.key,
+            setWidth,
+            `${resizeLabel}: ${columnLabel(column)}`
+          )}
+          style={RESIZE_HANDLE_STYLE}
+        />
+      </>
+    ) : (
+      column.header
+    ),
+    width: columnWidths?.[column.key] ?? column.width,
     fixed: pinned?.[column.key],
     sorter: column.sortable ? true : undefined,
     sortOrder: column.sortable
@@ -88,13 +130,15 @@ export function buildColumns<TRow>({
       : undefined,
     showSorterTooltip: false,
     onCell: () => cellStyle(column.align),
-    onHeaderCell: () =>
-      column.sortable
-        ? {
-            ...cellStyle(column.align),
-            "aria-sort": ariaSortFor(column.key, sortBy, sortDir),
-          }
-        : cellStyle(column.align),
+    onHeaderCell: () => {
+      // The resize handle is absolute, so the header cell needs a positioning
+      // context for it.
+      const style: CSSProperties = { textAlign: logicalAlign(column.align) };
+      if (setWidth) style.position = "relative";
+      return column.sortable
+        ? { style, "aria-sort": ariaSortFor(column.key, sortBy, sortDir) }
+        : { style };
+    },
     render: (_value: unknown, row: TRow, index: number) =>
       column.Cell ? (
         <column.Cell row={row} rowIndex={index} />

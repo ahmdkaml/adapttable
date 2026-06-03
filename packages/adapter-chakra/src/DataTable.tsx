@@ -90,6 +90,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     stickyTop: props.stickyTop,
     pinOffset: chrome.columnLayout.pinOffset,
     maxHeight: props.maxHeight,
+    setWidth: props.resizableColumns ? chrome.columnLayout.setWidth : undefined,
+    columnWidths: chrome.columnLayout.state.widths,
+    resizeLabel: table.labels.resizeColumn,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (

@@ -33,4 +33,5 @@ export const ar: Required<TableLabels> = {
   moveLeft: "نقل لليسار",
   moveRight: "نقل لليمين",
   resetColumns: "إعادة تعيين الأعمدة",
+  resizeColumn: "تغيير حجم العمود",
 };

@@ -14,11 +14,10 @@ function handleEvent(width: number, extra: Record<string, unknown>) {
 }
 
 describe("columnResizeHandleProps", () => {
-  it("exposes accessible separator semantics", () => {
+  it("exposes accessible button semantics", () => {
     const props = columnResizeHandleProps("a", vi.fn(), "Resize A");
-    expect(props.role).toBe("separator");
+    expect(props.role).toBe("button");
     expect(props.tabIndex).toBe(0);
-    expect(props["aria-orientation"]).toBe("vertical");
     expect(props["aria-label"]).toBe("Resize A");
   });
 

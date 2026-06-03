@@ -218,4 +218,6 @@ export interface TableLabels {
   moveRight?: string;
   /** Reset the column layout to defaults. */
   resetColumns?: string;
+  /** Accessible label for a column-resize handle. */
+  resizeColumn?: string;
 }

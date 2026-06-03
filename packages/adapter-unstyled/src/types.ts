@@ -28,6 +28,7 @@ export interface DataTableClassNames {
   columnMenuButton?: string;
   columnMenuPanel?: string;
   columnMenuItem?: string;
+  resizeHandle?: string;
   bulkBar?: string;
   bulkButton?: string;
   table?: string;

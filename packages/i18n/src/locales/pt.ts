@@ -33,4 +33,5 @@ export const pt: Required<TableLabels> = {
   moveLeft: "Mover para a esquerda",
   moveRight: "Mover para a direita",
   resetColumns: "Redefinir colunas",
+  resizeColumn: "Redimensionar coluna",
 };
