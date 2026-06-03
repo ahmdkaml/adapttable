@@ -32,6 +32,9 @@ attributes:
     table: "w-full text-sm",
     row: "border-b hover:bg-zinc-50 data-[selected]:bg-blue-50",
     cell: "px-3 py-2",
+    filtersBackdrop: "fixed inset-0 bg-black/40",
+    filtersPanel: "fixed inset-y-0 end-0 w-96 bg-white shadow-xl",
+    filtersDone: "rounded-md bg-zinc-900 text-white px-3 py-2",
   }}
 />
 ```

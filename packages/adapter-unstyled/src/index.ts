@@ -8,6 +8,7 @@
  * @packageDocumentation
  */
 
+export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";
 export type { DataTableClassNames, DataTableProps } from "./types";

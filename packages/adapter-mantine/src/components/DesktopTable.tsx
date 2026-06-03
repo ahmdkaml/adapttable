@@ -184,6 +184,15 @@ export function DesktopTable<TRow>({
     }));
   const columnSpan =
     columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
+  const theadStyle = stickyHeader
+    ? {
+        background: "var(--mantine-color-body)",
+        position: "sticky" as const,
+        top: stickyHeaderOffset,
+        zIndex: 4,
+        boxShadow: "0 1px 0 var(--mantine-color-default-border)",
+      }
+    : { background: "var(--mantine-color-body)" };
 
   return (
     <div style={{ overflowX: "auto", width: "100%" }}>
@@ -194,18 +203,10 @@ export function DesktopTable<TRow>({
         verticalSpacing="sm"
         horizontalSpacing="md"
         stickyHeader={stickyHeader}
-        stickyHeaderOffset={stickyHeaderOffset}
+        stickyHeaderOffset={stickyHeader ? stickyHeaderOffset : 0}
         miw={480}
       >
-        <Table.Thead
-          style={{
-            background: "var(--mantine-color-body)",
-            position: "sticky",
-            top: stickyHeaderOffset,
-            zIndex: 4,
-            boxShadow: "0 1px 0 var(--mantine-color-default-border)",
-          }}
-        >
+        <Table.Thead style={theadStyle}>
           <Table.Tr
             {...table.getHeaderRowProps()}
             style={{

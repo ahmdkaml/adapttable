@@ -156,6 +156,11 @@ export function App() {
   const direction = locale === "ar" ? "rtl" : "ltr";
 
   useEffect(() => {
+    document.documentElement.lang = locale === "ar" ? "ar" : "en";
+    document.documentElement.dir = direction;
+  }, [locale, direction]);
+
+  useEffect(() => {
     const onNotice = (event: Event) => {
       const detail = (event as CustomEvent<DemoNotice>).detail;
       setNotice(detail);

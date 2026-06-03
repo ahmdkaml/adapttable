@@ -12,7 +12,15 @@ export interface DataTableClassNames {
   search?: string;
   sortSelect?: string;
   filtersButton?: string;
+  filtersBackdrop?: string;
   filtersPanel?: string;
+  filtersHeader?: string;
+  filtersTitle?: string;
+  filtersClose?: string;
+  filtersBody?: string;
+  filtersFooter?: string;
+  filtersClear?: string;
+  filtersDone?: string;
   chips?: string;
   chip?: string;
   chipRemove?: string;

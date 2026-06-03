@@ -57,7 +57,7 @@ function sortValue(row: Person, key: string): string {
  * only change needed to talk to a real server.
  */
 export async function fetchPeople(params: PeopleParams): Promise<PeoplePage> {
-  await new Promise((resolve) => setTimeout(resolve, 350));
+  await new Promise((resolve) => setTimeout(resolve, 480));
 
   let rows = PEOPLE.slice();
 

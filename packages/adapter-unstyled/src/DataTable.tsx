@@ -16,6 +16,7 @@ import {
   Footer,
   LoadingState,
 } from "./components/chrome";
+import { FilterPanel } from "./components/FilterPanel";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
@@ -63,6 +64,7 @@ function DataTableBody<TRow>({
             variant={chrome.isMobile ? "cards" : "table"}
             labels={labels}
             classNames={classNames}
+            hasActions={(props.rowActions?.length ?? 0) > 0}
           />
         )}
       </>
@@ -241,20 +243,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         )}
       </div>
 
-      {filters && filtersOpen && (
-        <div
-          data-adapttable-part="filters-panel"
-          className={classNames.filtersPanel}
-        >
-          {filters}
-          <button
-            type="button"
-            onClick={() => onClearFilters?.()}
-            disabled={chrome.activeFilterCount === 0}
-          >
-            {labels.clearAll}
-          </button>
-        </div>
+      {filters && (
+        <FilterPanel
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          filters={filters}
+          activeFilterCount={chrome.activeFilterCount}
+          onClearFilters={onClearFilters}
+          labels={labels}
+          dir={dir}
+          classNames={classNames}
+        />
       )}
 
       <Chips

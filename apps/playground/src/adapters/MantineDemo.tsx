@@ -208,8 +208,7 @@ export function MantineDemo({
             virtualize
             estimateRowSize={56}
             estimateCardSize={140}
-            stickyTop={12}
-            stickyHeader={false}
+            stickyTop={8}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}

@@ -214,6 +214,12 @@ export function ErrorState({
   );
 }
 
+function loadingLineWidth(column: number, total: number): string {
+  if (column === 0) return "70%";
+  if (column === total - 1) return "42%";
+  return "55%";
+}
+
 /** Skeleton-ish loading placeholder (semantic, unstyled). */
 export function LoadingState({
   rows,
@@ -221,15 +227,19 @@ export function LoadingState({
   variant,
   labels,
   classNames,
+  hasActions = false,
 }: Readonly<{
   rows: number;
   columns: number;
   variant: "table" | "cards";
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
+  hasActions?: boolean;
 }>) {
   const rowKeys = Array.from({ length: rows }, (_, i) => i);
-  const columnKeys = Array.from({ length: Math.max(columns, 1) }, (_, i) => i);
+  const dataColumns = Math.max(columns, 1);
+  const columnCount = dataColumns + (hasActions ? 1 : 0);
+  const columnKeys = Array.from({ length: columnCount }, (_, i) => i);
   return (
     <div
       role="status"
@@ -240,12 +250,29 @@ export function LoadingState({
     >
       {variant === "table" ? (
         <table data-adapttable-part="loading-table">
+          <thead>
+            <tr data-adapttable-part="loading-header-row">
+              {columnKeys.map((column) => (
+                <th key={column} data-adapttable-part="loading-header-cell">
+                  <span
+                    data-adapttable-part="loading-line"
+                    style={{ width: loadingLineWidth(column, columnCount) }}
+                  />
+                </th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {rowKeys.map((row) => (
               <tr key={row} data-adapttable-part="loading-row">
                 {columnKeys.map((column) => (
                   <td key={column} data-adapttable-part="loading-cell">
-                    <span data-adapttable-part="loading-line" />
+                    <span
+                      data-adapttable-part="loading-line"
+                      style={{
+                        width: loadingLineWidth(column, columnCount),
+                      }}
+                    />
                   </td>
                 ))}
               </tr>
@@ -256,9 +283,17 @@ export function LoadingState({
         <div data-adapttable-part="loading-cards">
           {rowKeys.map((row) => (
             <div key={row} data-adapttable-part="loading-card">
-              {columnKeys.slice(0, 3).map((column) => (
-                <span key={column} data-adapttable-part="loading-line" />
-              ))}
+              {columnKeys
+                .slice(0, Math.min(4, columnKeys.length))
+                .map((column) => (
+                  <span
+                    key={column}
+                    data-adapttable-part="loading-line"
+                    style={{
+                      width: loadingLineWidth(column, columnKeys.length),
+                    }}
+                  />
+                ))}
             </div>
           ))}
         </div>

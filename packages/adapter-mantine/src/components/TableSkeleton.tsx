@@ -21,6 +21,19 @@ export function TableSkeleton({
   return (
     <div role="status" aria-busy="true" aria-live="polite">
       <Table>
+        <Table.Thead>
+          <Table.Tr>
+            {colKeys.map((c) => (
+              <Table.Th key={c}>
+                <Skeleton
+                  height={12}
+                  radius="sm"
+                  width={c === 0 ? "55%" : "40%"}
+                />
+              </Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
         <Table.Tbody>
           {rowKeys.map((r) => (
             <Table.Tr key={r}>
