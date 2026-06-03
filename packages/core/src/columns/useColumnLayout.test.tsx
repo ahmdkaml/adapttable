@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { useColumnLayout } from "./useColumnLayout";
+import { pinnedCellStyle, useColumnLayout } from "./useColumnLayout";
 
 interface Row {
   id: string;
@@ -109,6 +109,20 @@ describe("useColumnLayout", () => {
     // 'b' is before 'c' (both right-pinned) → inset = width(c) = 80.
     expect(result.current.pinOffset("b")).toEqual({ side: "right", inset: 80 });
     expect(result.current.pinOffset("c")).toEqual({ side: "right", inset: 0 });
+  });
+
+  it("builds a sticky style from a pin offset (or undefined when unpinned)", () => {
+    expect(pinnedCellStyle(undefined)).toBeUndefined();
+    expect(pinnedCellStyle({ side: "left", inset: 0 })).toEqual({
+      position: "sticky",
+      left: 0,
+      zIndex: 1,
+    });
+    expect(pinnedCellStyle({ side: "right", inset: 80 }, 3)).toEqual({
+      position: "sticky",
+      right: 80,
+      zIndex: 3,
+    });
   });
 
   it("sets and clears a column width", () => {

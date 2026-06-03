@@ -66,6 +66,27 @@ export interface UseColumnLayoutResult<TRow> {
   reset: () => void;
 }
 
+/** Minimal sticky-positioning style for a pinned cell, from a pin offset. */
+export interface PinnedCellStyle {
+  position: "sticky";
+  left?: number;
+  right?: number;
+  zIndex: number;
+}
+
+/**
+ * Build the sticky style for a pinned header/body cell from its pin offset.
+ * Adapters spread this onto the cell and add their own opaque background.
+ * Returns undefined for an unpinned cell.
+ */
+export function pinnedCellStyle(
+  offset: { side: "left" | "right"; inset: number } | undefined,
+  zIndex = 1
+): PinnedCellStyle | undefined {
+  if (!offset) return undefined;
+  return { position: "sticky", [offset.side]: offset.inset, zIndex };
+}
+
 /** Order `columns` by an explicit key order, appending any unlisted columns. */
 function applyOrder<TRow>(
   columns: readonly ColumnDef<TRow>[],

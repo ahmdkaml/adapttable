@@ -139,6 +139,8 @@ export { deriveSortByOptions } from "./sort/sortByOptions";
 export {
   type ColumnLayoutState,
   EMPTY_COLUMN_LAYOUT,
+  type PinnedCellStyle,
+  pinnedCellStyle,
   useColumnLayout,
   type UseColumnLayoutOptions,
   type UseColumnLayoutResult,
