@@ -136,6 +136,13 @@ export { nextSort, type SortState } from "./sort/cycleSort";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
+export {
+  type ColumnLayoutState,
+  EMPTY_COLUMN_LAYOUT,
+  useColumnLayout,
+  type UseColumnLayoutOptions,
+  type UseColumnLayoutResult,
+} from "./columns/useColumnLayout";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
 
 /* ── Pagination ────────────────────────────────────────────────────── */
