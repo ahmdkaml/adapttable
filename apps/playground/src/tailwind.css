@@ -1,0 +1,41 @@
+/*
+ * Tailwind v4 for the unstyled adapter demos (Tailwind + shadcn tabs).
+ *
+ * Import only the THEME + UTILITIES layers — deliberately NOT preflight.
+ * Preflight is a global reset that would fight the Mantine / MUI / Chakra /
+ * AntD demos rendered in the same app. Without it, Tailwind utilities still
+ * work where applied, and the other kits keep their own resets.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Preflight is skipped (above), so restore border-box sizing — but only inside
+   the unstyled AdaptTable so Tailwind's height/padding utilities measure right
+   without disturbing the Mantine/MUI/Chakra/AntD demos. */
+@layer base {
+  [data-adapttable-part="root"],
+  [data-adapttable-part="root"] *,
+  [data-adapttable-part="root"] ::before,
+  [data-adapttable-part="root"] ::after {
+    box-sizing: border-box;
+  }
+}
+
+/* shadcn/ui "neutral" design tokens, exposed as Tailwind colors so the
+   shadcn demo can use real `bg-card`, `text-muted-foreground`, `border`, … */
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(0 0% 3.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 3.9%);
+  --color-muted: hsl(0 0% 96.1%);
+  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-border: hsl(0 0% 89.8%);
+  --color-input: hsl(0 0% 89.8%);
+  --color-primary: hsl(0 0% 9%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-accent: hsl(0 0% 96.1%);
+  --color-accent-foreground: hsl(0 0% 9%);
+  --color-ring: hsl(0 0% 63.9%);
+}
