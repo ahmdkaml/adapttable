@@ -65,7 +65,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollToTopOnChange = true,
     scrollTopGap,
     animate = false,
-    stickyHeader = true,
+    stickyHeader = false,
   } = props;
 
   const chrome = useTableChrome<TRow>(props);

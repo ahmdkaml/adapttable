@@ -43,6 +43,7 @@ export function UnstyledLike({
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
             confirm={demoConfirm}
+            stickyHeader
             virtualize
             estimateRowSize={56}
             estimateCardSize={140}

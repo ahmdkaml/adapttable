@@ -257,6 +257,24 @@ describe("<DataTable> (Ant Design)", () => {
     ).toBeDisabled();
   });
 
+  it("keeps a row action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        rowActions: [
+          {
+            key: "d",
+            label: "DeleteAct",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    expect(
+      screen.getAllByRole("button", { name: "DeleteAct" })[0]!
+    ).not.toBeDisabled();
+  });
+
   it("labels the table with tableLabel", () => {
     renderHarness({ override: { tableLabel: "People" } });
     expect(screen.getByRole("table", { name: "People" })).toBeInTheDocument();

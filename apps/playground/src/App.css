@@ -525,6 +525,8 @@ select {
   font-weight: 750;
   padding: 10px 12px;
   text-align: start;
+  /* opaque so the sticky header hides rows scrolling beneath it */
+  background: #fffdf7;
 }
 
 .ut-sort-button,

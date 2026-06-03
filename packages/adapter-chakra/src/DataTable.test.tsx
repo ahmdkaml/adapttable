@@ -278,6 +278,23 @@ describe("<DataTable> (Chakra)", () => {
     expect(screen.getByText("Delete").closest("button")).toBeDisabled();
   });
 
+  it("keeps a bulk action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        bulkActions: [
+          {
+            key: "d",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("Delete").closest("button")).not.toBeDisabled();
+  });
+
   it("fires prefetch on desktop row hover and renders a custom Cell", () => {
     const prefetch = vi.fn();
     const cellCols: ColumnDef<Row>[] = [

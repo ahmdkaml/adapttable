@@ -132,6 +132,39 @@ describe("<DataTable> (unstyled) gaps", () => {
     expect(btn).toHaveAttribute("title", "Referenced");
   });
 
+  it("keeps a bulk action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        bulkActions: [
+          {
+            key: "del",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("Delete")).not.toBeDisabled();
+  });
+
+  // Sticky header is opt-in (default off). When enabled it is applied to the
+  // header *cells* inline (not a `<thead>`), with a `data-sticky` hook so the
+  // consumer can give them an opaque background.
+  it("does not stick header cells by default (opt-in)", () => {
+    renderHarness();
+    const th = screen.getByText("Name").closest("th");
+    expect(th).not.toHaveStyle({ position: "sticky" });
+  });
+
+  it("sticks header cells when stickyHeader is enabled", () => {
+    renderHarness({ override: { stickyHeader: true } });
+    const th = screen.getByText("Name").closest("th");
+    expect(th).toHaveStyle({ position: "sticky" });
+    expect(th).toHaveAttribute("data-sticky");
+  });
+
   it("fires prefetch on desktop row hover", () => {
     const prefetch = vi.fn();
     renderHarness({ override: { prefetch } });

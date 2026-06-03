@@ -9,6 +9,7 @@ import {
   virtualColumnSpan,
   type VirtualTableRow,
 } from "@adapttable/core";
+import type { CSSProperties } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
@@ -26,6 +27,8 @@ interface SharedProps<TRow> {
   paddingTop?: number;
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
+  stickyHeader?: boolean;
+  stickyTop?: number;
 }
 
 function RowActionButtons<TRow>({
@@ -84,6 +87,8 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  stickyHeader = false,
+  stickyTop = 0,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -93,6 +98,14 @@ export function DesktopTable<TRow>({
     Boolean(selection),
     showActions
   );
+  // Stick the header *cells* (a `<thead>` does not pin against the document
+  // scroller). The adapter ships no colours, so consumers must give their
+  // `headerCell` class an opaque background — the `data-sticky` hook makes
+  // that easy to target.
+  const stickyStyle: CSSProperties | undefined = stickyHeader
+    ? { position: "sticky", top: stickyTop, zIndex: 1 }
+    : undefined;
+  const stickyAttr = stickyHeader || undefined;
 
   return (
     <table
@@ -109,6 +122,8 @@ export function DesktopTable<TRow>({
           {selection && (
             <th
               data-adapttable-part="selection-header"
+              data-sticky={stickyAttr}
+              style={stickyStyle}
               className={cx(classNames.headerCell, classNames.selectionCell)}
             >
               <input
@@ -132,6 +147,8 @@ export function DesktopTable<TRow>({
                 {...headerProps}
                 data-adapttable-part="header-cell"
                 data-sorted={active ? table.sortDir : undefined}
+                data-sticky={stickyAttr}
+                style={stickyStyle}
                 className={classNames.headerCell}
               >
                 {column.sortable ? (
@@ -152,6 +169,8 @@ export function DesktopTable<TRow>({
           {showActions && (
             <th
               data-adapttable-part="actions-header"
+              data-sticky={stickyAttr}
+              style={stickyStyle}
               className={classNames.headerCell}
             >
               {labels.actions}

@@ -85,6 +85,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     paddingTop: virtualization.paddingTop,
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
+    stickyHeader: props.stickyHeader,
+    stickyTop: props.stickyTop,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (

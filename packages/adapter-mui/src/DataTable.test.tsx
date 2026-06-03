@@ -221,6 +221,24 @@ describe("<DataTable> (MUI)", () => {
     ).toBeDisabled();
   });
 
+  it("keeps a row action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        rowActions: [
+          {
+            key: "delete",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    expect(
+      screen.getAllByRole("button", { name: "Delete" })[0]!
+    ).not.toBeDisabled();
+  });
+
   it("applies className and dir", () => {
     const { container } = renderHarness({
       override: { className: "my-root", dir: "rtl" },

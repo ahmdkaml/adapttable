@@ -19,7 +19,6 @@ import {
   IconButton,
   Stack,
   Table,
-  TableContainer,
   Tbody,
   Td,
   Text,
@@ -44,6 +43,8 @@ interface SharedProps<TRow> {
   paddingTop?: number;
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
+  stickyHeader?: boolean;
+  stickyTop?: number;
 }
 
 function chakraAlign(
@@ -130,6 +131,8 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  stickyHeader = false,
+  stickyTop = 0,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -139,9 +142,20 @@ export function DesktopTable<TRow>({
     Boolean(selection),
     showActions
   );
+  // Stick the header *cells* (a `<thead>` does not pin against the document
+  // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
+  // sticky and let the header overlap the first row.
+  const stickyTh = stickyHeader
+    ? {
+        position: "sticky" as const,
+        top: `${stickyTop}px`,
+        zIndex: 1,
+        bg: "chakra-body-bg",
+      }
+    : {};
 
   return (
-    <TableContainer>
+    <Box>
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}
@@ -149,7 +163,7 @@ export function DesktopTable<TRow>({
         <Thead>
           <Tr>
             {selection && (
-              <Th>
+              <Th {...stickyTh}>
                 <Checkbox
                   aria-label={labels.selectAll}
                   isChecked={selection.headerState === "all"}
@@ -171,6 +185,7 @@ export function DesktopTable<TRow>({
                   textAlign={chakraAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}
+                  {...stickyTh}
                 >
                   {column.sortable ? (
                     <Box
@@ -195,7 +210,11 @@ export function DesktopTable<TRow>({
                 </Th>
               );
             })}
-            {showActions && <Th textAlign="end">{labels.actions}</Th>}
+            {showActions && (
+              <Th textAlign="end" {...stickyTh}>
+                {labels.actions}
+              </Th>
+            )}
           </Tr>
         </Thead>
         <Tbody>
@@ -255,7 +274,7 @@ export function DesktopTable<TRow>({
           )}
         </Tbody>
       </Table>
-    </TableContainer>
+    </Box>
   );
 }
 

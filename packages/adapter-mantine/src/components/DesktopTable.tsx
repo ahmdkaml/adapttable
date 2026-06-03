@@ -173,7 +173,7 @@ export function DesktopTable<TRow>({
   paddingBottom = 0,
   measureElement,
   stickyHeaderOffset = 0,
-  stickyHeader = true,
+  stickyHeader = false,
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;

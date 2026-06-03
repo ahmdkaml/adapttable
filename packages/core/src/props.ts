@@ -93,6 +93,8 @@ export interface BaseDataTableProps<TRow> {
   skeletonRows?: number;
   /** Sticky toolbar top offset in px. Defaults to 0. */
   stickyTop?: number;
+  /** Keep the desktop table header sticky while scrolling. Defaults to false (opt-in). */
+  stickyHeader?: boolean;
   /** Scroll back to the table when search/filter/page changes. Defaults to true. */
   scrollToTopOnChange?: boolean;
   /** Extra gap below sticky chrome when scrolling back. Defaults to 8. */

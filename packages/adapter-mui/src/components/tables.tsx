@@ -45,6 +45,8 @@ interface SharedProps<TRow> {
   paddingTop?: number;
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
+  stickyHeader?: boolean;
+  stickyTop?: number;
 }
 
 /**
@@ -117,6 +119,8 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  stickyHeader = false,
+  stickyTop = 0,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -126,9 +130,20 @@ export function DesktopTable<TRow>({
     Boolean(selection),
     showActions
   );
+  // `position: sticky` on a `<thead>` does not pin against the document
+  // scroller, so we stick the header *cells* instead (no overflow wrapper,
+  // which would trap sticky and let the header overlap the first row).
+  const headSx = stickyHeader
+    ? {
+        position: "sticky" as const,
+        top: stickyTop,
+        zIndex: 2,
+        bgcolor: "background.paper",
+      }
+    : undefined;
 
   return (
-    <Box sx={{ overflowX: "auto" }}>
+    <Box>
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}
@@ -136,7 +151,7 @@ export function DesktopTable<TRow>({
         <TableHead>
           <TableRow>
             {selection && (
-              <TableCell padding="checkbox">
+              <TableCell padding="checkbox" sx={headSx}>
                 <Checkbox
                   slotProps={{ input: { "aria-label": labels.selectAll } }}
                   checked={selection.headerState === "all"}
@@ -159,6 +174,7 @@ export function DesktopTable<TRow>({
                   key={column.key}
                   aria-sort={ariaSort}
                   sx={{
+                    ...headSx,
                     textAlign: muiAlign(column.align),
                     width: column.width,
                   }}
@@ -178,7 +194,9 @@ export function DesktopTable<TRow>({
               );
             })}
             {showActions && (
-              <TableCell sx={{ textAlign: "end" }}>{labels.actions}</TableCell>
+              <TableCell sx={{ ...headSx, textAlign: "end" }}>
+                {labels.actions}
+              </TableCell>
             )}
           </TableRow>
         </TableHead>

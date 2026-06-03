@@ -29,8 +29,6 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
    * Off by default.
    */
   animate?: boolean;
-  /** Keep the desktop table header sticky. Defaults to true. */
-  stickyHeader?: boolean;
 }
 
 /** Mantine color alias re-export for action colors. */
