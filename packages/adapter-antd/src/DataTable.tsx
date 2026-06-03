@@ -1,6 +1,9 @@
 import {
   pageSizeOptions,
+  type SelectionState,
+  type TableLabels,
   type TableSource,
+  type UseDataTableResult,
   useInfiniteScroll,
   useTableChrome,
 } from "@adapttable/core";
@@ -90,6 +93,65 @@ function sortChangeHandler<TRow>(
       return;
     }
     source.setSort(key, next.order === "descend" ? "desc" : "asc");
+  };
+}
+
+/** antd scroll config: virtual sizing, else x for pinning + y for the box. */
+function resolveScroll(
+  virtualize: boolean,
+  virtualWidth: number,
+  virtualHeight: number,
+  hasPinned: boolean,
+  maxHeight: number | undefined
+): NonNullable<TableProps<unknown>["scroll"]> {
+  if (virtualize)
+    return tableScrollConfig(virtualize, virtualWidth, virtualHeight);
+  return { x: hasPinned ? "max-content" : undefined, y: maxHeight };
+}
+
+/** Build antd's rowSelection from the headless selection state. */
+function buildRowSelection<TRow>(
+  selection: SelectionState | null | undefined,
+  getRowId: (row: TRow) => string,
+  labels: Required<TableLabels>
+): TableProps<TRow>["rowSelection"] {
+  if (!selection) return undefined;
+  return {
+    selectedRowKeys: [...selection.selectedIds],
+    onSelect: (record) => selection.toggle(getRowId(record)),
+    onSelectAll: () => selection.toggleAll(),
+    getCheckboxProps: () => ({ title: labels.selectRow }),
+    columnTitle: (
+      <Checkbox
+        aria-label={labels.selectAll}
+        checked={selection.headerState === "all"}
+        indeterminate={selection.headerState === "some"}
+        onChange={() => selection.toggleAll()}
+      />
+    ),
+  };
+}
+
+/** Build antd's pagination config (undefined in infinite mode → `false`). */
+function buildPagination<TRow>(
+  isPaged: boolean,
+  table: UseDataTableResult<TRow>,
+  source: TableSource<TRow>,
+  labels: Required<TableLabels>
+) {
+  if (!isPaged) return undefined;
+  return {
+    current: table.pagination.safePage,
+    pageSize: source.limit,
+    total: source.total,
+    showSizeChanger: true,
+    pageSizeOptions: pageSizeOptions(source.limit).map(String),
+    showTotal: (total: number, range: [number, number]) =>
+      labels.showing({ from: range[0], to: range[1], total }),
+    onChange: (page: number, pageSize: number) => {
+      if (pageSize === source.limit) source.setPage(page);
+      else source.setLimit(pageSize);
+    },
   };
 }
 
@@ -203,42 +265,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     sortDir: source.sortDir,
     confirm,
     labels,
+    pinned: c.columnLayout.state.pinned,
   });
+  const hasPinned = Object.keys(c.columnLayout.state.pinned).length > 0;
 
   const handleChange = sortChangeHandler(source);
 
-  const rowSelection: TableProps<TRow>["rowSelection"] = selection
-    ? {
-        selectedRowKeys: [...selection.selectedIds],
-        onSelect: (record) => selection.toggle(getRowId(record)),
-        onSelectAll: () => selection.toggleAll(),
-        getCheckboxProps: () => ({ title: labels.selectRow }),
-        columnTitle: (
-          <Checkbox
-            aria-label={labels.selectAll}
-            checked={selection.headerState === "all"}
-            indeterminate={selection.headerState === "some"}
-            onChange={() => selection.toggleAll()}
-          />
-        ),
-      }
-    : undefined;
-
-  const pagination: TableProps<TRow>["pagination"] = c.isPaged
-    ? {
-        current: table.pagination.safePage,
-        pageSize: source.limit,
-        total: source.total,
-        showSizeChanger: true,
-        pageSizeOptions: pageSizeOptions(source.limit).map(String),
-        showTotal: (total, range) =>
-          labels.showing({ from: range[0], to: range[1], total }),
-        onChange: (page, pageSize) => {
-          if (pageSize === source.limit) source.setPage(page);
-          else source.setLimit(pageSize);
-        },
-      }
-    : false;
+  const rowSelection = buildRowSelection(selection, getRowId, labels);
+  const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
 
   let bodyRegion: ReactNode;
   if (source.error) {
@@ -297,7 +331,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
             : undefined
         }
-        scroll={tableScrollConfig(virtualize, virtualWidth, virtualHeight)}
+        scroll={resolveScroll(
+          virtualize,
+          virtualWidth,
+          virtualHeight,
+          hasPinned,
+          props.maxHeight
+        )}
         locale={{ emptyText: labels.noData }}
       />
     );

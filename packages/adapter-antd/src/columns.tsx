@@ -55,6 +55,8 @@ export interface BuildColumnsOptions<TRow> {
   sortDir: SortDirection | undefined;
   confirm: ConfirmHandler;
   labels: Required<TableLabels>;
+  /** Per-column edge pinning, mapped to antd's native `fixed`. */
+  pinned?: Readonly<Record<string, "left" | "right">>;
 }
 
 /**
@@ -73,11 +75,13 @@ export function buildColumns<TRow>({
   sortDir,
   confirm,
   labels,
+  pinned,
 }: BuildColumnsOptions<TRow>): TableColumnsType<TRow> {
   const cols: TableColumnsType<TRow> = columns.map((column) => ({
     key: column.key,
     title: column.header,
     width: column.width,
+    fixed: pinned?.[column.key],
     sorter: column.sortable ? true : undefined,
     sortOrder: column.sortable
       ? sortOrderFor(column.key, sortBy, sortDir)
