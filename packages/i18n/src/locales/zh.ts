@@ -26,4 +26,11 @@ export const zh: Required<TableLabels> = {
   selectedCount: (count) => `已选择 ${count} 项`,
   showing: ({ from, to, total }) => `显示第 ${from}–${to} 条，共 ${total} 条`,
   pageOf: ({ page, total }) => `第 ${page} 页，共 ${total} 页`,
+  columns: "列",
+  pinLeft: "固定到左侧",
+  pinRight: "固定到右侧",
+  unpin: "取消固定",
+  moveLeft: "左移",
+  moveRight: "右移",
+  resetColumns: "重置列",
 };

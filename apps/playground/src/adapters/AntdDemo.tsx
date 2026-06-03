@@ -170,6 +170,7 @@ export function AntdDemo({
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
             confirm={demoConfirm}
+            enableColumnMenu
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}

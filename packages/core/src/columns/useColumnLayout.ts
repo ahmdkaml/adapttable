@@ -52,6 +52,16 @@ export interface UseColumnLayoutResult<TRow> {
   setHidden: (key: string, hidden: boolean) => void;
   /** Toggle a single column's visibility. */
   toggleVisible: (key: string) => void;
+  /** Pin a column to an edge, or unpin it with `undefined`. */
+  setPinned: (key: string, side: "left" | "right" | undefined) => void;
+  /** Move a column to a new index among the visible columns. */
+  move: (key: string, toIndex: number) => void;
+  /** Set (or clear, with `undefined`) a column's pixel width. */
+  setWidth: (key: string, width: number | undefined) => void;
+  /** Sticky inset (px) for a pinned column, by side. `undefined` if unpinned. */
+  pinOffset: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
   /** Restore the empty layout (all visible, declared order). */
   reset: () => void;
 }
@@ -125,7 +135,25 @@ export function useColumnLayout<TRow>({
     [setHidden, state.hidden]
   );
 
-  const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);
+  const setPinned = useCallback(
+    (key: string, side: "left" | "right" | undefined) => {
+      const next = { ...state.pinned };
+      if (side === undefined) delete next[key];
+      else next[key] = side;
+      commit({ ...state, pinned: next });
+    },
+    [commit, state]
+  );
+
+  const setWidth = useCallback(
+    (key: string, width: number | undefined) => {
+      const next = { ...state.widths };
+      if (width === undefined) delete next[key];
+      else next[key] = width;
+      commit({ ...state, widths: next });
+    },
+    [commit, state]
+  );
 
   const visibleColumns = useMemo(
     () =>
@@ -135,12 +163,59 @@ export function useColumnLayout<TRow>({
     [columns, state.order, state.hidden]
   );
 
+  const move = useCallback(
+    (key: string, toIndex: number) => {
+      const current = visibleColumns.map((c) => c.key);
+      const from = current.indexOf(key);
+      if (from === -1) return;
+      const clamped = Math.max(0, Math.min(toIndex, current.length - 1));
+      if (from === clamped) return;
+      current.splice(from, 1);
+      current.splice(clamped, 0, key);
+      commit({ ...state, order: current });
+    },
+    [commit, state, visibleColumns]
+  );
+
+  const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);
+
+  const pinOffset = useCallback(
+    (key: string) => {
+      const side = state.pinned[key];
+      if (!side) return undefined;
+      const resolveWidth = (k: string): number => {
+        if (typeof state.widths[k] === "number") return state.widths[k];
+        const declared = columns.find((c) => c.key === k)?.width;
+        if (typeof declared === "number") return declared;
+        if (typeof declared === "string") {
+          const n = Number.parseInt(declared, 10);
+          if (Number.isFinite(n)) return n;
+        }
+        return 150;
+      };
+      const samePinned = visibleColumns.filter(
+        (c) => state.pinned[c.key] === side
+      );
+      const idx = samePinned.findIndex((c) => c.key === key);
+      // Left: sum widths before this column; right: sum widths after it.
+      const preceding =
+        side === "left" ? samePinned.slice(0, idx) : samePinned.slice(idx + 1);
+      const inset = preceding.reduce((sum, c) => sum + resolveWidth(c.key), 0);
+      return { side, inset };
+    },
+    [columns, state.pinned, state.widths, visibleColumns]
+  );
+
   return {
     state,
     visibleColumns,
     isHidden,
     setHidden,
     toggleVisible,
+    setPinned,
+    move,
+    setWidth,
+    pinOffset,
     reset,
   };
 }

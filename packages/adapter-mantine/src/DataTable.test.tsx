@@ -346,4 +346,22 @@ describe("<DataTable> (Mantine)", () => {
     // the table must not sit inside a horizontal-overflow scroll container
     expect(th!.closest("[style*='overflow']")).toBeNull();
   });
+
+  it("renders the Columns menu trigger when enableColumnMenu is set", () => {
+    renderHarness({ override: { enableColumnMenu: true } });
+    expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();
+  });
+
+  it("hides a column via a controlled columnLayout", () => {
+    renderHarness({
+      override: {
+        columnLayout: { hidden: ["city"], order: [], pinned: {}, widths: {} },
+      },
+    });
+    // The header and its values are dropped when the column is hidden.
+    expect(screen.queryByText("City")).toBeNull();
+    expect(screen.queryByText("Dubai")).toBeNull();
+    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
 });

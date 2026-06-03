@@ -26,4 +26,11 @@ export const it: Required<TableLabels> = {
   selectedCount: (count) => `${count} selezionati`,
   showing: ({ from, to, total }) => `Visualizzazione ${from}–${to} di ${total}`,
   pageOf: ({ page, total }) => `Pagina ${page} di ${total}`,
+  columns: "Colonne",
+  pinLeft: "Blocca a sinistra",
+  pinRight: "Blocca a destra",
+  unpin: "Sblocca",
+  moveLeft: "Sposta a sinistra",
+  moveRight: "Sposta a destra",
+  resetColumns: "Reimposta colonne",
 };

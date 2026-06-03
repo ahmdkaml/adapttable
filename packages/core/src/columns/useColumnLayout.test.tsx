@@ -72,4 +72,53 @@ describe("useColumnLayout", () => {
     );
     expect(keys(result.current.visibleColumns)).toEqual(["b", "a", "c"]);
   });
+
+  it("moves a column to a new index", () => {
+    const { result } = renderHook(() => useColumnLayout({ columns }));
+    act(() => result.current.move("a", 2));
+    expect(keys(result.current.visibleColumns)).toEqual(["b", "c", "a"]);
+  });
+
+  it("pins columns and computes sticky offsets from widths", () => {
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns,
+        defaultLayout: { widths: { a: 100, b: 120 } },
+      })
+    );
+    act(() => result.current.setPinned("a", "left"));
+    act(() => result.current.setPinned("b", "left"));
+    // 'a' is first left-pinned → inset 0; 'b' follows → inset = width(a) = 100.
+    expect(result.current.pinOffset("a")).toEqual({ side: "left", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 100 });
+    expect(result.current.pinOffset("c")).toBeUndefined();
+    act(() => result.current.setPinned("a", undefined));
+    expect(result.current.pinOffset("a")).toBeUndefined();
+  });
+
+  it("right-pin offset sums widths of right-pinned columns after it", () => {
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns,
+        defaultLayout: {
+          pinned: { b: "right", c: "right" },
+          widths: { c: 80 },
+        },
+      })
+    );
+    // 'b' is before 'c' (both right-pinned) → inset = width(c) = 80.
+    expect(result.current.pinOffset("b")).toEqual({ side: "right", inset: 80 });
+    expect(result.current.pinOffset("c")).toEqual({ side: "right", inset: 0 });
+  });
+
+  it("sets and clears a column width", () => {
+    const onLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useColumnLayout({ columns, onLayoutChange })
+    );
+    act(() => result.current.setWidth("a", 200));
+    expect(result.current.state.widths.a).toBe(200);
+    act(() => result.current.setWidth("a", undefined));
+    expect(result.current.state.widths.a).toBeUndefined();
+  });
 });

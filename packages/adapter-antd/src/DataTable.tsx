@@ -29,6 +29,7 @@ import {
   FilterDrawer,
   Toolbar,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { MobileCards } from "./components/MobileCards";
 import type { DataTableProps } from "./types";
 
@@ -305,6 +306,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <div dir={props.dir} className={className}>
       <Space direction="vertical" size="small" style={{ width: "100%" }}>
+        {props.enableColumnMenu && !c.isMobile && (
+          <Flex justify="flex-end">
+            <ColumnMenu
+              allColumns={c.allColumns}
+              layout={c.columnLayout}
+              labels={labels}
+            />
+          </Flex>
+        )}
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}

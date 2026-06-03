@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
@@ -53,6 +54,21 @@ export interface BaseDataTableProps<TRow> {
   onRowsChange?: (rows: readonly TRow[]) => void;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
+
+  /* ── Column management ───────────────────────────────────────────── */
+  /** Render the built-in "Columns" menu (show/hide, pin, reorder). */
+  enableColumnMenu?: boolean;
+  /** Controlled column layout (hidden/order/pinned/widths). */
+  columnLayout?: ColumnLayoutState;
+  /** Change handler for the controlled column layout. */
+  onColumnLayoutChange?: (next: ColumnLayoutState) => void;
+  /** Initial column layout for the uncontrolled mode. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
+  /**
+   * Fixed-height scroll box (px). Enables sideways scrolling + column pinning;
+   * the header and pinned columns pin within this box. Omit for page scroll.
+   */
+  maxHeight?: number;
 
   /* ── Virtualization ──────────────────────────────────────────────── */
   /** Virtualize long infinite lists. Defaults to false. */

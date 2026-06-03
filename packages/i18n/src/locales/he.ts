@@ -26,4 +26,11 @@ export const he: Required<TableLabels> = {
   selectedCount: (count) => `${count} נבחרו`,
   showing: ({ from, to, total }) => `מציג ${from}–${to} מתוך ${total}`,
   pageOf: ({ page, total }) => `עמוד ${page} מתוך ${total}`,
+  columns: "עמודות",
+  pinLeft: "הצמד לשמאל",
+  pinRight: "הצמד לימין",
+  unpin: "בטל הצמדה",
+  moveLeft: "הזז שמאלה",
+  moveRight: "הזז ימינה",
+  resetColumns: "אפס עמודות",
 };

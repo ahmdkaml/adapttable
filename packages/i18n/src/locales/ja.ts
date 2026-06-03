@@ -26,4 +26,11 @@ export const ja: Required<TableLabels> = {
   selectedCount: (count) => `${count} 件選択中`,
   showing: ({ from, to, total }) => `${total} 件中 ${from}–${to} 件を表示`,
   pageOf: ({ page, total }) => `${total} ページ中 ${page} ページ`,
+  columns: "列",
+  pinLeft: "左に固定",
+  pinRight: "右に固定",
+  unpin: "固定解除",
+  moveLeft: "左へ移動",
+  moveRight: "右へ移動",
+  resetColumns: "列をリセット",
 };

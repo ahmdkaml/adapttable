@@ -205,6 +205,7 @@ export function MantineDemo({
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}
             confirm={demoConfirm}
+            enableColumnMenu
             stickyHeader
             virtualize
             estimateRowSize={56}

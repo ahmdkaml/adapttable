@@ -27,4 +27,11 @@ export const de: Required<TableLabels> = {
   showing: ({ from, to, total }) =>
     `${from}–${to} von ${total} werden angezeigt`,
   pageOf: ({ page, total }) => `Seite ${page} von ${total}`,
+  columns: "Spalten",
+  pinLeft: "Links anheften",
+  pinRight: "Rechts anheften",
+  unpin: "Lösen",
+  moveLeft: "Nach links",
+  moveRight: "Nach rechts",
+  resetColumns: "Spalten zurücksetzen",
 };

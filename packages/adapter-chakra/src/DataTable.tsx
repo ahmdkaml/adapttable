@@ -18,6 +18,7 @@ import {
   LoadingState,
   Toolbar,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { subtleText } from "./styles";
 import type { DataTableProps } from "./types";
@@ -108,6 +109,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Box dir={props.dir} borderWidth="1px" borderRadius="md" p={3}>
       <Stack spacing={3}>
+        {props.enableColumnMenu && !chrome.isMobile && (
+          <Flex justify="flex-end">
+            <ColumnMenu
+              allColumns={chrome.allColumns}
+              layout={chrome.columnLayout}
+              labels={table.labels}
+            />
+          </Flex>
+        )}
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}

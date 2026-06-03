@@ -24,6 +24,10 @@ export interface DataTableClassNames {
   chips?: string;
   chip?: string;
   chipRemove?: string;
+  columnMenu?: string;
+  columnMenuButton?: string;
+  columnMenuPanel?: string;
+  columnMenuItem?: string;
   bulkBar?: string;
   bulkButton?: string;
   table?: string;

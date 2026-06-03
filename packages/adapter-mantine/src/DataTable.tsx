@@ -13,6 +13,7 @@ import { useCallback, useRef } from "react";
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { BulkActionBar } from "./components/BulkActionBar";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorState } from "./components/ErrorState";
@@ -66,6 +67,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollTopGap,
     animate = false,
     stickyHeader = false,
+    enableColumnMenu = false,
   } = props;
 
   const chrome = useTableChrome<TRow>(props);
@@ -189,6 +191,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           className={classNames?.toolbar}
         >
           <Stack gap="xs">
+            {enableColumnMenu && !isMobile && (
+              <Group justify="flex-end">
+                <ColumnMenu
+                  allColumns={chrome.allColumns}
+                  layout={chrome.columnLayout}
+                  labels={table.labels}
+                />
+              </Group>
+            )}
             <Toolbar
               table={table}
               hideSearch={hideSearch}

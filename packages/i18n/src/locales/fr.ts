@@ -26,4 +26,11 @@ export const fr: Required<TableLabels> = {
   selectedCount: (count) => `${count} sélectionné(s)`,
   showing: ({ from, to, total }) => `Affichage de ${from}–${to} sur ${total}`,
   pageOf: ({ page, total }) => `Page ${page} sur ${total}`,
+  columns: "Colonnes",
+  pinLeft: "Épingler à gauche",
+  pinRight: "Épingler à droite",
+  unpin: "Détacher",
+  moveLeft: "Déplacer à gauche",
+  moveRight: "Déplacer à droite",
+  resetColumns: "Réinitialiser les colonnes",
 };

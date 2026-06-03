@@ -16,6 +16,7 @@ import {
   Footer,
   LoadingState,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { FilterPanel } from "./components/FilterPanel";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
@@ -181,6 +182,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={cx("adapttable", classNames.root)}
     >
       <div data-adapttable-part="toolbar" className={classNames.toolbar}>
+        {props.enableColumnMenu && !chrome.isMobile && (
+          <ColumnMenu
+            allColumns={chrome.allColumns}
+            layout={chrome.columnLayout}
+            labels={labels}
+            classNames={classNames}
+          />
+        )}
         {!hideSearch && (
           <input
             {...searchProps}
