@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  pinnedCellStyle,
   resolveDisabledReason,
   type RowAction,
   runRowAction,
@@ -35,6 +36,10 @@ export interface DesktopTableProps<TRow> {
   measureElement?: (element: Element | null) => void;
   stickyHeaderOffset?: number;
   stickyHeader?: boolean;
+  pinOffset?: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
+  maxHeight?: number;
 }
 
 function SortIcon({
@@ -174,6 +179,8 @@ export function DesktopTable<TRow>({
   measureElement,
   stickyHeaderOffset = 0,
   stickyHeader = false,
+  pinOffset,
+  maxHeight,
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -201,8 +208,26 @@ export function DesktopTable<TRow>({
       }
     : { background: "var(--mantine-color-body)" };
 
+  // Pinned cells stick to the left/right edge (corner-sticky in the header,
+  // which also sticks to the top). They need an opaque background.
+  const pinBg = "var(--mantine-color-body)";
+  const headerStyleFor = (key: string): CSSProperties => ({
+    ...headerCellStyle,
+    ...pinnedCellStyle(pinOffset?.(key), 2),
+  });
+  const bodyPinStyle = (key: string): CSSProperties | undefined => {
+    const pin = pinnedCellStyle(pinOffset?.(key), 1);
+    return pin ? { ...pin, background: pinBg } : undefined;
+  };
+
   return (
-    <div style={{ width: "100%" }}>
+    <div
+      style={
+        maxHeight == null
+          ? { width: "100%" }
+          : { width: "100%", maxHeight, overflow: "auto" }
+      }
+    >
       <Table
         {...table.getTableProps()}
         className={className}
@@ -228,7 +253,7 @@ export function DesktopTable<TRow>({
                 key={column.key}
                 table={table}
                 column={column}
-                stickyStyle={headerCellStyle}
+                stickyStyle={headerStyleFor(column.key)}
               />
             ))}
             {showActions && (
@@ -270,7 +295,11 @@ export function DesktopTable<TRow>({
                   </Table.Td>
                 )}
                 {columns.map((column) => (
-                  <Table.Td key={column.key} {...table.getCellProps(column)}>
+                  <Table.Td
+                    key={column.key}
+                    {...table.getCellProps(column)}
+                    style={bodyPinStyle(column.key)}
+                  >
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (

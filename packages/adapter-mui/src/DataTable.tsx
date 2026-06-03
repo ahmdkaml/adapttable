@@ -123,6 +123,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         measureElement={virtualization.measureElement}
         stickyHeader={props.stickyHeader}
         stickyTop={props.stickyTop}
+        pinOffset={c.columnLayout.pinOffset}
+        maxHeight={props.maxHeight}
       />
     );
   }

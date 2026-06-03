@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
@@ -27,6 +28,7 @@ import {
   Tooltip,
   Tr,
 } from "@chakra-ui/react";
+import type { CSSProperties } from "react";
 
 import { subtleText } from "../styles";
 
@@ -45,6 +47,10 @@ interface SharedProps<TRow> {
   measureElement?: (element: Element | null) => void;
   stickyHeader?: boolean;
   stickyTop?: number;
+  pinOffset?: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
+  maxHeight?: number;
 }
 
 function chakraAlign(
@@ -133,6 +139,8 @@ export function DesktopTable<TRow>({
   measureElement,
   stickyHeader = false,
   stickyTop = 0,
+  pinOffset,
+  maxHeight,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -153,9 +161,20 @@ export function DesktopTable<TRow>({
         bg: "chakra-body-bg",
       }
     : {};
+  // Pinned cells use a raw `style` (Chakra maps numeric props onto its spacing
+  // scale, which would mangle pixel insets) plus an opaque background.
+  const pinStyle = (key: string, z: number): CSSProperties | undefined => {
+    const pin = pinnedCellStyle(pinOffset?.(key), z);
+    return pin
+      ? { ...pin, background: "var(--chakra-colors-chakra-body-bg)" }
+      : undefined;
+  };
 
   return (
-    <Box>
+    <Box
+      maxH={maxHeight == null ? undefined : `${maxHeight}px`}
+      overflow={maxHeight == null ? undefined : "auto"}
+    >
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}
@@ -186,6 +205,7 @@ export function DesktopTable<TRow>({
                   width={column.width}
                   aria-sort={ariaSort}
                   {...stickyTh}
+                  style={pinStyle(column.key, 2)}
                 >
                   {column.sortable ? (
                     <Box
@@ -245,7 +265,11 @@ export function DesktopTable<TRow>({
                   </Td>
                 )}
                 {columns.map((column) => (
-                  <Td key={column.key} textAlign={chakraAlign(column.align)}>
+                  <Td
+                    key={column.key}
+                    textAlign={chakraAlign(column.align)}
+                    style={pinStyle(column.key, 1)}
+                  >
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (

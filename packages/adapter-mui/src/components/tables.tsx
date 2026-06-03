@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
@@ -47,6 +48,10 @@ interface SharedProps<TRow> {
   measureElement?: (element: Element | null) => void;
   stickyHeader?: boolean;
   stickyTop?: number;
+  pinOffset?: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
+  maxHeight?: number;
 }
 
 /**
@@ -121,6 +126,8 @@ export function DesktopTable<TRow>({
   measureElement,
   stickyHeader = false,
   stickyTop = 0,
+  pinOffset,
+  maxHeight,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -131,8 +138,8 @@ export function DesktopTable<TRow>({
     showActions
   );
   // `position: sticky` on a `<thead>` does not pin against the document
-  // scroller, so we stick the header *cells* instead (no overflow wrapper,
-  // which would trap sticky and let the header overlap the first row).
+  // scroller, so we stick the header *cells* instead. Pinned cells also stick
+  // left/right (corner-sticky in the header) with an opaque background.
   const headSx = stickyHeader
     ? {
         position: "sticky" as const,
@@ -141,9 +148,18 @@ export function DesktopTable<TRow>({
         bgcolor: "background.paper",
       }
     : undefined;
+  const headSxFor = (key: string) => {
+    const pin = pinnedCellStyle(pinOffset?.(key), 2);
+    if (!headSx && !pin) return undefined;
+    return { ...headSx, ...pin, bgcolor: "background.paper" };
+  };
+  const bodyPinSx = (key: string) => {
+    const pin = pinnedCellStyle(pinOffset?.(key), 1);
+    return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
+  };
 
   return (
-    <Box>
+    <Box sx={maxHeight == null ? undefined : { maxHeight, overflow: "auto" }}>
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}
@@ -174,7 +190,7 @@ export function DesktopTable<TRow>({
                   key={column.key}
                   aria-sort={ariaSort}
                   sx={{
-                    ...headSx,
+                    ...headSxFor(column.key),
                     textAlign: muiAlign(column.align),
                     width: column.width,
                   }}
@@ -233,7 +249,10 @@ export function DesktopTable<TRow>({
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}
-                    sx={{ textAlign: muiAlign(column.align) }}
+                    sx={{
+                      ...bodyPinSx(column.key),
+                      textAlign: muiAlign(column.align),
+                    }}
                   >
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />

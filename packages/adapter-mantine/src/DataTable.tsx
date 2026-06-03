@@ -171,6 +171,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         measureElement={virtualization.measureElement}
         stickyHeaderOffset={stickyTop + toolbarHeight}
         stickyHeader={stickyHeader}
+        pinOffset={chrome.columnLayout.pinOffset}
+        maxHeight={props.maxHeight}
       />
     );
   }
