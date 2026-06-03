@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   runRowAction,
@@ -75,7 +76,7 @@ function RowActionButtons<TRow>({
     <HStack spacing={1} justify="flex-end">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const reason = action.disabledReason?.(row);
+        const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
         const handleClick = (e: React.MouseEvent) => {

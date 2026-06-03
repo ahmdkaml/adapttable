@@ -148,6 +148,32 @@ describe("useTableVirtualization", () => {
     expect(onEndReached).toHaveBeenCalledTimes(1);
   });
 
+  it("does not call onEndReached again on re-render while still at the end", () => {
+    const onEndReached = vi.fn();
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [{ index: 4, key: "v-4", start: 160, end: 200 }],
+      getTotalSize: () => 200,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { rerender } = renderHook(() =>
+      useTableVirtualization({
+        rows,
+        rowKey,
+        enabled: true,
+        estimateSize: 40,
+        onEndReached,
+      })
+    );
+    rerender();
+    rerender();
+
+    // The slice still sits on the final row and the row count is unchanged,
+    // so the end-reached notification must not repeat.
+    expect(onEndReached).toHaveBeenCalledTimes(1);
+  });
+
   it("resolves fallback render entries when no virtual entries are provided", () => {
     expect(resolveVirtualRows(rows, rowKey).map((entry) => entry.key)).toEqual([
       "0",

@@ -31,6 +31,19 @@ export const defaultConfirm: ConfirmHandler = ({ message, onConfirm }) => {
 };
 
 /**
+ * Normalize a `disabledReason` result. Per the action contract only a
+ * *non-empty* string disables, so an empty string maps to `undefined` —
+ * letting every adapter treat "disabled" as simply "reason is defined" and
+ * fall back to the action label for tooltips. (A plain `|| undefined` would
+ * trip `prefer-nullish-coalescing`; this keeps the falsy-empty intent.)
+ */
+export function resolveDisabledReason(
+  reason: string | undefined
+): string | undefined {
+  return reason !== undefined && reason !== "" ? reason : undefined;
+}
+
+/**
  * Run a row action, routing through `confirm` first when the action
  * declares a `confirm` block.
  *

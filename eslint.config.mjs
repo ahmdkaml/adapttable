@@ -1,5 +1,6 @@
 // @ts-check
 import js from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -10,14 +11,13 @@ import prettier from "eslint-config-prettier";
 import globals from "globals";
 
 // The default export types `.configs` as optional and its `recommended` entry
-// as a loose config union, neither of which matches the `config()` parameter
-// type. Guard the access and cast (via `unknown`) to the shape it accepts.
-const sonarRecommended =
-  /** @type {import("typescript-eslint").ConfigWithExtends} */ (
-    /** @type {unknown} */ (sonarjs.configs?.recommended ?? {})
-  );
+// as a loose config union, neither of which matches the `defineConfig()`
+// parameter type. Guard the access and cast (via `unknown`) to a flat config.
+const sonarRecommended = /** @type {import("eslint").Linter.Config} */ (
+  /** @type {unknown} */ (sonarjs.configs?.recommended ?? {})
+);
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       "**/dist/**",

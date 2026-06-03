@@ -35,6 +35,7 @@ export {
   type ConfirmHandler,
   type ConfirmRequest,
   defaultConfirm,
+  resolveDisabledReason,
   runRowAction,
 } from "./actions/confirm";
 export {

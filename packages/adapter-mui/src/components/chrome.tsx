@@ -4,6 +4,7 @@ import {
   type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
+  resolveDisabledReason,
   type TableLabels,
   type ToolbarChromeProps,
   useBulkActionRunner,
@@ -220,7 +221,7 @@ export function BulkBar({
           {labels.clearAll}
         </Button>
         {bulkActions.map((action) => {
-          const reason = action.disabledReason?.(ids);
+          const reason = resolveDisabledReason(action.disabledReason?.(ids));
           return (
             <Tooltip key={action.key} title={reason ?? ""}>
               <span>

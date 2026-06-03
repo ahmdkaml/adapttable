@@ -183,4 +183,24 @@ describe("BulkActionBar", () => {
     fireEvent.click(screen.getByText("Delete"));
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  // Contract: only a *non-empty* reason disables. An empty string must be
+  // treated as "no reason" — the action stays enabled and keeps its label.
+  it("keeps the action enabled when disabledReason returns an empty string", () => {
+    const onClick = vi.fn().mockResolvedValue(undefined);
+    renderMantine(
+      <BulkActionBar
+        selection={makeSelection(2)}
+        bulkActions={[
+          { key: "x", label: "Archive", onClick, disabledReason: () => "" },
+        ]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    const btn = screen.getByText("Archive").closest("button");
+    expect(btn).not.toBeDisabled();
+    fireEvent.click(screen.getByText("Archive"));
+    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+  });
 });

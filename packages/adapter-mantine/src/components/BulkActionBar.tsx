@@ -1,6 +1,7 @@
 import {
   type BulkAction,
   type ConfirmHandler,
+  resolveDisabledReason,
   type SelectionState,
   type TableLabels,
   useBulkActionRunner,
@@ -69,7 +70,7 @@ function BulkButton({
   pending: string | null;
   onRun: (action: BulkAction) => void;
 }>) {
-  const reason = action.disabledReason?.(ids);
+  const reason = resolveDisabledReason(action.disabledReason?.(ids));
   const ineligible = reason !== undefined;
   const button = (
     <Button

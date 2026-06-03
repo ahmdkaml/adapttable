@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  resolveDisabledReason,
   type RowAction,
   runRowAction,
   type UseDataTableResult,
@@ -54,15 +55,16 @@ function SortIcon({
 function HeaderCell<TRow>({
   table,
   column,
+  stickyStyle,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
+  stickyStyle: CSSProperties;
 }>) {
   const cellProps = table.getHeaderCellProps(column);
   const headerStyle = {
     ...(cellProps.style as CSSProperties | undefined),
-    background: "var(--mantine-color-body)",
-    zIndex: 2,
+    ...stickyStyle,
   };
   if (!column.sortable) {
     return (
@@ -112,7 +114,7 @@ function RowActions<TRow>({
     <Group gap={4} justify="flex-end" wrap="nowrap">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
-        const reason = action.disabledReason?.(row);
+        const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
         const handleClick = (e: MouseEvent) => {
@@ -184,42 +186,35 @@ export function DesktopTable<TRow>({
     }));
   const columnSpan =
     columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
-  const theadStyle = stickyHeader
+  // `position: sticky` on `<thead>` does not engage against the document
+  // scroller (only inside an overflow container) — so we stick the header
+  // *cells* instead, which pins reliably at the page level beneath the
+  // sticky toolbar (`stickyHeaderOffset`). Each th carries its own opaque
+  // background so scrolled rows never show through.
+  const headerCellStyle: CSSProperties = stickyHeader
     ? {
-        background: "var(--mantine-color-body)",
-        position: "sticky" as const,
+        position: "sticky",
         top: stickyHeaderOffset,
-        zIndex: 4,
+        zIndex: 2,
+        background: "var(--mantine-color-body)",
         boxShadow: "0 1px 0 var(--mantine-color-default-border)",
       }
     : { background: "var(--mantine-color-body)" };
 
   return (
-    <div style={{ overflowX: "auto", width: "100%" }}>
+    <div style={{ width: "100%" }}>
       <Table
         {...table.getTableProps()}
         className={className}
         highlightOnHover
         verticalSpacing="sm"
         horizontalSpacing="md"
-        stickyHeader={stickyHeader}
-        stickyHeaderOffset={stickyHeader ? stickyHeaderOffset : 0}
         miw={480}
       >
-        <Table.Thead style={theadStyle}>
-          <Table.Tr
-            {...table.getHeaderRowProps()}
-            style={{
-              background: "var(--mantine-color-body)",
-              zIndex: 3,
-            }}
-          >
+        <Table.Thead style={{ background: "var(--mantine-color-body)" }}>
+          <Table.Tr {...table.getHeaderRowProps()}>
             {selection && (
-              <Table.Th
-                w={40}
-                ta="center"
-                style={{ background: "var(--mantine-color-body)", zIndex: 2 }}
-              >
+              <Table.Th w={40} ta="center" style={headerCellStyle}>
                 <Checkbox
                   aria-label={labels.selectAll}
                   checked={selection.headerState === "all"}
@@ -229,14 +224,15 @@ export function DesktopTable<TRow>({
               </Table.Th>
             )}
             {columns.map((column) => (
-              <HeaderCell key={column.key} table={table} column={column} />
+              <HeaderCell
+                key={column.key}
+                table={table}
+                column={column}
+                stickyStyle={headerCellStyle}
+              />
             ))}
             {showActions && (
-              <Table.Th
-                ta="end"
-                w={120}
-                style={{ background: "var(--mantine-color-body)", zIndex: 2 }}
-              >
+              <Table.Th ta="end" w={120} style={headerCellStyle}>
                 {labels.actions}
               </Table.Th>
             )}

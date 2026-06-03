@@ -327,4 +327,23 @@ describe("<DataTable> (Mantine)", () => {
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
+
+  // Regression: the sticky header must pin via the header *cells*, not the
+  // `<thead>` (which does not stick against the document scroller) — and it
+  // must NOT live in an `overflow` wrapper that would trap sticky and let the
+  // header overlap the first row. See DesktopTable for the full rationale.
+  it("sticks the header cells by default so they pin to the page", () => {
+    renderHarness();
+    const th = screen.getByText("Name").closest("th");
+    expect(th).not.toBeNull();
+    expect(th).toHaveStyle({ position: "sticky" });
+    // the table must not sit inside a horizontal-overflow scroll container
+    expect(th!.closest("[style*='overflow']")).toBeNull();
+  });
+
+  it("does not stick the header cells when stickyHeader is disabled", () => {
+    renderHarness({ override: { stickyHeader: false } });
+    const th = screen.getByText("Name").closest("th");
+    expect(th).not.toHaveStyle({ position: "sticky" });
+  });
 });

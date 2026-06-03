@@ -202,7 +202,10 @@ select {
 
 .demo-shell {
   border-radius: 34px;
-  overflow: hidden;
+  /* `clip` rounds the corners like `hidden` but, unlike `hidden`, does not
+     create a scroll container — so the table's sticky header still pins to
+     the page viewport instead of being trapped by this shell. */
+  overflow: clip;
 }
 
 .demo-header {

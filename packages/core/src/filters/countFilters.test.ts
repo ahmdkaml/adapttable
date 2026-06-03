@@ -5,6 +5,7 @@ import {
   countFilterChipLabel,
   countFilterExtra,
   type CountFilterState,
+  countFilterStateFromExtra,
   isCountFilterComplete,
   sanitizeCountFilterParams,
 } from "./countFilters";
@@ -15,6 +16,40 @@ describe("count filter helpers", () => {
     expect(isCountFilterComplete({ op: "gte" })).toBe(false);
     expect(isCountFilterComplete({ op: "between", from: 1, to: 3 })).toBe(true);
     expect(isCountFilterComplete({ op: "between", from: 1 })).toBe(false);
+  });
+
+  it("rehydrates numeric state from string URL values", () => {
+    // URL params arrive as strings; they must coerce to numbers, not be
+    // treated as incomplete and dropped.
+    expect(
+      countFilterStateFromExtra("projects", {
+        projectsOp: "between",
+        projectsFrom: "2",
+        projectsTo: "8",
+      })
+    ).toEqual({ op: "between", value: undefined, from: 2, to: 8 });
+    expect(
+      isCountFilterComplete(
+        countFilterStateFromExtra("projects", {
+          projectsOp: "gte",
+          projectsValue: "5",
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("ignores unknown operators and non-numeric values", () => {
+    expect(
+      countFilterStateFromExtra("projects", {
+        projectsOp: "bogus",
+        projectsValue: "abc",
+      })
+    ).toEqual({
+      op: undefined,
+      value: undefined,
+      from: undefined,
+      to: undefined,
+    });
   });
 
   it("builds URL extra updates for a bucket", () => {

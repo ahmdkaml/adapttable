@@ -3,7 +3,7 @@ import {
   type VirtualItem,
   type Virtualizer,
 } from "@tanstack/react-virtual";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { VIRTUAL_OVERSCAN } from "../constants";
 
@@ -126,10 +126,21 @@ export function useTableVirtualization<TRow>({
     });
   }, [active, rowKey, rows, virtualItems]);
 
+  // `virtualItems` is a fresh array every render, so a naive effect would call
+  // `onEndReached` on every render while the last row stays in view. Notify at
+  // most once per row count: re-arm only when more rows actually load (the
+  // count grows) or the user scrolls back off the end.
+  const notifiedAtCount = useRef(-1);
   useEffect(() => {
     if (!active || rows.length === 0) return;
     const last = virtualItems.at(-1);
-    if (last && last.index >= rows.length - 1) {
+    const atEnd = last !== undefined && last.index >= rows.length - 1;
+    if (!atEnd) {
+      notifiedAtCount.current = -1;
+      return;
+    }
+    if (notifiedAtCount.current !== rows.length) {
+      notifiedAtCount.current = rows.length;
       onEndReached?.();
     }
   }, [active, onEndReached, rows.length, virtualItems]);

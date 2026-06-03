@@ -1,5 +1,6 @@
 import {
   pageSizeOptions,
+  type TableSource,
   useInfiniteScroll,
   useTableChrome,
 } from "@adapttable/core";
@@ -13,7 +14,12 @@ import {
   Table,
   type TableProps,
 } from "antd";
-import { type CSSProperties, type ReactNode, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  type UIEventHandler,
+  useState,
+} from "react";
 
 import { buildColumns } from "./columns";
 import {
@@ -46,6 +52,44 @@ function tableScrollConfig(
 ): NonNullable<TableProps<unknown>["scroll"]> {
   if (!virtualize) return {};
   return { x: virtualWidth, y: virtualHeight };
+}
+
+/**
+ * antd renders virtual rows inside its own fixed-height scroll container, so
+ * the page-level infinite-scroll sentinel never reaches the viewport. This
+ * pages in the next slice when that internal scroll nears its end instead.
+ */
+function virtualScrollEndHandler<TRow>(
+  source: TableSource<TRow>,
+  active: boolean
+): UIEventHandler<HTMLElement> {
+  return (event) => {
+    if (!active) return;
+    const el = event.currentTarget;
+    if (
+      source.hasNextPage &&
+      !source.isFetchingNextPage &&
+      el.scrollHeight - el.scrollTop - el.clientHeight <= 80
+    ) {
+      source.fetchNextPage();
+    }
+  };
+}
+
+/** Map antd's `onChange` sort event back onto the source's sort state. */
+function sortChangeHandler<TRow>(
+  source: TableSource<TRow>
+): NonNullable<TableProps<TRow>["onChange"]> {
+  return (_pagination, _filters, sorter, extra) => {
+    if (extra.action !== "sort") return;
+    const next = Array.isArray(sorter) ? sorter[0] : sorter;
+    const key = next?.columnKey as string | undefined;
+    if (!key || !next?.order) {
+      source.setSort(undefined);
+      return;
+    }
+    source.setSort(key, next.order === "descend" ? "desc" : "asc");
+  };
 }
 
 function skeletonLineWidth(isActions: boolean, index: number): string {
@@ -134,13 +178,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { labels, source, selection } = table;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
+  // In virtual mode the rows live inside antd's own fixed-height scroll
+  // container, so the page-level sentinel never reaches the viewport — the
+  // internal scroll (`handleVirtualScroll`) drives paging instead. Disable
+  // the sentinel there to avoid an eager fetch from the always-visible button.
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: () => source.fetchNextPage(),
     itemCount: source.rows.length,
-    enabled: !c.isPaged && !source.error,
+    enabled: !c.isPaged && !source.error && !virtualize,
   });
+
+  const handleVirtualScroll = virtualScrollEndHandler(
+    source,
+    virtualize && !c.isPaged && !source.error
+  );
 
   const columns = buildColumns<TRow>({
     columns: table.columns,
@@ -151,21 +204,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     labels,
   });
 
-  const handleChange: TableProps<TRow>["onChange"] = (
-    _pagination,
-    _filters,
-    sorter,
-    extra
-  ) => {
-    if (extra.action !== "sort") return;
-    const next = Array.isArray(sorter) ? sorter[0] : sorter;
-    const key = next?.columnKey as string | undefined;
-    if (!key || !next?.order) {
-      source.setSort(undefined);
-      return;
-    }
-    source.setSort(key, next.order === "descend" ? "desc" : "asc");
-  };
+  const handleChange = sortChangeHandler(source);
 
   const rowSelection: TableProps<TRow>["rowSelection"] = selection
     ? {
@@ -248,6 +287,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         size={size}
         bordered={bordered}
         virtual={virtualize}
+        onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
         pagination={pagination}
         onChange={handleChange}

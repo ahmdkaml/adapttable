@@ -4,6 +4,7 @@ import {
   type ConfirmHandler,
   pageSizeOptions,
   type PaginationInfo,
+  resolveDisabledReason,
   type SelectionState,
   type TableLabels,
   useBulkActionRunner,
@@ -94,7 +95,7 @@ export function BulkBar({
         {labels.clearAll}
       </button>
       {bulkActions.map((action) => {
-        const reason = action.disabledReason?.(ids);
+        const reason = resolveDisabledReason(action.disabledReason?.(ids));
         return (
           <button
             key={action.key}

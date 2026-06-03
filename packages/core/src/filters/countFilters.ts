@@ -45,6 +45,29 @@ function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/**
+ * Coerce a raw extra/param value to a finite number. URL state arrives as
+ * strings (e.g. `"5"`), so a bare `as number` cast would leave numeric
+ * filters looking incomplete and silently drop them. Returns undefined for
+ * anything that is not a finite number or numeric string.
+ */
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+/** Coerce a raw value to a known {@link CountOperator}, else undefined. */
+function toOperator(value: unknown): CountOperator | undefined {
+  return COUNT_OPERATORS.includes(value as CountOperator)
+    ? (value as CountOperator)
+    : undefined;
+}
+
 /** Whether a count-filter state is complete enough to affect a query. */
 export function isCountFilterComplete(state: CountFilterState): boolean {
   if (!state.op) return false;
@@ -83,10 +106,10 @@ export function countFilterStateFromExtra(
   extra: Readonly<Record<string, FilterValue>>
 ): CountFilterState {
   return {
-    op: extra[opKey(bucket)] as CountOperator | undefined,
-    value: extra[valueKey(bucket)] as number | undefined,
-    from: extra[fromKey(bucket)] as number | undefined,
-    to: extra[toKey(bucket)] as number | undefined,
+    op: toOperator(extra[opKey(bucket)]),
+    value: toNumber(extra[valueKey(bucket)]),
+    from: toNumber(extra[fromKey(bucket)]),
+    to: toNumber(extra[toKey(bucket)]),
   };
 }
 
@@ -102,10 +125,10 @@ export function sanitizeCountFilterParams<P extends Record<string, unknown>>(
   const out: Record<string, unknown> = { ...params };
   for (const bucket of buckets) {
     const state: CountFilterState = {
-      op: out[opKey(bucket)] as CountOperator | undefined,
-      value: out[valueKey(bucket)] as number | undefined,
-      from: out[fromKey(bucket)] as number | undefined,
-      to: out[toKey(bucket)] as number | undefined,
+      op: toOperator(out[opKey(bucket)]),
+      value: toNumber(out[valueKey(bucket)]),
+      from: toNumber(out[fromKey(bucket)]),
+      to: toNumber(out[toKey(bucket)]),
     };
     if (isCountFilterComplete(state)) continue;
     delete out[opKey(bucket)];

@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  resolveDisabledReason,
   type RowAction,
   runRowAction,
   type UseDataTableResult,
@@ -110,7 +111,9 @@ export function MobileCards<TRow>({
                 <Group gap={4} justify="flex-end" pt={4}>
                   {rowActions.map((action) => {
                     if (action.isHidden?.(row)) return null;
-                    const reason = action.disabledReason?.(row);
+                    const reason = resolveDisabledReason(
+                      action.disabledReason?.(row)
+                    );
                     const disabled =
                       reason !== undefined ||
                       (action.isDisabled?.(row) ?? false);

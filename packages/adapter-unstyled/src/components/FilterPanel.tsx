@@ -1,6 +1,6 @@
 import type { TableLabels } from "@adapttable/core";
 import type { Direction } from "@adapttable/core";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
@@ -28,6 +28,28 @@ export function FilterPanel({
   dir = "ltr",
   classNames,
 }: Readonly<FilterPanelProps>) {
+  const panelRef = useRef<HTMLElement>(null);
+  // Keep the latest onClose without re-running the open/close effect on every
+  // parent render (which would restore focus prematurely).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // While open: close on Escape, move focus into the panel, and restore focus
+  // to the trigger on close — basic dialog a11y the hand-rolled drawer needs.
+  useEffect(() => {
+    if (!open) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      trigger?.focus?.();
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -43,6 +65,8 @@ export function FilterPanel({
         onClick={onClose}
       />
       <aside
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={labels.filters}

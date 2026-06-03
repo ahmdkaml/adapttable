@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  resolveDisabledReason,
   type RowAction,
   runRowAction,
   type SortDirection,
@@ -109,7 +110,7 @@ export function buildColumns<TRow>({
         <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
           {rowActions.map((action) => {
             if (action.isHidden?.(row)) return null;
-            const reason = action.disabledReason?.(row);
+            const reason = resolveDisabledReason(action.disabledReason?.(row));
             const disabled =
               reason !== undefined || (action.isDisabled?.(row) ?? false);
             return (

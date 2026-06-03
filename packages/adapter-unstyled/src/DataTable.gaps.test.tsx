@@ -168,6 +168,14 @@ describe("<DataTable> (unstyled) gaps", () => {
     expect(screen.queryByRole("dialog", { name: "Filters" })).toBeNull();
   });
 
+  it("closes the filter drawer on Escape", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    expect(screen.getByRole("dialog", { name: "Filters" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Filters" })).toBeNull();
+  });
+
   it("virtualizes desktop rows when enabled", () => {
     vi.mocked(useTableVirtualization).mockReturnValue({
       enabled: true,
