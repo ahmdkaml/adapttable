@@ -137,6 +137,12 @@ export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
+  COLUMN_RESIZE_STEP,
+  type ColumnResizeHandleProps,
+  columnResizeHandleProps,
+  MIN_COLUMN_WIDTH,
+} from "./columns/columnResize";
+export {
   type ColumnLayoutState,
   EMPTY_COLUMN_LAYOUT,
   type PinnedCellStyle,
