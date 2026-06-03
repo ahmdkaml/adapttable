@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
@@ -29,6 +30,10 @@ interface SharedProps<TRow> {
   measureElement?: (element: Element | null) => void;
   stickyHeader?: boolean;
   stickyTop?: number;
+  pinOffset?: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
+  maxHeight?: number;
 }
 
 function RowActionButtons<TRow>({
@@ -89,6 +94,8 @@ export function DesktopTable<TRow>({
   measureElement,
   stickyHeader = false,
   stickyTop = 0,
+  pinOffset,
+  maxHeight,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -100,14 +107,22 @@ export function DesktopTable<TRow>({
   );
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller). The adapter ships no colours, so consumers must give their
-  // `headerCell` class an opaque background — the `data-sticky` hook makes
-  // that easy to target.
+  // `headerCell` class an opaque background — the `data-sticky`/`data-pinned`
+  // hooks make that easy to target.
   const stickyStyle: CSSProperties | undefined = stickyHeader
     ? { position: "sticky", top: stickyTop, zIndex: 1 }
     : undefined;
   const stickyAttr = stickyHeader || undefined;
+  // Pinned header cells need both the sticky-top and sticky-left/right styles.
+  const pinStyle = (key: string): CSSProperties | undefined =>
+    pinnedCellStyle(pinOffset?.(key), 2);
+  const headStyle = (key: string): CSSProperties | undefined => {
+    const pin = pinStyle(key);
+    if (!stickyStyle && !pin) return undefined;
+    return { ...stickyStyle, ...pin };
+  };
 
-  return (
+  const tableEl = (
     <table
       {...table.getTableProps()}
       data-adapttable-part="table"
@@ -148,7 +163,8 @@ export function DesktopTable<TRow>({
                 data-adapttable-part="header-cell"
                 data-sorted={active ? table.sortDir : undefined}
                 data-sticky={stickyAttr}
-                style={stickyStyle}
+                data-pinned={pinOffset?.(column.key)?.side}
+                style={headStyle(column.key)}
                 className={classNames.headerCell}
               >
                 {column.sortable ? (
@@ -220,6 +236,8 @@ export function DesktopTable<TRow>({
                   key={column.key}
                   {...table.getCellProps(column)}
                   data-adapttable-part="cell"
+                  data-pinned={pinOffset?.(column.key)?.side}
+                  style={pinStyle(column.key)}
                   className={classNames.cell}
                 >
                   {column.Cell ? (
@@ -256,6 +274,19 @@ export function DesktopTable<TRow>({
         )}
       </tbody>
     </table>
+  );
+
+  // A bounded-height scroll box turns on sideways scrolling so pinned columns
+  // (sticky left/right) have somewhere to stick; the header pins to the box.
+  return maxHeight == null ? (
+    tableEl
+  ) : (
+    <div
+      data-adapttable-part="scroll-box"
+      style={{ maxHeight, overflow: "auto" }}
+    >
+      {tableEl}
+    </div>
   );
 }
 
