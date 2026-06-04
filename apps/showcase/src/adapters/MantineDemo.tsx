@@ -2,22 +2,29 @@ import type { TableSource } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mantine";
 import {
+  Avatar,
+  Badge,
   Checkbox,
   Group,
   MantineProvider,
   NumberInput,
+  Progress,
   Select,
   Stack,
+  Text,
   TextInput,
 } from "@mantine/core";
 
 import {
   allocationFilterState,
+  type AvatarCellProps,
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  type DemoCells,
   demoConfirm,
   demoFilterChips,
+  type LoadCellProps,
   type Locale,
   makeActions,
   makeBulkActions,
@@ -28,7 +35,9 @@ import {
   selectedTeams,
   setAllocationFilter,
   setBudgetFilter,
+  type StatusCellProps,
   STATUSES,
+  statusTone,
   strings,
   TEAMS,
 } from "../data";
@@ -187,6 +196,26 @@ function MantineFilters({
   );
 }
 
+/** Mantine-native cell visuals (Avatar · Badge · Progress). */
+const MANTINE_CELLS: DemoCells = {
+  Avatar: ({ name }: AvatarCellProps) => (
+    <Avatar name={name} color="initials" radius="xl" size={36} />
+  ),
+  Status: ({ status, label }: StatusCellProps) => (
+    <Badge color={statusTone(status)} variant="light" radius="sm">
+      {label}
+    </Badge>
+  ),
+  Load: ({ value, meta }: LoadCellProps) => (
+    <Stack gap={4} miw={90}>
+      <Progress value={value} size="sm" radius="xl" />
+      <Text size="xs" c="dimmed">
+        {meta}
+      </Text>
+    </Stack>
+  ),
+};
+
 export function MantineDemo({
   mode,
   locale,
@@ -207,7 +236,7 @@ export function MantineDemo({
         render={(source) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale)}
+            columns={makeColumns(locale, MANTINE_CELLS)}
             rowKey={(r) => r.id}
             labels={getLabels(locale)}
             dir={getDirection(locale)}

@@ -2,6 +2,8 @@ import { DataTable } from "@adapttable/chakra";
 import type { TableSource } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
+  Avatar,
+  Badge,
   Box,
   ChakraProvider,
   Checkbox,
@@ -14,17 +16,22 @@ import {
   Input,
   NumberInput,
   NumberInputField,
+  Progress,
   Select,
   Stack,
+  Text,
 } from "@chakra-ui/react";
 
 import {
   allocationFilterState,
+  type AvatarCellProps,
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  type DemoCells,
   demoConfirm,
   demoFilterChips,
+  type LoadCellProps,
   type Locale,
   makeActions,
   makeBulkActions,
@@ -35,7 +42,9 @@ import {
   selectedTeams,
   setAllocationFilter,
   setBudgetFilter,
+  type StatusCellProps,
   STATUSES,
+  statusTone,
   strings,
   TEAMS,
 } from "../data";
@@ -225,6 +234,35 @@ function ChakraFilters({
   );
 }
 
+/** Chakra-native cell visuals (Avatar · Badge · Progress). */
+const CHAKRA_CELLS: DemoCells = {
+  Avatar: ({ name }: AvatarCellProps) => <Avatar name={name} size="sm" />,
+  Status: ({ status, label }: StatusCellProps) => (
+    <Badge
+      colorScheme={statusTone(status)}
+      borderRadius="full"
+      px={2}
+      py={0.5}
+      textTransform="none"
+    >
+      {label}
+    </Badge>
+  ),
+  Load: ({ value, meta }: LoadCellProps) => (
+    <Box minW="90px">
+      <Progress
+        value={value}
+        size="sm"
+        borderRadius="full"
+        colorScheme="blue"
+      />
+      <Text fontSize="xs" color="gray.500" mt={1}>
+        {meta}
+      </Text>
+    </Box>
+  ),
+};
+
 export function ChakraDemo({
   mode,
   locale,
@@ -260,7 +298,7 @@ export function ChakraDemo({
         render={(source) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale)}
+            columns={makeColumns(locale, CHAKRA_CELLS)}
             rowKey={(r) => r.id}
             labels={getLabels(locale)}
             dir={getDirection(locale)}

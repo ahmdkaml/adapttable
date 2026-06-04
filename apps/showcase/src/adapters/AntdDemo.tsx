@@ -2,33 +2,44 @@ import { DataTable } from "@adapttable/antd";
 import type { TableSource } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
+  Avatar,
   Checkbox,
   ConfigProvider,
   Input,
   InputNumber,
+  Progress,
   Select,
   Space,
+  Tag,
   theme as antdTheme,
+  Typography,
 } from "antd";
 
 import {
   allocationFilterState,
+  type AvatarCellProps,
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  type DemoCells,
   demoConfirm,
   demoFilterChips,
+  initials,
+  type LoadCellProps,
   type Locale,
   makeActions,
   makeBulkActions,
   makeColumns,
   makeFilterLabels,
+  nameHue,
   type Person,
   selectedStatuses,
   selectedTeams,
   setAllocationFilter,
   setBudgetFilter,
+  type StatusCellProps,
   STATUSES,
+  statusTone,
   strings,
   TEAMS,
 } from "../data";
@@ -153,6 +164,42 @@ function AntdFilters({
   );
 }
 
+const ANTD_TAG_COLOR = {
+  green: "green",
+  blue: "blue",
+  red: "red",
+  gray: "default",
+} as const;
+
+/** Ant Design-native cell visuals (Avatar · Tag · Progress). */
+const ANTD_CELLS: DemoCells = {
+  Avatar: ({ name }: AvatarCellProps) => (
+    <Avatar
+      size={36}
+      style={{
+        backgroundColor: `hsl(${nameHue(name)} 60% 88%)`,
+        color: `hsl(${nameHue(name)} 45% 35%)`,
+        fontWeight: 700,
+      }}
+    >
+      {initials(name)}
+    </Avatar>
+  ),
+  Status: ({ status, label }: StatusCellProps) => (
+    <Tag color={ANTD_TAG_COLOR[statusTone(status)]} bordered={false}>
+      {label}
+    </Tag>
+  ),
+  Load: ({ value, meta }: LoadCellProps) => (
+    <div style={{ minWidth: 90 }}>
+      <Progress percent={value} showInfo={false} size="small" />
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {meta}
+      </Typography.Text>
+    </div>
+  ),
+};
+
 export function AntdDemo({
   mode,
   locale,
@@ -178,7 +225,7 @@ export function AntdDemo({
         render={(source) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale)}
+            columns={makeColumns(locale, ANTD_CELLS)}
             rowKey={(r) => r.id}
             labels={getLabels(locale)}
             dir={getDirection(locale)}

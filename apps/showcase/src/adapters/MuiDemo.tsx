@@ -2,35 +2,46 @@ import type { TableSource } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mui";
 import {
+  Avatar,
   Box,
   Checkbox,
+  Chip,
   createTheme,
   FormControlLabel,
   FormGroup,
   FormLabel,
+  LinearProgress,
   MenuItem,
   TextField,
   ThemeProvider,
+  Typography,
 } from "@mui/material";
 
 import {
   allocationFilterState,
+  type AvatarCellProps,
   budgetFilterState,
   clearDemoFilters,
   COUNT_OPTIONS,
+  type DemoCells,
   demoConfirm,
   demoFilterChips,
+  initials,
+  type LoadCellProps,
   type Locale,
   makeActions,
   makeBulkActions,
   makeColumns,
   makeFilterLabels,
+  nameHue,
   type Person,
   selectedStatuses,
   selectedTeams,
   setAllocationFilter,
   setBudgetFilter,
+  type StatusCellProps,
   STATUSES,
+  statusTone,
   strings,
   TEAMS,
   toggleTeam,
@@ -206,6 +217,50 @@ function MuiFilters({
   );
 }
 
+const MUI_CHIP_COLOR = {
+  green: "success",
+  blue: "info",
+  red: "error",
+  gray: "default",
+} as const;
+
+/** MUI-native cell visuals (Avatar · Chip · LinearProgress). */
+const MUI_CELLS: DemoCells = {
+  Avatar: ({ name }: AvatarCellProps) => (
+    <Avatar
+      sx={{
+        width: 36,
+        height: 36,
+        fontSize: 14,
+        fontWeight: 700,
+        bgcolor: `hsl(${nameHue(name)} 60% 90%)`,
+        color: `hsl(${nameHue(name)} 45% 35%)`,
+      }}
+    >
+      {initials(name)}
+    </Avatar>
+  ),
+  Status: ({ status, label }: StatusCellProps) => (
+    <Chip
+      label={label}
+      size="small"
+      color={MUI_CHIP_COLOR[statusTone(status)]}
+    />
+  ),
+  Load: ({ value, meta }: LoadCellProps) => (
+    <Box sx={{ minWidth: 90 }}>
+      <LinearProgress
+        variant="determinate"
+        value={value}
+        sx={{ height: 6, borderRadius: 999 }}
+      />
+      <Typography variant="caption" color="text.secondary">
+        {meta}
+      </Typography>
+    </Box>
+  ),
+};
+
 export function MuiDemo({
   mode,
   locale,
@@ -227,7 +282,7 @@ export function MuiDemo({
         render={(source) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale)}
+            columns={makeColumns(locale, MUI_CELLS)}
             rowKey={(r) => r.id}
             labels={getLabels(locale)}
             dir={getDirection(locale)}

@@ -20,6 +20,7 @@ import {
   isCountFilterComplete,
   sanitizeCountFilterParams,
 } from "@adapttable/core";
+import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
 import people from "./people.json";
@@ -191,22 +192,98 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
   },
 ];
 
-export function makeColumns(locale: Locale): ColumnDef<Person>[] {
+/**
+ * Provider-native cell renderers. Each adapter passes its OWN kit components
+ * (Mantine `Avatar`/`Badge`/`Progress`, MUI `Avatar`/`Chip`/`LinearProgress`,
+ * …) so the rich cells look native to that kit — no bespoke showcase CSS. The
+ * column STRUCTURE (keys, headers, sort, widths) stays shared via
+ * {@link makeColumns}; only these three visuals differ per provider.
+ */
+/** Props for a provider's avatar cell. */
+export interface AvatarCellProps {
+  name: string;
+}
+/** Props for a provider's status-pill cell. */
+export interface StatusCellProps {
+  status: DemoStatus;
+  label: string;
+}
+/** Props for a provider's load-bar cell. */
+export interface LoadCellProps {
+  /** Utilisation 0–100. */
+  value: number;
+  /** Caption rendered under the bar, e.g. `"78% · 4"`. */
+  meta: string;
+}
+
+export interface DemoCells {
+  /** Initials avatar (kit-styled, deterministic colour from the name). */
+  Avatar: (props: AvatarCellProps) => ReactNode;
+  /** Status pill / badge / tag. */
+  Status: (props: StatusCellProps) => ReactNode;
+  /** Utilisation bar with a `value` (0–100) and a `meta` caption. */
+  Load: (props: LoadCellProps) => ReactNode;
+}
+
+const cellStack: CSSProperties = {
+  display: "inline-flex",
+  flexDirection: "column",
+  gap: 2,
+  minWidth: 0,
+  lineHeight: 1.35,
+};
+
+/** First-letters of (up to) the first two name words, e.g. "Ada Lovelace" → "AL". */
+export function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+/** Deterministic 0–359 hue from a name, for adapters whose avatar needs a colour. */
+export function nameHue(name: string): number {
+  let hue = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hue = (hue * 31 + name.charCodeAt(i)) % 360;
+  }
+  return hue;
+}
+
+/** Map a demo status to a semantic colour family every kit understands. */
+export function statusTone(
+  status: DemoStatus
+): "green" | "blue" | "red" | "gray" {
+  if (status === "Active") return "green";
+  if (status === "Planned") return "blue";
+  if (status === "Blocked") return "red";
+  return "gray";
+}
+
+export function makeColumns(
+  locale: Locale,
+  cells: DemoCells
+): ColumnDef<Person>[] {
   const s = STRINGS[locale];
+  const { Avatar, Status, Load } = cells;
   return [
     {
       key: "person",
       header: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      width: "34%",
+      width: "30%",
       accessor: (row) => (
-        <span className="demo-person-cell">
-          <strong>{row.name}</strong>
-          <small>{row.email}</small>
-          <em>
-            {row.role} · {row.team}
-          </em>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
+          <Avatar name={row.name} />
+          <span style={cellStack}>
+            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
+              {row.email}
+            </small>
+          </span>
         </span>
       ),
       mobileLabel: s.person,
@@ -214,10 +291,12 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
     {
       key: "status",
       header: s.status,
-      accessor: (r) => personStatus(r),
+      accessor: (r) => (
+        <Status status={personStatus(r)} label={personStatus(r)} />
+      ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      width: "14%",
+      width: "13%",
       mobileLabel: s.status,
     },
     {
@@ -227,10 +306,12 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
       sortable: true,
       width: "18%",
       accessor: (row) => (
-        <span className="demo-stack-cell">
-          <strong>{formatDate(startDate(row), locale)}</strong>
-          <small>
-            {s.dueDate}: {formatDate(dueDate(row), locale)}
+        <span style={cellStack}>
+          <strong style={{ fontWeight: 550 }}>
+            {formatDate(startDate(row), locale)}
+          </strong>
+          <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
+            → {formatDate(dueDate(row), locale)}
           </small>
         </span>
       ),
@@ -239,11 +320,15 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
     {
       key: "budget",
       header: s.budget,
-      accessor: (r) => formatMoney(budget(r), locale),
+      accessor: (r) => (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+          {formatMoney(budget(r), locale)}
+        </span>
+      ),
       sortValue: (r) => budget(r),
       sortable: true,
       align: "end",
-      width: "14%",
+      width: "13%",
       mobileLabel: s.budget,
     },
     {
@@ -251,15 +336,12 @@ export function makeColumns(locale: Locale): ColumnDef<Person>[] {
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      align: "end",
-      width: "12%",
+      width: "16%",
       accessor: (row) => (
-        <span className="demo-stack-cell demo-stack-cell-end">
-          <strong>{formatPercent(utilization(row), locale)}</strong>
-          <small>
-            {s.allocations}: {allocationCount(row)}
-          </small>
-        </span>
+        <Load
+          value={utilization(row)}
+          meta={`${formatPercent(utilization(row), locale)} · ${allocationCount(row)}`}
+        />
       ),
       mobileLabel: s.load,
     },
