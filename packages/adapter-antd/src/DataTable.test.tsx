@@ -82,6 +82,48 @@ describe("<DataTable> (Ant Design)", () => {
     expect(container.querySelector(".ant-skeleton")).toBeInTheDocument();
   });
 
+  it("maps density='compact' to the small antd table", () => {
+    const { container } = renderHarness({ override: { density: "compact" } });
+    expect(container.querySelector(".ant-table-small")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-middle")).toBeNull();
+  });
+
+  it("maps density='comfortable' to the middle antd table", () => {
+    const { container } = renderHarness({
+      override: { density: "comfortable" },
+    });
+    expect(container.querySelector(".ant-table-middle")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-small")).toBeNull();
+  });
+
+  it("defaults to the middle antd table when no density is given", () => {
+    const { container } = renderHarness();
+    expect(container.querySelector(".ant-table-middle")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-small")).toBeNull();
+  });
+
+  it("keeps density independent of column pinning (compact + pinned)", () => {
+    const { container } = renderHarness({
+      override: {
+        density: "compact",
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    expect(container.querySelector(".ant-table-small")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+  });
+
+  it("lets an explicit size prop override density", () => {
+    const { container } = renderHarness({
+      override: { density: "compact", size: "large" },
+    });
+    // antd's "large" table carries no size modifier class — so neither the
+    // small (from density) nor the middle class should be present.
+    expect(container.querySelector(".ant-table")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-small")).toBeNull();
+    expect(container.querySelector(".ant-table-middle")).toBeNull();
+  });
+
   it("surfaces an error and retries", () => {
     const refetch = vi.fn();
     renderHarness({ error: new Error("boom"), refetch });

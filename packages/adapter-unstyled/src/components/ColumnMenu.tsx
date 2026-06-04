@@ -160,7 +160,7 @@ export function ColumnMenu<TRow>({
           style={{
             position: "absolute",
             zIndex: 40,
-            insetInlineStart: 0,
+            insetInlineEnd: 0,
             margin: 0,
             border: 0,
             padding: 0,

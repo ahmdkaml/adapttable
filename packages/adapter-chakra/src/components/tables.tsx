@@ -2,12 +2,16 @@ import {
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
+  edgePinStyle,
+  PIN_Z,
+  type PinLeads,
   pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   runRowAction,
   type SharedTableRenderProps,
+  tableMinWidth,
   virtualColumnSpan,
 } from "@adapttable/core";
 import {
@@ -156,22 +160,45 @@ export function DesktopTable<TRow>({
     ? {
         position: "sticky" as const,
         top: `${stickyTop}px`,
-        zIndex: 1,
+        zIndex: PIN_Z.header,
         bg: "chakra-body-bg",
       }
     : {};
+  // The leading checkbox (48px) and trailing actions (120px) columns pin to the
+  // edge alongside the data columns, which therefore start past them.
+  const selectionWidth = 48;
+  const actionsWidth = 120;
+  const leads: PinLeads = {
+    left: selection ? selectionWidth : 0,
+    right: showActions ? actionsWidth : 0,
+  };
+  const hasLeftPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "left"
+  );
+  const hasRightPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "right"
+  );
+  const pinBg = "var(--chakra-colors-chakra-body-bg)";
   // Pinned cells use a raw `style` (Chakra maps numeric props onto its spacing
   // scale, which would mangle pixel insets) plus an opaque background.
   const pinStyle = (key: string, z: number): CSSProperties | undefined => {
-    const pin = pinnedCellStyle(pinOffset?.(key), z);
-    return pin
-      ? { ...pin, background: "var(--chakra-colors-chakra-body-bg)" }
-      : undefined;
+    const pin = pinnedCellStyle(pinOffset?.(key), z, leads);
+    return pin ? { ...pin, background: pinBg } : undefined;
+  };
+  // Edge (selection / actions) cell sticks flush to its side when a data column
+  // on that side is pinned.
+  const edgeStyle = (
+    side: "left" | "right",
+    active: boolean,
+    z: number
+  ): CSSProperties | undefined => {
+    const pin = edgePinStyle(side, active, z);
+    return pin ? { ...pin, background: pinBg } : undefined;
   };
   // Header-cell style merging pin + user width; the resize handle is absolute,
   // so add a positioning context when the cell is not already sticky/pinned.
   const headCellStyle = (key: string): CSSProperties | undefined => {
-    const pin = pinStyle(key, 2);
+    const pin = pinStyle(key, PIN_Z.headerPinned);
     const width = columnWidths?.[key];
     if (!pin && width == null && !setWidth) return undefined;
     const style: CSSProperties = { ...pin };
@@ -183,6 +210,12 @@ export function DesktopTable<TRow>({
     typeof column.header === "string" ? column.header : column.key;
 
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // Fixed-width columns get a real table min-width (their sum), so the table
+  // overflows and scrolls horizontally instead of squishing columns to fit.
+  const minWidth = tableMinWidth(columns, {
+    widths: columnWidths,
+    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+  });
 
   return (
     <Box
@@ -192,12 +225,17 @@ export function DesktopTable<TRow>({
     >
       <Table
         size={size}
+        data-size={size}
+        minW={minWidth > 0 ? `${minWidth}px` : undefined}
         aria-label={table.getTableProps()["aria-label"] as string}
       >
         <Thead>
           <Tr>
             {selection && (
-              <Th {...stickyTh}>
+              <Th
+                {...stickyTh}
+                style={edgeStyle("left", hasLeftPin, PIN_Z.headerPinned)}
+              >
                 <Checkbox
                   aria-label={labels.selectAll}
                   isChecked={selection.headerState === "all"}
@@ -253,7 +291,11 @@ export function DesktopTable<TRow>({
               );
             })}
             {showActions && (
-              <Th textAlign="end" {...stickyTh}>
+              <Th
+                textAlign="end"
+                {...stickyTh}
+                style={edgeStyle("right", hasRightPin, PIN_Z.headerPinned)}
+              >
                 {labels.actions}
               </Th>
             )}
@@ -278,7 +320,7 @@ export function DesktopTable<TRow>({
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               >
                 {selection && (
-                  <Td>
+                  <Td style={edgeStyle("left", hasLeftPin, PIN_Z.body)}>
                     <Checkbox
                       aria-label={labels.selectRow}
                       isChecked={selection.isSelected(id)}
@@ -300,7 +342,10 @@ export function DesktopTable<TRow>({
                   </Td>
                 ))}
                 {showActions && (
-                  <Td textAlign="end">
+                  <Td
+                    textAlign="end"
+                    style={edgeStyle("right", hasRightPin, PIN_Z.body)}
+                  >
                     <RowActionButtons
                       row={row}
                       actions={rowActions!}

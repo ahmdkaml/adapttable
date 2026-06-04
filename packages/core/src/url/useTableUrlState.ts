@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LIMIT } from "../constants";
 import type {
@@ -7,12 +7,7 @@ import type {
   SortDirection,
   TableQueryParams,
 } from "../types";
-import { isBrowser } from "../utils/env";
-import {
-  createMemoryAdapter,
-  getHistoryAdapter,
-  type UrlStateAdapter,
-} from "./adapter";
+import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
 import {
   PARAM_LIMIT,
   PARAM_PAGE,
@@ -46,6 +41,12 @@ export interface UseTableUrlStateOptions {
   numberExtraKeys?: readonly string[];
   /** Extra-filter keys whose values are comma-separated arrays. */
   arrayExtraKeys?: readonly string[];
+  /**
+   * Namespace for this table's URL params, so multiple tables can share one
+   * URL without colliding. With `urlKey="left"` the params become
+   * `left.q`, `left.page`, `left.f_status`, … Omit for the bare keys.
+   */
+  urlKey?: string;
 }
 
 /** State + setters returned by {@link useTableUrlState}. */
@@ -78,20 +79,6 @@ export interface UseTableUrlStateResult {
   clearAll: () => void;
 }
 
-function useResolvedAdapter(
-  adapter: UrlStateAdapter | undefined,
-  enabled: boolean
-): UrlStateAdapter {
-  // A per-hook memory adapter, created once, used when disabled or SSR.
-  const memoryRef = useRef<UrlStateAdapter | null>(null);
-  memoryRef.current ??= createMemoryAdapter();
-
-  if (adapter) return adapter;
-  if (!enabled) return memoryRef.current;
-  if (!isBrowser()) return memoryRef.current;
-  return getHistoryAdapter();
-}
-
 /**
  * Headless URL-synced table state. Keeps page / limit / search / sort and
  * an arbitrary `extra` filter bag in the query string (or a local store
@@ -110,7 +97,10 @@ export function useTableUrlState(
     defaults = {},
     numberExtraKeys = [],
     arrayExtraKeys = [],
+    urlKey,
   } = options;
+  // Per-table namespace, e.g. "left." → left.q / left.page / left.f_status.
+  const ns = urlKey ? `${urlKey}.` : "";
 
   const resolved = useResolvedAdapter(adapter, enabled);
   const search = useSyncExternalStore(
@@ -121,14 +111,18 @@ export function useTableUrlState(
   const params = useMemo(() => new URLSearchParams(search), [search]);
 
   const initialLimit = defaults.limit ?? DEFAULT_LIMIT;
-  const page = readPage(params, defaults.page ?? 1);
-  const limit = readLimit(params, initialLimit);
-  const searchTerm = (params.get(PARAM_SEARCH) ?? defaults.search ?? "").trim();
-  const sortBy = params.get(PARAM_SORT_BY) ?? defaults.sortBy;
-  const sortDir = readSortDir(params) ?? defaults.sortDir;
+  const page = readPage(params, defaults.page ?? 1, ns);
+  const limit = readLimit(params, initialLimit, ns);
+  const searchTerm = (
+    params.get(ns + PARAM_SEARCH) ??
+    defaults.search ??
+    ""
+  ).trim();
+  const sortBy = params.get(ns + PARAM_SORT_BY) ?? defaults.sortBy;
+  const sortDir = readSortDir(params, ns) ?? defaults.sortDir;
   const urlExtra = useMemo(
-    () => readExtra(params, numberExtraKeys, arrayExtraKeys),
-    [params, numberExtraKeys, arrayExtraKeys]
+    () => readExtra(params, numberExtraKeys, arrayExtraKeys, ns),
+    [params, numberExtraKeys, arrayExtraKeys, ns]
   );
   const extra = useMemo<ExtraFilters>(
     () => (defaults.extra ? { ...defaults.extra, ...urlExtra } : urlExtra),
@@ -147,82 +141,90 @@ export function useTableUrlState(
   const setPage = useCallback(
     (next: number) =>
       commit((p) => {
-        if (next <= 1) p.delete(PARAM_PAGE);
-        else p.set(PARAM_PAGE, String(next));
+        if (next <= 1) p.delete(ns + PARAM_PAGE);
+        else p.set(ns + PARAM_PAGE, String(next));
       }),
-    [commit]
+    [commit, ns]
   );
 
   const setLimit = useCallback(
     (next: number) =>
       commit((p) => {
-        if (next === initialLimit) p.delete(PARAM_LIMIT);
-        else p.set(PARAM_LIMIT, String(next));
-        p.delete(PARAM_PAGE);
+        if (next === initialLimit) p.delete(ns + PARAM_LIMIT);
+        else p.set(ns + PARAM_LIMIT, String(next));
+        p.delete(ns + PARAM_PAGE);
       }),
-    [commit, initialLimit]
+    [commit, initialLimit, ns]
   );
 
   const setSearch = useCallback(
     (next: string) =>
       commit((p) => {
         const trimmed = next.trim();
-        if (trimmed === "") p.delete(PARAM_SEARCH);
-        else p.set(PARAM_SEARCH, trimmed);
-        p.delete(PARAM_PAGE);
+        if (trimmed === "") p.delete(ns + PARAM_SEARCH);
+        else p.set(ns + PARAM_SEARCH, trimmed);
+        p.delete(ns + PARAM_PAGE);
       }),
-    [commit]
+    [commit, ns]
   );
 
   const setSort = useCallback(
     (key: string | undefined, dir: SortDirection = "asc") =>
       commit((p) => {
         if (key) {
-          p.set(PARAM_SORT_BY, key);
-          p.set(PARAM_SORT_DIR, dir);
+          p.set(ns + PARAM_SORT_BY, key);
+          p.set(ns + PARAM_SORT_DIR, dir);
         } else {
-          p.delete(PARAM_SORT_BY);
-          p.delete(PARAM_SORT_DIR);
+          p.delete(ns + PARAM_SORT_BY);
+          p.delete(ns + PARAM_SORT_DIR);
         }
-        p.delete(PARAM_PAGE);
+        p.delete(ns + PARAM_PAGE);
       }),
-    [commit]
+    [commit, ns]
   );
 
   const setExtra = useCallback(
     (key: string, value: FilterValue) =>
       commit((p) => {
-        writeExtra(p, {
-          ...readExtra(p, numberExtraKeys, arrayExtraKeys),
-          [key]: value,
-        });
-        p.delete(PARAM_PAGE);
+        writeExtra(
+          p,
+          {
+            ...readExtra(p, numberExtraKeys, arrayExtraKeys, ns),
+            [key]: value,
+          },
+          ns
+        );
+        p.delete(ns + PARAM_PAGE);
       }),
-    [commit, numberExtraKeys, arrayExtraKeys]
+    [commit, numberExtraKeys, arrayExtraKeys, ns]
   );
 
   const setExtras = useCallback(
     (updates: ExtraFilters) =>
       commit((p) => {
-        writeExtra(p, {
-          ...readExtra(p, numberExtraKeys, arrayExtraKeys),
-          ...updates,
-        });
-        p.delete(PARAM_PAGE);
+        writeExtra(
+          p,
+          {
+            ...readExtra(p, numberExtraKeys, arrayExtraKeys, ns),
+            ...updates,
+          },
+          ns
+        );
+        p.delete(ns + PARAM_PAGE);
       }),
-    [commit, numberExtraKeys, arrayExtraKeys]
+    [commit, numberExtraKeys, arrayExtraKeys, ns]
   );
 
   const clearAll = useCallback(
     () =>
       commit((p) => {
-        p.delete(PARAM_SEARCH);
-        p.delete(PARAM_SORT_BY);
-        p.delete(PARAM_SORT_DIR);
-        p.delete(PARAM_PAGE);
-        writeExtra(p, {});
+        p.delete(ns + PARAM_SEARCH);
+        p.delete(ns + PARAM_SORT_BY);
+        p.delete(ns + PARAM_SORT_DIR);
+        p.delete(ns + PARAM_PAGE);
+        writeExtra(p, {}, ns);
       }),
-    [commit]
+    [commit, ns]
   );
 
   return {

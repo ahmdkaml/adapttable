@@ -87,19 +87,34 @@ describe("FilterPopover", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("closes on an outside mousedown but stays open for inside clicks", () => {
+  it("closes on an outside click but stays open for inside clicks", () => {
     const { onClose } = renderPopover();
     // Click inside the popover card — must NOT close.
-    fireEvent.mouseDown(
+    fireEvent.click(
       document.querySelector('[data-adapttable-part="filters-popover"]')!
     );
     expect(onClose).not.toHaveBeenCalled();
     // Click on the anchored trigger — still inside the anchor, must NOT close.
-    fireEvent.mouseDown(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     expect(onClose).not.toHaveBeenCalled();
     // Click on the document body (outside) — closes.
-    fireEvent.mouseDown(document.body);
+    fireEvent.click(document.body);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays open while a control inside it holds focus (native picker popups)", () => {
+    const { onClose } = renderPopover({
+      filters: (
+        <select data-testid="op" aria-label="Operator">
+          <option value="">-</option>
+        </select>
+      ),
+    });
+    // A native <select>/date/number popup keeps focus on the control inside the
+    // popover while dispatching a document-level click outside the popover DOM.
+    screen.getByTestId("op").focus();
+    fireEvent.click(document.body);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("shows the active-filter count beside the title", () => {

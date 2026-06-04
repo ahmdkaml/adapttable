@@ -35,7 +35,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     colorScheme,
-    size = "md",
     virtualize = false,
     estimateRowSize,
     estimateCardSize,
@@ -43,6 +42,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualScrollMargin,
   } = props;
   const { filtersMode = "popover" } = props;
+  // Map row density to Chakra's table `size` (independent of column pinning):
+  // compact → "sm", comfortable (default) → "md". An explicit `size` prop, if
+  // given, still wins for backward compatibility.
+  const size =
+    props.size ??
+    ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;

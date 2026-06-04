@@ -354,6 +354,50 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();
   });
 
+  // Row density is independent of pinning: it only re-maps the Mantine
+  // `<Table>` spacing. Mantine emits the chosen spacing as the
+  // `--table-vertical-spacing` / `--table-horizontal-spacing` CSS vars on the
+  // table element, so we assert on those.
+  it("uses comfortable spacing (sm / md) by default", () => {
+    renderHarness();
+    const table = screen.getByText("Name").closest("table")!;
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).toBe(
+      "var(--mantine-spacing-sm)"
+    );
+    expect(table.style.getPropertyValue("--table-horizontal-spacing")).toBe(
+      "var(--mantine-spacing-md)"
+    );
+  });
+
+  it("tightens rows when density is compact", () => {
+    renderHarness({ override: { density: "compact" } });
+    const table = screen.getByText("Name").closest("table")!;
+    // 4 -> rem(4) === "0.25rem" (scaled); horizontal drops from md to sm.
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).toContain(
+      "0.25rem"
+    );
+    expect(table.style.getPropertyValue("--table-horizontal-spacing")).toBe(
+      "var(--mantine-spacing-sm)"
+    );
+    // Compact must not equal the comfortable vertical rhythm.
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).not.toBe(
+      "var(--mantine-spacing-sm)"
+    );
+  });
+
+  it("applies compact density to mobile cards too", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: { density: "compact" },
+    });
+    // Compact cards use the tighter `sm` Card padding instead of `md`.
+    const card = container.querySelector('[class*="mantine-Card-root"]');
+    expect(card).not.toBeNull();
+    expect(card!.getAttribute("style") ?? "").toContain(
+      "var(--mantine-spacing-sm)"
+    );
+  });
+
   it("hides a column via a controlled columnLayout", () => {
     renderHarness({
       override: {

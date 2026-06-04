@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { ColumnDef } from "../types";
+import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 
 /**
  * User-driven column layout: which columns are hidden, their order, pinning,
@@ -75,16 +76,57 @@ export interface PinnedCellStyle {
 }
 
 /**
+ * Stacking order for sticky table cells, lowest → highest. A pinned body cell
+ * must sit above plain scrolled cells; a sticky header above all body cells;
+ * and a pinned header (the corner) above everything — otherwise a pinned
+ * column's body cells paint over the sticky header on vertical scroll, and
+ * later headers paint over a pinned header on horizontal scroll.
+ */
+export const PIN_Z = {
+  body: 1,
+  header: 2,
+  headerPinned: 3,
+} as const;
+
+/**
+ * Extra inset (px) the leading selection column / trailing actions column add
+ * in front of the pinned data columns, so a left-pinned column sits just after
+ * a pinned checkbox and a right-pinned column just before pinned actions.
+ */
+export interface PinLeads {
+  left?: number;
+  right?: number;
+}
+
+/**
  * Build the sticky style for a pinned header/body cell from its pin offset.
  * Adapters spread this onto the cell and add their own opaque background.
- * Returns undefined for an unpinned cell.
+ * `leads` shifts the cell past a pinned selection/actions edge column. Returns
+ * undefined for an unpinned cell.
  */
 export function pinnedCellStyle(
   offset: { side: "left" | "right"; inset: number } | undefined,
-  zIndex = 1
+  zIndex = 1,
+  leads?: PinLeads
 ): PinnedCellStyle | undefined {
   if (!offset) return undefined;
-  return { position: "sticky", [offset.side]: offset.inset, zIndex };
+  const lead = (offset.side === "left" ? leads?.left : leads?.right) ?? 0;
+  return { position: "sticky", [offset.side]: offset.inset + lead, zIndex };
+}
+
+/**
+ * Sticky style for a leading/trailing non-data column (the selection checkbox
+ * on the left, row actions on the right) so it pins flush to the edge whenever
+ * a data column on that side is pinned. `active` is false when nothing on that
+ * side is pinned, in which case the column stays in normal flow.
+ */
+export function edgePinStyle(
+  side: "left" | "right",
+  active: boolean,
+  zIndex: number = PIN_Z.body
+): PinnedCellStyle | undefined {
+  if (!active) return undefined;
+  return { position: "sticky", [side]: 0, zIndex };
 }
 
 /** Order `columns` by an explicit key order, appending any unlisted columns. */
@@ -209,16 +251,9 @@ export function useColumnLayout<TRow>({
       const resolveWidth = (k: string): number => {
         if (typeof state.widths[k] === "number") return state.widths[k];
         const declared = columns.find((c) => c.key === k)?.width;
-        if (typeof declared === "number") return declared;
-        if (typeof declared === "string") {
-          // Only pixel (or unit-less) widths can be summed into a sticky
-          // inset; relative units (%, rem, fr, …) have no px value here, so
-          // `parseInt("50%")` → 50 would corrupt the offset. Fall back instead.
-          if (/^\d+(?:\.\d+)?(?:px)?$/.test(declared.trim())) {
-            return Number.parseFloat(declared);
-          }
-        }
-        return 150;
+        // Only pixel widths can be summed into a sticky inset; relative units
+        // have no px value here, so fall back to a sane default instead.
+        return parsePxWidth(declared) ?? FALLBACK_PIN_WIDTH;
       };
       const samePinned = visibleColumns.filter(
         (c) => state.pinned[c.key] === side

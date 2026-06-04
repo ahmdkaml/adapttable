@@ -2,7 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { pinnedCellStyle, useColumnLayout } from "./useColumnLayout";
+import {
+  edgePinStyle,
+  PIN_Z,
+  pinnedCellStyle,
+  useColumnLayout,
+} from "./useColumnLayout";
 
 interface Row {
   id: string;
@@ -159,6 +164,34 @@ describe("useColumnLayout", () => {
       position: "sticky",
       right: 80,
       zIndex: 3,
+    });
+  });
+
+  it("offsets a pinned cell past a leading/trailing edge column via leads", () => {
+    // Left pin shifts right by the selection-column lead; the right lead is
+    // ignored for a left pin (and vice-versa).
+    expect(
+      pinnedCellStyle({ side: "left", inset: 30 }, PIN_Z.body, {
+        left: 40,
+        right: 120,
+      })
+    ).toEqual({ position: "sticky", left: 70, zIndex: PIN_Z.body });
+    expect(
+      pinnedCellStyle({ side: "right", inset: 10 }, PIN_Z.body, { left: 40 })
+    ).toEqual({ position: "sticky", right: 10, zIndex: PIN_Z.body });
+  });
+
+  it("builds an edge-pin style only when that side is active", () => {
+    expect(edgePinStyle("left", false)).toBeUndefined();
+    expect(edgePinStyle("left", true)).toEqual({
+      position: "sticky",
+      left: 0,
+      zIndex: PIN_Z.body,
+    });
+    expect(edgePinStyle("right", true, PIN_Z.headerPinned)).toEqual({
+      position: "sticky",
+      right: 0,
+      zIndex: PIN_Z.headerPinned,
     });
   });
 

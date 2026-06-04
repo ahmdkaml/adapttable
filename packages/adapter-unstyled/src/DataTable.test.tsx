@@ -72,6 +72,22 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getByText("Riyadh")).toBeInTheDocument();
   });
 
+  it("defaults the root density hook to comfortable", () => {
+    const { container } = renderHarness();
+    expect(
+      container.querySelector('[data-adapttable-part="root"]')
+    ).toHaveAttribute("data-density", "comfortable");
+  });
+
+  it("surfaces data-density=compact on the root when density is compact", () => {
+    const { container } = renderHarness({
+      override: { density: "compact" },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="root"]')
+    ).toHaveAttribute("data-density", "compact");
+  });
+
   it("renders the empty state", () => {
     renderHarness({ rows: [] });
     expect(screen.getByText("No data")).toBeInTheDocument();
@@ -310,6 +326,39 @@ describe("<DataTable> (unstyled)", () => {
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
+  it("pins the selection column alongside a left-pinned data column", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        stickyHeader: true,
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    const selHeader = container.querySelector(
+      '[data-adapttable-part="selection-header"]'
+    );
+    expect(selHeader).toHaveAttribute("data-pinned", "left");
+    expect(selHeader).toHaveStyle({ position: "sticky", left: "0px" });
+    const selCell = container.querySelector(
+      '[data-adapttable-part="selection-cell"]'
+    );
+    expect(selCell).toHaveAttribute("data-pinned", "left");
+    expect(selCell).toHaveStyle({ position: "sticky", left: "0px" });
+  });
+
+  it("leaves the selection column unpinned when nothing is pinned", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      },
+    });
+    const selHeader = container.querySelector(
+      '[data-adapttable-part="selection-header"]'
+    );
+    expect(selHeader).not.toHaveAttribute("data-pinned");
+    expect(selHeader?.getAttribute("style")).toBeNull();
+  });
+
   it("renders filter chips and toggles the filters popover", () => {
     renderHarness(
       {
@@ -342,7 +391,7 @@ describe("<DataTable> (unstyled)", () => {
       document.querySelector('[data-adapttable-part="filters-backdrop"]')
     ).toBeNull();
     // Clicking outside the anchor/popover closes it.
-    fireEvent.mouseDown(document.body);
+    fireEvent.click(document.body);
     expect(screen.queryByText("filter body")).toBeNull();
     // No drawer dialog in popover mode.
     expect(

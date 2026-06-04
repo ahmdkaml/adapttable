@@ -139,6 +139,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualScrollMargin,
   } = props;
 
+  const density = props.density ?? "comfortable";
+
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
@@ -215,6 +217,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       dir={dir}
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}
+      data-density={density}
       className={cx("adapttable", classNames.root)}
     >
       <div

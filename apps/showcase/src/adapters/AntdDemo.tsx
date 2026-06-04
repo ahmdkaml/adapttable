@@ -25,12 +25,14 @@ import {
   demoConfirm,
   demoFilterChips,
   initials,
+  LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
   makeActions,
   makeBulkActions,
   makeColumns,
   makeFilterLabels,
+  makeWideColumns,
   nameHue,
   type Person,
   selectedStatuses,
@@ -43,7 +45,7 @@ import {
   strings,
   TEAMS,
 } from "../data";
-import { type DataMode, DemoBody, type PageMode } from "../Demo";
+import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
 
 function AntdFilters({
   source,
@@ -205,11 +207,18 @@ export function AntdDemo({
   locale,
   dark,
   pageMode,
+  urlKey,
+  density,
+  wide,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   dark?: boolean;
   pageMode?: PageMode;
+  urlKey?: string;
+  density?: Density;
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -222,11 +231,21 @@ export function AntdDemo({
       <DemoBody
         mode={mode}
         pageMode={pageMode}
-        render={(source) => (
+        urlKey={urlKey}
+        defaultColumnLayout={
+          wide ? { pinned: { person: "left" } } : LIVE_DEFAULT_LAYOUT
+        }
+        render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, ANTD_CELLS)}
+            columns={
+              wide
+                ? makeWideColumns(locale, ANTD_CELLS)
+                : makeColumns(locale, ANTD_CELLS)
+            }
             rowKey={(r) => r.id}
+            {...columns}
+            density={density}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

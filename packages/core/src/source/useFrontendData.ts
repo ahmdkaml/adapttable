@@ -25,7 +25,12 @@ const toSortable = (value: unknown): SortableValue =>
 /** Options for {@link useFrontendData}. */
 export interface UseFrontendDataOptions<TRow> extends Pick<
   UseTableUrlStateOptions,
-  "adapter" | "enabled" | "defaults" | "numberExtraKeys" | "arrayExtraKeys"
+  | "adapter"
+  | "enabled"
+  | "defaults"
+  | "numberExtraKeys"
+  | "arrayExtraKeys"
+  | "urlKey"
 > {
   /** The source array. Filtered / sorted / sliced internally by state. */
   data: readonly TRow[];

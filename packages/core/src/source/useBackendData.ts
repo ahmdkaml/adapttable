@@ -43,7 +43,12 @@ export interface UseBackendDataOptions<
   TPage,
 > extends Pick<
   UseTableUrlStateOptions,
-  "adapter" | "enabled" | "defaults" | "numberExtraKeys" | "arrayExtraKeys"
+  | "adapter"
+  | "enabled"
+  | "defaults"
+  | "numberExtraKeys"
+  | "arrayExtraKeys"
+  | "urlKey"
 > {
   /**
    * The caller's paginated-query hook, built on `useInfiniteQuery`. It

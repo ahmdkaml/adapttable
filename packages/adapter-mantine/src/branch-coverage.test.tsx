@@ -110,6 +110,35 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
     const cell = screen.getByText("Alice").closest("td")!;
     expect(cell.style.position).toBe("sticky");
   });
+
+  // Pinning turns the wrapper into a (horizontal) scroll container, which also
+  // makes it the vertical sticky context. The sticky header must then stick to
+  // the box top (0), not the page-toolbar offset — otherwise it is pushed down
+  // and overlaps the first row.
+  it("sticks the header to the box top (0) when pinned + stickyHeader", () => {
+    mount({
+      stickyHeader: true,
+      defaultColumnLayout: { pinned: { name: "left" } },
+    });
+    const th = screen.getByText("Name").closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.top).toBe("0px");
+  });
+
+  it("pins the selection column alongside a left-pinned data column", () => {
+    mount({
+      bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      defaultColumnLayout: { pinned: { name: "left" } },
+    });
+    const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
+    expect(headerCheckbox.style.position).toBe("sticky");
+    expect(headerCheckbox.style.left).toBe("0px");
+    const rowCheckbox = screen
+      .getAllByLabelText("Select row")[0]!
+      .closest("td")!;
+    expect(rowCheckbox.style.position).toBe("sticky");
+    expect(rowCheckbox.style.left).toBe("0px");
+  });
 });
 
 describe("MobileCards hidden + disabled actions", () => {

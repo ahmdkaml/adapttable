@@ -454,3 +454,28 @@ describe("MUI coverage gaps", () => {
     expect(screen.queryByText("Loading…")).toBeNull();
   });
 });
+
+describe("MUI density → table size", () => {
+  // MUI threads the table `size` down to every cell as a `MuiTableCell-size*`
+  // modifier class, which is the stable signal for the rendered density.
+  it("maps density='compact' to the small MUI table", () => {
+    const { container } = mount({ density: "compact" });
+    const cell = container.querySelector("tbody td");
+    expect(cell).toHaveClass("MuiTableCell-sizeSmall");
+    expect(cell).not.toHaveClass("MuiTableCell-sizeMedium");
+  });
+
+  it("maps density='comfortable' to the medium MUI table", () => {
+    const { container } = mount({ density: "comfortable" });
+    const cell = container.querySelector("tbody td");
+    expect(cell).toHaveClass("MuiTableCell-sizeMedium");
+    expect(cell).not.toHaveClass("MuiTableCell-sizeSmall");
+  });
+
+  it("defaults to the medium MUI table when density is omitted", () => {
+    const { container } = mount();
+    const cell = container.querySelector("tbody td");
+    expect(cell).toHaveClass("MuiTableCell-sizeMedium");
+    expect(cell).not.toHaveClass("MuiTableCell-sizeSmall");
+  });
+});

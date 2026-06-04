@@ -2,6 +2,7 @@ import type {
   ActiveFilterChip,
   BulkAction,
   ColumnDef,
+  ColumnLayoutState,
   ConfirmHandler,
   ConfirmRequest,
   CountFilterState,
@@ -262,31 +263,60 @@ export function statusTone(
   return "gray";
 }
 
+/**
+ * The live-demo's default column layout: `email` and `team` ship as real
+ * columns but start hidden, so the table is clean by default yet has columns
+ * to reveal. Revealing them (or pinning — see the showcase) widens the table
+ * past its container so a pinned column visibly sticks while scrolling.
+ */
+export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
+  hidden: ["email", "team"],
+};
+
 export function makeColumns(
   locale: Locale,
   cells: DemoCells
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
+  // Fixed pixel widths (not %) so revealing the hidden email/team columns
+  // pushes the total past the container and the table scrolls horizontally —
+  // the only way a pinned column can be seen to stick.
   return [
     {
       key: "person",
       header: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      width: "30%",
+      width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
           <Avatar name={row.name} />
           <span style={cellStack}>
             <strong style={{ fontWeight: 600 }}>{row.name}</strong>
-            <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
-              {row.email}
+            <small style={{ opacity: 0.55, fontSize: "0.8em" }}>
+              {row.role}
             </small>
           </span>
         </span>
       ),
       mobileLabel: s.person,
+    },
+    {
+      key: "email",
+      header: s.email,
+      accessor: (r) => (
+        <span style={{ opacity: 0.7, fontSize: "0.9em" }}>{r.email}</span>
+      ),
+      width: 250,
+      mobileLabel: s.email,
+    },
+    {
+      key: "team",
+      header: s.team,
+      accessor: (r) => r.team,
+      width: 130,
+      mobileLabel: s.team,
     },
     {
       key: "status",
@@ -296,7 +326,7 @@ export function makeColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      width: "13%",
+      width: 130,
       mobileLabel: s.status,
     },
     {
@@ -304,7 +334,7 @@ export function makeColumns(
       header: s.timeline,
       sortValue: (r) => startDate(r).getTime(),
       sortable: true,
-      width: "18%",
+      width: 185,
       accessor: (row) => (
         <span style={cellStack}>
           <strong style={{ fontWeight: 550 }}>
@@ -328,7 +358,7 @@ export function makeColumns(
       sortValue: (r) => budget(r),
       sortable: true,
       align: "end",
-      width: "13%",
+      width: 130,
       mobileLabel: s.budget,
     },
     {
@@ -336,7 +366,7 @@ export function makeColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      width: "16%",
+      width: 175,
       accessor: (row) => (
         <Load
           value={utilization(row)}
@@ -344,6 +374,103 @@ export function makeColumns(
         />
       ),
       mobileLabel: s.load,
+    },
+  ];
+}
+
+/**
+ * A deliberately WIDE column set (8 fixed-px columns, ~1440px total) for the
+ * column-management showcase — wide enough to scroll sideways so a pinned
+ * column visibly sticks. `person` is the natural pin target; pair it with
+ * `defaultColumnLayout={{ pinned: { person: "left" } }}`.
+ */
+export function makeWideColumns(
+  locale: Locale,
+  cells: DemoCells
+): ColumnDef<Person>[] {
+  const s = STRINGS[locale];
+  const { Avatar, Status, Load } = cells;
+  return [
+    {
+      key: "person",
+      header: s.person,
+      sortable: true,
+      sortValue: (r) => r.name,
+      width: 240,
+      accessor: (row) => (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
+          <Avatar name={row.name} />
+          <span style={cellStack}>
+            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
+              {row.email}
+            </small>
+          </span>
+        </span>
+      ),
+    },
+    { key: "role", header: s.role, accessor: (r) => r.role, width: 150 },
+    {
+      key: "team",
+      header: s.team,
+      accessor: (r) => r.team,
+      sortValue: (r) => r.team,
+      sortable: true,
+      width: 130,
+    },
+    {
+      key: "status",
+      header: s.status,
+      accessor: (r) => (
+        <Status status={personStatus(r)} label={personStatus(r)} />
+      ),
+      sortValue: (r) => personStatus(r),
+      sortable: true,
+      width: 140,
+    },
+    { key: "email", header: s.email, accessor: (r) => r.email, width: 240 },
+    {
+      key: "timeline",
+      header: s.timeline,
+      sortValue: (r) => startDate(r).getTime(),
+      sortable: true,
+      width: 200,
+      accessor: (row) => (
+        <span style={cellStack}>
+          <strong style={{ fontWeight: 550 }}>
+            {formatDate(startDate(row), locale)}
+          </strong>
+          <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
+            → {formatDate(dueDate(row), locale)}
+          </small>
+        </span>
+      ),
+    },
+    {
+      key: "budget",
+      header: s.budget,
+      accessor: (r) => (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+          {formatMoney(budget(r), locale)}
+        </span>
+      ),
+      sortValue: (r) => budget(r),
+      sortable: true,
+      align: "end",
+      width: 150,
+    },
+    {
+      key: "load",
+      header: s.load,
+      sortValue: (r) => utilization(r),
+      sortable: true,
+      width: 190,
+      accessor: (row) => (
+        <Load
+          value={utilization(row)}
+          meta={`${formatPercent(utilization(row), locale)} · ${allocationCount(row)}`}
+        />
+      ),
     },
   ];
 }
@@ -630,6 +757,23 @@ export function clearDemoFilters(source: TableSource<Person>): void {
   });
 }
 
+/**
+ * Tailwind class hooks for the shared (unstyled/shadcn) filter panel — the kit
+ * adapters supply their own filter components, so this one is class-driven.
+ */
+const FILTER = {
+  panel: "flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-200",
+  group: "m-0 flex flex-col gap-1.5 border-0 p-0",
+  legend:
+    "p-0 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400",
+  chips: "flex flex-wrap gap-x-4 gap-y-2",
+  chip: "inline-flex items-center gap-1.5",
+  checkbox: "h-4 w-4 accent-indigo-600",
+  grid: "grid grid-cols-2 gap-2",
+  field:
+    "flex flex-col gap-1 [&>span]:text-xs [&>span]:text-gray-500 dark:[&>span]:text-gray-400 [&>input]:h-9 [&>input]:rounded-md [&>input]:border [&>input]:border-gray-300 [&>input]:bg-white [&>input]:px-2 [&>input]:outline-none dark:[&>input]:border-gray-600 dark:[&>input]:bg-gray-800 [&>select]:h-9 [&>select]:rounded-md [&>select]:border [&>select]:border-gray-300 [&>select]:bg-white [&>select]:px-2 [&>select]:outline-none dark:[&>select]:border-gray-600 dark:[&>select]:bg-gray-800",
+} as const;
+
 export function DemoFilters({
   source,
   locale,
@@ -647,14 +791,15 @@ export function DemoFilters({
   const setBudget = (next: CountFilterState) =>
     source.setExtras(countFilterExtra(BUDGET_BUCKET, next));
   return (
-    <div className="demo-filter-panel">
-      <fieldset>
-        <legend>{s.team}</legend>
-        <div className="demo-filter-options">
+    <div className={FILTER.panel}>
+      <fieldset className={FILTER.group}>
+        <legend className={FILTER.legend}>{s.team}</legend>
+        <div className={FILTER.chips}>
           {TEAMS.map((team) => (
-            <label key={team}>
+            <label key={team} className={FILTER.chip}>
               <input
                 type="checkbox"
+                className={FILTER.checkbox}
                 checked={selected.includes(team)}
                 onChange={() =>
                   source.setExtra("team", toggleTeam(selected, team))
@@ -666,13 +811,14 @@ export function DemoFilters({
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>{s.status}</legend>
-        <div className="demo-filter-options">
+      <fieldset className={FILTER.group}>
+        <legend className={FILTER.legend}>{s.status}</legend>
+        <div className={FILTER.chips}>
           {STATUSES.map((status) => (
-            <label key={status}>
+            <label key={status} className={FILTER.chip}>
               <input
                 type="checkbox"
+                className={FILTER.checkbox}
                 checked={statuses.includes(status)}
                 onChange={() =>
                   source.setExtra(
@@ -689,10 +835,10 @@ export function DemoFilters({
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>{s.startDate}</legend>
-        <div className="demo-count-filter">
-          <label>
+      <fieldset className={FILTER.group}>
+        <legend className={FILTER.legend}>{s.startDate}</legend>
+        <div className={FILTER.grid}>
+          <label className={FILTER.field}>
             <span>{s.dateFrom}</span>
             <input
               type="date"
@@ -702,7 +848,7 @@ export function DemoFilters({
               }
             />
           </label>
-          <label>
+          <label className={FILTER.field}>
             <span>{s.dateTo}</span>
             <input
               type="date"
@@ -715,10 +861,10 @@ export function DemoFilters({
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>{s.allocationFilter}</legend>
-        <div className="demo-count-filter">
-          <label>
+      <fieldset className={FILTER.group}>
+        <legend className={FILTER.legend}>{s.allocationFilter}</legend>
+        <div className={FILTER.grid}>
+          <label className={FILTER.field}>
             <span>{s.countOperator}</span>
             <select
               value={countState.op ?? ""}
@@ -745,7 +891,7 @@ export function DemoFilters({
 
           {countState.op === "between" ? (
             <>
-              <label>
+              <label className={FILTER.field}>
                 <span>{s.countFrom}</span>
                 <input
                   type="number"
@@ -761,7 +907,7 @@ export function DemoFilters({
                   }
                 />
               </label>
-              <label>
+              <label className={FILTER.field}>
                 <span>{s.countTo}</span>
                 <input
                   type="number"
@@ -779,7 +925,7 @@ export function DemoFilters({
               </label>
             </>
           ) : (
-            <label>
+            <label className={FILTER.field}>
               <span>{s.countValue}</span>
               <input
                 type="number"
@@ -799,10 +945,10 @@ export function DemoFilters({
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>{s.budgetFilter}</legend>
-        <div className="demo-count-filter">
-          <label>
+      <fieldset className={FILTER.group}>
+        <legend className={FILTER.legend}>{s.budgetFilter}</legend>
+        <div className={FILTER.grid}>
+          <label className={FILTER.field}>
             <span>{s.countOperator}</span>
             <select
               value={budgetState.op ?? ""}
@@ -826,7 +972,7 @@ export function DemoFilters({
               ))}
             </select>
           </label>
-          <label>
+          <label className={FILTER.field}>
             <span>{s.countValue}</span>
             <input
               type="number"

@@ -9,6 +9,7 @@ import {
   demoFilterChips,
   DemoFilters,
   initials,
+  LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
   makeActions,
@@ -20,7 +21,7 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type PageMode } from "../Demo";
+import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
 
 const TAILWIND_STATUS = {
   green:
@@ -66,6 +67,24 @@ const TAILWIND_CELLS: DemoCells = {
 };
 
 /**
+ * The unstyled adapter ships no CSS, so "compact" density can't change padding
+ * on its own — we tighten the cell/header vertical padding token here so the
+ * change is visible.
+ */
+function withDensity(
+  classNames: DataTableClassNames,
+  density: Density
+): DataTableClassNames {
+  if (density !== "compact") return classNames;
+  const tighten = (cls?: string) => cls?.replace("py-2.5", "py-1.5");
+  return {
+    ...classNames,
+    cell: tighten(classNames.cell),
+    headerCell: tighten(classNames.headerCell),
+  };
+}
+
+/**
  * Shared renderer for the two class-driven demos (plain Tailwind and
  * shadcn-style). The unstyled adapter ships no CSS — these `classNames`
  * (Tailwind utilities via the Play CDN) are the entire look.
@@ -75,23 +94,32 @@ export function UnstyledLike({
   locale,
   classNames,
   pageMode,
+  urlKey,
+  density = "comfortable",
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   classNames: DataTableClassNames;
   pageMode?: PageMode;
+  urlKey?: string;
+  density?: Density;
 }>) {
   const s = strings(locale);
+  const styled = withDensity(classNames, density);
   return (
     <DemoBody
       mode={mode}
       pageMode={pageMode}
-      render={(source) => {
+      urlKey={urlKey}
+      defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+      render={(source, columns) => {
         return (
           <DataTable
             source={source}
             columns={makeColumns(locale, TAILWIND_CELLS)}
             rowKey={(r) => r.id}
+            {...columns}
+            density={density}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
@@ -101,13 +129,10 @@ export function UnstyledLike({
             enableColumnMenu
             resizableColumns
             stickyHeader
-            virtualize
-            estimateRowSize={56}
-            estimateCardSize={140}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}
-            classNames={classNames}
+            classNames={styled}
             filters={<DemoFilters source={source} locale={locale} />}
           />
         );

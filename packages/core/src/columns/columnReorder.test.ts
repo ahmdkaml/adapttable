@@ -36,6 +36,28 @@ describe("columnRowDragProps", () => {
     expect(dt.setData).toHaveBeenCalledWith(COLUMN_DND_MIME, "a");
     expect(dt.effectAllowed).toBe("move");
   });
+
+  it("cancels the drag when it starts on an interactive control", () => {
+    const props = columnRowDragProps("a");
+    const dt = fakeDataTransfer();
+    const button = document.createElement("button");
+    const icon = document.createElement("span");
+    button.append(icon);
+    // Drag started on the pin/eye button (or an icon inside it): cancel so the
+    // button's click still fires; nothing is written to the transfer.
+    const event = dragEvent(dt, { target: icon, preventDefault: vi.fn() });
+    props.onDragStart(event as never);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(dt.setData).not.toHaveBeenCalled();
+  });
+
+  it("starts the drag from the row body (a non-control target)", () => {
+    const props = columnRowDragProps("a");
+    const dt = fakeDataTransfer();
+    const rowBody = document.createElement("div");
+    props.onDragStart(dragEvent(dt, { target: rowBody }) as never);
+    expect(dt.setData).toHaveBeenCalledWith(COLUMN_DND_MIME, "a");
+  });
 });
 
 describe("columnReorderKeyProps", () => {

@@ -161,4 +161,47 @@ describe("useTableUrlState", () => {
       spy.mockRestore();
     }
   });
+
+  describe("urlKey namespacing", () => {
+    it("reads only its own namespaced params, ignoring the bare keys", () => {
+      const { result } = renderWith(
+        "left.page=2&left.q=foo&left.sortBy=name&left.sortDir=desc&left.f_team=Core&q=other&page=9",
+        { urlKey: "left", arrayExtraKeys: ["team"] }
+      );
+      expect(result.current.page).toBe(2);
+      expect(result.current.search).toBe("foo");
+      expect(result.current.sortBy).toBe("name");
+      expect(result.current.sortDir).toBe("desc");
+      expect(result.current.extra).toEqual({ team: ["Core"] });
+    });
+
+    it("writes namespaced params and never clobbers another table's keys", () => {
+      const { result, adapter } = renderWith("right.q=keep&right.f_team=Data", {
+        urlKey: "left",
+        arrayExtraKeys: ["team"],
+      });
+      act(() => result.current.setSearch("hi"));
+      act(() => result.current.setSort("name", "asc"));
+      act(() => result.current.setExtra("team", ["Core"]));
+      // Page last — setSort/setExtra reset it, mirroring the real flow.
+      act(() => result.current.setPage(3));
+      const url = adapter.getSearch();
+      expect(url).toContain("left.q=hi");
+      expect(url).toContain("left.page=3");
+      expect(url).toContain("left.sortBy=name");
+      expect(url).toContain("left.f_team=Core");
+      // The other table's params survive untouched.
+      expect(url).toContain("right.q=keep");
+      expect(url).toContain("right.f_team=Data");
+    });
+
+    it("clearAll only wipes its own namespace", () => {
+      const { result, adapter } = renderWith(
+        "left.q=foo&left.f_team=Core&right.q=bar",
+        { urlKey: "left", arrayExtraKeys: ["team"] }
+      );
+      act(() => result.current.clearAll());
+      expect(adapter.getSearch()).toBe("right.q=bar");
+    });
+  });
 });

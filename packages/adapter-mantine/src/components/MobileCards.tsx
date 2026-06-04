@@ -19,6 +19,8 @@ import {
 } from "@mantine/core";
 import type { RefObject } from "react";
 
+import type { Density } from "../density";
+
 /** Props for {@link MobileCards}. */
 export interface MobileCardsProps<TRow> {
   table: UseDataTableResult<TRow>;
@@ -32,6 +34,7 @@ export interface MobileCardsProps<TRow> {
   paddingTop?: number;
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
+  density?: Density;
 }
 
 function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -54,8 +57,10 @@ export function MobileCards<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  density = "comfortable",
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
+  const compact = density === "compact";
   const entries =
     rowEntries ??
     rows.map((row, index) => ({
@@ -66,7 +71,7 @@ export function MobileCards<TRow>({
 
   return (
     <Stack
-      gap="sm"
+      gap={compact ? "xs" : "sm"}
       ref={bodyRef}
       className={className}
       {...table.getTableProps({ role: "list" })}
@@ -81,11 +86,11 @@ export function MobileCards<TRow>({
             data-index={index}
             withBorder
             radius="md"
-            padding="md"
+            padding={compact ? "sm" : "md"}
             role="listitem"
             data-stagger=""
           >
-            <Stack gap="xs">
+            <Stack gap={compact ? 4 : "xs"}>
               {selection && (
                 <Checkbox
                   aria-label={labels.selectRow}

@@ -79,6 +79,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     stickyHeader = false,
     enableColumnMenu = false,
   } = props;
+  const density = props.density ?? "comfortable";
 
   const chrome = useTableChrome<TRow>(props);
   const { table, isMobile, confirm, getRowId } = chrome;
@@ -162,6 +163,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
         measureElement={virtualization.measureElement}
+        density={density}
       />
     );
   } else {
@@ -188,6 +190,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         }
         columnWidths={chrome.columnLayout.state.widths}
         resizeLabel={table.labels.resizeColumn}
+        density={density}
       />
     );
   }

@@ -147,7 +147,11 @@ const CLASS_NAMES: DataTableClassNames = {
 /** Real unstyled adapter, virtualized over 50,000 rows. */
 export function ScaleDemo() {
   const rows = useMemo(() => makeBigList(50000), []);
-  const source = useFrontendData<BigPerson>({ data: rows, columns: COLUMNS });
+  const source = useFrontendData<BigPerson>({
+    data: rows,
+    columns: COLUMNS,
+    urlKey: "scale",
+  });
   return (
     <DataTable
       source={source}

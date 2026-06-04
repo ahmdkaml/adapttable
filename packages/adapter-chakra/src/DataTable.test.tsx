@@ -438,3 +438,43 @@ describe("<DataTable> (Chakra)", () => {
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
 });
+
+describe("<DataTable> (Chakra) density → table size", () => {
+  function tableSizeOf(props: Parameters<typeof Harness>[0]): string | null {
+    const { container } = renderHarness(props);
+    return container.querySelector("table")?.getAttribute("data-size") ?? null;
+  }
+  // A genuine size change alters the Chakra-generated class on body cells
+  // (the <table> element class is size-agnostic). Capturing it proves the
+  // size is actually applied, not just echoed onto a data attribute.
+  function cellClassOf(props: Parameters<typeof Harness>[0]): string {
+    const { container } = renderHarness(props);
+    return container.querySelector("tbody td")?.className ?? "";
+  }
+
+  it('maps density="compact" to the smaller "sm" size', () => {
+    expect(tableSizeOf({ override: { density: "compact" } })).toBe("sm");
+  });
+
+  it('maps density="comfortable" to the larger "md" size', () => {
+    expect(tableSizeOf({ override: { density: "comfortable" } })).toBe("md");
+  });
+
+  it('defaults to the larger "md" size when density is omitted', () => {
+    expect(tableSizeOf({})).toBe("md");
+  });
+
+  it("renders distinct cell styling for compact vs comfortable", () => {
+    const compact = cellClassOf({ override: { density: "compact" } });
+    const comfortable = cellClassOf({ override: { density: "comfortable" } });
+    expect(compact).not.toBe("");
+    expect(comfortable).not.toBe("");
+    expect(compact).not.toBe(comfortable);
+  });
+
+  it("lets an explicit size prop win over density", () => {
+    expect(tableSizeOf({ override: { density: "compact", size: "lg" } })).toBe(
+      "lg"
+    );
+  });
+});

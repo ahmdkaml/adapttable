@@ -14,7 +14,7 @@ import {
   type DemoNotice,
   type Locale,
 } from "./data";
-import { type DataMode, type PageMode } from "./Demo";
+import { type DataMode, type Density, type PageMode } from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
 import { Columns, Layers, Pin, Resize } from "./sectionIcons";
 import {
@@ -35,6 +35,8 @@ type DemoComponent = (
     locale: Locale;
     dark?: boolean;
     pageMode?: PageMode;
+    urlKey?: string;
+    density?: Density;
   }>
 ) => ReactNode;
 
@@ -90,6 +92,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
   const [pageMode, setPageMode] = useState<PageMode>("paged");
+  const [density, setDensity] = useState<Density>("comfortable");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
@@ -158,6 +161,17 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Density">
+          <Segmented
+            label="density"
+            value={density}
+            onChange={setDensity}
+            options={[
+              { value: "comfortable", label: "Comfortable" },
+              { value: "compact", label: "Compact" },
+            ]}
+          />
+        </Control>
       </div>
 
       <div className="demo-surface" style={cssVars({ "--c": accent })}>
@@ -165,14 +179,21 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
           <span className="demo-surface__tag">{token.label} adapter</span>
           <span className="demo-surface__url">
             <Layers size={12} />
-            ?q=&sort=&page=1 · state lives in the URL
+            ?live.q=&live.sort=&live.page=1 · each table namespaced in the URL
           </span>
         </div>
         <div
           className="demo-surface__body"
-          key={`${adapter}-${mode}-${locale}-${pageMode}-${dark ? "d" : "l"}`}
+          key={`${adapter}-${mode}-${locale}-${pageMode}-${density}-${dark ? "d" : "l"}`}
         >
-          <Demo mode={mode} locale={locale} dark={dark} pageMode={pageMode} />
+          <Demo
+            mode={mode}
+            locale={locale}
+            dark={dark}
+            pageMode={pageMode}
+            density={density}
+            urlKey="live"
+          />
         </div>
       </div>
     </section>
@@ -203,7 +224,13 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
           </span>
         </div>
         <div className="pad-surface__body">
-          <AntdDemo mode="frontend" locale="en" dark={dark} />
+          <AntdDemo
+            mode="frontend"
+            locale="en"
+            dark={dark}
+            urlKey="cols"
+            wide
+          />
         </div>
       </div>
     </section>
@@ -240,7 +267,7 @@ function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
       </SectionHead>
       <div className="pad-surface">
         <div className="pad-surface__body">
-          <ChakraDemo mode="frontend" locale="ar" dark={dark} />
+          <ChakraDemo mode="frontend" locale="ar" dark={dark} urlKey="rtl" />
         </div>
       </div>
     </section>

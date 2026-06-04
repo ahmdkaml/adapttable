@@ -2,12 +2,16 @@ import {
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
+  edgePinStyle,
+  PIN_Z,
+  type PinLeads,
   pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   runRowAction,
   type SharedTableRenderProps,
+  tableMinWidth,
   virtualColumnSpan,
 } from "@adapttable/core";
 
@@ -145,14 +149,32 @@ export function DesktopTable<TRow>({
     ? {
         position: "sticky" as const,
         top: stickyTop,
-        zIndex: 2,
+        zIndex: PIN_Z.header,
         bgcolor: "background.paper",
       }
     : undefined;
+  // The leading checkbox (48px) and trailing actions (120px) columns pin to the
+  // edge alongside the data columns, which therefore start past them.
+  const selectionWidth = 48;
+  const actionsWidth = 120;
+  const leads: PinLeads = {
+    left: selection ? selectionWidth : 0,
+    right: showActions ? actionsWidth : 0,
+  };
+  const hasLeftPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "left"
+  );
+  const hasRightPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "right"
+  );
   // Built with conditional spreads so no key is ever `undefined` — that keeps
   // the object assignable to MUI's strict `sx` index signature with no cast.
   const headCellSx = (column: ColumnDef<TRow>) => {
-    const pin = pinnedCellStyle(pinOffset?.(column.key), 2);
+    const pin = pinnedCellStyle(
+      pinOffset?.(column.key),
+      PIN_Z.headerPinned,
+      leads
+    );
     const width = columnWidths?.[column.key] ?? column.width;
     // The resize handle is absolute; an un-pinned/un-sticky cell still needs a
     // positioning context for it.
@@ -166,7 +188,17 @@ export function DesktopTable<TRow>({
     };
   };
   const bodyPinSx = (key: string) => {
-    const pin = pinnedCellStyle(pinOffset?.(key), 1);
+    const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
+    return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
+  };
+  // The checkbox / actions cells pin to their edge when a data column on that
+  // side is pinned (corner-sticky in the header).
+  const edgeHeadSx = (side: "left" | "right", active: boolean) => {
+    const pin = edgePinStyle(side, active, PIN_Z.headerPinned);
+    return { ...headSx, ...(pin && { ...pin, bgcolor: "background.paper" }) };
+  };
+  const edgeBodySx = (side: "left" | "right", active: boolean) => {
+    const pin = edgePinStyle(side, active, PIN_Z.body);
     return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
   };
 
@@ -177,17 +209,24 @@ export function DesktopTable<TRow>({
   } else if (hasPinned) {
     boxSx = { overflowX: "auto" };
   }
+  // Fixed-width columns get a real table min-width (their sum), so the table
+  // overflows and scrolls horizontally instead of squishing columns to fit.
+  const minWidth = tableMinWidth(columns, {
+    widths: columnWidths,
+    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+  });
 
   return (
     <Box sx={boxSx}>
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}
+        sx={minWidth > 0 ? { minWidth } : undefined}
       >
         <TableHead>
           <TableRow>
             {selection && (
-              <TableCell padding="checkbox" sx={headSx}>
+              <TableCell padding="checkbox" sx={edgeHeadSx("left", hasLeftPin)}>
                 <Checkbox
                   slotProps={{ input: { "aria-label": labels.selectAll } }}
                   checked={selection.headerState === "all"}
@@ -241,7 +280,9 @@ export function DesktopTable<TRow>({
               );
             })}
             {showActions && (
-              <TableCell sx={{ ...headSx, textAlign: "end" }}>
+              <TableCell
+                sx={{ ...edgeHeadSx("right", hasRightPin), textAlign: "end" }}
+              >
                 {labels.actions}
               </TableCell>
             )}
@@ -269,7 +310,10 @@ export function DesktopTable<TRow>({
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               >
                 {selection && (
-                  <TableCell padding="checkbox">
+                  <TableCell
+                    padding="checkbox"
+                    sx={edgeBodySx("left", hasLeftPin)}
+                  >
                     <Checkbox
                       slotProps={{ input: { "aria-label": labels.selectRow } }}
                       checked={selected}
@@ -293,7 +337,12 @@ export function DesktopTable<TRow>({
                   </TableCell>
                 ))}
                 {showActions && (
-                  <TableCell sx={{ textAlign: "end" }}>
+                  <TableCell
+                    sx={{
+                      ...edgeBodySx("right", hasRightPin),
+                      textAlign: "end",
+                    }}
+                  >
                     <RowActionButtons
                       row={row}
                       actions={rowActions!}

@@ -50,7 +50,10 @@ Every node carries:
   `table`, `row`, `cell`, `header-cell`, `sort-button`, `chips`, `chip`,
   `bulk-bar`, `footer`, `empty`, `loading`, `error`, `card`, …
 - `data-*` state — `data-selected` on selected rows/cards, `data-sorted`
-  (`asc`/`desc`) on the active header, `data-mobile` on the root.
+  (`asc`/`desc`) on the active header, `data-mobile` on the root, and
+  `data-density` (`comfortable`/`compact`) on the root. The adapter ships no
+  density styles — drive spacing yourself, e.g.
+  `[data-density="compact"] [data-adapttable-part="cell"] { padding: 4px 8px; }`.
 - A per-part `className` from the `classNames` prop.
 
 Target them with attribute selectors (`[data-adapttable-part="row"]`),

@@ -27,6 +27,7 @@ import {
   demoConfirm,
   demoFilterChips,
   initials,
+  LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
   makeActions,
@@ -46,7 +47,7 @@ import {
   TEAMS,
   toggleTeam,
 } from "../data";
-import { type DataMode, DemoBody, type PageMode } from "../Demo";
+import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
 
 const numberValue = (value: string): number | undefined =>
   value === "" ? undefined : Number(value);
@@ -266,11 +267,15 @@ export function MuiDemo({
   locale,
   dark,
   pageMode,
+  urlKey,
+  density,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   dark?: boolean;
   pageMode?: PageMode;
+  urlKey?: string;
+  density?: Density;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -279,11 +284,15 @@ export function MuiDemo({
       <DemoBody
         mode={mode}
         pageMode={pageMode}
-        render={(source) => (
+        urlKey={urlKey}
+        defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+        render={(source, columns) => (
           <DataTable
             source={source}
             columns={makeColumns(locale, MUI_CELLS)}
             rowKey={(r) => r.id}
+            {...columns}
+            density={density}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
@@ -293,9 +302,6 @@ export function MuiDemo({
             enableColumnMenu
             resizableColumns
             stickyHeader
-            virtualize
-            estimateRowSize={56}
-            estimateCardSize={140}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
             onClearFilters={() => clearDemoFilters(source)}

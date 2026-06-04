@@ -2,12 +2,16 @@ import {
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
+  edgePinStyle,
+  PIN_Z,
+  type PinLeads,
   pinnedCellStyle,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   runRowAction,
   type SharedTableRenderProps,
+  tableMinWidth,
   virtualColumnSpan,
 } from "@adapttable/core";
 import type { CSSProperties } from "react";
@@ -108,14 +112,28 @@ export function DesktopTable<TRow>({
   // `headerCell` class an opaque background — the `data-sticky`/`data-pinned`
   // hooks make that easy to target.
   const stickyStyle: CSSProperties | undefined = stickyHeader
-    ? { position: "sticky", top: stickyTop, zIndex: 1 }
+    ? { position: "sticky", top: stickyTop, zIndex: PIN_Z.header }
     : undefined;
   const stickyAttr = stickyHeader || undefined;
-  // Pinned header cells need both the sticky-top and sticky-left/right styles.
-  const pinStyle = (key: string): CSSProperties | undefined =>
-    pinnedCellStyle(pinOffset?.(key), 2);
+  // The leading checkbox (44px) and trailing actions (120px) columns pin to the
+  // edge alongside the data columns, which therefore start past them.
+  const selectionWidth = 44;
+  const actionsWidth = 120;
+  const leads: PinLeads = {
+    left: selection ? selectionWidth : 0,
+    right: showActions ? actionsWidth : 0,
+  };
+  const hasLeftPin = columns.some((c) => pinOffset?.(c.key)?.side === "left");
+  const hasRightPin = columns.some((c) => pinOffset?.(c.key)?.side === "right");
+  // Pinned header cells need both the sticky-top and sticky-left/right styles;
+  // body cells only the side. Header pins sit above the sticky header so later
+  // headers never paint over them on horizontal scroll.
+  const headPinStyle = (key: string): CSSProperties | undefined =>
+    pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
+  const bodyPinStyle = (key: string): CSSProperties | undefined =>
+    pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
   const headStyle = (key: string): CSSProperties | undefined => {
-    const pin = pinStyle(key);
+    const pin = headPinStyle(key);
     const width = columnWidths?.[key];
     if (!stickyStyle && !pin && width == null && !setWidth) return undefined;
     const merged: CSSProperties = { ...stickyStyle, ...pin, width };
@@ -124,14 +142,31 @@ export function DesktopTable<TRow>({
     if (setWidth && !merged.position) merged.position = "relative";
     return merged;
   };
+  // The checkbox / actions edge cells pin to their side when a data column
+  // there is pinned (corner-sticky in the header).
+  const edgeHeadStyle = (
+    side: "left" | "right",
+    active: boolean
+  ): CSSProperties | undefined => {
+    const edge = edgePinStyle(side, active, PIN_Z.headerPinned);
+    if (!stickyStyle && !edge) return undefined;
+    return { ...stickyStyle, ...edge };
+  };
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
+  // Fixed-width columns get a real table min-width (their sum), so the table
+  // overflows and scrolls horizontally instead of squishing columns to fit.
+  const minWidth = tableMinWidth(columns, {
+    widths: columnWidths,
+    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+  });
 
   const tableEl = (
     <table
       {...table.getTableProps()}
       data-adapttable-part="table"
       className={classNames.table}
+      style={minWidth > 0 ? { minWidth } : undefined}
     >
       <thead data-adapttable-part="thead" className={classNames.thead}>
         <tr
@@ -143,7 +178,8 @@ export function DesktopTable<TRow>({
             <th
               data-adapttable-part="selection-header"
               data-sticky={stickyAttr}
-              style={stickyStyle}
+              data-pinned={hasLeftPin ? "left" : undefined}
+              style={edgeHeadStyle("left", hasLeftPin)}
               className={cx(classNames.headerCell, classNames.selectionCell)}
             >
               <input
@@ -203,8 +239,9 @@ export function DesktopTable<TRow>({
             <th
               data-adapttable-part="actions-header"
               data-sticky={stickyAttr}
-              style={stickyStyle}
-              className={classNames.headerCell}
+              data-pinned={hasRightPin ? "right" : undefined}
+              style={edgeHeadStyle("right", hasRightPin)}
+              className={cx(classNames.headerCell, classNames.actionsCell)}
             >
               {labels.actions}
             </th>
@@ -237,6 +274,8 @@ export function DesktopTable<TRow>({
               {selection && (
                 <td
                   data-adapttable-part="selection-cell"
+                  data-pinned={hasLeftPin ? "left" : undefined}
+                  style={edgePinStyle("left", hasLeftPin, PIN_Z.body)}
                   className={cx(classNames.cell, classNames.selectionCell)}
                 >
                   <input
@@ -254,7 +293,7 @@ export function DesktopTable<TRow>({
                   {...table.getCellProps(column)}
                   data-adapttable-part="cell"
                   data-pinned={pinOffset?.(column.key)?.side}
-                  style={pinStyle(column.key)}
+                  style={bodyPinStyle(column.key)}
                   className={classNames.cell}
                 >
                   {column.Cell ? (
@@ -267,6 +306,8 @@ export function DesktopTable<TRow>({
               {showActions && (
                 <td
                   data-adapttable-part="actions-cell"
+                  data-pinned={hasRightPin ? "right" : undefined}
+                  style={edgePinStyle("right", hasRightPin, PIN_Z.body)}
                   className={cx(classNames.cell, classNames.actionsCell)}
                 >
                   <RowActionButtons

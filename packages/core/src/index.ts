@@ -77,6 +77,11 @@ export {
   type UrlStateAdapter,
 } from "./url/adapter";
 export {
+  useColumnLayoutUrlState,
+  type UseColumnLayoutUrlStateOptions,
+  type UseColumnLayoutUrlStateResult,
+} from "./url/useColumnLayoutUrlState";
+export {
   useTableUrlState,
   type UseTableUrlStateOptions,
   type UseTableUrlStateResult,
@@ -159,10 +164,19 @@ export {
   columnResizeHandleProps,
   MIN_COLUMN_WIDTH,
 } from "./columns/columnResize";
+export {
+  FALLBACK_PIN_WIDTH,
+  parsePxWidth,
+  resolveColumnWidth,
+  tableMinWidth,
+} from "./columns/columnWidths";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
 export {
   type ColumnLayoutState,
+  edgePinStyle,
   EMPTY_COLUMN_LAYOUT,
+  PIN_Z,
+  type PinLeads,
   type PinnedCellStyle,
   pinnedCellStyle,
   useColumnLayout,

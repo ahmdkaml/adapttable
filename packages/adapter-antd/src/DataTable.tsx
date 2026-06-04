@@ -3,6 +3,7 @@ import {
   pageSizeOptions,
   type SelectionState,
   type TableLabels,
+  tableMinWidth,
   type TableSource,
   type UseColumnLayoutResult,
   type UseDataTableResult,
@@ -98,27 +99,49 @@ function sortChangeHandler<TRow>(
   };
 }
 
+/** Summed min-width of fixed-width columns, plus the selection/actions cols. */
+function antdMinWidth<TRow>(
+  columns: readonly ColumnDef<TRow>[],
+  widths: Readonly<Record<string, number>>,
+  hasSelection: boolean,
+  hasActions: boolean
+): number {
+  return tableMinWidth(columns, {
+    widths,
+    extra: (hasSelection ? 48 : 0) + (hasActions ? 120 : 0),
+  });
+}
+
 /** antd scroll config: virtual sizing, else x for pinning + y for the box. */
 function resolveScroll(
   virtualize: boolean,
   virtualWidth: number,
   virtualHeight: number,
   hasPinned: boolean,
-  maxHeight: number | undefined
+  maxHeight: number | undefined,
+  minWidth: number
 ): NonNullable<TableProps<unknown>["scroll"]> {
   if (virtualize)
     return tableScrollConfig(virtualize, virtualWidth, virtualHeight);
-  return { x: hasPinned ? "max-content" : undefined, y: maxHeight };
+  // Pinning needs content-driven width; otherwise a fixed-width column set
+  // gets its summed min-width so the table scrolls instead of squishing.
+  let x: number | "max-content" | undefined;
+  if (hasPinned) x = "max-content";
+  else if (minWidth > 0) x = minWidth;
+  return { x, y: maxHeight };
 }
 
 /** Build antd's rowSelection from the headless selection state. */
 function buildRowSelection<TRow>(
   selection: SelectionState | null | undefined,
   getRowId: (row: TRow) => string,
-  labels: Required<TableLabels>
+  labels: Required<TableLabels>,
+  fixedLeft: boolean
 ): TableProps<TRow>["rowSelection"] {
   if (!selection) return undefined;
   return {
+    // Pin the checkbox column alongside any left-fixed data column.
+    fixed: fixedLeft ? "left" : undefined,
     selectedRowKeys: [...selection.selectedIds],
     onSelect: (record) => selection.toggle(getRowId(record)),
     onSelectAll: () => selection.toggleAll(),
@@ -251,12 +274,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
-    size = "middle",
     bordered = false,
     virtualize = false,
     virtualHeight = 480,
     virtualWidth = 960,
   } = props;
+  // Density drives antd's `size` (independent of column pinning): "compact" →
+  // the small table, "comfortable" (default) → the middle one. An explicit
+  // `size` prop still wins so callers can opt into "large".
+  const size =
+    props.size ??
+    ((props.density ?? "comfortable") === "compact" ? "small" : "middle");
   const filtersMode = props.filtersMode ?? "popover";
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
@@ -292,11 +320,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     columnWidths: c.columnLayout.state.widths,
     resizeLabel: labels.resizeColumn,
   });
-  const hasPinned = Object.keys(c.columnLayout.state.pinned).length > 0;
+  const pinnedSides = Object.values(c.columnLayout.state.pinned);
+  const hasPinned = pinnedSides.length > 0;
+  const hasLeftPin = pinnedSides.includes("left");
+  const minWidth = antdMinWidth(
+    table.columns,
+    c.columnLayout.state.widths,
+    Boolean(table.selection),
+    Boolean(props.rowActions?.length)
+  );
 
   const handleChange = sortChangeHandler(source);
 
-  const rowSelection = buildRowSelection(selection, getRowId, labels);
+  const rowSelection = buildRowSelection(
+    selection,
+    getRowId,
+    labels,
+    hasLeftPin
+  );
   const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
@@ -365,7 +406,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           virtualWidth,
           virtualHeight,
           hasPinned,
-          props.maxHeight
+          props.maxHeight,
+          minWidth
         )}
         locale={{ emptyText: labels.noData }}
       />

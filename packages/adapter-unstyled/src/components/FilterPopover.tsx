@@ -41,22 +41,31 @@ export function FilterPopover({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const rootRef = useRef<HTMLSpanElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // No scrim: close on outside-click (mousedown outside the anchor/popover) or
-  // Escape, exactly like ColumnMenu — the background stays interactive.
+  // No scrim: close on an outside click or Escape — the background stays
+  // interactive. We listen for `click` (not `mousedown`) and ignore events
+  // while a control inside the popover still holds focus, so a caller's native
+  // `<select>` / date / number picker — whose popup dispatches a document-level
+  // event targeting outside the popover DOM — never closes it mid-edit.
   useEffect(() => {
     if (!open) return;
-    const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node))
-        onCloseRef.current();
+    const onClick = (event: MouseEvent) => {
+      const root = rootRef.current;
+      if (!root) return;
+      if (root.contains(event.target as Node)) return;
+      // A control inside the CARD (not the trigger) still holds focus → keep
+      // open so native picker popups don't dismiss it mid-edit.
+      if (cardRef.current?.contains(document.activeElement)) return;
+      onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCloseRef.current();
     };
-    document.addEventListener("mousedown", onDown);
+    document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
@@ -75,6 +84,7 @@ export function FilterPopover({
       {children}
       {open && (
         <div
+          ref={cardRef}
           data-adapttable-part="filters-popover"
           data-dir={dir}
           className={cx(

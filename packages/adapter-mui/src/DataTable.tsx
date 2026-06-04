@@ -21,6 +21,18 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
 
+/**
+ * Map row density to MUI's table `size`, independent of column pinning. An
+ * explicit `size` prop still wins for backward compatibility.
+ */
+function tableSize(
+  size: "small" | "medium" | undefined,
+  density: "comfortable" | "compact" | undefined
+): "small" | "medium" {
+  if (size) return size;
+  return density === "compact" ? "small" : "medium";
+}
+
 /** The width setter only when column resize is enabled (opt-in). */
 function resizeSetter(
   enabled: boolean | undefined,
@@ -41,13 +53,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
-    size = "medium",
     virtualize = false,
     estimateRowSize,
     estimateCardSize,
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+  const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;

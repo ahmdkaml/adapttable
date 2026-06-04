@@ -44,6 +44,12 @@ export interface BaseDataTableProps<TRow> {
   labels?: TableLabels;
   /** Text direction. Defaults to `"ltr"`. */
   dir?: Direction;
+  /**
+   * Row density — independent of column pinning. `"comfortable"` (default) is
+   * the roomy layout; `"compact"` tightens row height/padding. Each adapter
+   * maps it to its kit's table size.
+   */
+  density?: "comfortable" | "compact";
   /** Force the mobile layout (otherwise resolved from the viewport). */
   isMobile?: boolean;
   /** Leading desktop-visible columns kept on mobile even if hideOnMobile. */

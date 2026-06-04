@@ -20,6 +20,15 @@ export function columnRowDragProps(key: string): ColumnRowDragProps {
   return {
     draggable: true,
     onDragStart: (event) => {
+      // The whole row is draggable so the drag image is the full row — but a
+      // drag starting on an interactive control (the eye/pin buttons) would
+      // hijack their click. Cancel those so the buttons stay clickable; drags
+      // from the grip or the row body still reorder.
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("button,input,select,a")) {
+        event.preventDefault();
+        return;
+      }
       event.dataTransfer.setData(COLUMN_DND_MIME, key);
       event.dataTransfer.effectAllowed = "move";
     },

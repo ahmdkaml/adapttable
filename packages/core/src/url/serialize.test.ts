@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import type { ColumnLayoutState } from "../columns/useColumnLayout";
 import type { FilterValue } from "../types";
 import {
   isEmptyFilterValue,
+  readColumnLayout,
   readExtra,
   readLimit,
   readPage,
   readSortDir,
+  writeColumnLayout,
   writeExtra,
 } from "./serialize";
 
@@ -137,5 +140,101 @@ describe("extra-filter round-trips", () => {
     expect(readExtra(ps("f_tags=a,100%,c"), [], ["tags"])).toEqual({
       tags: ["a", "100%", "c"],
     });
+  });
+});
+
+describe("readColumnLayout", () => {
+  it("returns undefined when no layout params are present", () => {
+    expect(readColumnLayout(ps("page=2&q=foo"))).toBeUndefined();
+  });
+
+  it("reads hidden, pinned, order, and widths", () => {
+    const params = ps(
+      "colHide=email,team&colPin=person:left,budget:right&colOrder=person,status&colW=person:240,budget:130"
+    );
+    expect(readColumnLayout(params)).toEqual({
+      hidden: ["email", "team"],
+      order: ["person", "status"],
+      pinned: { person: "left", budget: "right" },
+      widths: { person: 240, budget: 130 },
+    });
+  });
+
+  it("reads a namespaced layout via the prefix", () => {
+    const params = ps("left.colHide=email&right.colHide=team");
+    expect(readColumnLayout(params, "left.")?.hidden).toEqual(["email"]);
+    expect(readColumnLayout(params, "right.")?.hidden).toEqual(["team"]);
+  });
+
+  it("ignores malformed pin sides and non-positive widths", () => {
+    const params = ps("colPin=a:up,b:left&colW=a:0,b:120,c:nope");
+    expect(readColumnLayout(params)).toEqual({
+      hidden: [],
+      order: [],
+      pinned: { b: "left" },
+      widths: { b: 120 },
+    });
+  });
+
+  it("round-trips keys that contain the delimiters through a real URL", () => {
+    // Keys carrying ':' / ',' must survive the write → toString → parse → read
+    // cycle the History adapter performs, never colliding with the delimiters.
+    const params = ps("");
+    writeColumnLayout(params, {
+      hidden: ["x,y"],
+      order: [],
+      pinned: { "a:b": "left" },
+      widths: {},
+    });
+    const layout = readColumnLayout(new URLSearchParams(params.toString()))!;
+    expect(layout.pinned).toEqual({ "a:b": "left" });
+    expect(layout.hidden).toEqual(["x,y"]);
+  });
+});
+
+describe("writeColumnLayout", () => {
+  const write = (layout: ColumnLayoutState, prefix = ""): string => {
+    const params = ps("");
+    writeColumnLayout(params, layout, prefix);
+    return params.toString();
+  };
+
+  it("round-trips a full layout through read", () => {
+    const layout: ColumnLayoutState = {
+      hidden: ["email"],
+      order: ["person", "status"],
+      pinned: { person: "left" },
+      widths: { person: 240 },
+    };
+    const params = ps("");
+    writeColumnLayout(params, layout);
+    expect(readColumnLayout(params)).toEqual(layout);
+  });
+
+  it("omits every empty field so a pristine layout leaves no params", () => {
+    expect(write({ hidden: [], order: [], pinned: {}, widths: {} })).toBe("");
+  });
+
+  it("clears a previously-set field when it becomes empty", () => {
+    const params = ps("colHide=email&colPin=person:left");
+    writeColumnLayout(params, {
+      hidden: [],
+      order: [],
+      pinned: { person: "left" },
+      widths: {},
+    });
+    expect(params.get("colHide")).toBeNull();
+    expect(params.get("colPin")).toBe("person:left");
+  });
+
+  it("rounds widths to whole pixels", () => {
+    const params = ps("");
+    writeColumnLayout(params, {
+      hidden: [],
+      order: [],
+      pinned: {},
+      widths: { person: 240.6 },
+    });
+    expect(params.get("colW")).toBe("person:241");
   });
 });

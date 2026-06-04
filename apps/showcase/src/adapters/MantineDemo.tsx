@@ -24,6 +24,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterChips,
+  LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
   makeActions,
@@ -41,7 +42,7 @@ import {
   strings,
   TEAMS,
 } from "../data";
-import { type DataMode, DemoBody, type PageMode } from "../Demo";
+import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
 
 const toNumber = (value: number | string): number | undefined =>
   typeof value === "number" ? value : undefined;
@@ -221,11 +222,15 @@ export function MantineDemo({
   locale,
   dark,
   pageMode,
+  urlKey,
+  density,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   dark?: boolean;
   pageMode?: PageMode;
+  urlKey?: string;
+  density?: Density;
 }>) {
   const s = strings(locale);
   return (
@@ -233,11 +238,15 @@ export function MantineDemo({
       <DemoBody
         mode={mode}
         pageMode={pageMode}
-        render={(source) => (
+        urlKey={urlKey}
+        defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+        render={(source, columns) => (
           <DataTable
             source={source}
             columns={makeColumns(locale, MANTINE_CELLS)}
             rowKey={(r) => r.id}
+            {...columns}
+            density={density}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
@@ -247,9 +256,6 @@ export function MantineDemo({
             enableColumnMenu
             resizableColumns
             stickyHeader
-            virtualize
-            estimateRowSize={56}
-            estimateCardSize={140}
             stickyTop={8}
             filterLabels={makeFilterLabels(locale)}
             extraChips={demoFilterChips(source, locale)}
