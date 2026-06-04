@@ -20,6 +20,32 @@
   [data-adapttable-part="root"] ::after {
     box-sizing: border-box;
   }
+
+  /* Preflight is skipped, so `border-style` defaults to `none` and every
+     Tailwind `border` collapses to 0px. Restore the preflight border defaults,
+     scoped to the table, so `border` / `border-b` etc. actually render. */
+  [data-adapttable-part="root"] *,
+  [data-adapttable-part="root"] ::before,
+  [data-adapttable-part="root"] ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--color-border);
+  }
+
+  /* Preflight is skipped, so native controls keep OS chrome (button borders,
+     select arrows). Reset just buttons inside the unstyled table so the
+     icon/ghost buttons render flat — utility classes still re-add any border
+     or background where a slot asks for one. */
+  [data-adapttable-part="root"] button {
+    appearance: none;
+    background: transparent;
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
 }
 
 /* shadcn/ui "neutral" design tokens, exposed as Tailwind colors so the

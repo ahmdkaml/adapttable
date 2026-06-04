@@ -1,6 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as env from "../utils/env";
 import { createMemoryAdapter } from "./adapter";
 import { useTableUrlState } from "./useTableUrlState";
 
@@ -18,6 +20,17 @@ function renderWith(
 }
 
 describe("useTableUrlState", () => {
+  it("reads the initial search via the server snapshot during SSR", () => {
+    const adapter = createMemoryAdapter("page=4");
+    function Probe() {
+      const { page } = useTableUrlState({ adapter });
+      return <span>{`page-${page}`}</span>;
+    }
+    // Server rendering exercises the getServerSnapshot path, which reads the
+    // adapter's current search synchronously.
+    expect(renderToString(<Probe />)).toContain("page-4");
+  });
+
   it("reads page / limit / search / sort from the URL", () => {
     const { result } = renderWith(
       "page=2&limit=50&q=foo&sortBy=name&sortDir=desc"
@@ -130,5 +143,22 @@ describe("useTableUrlState", () => {
     expect(result.current.page).toBe(7);
     act(() => result.current.setPage(2));
     expect(window.location.search).toBe("?page=2");
+  });
+
+  it("uses the memory adapter when enabled but not in a browser (SSR)", () => {
+    const spy = vi.spyOn(env, "isBrowser").mockReturnValue(false);
+    try {
+      window.history.replaceState(null, "", "/?page=8");
+      // Enabled + no adapter, but isBrowser() is false → falls through to the
+      // per-hook memory adapter instead of the history adapter, so the URL is
+      // ignored and never mutated.
+      const { result } = renderHook(() => useTableUrlState());
+      expect(result.current.page).toBe(1);
+      act(() => result.current.setPage(5));
+      expect(result.current.page).toBe(5);
+      expect(window.location.search).toBe("?page=8");
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

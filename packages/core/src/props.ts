@@ -85,8 +85,15 @@ export interface BaseDataTableProps<TRow> {
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
-  /** Filter widgets rendered in the drawer / panel. */
+  /** Filter widgets rendered in the popover / drawer. */
   filters?: ReactNode;
+  /**
+   * How the filter container opens. `"popover"` (default) anchors a card under
+   * the Filters button with a backdrop; `"drawer"` slides in a side panel. The
+   * caller passes the same `filters` content either way — only the container
+   * changes.
+   */
+  filtersMode?: "popover" | "drawer";
   /** Per-filter-key chip label resolvers. */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
   /** Extra chips driven by non-URL state, merged with the derived chips. */

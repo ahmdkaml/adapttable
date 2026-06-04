@@ -147,7 +147,7 @@ describe("<DataTable> (MUI)", () => {
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
-  it("renders filter chips and opens the drawer", () => {
+  it("renders filter chips and opens the filter popover", () => {
     renderHarness(
       {
         override: {
@@ -334,9 +334,10 @@ describe("<DataTable> (MUI)", () => {
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi
-      .fn()
-      .mockImplementation((cb: IntersectionObserverCallback) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+      cb: IntersectionObserverCallback
+    ) {
+      return {
         observe: () => {
           trigger = () =>
             cb(
@@ -346,7 +347,8 @@ describe("<DataTable> (MUI)", () => {
         },
         disconnect: () => undefined,
         unobserve: () => undefined,
-      }));
+      };
+    });
     try {
       renderHarness({ mode: "infinite" }, "limit=1");
       expect(screen.queryByText("Bob")).toBeNull();

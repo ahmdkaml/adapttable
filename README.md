@@ -4,7 +4,7 @@
 
 ### The headless React data table that works with **any** UI kit — batteries-included for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn.
 
-**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
+**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
@@ -60,19 +60,20 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 
 ## Feature comparison
 
-| Feature                                        |  ag-grid  |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**       |
-| ---------------------------------------------- | :-------: | :---------------------: | :---------------: | :----------: | :-----------------------: |
-| Headless core                                  |     ✗     |            ✓            |         ✗         |      ✗       |           **✓**           |
-| Works across UI kits                           |     ✗     | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters**  |
-| Client **and** server data, same API           |  partial  |    wire it yourself     |         ✗         |   partial    |   **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)             |     ✗     |            ✗            |         ✗         |      ✗       |           **✓**           |
-| Filter drawer + removable chips                |     ✗     |            ✗            |         ✗         |   partial    |      **✓ built-in**       |
-| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**    |
-| Responsive mobile card layout                  |     ✗     |    build it yourself    |      partial      |   partial    | **✓ automatic + tunable** |
-| Optional row/card virtualization               |     ✓     |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ built-in opt-in**   |
-| i18n + **RTL / Arabic** first-class            |  partial  |            ✗            |         ✗         |   partial    |           **✓**           |
-| Dark mode                                      |     ✓     |           n/a           |         ✓         |      ✓       |      **✓ seamless**       |
-| MIT / free                                     | open-core |            ✓            |         ✓         |  open-core   |           **✓**           |
+| Feature                                           |  ag-grid  |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**       |
+| ------------------------------------------------- | :-------: | :---------------------: | :---------------: | :----------: | :-----------------------: |
+| Headless core                                     |     ✗     |            ✓            |         ✗         |      ✗       |           **✓**           |
+| Works across UI kits                              |     ✗     | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters**  |
+| Client **and** server data, same API              |  partial  |    wire it yourself     |         ✗         |   partial    |   **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)                |     ✗     |            ✗            |         ✗         |      ✗       |           **✓**           |
+| Filter drawer + removable chips                   |     ✗     |            ✗            |         ✗         |   partial    |      **✓ built-in**       |
+| Column management (reorder · pin · resize · hide) | open-core |      _(build it)_       |      partial      |  ✓ _(paid)_  |      **✓ built-in**       |
+| Infinite scroll **and** paged (auto by device)    |     ✓     |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**    |
+| Responsive mobile card layout                     |     ✗     |    build it yourself    |      partial      |   partial    | **✓ automatic + tunable** |
+| Optional row/card virtualization                  |     ✓     |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ built-in opt-in**   |
+| i18n + **RTL / Arabic** first-class               |  partial  |            ✗            |         ✗         |   partial    |           **✓**           |
+| Dark mode                                         |     ✓     |           n/a           |         ✓         |      ✓       |      **✓ seamless**       |
+| MIT / free                                        | open-core |            ✓            |         ✓         |  open-core   |           **✓**           |
 
 <sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" = a free MIT/community edition plus paid tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium), where the advanced server-side and infinite-loading features live.</sub>
 
@@ -166,6 +167,7 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 - [x] `@adapttable/mui`
 - [x] `@adapttable/chakra`
 - [x] `@adapttable/cli`
+- [x] Column management — show/hide, reorder, pin (sticky), and resize
 - [x] Docs (markdown + `llms.txt`) + examples
 - [ ] Hosted docs site + live playground
 - [x] Optional row/card virtualization (windowing) for very large lists

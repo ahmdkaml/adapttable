@@ -25,6 +25,19 @@ function cellWidth(handle: HTMLElement): number {
 }
 
 /**
+ * Whether the handle sits in a right-to-left context. The handle renders at
+ * the column's inline-end (the visual LEFT edge in RTL), so the physical drag
+ * delta and the Arrow keys must flip to keep "drag/press outward = wider".
+ * Prefers an explicit `[dir]` ancestor (what the adapters set on the root),
+ * falling back to the resolved CSS `direction` for theme-only RTL.
+ */
+function isRtl(handle: HTMLElement): boolean {
+  const scoped = handle.closest("[dir]");
+  if (scoped) return scoped.getAttribute("dir") === "rtl";
+  return globalThis.getComputedStyle(handle).direction === "rtl";
+}
+
+/**
  * Build the props for a column-resize handle. Pointer drag resizes live; arrow
  * keys nudge by {@link COLUMN_RESIZE_STEP} for keyboard a11y. Width is measured
  * from the live cell, so columns need no preset width to be resizable.
@@ -47,11 +60,10 @@ export function columnResizeHandleProps(
       event.stopPropagation();
       const startX = event.clientX;
       const startWidth = cellWidth(event.currentTarget);
+      const rtl = isRtl(event.currentTarget);
       const onMove = (e: globalThis.PointerEvent) => {
-        setWidth(
-          key,
-          Math.max(MIN_COLUMN_WIDTH, startWidth + e.clientX - startX)
-        );
+        const delta = rtl ? startX - e.clientX : e.clientX - startX;
+        setWidth(key, Math.max(MIN_COLUMN_WIDTH, startWidth + delta));
       };
       const onUp = () => {
         document.removeEventListener("pointermove", onMove);
@@ -64,8 +76,11 @@ export function columnResizeHandleProps(
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault();
       const current = cellWidth(event.currentTarget);
-      const delta =
-        event.key === "ArrowLeft" ? -COLUMN_RESIZE_STEP : COLUMN_RESIZE_STEP;
+      // The handle is at the inline-end edge: in LTR that's the right, so
+      // ArrowRight widens; in RTL it's the left, so ArrowLeft widens.
+      const widen =
+        event.key === (isRtl(event.currentTarget) ? "ArrowLeft" : "ArrowRight");
+      const delta = widen ? COLUMN_RESIZE_STEP : -COLUMN_RESIZE_STEP;
       setWidth(key, Math.max(MIN_COLUMN_WIDTH, current + delta));
     },
   };

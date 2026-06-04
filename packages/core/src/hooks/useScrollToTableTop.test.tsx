@@ -82,6 +82,28 @@ describe("useScrollToTableTop", () => {
     scrollBy.mockRestore();
   });
 
+  it("does nothing when the ref has no current node", async () => {
+    const scrollBy = vi
+      .spyOn(window, "scrollBy")
+      .mockImplementation(() => undefined);
+    const ref = { current: null };
+
+    const { rerender } = renderHook(
+      ({ dep }) =>
+        useScrollToTableTop({
+          ref,
+          deps: [dep],
+          offset: 56,
+        }),
+      { initialProps: { dep: "a" } }
+    );
+    rerender({ dep: "b" });
+    await act(async () => Promise.resolve());
+
+    expect(scrollBy).not.toHaveBeenCalled();
+    scrollBy.mockRestore();
+  });
+
   it("can be disabled", async () => {
     const scrollBy = vi
       .spyOn(window, "scrollBy")

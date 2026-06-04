@@ -45,15 +45,39 @@ export function People({ data }: { data: Person[] }) {
 
 Every node carries:
 
-- `data-adapttable-part="…"` — `root`, `toolbar`, `search`, `table`, `row`,
-  `cell`, `header-cell`, `sort-button`, `chips`, `chip`, `bulk-bar`,
-  `footer`, `empty`, `loading`, `error`, `card`, …
+- `data-adapttable-part="…"` — `root`, `toolbar`, `search-field`,
+  `search-icon`, `search`, `filters-button`, `filters-icon`, `column-menu`,
+  `table`, `row`, `cell`, `header-cell`, `sort-button`, `chips`, `chip`,
+  `bulk-bar`, `footer`, `empty`, `loading`, `error`, `card`, …
 - `data-*` state — `data-selected` on selected rows/cards, `data-sorted`
   (`asc`/`desc`) on the active header, `data-mobile` on the root.
 - A per-part `className` from the `classNames` prop.
 
 Target them with attribute selectors (`[data-adapttable-part="row"]`),
 Tailwind data variants (`data-[selected]:bg-blue-50`), or class overrides.
+
+The leading search/funnel glyphs render as inline `currentColor` SVGs in the
+`search-icon` / `filters-icon` slots, so you can restyle or hide them via the
+`searchIcon` / `filtersIcon` class names (or the matching `data-adapttable-part`
+selectors). `SearchIcon` and `FiltersIcon` are also exported for reuse.
+
+## Empty / loading overrides
+
+Replace the empty-state or first-load skeleton with the top-level
+`emptyState` / `loadingState` props, or with the cross-adapter `slots` alias —
+whichever your other adapters already use:
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  slots={{ empty: <MyEmpty />, skeleton: <MySkeleton /> }}
+/>
+```
+
+`slots.empty` / `slots.skeleton` take precedence when both forms are supplied
+(`slots.empty ?? emptyState`, `slots.skeleton ?? loadingState`).
 
 Everything else — client/server data, URL state, sorting, filtering,
 selection + bulk actions, RTL (`dir`), auto desktop/mobile — works the same

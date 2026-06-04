@@ -7,9 +7,8 @@ import {
   resolveVirtualRows,
   type RowAction,
   runRowAction,
-  type UseDataTableResult,
+  type SharedTableRenderProps,
   virtualColumnSpan,
-  type VirtualTableRow,
 } from "@adapttable/core";
 import type { CSSProperties } from "react";
 
@@ -28,28 +27,8 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
 
-interface SharedProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  rows: readonly TRow[];
-  rowActions?: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  getRowId: (row: TRow) => string;
+interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   classNames: DataTableClassNames;
-  /** Hover-prefetch callback fired on desktop row mouse-enter. */
-  prefetch?: (row: TRow) => void;
-  rowEntries?: readonly VirtualTableRow<TRow>[];
-  paddingTop?: number;
-  paddingBottom?: number;
-  measureElement?: (element: Element | null) => void;
-  stickyHeader?: boolean;
-  stickyTop?: number;
-  pinOffset?: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
-  maxHeight?: number;
-  setWidth?: (key: string, width: number) => void;
-  columnWidths?: Readonly<Record<string, number>>;
-  resizeLabel?: string;
 }
 
 function RowActionButtons<TRow>({
@@ -314,14 +293,20 @@ export function DesktopTable<TRow>({
     </table>
   );
 
-  // A bounded-height scroll box turns on sideways scrolling so pinned columns
-  // (sticky left/right) have somewhere to stick; the header pins to the box.
-  return maxHeight == null ? (
-    tableEl
-  ) : (
+  // A pinned column needs a horizontal scroll container to stick to, so wrap
+  // the table whenever something is pinned (or a `maxHeight` bounds it). We do
+  // NOT wrap a plain table — `overflow-x:auto` makes `overflow-y` compute to
+  // `auto` too, which would trap a page-scroll sticky header inside the box.
+  const hasPinned = columns.some((c) => pinOffset?.(c.key) != null);
+  if (maxHeight == null && !hasPinned) return tableEl;
+  return (
     <div
       data-adapttable-part="scroll-box"
-      style={{ maxHeight, overflow: "auto" }}
+      style={
+        maxHeight == null
+          ? { overflowX: "auto" }
+          : { maxHeight, overflowX: "auto", overflowY: "auto" }
+      }
     >
       {tableEl}
     </div>

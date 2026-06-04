@@ -7,9 +7,8 @@ import {
   resolveVirtualRows,
   type RowAction,
   runRowAction,
-  type UseDataTableResult,
+  type SharedTableRenderProps,
   virtualColumnSpan,
-  type VirtualTableRow,
 } from "@adapttable/core";
 
 /** Sx for an absolutely-positioned column-resize handle. */
@@ -30,12 +29,14 @@ import {
   Checkbox,
   IconButton,
   Stack,
+  type SxProps,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
   TableSortLabel,
+  type Theme,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -47,27 +48,8 @@ function muiColor(color: string | undefined): "default" | "error" {
     : "default";
 }
 
-interface SharedProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  rows: readonly TRow[];
-  rowActions?: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  getRowId: (row: TRow) => string;
+interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   size: "small" | "medium";
-  prefetch?: (row: TRow) => void;
-  rowEntries?: readonly VirtualTableRow<TRow>[];
-  paddingTop?: number;
-  paddingBottom?: number;
-  measureElement?: (element: Element | null) => void;
-  stickyHeader?: boolean;
-  stickyTop?: number;
-  pinOffset?: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
-  maxHeight?: number;
-  setWidth?: (key: string, width: number) => void;
-  columnWidths?: Readonly<Record<string, number>>;
-  resizeLabel?: string;
 }
 
 /**
@@ -188,8 +170,16 @@ export function DesktopTable<TRow>({
     return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
   };
 
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  let boxSx: SxProps<Theme> | undefined;
+  if (maxHeight != null) {
+    boxSx = { maxHeight, overflow: "auto" };
+  } else if (hasPinned) {
+    boxSx = { overflowX: "auto" };
+  }
+
   return (
-    <Box sx={maxHeight == null ? undefined : { maxHeight, overflow: "auto" }}>
+    <Box sx={boxSx}>
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}

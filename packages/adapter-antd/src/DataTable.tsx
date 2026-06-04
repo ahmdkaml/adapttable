@@ -1,8 +1,10 @@
 import {
+  type ColumnDef,
   pageSizeOptions,
   type SelectionState,
   type TableLabels,
   type TableSource,
+  type UseColumnLayoutResult,
   type UseDataTableResult,
   useInfiniteScroll,
   useTableChrome,
@@ -132,6 +134,25 @@ function buildRowSelection<TRow>(
   };
 }
 
+/**
+ * The column-management menu, gated to desktop + opt-in. Rendered as a
+ * component (not an inline ternary) so the `DataTable` body stays flat.
+ */
+function ColumnMenuSlot<TRow>({
+  enabled,
+  allColumns,
+  layout,
+  labels,
+}: Readonly<{
+  enabled: boolean;
+  allColumns: ColumnDef<TRow>[];
+  layout: UseColumnLayoutResult<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  if (!enabled) return null;
+  return <ColumnMenu allColumns={allColumns} layout={layout} labels={labels} />;
+}
+
 /** Build antd's pagination config (undefined in infinite mode → `false`). */
 function buildPagination<TRow>(
   isPaged: boolean,
@@ -236,10 +257,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualHeight = 480,
     virtualWidth = 960,
   } = props;
+  const filtersMode = props.filtersMode ?? "popover";
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -276,6 +298,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const rowSelection = buildRowSelection(selection, getRowId, labels);
   const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
+  const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
+    ? { offsetHeader: props.stickyTop ?? 0 }
+    : undefined;
 
   let bodyRegion: ReactNode;
   if (source.error) {
@@ -325,6 +350,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         size={size}
         bordered={bordered}
         virtual={virtualize}
+        sticky={sticky}
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
         pagination={pagination}
@@ -349,15 +375,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <div dir={props.dir} className={className}>
       <Space direction="vertical" size="small" style={{ width: "100%" }}>
-        {props.enableColumnMenu && !c.isMobile && (
-          <Flex justify="flex-end">
-            <ColumnMenu
-              allColumns={c.allColumns}
-              layout={c.columnLayout}
-              labels={labels}
-            />
-          </Flex>
-        )}
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}
@@ -366,7 +383,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={c.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          filters={props.filters}
+          filtersMode={filtersMode}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          dir={props.dir}
+          columnMenu={
+            <ColumnMenuSlot
+              enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
+              allColumns={c.allColumns}
+              layout={c.columnLayout}
+              labels={labels}
+            />
+          }
           showRowsPerPage={!c.isPaged}
         />
         <Chips
@@ -394,10 +425,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Flex>
         )}
       </Space>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}

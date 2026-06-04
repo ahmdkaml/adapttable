@@ -6,7 +6,7 @@ import {
   type VirtualTableRow,
 } from "@adapttable/core";
 import { ChakraProvider } from "@chakra-ui/react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -133,6 +133,30 @@ describe("Chakra gaps", () => {
     });
     mount({ virtualize: true, estimateRowSize: 40 }, "", "infinite");
     expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("fetches the next page from the virtual onEndReached", () => {
+    let endReached: (() => void) | undefined;
+    vi.mocked(useTableVirtualization).mockImplementation(
+      ({ rows, rowKey, onEndReached }) => {
+        endReached = onEndReached;
+        return {
+          enabled: true,
+          rows: rows.map((row, index) => ({
+            row,
+            index,
+            key: rowKey(row),
+          })),
+          paddingTop: 0,
+          paddingBottom: 0,
+          measureElement: vi.fn(),
+        };
+      }
+    );
+    mount({ virtualize: true }, "limit=1", "infinite");
+    expect(screen.queryByText("Bob")).toBeNull();
+    act(() => endReached?.());
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 

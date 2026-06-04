@@ -1,0 +1,111 @@
+import { defaultLabels } from "@adapttable/core";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import { FilterPopover } from "./FilterPopover";
+
+function renderPopover(props?: Partial<Parameters<typeof FilterPopover>[0]>) {
+  const onClose = props?.onClose ?? vi.fn();
+  return {
+    onClose,
+    ...render(
+      <FilterPopover
+        open
+        onClose={onClose}
+        filters={<div>filter body</div>}
+        activeFilterCount={0}
+        labels={defaultLabels}
+        classNames={{}}
+        {...props}
+      >
+        <button type="button">Filters</button>
+      </FilterPopover>
+    ),
+  };
+}
+
+describe("FilterPopover", () => {
+  it("anchors to the inline-end edge in LTR", () => {
+    renderPopover({ dir: "ltr" });
+    const card = document.querySelector(
+      '[data-adapttable-part="filters-popover"]'
+    )!;
+    expect(card).toHaveStyle({ right: "0px" });
+  });
+
+  it("anchors to the inline-start edge in RTL", () => {
+    renderPopover({ dir: "rtl" });
+    const card = document.querySelector(
+      '[data-adapttable-part="filters-popover"]'
+    )!;
+    expect(card).toHaveStyle({ left: "0px" });
+    expect(card).toHaveAttribute("data-dir", "rtl");
+  });
+
+  it("does not render the card when closed", () => {
+    renderPopover({ open: false });
+    expect(
+      document.querySelector('[data-adapttable-part="filters-popover"]')
+    ).toBeNull();
+  });
+
+  it("never renders a full-screen backdrop in popover mode", () => {
+    renderPopover();
+    expect(
+      document.querySelector('[data-adapttable-part="filters-backdrop"]')
+    ).toBeNull();
+    // The card itself must not be a fixed full-screen scrim.
+    const card = document.querySelector(
+      '[data-adapttable-part="filters-popover"]'
+    )!;
+    expect(card).toHaveStyle({ position: "absolute" });
+  });
+
+  it("disables Clear all when no filters are active", () => {
+    renderPopover({ activeFilterCount: 0 });
+    expect(screen.getByRole("button", { name: "Clear all" })).toBeDisabled();
+  });
+
+  it("invokes onClearFilters from Clear all when filters are active", () => {
+    const onClearFilters = vi.fn();
+    renderPopover({ activeFilterCount: 2, onClearFilters });
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it("tolerates Clear all with no handler wired", () => {
+    renderPopover({ activeFilterCount: 1 });
+    const clear = screen.getByRole("button", { name: "Clear all" });
+    expect(() => fireEvent.click(clear)).not.toThrow();
+  });
+
+  it("closes on Escape but ignores other keys", () => {
+    const { onClose } = renderPopover();
+    fireEvent.keyDown(document, { key: "ArrowDown" });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes on an outside mousedown but stays open for inside clicks", () => {
+    const { onClose } = renderPopover();
+    // Click inside the popover card — must NOT close.
+    fireEvent.mouseDown(
+      document.querySelector('[data-adapttable-part="filters-popover"]')!
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    // Click on the anchored trigger — still inside the anchor, must NOT close.
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Filters" }));
+    expect(onClose).not.toHaveBeenCalled();
+    // Click on the document body (outside) — closes.
+    fireEvent.mouseDown(document.body);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the active-filter count beside the title", () => {
+    renderPopover({ activeFilterCount: 3 });
+    expect(
+      document.querySelector('[data-adapttable-part="filters-title"]')
+    ).toHaveTextContent("(3)");
+  });
+});

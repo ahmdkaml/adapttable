@@ -82,6 +82,9 @@ export {
   type UseTableUrlStateResult,
 } from "./url/useTableUrlState";
 
+/* ── Shared render contracts ───────────────────────────────────────── */
+export type { SharedTableRenderProps } from "./tableRenderProps";
+
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
 export {
@@ -137,11 +140,26 @@ export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
+  columnMenuLabel,
+  type ColumnMenuRow,
+  columnMenuRows,
+} from "./columns/columnMenuModel";
+export {
+  COLUMN_DND_MIME,
+  type ColumnDropProps,
+  columnDropProps,
+  type ColumnReorderKeyProps,
+  columnReorderKeyProps,
+  type ColumnRowDragProps,
+  columnRowDragProps,
+} from "./columns/columnReorder";
+export {
   COLUMN_RESIZE_STEP,
   type ColumnResizeHandleProps,
   columnResizeHandleProps,
   MIN_COLUMN_WIDTH,
 } from "./columns/columnResize";
+export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
 export {
   type ColumnLayoutState,
   EMPTY_COLUMN_LAYOUT,

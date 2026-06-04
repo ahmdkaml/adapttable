@@ -7,9 +7,8 @@ import {
   resolveVirtualRows,
   type RowAction,
   runRowAction,
-  type UseDataTableResult,
+  type SharedTableRenderProps,
   virtualColumnSpan,
-  type VirtualTableRow,
 } from "@adapttable/core";
 import {
   Box,
@@ -45,28 +44,9 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
   userSelect: "none",
 };
 
-interface SharedProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  rows: readonly TRow[];
-  rowActions?: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  getRowId: (row: TRow) => string;
+interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   size: "sm" | "md" | "lg";
   colorScheme?: string;
-  prefetch?: (row: TRow) => void;
-  rowEntries?: readonly VirtualTableRow<TRow>[];
-  paddingTop?: number;
-  paddingBottom?: number;
-  measureElement?: (element: Element | null) => void;
-  stickyHeader?: boolean;
-  stickyTop?: number;
-  pinOffset?: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
-  maxHeight?: number;
-  setWidth?: (key: string, width: number) => void;
-  columnWidths?: Readonly<Record<string, number>>;
-  resizeLabel?: string;
 }
 
 function chakraAlign(
@@ -202,10 +182,13 @@ export function DesktopTable<TRow>({
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
 
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+
   return (
     <Box
       maxH={maxHeight == null ? undefined : `${maxHeight}px`}
-      overflow={maxHeight == null ? undefined : "auto"}
+      overflowX={maxHeight != null || hasPinned ? "auto" : undefined}
+      overflowY={maxHeight == null ? undefined : "auto"}
     >
       <Table
         size={size}

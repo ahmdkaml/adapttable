@@ -42,10 +42,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+  const { filtersMode = "popover" } = props;
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -114,15 +115,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Box dir={props.dir} borderWidth="1px" borderRadius="md" p={3}>
       <Stack spacing={3}>
-        {props.enableColumnMenu && !chrome.isMobile && (
-          <Flex justify="flex-end">
-            <ColumnMenu
-              allColumns={chrome.allColumns}
-              layout={chrome.columnLayout}
-              labels={table.labels}
-            />
-          </Flex>
-        )}
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}
@@ -131,9 +123,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={chrome.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          filtersMode={filtersMode}
+          filters={props.filters}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          columnMenu={
+            props.enableColumnMenu && !chrome.isMobile ? (
+              <ColumnMenu
+                allColumns={chrome.allColumns}
+                layout={chrome.columnLayout}
+                labels={table.labels}
+              />
+            ) : undefined
+          }
           showRowsPerPage={!chrome.isPaged}
           colorScheme={colorScheme}
+          dir={props.dir}
         />
         <Chips
           chips={chrome.mergedChips}
@@ -181,10 +188,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={props.onClearFilters}

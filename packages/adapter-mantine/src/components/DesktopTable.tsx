@@ -261,14 +261,14 @@ export function DesktopTable<TRow>({
     return pin ? { ...pin, background: pinBg } : undefined;
   };
 
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  const wrapperStyle: CSSProperties =
+    maxHeight == null
+      ? { width: "100%", ...(hasPinned ? { overflowX: "auto" } : {}) }
+      : { width: "100%", maxHeight, overflow: "auto" };
+
   return (
-    <div
-      style={
-        maxHeight == null
-          ? { width: "100%" }
-          : { width: "100%", maxHeight, overflow: "auto" }
-      }
-    >
+    <div style={wrapperStyle}>
       <Table
         {...table.getTableProps()}
         className={className}

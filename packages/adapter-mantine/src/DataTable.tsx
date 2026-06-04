@@ -13,7 +13,7 @@ import { useCallback, useRef } from "react";
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { BulkActionBar } from "./components/BulkActionBar";
-import { ColumnMenu } from "./components/ColumnMenu";
+import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorState } from "./components/ErrorState";
@@ -31,6 +31,15 @@ const stickyToolbarStyle = (top: number) => ({
   background: "var(--mantine-color-body)",
   paddingBottom: "var(--mantine-spacing-xs)",
 });
+
+/** The Columns menu, rendered inline in the toolbar — or nothing when off. */
+function ColumnMenuSlot<TRow>({
+  enabled,
+  ...props
+}: Readonly<{ enabled: boolean } & ColumnMenuProps<TRow>>) {
+  if (!enabled) return null;
+  return <ColumnMenu {...props} />;
+}
 
 /**
  * Batteries-included Mantine data table. Drop in `columns`, a `source`
@@ -51,6 +60,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     prefetch,
     hideSearch,
     filters,
+    filtersMode = "popover",
     onClearFilters,
     bulkActions,
     slots,
@@ -198,15 +208,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           className={classNames?.toolbar}
         >
           <Stack gap="xs">
-            {enableColumnMenu && !isMobile && (
-              <Group justify="flex-end">
-                <ColumnMenu
-                  allColumns={chrome.allColumns}
-                  layout={chrome.columnLayout}
-                  labels={table.labels}
-                />
-              </Group>
-            )}
             <Toolbar
               table={table}
               hideSearch={hideSearch}
@@ -215,7 +216,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               customToolbar={customToolbar}
               hasFilters={Boolean(filters)}
               activeFilterCount={chrome.activeFilterCount}
-              onOpenFilters={drawer.open}
+              filtersMode={filtersMode}
+              filters={filters}
+              filtersOpen={drawerOpened}
+              onToggleFilters={drawer.toggle}
+              onCloseFilters={drawer.close}
+              onClearFilters={onClearFilters}
+              dir={dir}
+              columnMenu={
+                <ColumnMenuSlot
+                  enabled={enableColumnMenu && !isMobile}
+                  allColumns={chrome.allColumns}
+                  layout={chrome.columnLayout}
+                  labels={table.labels}
+                />
+              }
               showRowsPerPage={!chrome.isPaged}
             />
             <ActiveFilterChips
@@ -278,7 +293,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         )}
       </Stack>
 
-      {filters && (
+      {filters && filtersMode === "drawer" && (
         <FilterDrawer
           opened={drawerOpened}
           onClose={drawer.close}

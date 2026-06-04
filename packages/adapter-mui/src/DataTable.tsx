@@ -48,10 +48,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+  const { filtersMode = "popover" } = props;
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const columnMenu = props.enableColumnMenu && !c.isMobile && (
+    <ColumnMenu
+      allColumns={c.allColumns}
+      layout={c.columnLayout}
+      labels={labels}
+    />
+  );
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -148,15 +156,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       sx={{ p: 1.5 }}
     >
       <Stack spacing={1.5}>
-        {props.enableColumnMenu && !c.isMobile && (
-          <Stack direction="row" justifyContent="flex-end">
-            <ColumnMenu
-              allColumns={c.allColumns}
-              layout={c.columnLayout}
-              labels={labels}
-            />
-          </Stack>
-        )}
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}
@@ -165,8 +164,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={c.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          onOpenFilters={() =>
+            setFiltersOpen((open) => (filtersMode === "popover" ? !open : true))
+          }
           showRowsPerPage={!c.isPaged}
+          filtersMode={filtersMode}
+          filters={props.filters}
+          filtersOpen={filtersOpen}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          dir={props.dir}
+          columnMenu={columnMenu}
         />
         <Chips
           chips={c.mergedChips}
@@ -213,10 +221,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}

@@ -47,7 +47,10 @@ const sw = { ...en, search: "Tafuta", noData: "Hakuna data" };
 
 RTL is first-class. Pass `dir="rtl"` and the adapter applies it through its
 direction provider and logical CSS, flipping layout, alignment, and the
-filter drawer side automatically.
+filter drawer side automatically. Column resizing is direction-aware too:
+the resize handle sits on the column's inline-end edge, so dragging it
+outward (or pressing the leading arrow key) widens the column in both LTR
+and RTL.
 
 Helpers:
 

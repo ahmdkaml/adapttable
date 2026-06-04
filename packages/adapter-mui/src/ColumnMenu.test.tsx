@@ -48,21 +48,40 @@ describe("mui ColumnMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
-    fireEvent.click(
-      document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[1]!
-    );
+    // visibility via the eye control (aria-label is the column name)
+    fireEvent.click(byLabel("Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
+    // pin (a is pinned left → unpins; b pins left)
     fireEvent.click(byLabel("Unpin: Alpha"));
     expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    fireEvent.click(byLabel("Pin left: Bravo"));
+    expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 
-    fireEvent.click(byLabel("Pin right: Bravo"));
-    expect(layout.setPinned).toHaveBeenCalledWith("b", "right");
-
-    fireEvent.click(byLabel("Move right: Alpha"));
+    // reorder via grip keyboard
+    fireEvent.keyDown(byLabel("Move left / Move right: Alpha"), {
+      key: "ArrowRight",
+    });
     expect(layout.move).toHaveBeenCalledWith("a", 1);
 
     fireEvent.click(screen.getByText("Reset columns"));
     expect(layout.reset).toHaveBeenCalled();
+  });
+
+  it("renders a hidden column with strike-through and disabled colors", async () => {
+    const layout = fakeLayout();
+    // `r.hidden` is derived from `layout.isHidden(key)`; mark "b" hidden so the
+    // hidden-side branches (eye color, text color, line-through) are exercised.
+    layout.isHidden = (key) => key === "b";
+    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    const bravo = screen.getByText("Bravo");
+    expect(bravo).toHaveStyle({ textDecoration: "line-through" });
+    // The eye toggle for a hidden column reports aria-pressed="false".
+    expect(byLabel("Bravo")).toHaveAttribute("aria-pressed", "false");
+    // A visible column keeps aria-pressed="true".
+    expect(byLabel("Charlie")).toHaveAttribute("aria-pressed", "true");
   });
 });

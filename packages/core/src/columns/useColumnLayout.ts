@@ -88,7 +88,7 @@ export function pinnedCellStyle(
 }
 
 /** Order `columns` by an explicit key order, appending any unlisted columns. */
-function applyOrder<TRow>(
+export function applyColumnOrder<TRow>(
   columns: readonly ColumnDef<TRow>[],
   order: readonly string[]
 ): ColumnDef<TRow>[] {
@@ -178,7 +178,7 @@ export function useColumnLayout<TRow>({
 
   const visibleColumns = useMemo(
     () =>
-      applyOrder(columns, state.order).filter(
+      applyColumnOrder(columns, state.order).filter(
         (c) => !state.hidden.includes(c.key)
       ),
     [columns, state.order, state.hidden]
@@ -186,7 +186,9 @@ export function useColumnLayout<TRow>({
 
   const move = useCallback(
     (key: string, toIndex: number) => {
-      const current = visibleColumns.map((c) => c.key);
+      // Operate on the FULL ordered list (visible + hidden) so hiding a column
+      // never reorders the rest and reordering keeps hidden columns in place.
+      const current = applyColumnOrder(columns, state.order).map((c) => c.key);
       const from = current.indexOf(key);
       if (from === -1) return;
       const clamped = Math.max(0, Math.min(toIndex, current.length - 1));
@@ -195,7 +197,7 @@ export function useColumnLayout<TRow>({
       current.splice(clamped, 0, key);
       commit({ ...state, order: current });
     },
-    [commit, state, visibleColumns]
+    [commit, state, columns]
   );
 
   const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);
@@ -209,8 +211,12 @@ export function useColumnLayout<TRow>({
         const declared = columns.find((c) => c.key === k)?.width;
         if (typeof declared === "number") return declared;
         if (typeof declared === "string") {
-          const n = Number.parseInt(declared, 10);
-          if (Number.isFinite(n)) return n;
+          // Only pixel (or unit-less) widths can be summed into a sticky
+          // inset; relative units (%, rem, fr, …) have no px value here, so
+          // `parseInt("50%")` → 50 would corrupt the offset. Fall back instead.
+          if (/^\d+(?:\.\d+)?(?:px)?$/.test(declared.trim())) {
+            return Number.parseFloat(declared);
+          }
         }
         return 150;
       };

@@ -1,5 +1,4 @@
-import type { TableLabels } from "@adapttable/core";
-import type { Direction } from "@adapttable/core";
+import type { Direction, TableLabels } from "@adapttable/core";
 import { type ReactNode, useEffect, useRef } from "react";
 
 import { cx } from "../cx";
@@ -28,7 +27,7 @@ export function FilterPanel({
   dir = "ltr",
   classNames,
 }: Readonly<FilterPanelProps>) {
-  const panelRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDialogElement>(null);
   // Keep the latest onClose without re-running the open/close effect on every
   // parent render (which would restore focus prematurely).
   const onCloseRef = useRef(onClose);
@@ -64,10 +63,10 @@ export function FilterPanel({
         )}
         onClick={onClose}
       />
-      <aside
+      <dialog
         ref={panelRef}
+        open
         tabIndex={-1}
-        role="dialog"
         aria-modal="true"
         aria-label={labels.filters}
         data-adapttable-part="filters-panel"
@@ -123,7 +122,7 @@ export function FilterPanel({
             {labels.applyFilters}
           </button>
         </footer>
-      </aside>
+      </dialog>
     </>
   );
 }

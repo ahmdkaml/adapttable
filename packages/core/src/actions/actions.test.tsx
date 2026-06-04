@@ -2,7 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BulkAction, RowAction } from "../types";
-import { type ConfirmHandler, defaultConfirm, runRowAction } from "./confirm";
+import {
+  type ConfirmHandler,
+  defaultConfirm,
+  resolveDisabledReason,
+  runRowAction,
+} from "./confirm";
 import { useBulkActionRunner } from "./useBulkActionRunner";
 
 interface Row {
@@ -55,6 +60,20 @@ describe("defaultConfirm", () => {
       onConfirm,
     });
     expect(onConfirm).toHaveBeenCalled();
+  });
+});
+
+describe("resolveDisabledReason", () => {
+  it("keeps a non-empty reason", () => {
+    expect(resolveDisabledReason("Locked")).toBe("Locked");
+  });
+
+  it("maps an empty string to undefined (not disabled)", () => {
+    expect(resolveDisabledReason("")).toBeUndefined();
+  });
+
+  it("passes undefined straight through", () => {
+    expect(resolveDisabledReason(undefined)).toBeUndefined();
   });
 });
 

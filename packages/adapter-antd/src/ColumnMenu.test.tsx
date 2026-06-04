@@ -48,21 +48,41 @@ describe("antd ColumnMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
-    fireEvent.click(
-      document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[1]!
-    );
+    // visibility via the eye control (aria-label is the column name)
+    fireEvent.click(byLabel("Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
+    // pin (a is pinned left → unpins; b pins left)
     fireEvent.click(byLabel("Unpin: Alpha"));
     expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    fireEvent.click(byLabel("Pin left: Bravo"));
+    expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 
-    fireEvent.click(byLabel("Pin right: Bravo"));
-    expect(layout.setPinned).toHaveBeenCalledWith("b", "right");
-
-    fireEvent.click(byLabel("Move right: Alpha"));
+    // reorder via grip keyboard
+    fireEvent.keyDown(byLabel("Move left / Move right: Alpha"), {
+      key: "ArrowRight",
+    });
     expect(layout.move).toHaveBeenCalledWith("a", 1);
 
     fireEvent.click(screen.getByText("Reset columns"));
     expect(layout.reset).toHaveBeenCalled();
+  });
+
+  it("renders the hidden-column state (strike-through, eye-off, text button)", async () => {
+    const layout = fakeLayout();
+    layout.state = { hidden: ["b"], order: [], pinned: {}, widths: {} };
+    layout.isHidden = (key) => key === "b";
+    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The hidden column's eye toggle reports aria-pressed=false.
+    const hiddenEye = byLabel("Bravo");
+    expect(hiddenEye).toHaveAttribute("aria-pressed", "false");
+    // A visible column's eye toggle reports aria-pressed=true.
+    expect(byLabel("Alpha")).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(hiddenEye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("b");
   });
 });

@@ -1,5 +1,4 @@
-import type { TableLabels } from "@adapttable/core";
-import type { Direction } from "@adapttable/core";
+import type { Direction, TableLabels } from "@adapttable/core";
 import { Button, Drawer, Group, Stack } from "@mantine/core";
 import type { ReactNode } from "react";
 

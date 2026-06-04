@@ -111,6 +111,43 @@ describe("useColumnLayout", () => {
     expect(result.current.pinOffset("c")).toEqual({ side: "right", inset: 0 });
   });
 
+  it("resolves declared string widths (parseInt) and the 150 fallback", () => {
+    // No state widths: 'a' has a string declared width "120px" (parsed to 120),
+    // 'b' has none at all (falls back to 150). 'c' is pinned last and follows
+    // both, so its inset sums width(a) + width(b) = 120 + 150 = 270.
+    const widthCols: ColumnDef<Row>[] = [
+      { key: "a", header: "A", accessor: (r) => r.id, width: "120px" },
+      { key: "b", header: "B", accessor: (r) => r.id },
+      { key: "c", header: "C", accessor: (r) => r.id },
+    ];
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns: widthCols,
+        defaultLayout: {
+          pinned: { a: "left", b: "left", c: "left" },
+        },
+      })
+    );
+    expect(result.current.pinOffset("a")).toEqual({ side: "left", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 120 });
+    expect(result.current.pinOffset("c")).toEqual({ side: "left", inset: 270 });
+  });
+
+  it("falls back to 150 for an unparseable declared string width", () => {
+    const widthCols: ColumnDef<Row>[] = [
+      { key: "a", header: "A", accessor: (r) => r.id, width: "auto" },
+      { key: "b", header: "B", accessor: (r) => r.id },
+    ];
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns: widthCols,
+        defaultLayout: { pinned: { a: "left", b: "left" } },
+      })
+    );
+    // "auto" parses to NaN → fallback 150, so 'b' is inset by 150.
+    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 150 });
+  });
+
   it("builds a sticky style from a pin offset (or undefined when unpinned)", () => {
     expect(pinnedCellStyle(undefined)).toBeUndefined();
     expect(pinnedCellStyle({ side: "left", inset: 0 })).toEqual({
@@ -134,5 +171,53 @@ describe("useColumnLayout", () => {
     expect(result.current.state.widths.a).toBe(200);
     act(() => result.current.setWidth("a", undefined));
     expect(result.current.state.widths.a).toBeUndefined();
+  });
+
+  it("setHidden is a no-op when visibility already matches", () => {
+    const onLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useColumnLayout({ columns, onLayoutChange })
+    );
+    // 'a' is already visible; asking to show it again must not commit.
+    act(() => result.current.setHidden("a", false));
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(keys(result.current.visibleColumns)).toEqual(["a", "b", "c"]);
+  });
+
+  it("move ignores an unknown key (not found in the order)", () => {
+    const onLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useColumnLayout({ columns, onLayoutChange })
+    );
+    act(() => result.current.move("zzz", 0));
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(keys(result.current.visibleColumns)).toEqual(["a", "b", "c"]);
+  });
+
+  it("move is a no-op when the target index equals the current index", () => {
+    const onLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useColumnLayout({ columns, onLayoutChange })
+    );
+    // 'a' is already at index 0; moving it to 0 must not commit.
+    act(() => result.current.move("a", 0));
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(keys(result.current.visibleColumns)).toEqual(["a", "b", "c"]);
+  });
+
+  it("resolves a declared numeric width for a pinned column", () => {
+    const widthCols: ColumnDef<Row>[] = [
+      { key: "a", header: "A", accessor: (r) => r.id, width: 90 },
+      { key: "b", header: "B", accessor: (r) => r.id },
+    ];
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns: widthCols,
+        defaultLayout: { pinned: { a: "left", b: "left" } },
+      })
+    );
+    // No state width for 'a', but its declared numeric width (90) is used, so
+    // 'b' is inset by 90.
+    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 90 });
   });
 });

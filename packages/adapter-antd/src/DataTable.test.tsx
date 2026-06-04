@@ -192,7 +192,7 @@ describe("<DataTable> (Ant Design)", () => {
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
-  it("renders filter chips and opens the drawer", () => {
+  it("renders filter chips and opens the filter popover", () => {
     renderHarness(
       {
         override: {
@@ -205,6 +205,97 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("Status: Active")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(screen.getByText("filter body")).toBeInTheDocument();
+  });
+
+  it("closes the filter popover on an outside click with no scrim", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByText("filter body")).toBeInTheDocument();
+    // No backdrop/scrim is rendered — the background stays interactive.
+    expect(screen.queryByTestId("filter-scrim")).toBeNull();
+    // A mousedown anywhere outside the popover hides it (antd toggles the
+    // `ant-popover-hidden` class rather than unmounting the content).
+    fireEvent.mouseDown(document.body);
+    expect(document.querySelector(".ant-popover")).toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("closes the filter popover when Escape is pressed", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.querySelector(".ant-popover")).toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("keeps the filter popover open when its own content is clicked", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    // A mousedown inside the floating popover must not close it.
+    fireEvent.mouseDown(screen.getByText("filter body"));
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("toggles the filter popover closed on a second Filters click", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const button = screen.getByRole("button", { name: /filters/i });
+    fireEvent.click(button);
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+    fireEvent.click(button);
+    expect(document.querySelector(".ant-popover")).toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("clears all filters from the popover header", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        override: {
+          filters: <div>filter body</div>,
+          filterLabels: { status: (v) => `Status: ${v}` },
+          onClearFilters,
+        },
+      },
+      "f_status=Active"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    // The popover header's "Clear all" sits above the filter body.
+    const body = screen.getByText("filter body").parentElement!.parentElement!;
+    fireEvent.click(within(body).getByText("Clear all"));
+    expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it("anchors the filter popover to the start edge in RTL mode", () => {
+    renderHarness({
+      override: { dir: "rtl", filters: <div>filter body</div> },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByText("filter body")).toBeInTheDocument();
+    // No drawer is mounted in popover mode.
+    expect(document.querySelector(".ant-drawer")).toBeNull();
+  });
+
+  it("renders the filters in a drawer when filtersMode is drawer", () => {
+    renderHarness({
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
+    });
+    expect(screen.queryByTestId("filter-scrim")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    const drawer = document.querySelector(".ant-drawer")!;
+    expect(drawer).toHaveClass("ant-drawer-open");
+    expect(
+      within(screen.getByRole("dialog")).getByText("filter body")
+    ).toBeInTheDocument();
   });
 
   it("clears all active filters from the chip strip", () => {
@@ -445,12 +536,268 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
+  it("pages in the next slice when the virtual scroll nears its end", () => {
+    const { container } = renderHarness(
+      { mode: "infinite", override: { virtualize: true } },
+      "limit=1"
+    );
+    expect(screen.queryByText("Bob")).toBeNull();
+    const scroller = container.querySelector<HTMLElement>(
+      ".ant-table-tbody-virtual-holder"
+    );
+    expect(scroller).not.toBeNull();
+    // Simulate scrolling to the bottom of antd's internal virtual holder.
+    Object.defineProperty(scroller!, "scrollHeight", { value: 1000 });
+    Object.defineProperty(scroller!, "clientHeight", { value: 400 });
+    Object.defineProperty(scroller!, "scrollTop", {
+      value: 600,
+      writable: true,
+    });
+    act(() => fireEvent.scroll(scroller!));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("ignores the virtual scroll handler in paged (non-infinite) mode", () => {
+    const { container } = renderHarness({ override: { virtualize: true } });
+    const scroller = container.querySelector<HTMLElement>(
+      ".ant-table-tbody-virtual-holder"
+    );
+    expect(scroller).not.toBeNull();
+    // No next page in paged mode — scrolling must not throw or page anything.
+    act(() => fireEvent.scroll(scroller!));
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("toggles a single row's selection via its checkbox", () => {
+    const { container } = renderHarness({
+      override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+    });
+    // The first body-row checkbox lives in a cell titled "Select row".
+    const rowCheckbox = container.querySelector<HTMLInputElement>(
+      'tbody [title="Select row"] input[type="checkbox"]'
+    );
+    expect(rowCheckbox).not.toBeNull();
+    fireEvent.click(rowCheckbox!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+  });
+
+  it("renders a multi-column skeleton with a middle column width", () => {
+    const { container } = renderHarness({
+      rows: [],
+      isLoading: true,
+      override: {
+        skeletonRows: 2,
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name },
+          { key: "city", header: "City", accessor: (r) => r.city },
+          { key: "id", header: "Id", accessor: (r) => r.id },
+        ],
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    expect(container.querySelector(".ant-skeleton")).toBeInTheDocument();
+  });
+
+  it("closes the filter drawer via the apply button", () => {
+    renderHarness(
+      { override: { filters: <div>filter body</div>, filtersMode: "drawer" } },
+      "f_status=Active"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    const dialog = screen.getByRole("dialog");
+    const drawer = document.querySelector(".ant-drawer")!;
+    expect(drawer).toHaveClass("ant-drawer-open");
+    // The drawer's primary footer button (label "Done") closes it.
+    fireEvent.click(within(dialog).getByText("Done"));
+    expect(drawer).not.toHaveClass("ant-drawer-open");
+  });
+
+  it("clears all filters from the drawer footer", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        override: {
+          filters: <div>filter body</div>,
+          filtersMode: "drawer",
+          filterLabels: { status: (v) => `Status: ${v}` },
+          onClearFilters,
+        },
+      },
+      "f_status=Active"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    const drawer = screen.getByRole("dialog");
+    fireEvent.click(within(drawer).getByText("Clear all"));
+    expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it("renders a resize handle whose label falls back to the column key for a JSX header", () => {
+    renderHarness({
+      override: {
+        resizableColumns: true,
+        columns: [
+          { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+      },
+    });
+    // The JSX-header column's resize handle uses the key, the string one its text.
+    expect(
+      screen.getByRole("button", { name: "Resize column: name" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Resize column: City" })
+    ).toBeInTheDocument();
+  });
+
+  it("renders the column menu inline in the toolbar when enabled", () => {
+    renderHarness({ override: { enableColumnMenu: true } });
+    expect(
+      screen.getAllByRole("button", { name: "Columns" }).length
+    ).toBeGreaterThan(0);
+  });
+
+  it("wires antd's sticky header when stickyHeader is set", () => {
+    const { container } = renderHarness({
+      override: { stickyHeader: true, stickyTop: 12 },
+    });
+    // antd renders its sticky-header holder only when the `sticky` prop is set.
+    expect(container.querySelector(".ant-table-sticky-holder")).not.toBeNull();
+  });
+
+  it("omits the sticky header by default", () => {
+    const { container } = renderHarness();
+    expect(container.querySelector(".ant-table-sticky-holder")).toBeNull();
+  });
+
+  it("prefetches a row on card hover in mobile mode", () => {
+    const prefetch = vi.fn();
+    renderHarness({ override: { isMobile: true, prefetch } });
+    fireEvent.mouseEnter(screen.getByText("Alice").closest(".ant-card")!);
+    expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("uses an explicit mobileLabel for the card descriptions label", () => {
+    renderHarness({
+      override: {
+        isMobile: true,
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            mobileLabel: "Full name",
+            accessor: (r) => r.name,
+          },
+        ],
+      },
+    });
+    expect(screen.getAllByText("Full name").length).toBeGreaterThan(0);
+  });
+
+  it("derives mobile sort options from sortable columns when none are passed", () => {
+    renderHarness({ override: { isMobile: true } });
+    // "name" is sortable, so the mobile toolbar exposes a Sort by select.
+    expect(
+      screen.getByRole("combobox", { name: "Sort by" })
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to source.limit for the skeleton row count when skeletonRows is omitted", () => {
+    const { container } = renderHarness({ rows: [], isLoading: true });
+    // No skeletonRows override → the skeleton uses source.limit (default 25).
+    expect(container.querySelector(".ant-skeleton")).toBeInTheDocument();
+  });
+
+  it("center-aligns a column whose align is center", () => {
+    const { container } = renderHarness({
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            accessor: (r) => r.name,
+            align: "center",
+          },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+      },
+    });
+    // The center column's body cells carry a center text-align style.
+    const centered = container.querySelector<HTMLElement>(
+      'tbody td[style*="center"]'
+    );
+    expect(centered).not.toBeNull();
+  });
+
+  it("uses a custom search placeholder when one is provided", () => {
+    renderHarness({ override: { searchPlaceholder: "Find people…" } });
+    expect(screen.getByPlaceholderText("Find people…")).toBeInTheDocument();
+  });
+
+  it("opens the filter drawer on the left edge in RTL mode", () => {
+    renderHarness(
+      {
+        override: {
+          dir: "rtl",
+          filters: <div>filter body</div>,
+          filtersMode: "drawer",
+        },
+      },
+      "f_status=Active"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    // antd places the drawer on the left edge when dir is rtl.
+    expect(document.querySelector(".ant-drawer-left")).not.toBeNull();
+    expect(document.querySelector(".ant-drawer-right")).toBeNull();
+  });
+
+  it("widens the table to max-content once a column is pinned", () => {
+    const { container } = renderHarness({
+      override: { enableColumnMenu: true },
+    });
+    // Before pinning, the table is not forced to max-content width.
+    expect(container.querySelector(".ant-table-content")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    // Pin the Name column to the left edge via the menu.
+    const pinLeft = document.querySelector<HTMLElement>(
+      '[aria-label="Pin left: Name"]'
+    );
+    expect(pinLeft).not.toBeNull();
+    fireEvent.click(pinLeft!);
+    // antd renders a sticky/fixed cell once a column is pinned (x: max-content).
+    expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+  });
+
+  it("stops paging the virtual scroll once there is no next page", () => {
+    // All rows fit in the first page → infinite mode has no next page, but the
+    // virtual scroll handler is still active (virtualize && !paged && !error).
+    const { container } = renderHarness({
+      mode: "infinite",
+      override: { virtualize: true },
+    });
+    const scroller = container.querySelector<HTMLElement>(
+      ".ant-table-tbody-virtual-holder"
+    );
+    expect(scroller).not.toBeNull();
+    Object.defineProperty(scroller!, "scrollHeight", { value: 1000 });
+    Object.defineProperty(scroller!, "clientHeight", { value: 400 });
+    Object.defineProperty(scroller!, "scrollTop", {
+      value: 600,
+      writable: true,
+    });
+    // Both rows are already shown and hasNextPage is false; scrolling is a no-op.
+    act(() => fireEvent.scroll(scroller!));
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi
-      .fn()
-      .mockImplementation((cb: IntersectionObserverCallback) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+      cb: IntersectionObserverCallback
+    ) {
+      return {
         observe: () => {
           trigger = () =>
             cb(
@@ -460,7 +807,8 @@ describe("<DataTable> (Ant Design)", () => {
         },
         disconnect: () => undefined,
         unobserve: () => undefined,
-      }));
+      };
+    });
     try {
       renderHarness({ mode: "infinite" }, "limit=1");
       expect(screen.queryByText("Bob")).toBeNull();

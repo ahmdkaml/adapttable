@@ -20,6 +20,23 @@ describe("FilterPanel", () => {
     expect(container.querySelector('[data-dir="rtl"]')).toBeTruthy();
   });
 
+  it("invokes onClearFilters from the clear button when filters are active", () => {
+    const onClearFilters = vi.fn();
+    const { getByRole } = render(
+      <FilterPanel
+        open
+        onClose={vi.fn()}
+        filters={<div>filters</div>}
+        activeFilterCount={2}
+        onClearFilters={onClearFilters}
+        labels={defaultLabels}
+        classNames={{}}
+      />
+    );
+    fireEvent.click(getByRole("button", { name: "Clear all" }));
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
   it("closes when the backdrop is clicked", () => {
     const onClose = vi.fn();
     render(

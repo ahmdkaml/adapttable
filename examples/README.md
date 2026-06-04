@@ -8,6 +8,7 @@ complete, copy-pasteable React component — wrap it in your kit's provider
 | ------------------------------------------------ | ---------------------- | ------------------------------------- |
 | [mantine-basic.tsx](./mantine-basic.tsx)         | `@adapttable/mantine`  | Client data, sorting, row actions     |
 | [mantine-filters.tsx](./mantine-filters.tsx)     | `@adapttable/mantine`  | Live filters + removable chips        |
+| [mantine-columns.tsx](./mantine-columns.tsx)     | `@adapttable/mantine`  | Column menu, reorder, pin, resize     |
 | [mui-backend.tsx](./mui-backend.tsx)             | `@adapttable/mui`      | Server pagination with TanStack Query |
 | [chakra-selection.tsx](./chakra-selection.tsx)   | `@adapttable/chakra`   | Selection + bulk actions              |
 | [antd-basic.tsx](./antd-basic.tsx)               | `@adapttable/antd`     | AntD table, dark mode, row actions    |

@@ -1,7 +1,7 @@
-import type { Direction } from "@adapttable/core";
 import {
   type ActiveFilterChip,
   type BulkBarChromeProps,
+  type Direction,
   pageSizeOptions,
   type PaginationInfo,
   resolveDisabledReason,
@@ -16,6 +16,7 @@ import {
   Button,
   Chip,
   Drawer,
+  InputAdornment,
   MenuItem,
   Pagination,
   Skeleton,
@@ -24,7 +25,48 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
+
+import { FilterPopover } from "./FilterPopover";
+
+/** Funnel/filter glyph (currentColor, no icon-lib dependency). */
+function FiltersIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" />
+    </svg>
+  );
+}
+
+/** Magnifying-glass glyph for the search field (currentColor, no icon-lib). */
+function SearchIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
 
 /** Inline equivalent of `@mui/utils` visuallyHidden (avoids an extra dep). */
 const srOnly = {
@@ -39,6 +81,28 @@ const srOnly = {
   border: 0,
 } as const;
 
+/**
+ * Toolbar props: the shared {@link ToolbarChromeProps} plus the filter-container
+ * wiring (mode + open/close handlers) so the Filters button can act as either
+ * the popover anchor (default) or the drawer trigger.
+ */
+export interface MuiToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
+  /** Which filter container the Filters button drives. */
+  filtersMode: "popover" | "drawer";
+  /** Filter content (rendered inside the popover when in popover mode). */
+  filters?: ReactNode;
+  /** Whether the filter container is open (popover mode). */
+  filtersOpen: boolean;
+  /** Close the filter container (popover mode). */
+  onCloseFilters: () => void;
+  /** Clear all active filters. */
+  onClearFilters?: () => void;
+  /** Layout direction (flips popover/drawer side). */
+  dir?: Direction;
+  /** The Columns menu, rendered inline at the end of the toolbar row. */
+  columnMenu?: ReactNode;
+}
+
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
@@ -50,18 +114,42 @@ export function Toolbar<TRow>({
   activeFilterCount,
   onOpenFilters,
   showRowsPerPage,
-}: Readonly<ToolbarChromeProps<TRow>>) {
+  filtersMode,
+  filters,
+  filtersOpen,
+  onCloseFilters,
+  onClearFilters,
+  dir,
+  columnMenu,
+}: Readonly<MuiToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
     sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
+  const filtersAnchorRef = useRef<HTMLButtonElement>(null);
+
+  const filtersButton = hasFilters ? (
+    <Badge color="primary" badgeContent={activeFilterCount}>
+      <Button
+        ref={filtersAnchorRef}
+        variant="outlined"
+        size="small"
+        startIcon={<FiltersIcon />}
+        aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+        onClick={onOpenFilters}
+      >
+        {labels.filters}
+      </Button>
+    </Badge>
+  ) : null;
+
   return (
     <Stack
       direction="row"
       spacing={1}
-      flexWrap="wrap"
+      flexWrap="nowrap"
       alignItems="center"
       justifyContent="space-between"
       useFlexGap
@@ -73,20 +161,27 @@ export function Toolbar<TRow>({
           placeholder={searchProps.placeholder as string}
           slotProps={{
             htmlInput: { "aria-label": labels.search, type: "search" },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
           onChange={
             searchProps.onChange as (e: {
               currentTarget: { value: string };
             }) => void
           }
-          sx={{ flex: 1, minWidth: 200, maxWidth: 360 }}
+          sx={{ flex: 1, minWidth: 160, maxWidth: 360 }}
         />
       )}
       <Stack
         direction="row"
         spacing={1}
         alignItems="center"
-        flexWrap="wrap"
+        flexWrap="nowrap"
         useFlexGap
       >
         {sortOptions && sortOptions.length > 0 && (
@@ -112,13 +207,20 @@ export function Toolbar<TRow>({
           </TextField>
         )}
         {customToolbar}
-        {hasFilters && (
-          <Badge color="primary" badgeContent={activeFilterCount}>
-            <Button variant="outlined" size="small" onClick={onOpenFilters}>
-              {labels.filters}
-            </Button>
-          </Badge>
+        {filtersButton}
+        {hasFilters && filtersMode === "popover" && (
+          <FilterPopover
+            open={filtersOpen}
+            onClose={onCloseFilters}
+            anchorEl={filtersAnchorRef.current}
+            filters={filters}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={onClearFilters}
+            labels={labels}
+            dir={dir}
+          />
         )}
+        {columnMenu}
         {showRowsPerPage && (
           <TextField
             select

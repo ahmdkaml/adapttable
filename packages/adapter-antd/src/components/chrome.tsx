@@ -1,7 +1,7 @@
-import type { Direction } from "@adapttable/core";
 import {
   type ActiveFilterChip,
   type BulkBarChromeProps,
+  type Direction,
   pageSizeOptions,
   type TableLabels,
   type ToolbarChromeProps,
@@ -21,6 +21,31 @@ import {
 import type { ReactNode } from "react";
 
 import { isDangerColor } from "../colors";
+import { FiltersIcon, SearchIcon } from "../icons";
+import { FilterPopover } from "./FilterPopover";
+
+/** Extra toolbar props for threading the filter container's open/close wiring. */
+export interface ToolbarProps<TRow> extends Omit<
+  ToolbarChromeProps<TRow>,
+  "onOpenFilters"
+> {
+  /** Filter content (anchored popover or drawer). */
+  filters?: ReactNode;
+  /** Whether to anchor a popover or open the drawer. */
+  filtersMode: "popover" | "drawer";
+  /** Whether the filter container is open. */
+  filtersOpen: boolean;
+  /** Toggle the filter container open/closed. */
+  onToggleFilters: () => void;
+  /** Close the filter container. */
+  onCloseFilters: () => void;
+  /** Clear every active filter. */
+  onClearFilters?: () => void;
+  /** Layout direction (RTL flips the popover anchor). */
+  dir?: Direction;
+  /** The Columns menu, rendered inline at the end of the toolbar row. */
+  columnMenu?: ReactNode;
+}
 
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
@@ -31,22 +56,44 @@ export function Toolbar<TRow>({
   customToolbar,
   hasFilters,
   activeFilterCount,
-  onOpenFilters,
+  filters,
+  filtersMode,
+  filtersOpen,
+  onToggleFilters,
+  onCloseFilters,
+  onClearFilters,
+  dir,
+  columnMenu,
   showRowsPerPage,
-}: Readonly<ToolbarChromeProps<TRow>>) {
+}: Readonly<ToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
     sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
+
+  const filtersButton = (
+    <Badge count={activeFilterCount} size="small">
+      <Button
+        icon={<FiltersIcon size={16} />}
+        aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+        data-active={filtersOpen || undefined}
+        onClick={onToggleFilters}
+      >
+        {labels.filters}
+      </Button>
+    </Badge>
+  );
+
   return (
-    <Flex gap="small" wrap align="center" justify="space-between">
+    <Flex gap="small" wrap={false} align="center" justify="space-between">
       {!hideSearch && (
         <Input
           type="search"
           allowClear
-          style={{ flex: 1, minWidth: 200, maxWidth: 360 }}
+          prefix={<SearchIcon size={14} />}
+          style={{ flex: 1, minWidth: 160, maxWidth: 360 }}
           aria-label={labels.search}
           value={searchProps.value as string}
           placeholder={searchProps.placeholder as string}
@@ -57,7 +104,7 @@ export function Toolbar<TRow>({
           }
         />
       )}
-      <Flex gap="small" wrap align="center">
+      <Flex gap="small" wrap={false} align="center">
         {sortOptions && sortOptions.length > 0 && (
           <Select
             style={{ minWidth: 160 }}
@@ -75,11 +122,23 @@ export function Toolbar<TRow>({
           />
         )}
         {customToolbar}
-        {hasFilters && (
-          <Badge count={activeFilterCount} size="small">
-            <Button onClick={onOpenFilters}>{labels.filters}</Button>
-          </Badge>
-        )}
+        {hasFilters &&
+          (filtersMode === "popover" ? (
+            <FilterPopover
+              open={filtersOpen}
+              onClose={onCloseFilters}
+              filters={filters}
+              activeFilterCount={activeFilterCount}
+              onClearFilters={onClearFilters}
+              labels={labels}
+              dir={dir}
+            >
+              {filtersButton}
+            </FilterPopover>
+          ) : (
+            filtersButton
+          ))}
+        {columnMenu}
         {showRowsPerPage && (
           <Select
             style={{ minWidth: 110 }}

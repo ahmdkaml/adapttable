@@ -43,14 +43,18 @@ export function useSearchInput(
     }
   }, [search]);
 
-  // Debounced input → commit, skipping when already in sync.
+  // Debounced input → commit, skipping when already in sync. Compare against
+  // the last value WE committed (not the live `search`): when an external
+  // change (clear-all, back button) lands while a debounce is still pending,
+  // `search` flips but `debounced` is briefly stale — keying off `search` here
+  // would re-commit that stale value and resurrect the cleared/old search.
   useEffect(() => {
     const trimmed = debounced.trim();
-    if (trimmed !== search) {
+    if (trimmed !== committedRef.current) {
       committedRef.current = trimmed;
       setSearch(trimmed);
     }
-  }, [debounced, search, setSearch]);
+  }, [debounced, setSearch]);
 
   return { value, setValue };
 }

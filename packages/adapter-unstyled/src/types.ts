@@ -10,9 +10,18 @@ export interface DataTableClassNames {
   root?: string;
   toolbar?: string;
   search?: string;
+  /** The search field wrapper (holds the search input + leading icon). */
+  searchField?: string;
+  /** The leading magnifying-glass icon inside the search field. */
+  searchIcon?: string;
   sortSelect?: string;
   filtersButton?: string;
+  /** The leading funnel icon inside the Filters button. */
+  filtersIcon?: string;
+  filtersCount?: string;
+  filtersAnchor?: string;
   filtersBackdrop?: string;
+  filtersPopover?: string;
   filtersPanel?: string;
   filtersHeader?: string;
   filtersTitle?: string;
@@ -27,7 +36,15 @@ export interface DataTableClassNames {
   columnMenu?: string;
   columnMenuButton?: string;
   columnMenuPanel?: string;
+  columnMenuHeader?: string;
+  columnMenuTitle?: string;
+  columnMenuHint?: string;
   columnMenuItem?: string;
+  columnMenuGrip?: string;
+  columnMenuLabel?: string;
+  columnMenuVisibility?: string;
+  columnMenuPin?: string;
+  columnMenuReset?: string;
   resizeHandle?: string;
   bulkBar?: string;
   bulkButton?: string;
@@ -58,6 +75,18 @@ export interface DataTableClassNames {
   retryButton?: string;
 }
 
+/**
+ * Overridable sub-components — a cross-adapter alias for the top-level
+ * `emptyState` / `loadingState` props. When both are supplied the `slots`
+ * entry wins (`slots.empty ?? emptyState`, `slots.skeleton ?? loadingState`).
+ */
+export interface DataTableSlots {
+  /** Replace the empty-state (alias for `emptyState`). */
+  empty?: ReactNode;
+  /** Replace the loading skeleton (alias for `loadingState`). */
+  skeleton?: ReactNode;
+}
+
 /** Props for the unstyled `<DataTable>`. */
 export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   /** Per-part class name overrides. */
@@ -66,4 +95,9 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   emptyState?: ReactNode;
   /** Loading-state node override (replaces the skeleton on first load). */
   loadingState?: ReactNode;
+  /**
+   * Cross-adapter alias for `emptyState` / `loadingState`. Takes precedence
+   * over the top-level props when both are provided.
+   */
+  slots?: DataTableSlots;
 }
