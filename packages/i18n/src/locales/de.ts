@@ -35,4 +35,6 @@ export const de: Required<TableLabels> = {
   moveRight: "Nach rechts",
   resetColumns: "Spalten zurücksetzen",
   resizeColumn: "Spalte anpassen",
+  showColumn: "Spalte einblenden",
+  hideColumn: "Spalte ausblenden",
 };

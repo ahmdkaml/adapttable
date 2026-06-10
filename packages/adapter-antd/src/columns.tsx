@@ -170,12 +170,16 @@ export function buildColumns<TRow>({
                   disabled={disabled}
                   title={reason}
                   aria-label={action.label}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!disabled) {
-                      runRowAction(action, row, confirm, labels.cancel);
-                    }
-                  }}
+                  // The disabled attribute already blocks activation, so
+                  // attach the handler only when the action can run.
+                  onClick={
+                    disabled
+                      ? undefined
+                      : (e) => {
+                          e.stopPropagation();
+                          runRowAction(action, row, confirm, labels.cancel);
+                        }
+                  }
                 >
                   {action.icon ?? action.label}
                 </Button>

@@ -6,8 +6,10 @@ import {
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
+  pinnedColumnWidth,
   resolveDisabledReason,
   type RowAction,
+  rowClickProps,
   runRowAction,
   tableMinWidth,
   type UseDataTableResult,
@@ -46,6 +48,8 @@ export interface DesktopTableProps<TRow> {
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   prefetch?: (row: TRow) => void;
+  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
+  onRowClick?: (row: TRow) => void;
   getRowId: (row: TRow) => string;
   bodyRef: RefObject<HTMLTableSectionElement>;
   className?: string;
@@ -149,10 +153,14 @@ function RowActions<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
-        const handleClick = (e: MouseEvent) => {
-          e.stopPropagation();
-          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-        };
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         // Icon-only actions render as an ActionIcon; without an icon, fall
         // back to a text button so the label is actually visible.
         return action.icon ? (
@@ -197,6 +205,7 @@ export function DesktopTable<TRow>({
   rowActions,
   confirm,
   prefetch,
+  onRowClick,
   getRowId,
   bodyRef,
   className,
@@ -264,11 +273,17 @@ export function DesktopTable<TRow>({
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
   // which also sticks to the top). They need an opaque background.
   const pinBg = "var(--mantine-color-body)";
-  const headerStyleFor = (key: string): CSSProperties => {
+  const headerStyleFor = (column: ColumnDef<TRow>): CSSProperties => {
+    const key = column.key;
+    const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
     const merged: CSSProperties = {
       ...headerCellStyle,
-      ...pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads),
-      width: columnWidths?.[key],
+      ...pin,
+      // A pinned column renders at the same width its sticky inset assumed,
+      // so stacked pins stay flush even with no declared width.
+      width: pin
+        ? pinnedColumnWidth(column, columnWidths)
+        : columnWidths?.[key],
     };
     if (setWidth && !merged.position) merged.position = "relative";
     return merged;
@@ -352,7 +367,7 @@ export function DesktopTable<TRow>({
                 key={column.key}
                 table={table}
                 column={column}
-                stickyStyle={headerStyleFor(column.key)}
+                stickyStyle={headerStyleFor(column)}
                 resizeHandle={resizeHandleFor(column)}
               />
             ))}
@@ -381,6 +396,7 @@ export function DesktopTable<TRow>({
               <Table.Tr
                 key={key}
                 {...rowProps}
+                {...rowClickProps(row, onRowClick)}
                 ref={measureElement}
                 data-stagger=""
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}

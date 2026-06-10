@@ -58,6 +58,21 @@ describe("columnRowDragProps", () => {
     props.onDragStart(dragEvent(dt, { target: rowBody }) as never);
     expect(dt.setData).toHaveBeenCalledWith(COLUMN_DND_MIME, "a");
   });
+
+  it("starts the drag from the grip even when the kit renders it as a button", () => {
+    // Mantine/MUI/Chakra render the grip as an icon BUTTON; the interactive-
+    // control cancel must not eat the strongest drag affordance of all.
+    const props = columnRowDragProps("a");
+    const dt = fakeDataTransfer();
+    const grip = document.createElement("button");
+    grip.setAttribute("data-adapttable-grip", "");
+    const icon = document.createElement("span");
+    grip.append(icon);
+    const event = dragEvent(dt, { target: icon, preventDefault: vi.fn() });
+    props.onDragStart(event as never);
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(dt.setData).toHaveBeenCalledWith(COLUMN_DND_MIME, "a");
+  });
 });
 
 describe("columnReorderKeyProps", () => {
@@ -79,6 +94,37 @@ describe("columnReorderKeyProps", () => {
     expect(move).toHaveBeenLastCalledWith("a", 4);
     props.onKeyDown(dragEvent(null, { key: "ArrowDown" }) as never);
     expect(move).toHaveBeenLastCalledWith("a", 4);
+  });
+
+  it("flips ArrowLeft/ArrowRight under dir=rtl (Up/Down stay logical)", () => {
+    const move = vi.fn();
+    const props = columnReorderKeyProps("a", 3, move, "Reorder A");
+    const root = document.createElement("div");
+    root.setAttribute("dir", "rtl");
+    const grip = document.createElement("span");
+    root.append(grip);
+    // Visually-right is toward the START in RTL.
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowRight", currentTarget: grip }) as never
+    );
+    expect(move).toHaveBeenLastCalledWith("a", 2);
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowLeft", currentTarget: grip }) as never
+    );
+    expect(move).toHaveBeenLastCalledWith("a", 4);
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowUp", currentTarget: grip }) as never
+    );
+    expect(move).toHaveBeenLastCalledWith("a", 2);
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowDown", currentTarget: grip }) as never
+    );
+    expect(move).toHaveBeenLastCalledWith("a", 4);
+  });
+
+  it("marks the grip so row-drag exempts it from the control cancel", () => {
+    const props = columnReorderKeyProps("a", 0, vi.fn(), "Reorder A");
+    expect(props["data-adapttable-grip"]).toBe("");
   });
 
   it("ignores non-arrow keys", () => {
@@ -113,5 +159,20 @@ describe("columnDropProps", () => {
     const drop = dragEvent(fakeDataTransfer());
     props.onDrop(drop as never);
     expect(move).not.toHaveBeenCalled();
+  });
+});
+
+describe("direction detection without a [dir] ancestor", () => {
+  it("falls back to the computed style direction", () => {
+    const move = vi.fn();
+    const props = columnReorderKeyProps("a", 3, move, "Reorder A");
+    const grip = document.createElement("span");
+    document.body.append(grip); // no [dir] anywhere up the tree
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowLeft", currentTarget: grip }) as never
+    );
+    // jsdom computes direction "ltr" → ArrowLeft moves toward the start.
+    expect(move).toHaveBeenLastCalledWith("a", 2);
+    grip.remove();
   });
 });

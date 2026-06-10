@@ -40,6 +40,8 @@ const labels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 function open(layout: UseColumnLayoutResult<Row>) {
@@ -75,16 +77,16 @@ describe("unstyled ColumnMenu", () => {
   it("toggles visibility via the eye control", () => {
     const layout = fakeLayout();
     open(layout);
-    fireEvent.click(screen.getByRole("button", { name: "Bravo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide column: Bravo" }));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
   });
 
   it("pins and unpins via the pin control", () => {
     const layout = fakeLayout();
     open(layout);
-    // column a is already pinned left → its control unpins
-    fireEvent.click(screen.getByRole("button", { name: "Unpin: Alpha" }));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Alpha" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
     fireEvent.click(screen.getByRole("button", { name: "Pin left: Bravo" }));
     expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
   });
@@ -138,7 +140,9 @@ describe("unstyled ColumnMenu", () => {
     fireEvent.keyDown(gripC, { key: "ArrowLeft" });
     expect(layout.move).toHaveBeenCalledWith("c", 1);
     // …and its eye toggles it back on.
-    fireEvent.click(screen.getByRole("button", { name: "Charlie" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Charlie" })
+    );
     expect(layout.toggleVisible).toHaveBeenCalledWith("c");
   });
 

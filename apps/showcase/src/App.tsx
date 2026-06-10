@@ -207,14 +207,15 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
         kicker="Column management"
         title="Wide tables, fully handled."
       >
-        Show/hide, drag-reorder, pin left, and resize by drag or keyboard — open
-        the Columns menu, grab a header edge, or hit the pin. Persist the layout
-        to localStorage, the URL, or your server.
+        Show/hide, drag-reorder, pin left or right, and resize by drag or
+        keyboard — open the Columns menu, grab a header edge, or tap the pin to
+        cycle left → right → unpinned. Persist the layout to localStorage, the
+        URL, or your server.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
           <span className="hint">
-            <Pin size={12} /> Pin a column left
+            <Pin size={12} /> Pin a column left or right
           </span>
           <span className="hint">
             <Resize size={12} /> drag a column edge to resize

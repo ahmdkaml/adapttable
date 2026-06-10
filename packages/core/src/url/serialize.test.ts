@@ -98,6 +98,16 @@ describe("writeExtra", () => {
     expect(p.get("f_tags")).toBe("a,b");
     expect(p.has("f_cleared")).toBe(false);
   });
+  it("trims array entries on write so values round-trip byte-identical", () => {
+    const p = ps("");
+    writeExtra(p, { tags: [" a ", "b", "  "] });
+    expect(p.get("f_tags")).toBe("a,b");
+  });
+  it("skips an array that is empty after trimming (no stray marker)", () => {
+    const p = ps("");
+    writeExtra(p, { tags: ["  ", ""] });
+    expect(p.has("f_tags")).toBe(false);
+  });
   it("strips existing f_ params not present in the new bag", () => {
     const p = ps("f_old=1&keep=yes");
     writeExtra(p, { fresh: "2" });

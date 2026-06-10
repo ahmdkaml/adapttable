@@ -27,11 +27,15 @@ export const ar: Required<TableLabels> = {
   showing: ({ from, to, total }) => `عرض ${from}–${to} من ${total}`,
   pageOf: ({ page, total }) => `صفحة ${page} من ${total}`,
   columns: "الأعمدة",
-  pinLeft: "تثبيت لليسار",
-  pinRight: "تثبيت لليمين",
+  // Pinning and reorder are logical (start/end follows اتجاه الكتابة), so the
+  // copy is direction-neutral instead of a literal يسار/يمين.
+  pinLeft: "تثبيت في البداية",
+  pinRight: "تثبيت في النهاية",
   unpin: "إلغاء التثبيت",
-  moveLeft: "نقل لليسار",
-  moveRight: "نقل لليمين",
+  moveLeft: "نقل نحو البداية",
+  moveRight: "نقل نحو النهاية",
   resetColumns: "إعادة تعيين الأعمدة",
   resizeColumn: "تغيير حجم العمود",
+  showColumn: "إظهار العمود",
+  hideColumn: "إخفاء العمود",
 };

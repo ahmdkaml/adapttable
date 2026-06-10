@@ -3,7 +3,9 @@
  * (desktop/mobile), the search-placeholder prop, the empty sort-option reset,
  * the bounded-height scroll box, mobile virtual bottom-spacer, the skeleton
  * actions column, the non-string resize-handle header label, the enabled
- * row-action click path, and the non-Escape keydown in the filter drawer.
+ * row-action click path, the non-Escape keydown in the filter drawer, the
+ * sticky header inside a bounded scroll box, the fixed-width table min-width,
+ * the right-pinned actions edge, and the clickable mobile card.
  */
 import {
   createMemoryAdapter,
@@ -131,6 +133,32 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     expect(box).toHaveStyle({ overflowX: "auto" });
   });
 
+  // tables.tsx sticky top — inside a maxHeight scroll box the box itself is
+  // the sticky context, so the header pins to ITS top: a viewport offset
+  // (stickyTop) would float the header mid-box and must be ignored.
+  it("pins a sticky header to the scroll-box top, ignoring stickyTop", () => {
+    renderHarness({
+      override: { stickyHeader: true, stickyTop: 64, maxHeight: 240 },
+    });
+    const th = screen.getByText("Name").closest("th");
+    expect(th).toHaveStyle({ position: "sticky", top: "0px" });
+  });
+
+  // tables.tsx min-width — fixed-width columns sum to a real table min-width
+  // so the table overflows and scrolls horizontally instead of squishing.
+  it("gives the table a min-width equal to the fixed column widths", () => {
+    const { container } = renderHarness({
+      override: {
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name, width: 200 },
+        ],
+      },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="table"]')
+    ).toHaveStyle({ minWidth: "200px" });
+  });
+
   it("bounds the scroll box height when maxHeight is set", () => {
     const { container } = renderHarness({ override: { maxHeight: 300 } });
     const box = container.querySelector('[data-adapttable-part="scroll-box"]');
@@ -241,6 +269,44 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     });
     fireEvent.click(screen.getAllByLabelText("Edit")[0]!);
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  // tables.tsx actions edge pin — when a data column is pinned right, the
+  // trailing actions column pins to the same edge (header AND body cells) so
+  // it stays flush with the pinned column on horizontal scroll.
+  it("pins the actions column alongside a right-pinned data column", () => {
+    const { container } = renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: { pinned: { name: "right" } },
+      },
+    });
+    const header = container.querySelector(
+      '[data-adapttable-part="actions-header"]'
+    );
+    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveStyle({ position: "sticky" });
+    const cell = container.querySelector(
+      '[data-adapttable-part="actions-cell"]'
+    );
+    expect(cell).toHaveAttribute("data-pinned", "right");
+    expect(cell).toHaveStyle({ position: "sticky" });
+  });
+
+  // tables.tsx mobile cards — onRowClick makes each card clickable: it gains
+  // the `data-clickable` styling hook and activates the handler on click.
+  it("makes mobile cards clickable when onRowClick is set", () => {
+    const onRowClick = vi.fn();
+    const { container } = renderHarness({
+      isMobile: true,
+      override: { onRowClick },
+    });
+    const card = container.querySelector('[data-adapttable-part="card"]');
+    expect(card).toHaveAttribute("data-clickable");
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
   });
 
   // FilterPanel.tsx:43 — `if (event.key === "Escape")`, the false side: any

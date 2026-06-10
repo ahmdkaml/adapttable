@@ -3,6 +3,7 @@ import {
   type ConfirmHandler,
   resolveDisabledReason,
   type RowAction,
+  rowClickProps,
   runRowAction,
   type TableLabels,
   type UseDataTableResult,
@@ -45,9 +46,13 @@ function CardActions<TRow>({
             disabled={disabled}
             title={reason}
             aria-label={action.label}
-            onClick={() => {
-              if (!disabled) runRowAction(action, row, confirm, labels.cancel);
-            }}
+            // The disabled attribute already blocks activation, so attach
+            // the handler only when the action can run.
+            onClick={
+              disabled
+                ? undefined
+                : () => runRowAction(action, row, confirm, labels.cancel)
+            }
           >
             {action.icon ?? action.label}
           </Button>
@@ -71,7 +76,9 @@ export function MobileCards<TRow>({
   confirm,
   getRowId,
   prefetch,
+  onRowClick,
   tableLabel,
+  compact = false,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -79,7 +86,11 @@ export function MobileCards<TRow>({
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   prefetch?: (row: TRow) => void;
+  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
+  onRowClick?: (row: TRow) => void;
   tableLabel?: string;
+  /** Tighter card rhythm for the `"compact"` density. */
+  compact?: boolean;
 }>) {
   const { labels, selection, columns } = table;
   return (
@@ -92,7 +103,7 @@ export function MobileCards<TRow>({
         padding: 0,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: compact ? 4 : 8,
       }}
     >
       {rows.map((row, rowIndex) => {
@@ -101,6 +112,7 @@ export function MobileCards<TRow>({
           <li key={id}>
             <Card
               size="small"
+              {...rowClickProps(row, onRowClick)}
               onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               title={
                 selection ? (

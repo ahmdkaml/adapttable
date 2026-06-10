@@ -43,7 +43,8 @@ export function PaginationFooter({
           aria-label={labels.rowsPerPage}
           data={options}
           value={String(limit)}
-          onChange={(v) => onLimitChange(Number(v ?? limit))}
+          // `allowDeselect={false}` keeps the value non-null.
+          onChange={(v) => onLimitChange(Number(v!))}
           size="xs"
           w={76}
           allowDeselect={false}
@@ -66,12 +67,12 @@ export function PaginationFooter({
           size="sm"
           siblings={1}
           boundaries={1}
-          getControlProps={(control) => {
-            if (control === "previous")
-              return { "aria-label": labels.previousPage };
-            if (control === "next") return { "aria-label": labels.nextPage };
-            return {};
-          }}
+          // Only previous/next control buttons render (boundaries keep
+          // first/last away), so a total ternary labels them both.
+          getControlProps={(control) => ({
+            "aria-label":
+              control === "previous" ? labels.previousPage : labels.nextPage,
+          })}
         />
       </Group>
     </Group>

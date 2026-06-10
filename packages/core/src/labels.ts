@@ -37,6 +37,8 @@ export const defaultLabels: Required<TableLabels> = {
   moveRight: "Move right",
   resetColumns: "Reset columns",
   resizeColumn: "Resize column",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 /**

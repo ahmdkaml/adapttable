@@ -6,15 +6,17 @@ import {
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
+  pinnedColumnWidth,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
+  rowClickProps,
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
-  virtualColumnSpan,
+  tableRenderModel,
 } from "@adapttable/core";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -55,6 +57,14 @@ function RowActionButtons<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         return (
           <button
             key={action.key}
@@ -65,10 +75,7 @@ function RowActionButtons<TRow>({
             data-adapttable-part="action-button"
             data-color={action.color}
             className={classNames.actionButton}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-            }}
+            onClick={handleClick}
           >
             {action.icon ?? action.label}
           </button>
@@ -87,6 +94,7 @@ export function DesktopTable<TRow>({
   getRowId,
   classNames,
   prefetch,
+  onRowClick,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -99,20 +107,20 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan = virtualColumnSpan(
-    columns.length,
-    Boolean(selection),
-    showActions
-  );
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller). The adapter ships no colours, so consumers must give their
   // `headerCell` class an opaque background — the `data-sticky`/`data-pinned`
   // hooks make that easy to target.
+  // Inside a maxHeight scroll box the box itself is the sticky context, so
+  // the header pins to ITS top — a viewport offset would float it mid-box.
   const stickyStyle: CSSProperties | undefined = stickyHeader
-    ? { position: "sticky", top: stickyTop, zIndex: PIN_Z.header }
+    ? {
+        position: "sticky",
+        top: maxHeight == null ? stickyTop : 0,
+        zIndex: PIN_Z.header,
+      }
     : undefined;
   const stickyAttr = stickyHeader || undefined;
   // The leading checkbox (44px) and trailing actions (120px) columns pin to the
@@ -132,11 +140,22 @@ export function DesktopTable<TRow>({
     pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
   const bodyPinStyle = (key: string): CSSProperties | undefined =>
     pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
-  const headStyle = (key: string): CSSProperties | undefined => {
+  const headStyle = (column: ColumnDef<TRow>): CSSProperties | undefined => {
+    const key = column.key;
     const pin = headPinStyle(key);
-    const width = columnWidths?.[key];
+    // A pinned column renders at the width its sticky inset assumed, so
+    // stacked pins stay flush even with no declared width.
+    const width = pin
+      ? pinnedColumnWidth(column, columnWidths)
+      : columnWidths?.[key];
     if (!stickyStyle && !pin && width == null && !setWidth) return undefined;
-    const merged: CSSProperties = { ...stickyStyle, ...pin, width };
+    // Leave `width` out when unset so merging never clobbers the declared
+    // column width the core prop-getter already provides.
+    const merged: CSSProperties = {
+      ...stickyStyle,
+      ...pin,
+      ...(width != null && { width }),
+    };
     // The resize handle is absolutely positioned, so the cell needs a
     // positioning context when it is not already sticky/pinned.
     if (setWidth && !merged.position) merged.position = "relative";
@@ -195,7 +214,14 @@ export function DesktopTable<TRow>({
             </th>
           )}
           {columns.map((column) => {
-            const headerProps = table.getHeaderCellProps(column);
+            // Route the local sticky/pin/width style THROUGH the prop-getter
+            // so it merges with core's alignment + declared width instead of
+            // replacing them (a bare `style=` after the spread would).
+            const localStyle = headStyle(column);
+            const headerProps = table.getHeaderCellProps(
+              column,
+              localStyle && { style: localStyle }
+            );
             const active = table.sortBy === column.key;
             return (
               <th
@@ -205,7 +231,6 @@ export function DesktopTable<TRow>({
                 data-sorted={active ? table.sortDir : undefined}
                 data-sticky={stickyAttr}
                 data-pinned={pinOffset?.(column.key)?.side}
-                style={headStyle(column.key)}
                 className={classNames.headerCell}
               >
                 {column.sortable ? (
@@ -265,9 +290,11 @@ export function DesktopTable<TRow>({
             <tr
               key={key}
               {...rowProps}
+              {...rowClickProps(row, onRowClick)}
               ref={measureElement}
               data-adapttable-part="row"
               data-selected={selection?.isSelected(id) ? "" : undefined}
+              data-clickable={onRowClick ? "" : undefined}
               className={classNames.row}
               onMouseEnter={prefetch ? () => prefetch(row) : undefined}
             >
@@ -287,22 +314,27 @@ export function DesktopTable<TRow>({
                   />
                 </td>
               )}
-              {columns.map((column) => (
-                <td
-                  key={column.key}
-                  {...table.getCellProps(column)}
-                  data-adapttable-part="cell"
-                  data-pinned={pinOffset?.(column.key)?.side}
-                  style={bodyPinStyle(column.key)}
-                  className={classNames.cell}
-                >
-                  {column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )}
-                </td>
-              ))}
+              {columns.map((column) => {
+                const pinStyle = bodyPinStyle(column.key);
+                return (
+                  <td
+                    key={column.key}
+                    {...table.getCellProps(
+                      column,
+                      pinStyle && { style: pinStyle }
+                    )}
+                    data-adapttable-part="cell"
+                    data-pinned={pinOffset?.(column.key)?.side}
+                    className={classNames.cell}
+                  >
+                    {column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )}
+                  </td>
+                );
+              })}
               {showActions && (
                 <td
                   data-adapttable-part="actions-cell"
@@ -362,6 +394,7 @@ export function MobileCards<TRow>({
   confirm,
   getRowId,
   classNames,
+  onRowClick,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -388,10 +421,12 @@ export function MobileCards<TRow>({
         return (
           <li
             key={key}
+            {...rowClickProps(row, onRowClick)}
             ref={measureElement}
             data-index={index}
             data-adapttable-part="card"
             data-selected={selection?.isSelected(id) ? "" : undefined}
+            data-clickable={onRowClick ? "" : undefined}
             className={classNames.card}
           >
             {selection && (

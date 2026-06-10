@@ -401,11 +401,13 @@ export function Footer({
         page={pagination.safePage}
         onChange={(_, page) => setPage(page)}
         size="small"
+        // Only page items and the previous/next controls render here
+        // (no first/last buttons), so the mapping is total.
         getItemAriaLabel={(type, page) => {
-          if (type === "previous") return labels.previousPage;
-          if (type === "next") return labels.nextPage;
-          if (type === "page") return labels.goToPage(page ?? 1);
-          return "";
+          // Page items always carry their page number (null is reserved
+          // for ellipsis/control items, which take the other branch).
+          if (type === "page") return labels.goToPage(page!);
+          return type === "previous" ? labels.previousPage : labels.nextPage;
         }}
       />
     </Stack>

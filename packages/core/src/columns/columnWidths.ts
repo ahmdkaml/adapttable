@@ -61,3 +61,20 @@ export function tableMinWidth<TRow>(
   );
   return total > 0 ? total + (options.extra ?? 0) : 0;
 }
+
+/**
+ * The pixel width to RENDER a pinned column at: its resolved width, else
+ * {@link FALLBACK_PIN_WIDTH}. Pin insets are summed from these same numbers
+ * (see `pinOffset`), so applying this width to pinned header cells keeps
+ * stacked pins flush — a natural-width pinned column would otherwise render
+ * narrower or wider than the inset math assumed.
+ *
+ * @param column - The pinned column.
+ * @param widths - Resize overrides from the column layout.
+ */
+export function pinnedColumnWidth(
+  column: WidthColumn,
+  widths?: Readonly<Record<string, number>>
+): number {
+  return resolveColumnWidth(column, widths) ?? FALLBACK_PIN_WIDTH;
+}

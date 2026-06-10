@@ -2,10 +2,12 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetDevWarnings } from "../utils/devWarn";
 import {
   resolveVirtualRows,
   useTableVirtualization,
   virtualColumnSpan,
+  warnVirtualizeInScrollBox,
 } from "./useTableVirtualization";
 
 vi.mock("@tanstack/react-virtual", () => ({
@@ -32,6 +34,17 @@ describe("useTableVirtualization", () => {
       measureElement: vi.fn(),
       options: { scrollMargin: 0 },
     } as unknown as ReturnType<typeof useWindowVirtualizer>);
+  });
+
+  it("feeds the virtualizer a size estimator and stable item keys", () => {
+    renderHook(() =>
+      useTableVirtualization({ rows, rowKey, enabled: true, estimateSize: 64 })
+    );
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(options.estimateSize(0)).toBe(64);
+    // Item keys come from rowKey; an out-of-range index degrades gracefully.
+    expect(options.getItemKey!(1)).toBe("1");
+    expect(options.getItemKey!(99)).toBe("99");
   });
 
   it("returns every row when virtualization is disabled", () => {
@@ -241,5 +254,18 @@ describe("useTableVirtualization", () => {
   it("computes table spacer column spans", () => {
     expect(virtualColumnSpan(3, false, false)).toBe(3);
     expect(virtualColumnSpan(3, true, true)).toBe(5);
+  });
+});
+
+describe("warnVirtualizeInScrollBox", () => {
+  it("warns only when virtualize and maxHeight are combined", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    warnVirtualizeInScrollBox(true, undefined);
+    warnVirtualizeInScrollBox(false, 400);
+    expect(warn).not.toHaveBeenCalled();
+    warnVirtualizeInScrollBox(true, 400);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("maxHeight"));
+    resetDevWarnings();
+    vi.restoreAllMocks();
   });
 });

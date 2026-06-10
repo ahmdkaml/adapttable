@@ -62,6 +62,24 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Ant Design)", () => {
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders rows with values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();
@@ -599,6 +617,18 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
+  it("keeps the Load more sentinel armed on mobile even with virtualize set", () => {
+    // Mobile renders cards (never antd's virtual table), so the page-level
+    // sentinel must stay enabled or infinite mode silently stops auto-loading.
+    renderHarness(
+      { mode: "infinite", override: { virtualize: true, isMobile: true } },
+      "limit=1"
+    );
+    expect(screen.queryByText("Bob")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
   it("ignores the virtual scroll handler in paged (non-infinite) mode", () => {
     const { container } = renderHarness({ override: { virtualize: true } });
     const scroller = container.querySelector<HTMLElement>(
@@ -699,6 +729,58 @@ describe("<DataTable> (Ant Design)", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("gives a fixed-width column set its summed min-width so it scrolls", () => {
+    const { container } = renderHarness({
+      override: {
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name, width: 200 },
+          { key: "city", header: "City", accessor: (r) => r.city, width: 160 },
+        ],
+      },
+    });
+    // With every column fixed-width (and nothing pinned), scroll.x gets the
+    // summed min-width so the table scrolls horizontally instead of squishing
+    // the columns below their declared widths.
+    expect(container.querySelector("table")).toHaveStyle({ width: "360px" });
+  });
+
+  it("pins the selection checkbox column alongside a left-pinned column", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    // The checkbox column must ride along with the left-fixed data column,
+    // or it would scroll out of view while Name stays pinned.
+    const selectionCell = container.querySelector(
+      "th.ant-table-selection-column"
+    );
+    expect(selectionCell).toHaveClass("ant-table-cell-fix-left");
+  });
+
+  it("keeps the filter popover open on a mousedown over its own trigger", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const button = screen.getByRole("button", { name: /filters/i });
+    fireEvent.click(button);
+    // A mousedown on the trigger must not close the popover — the click that
+    // follows it toggles; closing on mousedown would immediately re-open it.
+    fireEvent.mouseDown(button);
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("ignores non-Escape keys while the filter popover is open", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    // Only Escape dismisses; other keys (typing in filter inputs) must not.
+    fireEvent.keyDown(document, { key: "Enter" });
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
   it("wires antd's sticky header when stickyHeader is set", () => {
     const { container } = renderHarness({
       override: { stickyHeader: true, stickyTop: 12 },
@@ -710,6 +792,41 @@ describe("<DataTable> (Ant Design)", () => {
   it("omits the sticky header by default", () => {
     const { container } = renderHarness();
     expect(container.querySelector(".ant-table-sticky-holder")).toBeNull();
+  });
+
+  it("defaults the sticky header offset to 0 when stickyTop is omitted", () => {
+    const { container } = renderHarness({ override: { stickyHeader: true } });
+    // Without a stickyTop the header sticks flush to the viewport top.
+    const holder = container.querySelector(".ant-table-sticky-holder");
+    expect(holder).toHaveStyle({ top: "0px" });
+  });
+
+  it("tightens the card gap for density='compact' on mobile", () => {
+    const { container } = renderHarness({
+      override: { isMobile: true, density: "compact" },
+    });
+    // Compact density halves the vertical rhythm between cards.
+    const list = container.querySelector<HTMLElement>(
+      '[data-adapttable-part="cards"]'
+    );
+    expect(list?.style.gap).toBe("4px");
+  });
+
+  it("disables a mobile card action without attaching a click handler", () => {
+    const onClick = vi.fn();
+    renderHarness({
+      override: {
+        isMobile: true,
+        rowActions: [
+          { key: "d", label: "DisabledAct", onClick, isDisabled: () => true },
+        ],
+      },
+    });
+    // The disabled attribute is what blocks activation — no handler is bound.
+    const button = screen.getAllByRole("button", { name: "DisabledAct" })[0]!;
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it("prefetches a row on card hover in mobile mode", () => {

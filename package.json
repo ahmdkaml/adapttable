@@ -21,6 +21,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,mjs,cjs}\"",
     "clean": "turbo run clean && rimraf node_modules .turbo coverage",
     "sonar:coverage": "turbo run test:coverage --force && node scripts/fix-lcov-paths.mjs",
+    "llms": "node scripts/build-llms-full.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",

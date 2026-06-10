@@ -131,14 +131,16 @@ export function writeExtra(
   for (const [key, value] of Object.entries(extra)) {
     if (isEmptyFilterValue(value)) continue;
     const param = `${filterPrefix}${key}`;
-    // Percent-encode each array element so a value may contain the comma
-    // delimiter (and survives a single URLSearchParams decode round-trip).
-    params.set(
-      param,
-      Array.isArray(value)
-        ? value.map((v) => encodeURIComponent(String(v))).join(",")
-        : String(value)
-    );
+    if (Array.isArray(value)) {
+      // Trim entries the same way the read side does, so values round-trip
+      // byte-identical; percent-encode each element so a value may contain
+      // the comma delimiter (and survives a URLSearchParams decode).
+      const entries = value.map((v) => String(v).trim()).filter(Boolean);
+      if (entries.length === 0) continue;
+      params.set(param, entries.map((v) => encodeURIComponent(v)).join(","));
+    } else {
+      params.set(param, String(value));
+    }
   }
 }
 

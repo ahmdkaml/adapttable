@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, responsive mobile cards, optional row/card virtualization, provider-native filter drawers with chips, numeric/date/status filters, i18n + RTL, dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
 
 
 ---
@@ -9,9 +9,8 @@
 
 AdaptTable is a **headless, UI-agnostic React data table**. Pick the adapter
 for your design system and you get a fully styled, sortable, filterable,
-paginated or infinite table with URL-synced state, provider-native filter
-drawers, selection + bulk actions, optional virtualization, automatic
-responsive mobile cards, RTL, and dark mode — in about five lines.
+paginated table with URL-synced state, selection + bulk actions, RTL, and
+dark mode — in about five lines.
 
 ## Install
 
@@ -22,7 +21,7 @@ starter:
 npx @adapttable/cli init
 ```
 
-Or install manually (Mantine shown; swap for `mui`, `chakra`, or
+Or install manually (Mantine shown; swap for `mui`, `chakra`, `antd`, or
 `unstyled`):
 
 ```bash
@@ -30,6 +29,21 @@ pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react
 ```
 
 ## Your first table
+
+Each adapter renders with its UI kit's own components, so your app needs that
+kit's provider once at the root — exactly as the kit's docs describe (Mantine
+shown; MUI/Chakra/antd use their own providers, and the unstyled adapter
+needs none):
+
+```tsx
+// main.tsx — once per app, straight from Mantine's own setup guide.
+import "@mantine/core/styles.css";
+import { MantineProvider } from "@mantine/core";
+
+<MantineProvider>
+  <App />
+</MantineProvider>;
+```
 
 ```tsx
 import {
@@ -61,13 +75,50 @@ mobile card layout all work out of the box.
 ## Client vs. server data
 
 `useFrontendData` filters/sorts/slices an in-memory array. To drive the same
-table from a paginated API, swap in `useBackendData` (built on TanStack
-Query's `useInfiniteQuery`). **The `<DataTable>` doesn't change** — both
-hooks return the same [`TableSource`](./concepts.md).
+table from a paginated API, swap in `useBackendData`: you write one
+`useInfiniteQuery` hook (TanStack Query — wrap your app in its
+`QueryClientProvider`) and AdaptTable adapts it. **The `<DataTable>` doesn't
+change** — both hooks return the same [`TableSource`](./concepts.md).
 
 ```tsx
-const source = useBackendData({ usePaginatedQuery });
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
+import { type TableQueryParams, useBackendData } from "@adapttable/mantine";
+
+// Your query hook: fetch one page for the current params.
+function usePeopleQuery(params: Partial<TableQueryParams>) {
+  return useInfiniteQuery({
+    queryKey: ["people", params],
+    queryFn: ({ pageParam }) => fetchPeople({ ...params, page: pageParam }), // → { items, total, page, limit, hasNext }
+    initialPageParam: params.page ?? 1,
+    getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Pass the row type; the default page shape is `{ items, total, … }`.
+const source = useBackendData<Person>({ usePaginatedQuery: usePeopleQuery });
 ```
+
+See [`examples/mui-backend.tsx`](../examples/mui-backend.tsx) for a complete
+runnable version.
+
+## Turn on column management
+
+The Columns menu (show/hide, drag/keyboard reorder, pin) and resize handles
+are one prop each:
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  enableColumnMenu
+  resizableColumns
+/>
+```
+
+See [customization](./customization.md) for presets (`defaultColumnLayout`),
+URL persistence, and `density`.
 
 ## Next steps
 
@@ -76,7 +127,6 @@ const source = useBackendData({ usePaginatedQuery });
 - [i18n & RTL](./i18n-rtl.md)
 - [Customization](./customization.md)
 - [API reference](./api.md)
-
 
 ---
 
@@ -166,12 +216,67 @@ interface ColumnDef<TRow> {
 **paged on desktop**, using the same breakpoint the table uses, so the two
 never drift. Force a mode with `paginationMode: "paged" | "infinite"`.
 
+In infinite mode the adapters auto-load the next page when the bottom of the
+list scrolls into view (via `IntersectionObserver`, prefetching ~200px
+early), and also render an explicit **Load more** button as a keyboard- and
+screen-reader-friendly fallback. The auto-load behaviour is packaged as a
+headless hook, `useInfiniteScroll`, exported from `@adapttable/core` — attach
+the returned ref to a sentinel element after your last row to get the same
+behaviour in custom markup:
+
+```tsx
+const sentinelRef = useInfiniteScroll({
+  hasNextPage: source.hasNextPage,
+  isFetchingNextPage: source.isFetchingNextPage,
+  fetchNextPage: source.fetchNextPage,
+  itemCount: source.rows.length, // re-arms so short pages keep loading
+  enabled: source.paginationMode === "infinite",
+});
+// …render rows…
+<div ref={sentinelRef} />;
+```
+
+It is SSR- and test-safe: where `IntersectionObserver` is unavailable it
+no-ops, leaving the Load more button as the path forward.
+
+## Optional virtualization
+
+Long infinite lists can opt into row/card windowing with `virtualize`. The
+core exports `useTableVirtualization`, and the ready adapters wire it into
+their desktop rows and mobile cards. Ant Design maps the same `virtualize`
+prop to antd's native virtual table mode.
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(row) => row.id}
+  paginationMode="infinite"
+  virtualize
+  estimateRowSize={56}
+  estimateCardSize={140}
+/>
+```
+
+Virtualization is optional. Leave it off for small lists or paged tables; turn
+it on for long infinite lists.
+
+## Responsive cards
+
+Adapters automatically switch from table rows to mobile cards at the shared
+mobile breakpoint. `hideOnMobile` can hide low-value columns, while
+`mobileIdentityColumns` preserves a configurable number of leading
+desktop-visible columns so every card keeps enough identity to be useful.
+
+```tsx
+<DataTable mobileIdentityColumns={2} />
+```
+
 ## The two ways to use it
 
 1. **Batteries-included** — `import { DataTable } from "@adapttable/<kit>"`.
 2. **Headless** — `import { useDataTable } from "@adapttable/core"` and render
    your own markup with the returned prop-getters.
-
 
 ---
 
@@ -189,7 +294,29 @@ the back button all land the user on the exact same slice of data.
 Defaults are omitted from the URL to keep it clean, and changing any filter
 resets the page to 1.
 
-> **Note:** array filter values are encoded comma-separated, so individual
+`defaults.extra` provides default extra-filter values when the URL has no
+matching `f_<key>` entry. A shared URL value wins over the default for that key.
+When the user explicitly clears a defaulted value (removing the chip,
+clearing the search, clear-all), the hook records the clearing as an
+empty-valued param (`f_status=`, `q=`) so the default does not instantly
+resurrect — a missing param means "default applies", an empty one means
+"explicitly cleared".
+
+## Multiple tables on one page: `urlKey`
+
+Two tables sharing one URL would clobber each other's params. Give each one
+a namespace and every param is prefixed (`left.q`, `left.page`,
+`left.f_status`, `right.q`, …):
+
+```tsx
+const left = useFrontendData({ data, columns, urlKey: "left" });
+const right = useBackendData({ usePaginatedQuery, urlKey: "right" });
+```
+
+The same `urlKey` option exists on `useTableUrlState` and
+`useColumnLayoutUrlState` for headless consumers.
+
+> **Note:** array filter values are stored as comma-separated entries. Each
 > entry is encoded before joining, so ids, enum values, and even labels that
 > contain commas round-trip safely.
 
@@ -210,8 +337,63 @@ interface UrlStateAdapter {
 - **`createMemoryAdapter()`** — in-memory; used for SSR, tests, and when URL
   sync is disabled (the table still gets fully working local state).
 
-Integrate with an existing router by implementing the same three methods
-(e.g. wrapping react-router's `useSearchParams` or Next.js navigation).
+Integrate with an existing router by implementing the same three methods.
+Copy-paste recipes:
+
+### react-router
+
+```tsx
+import { useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import type { UrlStateAdapter } from "@adapttable/core";
+
+export function useReactRouterAdapter(): UrlStateAdapter {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return useMemo(
+    () => ({
+      getSearch: () => location.search.replace(/^\?/, ""),
+      setSearch: (search, opts) =>
+        navigate({ search }, { replace: !opts?.push }),
+      // react-router re-renders on navigation; the hook re-reads getSearch.
+      subscribe: () => () => undefined,
+    }),
+    [location.search, navigate]
+  );
+}
+```
+
+### Next.js (App Router)
+
+```tsx
+"use client";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { UrlStateAdapter } from "@adapttable/core";
+
+export function useNextAdapter(): UrlStateAdapter {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return useMemo(
+    () => ({
+      getSearch: () => searchParams.toString(),
+      setSearch: (search, opts) => {
+        const url = search ? `${pathname}?${search}` : pathname;
+        if (opts?.push) router.push(url, { scroll: false });
+        else router.replace(url, { scroll: false });
+      },
+      subscribe: () => () => undefined,
+    }),
+    [searchParams, pathname, router]
+  );
+}
+```
+
+Pass the adapter to the source hook: `useFrontendData({ data, columns,
+adapter: useNextAdapter() })`. With an explicit adapter the table also
+hydrates correctly under SSR — the server snapshot reads the adapter, which
+knows the request URL.
 
 ## Disabling URL sync
 
@@ -228,7 +410,6 @@ modals or drawers where you don't want to pollute the address bar.
 const { page, search, sortBy, setSearch, setSort, setExtra, clearAll } =
   useTableUrlState({ adapter, defaults, numberExtraKeys, arrayExtraKeys });
 ```
-
 
 ---
 
@@ -254,6 +435,10 @@ English defaults.
 
 ## Ready presets (`@adapttable/i18n`)
 
+Ten languages ship out of the box — **en, ar, de, es, fr, he, it, ja, pt,
+zh** (Arabic and Hebrew are right-to-left). `getLabels` matches the primary
+subtag (e.g. `"de-AT"` → German) and falls back to English.
+
 ```tsx
 import { getLabels, getDirection } from "@adapttable/i18n";
 
@@ -261,16 +446,16 @@ import { getLabels, getDirection } from "@adapttable/i18n";
   source={source}
   columns={columns}
   rowKey={(r) => r.id}
-  labels={getLabels(locale)} // "ar" → Arabic, otherwise English
-  dir={getDirection(locale)} // "ar" → "rtl"
+  labels={getLabels(locale)} // e.g. "de-AT" → German; unknown → English
+  dir={getDirection(locale)} // "ar" / "he" → "rtl"
 />;
 ```
 
-Bring your own language by spreading a preset:
+Need another language? Spread a preset and override the few strings you want:
 
 ```ts
 import { en } from "@adapttable/i18n";
-const fr = { ...en, search: "Rechercher", noData: "Aucune donnée" };
+const sw = { ...en, search: "Tafuta", noData: "Hakuna data" };
 ```
 
 ## RTL (right-to-left / Arabic)
@@ -295,7 +480,6 @@ theming — Mantine/MUI/Chakra color schemes, or `data-theme` / CSS variables
 for the unstyled adapter. Wrap your app in the kit's provider and AdaptTable
 follows it (and `prefers-color-scheme`) seamlessly.
 
-
 ---
 
 # Customization
@@ -306,7 +490,8 @@ power user controls every node. From least to most effort — all opt-in:
 ## 1. Props
 
 `columns`, `source`, `searchPlaceholder`, `sortByOptions`, `rowActions`,
-`bulkActions`, `filters`, `dir`, and more.
+`bulkActions`, `filters`, `dir`, `virtualize`, `mobileIdentityColumns`,
+`stickyTop`, and more.
 
 ## 2. Slots
 
@@ -331,11 +516,21 @@ attributes:
     table: "w-full text-sm",
     row: "border-b hover:bg-zinc-50 data-[selected]:bg-blue-50",
     cell: "px-3 py-2",
+    filtersBackdrop: "fixed inset-0 bg-black/40",
+    filtersPanel: "fixed inset-y-0 end-0 w-96 bg-white shadow-xl",
+    filtersDone: "rounded-md bg-zinc-900 text-white px-3 py-2",
   }}
 />
 ```
 
-## 4. Row & bulk actions
+## 4. Filter panels
+
+Filter panels are live by default: your filter controls call
+`source.setExtra(...)` as the user changes them, and the drawer action simply
+accepts the current state and closes the panel. If you prefer staged filters,
+keep draft state in your filter component and commit it with `setExtras`.
+
+## 5. Row & bulk actions
 
 ```tsx
 const rowActions = [
@@ -372,7 +567,32 @@ const bulkActions = [
 Confirmation is injectable via the `confirm` prop (defaults to
 `window.confirm`); pass your own dialog handler for a styled experience.
 
-## 5. Column management
+Row actions can use `disabledReason(row)` when an action should be disabled
+and explain why. Bulk actions have the same pattern for selected ids.
+
+## 6. Virtualization and sticky polish
+
+Virtualization is opt-in:
+
+```tsx
+<DataTable
+  virtualize
+  estimateRowSize={56}
+  estimateCardSize={140}
+  virtualOverscan={8}
+/>
+```
+
+Mantine also supports sticky offset and scroll restoration knobs:
+
+```tsx
+<DataTable stickyTop={56} scrollToTopOnChange scrollTopGap={8} />
+```
+
+Consumers rendering their own markup can use the headless
+`useTableVirtualization` and `useScrollToTableTop` hooks directly.
+
+## 7. Column management
 
 Let users show/hide, reorder, pin, and resize columns. All opt-in, all driven
 from `@adapttable/core`, so every adapter gets them by passing a prop.
@@ -389,18 +609,24 @@ from `@adapttable/core`, so every adapter gets them by passing a prop.
 />
 ```
 
-- Show/hide, reorder, and pin live in the built-in menu (`enableColumnMenu`).
-  Reorder by dragging a row or with arrow keys on its grip; pinning makes a
-  column sticky to the inline-start edge.
-- Resize (`resizableColumns`) adds a handle to each header — drag it, or focus
-  it and press the arrow keys. It is direction-aware (correct in RTL).
-- Pinning needs a horizontal scroll context to stick: set `maxHeight` or let
-  the table exceed its container width.
-- Preset the layout with `defaultColumnLayout` (uncontrolled), or control it
-  with `columnLayout` + `onColumnLayoutChange`. Shape: `{ hidden, order,
-  pinned, widths }`.
+- **Show/hide, reorder, pin** live in the built-in menu (`enableColumnMenu`).
+  Reorder by dragging a row or with the arrow keys on its grip. The pin
+  control cycles **none → left → right → none**; pinning is logical
+  (inline start/end), so a "left" pin sticks to the correct edge in RTL too.
+- **Resize** (`resizableColumns`) adds a handle to each header — drag it, or
+  focus it and press ←/→. It is direction-aware, so it widens the right way in
+  RTL.
+- **Pinning needs a horizontal scroll context** to visibly stick: set
+  `maxHeight` (a scroll box that also scrolls sideways) or let the table exceed
+  its container width.
+- Start from a preset with `defaultColumnLayout` (uncontrolled), or drive it
+  yourself with `columnLayout` + `onColumnLayoutChange` (controlled). The layout
+  shape is `{ hidden, order, pinned, widths }`.
 
-## 6. Prop-getters (fully headless)
+See [examples/mantine-columns.tsx](../examples/mantine-columns.tsx) for a full
+example.
+
+## 8. Prop-getters (fully headless)
 
 Build the entire markup yourself with `@adapttable/core`:
 
@@ -438,12 +664,89 @@ const t = useDataTable({ source, columns, rowKey });
 Prop-getters merge your overrides: event handlers compose, `className`
 strings concatenate, and `style` objects merge.
 
+## Clickable rows
+
+```tsx
+<DataTable onRowClick={(row) => navigate(`/people/${row.id}`)} … />
+```
+
+Rows get the pointer cursor and Enter-key activation; clicks on row actions,
+the selection checkbox, or links inside cells never trigger it.
+
+## CSV export
+
+```tsx
+import { downloadCsv, rowsToCsv } from "@adapttable/core";
+
+<DataTable
+  toolbar={
+    <Button onClick={() => downloadCsv("people.csv", rowsToCsv(rows, columns))}>
+      Export CSV
+    </Button>
+  }
+  …
+/>;
+```
+
+Cells resolve via `accessor` (when primitive) → `sortValue`, so JSX cells
+export their underlying value. Pass `getValue` for full control.
+
+## Persisting column layout
+
+- Shareable links: `useColumnLayoutUrlState({ urlKey })`.
+- User preference: `useColumnLayoutStorageState({ storageKey })` —
+  localStorage-backed, SSR-safe, cleared when the layout returns to the
+  default.
+
+```tsx
+const { layout, onLayoutChange } = useColumnLayoutStorageState({
+  storageKey: "people-columns",
+});
+<DataTable columnLayout={layout} onColumnLayoutChange={onLayoutChange} … />;
+```
+
 ## Animations
 
 Adapters can animate row/card entrance on mount. It is **opt-in**, honours
 `prefers-reduced-motion`, and is dependency-free by default (no GSAP
-required) — enable it with `animate` where supported.
+required) — enable it with `animate` where supported (Mantine):
 
+```tsx
+<DataTable source={source} columns={columns} rowKey={(r) => r.id} animate />
+```
+
+### Bring your own animation (GSAP, Framer Motion, anything)
+
+Every animatable row/card is tagged with a `data-stagger` attribute, so you
+can drive the entrance with whatever library you prefer. Leave the built-in
+off (`animate` defaults to `false`) and target the elements yourself:
+
+```tsx
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { DataTable, useFrontendData } from "@adapttable/mantine";
+
+function People({ data }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const source = useFrontendData({ data, columns });
+
+  useEffect(() => {
+    const items = ref.current?.querySelectorAll("[data-stagger]");
+    if (items?.length) {
+      gsap.from(items, { opacity: 0, y: 8, duration: 0.32, stagger: 0.04 });
+    }
+  }, [source.rows]);
+
+  return (
+    <div ref={ref}>
+      <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
+    </div>
+  );
+}
+```
+
+So the choice is yours: the built-in WAAPI stagger, your own GSAP/Framer
+timeline via `data-stagger`, or no animation at all.
 
 ---
 
@@ -462,7 +765,26 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ### State
 
 - `useTableUrlState(options?): { page, limit, search, sortBy, sortDir, extra, setPage, setLimit, setSort, setSearch, setExtra, setExtras, clearAll }`
+- `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` — URL-persisted
+  column layout (hidden / order / pinned / widths), namespaced by `urlKey`.
+- `useColumnLayoutStorageState({ storageKey, storage?, defaultLayout? })` —
+  the localStorage counterpart (user preference rather than shareable link).
 - `createHistoryAdapter()`, `createMemoryAdapter(initial?)`, `getHistoryAdapter()` → `UrlStateAdapter`
+
+### Column management
+
+- `useColumnLayout({ columns, layout?, onLayoutChange?, defaultLayout? })` —
+  headless visibility / order / pinning / width state with `visibleColumns`,
+  `toggleVisible`, `move`, `setPinned`, `setWidth`, `pinOffset`, `reset`.
+- Menu/markup builders for custom UIs: `columnMenuRows`, `columnRowDragProps`,
+  `columnDropProps`, `columnReorderKeyProps` (keyboard reorder, RTL-aware),
+  `columnResizeHandleProps` (pointer + arrow-key resize, RTL-aware).
+- Pinning style helpers: `pinnedCellStyle`, `edgePinStyle`, `PIN_Z` — logical
+  insets (`insetInlineStart/End`), so pins land on the correct edge in RTL.
+- Width helpers: `tableMinWidth`, `resolveColumnWidth`, `parsePxWidth`.
+- On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
+  `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
+  `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`.
 
 ### Orchestration / headless rendering
 
@@ -475,25 +797,52 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ### Selection, filters, actions
 
 - `useSelection`, `useActiveFilterChips`, `useExtraChips`
+- Count filter helpers: `COUNT_OPERATORS`, `COUNT_OPERATOR_SYMBOL`,
+  `countFilterExtra`, `clearCountFilterExtra`,
+  `countFilterStateFromExtra`, `countFilterChipLabel`,
+  `isCountFilterComplete`, `sanitizeCountFilterParams`
+- `mergeFilterChips`, `resolveActiveFilterCount` (pure helpers behind the
+  adapter chrome)
 - `defaultConfirm`, `runRowAction`, `useBulkActionRunner`
 
 ### Utilities & hooks
 
 - `useDebounce`, `useMediaQuery`, `useIsMobile`, `usePrefersReducedMotion`,
   `useColorScheme` (resolves `"light" | "dark" | "auto"`)
+- `useInfiniteScroll` — IntersectionObserver sentinel that auto-loads the
+  next page in infinite mode (returns a ref; re-arms on `itemCount`)
+- `useTableVirtualization` — headless window virtualization for rows/cards.
+- `useScrollToTableTop` — optional sticky-chrome scroll restoration.
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
-  `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`, `defaultLabels`
+  `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`,
+  `defaultLabels`, `pageSizeOptions`
 
 ### Types
 
 `TableSource`, `ColumnDef`, `RowAction`, `BulkAction`, `PaginatedResponse`,
 `TableLabels`, `BaseDataTableProps`, `SortDirection`, `Direction`,
-`ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`, …
+`ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`,
+`VirtualTableRow`, `CountFilterState`, `CountOperator`, …
+
+### Rows & export
+
+- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
+  interactive children (actions, checkboxes, links) keep their own behaviour.
+  Headless consumers: `rowClickProps(row, onRowClick)`.
+- `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV
+  export from the table's own column definitions (free; pair with the
+  `toolbar` slot).
+
+### Development warnings
+
+Misconfiguration warns once per message in development (silent in
+production): unresolvable sorts, duplicate column keys, two tables sharing a
+URL namespace without `urlKey`, and `virtualize` combined with `maxHeight`.
 
 ## Adapters
 
 `@adapttable/mantine`, `@adapttable/mui`, `@adapttable/chakra`,
-`@adapttable/antd`, `@adapttable/unstyled` each export:
+`@adapttable/antd`, and `@adapttable/unstyled` each export:
 
 - `DataTable<TRow>` — the batteries-included component (props extend
   `BaseDataTableProps` plus kit-specific extras like `slots` / `classNames`).
@@ -511,26 +860,27 @@ and JSDoc, so editor autocomplete is the canonical reference.
 - Programmatic: `detectKit`, `choosePackageManager`, `installCommand`,
   `scaffoldFiles`, `runInit`.
 
-
 ---
 
 # Comparison
 
 How AdaptTable compares to popular React table libraries.
 
-| Feature                                        |  ag-grid   |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**      |
-| ---------------------------------------------- | :--------: | :------------------: | :---------------: | :------------: | :----------------------: |
-| Headless core                                  |     ✗      |          ✓           |         ✗         |       ✗        |          **✓**           |
-| Works across UI kits                           |     ✗      | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters** |
-| Client **and** server data, same API           |  partial   |   wire it yourself   |         ✗         |    partial     |  **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)             |     ✗      |          ✗           |         ✗         |       ✗        |          **✓**           |
-| Filter drawer + removable chips                |     ✗      |          ✗           |         ✗         |    partial     |      **✓ built-in**      |
-| Infinite scroll **and** paged (auto by device) |     ✓      |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**   |
-| i18n + **RTL / Arabic** first-class            |  partial   |          ✗           |         ✗         |    partial     |          **✓**           |
-| Dark mode                                      |     ✓      |         n/a          |         ✓         |       ✓        |      **✓ seamless**      |
-| MIT / free                                     | open-core  |          ✓           |         ✓         |   open-core    |          **✓**           |
+| Feature                                        |  ag-grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**       |
+| ---------------------------------------------- | :-------: | :------------------: | :---------------: | :------------: | :-----------------------: |
+| Headless core                                  |     ✗     |          ✓           |         ✗         |       ✗        |           **✓**           |
+| Works across UI kits                           |     ✗     | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters**  |
+| Client **and** server data, same API           |  partial  |   wire it yourself   |         ✗         |    partial     |   **✓ (`TableSource`)**   |
+| URL-synced state (shareable links)             |     ✗     |          ✗           |         ✗         |       ✗        |           **✓**           |
+| Filter drawer + removable chips                |     ✗     |          ✗           |         ✗         |    partial     |      **✓ built-in**       |
+| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**    |
+| Responsive mobile card layout                  |  partial  |  build it yourself   |      partial      |    partial     | **✓ automatic + tunable** |
+| Optional row/card virtualization               |     ✓     |      ✓ (manual)      |         ✗         |    ✓ (paid)    |   **✓ built-in opt-in**   |
+| i18n + **RTL / Arabic** first-class            |  partial  |          ✗           |         ✗         |    partial     |           **✓**           |
+| Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**       |
+| MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |           **✓**           |
 
-Comparison as of June 2026, based on each project's public documentation. "Open-core" = a free MIT/community edition plus paid tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium), where the advanced server-side and infinite-loading features live.
+<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers.</sub>
 
 ## When to choose AdaptTable
 
@@ -538,6 +888,7 @@ Comparison as of June 2026, based on each project's public documentation. "Open-
   matches your kit without building it yourself.
 - You need **the same table for both in-memory and server-paginated data**.
 - You want **shareable, deep-linkable table state** for free.
+- You want tables that stay usable on phones without horizontal-scroll hacks.
 - You need **RTL / Arabic** done properly.
 - You want a **headless escape hatch** when the defaults aren't enough — the
   same core powers both the batteries-included components and your own
@@ -552,3 +903,126 @@ Comparison as of June 2026, based on each project's public documentation. "Open-
 - You need a spreadsheet-like editing surface today, not a responsive data
   table for application lists.
 
+---
+
+# Frequently asked questions
+
+Short, direct answers to the things people ask when choosing a React table.
+(Looking for a quick comparison table instead? See
+[comparison.md](./comparison.md).)
+
+## What is AdaptTable?
+
+AdaptTable is a **headless, UI-agnostic React data table**. A single headless
+engine (`@adapttable/core`) powers ready, batteries-included adapters for
+**Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn** (unstyled). You get
+TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
+already use — from the same core.
+
+## What is the best headless React table that works with my design system?
+
+If you use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn**, AdaptTable
+gives you a fully-featured table (sorting, filtering, selection, pagination,
+infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
+matches your kit without building the UI yourself. If you're on a different
+kit, the unstyled adapter exposes semantic HTML with `data-*` and `className`
+hooks, and the headless `useDataTable` core works with any markup.
+
+## Is there a free alternative to MUI X DataGrid or ag-Grid?
+
+Yes — AdaptTable is **MIT-licensed and fully free**, including server-side
+data, infinite scroll, filtering, and selection. MUI X DataGrid and ag-Grid are
+**open-core**: their advanced server-side data and infinite-loading
+capabilities sit behind paid Pro/Premium or Enterprise tiers. The MUI adapter
+gives a DataGrid-style experience at no cost.
+
+## How does it handle responsive tables on mobile?
+
+It does not try to squeeze desktop columns into a tiny viewport. The adapters
+automatically switch to mobile cards, with labels per value and a tunable
+`mobileIdentityColumns` option so the most important columns remain visible.
+This avoids the horizontal-scroll table pattern that breaks many responsive
+apps.
+
+## How do I use the same table for client-side and server-side data?
+
+Use one `TableSource` contract for both:
+
+```tsx
+// in-memory
+const source = useFrontendData({ data: rows, columns });
+// server-paginated (wraps your useInfiniteQuery hook) — the table is identical
+const source = useBackendData({ usePaginatedQuery });
+```
+
+`<DataTable source={source} … />` doesn't change between them.
+
+## Does AdaptTable support RTL and Arabic?
+
+Yes, RTL is first-class. Column alignment uses **logical CSS** (`start`/`end`),
+so it flips automatically under `dir="rtl"`. The optional `@adapttable/i18n`
+package ships **10 locales** — English, Arabic, German, Spanish, French,
+Hebrew, Italian, Japanese, Portuguese, and Chinese — plus `getDirection` /
+`isRtlLocale` helpers. Arabic and Hebrew are right-to-left.
+
+## Does it have dark mode?
+
+Dark mode is **seamless** — it's inherited from your UI kit's theme, with
+logical color choices and no hardcoded surfaces that fight the host theme.
+
+## Can I animate rows? Do I need GSAP?
+
+Animation is **opt-in and dependency-free** — the built-in entrance stagger
+uses the Web Animations API and honours `prefers-reduced-motion`. Prefer GSAP
+or Framer Motion? Every row/card is tagged with `data-stagger`, so you can
+drive the animation yourself (see
+[customization.md](./customization.md#animations)). Or run with no animation at
+all — your call.
+
+## Does it support virtualization?
+
+Yes. Long infinite lists can opt into row/card virtualization with
+`virtualize`, `estimateRowSize`, `estimateCardSize`, and `virtualOverscan`.
+Ant Design uses its native virtual table mode via the same `virtualize` prop.
+
+## How do I add URL-synced (shareable, deep-linkable) table state?
+
+It's built in. Search, sort, filters, and page sync to the URL through an
+injectable adapter (browser History by default; pass a router adapter for
+Next.js / react-router). Reloads, shared links, and back/forward restore the
+exact view. See [url-state.md](./url-state.md).
+
+## Which React versions and bundlers are supported?
+
+React **18+**. Every package ships dual ESM/CJS builds with `.d.ts` types
+(verified with `publint --strict` and `are-the-types-wrong`), so it works with
+Vite, Next.js, Remix, webpack, and friends. It's written in strict TypeScript.
+
+## Is it accessible?
+
+Yes — semantic table markup, `aria-sort` on sortable headers, labelled
+selection checkboxes and icon buttons, and a keyboard-friendly UX. Every
+adapter is audited with `axe` in CI, on both desktop and mobile layouts.
+
+## How big is it / is it tree-shakeable?
+
+Every package sets `sideEffects: false` and ships ESM, so unused code is
+tree-shaken. You only install the one adapter you use; the headless core has
+zero UI-kit dependencies.
+
+## How do I get started quickly?
+
+```bash
+npx @adapttable/cli init   # detects your UI kit and scaffolds a table
+```
+
+Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
+[getting-started.md](./getting-started.md).
+
+## When might another library fit better?
+
+- You need a heavyweight enterprise grid with pivoting, range selection, and
+  Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
+- You're not on React → TanStack Table (multi-framework).
+- You need spreadsheet-grade enterprise features like pivoting, Excel-style
+  editing, or range selection _today_.

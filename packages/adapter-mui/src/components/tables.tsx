@@ -6,13 +6,15 @@ import {
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
+  pinnedColumnWidth,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
+  rowClickProps,
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
-  virtualColumnSpan,
+  tableRenderModel,
 } from "@adapttable/core";
 
 /** Sx for an absolutely-positioned column-resize handle. */
@@ -95,11 +97,16 @@ function RowActionButtons<TRow>({
                 color={muiColor(action.color)}
                 disabled={disabled}
                 aria-label={action.label}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!disabled)
-                    runRowAction(action, row, confirm, cancelLabel);
-                }}
+                onClick={
+                  // The disabled attribute already blocks activation, so
+                  // attach the handler only when the action can run.
+                  disabled
+                    ? undefined
+                    : (e) => {
+                        e.stopPropagation();
+                        runRowAction(action, row, confirm, cancelLabel);
+                      }
+                }
               >
                 {action.icon ?? (
                   <Typography variant="caption">{action.label}</Typography>
@@ -122,6 +129,7 @@ export function DesktopTable<TRow>({
   getRowId,
   size,
   prefetch,
+  onRowClick,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -134,21 +142,17 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan = virtualColumnSpan(
-    columns.length,
-    Boolean(selection),
-    showActions
-  );
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
   // `position: sticky` on a `<thead>` does not pin against the document
   // scroller, so we stick the header *cells* instead. Pinned cells also stick
   // left/right (corner-sticky in the header) with an opaque background.
+  // Inside a maxHeight scroll box the box itself is the sticky context, so
+  // the header pins to ITS top — a viewport offset would float it mid-box.
   const headSx = stickyHeader
     ? {
         position: "sticky" as const,
-        top: stickyTop,
+        top: maxHeight == null ? stickyTop : 0,
         zIndex: PIN_Z.header,
         bgcolor: "background.paper",
       }
@@ -175,7 +179,11 @@ export function DesktopTable<TRow>({
       PIN_Z.headerPinned,
       leads
     );
-    const width = columnWidths?.[column.key] ?? column.width;
+    // A pinned column renders at the width its sticky inset assumed, so
+    // stacked pins stay flush even with no declared width.
+    const width = pin
+      ? pinnedColumnWidth(column, columnWidths)
+      : (columnWidths?.[column.key] ?? column.width);
     // The resize handle is absolute; an un-pinned/un-sticky cell still needs a
     // positioning context for it.
     const needsRelative = Boolean(setWidth) && !headSx && !pin;
@@ -303,6 +311,7 @@ export function DesktopTable<TRow>({
             return (
               <TableRow
                 key={key}
+                {...rowClickProps(row, onRowClick)}
                 ref={measureElement}
                 data-index={index}
                 hover
@@ -382,6 +391,8 @@ export function MobileCards<TRow>({
   rowActions,
   confirm,
   getRowId,
+  size,
+  onRowClick,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -389,8 +400,13 @@ export function MobileCards<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const compact = size === "small";
   return (
-    <Stack spacing={1.5} role="list">
+    <Stack
+      spacing={compact ? 1 : 1.5}
+      role="list"
+      aria-label={table.getTableProps()["aria-label"] as string}
+    >
       {paddingTop > 0 && <Box aria-hidden sx={{ height: paddingTop }} />}
       {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
@@ -401,8 +417,13 @@ export function MobileCards<TRow>({
             data-index={index}
             variant="outlined"
             role="listitem"
+            {...rowClickProps(row, onRowClick)}
           >
-            <CardContent>
+            <CardContent
+              sx={
+                compact ? { p: 1.25, "&:last-child": { pb: 1.25 } } : undefined
+              }
+            >
               {selection && (
                 <Checkbox
                   slotProps={{ input: { "aria-label": labels.selectRow } }}
@@ -411,7 +432,7 @@ export function MobileCards<TRow>({
                 />
               )}
               {columns.map((column) => (
-                <Box key={column.key} sx={{ mb: 1 }}>
+                <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
                   <Typography
                     variant="caption"
                     color="text.secondary"

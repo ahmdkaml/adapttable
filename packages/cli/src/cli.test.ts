@@ -119,6 +119,24 @@ describe("runInit", () => {
     expect(logs.join("\n")).toContain("Mantine");
   });
 
+  it("warns when Chakra v3 is detected (adapter targets v2)", () => {
+    const { io, logs } = makeIO(
+      JSON.stringify({ dependencies: { "@chakra-ui/react": "^3.2.0" } }),
+      []
+    );
+    runInit(io);
+    expect(logs.join("\n")).toContain("supports Chakra v2");
+  });
+
+  it("stays quiet for Chakra v2", () => {
+    const { io, logs } = makeIO(
+      JSON.stringify({ dependencies: { "@chakra-ui/react": "^2.10.4" } }),
+      []
+    );
+    runInit(io);
+    expect(logs.join("\n")).not.toContain("supports Chakra v2");
+  });
+
   it("skips an existing starter unless --force", () => {
     const base = JSON.stringify({ devDependencies: { "@mui/material": "6" } });
     const a = makeIO(base, [], ["src/PeopleTable.tsx"]);

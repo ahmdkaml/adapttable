@@ -1,10 +1,11 @@
 import {
   DEFAULT_CARD_SIZE_PX,
   DEFAULT_ROW_SIZE_PX,
+  useChromeScrollReset,
   useInfiniteScroll,
-  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
+  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
 import { useDisclosure, useElementSize } from "@mantine/hooks";
@@ -73,14 +74,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan,
     virtualScrollMargin,
     stickyTop = 0,
-    scrollToTopOnChange = true,
-    scrollTopGap,
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
   } = props;
   const density = props.density ?? "comfortable";
 
+  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, isMobile, confirm, getRowId } = chrome;
   const [drawerOpened, drawer] = useDisclosure(false);
@@ -110,19 +110,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollMargin: virtualScrollMargin,
     onEndReached: handleVirtualEndReached,
   });
-  useScrollToTableTop({
-    ref: rootRef,
-    deps: [
-      source.search,
-      source.sortBy ?? "",
-      source.sortDir ?? "",
-      source.page,
-      chrome.activeFilterCount,
-    ],
-    enabled: scrollToTopOnChange,
-    offset: stickyTop,
-    gap: scrollTopGap,
-  });
+  useChromeScrollReset(rootRef, chrome, props);
 
   useMountStagger(
     isMobile ? mobileBodyRef : desktopBodyRef,
@@ -157,6 +145,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
+        onRowClick={props.onRowClick}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -174,6 +163,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowActions={rowActions}
         confirm={confirm}
         prefetch={prefetch}
+        onRowClick={props.onRowClick}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}

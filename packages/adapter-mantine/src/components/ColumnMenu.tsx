@@ -6,6 +6,8 @@ import {
   columnRowDragProps,
   EyeIcon,
   GripIcon,
+  nextPinSide,
+  pinActionLabel,
   PinIcon,
 } from "@adapttable/core";
 import { ActionIcon, Box, Button, Group, Menu, Text } from "@mantine/core";
@@ -22,6 +24,8 @@ export interface ColumnMenuProps<TRow> {
     moveLeft: string;
     moveRight: string;
     resetColumns: string;
+    showColumn: string;
+    hideColumn: string;
   };
 }
 
@@ -76,7 +80,7 @@ export function ColumnMenu<TRow>({
                 variant={r.hidden ? "subtle" : "light"}
                 color={r.hidden ? "gray" : "blue"}
                 size="sm"
-                aria-label={r.name}
+                aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
                 aria-pressed={!r.hidden}
                 onClick={() => layout.toggleVisible(r.key)}
               >
@@ -91,13 +95,11 @@ export function ColumnMenu<TRow>({
                 {r.name}
               </Text>
               <ActionIcon
-                variant={r.pinnedLeft ? "filled" : "subtle"}
-                color={r.pinnedLeft ? "blue" : "gray"}
+                variant={r.pinned ? "filled" : "subtle"}
+                color={r.pinned ? "blue" : "gray"}
                 size="sm"
-                aria-label={`${r.pinnedLeft ? labels.unpin : labels.pinLeft}: ${r.name}`}
-                onClick={() =>
-                  layout.setPinned(r.key, r.pinnedLeft ? undefined : "left")
-                }
+                aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+                onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
               >
                 <PinIcon />
               </ActionIcon>

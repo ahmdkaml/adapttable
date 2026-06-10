@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useEffect, useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
@@ -12,6 +12,7 @@ import {
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
 import { useIsMobile } from "./hooks/useIsMobile";
+import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
 import type { SelectionState } from "./selection/useSelection";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
@@ -195,4 +196,36 @@ export function useTableChrome<TRow>(
     columnLayout,
     allColumns: columns,
   };
+}
+
+/**
+ * The shared scroll-restoration wiring every adapter `<DataTable>` needs:
+ * when search / sort / page / filters change, scroll the table back below
+ * the sticky chrome. Extracted so the identical block isn't repeated (and
+ * flagged as duplication) in each adapter.
+ *
+ * @typeParam TRow - The row type.
+ * @param ref - The adapter's root element.
+ * @param chrome - The {@link useTableChrome} result.
+ * @param props - The adapter's {@link BaseDataTableProps}.
+ */
+export function useChromeScrollReset<TRow>(
+  ref: RefObject<HTMLElement | null>,
+  chrome: TableChrome<TRow>,
+  props: BaseDataTableProps<TRow>
+): void {
+  const { source } = props;
+  useScrollToTableTop({
+    ref,
+    deps: [
+      source.search,
+      source.sortBy ?? "",
+      source.sortDir ?? "",
+      source.page,
+      chrome.activeFilterCount,
+    ],
+    enabled: props.scrollToTopOnChange,
+    offset: props.stickyTop,
+    gap: props.scrollTopGap,
+  });
 }

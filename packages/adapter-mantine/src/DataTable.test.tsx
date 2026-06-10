@@ -80,6 +80,67 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Mantine)", () => {
+  it("drawer mode: the toolbar button opens the slide-in filter drawer", async () => {
+    renderHarness({
+      override: { filters: <div>drawer body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("drawer body")).toBeInTheDocument();
+  });
+
+  it("popover mode: Escape closes and clear-all fires the handler", async () => {
+    const onClearFilters = vi.fn();
+    renderHarness({
+      initialUrl: "f_status=Active",
+      override: {
+        filters: <div>popover body</div>,
+        filterLabels: { status: (v) => `Status: ${v}` },
+        onClearFilters,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("popover body")).toBeInTheDocument();
+    // The dropdown stays visibility-hidden in jsdom (Floating UI never
+    // positions it), so query by selector — the established pattern for
+    // Mantine dropdowns in this suite.
+    const dropdown = screen
+      .getByText("popover body")
+      .closest(".mantine-Popover-dropdown")!;
+    const popoverClear = [...dropdown.querySelectorAll("button")].find(
+      (b) => b.textContent === "Clear all"
+    )!;
+    fireEvent.click(popoverClear);
+    expect(onClearFilters).toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByText("popover body"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByText("popover body")).toBeNull());
+  });
+
+  it("flips the filter popover to the start side under RTL", async () => {
+    renderHarness({
+      override: { dir: "rtl", filters: <div>rtl body</div> },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("rtl body")).toBeInTheDocument();
+  });
+
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders a row per source entry with column values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();

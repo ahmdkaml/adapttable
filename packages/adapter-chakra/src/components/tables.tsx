@@ -6,9 +6,11 @@ import {
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
+  pinnedColumnWidth,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
+  rowClickProps,
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
@@ -49,6 +51,8 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 };
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
+  /** Class hook for the table (desktop) / each card (mobile). */
+  className?: string;
   size: "sm" | "md" | "lg";
   colorScheme?: string;
 }
@@ -86,10 +90,14 @@ function RowActionButtons<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
-        const handleClick = (e: React.MouseEvent) => {
-          e.stopPropagation();
-          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-        };
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: React.MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         // Icon-only actions use IconButton (with a tooltip for the name);
         // text actions use a real Button so the label actually renders
         // (IconButton ignores children).
@@ -133,6 +141,8 @@ export function DesktopTable<TRow>({
   size,
   colorScheme,
   prefetch,
+  onRowClick,
+  className,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -156,10 +166,12 @@ export function DesktopTable<TRow>({
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
   // sticky and let the header overlap the first row.
+  // Inside a maxHeight scroll box the box itself is the sticky context, so
+  // the header pins to ITS top — a viewport offset would float it mid-box.
   const stickyTh = stickyHeader
     ? {
         position: "sticky" as const,
-        top: `${stickyTop}px`,
+        top: maxHeight == null ? `${stickyTop}px` : "0px",
         zIndex: PIN_Z.header,
         bg: "chakra-body-bg",
       }
@@ -197,9 +209,16 @@ export function DesktopTable<TRow>({
   };
   // Header-cell style merging pin + user width; the resize handle is absolute,
   // so add a positioning context when the cell is not already sticky/pinned.
-  const headCellStyle = (key: string): CSSProperties | undefined => {
+  const headCellStyle = (
+    column: ColumnDef<TRow>
+  ): CSSProperties | undefined => {
+    const key = column.key;
     const pin = pinStyle(key, PIN_Z.headerPinned);
-    const width = columnWidths?.[key];
+    // A pinned column renders at the width its sticky inset assumed, so
+    // stacked pins stay flush even with no declared width.
+    const width = pin
+      ? pinnedColumnWidth(column, columnWidths)
+      : columnWidths?.[key];
     if (!pin && width == null && !setWidth) return undefined;
     const style: CSSProperties = { ...pin };
     if (width != null) style.width = width;
@@ -226,6 +245,7 @@ export function DesktopTable<TRow>({
       <Table
         size={size}
         data-size={size}
+        className={className}
         minW={minWidth > 0 ? `${minWidth}px` : undefined}
         aria-label={table.getTableProps()["aria-label"] as string}
       >
@@ -258,7 +278,7 @@ export function DesktopTable<TRow>({
                   width={column.width}
                   aria-sort={ariaSort}
                   {...stickyTh}
-                  style={headCellStyle(column.key)}
+                  style={headCellStyle(column)}
                 >
                   {column.sortable ? (
                     <Box
@@ -313,6 +333,7 @@ export function DesktopTable<TRow>({
             return (
               <Tr
                 key={key}
+                {...rowClickProps(row, onRowClick)}
                 ref={measureElement}
                 data-index={index}
                 bg={selected ? "blackAlpha.100" : undefined}
@@ -383,7 +404,10 @@ export function MobileCards<TRow>({
   rowActions,
   confirm,
   getRowId,
+  size,
   colorScheme,
+  onRowClick,
+  className,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -391,8 +415,13 @@ export function MobileCards<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const compact = size === "sm";
   return (
-    <Stack spacing={3} role="list">
+    <Stack
+      spacing={compact ? 2 : 3}
+      role="list"
+      aria-label={table.getTableProps()["aria-label"] as string}
+    >
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
       {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
@@ -403,8 +432,10 @@ export function MobileCards<TRow>({
             data-index={index}
             variant="outline"
             role="listitem"
+            className={className}
+            {...rowClickProps(row, onRowClick)}
           >
-            <CardBody>
+            <CardBody p={compact ? 3 : undefined}>
               {selection && (
                 <Checkbox
                   aria-label={labels.selectRow}
@@ -414,7 +445,7 @@ export function MobileCards<TRow>({
                 />
               )}
               {columns.map((column) => (
-                <Box key={column.key} mb={2}>
+                <Box key={column.key} mb={compact ? 1 : 2}>
                   <Text fontSize="xs" {...subtleText} textTransform="uppercase">
                     {mobileLabel(column)}
                   </Text>

@@ -147,7 +147,8 @@ export function Toolbar<TRow>({
                 label: String(n),
               }))}
               value={String(source.limit)}
-              onChange={(v) => source.setLimit(Number(v ?? source.limit))}
+              // `allowDeselect={false}` keeps the value non-null.
+              onChange={(v) => source.setLimit(Number(v!))}
               size="sm"
               w={80}
               allowDeselect={false}

@@ -1,12 +1,14 @@
 import {
   DEFAULT_CARD_SIZE_PX,
   DEFAULT_ROW_SIZE_PX,
+  useChromeScrollReset,
   useInfiniteScroll,
   useTableChrome,
   useTableVirtualization,
+  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -61,10 +63,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
+  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useChromeScrollReset(rootRef, c, props);
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
@@ -129,6 +134,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         size={size}
+        onRowClick={props.onRowClick}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -145,6 +151,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         size={size}
         prefetch={props.prefetch}
+        onRowClick={props.onRowClick}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -162,6 +169,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   return (
     <Paper
+      ref={rootRef}
       variant="outlined"
       dir={props.dir}
       className={className}

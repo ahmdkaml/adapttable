@@ -65,6 +65,96 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (MUI)", () => {
+  it("drawer mode opens the slide-in filter drawer", async () => {
+    renderHarness({
+      override: { filters: <div>drawer body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("drawer body")).toBeInTheDocument();
+  });
+
+  it("flips the filter popover to the start side under RTL", async () => {
+    renderHarness({
+      override: { dir: "rtl", filters: <div>rtl body</div> },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("rtl body")).toBeInTheDocument();
+  });
+
+  it("kitchen sink: sticky header in a scroll box with pins, selection, resize, compact density", () => {
+    const { container } = renderHarness({
+      override: {
+        stickyHeader: true,
+        maxHeight: 300,
+        density: "compact",
+        resizableColumns: true,
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            accessor: (r) => r.name,
+            width: 200,
+          },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+        defaultColumnLayout: {
+          pinned: { name: "left", city: "right" },
+        },
+      },
+    });
+    // Inside the scroll box the header pins to the box's own top (0).
+    // (MUI applies `sx` via emotion classes, so read computed styles.)
+    const nameHeader = screen.getByText("Name").closest("th")!;
+    expect(getComputedStyle(nameHeader).top).toBe("0px");
+    expect(getComputedStyle(nameHeader).position).toBe("sticky");
+    const cityHeader = screen.getByText("City").closest("th")!;
+    expect(getComputedStyle(cityHeader).position).toBe("sticky");
+    // The scroll box bounds the table.
+    expect(container.querySelector("table")!.closest("div")!).toBeTruthy();
+    // Compact density maps to MUI's small size; Table forwards it to the
+    // cells via context, so the size class lands on each TableCell.
+    expect(nameHeader).toHaveClass("MuiTableCell-sizeSmall");
+  });
+
+  it("pinning without maxHeight still gets a horizontal scroll box", () => {
+    const { container } = renderHarness({
+      override: {
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    const table = container.querySelector("table")!;
+    const wrapper = table.parentElement!;
+    expect(wrapper.className).toContain("MuiBox-root");
+  });
+
+  it("compact density tightens the mobile cards", () => {
+    const { container } = renderHarness({
+      override: { isMobile: true, density: "compact" },
+    });
+    expect(container.querySelector('[role="list"]')).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
+  });
+
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders rows with values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();

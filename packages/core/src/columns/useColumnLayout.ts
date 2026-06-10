@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ColumnDef } from "../types";
 import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
@@ -6,9 +6,6 @@ import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 /**
  * User-driven column layout: which columns are hidden, their order, pinning,
  * and widths. Keyed by column `key`. Empty `order` means "declared order".
- *
- * Visibility is implemented now (Phase 1); `pinned`/`widths`/`order` mutation
- * land in later phases but the shape is fixed so persisted state is stable.
  */
 export interface ColumnLayoutState {
   /** Column keys hidden by the user. */
@@ -67,11 +64,16 @@ export interface UseColumnLayoutResult<TRow> {
   reset: () => void;
 }
 
-/** Minimal sticky-positioning style for a pinned cell, from a pin offset. */
+/**
+ * Minimal sticky-positioning style for a pinned cell, from a pin offset.
+ * Uses logical inset properties so pinning follows the writing direction:
+ * a `"left"`-pinned column sticks to the inline START (the right edge under
+ * `dir="rtl"`), matching antd's native `fixed` behaviour.
+ */
 export interface PinnedCellStyle {
   position: "sticky";
-  left?: number;
-  right?: number;
+  insetInlineStart?: number;
+  insetInlineEnd?: number;
   zIndex: number;
 }
 
@@ -98,11 +100,19 @@ export interface PinLeads {
   right?: number;
 }
 
+/** Map a pin side to its logical inset property (start = "left" in LTR). */
+function insetProp(
+  side: "left" | "right"
+): "insetInlineStart" | "insetInlineEnd" {
+  return side === "left" ? "insetInlineStart" : "insetInlineEnd";
+}
+
 /**
  * Build the sticky style for a pinned header/body cell from its pin offset.
  * Adapters spread this onto the cell and add their own opaque background.
  * `leads` shifts the cell past a pinned selection/actions edge column. Returns
- * undefined for an unpinned cell.
+ * undefined for an unpinned cell. The inset is logical (`insetInlineStart` /
+ * `insetInlineEnd`), so the same style pins to the correct edge in RTL.
  */
 export function pinnedCellStyle(
   offset: { side: "left" | "right"; inset: number } | undefined,
@@ -111,14 +121,19 @@ export function pinnedCellStyle(
 ): PinnedCellStyle | undefined {
   if (!offset) return undefined;
   const lead = (offset.side === "left" ? leads?.left : leads?.right) ?? 0;
-  return { position: "sticky", [offset.side]: offset.inset + lead, zIndex };
+  return {
+    position: "sticky",
+    [insetProp(offset.side)]: offset.inset + lead,
+    zIndex,
+  };
 }
 
 /**
  * Sticky style for a leading/trailing non-data column (the selection checkbox
- * on the left, row actions on the right) so it pins flush to the edge whenever
- * a data column on that side is pinned. `active` is false when nothing on that
- * side is pinned, in which case the column stays in normal flow.
+ * at the inline start, row actions at the inline end) so it pins flush to the
+ * edge whenever a data column on that side is pinned. `active` is false when
+ * nothing on that side is pinned, in which case the column stays in normal
+ * flow. Insets are logical, so the edge follows the writing direction.
  */
 export function edgePinStyle(
   side: "left" | "right",
@@ -126,7 +141,7 @@ export function edgePinStyle(
   zIndex: number = PIN_Z.body
 ): PinnedCellStyle | undefined {
   if (!active) return undefined;
-  return { position: "sticky", [side]: 0, zIndex };
+  return { position: "sticky", [insetProp(side)]: 0, zIndex };
 }
 
 /** Order `columns` by an explicit key order, appending any unlisted columns. */
@@ -168,8 +183,15 @@ export function useColumnLayout<TRow>({
   }));
   const state = layout ?? internal;
 
+  // Mutators read through this ref so two mutations in ONE event handler
+  // compose (the second sees the first's result) instead of the last write
+  // silently winning. `commit` advances it optimistically; renders re-sync it.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const commit = useCallback(
     (next: ColumnLayoutState) => {
+      stateRef.current = next;
       if (layout === undefined) setInternal(next);
       onLayoutChange?.(next);
     },
@@ -183,39 +205,42 @@ export function useColumnLayout<TRow>({
 
   const setHidden = useCallback(
     (key: string, hidden: boolean) => {
-      const has = state.hidden.includes(key);
+      const current = stateRef.current;
+      const has = current.hidden.includes(key);
       if (has === hidden) return;
       const nextHidden = hidden
-        ? [...state.hidden, key]
-        : state.hidden.filter((k) => k !== key);
-      commit({ ...state, hidden: nextHidden });
+        ? [...current.hidden, key]
+        : current.hidden.filter((k) => k !== key);
+      commit({ ...current, hidden: nextHidden });
     },
-    [commit, state]
+    [commit]
   );
 
   const toggleVisible = useCallback(
-    (key: string) => setHidden(key, !state.hidden.includes(key)),
-    [setHidden, state.hidden]
+    (key: string) => setHidden(key, !stateRef.current.hidden.includes(key)),
+    [setHidden]
   );
 
   const setPinned = useCallback(
     (key: string, side: "left" | "right" | undefined) => {
-      const next = { ...state.pinned };
+      const current = stateRef.current;
+      const next = { ...current.pinned };
       if (side === undefined) delete next[key];
       else next[key] = side;
-      commit({ ...state, pinned: next });
+      commit({ ...current, pinned: next });
     },
-    [commit, state]
+    [commit]
   );
 
   const setWidth = useCallback(
     (key: string, width: number | undefined) => {
-      const next = { ...state.widths };
+      const current = stateRef.current;
+      const next = { ...current.widths };
       if (width === undefined) delete next[key];
       else next[key] = width;
-      commit({ ...state, widths: next });
+      commit({ ...current, widths: next });
     },
-    [commit, state]
+    [commit]
   );
 
   const visibleColumns = useMemo(
@@ -228,18 +253,19 @@ export function useColumnLayout<TRow>({
 
   const move = useCallback(
     (key: string, toIndex: number) => {
+      const latest = stateRef.current;
       // Operate on the FULL ordered list (visible + hidden) so hiding a column
       // never reorders the rest and reordering keeps hidden columns in place.
-      const current = applyColumnOrder(columns, state.order).map((c) => c.key);
+      const current = applyColumnOrder(columns, latest.order).map((c) => c.key);
       const from = current.indexOf(key);
       if (from === -1) return;
       const clamped = Math.max(0, Math.min(toIndex, current.length - 1));
       if (from === clamped) return;
       current.splice(from, 1);
       current.splice(clamped, 0, key);
-      commit({ ...state, order: current });
+      commit({ ...latest, order: current });
     },
-    [commit, state, columns]
+    [commit, columns]
   );
 
   const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);
@@ -259,6 +285,10 @@ export function useColumnLayout<TRow>({
         (c) => state.pinned[c.key] === side
       );
       const idx = samePinned.findIndex((c) => c.key === key);
+      // A pinned key that isn't visible (hidden, or filtered by the device
+      // layout) has no rendered cell to stick — report it unpinned instead of
+      // computing a garbage inset from index -1.
+      if (idx === -1) return undefined;
       // Left: sum widths before this column; right: sum widths after it.
       const preceding =
         side === "left" ? samePinned.slice(0, idx) : samePinned.slice(idx + 1);

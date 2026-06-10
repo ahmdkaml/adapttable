@@ -6,6 +6,7 @@
 
 **Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
+[![CI](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml/badge.svg)](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)

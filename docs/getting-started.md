@@ -23,6 +23,21 @@ pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react
 
 ## Your first table
 
+Each adapter renders with its UI kit's own components, so your app needs that
+kit's provider once at the root — exactly as the kit's docs describe (Mantine
+shown; MUI/Chakra/antd use their own providers, and the unstyled adapter
+needs none):
+
+```tsx
+// main.tsx — once per app, straight from Mantine's own setup guide.
+import "@mantine/core/styles.css";
+import { MantineProvider } from "@mantine/core";
+
+<MantineProvider>
+  <App />
+</MantineProvider>;
+```
+
 ```tsx
 import {
   DataTable,
@@ -53,14 +68,50 @@ mobile card layout all work out of the box.
 ## Client vs. server data
 
 `useFrontendData` filters/sorts/slices an in-memory array. To drive the same
-table from a paginated API, swap in `useBackendData` (built on TanStack
-Query's `useInfiniteQuery`). **The `<DataTable>` doesn't change** — both
-hooks return the same [`TableSource`](./concepts.md).
+table from a paginated API, swap in `useBackendData`: you write one
+`useInfiniteQuery` hook (TanStack Query — wrap your app in its
+`QueryClientProvider`) and AdaptTable adapts it. **The `<DataTable>` doesn't
+change** — both hooks return the same [`TableSource`](./concepts.md).
 
 ```tsx
-// Pass the row type; the default page shape is `{ items, total }`.
-const source = useBackendData<Person>({ usePaginatedQuery });
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
+import { type TableQueryParams, useBackendData } from "@adapttable/mantine";
+
+// Your query hook: fetch one page for the current params.
+function usePeopleQuery(params: Partial<TableQueryParams>) {
+  return useInfiniteQuery({
+    queryKey: ["people", params],
+    queryFn: ({ pageParam }) => fetchPeople({ ...params, page: pageParam }), // → { items, total, page, limit, hasNext }
+    initialPageParam: params.page ?? 1,
+    getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Pass the row type; the default page shape is `{ items, total, … }`.
+const source = useBackendData<Person>({ usePaginatedQuery: usePeopleQuery });
 ```
+
+See [`examples/mui-backend.tsx`](../examples/mui-backend.tsx) for a complete
+runnable version.
+
+## Turn on column management
+
+The Columns menu (show/hide, drag/keyboard reorder, pin) and resize handles
+are one prop each:
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  enableColumnMenu
+  resizableColumns
+/>
+```
+
+See [customization](./customization.md) for presets (`defaultColumnLayout`),
+URL persistence, and `density`.
 
 ## Next steps
 

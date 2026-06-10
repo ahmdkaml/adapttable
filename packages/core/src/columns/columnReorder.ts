@@ -22,10 +22,16 @@ export function columnRowDragProps(key: string): ColumnRowDragProps {
     onDragStart: (event) => {
       // The whole row is draggable so the drag image is the full row — but a
       // drag starting on an interactive control (the eye/pin buttons) would
-      // hijack their click. Cancel those so the buttons stay clickable; drags
-      // from the grip or the row body still reorder.
+      // hijack their click. Cancel those so the buttons stay clickable. The
+      // reorder grip is exempt even when a kit renders it as a button
+      // (Mantine ActionIcon, MUI IconButton): it carries
+      // `data-adapttable-grip` via {@link columnReorderKeyProps}, and
+      // dragging from the grip is the strongest affordance of all.
       const target = event.target as HTMLElement | null;
-      if (target?.closest("button,input,select,a")) {
+      if (
+        target?.closest("button,input,select,a") &&
+        !target.closest("[data-adapttable-grip]")
+      ) {
         event.preventDefault();
         return;
       }
@@ -40,12 +46,27 @@ export interface ColumnReorderKeyProps {
   role: "button";
   tabIndex: 0;
   "aria-label": string;
+  "data-adapttable-grip": "";
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
 /**
+ * Whether the grip sits in a right-to-left context. Mirrors the resize
+ * handle's detection: an explicit `[dir]` ancestor wins (what the adapters
+ * set on the root), falling back to the resolved CSS `direction`.
+ */
+function isRtl(grip: HTMLElement | null): boolean {
+  if (!grip) return false;
+  const scoped = grip.closest("[dir]");
+  if (scoped) return scoped.getAttribute("dir") === "rtl";
+  return globalThis.getComputedStyle(grip).direction === "rtl";
+}
+
+/**
  * Build keyboard props for the reorder grip. Arrow keys move the column one
- * slot — the accessible equivalent of the pointer drag.
+ * slot — the accessible equivalent of the pointer drag. Up/Down always mean
+ * earlier/later in the order; Left/Right follow the writing direction, so in
+ * RTL pressing ArrowRight moves the column toward the start (visually right).
  *
  * @param key - Column key being reordered.
  * @param index - The column's current index in the full order.
@@ -62,12 +83,20 @@ export function columnReorderKeyProps(
     role: "button",
     tabIndex: 0,
     "aria-label": label,
+    "data-adapttable-grip": "",
     onKeyDown: (event) => {
-      const back = event.key === "ArrowLeft" || event.key === "ArrowUp";
-      const fwd = event.key === "ArrowRight" || event.key === "ArrowDown";
-      if (!back && !fwd) return;
+      const horizontal =
+        event.key === "ArrowLeft" || event.key === "ArrowRight";
+      const vertical = event.key === "ArrowUp" || event.key === "ArrowDown";
+      if (!horizontal && !vertical) return;
       event.preventDefault();
-      move(key, back ? index - 1 : index + 1);
+      // The arrow that points toward the inline start: ArrowLeft in LTR,
+      // ArrowRight in RTL (where the first column renders on the right).
+      const startKey = isRtl(event.currentTarget) ? "ArrowRight" : "ArrowLeft";
+      const towardStart = horizontal
+        ? event.key === startKey
+        : event.key === "ArrowUp";
+      move(key, towardStart ? index - 1 : index + 1);
     },
   };
 }

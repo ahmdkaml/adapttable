@@ -51,6 +51,7 @@ export {
   type TableBody,
   type TableChrome,
   type ToolbarChromeProps,
+  useChromeScrollReset,
   useTableChrome,
 } from "./useTableChrome";
 
@@ -88,7 +89,11 @@ export {
 } from "./url/useTableUrlState";
 
 /* ── Shared render contracts ───────────────────────────────────────── */
-export type { SharedTableRenderProps } from "./tableRenderProps";
+export {
+  type SharedTableRenderProps,
+  type TableRenderModel,
+  tableRenderModel,
+} from "./tableRenderProps";
 
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
@@ -148,6 +153,9 @@ export {
   columnMenuLabel,
   type ColumnMenuRow,
   columnMenuRows,
+  nextPinSide,
+  pinActionLabel,
+  type PinnedSide,
 } from "./columns/columnMenuModel";
 export {
   COLUMN_DND_MIME,
@@ -167,6 +175,7 @@ export {
 export {
   FALLBACK_PIN_WIDTH,
   parsePxWidth,
+  pinnedColumnWidth,
   resolveColumnWidth,
   tableMinWidth,
 } from "./columns/columnWidths";
@@ -183,6 +192,12 @@ export {
   type UseColumnLayoutOptions,
   type UseColumnLayoutResult,
 } from "./columns/useColumnLayout";
+export {
+  type LayoutStorage,
+  useColumnLayoutStorageState,
+  type UseColumnLayoutStorageStateOptions,
+  type UseColumnLayoutStorageStateResult,
+} from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
 
 /* ── Pagination ────────────────────────────────────────────────────── */
@@ -232,8 +247,15 @@ export {
   type UseTableVirtualizationOptions,
   virtualColumnSpan,
   type VirtualTableRow,
+  warnVirtualizeInScrollBox,
 } from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */
 export { mergeProps, type Props } from "./utils/mergeProps";
 export { stableKey } from "./utils/stableKey";
+
+/* ── Rows ──────────────────────────────────────────────────────────── */
+export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+
+/* ── Export (CSV) ──────────────────────────────────────────────────── */
+export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";

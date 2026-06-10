@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { visibleColumns } from "../columns/visibleColumns";
 import {
@@ -23,6 +23,7 @@ import type {
   SortDirection,
   TableLabels,
 } from "../types";
+import { devWarn } from "../utils/devWarn";
 import { mergeProps, type Props } from "../utils/mergeProps";
 import { stableKey } from "../utils/stableKey";
 import { useSearchInput } from "./useSearchInput";
@@ -158,6 +159,20 @@ export function useDataTable<TRow>(
   } = options;
 
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
+
+  // Duplicate keys silently corrupt sorting, selection, and column layout —
+  // every feature targets columns by key. Catch it in development.
+  useEffect(() => {
+    const seen = new Set<string>();
+    for (const column of allColumns) {
+      if (seen.has(column.key)) {
+        devWarn(
+          `duplicate column key "${column.key}" — column keys must be unique; sorting, selection, and column layout all target keys.`
+        );
+      }
+      seen.add(column.key);
+    }
+  }, [allColumns]);
 
   const columns = useMemo(
     () =>

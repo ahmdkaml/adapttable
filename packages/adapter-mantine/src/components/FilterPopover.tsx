@@ -34,9 +34,7 @@ export function FilterPopover({
   return (
     <Popover
       opened={open}
-      onChange={(next) => {
-        if (!next) onClose();
-      }}
+      onDismiss={onClose}
       position={dir === "rtl" ? "bottom-start" : "bottom-end"}
       withinPortal
       shadow="md"

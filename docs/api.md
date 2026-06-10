@@ -13,7 +13,26 @@ and JSDoc, so editor autocomplete is the canonical reference.
 ### State
 
 - `useTableUrlState(options?): { page, limit, search, sortBy, sortDir, extra, setPage, setLimit, setSort, setSearch, setExtra, setExtras, clearAll }`
+- `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` — URL-persisted
+  column layout (hidden / order / pinned / widths), namespaced by `urlKey`.
+- `useColumnLayoutStorageState({ storageKey, storage?, defaultLayout? })` —
+  the localStorage counterpart (user preference rather than shareable link).
 - `createHistoryAdapter()`, `createMemoryAdapter(initial?)`, `getHistoryAdapter()` → `UrlStateAdapter`
+
+### Column management
+
+- `useColumnLayout({ columns, layout?, onLayoutChange?, defaultLayout? })` —
+  headless visibility / order / pinning / width state with `visibleColumns`,
+  `toggleVisible`, `move`, `setPinned`, `setWidth`, `pinOffset`, `reset`.
+- Menu/markup builders for custom UIs: `columnMenuRows`, `columnRowDragProps`,
+  `columnDropProps`, `columnReorderKeyProps` (keyboard reorder, RTL-aware),
+  `columnResizeHandleProps` (pointer + arrow-key resize, RTL-aware).
+- Pinning style helpers: `pinnedCellStyle`, `edgePinStyle`, `PIN_Z` — logical
+  insets (`insetInlineStart/End`), so pins land on the correct edge in RTL.
+- Width helpers: `tableMinWidth`, `resolveColumnWidth`, `parsePxWidth`.
+- On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
+  `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
+  `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`.
 
 ### Orchestration / headless rendering
 
@@ -52,6 +71,21 @@ and JSDoc, so editor autocomplete is the canonical reference.
 `TableLabels`, `BaseDataTableProps`, `SortDirection`, `Direction`,
 `ColorScheme`, `PaginationMode`, `FilterValue`, `ExtraFilters`,
 `VirtualTableRow`, `CountFilterState`, `CountOperator`, …
+
+### Rows & export
+
+- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
+  interactive children (actions, checkboxes, links) keep their own behaviour.
+  Headless consumers: `rowClickProps(row, onRowClick)`.
+- `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV
+  export from the table's own column definitions (free; pair with the
+  `toolbar` slot).
+
+### Development warnings
+
+Misconfiguration warns once per message in development (silent in
+production): unresolvable sorts, duplicate column keys, two tables sharing a
+URL namespace without `urlKey`, and `virtualize` combined with `maxHeight`.
 
 ## Adapters
 

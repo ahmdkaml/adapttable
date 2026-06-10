@@ -36,6 +36,8 @@ const labels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 const byLabel = (name: string) =>
@@ -49,12 +51,12 @@ describe("antd ColumnMenu", () => {
     await screen.findByText("Reset columns");
 
     // visibility via the eye control (aria-label is the column name)
-    fireEvent.click(byLabel("Bravo"));
+    fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin (a is pinned left → unpins; b pins left)
-    fireEvent.click(byLabel("Unpin: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
+    fireEvent.click(byLabel("Pin right: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
     fireEvent.click(byLabel("Pin left: Bravo"));
     expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 
@@ -68,6 +70,50 @@ describe("antd ColumnMenu", () => {
     expect(layout.reset).toHaveBeenCalled();
   });
 
+  it("closes on Escape and reports collapsed state on the trigger", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    const trigger = screen.getByRole("button", { name: "Columns" });
+    fireEvent.click(trigger);
+    await screen.findByText("Reset columns");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // antd's Popover has no built-in Escape handling — the menu adds its own
+    // document listener so keyboard users can dismiss it.
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps the menu open for non-Escape keys", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    const trigger = screen.getByRole("button", { name: "Columns" });
+    fireEvent.click(trigger);
+    await screen.findByText("Reset columns");
+    // Arrow keys reorder columns inside the menu; they must not dismiss it.
+    fireEvent.keyDown(document, { key: "ArrowDown" });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("flips the popover to the start side under RTL", async () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        dir="rtl"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    // Under RTL the popover anchors bottomLeft (the start edge) so it opens
+    // toward the content instead of off-screen.
+    expect(
+      document.querySelector(".ant-popover-placement-bottomLeft")
+    ).not.toBeNull();
+  });
+
   it("renders the hidden-column state (strike-through, eye-off, text button)", async () => {
     const layout = fakeLayout();
     layout.state = { hidden: ["b"], order: [], pinned: {}, widths: {} };
@@ -76,11 +122,14 @@ describe("antd ColumnMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
-    // The hidden column's eye toggle reports aria-pressed=false.
-    const hiddenEye = byLabel("Bravo");
+    // The hidden column's eye toggle offers to show it.
+    const hiddenEye = byLabel("Show column: Bravo");
     expect(hiddenEye).toHaveAttribute("aria-pressed", "false");
-    // A visible column's eye toggle reports aria-pressed=true.
-    expect(byLabel("Alpha")).toHaveAttribute("aria-pressed", "true");
+    // A visible column's eye toggle offers to hide it.
+    expect(byLabel("Hide column: Alpha")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
 
     fireEvent.click(hiddenEye);
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
