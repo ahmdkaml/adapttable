@@ -15,6 +15,8 @@ export interface DataTableClassNames {
   /** The leading magnifying-glass icon inside the search field. */
   searchIcon?: string;
   sortSelect?: string;
+  /** Rows-per-page `<select>` (toolbar in infinite mode, footer when paged). */
+  rowsPerPageSelect?: string;
   filtersButton?: string;
   /** The leading funnel icon inside the Filters button. */
   filtersIcon?: string;
@@ -38,7 +40,6 @@ export interface DataTableClassNames {
   columnMenuPanel?: string;
   columnMenuHeader?: string;
   columnMenuTitle?: string;
-  columnMenuHint?: string;
   columnMenuItem?: string;
   columnMenuGrip?: string;
   columnMenuLabel?: string;

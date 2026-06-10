@@ -28,3 +28,8 @@ coverage/
 # Playwright MCP scratch output (screenshots, snapshots) — never committed.
 .playwright-mcp/
 pg-*.png
+# Any scratch image dropped at the repo root (real assets live in site/ and
+# apps/*/public/) — agent/browser screenshots must never reach a commit.
+/*.png
+/*.jpeg
+/*.jpg

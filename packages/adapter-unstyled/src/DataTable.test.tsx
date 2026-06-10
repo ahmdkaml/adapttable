@@ -62,6 +62,26 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (unstyled)", () => {
+  it("applies the rowsPerPageSelect class hook to both selects", () => {
+    const { container } = renderHarness({
+      override: { classNames: { rowsPerPageSelect: "my-rpp" } },
+    });
+    // Paged mode renders the footer select.
+    expect(
+      container.querySelector('[data-adapttable-part="footer"] select.my-rpp')
+    ).toBeInTheDocument();
+    const infinite = renderHarness({
+      mode: "infinite",
+      override: { classNames: { rowsPerPageSelect: "my-rpp" } },
+    });
+    // Infinite mode renders the toolbar select instead.
+    expect(
+      infinite.container.querySelector(
+        '[data-adapttable-part="toolbar"] select.my-rpp'
+      )
+    ).toBeInTheDocument();
+  });
+
   it("activates onRowClick from a row, but never from row actions", () => {
     const onRowClick = vi.fn();
     const onAction = vi.fn();

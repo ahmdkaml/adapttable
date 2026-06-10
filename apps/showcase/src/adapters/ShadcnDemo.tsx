@@ -18,6 +18,8 @@ const SHADCN: DataTableClassNames = {
   search:
     "w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground",
   sortSelect: "h-9 rounded-md border border-input bg-background px-2 text-sm",
+  rowsPerPageSelect:
+    "h-8 rounded-md border border-input bg-background px-1.5 text-sm text-foreground",
   filtersButton:
     "inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
@@ -52,7 +54,7 @@ const SHADCN: DataTableClassNames = {
   footer:
     "flex items-center justify-between gap-2 border-t border-border p-3 text-sm text-muted-foreground",
   pageButton:
-    "h-8 min-w-8 rounded-md border border-input bg-background px-2 hover:bg-accent disabled:opacity-50",
+    "inline-grid h-8 min-w-8 place-items-center rounded-md border border-input bg-background px-2 text-foreground hover:bg-accent disabled:opacity-40",
   chips: "flex flex-wrap gap-2 px-3 pb-2",
   chip: "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground",
   // ── Column popover ──────────────────────────────────────────────

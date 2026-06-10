@@ -65,3 +65,24 @@
   --color-accent-foreground: hsl(0 0% 9%);
   --color-ring: hsl(0 0% 63.9%);
 }
+
+/* UNLAYERED on purpose. Chakra's CSSReset (an emotion GLOBAL style injected by
+   the RTL section's ChakraProvider) applies `:where(*) { border-width: 0 }` to
+   the whole page and, being unlayered, beats every layered Tailwind utility.
+   These scoped restores are unlayered too, so the unstyled demo's borders
+   survive whatever kit is mounted alongside it. */
+[data-adapttable-part="root"] .border {
+  border-width: 1px;
+}
+[data-adapttable-part="root"] .border-b {
+  border-bottom-width: 1px;
+}
+[data-adapttable-part="root"] .border-t {
+  border-top-width: 1px;
+}
+[data-adapttable-part="root"] .border-s {
+  border-inline-start-width: 1px;
+}
+[data-adapttable-part="root"] .border-e {
+  border-inline-end-width: 1px;
+}

@@ -16,6 +16,8 @@ const TAILWIND: DataTableClassNames = {
   search:
     "w-full bg-transparent text-sm outline-none placeholder:text-gray-400",
   sortSelect: "h-9 rounded-md border border-gray-300 px-2 text-sm",
+  rowsPerPageSelect:
+    "h-8 rounded-md border border-indigo-200 bg-white px-1.5 text-sm dark:border-indigo-900/60 dark:bg-zinc-900",
   filtersButton:
     "inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50",
   filtersBackdrop: "fixed inset-0 z-40 bg-gray-900/30",
