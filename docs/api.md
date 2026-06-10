@@ -74,6 +74,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ### Rows & export
 
+- `onSelectionChange(selectedIds)` — observe the selection set (toggles,
+  select-all, automatic resets when search/filters change the result set).
 - `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
   interactive children (actions, checkboxes, links) keep their own behaviour.
   Headless consumers: `rowClickProps(row, onRowClick)`.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 
 import { visibleColumns } from "../columns/visibleColumns";
+import { SEARCH_DEBOUNCE_MS } from "../constants";
 import {
   type ActiveFilterChip,
   type ChipLabelResolver,
@@ -152,7 +153,7 @@ export function useDataTable<TRow>(
     dir = "ltr",
     isMobile = false,
     mobileIdentityColumns = 3,
-    searchDebounceMs = 300,
+    searchDebounceMs = SEARCH_DEBOUNCE_MS,
     bulkActions,
     selectionGetId,
     filterLabels = EMPTY_LABELS,

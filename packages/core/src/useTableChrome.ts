@@ -120,6 +120,7 @@ export function useTableChrome<TRow>(
     onRowsChange,
     bulkActions,
     selectionGetId,
+    onSelectionChange,
     filterLabels,
     extraChips,
     activeFilterCount: activeFilterCountProp,
@@ -159,6 +160,14 @@ export function useTableChrome<TRow>(
   useEffect(() => {
     onRowsChange?.(table.rows);
   }, [onRowsChange, table.rows]);
+
+  // Selection observer: the Set identity only changes when the selection
+  // does, so this fires exactly once per user-visible change (including the
+  // automatic reset when search/filters change the result set).
+  const selectedIds = table.selection?.selectedIds;
+  useEffect(() => {
+    if (selectedIds) onSelectionChange?.([...selectedIds]);
+  }, [onSelectionChange, selectedIds]);
 
   const mergedChips = useMemo<readonly ActiveFilterChip[]>(
     () => mergeFilterChips(table.filterChips, extraChips),

@@ -100,10 +100,11 @@ export interface BaseDataTableProps<TRow> {
   /** Filter widgets rendered in the popover / drawer. */
   filters?: ReactNode;
   /**
-   * How the filter container opens. `"popover"` (default) anchors a card under
-   * the Filters button with a backdrop; `"drawer"` slides in a side panel. The
-   * caller passes the same `filters` content either way — only the container
-   * changes.
+   * How the filter container opens. `"popover"` (default) anchors a light
+   * card under the Filters button — no backdrop, closing on Escape and
+   * outside click; `"drawer"` slides in a side panel with a real backdrop.
+   * The caller passes the same `filters` content either way — only the
+   * container changes.
    */
   filtersMode?: "popover" | "drawer";
   /** Per-filter-key chip label resolvers. */
@@ -120,6 +121,11 @@ export interface BaseDataTableProps<TRow> {
   bulkActions?: BulkAction[];
   /** Selection id extractor; defaults to `rowKey`. */
   selectionGetId?: (row: TRow) => string;
+  /**
+   * Observe the selection: fires with the selected ids whenever the set
+   * changes (toggles, select-all, automatic resets on search/filter change).
+   */
+  onSelectionChange?: (selectedIds: string[]) => void;
 
   /* ── Customisation (common) ──────────────────────────────────────── */
   /** Inline toolbar slot for custom controls (view toggles, etc.). */

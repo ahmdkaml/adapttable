@@ -224,13 +224,12 @@ export function DesktopTable<TRow>({
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  // `getRowId` IS the key (getRowProps derives its key from the same
+  // extractor) — building full row props per row just to read it back would
+  // double the per-row work.
   const entries =
     rowEntries ??
-    rows.map((row, index) => ({
-      row,
-      index,
-      key: table.getRowProps(row, index).key as string,
-    }));
+    rows.map((row, index) => ({ row, index, key: getRowId(row) }));
   const columnSpan =
     columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);

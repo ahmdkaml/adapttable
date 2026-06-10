@@ -1,5 +1,5 @@
-import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { useFrontendData } from "./source/useFrontendData";
 import { tableRenderModel } from "./tableRenderProps";
@@ -76,5 +76,55 @@ describe("useChromeScrollReset", () => {
       return chrome;
     });
     expect(result.current.table.rows).toHaveLength(2);
+  });
+});
+
+describe("onSelectionChange", () => {
+  it("fires with the selected ids whenever the selection set changes", () => {
+    const adapter = createMemoryAdapter("");
+    const onSelectionChange = vi.fn();
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        bulkActions: [{ key: "x", label: "X", onClick: () => undefined }],
+        onSelectionChange,
+      });
+    });
+    // Fires on mount with the (empty) initial set, then per change.
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+    act(() => result.current.table.selection!.toggle("a"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["a"]);
+    act(() => result.current.table.selection!.toggleAll());
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["a", "b"]);
+    act(() => result.current.table.selection!.clear());
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("stays silent without bulk actions (no selection exists)", () => {
+    const adapter = createMemoryAdapter("");
+    const onSelectionChange = vi.fn();
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        onSelectionChange,
+      });
+    });
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });

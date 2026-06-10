@@ -1,4 +1,11 @@
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import {
   type ColumnLayoutState,
@@ -26,6 +33,14 @@ export interface UseColumnLayoutUrlStateOptions {
    */
   urlKey?: string;
 }
+
+/**
+ * Trailing debounce for URL persistence. A column-resize drag commits one
+ * layout per animation frame; writing `history.replaceState` that often
+ * trips Safari's rate limit (~100 calls per 30s, then it throws). Reads stay
+ * instant via an optimistic overlay — only the URL write is deferred.
+ */
+export const LAYOUT_URL_WRITE_DEBOUNCE_MS = 150;
 
 /** State + change handler returned by {@link useColumnLayoutUrlState}. */
 export interface UseColumnLayoutUrlStateResult {
@@ -71,12 +86,16 @@ export function useColumnLayoutUrlState(
     () => ({ ...EMPTY_COLUMN_LAYOUT, ...defaultLayout }),
     [defaultLayout]
   );
+  // Optimistic overlay: the most recent layout not yet flushed to the URL.
+  const [pending, setPending] = useState<ColumnLayoutState | null>(null);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const layout = useMemo<ColumnLayoutState>(
-    () => readColumnLayout(params, ns) ?? fallback,
-    [params, ns, fallback]
+    () => pending ?? readColumnLayout(params, ns) ?? fallback,
+    [pending, params, ns, fallback]
   );
 
-  const onLayoutChange = useCallback(
+  const persist = useCallback(
     (next: ColumnLayoutState) => {
       const p = new URLSearchParams(resolved.getSearch());
       const isDefault = stableKey(next) === stableKey(fallback);
@@ -90,6 +109,36 @@ export function useColumnLayoutUrlState(
       resolved.setSearch(p.toString());
     },
     [resolved, ns, fallback]
+  );
+
+  const onLayoutChange = useCallback(
+    (next: ColumnLayoutState) => {
+      setPending(next);
+      if (flushTimer.current) clearTimeout(flushTimer.current);
+      flushTimer.current = setTimeout(() => {
+        flushTimer.current = null;
+        persist(next);
+        setPending(null);
+      }, LAYOUT_URL_WRITE_DEBOUNCE_MS);
+    },
+    [persist]
+  );
+
+  // Flush a pending layout on unmount so the last drag frame is never lost.
+  const latestRef = useRef<{
+    pending: ColumnLayoutState | null;
+    persist: typeof persist;
+  }>({ pending, persist });
+  latestRef.current = { pending, persist };
+  useEffect(
+    () => () => {
+      if (flushTimer.current) {
+        clearTimeout(flushTimer.current);
+        const { pending: last, persist: write } = latestRef.current;
+        if (last) write(last);
+      }
+    },
+    []
   );
 
   return { layout, onLayoutChange };
