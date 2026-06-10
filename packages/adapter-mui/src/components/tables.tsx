@@ -14,7 +14,7 @@ import {
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
-  virtualColumnSpan,
+  tableRenderModel,
 } from "@adapttable/core";
 
 /** Sx for an absolutely-positioned column-resize handle. */
@@ -137,14 +137,8 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan = virtualColumnSpan(
-    columns.length,
-    Boolean(selection),
-    showActions
-  );
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
   // `position: sticky` on a `<thead>` does not pin against the document
   // scroller, so we stick the header *cells* instead. Pinned cells also stick
   // left/right (corner-sticky in the header) with an opaque background.

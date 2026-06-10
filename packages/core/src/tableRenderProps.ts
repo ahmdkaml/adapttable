@@ -13,9 +13,14 @@
  * @typeParam TRow - The row type.
  */
 import type { ConfirmHandler } from "./actions/confirm";
-import type { RowAction } from "./types";
+import type { SelectionState } from "./selection/useSelection";
+import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
-import type { VirtualTableRow } from "./virtual/useTableVirtualization";
+import {
+  resolveVirtualRows,
+  virtualColumnSpan,
+  type VirtualTableRow,
+} from "./virtual/useTableVirtualization";
 
 export interface SharedTableRenderProps<TRow> {
   /** The resolved table model from `useDataTable`. */
@@ -56,4 +61,51 @@ export interface SharedTableRenderProps<TRow> {
   columnWidths?: Readonly<Record<string, number>>;
   /** Accessible label for a column-resize handle. */
   resizeLabel?: string;
+}
+
+/** The shared prelude every table/card renderer derives before rendering. */
+export interface TableRenderModel<TRow> {
+  columns: ColumnDef<TRow>[];
+  selection: SelectionState | null;
+  labels: Required<TableLabels>;
+  /** Whether a trailing actions column/section renders. */
+  showActions: boolean;
+  /** Materialised row entries (virtual window or the full set). */
+  entries: readonly VirtualTableRow<TRow>[];
+  /** Spacer-row colSpan covering selection + data + actions columns. */
+  columnSpan: number;
+}
+
+/**
+ * Derive the shared render prelude from {@link SharedTableRenderProps} —
+ * extracted so each adapter's renderer doesn't repeat the identical block
+ * (and trip the duplication gate).
+ *
+ * @typeParam TRow - The row type.
+ */
+export function tableRenderModel<TRow>(
+  props: Pick<
+    SharedTableRenderProps<TRow>,
+    "table" | "rows" | "rowActions" | "getRowId" | "rowEntries"
+  >
+): TableRenderModel<TRow> {
+  const { columns, selection, labels } = props.table;
+  const showActions = (props.rowActions?.length ?? 0) > 0;
+  const entries = resolveVirtualRows(
+    props.rows,
+    props.getRowId,
+    props.rowEntries
+  );
+  return {
+    columns,
+    selection,
+    labels,
+    showActions,
+    entries,
+    columnSpan: virtualColumnSpan(
+      columns.length,
+      Boolean(selection),
+      showActions
+    ),
+  };
 }

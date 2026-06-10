@@ -1,8 +1,8 @@
 import {
   DEFAULT_CARD_SIZE_PX,
   DEFAULT_ROW_SIZE_PX,
+  useChromeScrollReset,
   useInfiniteScroll,
-  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
   warnVirtualizeInScrollBox,
@@ -74,8 +74,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan,
     virtualScrollMargin,
     stickyTop = 0,
-    scrollToTopOnChange = true,
-    scrollTopGap,
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
@@ -112,19 +110,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollMargin: virtualScrollMargin,
     onEndReached: handleVirtualEndReached,
   });
-  useScrollToTableTop({
-    ref: rootRef,
-    deps: [
-      source.search,
-      source.sortBy ?? "",
-      source.sortDir ?? "",
-      source.page,
-      chrome.activeFilterCount,
-    ],
-    enabled: scrollToTopOnChange,
-    offset: stickyTop,
-    gap: scrollTopGap,
-  });
+  useChromeScrollReset(rootRef, chrome, props);
 
   useMountStagger(
     isMobile ? mobileBodyRef : desktopBodyRef,

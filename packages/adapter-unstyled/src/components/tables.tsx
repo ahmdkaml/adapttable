@@ -14,7 +14,7 @@ import {
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
-  virtualColumnSpan,
+  tableRenderModel,
 } from "@adapttable/core";
 import type { CSSProperties } from "react";
 
@@ -102,14 +102,8 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan = virtualColumnSpan(
-    columns.length,
-    Boolean(selection),
-    showActions
-  );
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller). The adapter ships no colours, so consumers must give their
   // `headerCell` class an opaque background — the `data-sticky`/`data-pinned`

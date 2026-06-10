@@ -51,6 +51,7 @@ export {
   type TableBody,
   type TableChrome,
   type ToolbarChromeProps,
+  useChromeScrollReset,
   useTableChrome,
 } from "./useTableChrome";
 
@@ -88,7 +89,11 @@ export {
 } from "./url/useTableUrlState";
 
 /* ── Shared render contracts ───────────────────────────────────────── */
-export type { SharedTableRenderProps } from "./tableRenderProps";
+export {
+  type SharedTableRenderProps,
+  type TableRenderModel,
+  tableRenderModel,
+} from "./tableRenderProps";
 
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";

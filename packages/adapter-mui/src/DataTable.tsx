@@ -1,8 +1,8 @@
 import {
   DEFAULT_CARD_SIZE_PX,
   DEFAULT_ROW_SIZE_PX,
+  useChromeScrollReset,
   useInfiniteScroll,
-  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
   warnVirtualizeInScrollBox,
@@ -69,19 +69,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { labels, source } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useScrollToTableTop({
-    ref: rootRef,
-    deps: [
-      source.search,
-      source.sortBy ?? "",
-      source.sortDir ?? "",
-      source.page,
-      c.activeFilterCount,
-    ],
-    enabled: props.scrollToTopOnChange,
-    offset: props.stickyTop,
-    gap: props.scrollTopGap,
-  });
+  useChromeScrollReset(rootRef, c, props);
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}

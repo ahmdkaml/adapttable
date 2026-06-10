@@ -6,10 +6,10 @@ import {
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  useChromeScrollReset,
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useInfiniteScroll,
-  useScrollToTableTop,
   useTableChrome,
 } from "@adapttable/core";
 import {
@@ -319,19 +319,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { labels, source, selection } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useScrollToTableTop({
-    ref: rootRef,
-    deps: [
-      source.search,
-      source.sortBy ?? "",
-      source.sortDir ?? "",
-      source.page,
-      c.activeFilterCount,
-    ],
-    enabled: props.scrollToTopOnChange,
-    offset: props.stickyTop,
-    gap: props.scrollTopGap,
-  });
+  useChromeScrollReset(rootRef, c, props);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
