@@ -15,6 +15,10 @@ export const sharedConfig = defineConfig({
     css: true,
     clearMocks: true,
     restoreMocks: true,
+    // Headroom for cold CI runners: the first test in a heavy suite pays the
+    // kit's first-render warm-up (antd's exceeded the 5s default on a 2-core
+    // runner). This widens the per-test budget only — assertions unchanged.
+    testTimeout: 15000,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
