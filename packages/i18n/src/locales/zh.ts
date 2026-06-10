@@ -34,4 +34,6 @@ export const zh: Required<TableLabels> = {
   moveRight: "右移",
   resetColumns: "重置列",
   resizeColumn: "调整列宽",
+  showColumn: "显示列",
+  hideColumn: "隐藏列",
 };

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
+import { resetDevWarnings } from "../utils/devWarn";
 import {
   defaultSearchText,
   useFrontendData,
@@ -150,6 +151,48 @@ describe("useFrontendData", () => {
     expect(result.current.refetch).toBe(refetch);
     expect(result.current.isFetching).toBe(true);
     expect(result.current.isLoading).toBe(true);
+  });
+});
+
+describe("dev warnings for unresolvable sorts", () => {
+  it("warns when sortBy matches no column (columns not passed)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render("sortBy=name&sortDir=asc");
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('sortBy "name" matches no column')
+    );
+    resetDevWarnings();
+    vi.restoreAllMocks();
+  });
+
+  it("warns when the column's accessor yields a non-primitive and no sortValue exists", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render("sortBy=name&sortDir=asc", {
+      columns: [
+        { key: "name", header: "Name", accessor: (r) => <b>{r.name}</b> },
+      ],
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('column "name" has no sortable value')
+    );
+    resetDevWarnings();
+    vi.restoreAllMocks();
+  });
+
+  it("stays silent when the sort resolves (sortValue present)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render("sortBy=count&sortDir=asc", { columns: cols });
+    expect(warn).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("stays silent when an explicit getSortValue is supplied", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render("sortBy=anything&sortDir=asc", {
+      getSortValue: (r) => r.count,
+    });
+    expect(warn).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 });
 

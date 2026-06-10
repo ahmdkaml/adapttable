@@ -220,4 +220,8 @@ export interface TableLabels {
   resetColumns?: string;
   /** Accessible label for a column-resize handle. */
   resizeColumn?: string;
+  /** Accessible label prefix for the column-menu visibility toggle (show). */
+  showColumn?: string;
+  /** Accessible label prefix for the column-menu visibility toggle (hide). */
+  hideColumn?: string;
 }

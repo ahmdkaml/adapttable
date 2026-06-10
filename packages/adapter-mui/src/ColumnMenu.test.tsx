@@ -36,6 +36,8 @@ const labels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 const byLabel = (name: string) =>
@@ -48,13 +50,13 @@ describe("mui ColumnMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
-    // visibility via the eye control (aria-label is the column name)
-    fireEvent.click(byLabel("Bravo"));
+    // visibility via the eye control (verb-prefixed accessible name)
+    fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin (a is pinned left → unpins; b pins left)
-    fireEvent.click(byLabel("Unpin: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
+    fireEvent.click(byLabel("Pin right: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
     fireEvent.click(byLabel("Pin left: Bravo"));
     expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 
@@ -79,9 +81,15 @@ describe("mui ColumnMenu", () => {
 
     const bravo = screen.getByText("Bravo");
     expect(bravo).toHaveStyle({ textDecoration: "line-through" });
-    // The eye toggle for a hidden column reports aria-pressed="false".
-    expect(byLabel("Bravo")).toHaveAttribute("aria-pressed", "false");
-    // A visible column keeps aria-pressed="true".
-    expect(byLabel("Charlie")).toHaveAttribute("aria-pressed", "true");
+    // The eye toggle for a hidden column offers to show it.
+    expect(byLabel("Show column: Bravo")).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    // A visible column offers to hide it.
+    expect(byLabel("Hide column: Charlie")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
   });
 });

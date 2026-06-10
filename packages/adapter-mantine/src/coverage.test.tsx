@@ -145,6 +145,8 @@ const menuLabels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 describe("ColumnMenu hidden column", () => {
@@ -159,7 +161,9 @@ describe("ColumnMenu hidden column", () => {
     await user.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
     // The eye control for the hidden column reports aria-pressed=false.
-    const eye = document.querySelector<HTMLElement>('[aria-label="Bravo"]')!;
+    const eye = document.querySelector<HTMLElement>(
+      '[aria-label="Show column: Bravo"]'
+    )!;
     expect(eye).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(eye);
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");

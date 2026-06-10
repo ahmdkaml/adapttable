@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   pageSizeOptions,
+  rowClickProps,
   type SelectionState,
   type TableLabels,
   tableMinWidth,
@@ -8,6 +9,7 @@ import {
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useInfiniteScroll,
+  useScrollToTableTop,
   useTableChrome,
 } from "@adapttable/core";
 import {
@@ -24,6 +26,7 @@ import {
   type CSSProperties,
   type ReactNode,
   type UIEventHandler,
+  useRef,
   useState,
 } from "react";
 
@@ -166,14 +169,39 @@ function ColumnMenuSlot<TRow>({
   allColumns,
   layout,
   labels,
+  dir,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
   layout: UseColumnLayoutResult<TRow>;
   labels: Required<TableLabels>;
+  dir?: "ltr" | "rtl";
 }>) {
   if (!enabled) return null;
-  return <ColumnMenu allColumns={allColumns} layout={layout} labels={labels} />;
+  return (
+    <ColumnMenu
+      allColumns={allColumns}
+      layout={layout}
+      labels={labels}
+      dir={dir}
+    />
+  );
+}
+
+/**
+ * Whether the page-level load-more sentinel should stay armed. It disarms
+ * only while the antd virtual table renders (desktop): there the rows live in
+ * antd's own fixed-height scroll container, and `handleVirtualScroll` drives
+ * paging instead. Mobile cards are never virtualized, so the sentinel keeps
+ * auto-loading there even with `virtualize` set.
+ */
+function sentinelEnabled(
+  isPaged: boolean,
+  error: Error | null,
+  virtualize: boolean,
+  body: string
+): boolean {
+  return !isPaged && !error && !(virtualize && body === "desktop");
 }
 
 /** Build antd's pagination config (undefined in infinite mode → `false`). */
@@ -290,6 +318,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToTableTop({
+    ref: rootRef,
+    deps: [
+      source.search,
+      source.sortBy ?? "",
+      source.sortDir ?? "",
+      source.page,
+      c.activeFilterCount,
+    ],
+    enabled: props.scrollToTopOnChange,
+    offset: props.stickyTop,
+    gap: props.scrollTopGap,
+  });
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -300,7 +342,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: () => source.fetchNextPage(),
     itemCount: source.rows.length,
-    enabled: !c.isPaged && !source.error && !virtualize,
+    enabled: sentinelEnabled(c.isPaged, source.error, virtualize, c.body),
   });
 
   const handleVirtualScroll = virtualScrollEndHandler(
@@ -378,7 +420,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         prefetch={props.prefetch}
+        onRowClick={props.onRowClick}
         tableLabel={resolvedTableLabel}
+        compact={(props.density ?? "comfortable") === "compact"}
       />
     );
   } else {
@@ -396,11 +440,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowSelection={rowSelection}
         pagination={pagination}
         onChange={handleChange}
-        onRow={
-          props.prefetch
-            ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
-            : undefined
-        }
+        onRow={(record) => ({
+          ...rowClickProps(record, props.onRowClick),
+          onMouseEnter: props.prefetch
+            ? () => props.prefetch?.(record)
+            : undefined,
+        })}
         scroll={resolveScroll(
           virtualize,
           virtualWidth,
@@ -415,7 +460,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   }
 
   return (
-    <div dir={props.dir} className={className}>
+    <div ref={rootRef} dir={props.dir} className={className}>
       <Space direction="vertical" size="small" style={{ width: "100%" }}>
         <Toolbar
           table={table}
@@ -438,6 +483,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               allColumns={c.allColumns}
               layout={c.columnLayout}
               labels={labels}
+              dir={props.dir}
             />
           }
           showRowsPerPage={!c.isPaged}

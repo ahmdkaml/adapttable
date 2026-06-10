@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LIMIT } from "../constants";
 import type {
@@ -7,8 +7,11 @@ import type {
   SortDirection,
   TableQueryParams,
 } from "../types";
+import { devWarn } from "../utils/devWarn";
 import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
 import {
+  FILTER_PREFIX,
+  isEmptyFilterValue,
   PARAM_LIMIT,
   PARAM_PAGE,
   PARAM_SEARCH,
@@ -79,11 +82,21 @@ export interface UseTableUrlStateResult {
   clearAll: () => void;
 }
 
+/** Mounted namespaces per adapter, for the duplicate-urlKey dev warning. */
+const nsRegistry = new WeakMap<UrlStateAdapter, Map<string, number>>();
+
 /**
  * Headless URL-synced table state. Keeps page / limit / search / sort and
  * an arbitrary `extra` filter bag in the query string (or a local store
  * when disabled), so reloads, shared links, and back/forward all restore
  * the exact slice. Decoupled from any router via {@link UrlStateAdapter}.
+ *
+ * `defaults` apply only while the URL is silent about a key. When the user
+ * explicitly clears a defaulted value (clearing the search, removing a
+ * filter chip, clear-all), the hook records the clearing as an EMPTY-valued
+ * param (`q=`, `sortBy=`, `f_status=`) so the default does not instantly
+ * resurrect. Without a default for the key the param is simply deleted, so
+ * URLs stay clean in the common case.
  *
  * @param options - See {@link UseTableUrlStateOptions}.
  * @returns The current state and its setters.
@@ -103,30 +116,76 @@ export function useTableUrlState(
   const ns = urlKey ? `${urlKey}.` : "";
 
   const resolved = useResolvedAdapter(adapter, enabled);
+  // Server snapshot: with the default (history) adapter the server rendered
+  // from an empty memory store, so hydration must read "" too — the real URL
+  // applies right after hydration. An EXPLICIT adapter is assumed to be
+  // SSR-consistent (e.g. a router adapter that knows the request URL).
   const search = useSyncExternalStore(
     (onChange) => resolved.subscribe(onChange),
     () => resolved.getSearch(),
-    () => resolved.getSearch()
+    () => (adapter ? adapter.getSearch() : "")
   );
   const params = useMemo(() => new URLSearchParams(search), [search]);
 
+  // Two tables on one adapter without distinct urlKeys silently clobber each
+  // other's params — catch it in development.
+  useEffect(() => {
+    const counts = nsRegistry.get(resolved) ?? new Map<string, number>();
+    nsRegistry.set(resolved, counts);
+    const next = (counts.get(ns) ?? 0) + 1;
+    counts.set(ns, next);
+    if (next > 1) {
+      devWarn(
+        `two tables share the URL namespace "${ns || "(bare)"}" — give each table a distinct \`urlKey\` or their state will clobber each other.`
+      );
+    }
+    return () => {
+      counts.set(ns, (counts.get(ns) ?? 1) - 1);
+    };
+  }, [resolved, ns]);
+
   const initialLimit = defaults.limit ?? DEFAULT_LIMIT;
-  const page = readPage(params, defaults.page ?? 1, ns);
+  const initialPage = defaults.page ?? 1;
+  const page = readPage(params, initialPage, ns);
   const limit = readLimit(params, initialLimit, ns);
+  // An empty-valued param is an explicit "cleared" marker (see the hook
+  // docs): the URL overrides the default with nothing.
   const searchTerm = (
     params.get(ns + PARAM_SEARCH) ??
     defaults.search ??
     ""
   ).trim();
-  const sortBy = params.get(ns + PARAM_SORT_BY) ?? defaults.sortBy;
-  const sortDir = readSortDir(params, ns) ?? defaults.sortDir;
-  const urlExtra = useMemo(
-    () => readExtra(params, numberExtraKeys, arrayExtraKeys, ns),
-    [params, numberExtraKeys, arrayExtraKeys, ns]
+  const sortByRaw = params.get(ns + PARAM_SORT_BY);
+  const sortBy = sortByRaw === null ? defaults.sortBy : sortByRaw || undefined;
+  // A defaulted sort adopts the defaulted direction; an explicit URL sort
+  // with no direction falls back to ascending.
+  const sortDirFallback = sortByRaw === null ? defaults.sortDir : "asc";
+  const sortDir =
+    sortBy === undefined
+      ? undefined
+      : (readSortDir(params, ns) ?? sortDirFallback);
+
+  /** Merge `defaults.extra` under the URL bag, honouring cleared markers. */
+  const mergeDefaultExtra = useCallback(
+    (p: URLSearchParams, urlBag: ExtraFilters): ExtraFilters => {
+      if (!defaults.extra) return urlBag;
+      const out: ExtraFilters = {};
+      for (const [key, value] of Object.entries(defaults.extra)) {
+        // A present-but-empty param means the user cleared this default.
+        if (p.get(ns + FILTER_PREFIX + key) === null) out[key] = value;
+      }
+      return { ...out, ...urlBag };
+    },
+    [defaults.extra, ns]
   );
+
   const extra = useMemo<ExtraFilters>(
-    () => (defaults.extra ? { ...defaults.extra, ...urlExtra } : urlExtra),
-    [defaults.extra, urlExtra]
+    () =>
+      mergeDefaultExtra(
+        params,
+        readExtra(params, numberExtraKeys, arrayExtraKeys, ns)
+      ),
+    [mergeDefaultExtra, params, numberExtraKeys, arrayExtraKeys, ns]
   );
 
   const commit = useCallback(
@@ -138,34 +197,69 @@ export function useTableUrlState(
     [resolved]
   );
 
+  /**
+   * Write the full extra bag, then stamp a cleared marker for every
+   * defaulted key the bag no longer carries — deleting the param instead
+   * would resurrect the default on the next read.
+   */
+  const writeExtraWithDefaults = useCallback(
+    (p: URLSearchParams, bag: ExtraFilters) => {
+      writeExtra(p, bag, ns);
+      for (const key of Object.keys(defaults.extra ?? {})) {
+        if (isEmptyFilterValue(bag[key])) p.set(ns + FILTER_PREFIX + key, "");
+      }
+    },
+    [defaults.extra, ns]
+  );
+
+  /** The current effective extra bag read fresh from a params snapshot. */
+  const readEffectiveExtra = useCallback(
+    (p: URLSearchParams): ExtraFilters =>
+      mergeDefaultExtra(p, readExtra(p, numberExtraKeys, arrayExtraKeys, ns)),
+    [mergeDefaultExtra, numberExtraKeys, arrayExtraKeys, ns]
+  );
+
+  /** Reset to page 1 — as a marker when a non-1 default would resurface. */
+  const resetPage = useCallback(
+    (p: URLSearchParams) => {
+      if (initialPage > 1) p.set(ns + PARAM_PAGE, "1");
+      else p.delete(ns + PARAM_PAGE);
+    },
+    [initialPage, ns]
+  );
+
   const setPage = useCallback(
     (next: number) =>
       commit((p) => {
-        if (next <= 1) p.delete(ns + PARAM_PAGE);
+        if (next <= 1) resetPage(p);
         else p.set(ns + PARAM_PAGE, String(next));
       }),
-    [commit, ns]
+    [commit, ns, resetPage]
   );
 
   const setLimit = useCallback(
     (next: number) =>
       commit((p) => {
-        if (next === initialLimit) p.delete(ns + PARAM_LIMIT);
-        else p.set(ns + PARAM_LIMIT, String(next));
-        p.delete(ns + PARAM_PAGE);
+        // Keep the written value inside the range the read side accepts
+        // (readLimit clamps to 1..500) so URL and table state never diverge.
+        const clamped = Math.min(Math.max(1, Math.round(next)), 500);
+        if (clamped === initialLimit) p.delete(ns + PARAM_LIMIT);
+        else p.set(ns + PARAM_LIMIT, String(clamped));
+        resetPage(p);
       }),
-    [commit, initialLimit, ns]
+    [commit, initialLimit, ns, resetPage]
   );
 
   const setSearch = useCallback(
     (next: string) =>
       commit((p) => {
         const trimmed = next.trim();
-        if (trimmed === "") p.delete(ns + PARAM_SEARCH);
-        else p.set(ns + PARAM_SEARCH, trimmed);
-        p.delete(ns + PARAM_PAGE);
+        if (trimmed !== "") p.set(ns + PARAM_SEARCH, trimmed);
+        else if (defaults.search) p.set(ns + PARAM_SEARCH, "");
+        else p.delete(ns + PARAM_SEARCH);
+        resetPage(p);
       }),
-    [commit, ns]
+    [commit, defaults.search, ns, resetPage]
   );
 
   const setSort = useCallback(
@@ -175,56 +269,52 @@ export function useTableUrlState(
           p.set(ns + PARAM_SORT_BY, key);
           p.set(ns + PARAM_SORT_DIR, dir);
         } else {
-          p.delete(ns + PARAM_SORT_BY);
+          if (defaults.sortBy) p.set(ns + PARAM_SORT_BY, "");
+          else p.delete(ns + PARAM_SORT_BY);
           p.delete(ns + PARAM_SORT_DIR);
         }
-        p.delete(ns + PARAM_PAGE);
+        resetPage(p);
       }),
-    [commit, ns]
+    [commit, defaults.sortBy, ns, resetPage]
   );
 
   const setExtra = useCallback(
     (key: string, value: FilterValue) =>
       commit((p) => {
-        writeExtra(
-          p,
-          {
-            ...readExtra(p, numberExtraKeys, arrayExtraKeys, ns),
-            [key]: value,
-          },
-          ns
-        );
-        p.delete(ns + PARAM_PAGE);
+        writeExtraWithDefaults(p, { ...readEffectiveExtra(p), [key]: value });
+        resetPage(p);
       }),
-    [commit, numberExtraKeys, arrayExtraKeys, ns]
+    [commit, readEffectiveExtra, resetPage, writeExtraWithDefaults]
   );
 
   const setExtras = useCallback(
     (updates: ExtraFilters) =>
       commit((p) => {
-        writeExtra(
-          p,
-          {
-            ...readExtra(p, numberExtraKeys, arrayExtraKeys, ns),
-            ...updates,
-          },
-          ns
-        );
-        p.delete(ns + PARAM_PAGE);
+        writeExtraWithDefaults(p, { ...readEffectiveExtra(p), ...updates });
+        resetPage(p);
       }),
-    [commit, numberExtraKeys, arrayExtraKeys, ns]
+    [commit, readEffectiveExtra, resetPage, writeExtraWithDefaults]
   );
 
   const clearAll = useCallback(
     () =>
       commit((p) => {
-        p.delete(ns + PARAM_SEARCH);
-        p.delete(ns + PARAM_SORT_BY);
+        if (defaults.search) p.set(ns + PARAM_SEARCH, "");
+        else p.delete(ns + PARAM_SEARCH);
+        if (defaults.sortBy) p.set(ns + PARAM_SORT_BY, "");
+        else p.delete(ns + PARAM_SORT_BY);
         p.delete(ns + PARAM_SORT_DIR);
-        p.delete(ns + PARAM_PAGE);
-        writeExtra(p, {}, ns);
+        resetPage(p);
+        writeExtraWithDefaults(p, {});
       }),
-    [commit, ns]
+    [
+      commit,
+      defaults.search,
+      defaults.sortBy,
+      ns,
+      resetPage,
+      writeExtraWithDefaults,
+    ]
   );
 
   return {

@@ -6,6 +6,8 @@ import {
   columnRowDragProps,
   EyeIcon,
   GripIcon,
+  nextPinSide,
+  pinActionLabel,
   PinIcon,
 } from "@adapttable/core";
 import {
@@ -27,6 +29,8 @@ export interface ColumnMenuLabels {
   moveLeft: string;
   moveRight: string;
   resetColumns: string;
+  showColumn: string;
+  hideColumn: string;
 }
 
 export interface ColumnMenuProps<TRow> {
@@ -51,6 +55,8 @@ export function ColumnMenu<TRow>({
       <Button
         size="small"
         variant="outlined"
+        aria-expanded={anchor !== null}
+        aria-haspopup="true"
         onClick={(e) => setAnchor(e.currentTarget)}
       >
         {labels.columns}
@@ -100,7 +106,7 @@ export function ColumnMenu<TRow>({
               </IconButton>
               <IconButton
                 size="small"
-                aria-label={r.name}
+                aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
                 aria-pressed={!r.hidden}
                 color={r.hidden ? "default" : "primary"}
                 onClick={() => layout.toggleVisible(r.key)}
@@ -119,11 +125,9 @@ export function ColumnMenu<TRow>({
               </Typography>
               <IconButton
                 size="small"
-                color={r.pinnedLeft ? "primary" : "default"}
-                aria-label={`${r.pinnedLeft ? labels.unpin : labels.pinLeft}: ${r.name}`}
-                onClick={() =>
-                  layout.setPinned(r.key, r.pinnedLeft ? undefined : "left")
-                }
+                color={r.pinned ? "primary" : "default"}
+                aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+                onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
               >
                 <PinIcon />
               </IconButton>

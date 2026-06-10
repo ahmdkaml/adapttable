@@ -4,8 +4,13 @@ import {
   type ColumnLayoutState,
   EMPTY_COLUMN_LAYOUT,
 } from "../columns/useColumnLayout";
+import { stableKey } from "../utils/stableKey";
 import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
-import { readColumnLayout, writeColumnLayout } from "./serialize";
+import {
+  PARAM_COL_HIDDEN,
+  readColumnLayout,
+  writeColumnLayout,
+} from "./serialize";
 
 /** Options for {@link useColumnLayoutUrlState}. */
 export interface UseColumnLayoutUrlStateOptions {
@@ -37,6 +42,12 @@ export interface UseColumnLayoutUrlStateResult {
  * shared links, and re-mounts restore the exact layout. Feed the result into
  * a table's `columnLayout` / `onColumnLayoutChange`.
  *
+ * `defaultLayout` applies only while the URL carries no layout. When the user
+ * explicitly empties the layout (e.g. unhides the last default-hidden
+ * column), an empty `colHide=` marker records that emptiness — deleting every
+ * param would resurrect the default on the next read. A change back to the
+ * exact default clears the params instead, keeping shared URLs clean.
+ *
  * @param options - See {@link UseColumnLayoutUrlStateOptions}.
  * @returns The current layout and a change handler that persists it.
  */
@@ -47,10 +58,12 @@ export function useColumnLayoutUrlState(
   const ns = urlKey ? `${urlKey}.` : "";
 
   const resolved = useResolvedAdapter(adapter, enabled);
+  // Same SSR rule as useTableUrlState: only an explicit adapter is trusted
+  // to be hydration-consistent; the default history adapter hydrates from "".
   const search = useSyncExternalStore(
     (onChange) => resolved.subscribe(onChange),
     () => resolved.getSearch(),
-    () => resolved.getSearch()
+    () => (adapter ? adapter.getSearch() : "")
   );
   const params = useMemo(() => new URLSearchParams(search), [search]);
 
@@ -66,10 +79,17 @@ export function useColumnLayoutUrlState(
   const onLayoutChange = useCallback(
     (next: ColumnLayoutState) => {
       const p = new URLSearchParams(resolved.getSearch());
-      writeColumnLayout(p, next, ns);
+      const isDefault = stableKey(next) === stableKey(fallback);
+      const isEmpty = stableKey(next) === stableKey(EMPTY_COLUMN_LAYOUT);
+      // Back to the exact default → drop the params; the default re-applies
+      // and shared URLs stay clean.
+      writeColumnLayout(p, isDefault ? EMPTY_COLUMN_LAYOUT : next, ns);
+      // An all-empty layout writes no params, which reads back as "use the
+      // default" — stamp a marker so an explicitly emptied layout sticks.
+      if (isEmpty && !isDefault) p.set(ns + PARAM_COL_HIDDEN, "");
       resolved.setSearch(p.toString());
     },
-    [resolved, ns]
+    [resolved, ns, fallback]
   );
 
   return { layout, onLayoutChange };

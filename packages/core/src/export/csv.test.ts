@@ -1,0 +1,79 @@
+import { describe, expect, it, vi } from "vitest";
+
+import type { ColumnDef } from "../types";
+import { downloadCsv, rowsToCsv } from "./csv";
+
+interface Row {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+const ROWS: Row[] = [
+  { id: "a", name: "Alice", amount: 1200 },
+  { id: "b", name: 'Bob "the builder", Jr.', amount: 7 },
+];
+
+const COLS: ColumnDef<Row>[] = [
+  { key: "name", header: "Name", accessor: (r) => r.name },
+  { key: "amount", header: "Amount", accessor: (r) => r.amount },
+];
+
+describe("rowsToCsv", () => {
+  it("emits a header row from string headers and resolves accessors", () => {
+    const csv = rowsToCsv(ROWS, COLS);
+    const [head, first] = csv.split("\r\n");
+    expect(head).toBe("Name,Amount");
+    expect(first).toBe("Alice,1200");
+  });
+
+  it("quotes delimiters, quotes, and newlines per RFC 4180", () => {
+    const csv = rowsToCsv(ROWS, COLS);
+    expect(csv).toContain('"Bob ""the builder"", Jr."');
+    const multiline = rowsToCsv(
+      [{ id: "c", name: "line1\nline2", amount: 0 }],
+      COLS
+    );
+    expect(multiline).toContain('"line1\nline2"');
+  });
+
+  it("falls back to sortValue for JSX cells, else empty", () => {
+    const cols: ColumnDef<Row>[] = [
+      {
+        key: "rich",
+        header: "Rich",
+        accessor: (r) => ({ jsx: r.name }) as unknown as string,
+        sortValue: (r) => r.amount,
+      },
+      { key: "cellOnly", header: "Cell only" },
+    ];
+    const csv = rowsToCsv([ROWS[0]!], cols);
+    expect(csv.split("\r\n")[1]).toBe("1200,");
+  });
+
+  it("uses non-string headers' keys and a custom delimiter/getValue", () => {
+    const cols: ColumnDef<Row>[] = [{ key: "k", header: 1 as never }];
+    const csv = rowsToCsv([ROWS[0]!], cols, {
+      delimiter: ";",
+      getValue: (row) => row.id,
+    });
+    expect(csv).toBe("k\r\na");
+  });
+});
+
+describe("downloadCsv", () => {
+  it("creates and clicks a download link in the browser", () => {
+    const createObjectURL = vi.fn(() => "blob:x");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    downloadCsv("people.csv", "Name\r\nAlice");
+    expect(createObjectURL).toHaveBeenCalled();
+    expect(click).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:x");
+    vi.unstubAllGlobals();
+    click.mockRestore();
+  });
+});

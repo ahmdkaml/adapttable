@@ -126,8 +126,9 @@ from `@adapttable/core`, so every adapter gets them by passing a prop.
 ```
 
 - **Show/hide, reorder, pin** live in the built-in menu (`enableColumnMenu`).
-  Reorder by dragging a row or with the arrow keys on its grip; pinning makes a
-  column sticky to the inline-start edge.
+  Reorder by dragging a row or with the arrow keys on its grip. The pin
+  control cycles **none → left → right → none**; pinning is logical
+  (inline start/end), so a "left" pin sticks to the correct edge in RTL too.
 - **Resize** (`resizableColumns`) adds a handle to each header — drag it, or
   focus it and press ←/→. It is direction-aware, so it widens the right way in
   RTL.
@@ -178,6 +179,47 @@ const t = useDataTable({ source, columns, rowKey });
 
 Prop-getters merge your overrides: event handlers compose, `className`
 strings concatenate, and `style` objects merge.
+
+## Clickable rows
+
+```tsx
+<DataTable onRowClick={(row) => navigate(`/people/${row.id}`)} … />
+```
+
+Rows get the pointer cursor and Enter-key activation; clicks on row actions,
+the selection checkbox, or links inside cells never trigger it.
+
+## CSV export
+
+```tsx
+import { downloadCsv, rowsToCsv } from "@adapttable/core";
+
+<DataTable
+  toolbar={
+    <Button onClick={() => downloadCsv("people.csv", rowsToCsv(rows, columns))}>
+      Export CSV
+    </Button>
+  }
+  …
+/>;
+```
+
+Cells resolve via `accessor` (when primitive) → `sortValue`, so JSX cells
+export their underlying value. Pass `getValue` for full control.
+
+## Persisting column layout
+
+- Shareable links: `useColumnLayoutUrlState({ urlKey })`.
+- User preference: `useColumnLayoutStorageState({ storageKey })` —
+  localStorage-backed, SSR-safe, cleared when the layout returns to the
+  default.
+
+```tsx
+const { layout, onLayoutChange } = useColumnLayoutStorageState({
+  storageKey: "people-columns",
+});
+<DataTable columnLayout={layout} onColumnLayoutChange={onLayoutChange} … />;
+```
 
 ## Animations
 

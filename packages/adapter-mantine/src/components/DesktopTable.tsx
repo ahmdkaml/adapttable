@@ -6,8 +6,10 @@ import {
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
+  pinnedColumnWidth,
   resolveDisabledReason,
   type RowAction,
+  rowClickProps,
   runRowAction,
   tableMinWidth,
   type UseDataTableResult,
@@ -46,6 +48,8 @@ export interface DesktopTableProps<TRow> {
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   prefetch?: (row: TRow) => void;
+  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
+  onRowClick?: (row: TRow) => void;
   getRowId: (row: TRow) => string;
   bodyRef: RefObject<HTMLTableSectionElement>;
   className?: string;
@@ -197,6 +201,7 @@ export function DesktopTable<TRow>({
   rowActions,
   confirm,
   prefetch,
+  onRowClick,
   getRowId,
   bodyRef,
   className,
@@ -264,11 +269,17 @@ export function DesktopTable<TRow>({
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
   // which also sticks to the top). They need an opaque background.
   const pinBg = "var(--mantine-color-body)";
-  const headerStyleFor = (key: string): CSSProperties => {
+  const headerStyleFor = (column: ColumnDef<TRow>): CSSProperties => {
+    const key = column.key;
+    const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
     const merged: CSSProperties = {
       ...headerCellStyle,
-      ...pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads),
-      width: columnWidths?.[key],
+      ...pin,
+      // A pinned column renders at the same width its sticky inset assumed,
+      // so stacked pins stay flush even with no declared width.
+      width: pin
+        ? pinnedColumnWidth(column, columnWidths)
+        : columnWidths?.[key],
     };
     if (setWidth && !merged.position) merged.position = "relative";
     return merged;
@@ -352,7 +363,7 @@ export function DesktopTable<TRow>({
                 key={column.key}
                 table={table}
                 column={column}
-                stickyStyle={headerStyleFor(column.key)}
+                stickyStyle={headerStyleFor(column)}
                 resizeHandle={resizeHandleFor(column)}
               />
             ))}
@@ -381,6 +392,7 @@ export function DesktopTable<TRow>({
               <Table.Tr
                 key={key}
                 {...rowProps}
+                {...rowClickProps(row, onRowClick)}
                 ref={measureElement}
                 data-stagger=""
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}

@@ -60,7 +60,11 @@ export function FilterPopover({
       onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key !== "Escape") return;
+      onCloseRef.current();
+      // Escape strands keyboard focus inside the removed card — hand it back
+      // to the trigger (the anchored child button).
+      rootRef.current?.querySelector("button")?.focus();
     };
     document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);

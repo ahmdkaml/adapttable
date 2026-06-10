@@ -132,12 +132,13 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
     });
     const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
     expect(headerCheckbox.style.position).toBe("sticky");
-    expect(headerCheckbox.style.left).toBe("0px");
+    // Logical inset: sticks to the inline START, the correct edge in RTL too.
+    expect(headerCheckbox.style.insetInlineStart).toBe("0");
     const rowCheckbox = screen
       .getAllByLabelText("Select row")[0]!
       .closest("td")!;
     expect(rowCheckbox.style.position).toBe("sticky");
-    expect(rowCheckbox.style.left).toBe("0px");
+    expect(rowCheckbox.style.insetInlineStart).toBe("0");
   });
 });
 

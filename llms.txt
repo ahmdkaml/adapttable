@@ -22,6 +22,8 @@ automatic table-to-card responsive layouts.
 
 ## Quickstart (batteries-included)
 
+Wrap the app once in the UI kit's own provider (MantineProvider / ThemeProvider / ChakraProvider / ConfigProvider, per that kit's docs); the unstyled adapter needs none.
+
 ```tsx
 import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/mantine";
 
@@ -36,7 +38,7 @@ function People({ data }: { data: Person[] }) {
 }
 ```
 
-Swap `useFrontendData` for `useBackendData` to drive the same table from a server-paginated `useInfiniteQuery`. Nothing else changes.
+Swap `useFrontendData` for `useBackendData` to drive the same table from a server-paginated `useInfiniteQuery`. Nothing else changes. Column management (show/hide, drag/keyboard reorder, pin left/right, resize) is one prop: `enableColumnMenu` (+ `resizableColumns`); persist it to the URL with `useColumnLayoutUrlState`, tune row rhythm with `density="compact"`. Pinning uses logical CSS insets, so it lands on the correct edge under `dir="rtl"` too. Misconfiguration (an unresolvable sort, duplicate column keys) logs a dev-only console warning instead of failing silently. Two tables on one page: namespace their URL params with `urlKey`.
 
 ## Headless usage (full control)
 

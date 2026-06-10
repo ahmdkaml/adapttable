@@ -80,6 +80,24 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Mantine)", () => {
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders a row per source entry with column values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();

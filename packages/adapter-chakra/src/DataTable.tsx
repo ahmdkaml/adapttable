@@ -3,11 +3,13 @@ import {
   DEFAULT_ROW_SIZE_PX,
   type TableBody,
   useInfiniteScroll,
+  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
+  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
 import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -48,10 +50,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const size =
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
+  warnVirtualizeInScrollBox(props.virtualize ?? false, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToTableTop({
+    ref: rootRef,
+    deps: [
+      source.search,
+      source.sortBy ?? "",
+      source.sortDir ?? "",
+      source.page,
+      chrome.activeFilterCount,
+    ],
+    enabled: props.scrollToTopOnChange,
+    offset: props.stickyTop,
+    gap: props.scrollTopGap,
+  });
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -99,6 +116,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     setWidth: props.resizableColumns ? chrome.columnLayout.setWidth : undefined,
     columnWidths: chrome.columnLayout.state.widths,
     resizeLabel: table.labels.resizeColumn,
+    onRowClick: props.onRowClick,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (
@@ -113,14 +131,28 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {labels.noData}
       </Text>
     ),
-    mobile: <MobileCards {...tableProps} />,
-    desktop: <DesktopTable {...tableProps} prefetch={props.prefetch} />,
+    mobile: <MobileCards {...tableProps} className={props.classNames?.card} />,
+    desktop: (
+      <DesktopTable
+        {...tableProps}
+        prefetch={props.prefetch}
+        className={props.classNames?.table}
+      />
+    ),
   };
 
   return (
-    <Box dir={props.dir} borderWidth="1px" borderRadius="md" p={3}>
+    <Box
+      ref={rootRef}
+      dir={props.dir}
+      className={props.classNames?.root}
+      borderWidth="1px"
+      borderRadius="md"
+      p={3}
+    >
       <Stack spacing={3}>
         <Toolbar
+          className={props.classNames?.toolbar}
           table={table}
           hideSearch={props.hideSearch}
           searchPlaceholder={props.searchPlaceholder}
@@ -184,6 +216,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         )}
         {chrome.showFooter && (
           <Footer
+            className={props.classNames?.footer}
             pagination={table.pagination}
             total={source.total}
             limit={source.limit}

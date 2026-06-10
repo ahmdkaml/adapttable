@@ -30,6 +30,8 @@ export interface SharedTableRenderProps<TRow> {
   getRowId: (row: TRow) => string;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
+  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
+  onRowClick?: (row: TRow) => void;
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];
   /** Spacer height above the virtual window. */

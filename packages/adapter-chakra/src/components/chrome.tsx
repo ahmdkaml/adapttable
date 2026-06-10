@@ -106,6 +106,7 @@ export function Toolbar<TRow>({
   showRowsPerPage,
   colorScheme,
   dir,
+  className,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   hideSearch?: boolean;
@@ -125,6 +126,8 @@ export function Toolbar<TRow>({
   showRowsPerPage: boolean;
   colorScheme?: string;
   dir?: Direction;
+  /** Class hook for the toolbar row. */
+  className?: string;
 }>) {
   const { labels, source } = table;
   const sortOptions =
@@ -158,6 +161,7 @@ export function Toolbar<TRow>({
       flexWrap="nowrap"
       justify="space-between"
       align="center"
+      className={className}
     >
       {!hideSearch && (
         <InputGroup size="sm" maxW="360px" flex="1" minW="160px">
@@ -336,6 +340,7 @@ export function Footer({
   setPage,
   setLimit,
   labels,
+  className,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
@@ -343,10 +348,17 @@ export function Footer({
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
+  /** Class hook for the footer row. */
+  className?: string;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
-    <HStack spacing={3} justify="space-between" flexWrap="wrap">
+    <HStack
+      spacing={3}
+      justify="space-between"
+      flexWrap="wrap"
+      className={className}
+    >
       <HStack spacing={2}>
         <Text fontSize="xs" {...subtleText}>
           {labels.rowsPerPage}

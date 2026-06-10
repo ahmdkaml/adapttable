@@ -82,4 +82,50 @@ describe("useColumnLayoutUrlState", () => {
     expect(result.current.layout.hidden).toEqual(["team"]);
     expect(window.location.search).toBe("");
   });
+
+  it("an explicitly emptied layout sticks instead of snapping back to the default", () => {
+    // Unhiding the last default-hidden column empties the layout; deleting
+    // every param would re-apply the default and instantly re-hide it.
+    const { result } = renderWith("", { defaultLayout: { hidden: ["email"] } });
+    expect(result.current.layout.hidden).toEqual(["email"]);
+    act(() => {
+      result.current.onLayoutChange({
+        hidden: [],
+        order: [],
+        pinned: {},
+        widths: {},
+      });
+    });
+    expect(result.current.layout.hidden).toEqual([]);
+  });
+
+  it("drops all params when the layout returns to the exact default", () => {
+    const { result, adapter } = renderWith("colHide=status", {
+      defaultLayout: { hidden: ["email"] },
+    });
+    act(() => {
+      result.current.onLayoutChange({
+        hidden: ["email"],
+        order: [],
+        pinned: {},
+        widths: {},
+      });
+    });
+    expect(adapter.getSearch()).toBe("");
+    expect(result.current.layout.hidden).toEqual(["email"]);
+  });
+
+  it("an emptied layout with no default leaves a clean URL", () => {
+    const { result, adapter } = renderWith("colHide=email");
+    act(() => {
+      result.current.onLayoutChange({
+        hidden: [],
+        order: [],
+        pinned: {},
+        widths: {},
+      });
+    });
+    expect(adapter.getSearch()).toBe("");
+    expect(result.current.layout.hidden).toEqual([]);
+  });
 });

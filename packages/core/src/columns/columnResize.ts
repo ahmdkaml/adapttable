@@ -61,16 +61,38 @@ export function columnResizeHandleProps(
       const startX = event.clientX;
       const startWidth = cellWidth(event.currentTarget);
       const rtl = isRtl(event.currentTarget);
-      const onMove = (e: globalThis.PointerEvent) => {
-        const delta = rtl ? startX - e.clientX : e.clientX - startX;
+      // Coalesce pointer moves to one width commit per animation frame —
+      // every commit re-renders the table (and may write the URL), and a
+      // drag emits far more moves than frames.
+      let frame = 0;
+      let lastX = startX;
+      const commit = () => {
+        frame = 0;
+        const delta = rtl ? startX - lastX : lastX - startX;
         setWidth(key, Math.max(MIN_COLUMN_WIDTH, startWidth + delta));
       };
+      const onMove = (e: globalThis.PointerEvent) => {
+        lastX = e.clientX;
+        frame ||= globalThis.requestAnimationFrame(commit);
+      };
+      // `pointercancel` fires instead of `pointerup` when the browser takes
+      // over the gesture (touch scroll, alt-tab mid-drag) — clean up on both
+      // or the column keeps resizing with every later pointer move.
       const onUp = () => {
+        // Flush a pending frame so the release position always lands; a
+        // drag-less click leaves no pending frame and commits nothing.
+        if (frame) {
+          globalThis.cancelAnimationFrame(frame);
+          frame = 0;
+          commit();
+        }
         document.removeEventListener("pointermove", onMove);
         document.removeEventListener("pointerup", onUp);
+        document.removeEventListener("pointercancel", onUp);
       };
       document.addEventListener("pointermove", onMove);
       document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
     },
     onKeyDown: (event) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;

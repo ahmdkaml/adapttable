@@ -6,6 +6,7 @@ import {
 import { useEffect, useMemo, useRef } from "react";
 
 import { VIRTUAL_OVERSCAN } from "../constants";
+import { devWarn } from "../utils/devWarn";
 
 /** One row/card entry materialized from a virtual window. */
 export interface VirtualTableRow<TRow> {
@@ -169,4 +170,21 @@ export function useTableVirtualization<TRow>({
     paddingBottom: Math.max(0, paddingBottom),
     measureElement: virtualizer.measureElement,
   };
+}
+
+/**
+ * Dev-only: `virtualize` windows against the PAGE scroll and cannot observe
+ * rows inside a `maxHeight` scroll box — combined, the window never moves and
+ * the slice never updates. Adapters call this once per render so the
+ * misconfiguration is caught in development instead of failing silently.
+ */
+export function warnVirtualizeInScrollBox(
+  virtualize: boolean,
+  maxHeight: number | undefined
+): void {
+  if (virtualize && maxHeight != null) {
+    devWarn(
+      "`virtualize` uses window scrolling and cannot see rows inside a `maxHeight` scroll box — use one or the other (antd is the exception: it virtualizes natively inside its own box)."
+    );
+  }
 }

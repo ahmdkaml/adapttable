@@ -154,15 +154,17 @@ describe("useColumnLayout", () => {
   });
 
   it("builds a sticky style from a pin offset (or undefined when unpinned)", () => {
+    // Logical insets: a "left" pin sticks to the inline START, so the same
+    // style lands on the correct edge (physical right) under dir="rtl".
     expect(pinnedCellStyle(undefined)).toBeUndefined();
     expect(pinnedCellStyle({ side: "left", inset: 0 })).toEqual({
       position: "sticky",
-      left: 0,
+      insetInlineStart: 0,
       zIndex: 1,
     });
     expect(pinnedCellStyle({ side: "right", inset: 80 }, 3)).toEqual({
       position: "sticky",
-      right: 80,
+      insetInlineEnd: 80,
       zIndex: 3,
     });
   });
@@ -175,24 +177,41 @@ describe("useColumnLayout", () => {
         left: 40,
         right: 120,
       })
-    ).toEqual({ position: "sticky", left: 70, zIndex: PIN_Z.body });
+    ).toEqual({ position: "sticky", insetInlineStart: 70, zIndex: PIN_Z.body });
     expect(
       pinnedCellStyle({ side: "right", inset: 10 }, PIN_Z.body, { left: 40 })
-    ).toEqual({ position: "sticky", right: 10, zIndex: PIN_Z.body });
+    ).toEqual({ position: "sticky", insetInlineEnd: 10, zIndex: PIN_Z.body });
   });
 
   it("builds an edge-pin style only when that side is active", () => {
     expect(edgePinStyle("left", false)).toBeUndefined();
     expect(edgePinStyle("left", true)).toEqual({
       position: "sticky",
-      left: 0,
+      insetInlineStart: 0,
       zIndex: PIN_Z.body,
     });
     expect(edgePinStyle("right", true, PIN_Z.headerPinned)).toEqual({
       position: "sticky",
-      right: 0,
+      insetInlineEnd: 0,
       zIndex: PIN_Z.headerPinned,
     });
+  });
+
+  it("reports a pinned-but-hidden column as unpinned (no garbage inset)", () => {
+    const { result } = renderHook(() =>
+      useColumnLayout({
+        columns,
+        defaultLayout: {
+          hidden: ["a"],
+          pinned: { a: "left", b: "left" },
+          widths: { a: 100, b: 90 },
+        },
+      })
+    );
+    // 'a' is pinned but hidden → no rendered cell to stick.
+    expect(result.current.pinOffset("a")).toBeUndefined();
+    // 'b' is the only VISIBLE left-pinned column → inset 0, not width(a).
+    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 0 });
   });
 
   it("sets and clears a column width", () => {
@@ -252,5 +271,18 @@ describe("useColumnLayout", () => {
     // No state width for 'a', but its declared numeric width (90) is used, so
     // 'b' is inset by 90.
     expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 90 });
+  });
+});
+
+describe("batched mutations", () => {
+  it("composes two mutations fired in one event handler", () => {
+    const { result } = renderHook(() => useColumnLayout({ columns }));
+    act(() => {
+      // Both run before any re-render — the second must see the first.
+      result.current.setPinned("a", "left");
+      result.current.setWidth("a", 200);
+    });
+    expect(result.current.state.pinned).toEqual({ a: "left" });
+    expect(result.current.state.widths).toEqual({ a: 200 });
   });
 });

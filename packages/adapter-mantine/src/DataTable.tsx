@@ -5,6 +5,7 @@ import {
   useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
+  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Stack } from "@mantine/core";
 import { useDisclosure, useElementSize } from "@mantine/hooks";
@@ -81,6 +82,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   } = props;
   const density = props.density ?? "comfortable";
 
+  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, isMobile, confirm, getRowId } = chrome;
   const [drawerOpened, drawer] = useDisclosure(false);
@@ -157,6 +159,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
+        onRowClick={props.onRowClick}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -174,6 +177,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowActions={rowActions}
         confirm={confirm}
         prefetch={prefetch}
+        onRowClick={props.onRowClick}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}

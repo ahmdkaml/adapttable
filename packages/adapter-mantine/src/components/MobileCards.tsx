@@ -3,6 +3,7 @@ import {
   type ConfirmHandler,
   resolveDisabledReason,
   type RowAction,
+  rowClickProps,
   runRowAction,
   type UseDataTableResult,
   type VirtualTableRow,
@@ -35,6 +36,8 @@ export interface MobileCardsProps<TRow> {
   paddingBottom?: number;
   measureElement?: (element: Element | null) => void;
   density?: Density;
+  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
+  onRowClick?: (row: TRow) => void;
 }
 
 function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -58,6 +61,7 @@ export function MobileCards<TRow>({
   paddingBottom = 0,
   measureElement,
   density = "comfortable",
+  onRowClick,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -82,6 +86,7 @@ export function MobileCards<TRow>({
         return (
           <Card
             key={key}
+            {...rowClickProps(row, onRowClick)}
             ref={measureElement}
             data-index={index}
             withBorder

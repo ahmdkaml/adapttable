@@ -9,6 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 
 /** Props for {@link FilterPopover}. */
 export interface FilterPopoverProps {
@@ -41,6 +42,16 @@ export function FilterPopover({
   labels,
   dir = "ltr",
 }: Readonly<FilterPopoverProps>) {
+  // Escape must close the popover wherever focus sits (e.g. still on the
+  // Filters trigger) — a keydown on the card alone misses that case.
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
   return (
     <Popper
       open={open && anchorEl !== null}
@@ -52,9 +63,6 @@ export function FilterPopover({
       <ClickAwayListener mouseEvent="onMouseDown" onClickAway={onClose}>
         <Paper
           elevation={8}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") onClose();
-          }}
           sx={{
             width: 360,
             maxWidth: "calc(100vw - 32px)",

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { columnResizeHandleProps } from "./columnResize";
 
@@ -27,6 +27,20 @@ function handleEvent(
 afterEach(() => vi.restoreAllMocks());
 
 describe("columnResizeHandleProps", () => {
+  beforeEach(() => {
+    // Synchronous rAF: each pointer move commits immediately, and pointerup
+    // finds no pending frame (matching the async contract's end state).
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      (cb: FrameRequestCallback): number => {
+        cb(0);
+        return 1;
+      }
+    );
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
   it("exposes accessible button semantics", () => {
     const props = columnResizeHandleProps("a", vi.fn(), "Resize A");
     expect(props.role).toBe("button");
@@ -43,9 +57,12 @@ describe("columnResizeHandleProps", () => {
     document.dispatchEvent(new MouseEvent("pointermove", { clientX: 140 }));
     expect(setWidth).toHaveBeenLastCalledWith("a", 190);
     document.dispatchEvent(new MouseEvent("pointerup"));
-    // after pointerup the listener is detached: further moves do nothing
+    // pointerup flushes the release position; the listener is then detached
+    // so further moves do nothing.
+    expect(setWidth).toHaveBeenLastCalledWith("a", 190);
+    const committed = setWidth.mock.calls.length;
     document.dispatchEvent(new MouseEvent("pointermove", { clientX: 300 }));
-    expect(setWidth).toHaveBeenCalledTimes(1);
+    expect(setWidth).toHaveBeenCalledTimes(committed);
   });
 
   it("inverts the pointer drag in RTL (handle is on the visual left)", () => {

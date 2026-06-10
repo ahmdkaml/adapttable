@@ -136,7 +136,9 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
-    await screen.findByText("Reset columns");
+    await screen.findByText("Reset columns", undefined, {
+      timeout: 5000,
+    });
     // The hidden column's label is struck through (covers the hidden branch).
     const cityLabels = screen.getAllByText("City");
     const struck = cityLabels.find((el) =>
@@ -150,7 +152,9 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
       override: { filters: <div>filter body</div>, filtersMode: "drawer" },
     });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
-    const body = await screen.findByText("filter body");
+    const body = await screen.findByText("filter body", undefined, {
+      timeout: 5000,
+    });
     // The drawer close button invokes onClose → setFiltersOpen(false).
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await waitForElementToBeRemoved(body);
@@ -163,9 +167,16 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
       "f_status=Active"
     );
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
-    await screen.findByText("body");
-    // Clear-all inside the popover header; without onClearFilters it must not throw.
-    const clearButtons = screen.getAllByRole("button", { name: "Clear all" });
+    await screen.findByText("body", undefined, { timeout: 5000 });
+    // Clear-all inside the popover header; without onClearFilters it must not
+    // throw. WAIT for the role: the card exists before Popper finishes
+    // positioning it (visibility:hidden), and byRole rightly excludes
+    // invisible elements — asserting synchronously races the positioner.
+    const clearButtons = await screen.findAllByRole(
+      "button",
+      { name: "Clear all" },
+      { timeout: 5000 }
+    );
     expect(() => fireEvent.click(clearButtons[0]!)).not.toThrow();
   });
 });

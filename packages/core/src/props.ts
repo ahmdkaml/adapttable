@@ -56,6 +56,12 @@ export interface BaseDataTableProps<TRow> {
   mobileIdentityColumns?: number;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
+  /**
+   * Row activation — fires on row click and on Enter when the row has focus.
+   * Interactive children (action buttons, the selection checkbox, links)
+   * keep their own behaviour and never trigger it.
+   */
+  onRowClick?: (row: TRow) => void;
   /** Called whenever the materialized source rows change. */
   onRowsChange?: (rows: readonly TRow[]) => void;
   /** Disable the built-in search box. */

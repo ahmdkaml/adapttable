@@ -2,10 +2,12 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetDevWarnings } from "../utils/devWarn";
 import {
   resolveVirtualRows,
   useTableVirtualization,
   virtualColumnSpan,
+  warnVirtualizeInScrollBox,
 } from "./useTableVirtualization";
 
 vi.mock("@tanstack/react-virtual", () => ({
@@ -241,5 +243,18 @@ describe("useTableVirtualization", () => {
   it("computes table spacer column spans", () => {
     expect(virtualColumnSpan(3, false, false)).toBe(3);
     expect(virtualColumnSpan(3, true, true)).toBe(5);
+  });
+});
+
+describe("warnVirtualizeInScrollBox", () => {
+  it("warns only when virtualize and maxHeight are combined", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    warnVirtualizeInScrollBox(true, undefined);
+    warnVirtualizeInScrollBox(false, 400);
+    expect(warn).not.toHaveBeenCalled();
+    warnVirtualizeInScrollBox(true, 400);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("maxHeight"));
+    resetDevWarnings();
+    vi.restoreAllMocks();
   });
 });

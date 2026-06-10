@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { resetDevWarnings } from "../utils/devWarn";
 import * as env from "../utils/env";
 import { createMemoryAdapter } from "./adapter";
 import { useTableUrlState } from "./useTableUrlState";
@@ -162,6 +163,50 @@ describe("useTableUrlState", () => {
     }
   });
 
+  describe("SSR server snapshot", () => {
+    it("hydrates from an empty snapshot with the default adapter", () => {
+      // The server rendered from an empty memory store; hydration must agree
+      // (the live URL applies right after hydration instead of mismatching).
+      window.history.replaceState(null, "", "/?page=4");
+      function Probe() {
+        const { page } = useTableUrlState();
+        return <span>{`page-${page}`}</span>;
+      }
+      expect(renderToString(<Probe />)).toContain("page-1");
+    });
+  });
+
+  describe("duplicate urlKey detection", () => {
+    it("warns when two tables share one adapter without distinct urlKeys", () => {
+      const warn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const adapter = createMemoryAdapter("");
+      renderHook(() => {
+        useTableUrlState({ adapter });
+        useTableUrlState({ adapter });
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("share the URL namespace")
+      );
+      resetDevWarnings();
+      vi.restoreAllMocks();
+    });
+
+    it("stays silent when each table has its own urlKey", () => {
+      const warn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const adapter = createMemoryAdapter("");
+      renderHook(() => {
+        useTableUrlState({ adapter, urlKey: "left" });
+        useTableUrlState({ adapter, urlKey: "right" });
+      });
+      expect(warn).not.toHaveBeenCalled();
+      vi.restoreAllMocks();
+    });
+  });
+
   describe("urlKey namespacing", () => {
     it("reads only its own namespaced params, ignoring the bare keys", () => {
       const { result } = renderWith(
@@ -202,6 +247,74 @@ describe("useTableUrlState", () => {
       );
       act(() => result.current.clearAll());
       expect(adapter.getSearch()).toBe("right.q=bar");
+    });
+  });
+
+  describe("clearing defaulted state (explicit-clear markers)", () => {
+    it("clearing a defaulted search sticks instead of resurrecting it", () => {
+      const { result } = renderWith("", { defaults: { search: "ada" } });
+      expect(result.current.search).toBe("ada");
+      act(() => result.current.setSearch(""));
+      expect(result.current.search).toBe("");
+    });
+
+    it("clearing a defaulted sort sticks instead of resurrecting it", () => {
+      const { result } = renderWith("", {
+        defaults: { sortBy: "name", sortDir: "desc" },
+      });
+      act(() => result.current.setSort(undefined));
+      expect(result.current.sortBy).toBeUndefined();
+      expect(result.current.sortDir).toBeUndefined();
+    });
+
+    it("removing a defaulted extra filter sticks (chip ✕ stays removed)", () => {
+      const { result } = renderWith("", {
+        defaults: { extra: { status: "Active" } },
+      });
+      expect(result.current.extra).toEqual({ status: "Active" });
+      act(() => result.current.setExtra("status", ""));
+      expect(result.current.extra).toEqual({});
+    });
+
+    it("setExtra on another key keeps an untouched default alive", () => {
+      const { result } = renderWith("", {
+        defaults: { extra: { status: "Active" } },
+      });
+      act(() => result.current.setExtra("team", "Core"));
+      expect(result.current.extra).toEqual({ status: "Active", team: "Core" });
+    });
+
+    it("clearAll clears defaulted search/sort/extra for good", () => {
+      const { result } = renderWith("", {
+        defaults: { search: "ada", sortBy: "name", extra: { team: "Core" } },
+      });
+      act(() => result.current.clearAll());
+      expect(result.current.search).toBe("");
+      expect(result.current.sortBy).toBeUndefined();
+      expect(result.current.extra).toEqual({});
+    });
+
+    it("keeps URLs clean when no default exists for the cleared key", () => {
+      const { result, adapter } = renderWith("q=foo&f_team=Core", {
+        arrayExtraKeys: ["team"],
+      });
+      act(() => result.current.clearAll());
+      expect(adapter.getSearch()).toBe("");
+    });
+
+    it("setPage(1) wins over a defaults.page greater than 1", () => {
+      const { result } = renderWith("", { defaults: { page: 3 } });
+      expect(result.current.page).toBe(3);
+      act(() => result.current.setPage(1));
+      expect(result.current.page).toBe(1);
+    });
+
+    it("setLimit clamps to the range the read side accepts", () => {
+      const { result } = renderWith("");
+      act(() => result.current.setLimit(9999));
+      expect(result.current.limit).toBe(500);
+      act(() => result.current.setLimit(0));
+      expect(result.current.limit).toBe(1);
     });
   });
 });

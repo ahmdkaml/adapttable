@@ -10,6 +10,8 @@ import {
   columnRowDragProps,
   EyeIcon,
   GripIcon,
+  nextPinSide,
+  pinActionLabel,
   PinIcon,
 } from "@adapttable/core";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +27,8 @@ export interface ColumnMenuLabels {
   moveLeft: string;
   moveRight: string;
   resetColumns: string;
+  showColumn: string;
+  hideColumn: string;
 }
 
 interface ColumnMenuRowProps<TRow> {
@@ -40,12 +44,12 @@ function ColumnMenuRowItem<TRow>({
   labels,
   classNames,
 }: Readonly<ColumnMenuRowProps<TRow>>) {
-  const { key, name, hidden, pinnedLeft, index } = row;
+  const { key, name, hidden, pinned, index } = row;
   return (
     <div
       data-adapttable-part="column-menu-item"
       data-hidden={hidden || undefined}
-      data-pinned={pinnedLeft ? "left" : undefined}
+      data-pinned={pinned}
       className={classNames.columnMenuItem}
       style={{ cursor: "grab" }}
       {...columnRowDragProps(key)}
@@ -68,7 +72,7 @@ function ColumnMenuRowItem<TRow>({
         data-adapttable-part="column-menu-visibility"
         data-active={!hidden || undefined}
         aria-pressed={!hidden}
-        aria-label={`${name}`}
+        aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
         className={classNames.columnMenuVisibility}
         onClick={() => layout.toggleVisible(key)}
       >
@@ -84,11 +88,11 @@ function ColumnMenuRowItem<TRow>({
       <button
         type="button"
         data-adapttable-part="column-menu-pin"
-        data-active={pinnedLeft || undefined}
-        aria-pressed={pinnedLeft}
-        aria-label={`${pinnedLeft ? labels.unpin : labels.pinLeft}: ${name}`}
+        data-active={pinned !== undefined || undefined}
+        aria-pressed={pinned !== undefined}
+        aria-label={`${pinActionLabel(pinned, labels)}: ${name}`}
         className={classNames.columnMenuPin}
-        onClick={() => layout.setPinned(key, pinnedLeft ? undefined : "left")}
+        onClick={() => layout.setPinned(key, nextPinSide(pinned))}
       >
         <PinIcon />
       </button>
@@ -117,6 +121,7 @@ export function ColumnMenu<TRow>({
 }: Readonly<ColumnMenuProps<TRow>>) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -124,7 +129,11 @@ export function ColumnMenu<TRow>({
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      // Escape strands keyboard focus inside the removed panel — hand it
+      // back to the trigger (outside clicks keep their own focus target).
+      triggerRef.current?.focus();
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -142,6 +151,7 @@ export function ColumnMenu<TRow>({
       style={{ position: "relative" }}
     >
       <button
+        ref={triggerRef}
         type="button"
         aria-expanded={open}
         aria-haspopup="true"

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFrontendData } from "../source/useFrontendData";
 import type { BulkAction, ColumnDef } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
+import { resetDevWarnings } from "../utils/devWarn";
 import { useDataTable, type UseDataTableOptions } from "./useDataTable";
 
 interface Row {
@@ -49,6 +50,22 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("useDataTable", () => {
+  it("warns in dev about duplicate column keys (and not about unique ones)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mount("", {
+      columns: [...cols, { key: "name", header: "Name again" }],
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('duplicate column key "name"')
+    );
+    warn.mockClear();
+    resetDevWarnings();
+    mount();
+    expect(warn).not.toHaveBeenCalled();
+    resetDevWarnings();
+    vi.restoreAllMocks();
+  });
+
   it("exposes rows, columns, labels, and pagination", () => {
     const { result } = mount();
     expect(result.current.rows.map((r) => r.id)).toEqual(["a", "b"]);

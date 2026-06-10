@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
+import { nextPinSide, pinActionLabel } from "./columnMenuModel";
 import { columnMenuLabel, columnMenuRows } from "./columnMenuModel";
 import type { UseColumnLayoutResult } from "./useColumnLayout";
 
@@ -45,7 +46,7 @@ describe("columnMenuRows", () => {
   it("keeps every column in declared order — hiding does not reorder", () => {
     const rows = columnMenuRows(cols, layout(["b"], { a: "left" }));
     expect(rows.map((r) => r.key)).toEqual(["a", "b", "c", "d"]);
-    expect(rows[0]!.pinnedLeft).toBe(true);
+    expect(rows[0]!.pinned).toBe("left");
     expect(rows[0]!.index).toBe(0);
     // Bravo is hidden but stays in position 1 with a stable reorder index.
     const bravo = rows[1]!;
@@ -61,5 +62,21 @@ describe("columnMenuRows", () => {
     expect(rows.map((r) => r.key)).toEqual(["c", "a", "b", "d"]);
     expect(rows[1]!.key).toBe("a");
     expect(rows[1]!.hidden).toBe(true);
+  });
+});
+
+describe("pin cycle helpers", () => {
+  const labels = { pinLeft: "Pin left", pinRight: "Pin right", unpin: "Unpin" };
+
+  it("cycles none → left → right → none", () => {
+    expect(nextPinSide(undefined)).toBe("left");
+    expect(nextPinSide("left")).toBe("right");
+    expect(nextPinSide("right")).toBeUndefined();
+  });
+
+  it("labels the NEXT action so the accessible name matches behaviour", () => {
+    expect(pinActionLabel(undefined, labels)).toBe("Pin left");
+    expect(pinActionLabel("left", labels)).toBe("Pin right");
+    expect(pinActionLabel("right", labels)).toBe("Unpin");
   });
 });

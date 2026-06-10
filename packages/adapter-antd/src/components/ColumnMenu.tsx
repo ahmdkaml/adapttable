@@ -1,4 +1,8 @@
-import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
+import type {
+  ColumnDef,
+  Direction,
+  UseColumnLayoutResult,
+} from "@adapttable/core";
 import {
   columnDropProps,
   columnMenuRows,
@@ -6,9 +10,12 @@ import {
   columnRowDragProps,
   EyeIcon,
   GripIcon,
+  nextPinSide,
+  pinActionLabel,
   PinIcon,
 } from "@adapttable/core";
 import { Button, Divider, Flex, Popover } from "antd";
+import { useEffect, useState } from "react";
 
 export interface ColumnMenuLabels {
   columns: string;
@@ -18,23 +25,39 @@ export interface ColumnMenuLabels {
   moveLeft: string;
   moveRight: string;
   resetColumns: string;
+  showColumn: string;
+  hideColumn: string;
 }
 
 export interface ColumnMenuProps<TRow> {
   allColumns: ColumnDef<TRow>[];
   layout: UseColumnLayoutResult<TRow>;
   labels: ColumnMenuLabels;
+  /** Text direction — flips the popover to the start side under RTL. */
+  dir?: Direction;
 }
 
 /**
  * AntD column-management popover: per-column drag grip (reorder), eye
- * (show/hide), and pin toggle.
+ * (show/hide), and pin toggle. Controlled open state so Escape dismisses it
+ * (antd's Popover has no built-in Escape handling) and the trigger reports
+ * `aria-expanded` like the Filters button beside it.
  */
 export function ColumnMenu<TRow>({
   allColumns,
   layout,
   labels,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
   const content = (
     <div
       style={{
@@ -80,7 +103,7 @@ export function ColumnMenu<TRow>({
           <Button
             size="small"
             type={r.hidden ? "text" : "link"}
-            aria-label={r.name}
+            aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
             aria-pressed={!r.hidden}
             icon={<EyeIcon off={r.hidden} />}
             onClick={() => layout.toggleVisible(r.key)}
@@ -97,12 +120,10 @@ export function ColumnMenu<TRow>({
           </span>
           <Button
             size="small"
-            type={r.pinnedLeft ? "primary" : "text"}
-            aria-label={`${r.pinnedLeft ? labels.unpin : labels.pinLeft}: ${r.name}`}
+            type={r.pinned ? "primary" : "text"}
+            aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
             icon={<PinIcon />}
-            onClick={() =>
-              layout.setPinned(r.key, r.pinnedLeft ? undefined : "left")
-            }
+            onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
           />
         </Flex>
       ))}
@@ -115,11 +136,15 @@ export function ColumnMenu<TRow>({
   return (
     <Popover
       trigger="click"
-      placement="bottomRight"
+      open={open}
+      onOpenChange={setOpen}
+      placement={dir === "rtl" ? "bottomLeft" : "bottomRight"}
       content={content}
       styles={{ body: { padding: 0 } }}
     >
-      <Button>{labels.columns}</Button>
+      <Button aria-expanded={open} aria-haspopup="true">
+        {labels.columns}
+      </Button>
     </Popover>
   );
 }

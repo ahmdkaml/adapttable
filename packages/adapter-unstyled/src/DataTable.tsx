@@ -3,11 +3,13 @@ import {
   DEFAULT_ROW_SIZE_PX,
   pageSizeOptions,
   useInfiniteScroll,
+  useScrollToTableTop,
   useTableChrome,
   useTableVirtualization,
+  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
 import type { ReactElement } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -94,6 +96,7 @@ function DataTableBody<TRow>({
       getRowId={getRowId}
       classNames={classNames}
       prefetch={props.prefetch}
+      onRowClick={props.onRowClick}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}
@@ -141,10 +144,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const density = props.density ?? "comfortable";
 
+  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToTableTop({
+    ref: rootRef,
+    deps: [
+      source.search,
+      source.sortBy ?? "",
+      source.sortDir ?? "",
+      source.page,
+      chrome.activeFilterCount,
+    ],
+    enabled: props.scrollToTopOnChange,
+    offset: props.stickyTop,
+    gap: props.scrollTopGap,
+  });
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -214,6 +232,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   return (
     <div
+      ref={rootRef}
       dir={dir}
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}

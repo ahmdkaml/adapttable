@@ -62,6 +62,24 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (unstyled)", () => {
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders a semantic table with rows and data hooks", () => {
     const { container } = renderHarness();
     expect(
@@ -338,12 +356,15 @@ describe("<DataTable> (unstyled)", () => {
       '[data-adapttable-part="selection-header"]'
     );
     expect(selHeader).toHaveAttribute("data-pinned", "left");
-    expect(selHeader).toHaveStyle({ position: "sticky", left: "0px" });
+    // Logical inset: sticks to the inline START, the correct edge in RTL too.
+    expect(selHeader).toHaveStyle({ position: "sticky" });
+    expect((selHeader as HTMLElement).style.insetInlineStart).toBe("0");
     const selCell = container.querySelector(
       '[data-adapttable-part="selection-cell"]'
     );
     expect(selCell).toHaveAttribute("data-pinned", "left");
-    expect(selCell).toHaveStyle({ position: "sticky", left: "0px" });
+    expect(selCell).toHaveStyle({ position: "sticky" });
+    expect((selCell as HTMLElement).style.insetInlineStart).toBe("0");
   });
 
   it("leaves the selection column unpinned when nothing is pinned", () => {

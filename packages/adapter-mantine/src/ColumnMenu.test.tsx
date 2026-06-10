@@ -38,6 +38,8 @@ const labels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 // Mantine renders the dropdown in a portal whose buttons testing-library's
@@ -58,12 +60,12 @@ describe("mantine ColumnMenu", () => {
     await screen.findByText("Reset columns");
 
     // visibility via the eye control (aria-label is the column name)
-    fireEvent.click(byLabel("Bravo"));
+    fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin (a is pinned left → unpins; b pins left)
-    fireEvent.click(byLabel("Unpin: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
+    fireEvent.click(byLabel("Pin right: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
     fireEvent.click(byLabel("Pin left: Bravo"));
     expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 

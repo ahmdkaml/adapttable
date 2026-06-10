@@ -27,11 +27,15 @@ export const he: Required<TableLabels> = {
   showing: ({ from, to, total }) => `מציג ${from}–${to} מתוך ${total}`,
   pageOf: ({ page, total }) => `עמוד ${page} מתוך ${total}`,
   columns: "עמודות",
-  pinLeft: "הצמד לשמאל",
-  pinRight: "הצמד לימין",
+  // Pinning and reorder are logical (start/end follows כיוון הכתיבה), so
+  // the copy is direction-neutral instead of a literal שמאל/ימין.
+  pinLeft: "הצמד להתחלה",
+  pinRight: "הצמד לסוף",
   unpin: "בטל הצמדה",
-  moveLeft: "הזז שמאלה",
-  moveRight: "הזז ימינה",
+  moveLeft: "הזז לכיוון ההתחלה",
+  moveRight: "הזז לכיוון הסוף",
   resetColumns: "אפס עמודות",
   resizeColumn: "שנה גודל עמודה",
+  showColumn: "הצג עמודה",
+  hideColumn: "הסתר עמודה",
 };

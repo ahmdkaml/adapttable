@@ -36,6 +36,8 @@ const labels = {
   moveLeft: "Move left",
   moveRight: "Move right",
   resetColumns: "Reset columns",
+  showColumn: "Show column",
+  hideColumn: "Hide column",
 };
 
 const byLabel = (name: string) =>
@@ -49,12 +51,12 @@ describe("antd ColumnMenu", () => {
     await screen.findByText("Reset columns");
 
     // visibility via the eye control (aria-label is the column name)
-    fireEvent.click(byLabel("Bravo"));
+    fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin (a is pinned left → unpins; b pins left)
-    fireEvent.click(byLabel("Unpin: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
+    fireEvent.click(byLabel("Pin right: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
     fireEvent.click(byLabel("Pin left: Bravo"));
     expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
 
@@ -76,11 +78,14 @@ describe("antd ColumnMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
-    // The hidden column's eye toggle reports aria-pressed=false.
-    const hiddenEye = byLabel("Bravo");
+    // The hidden column's eye toggle offers to show it.
+    const hiddenEye = byLabel("Show column: Bravo");
     expect(hiddenEye).toHaveAttribute("aria-pressed", "false");
-    // A visible column's eye toggle reports aria-pressed=true.
-    expect(byLabel("Alpha")).toHaveAttribute("aria-pressed", "true");
+    // A visible column's eye toggle offers to hide it.
+    expect(byLabel("Hide column: Alpha")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
 
     fireEvent.click(hiddenEye);
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");

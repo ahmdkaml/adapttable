@@ -62,6 +62,24 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Ant Design)", () => {
+  it("activates onRowClick from a row, but never from row actions", () => {
+    const onRowClick = vi.fn();
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+      },
+    });
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onAction).toHaveBeenCalled();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it("renders rows with values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();
@@ -596,6 +614,18 @@ describe("<DataTable> (Ant Design)", () => {
       writable: true,
     });
     act(() => fireEvent.scroll(scroller!));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("keeps the Load more sentinel armed on mobile even with virtualize set", () => {
+    // Mobile renders cards (never antd's virtual table), so the page-level
+    // sentinel must stay enabled or infinite mode silently stops auto-loading.
+    renderHarness(
+      { mode: "infinite", override: { virtualize: true, isMobile: true } },
+      "limit=1"
+    );
+    expect(screen.queryByText("Bob")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 

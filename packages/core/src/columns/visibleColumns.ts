@@ -9,7 +9,8 @@ export type TableLayout = "desktop" | "mobile";
  * - Desktop: drops `hideOnDesktop` columns.
  * - Mobile: drops `hideOnMobile` columns, but the first three declared
  *   (desktop-visible) columns always surface so every card keeps a
- *   minimum identity block.
+ *   minimum identity block. Mobile-only columns (`hideOnDesktop` without
+ *   `hideOnMobile`) render here — they exist precisely for the card layout.
  *
  * @typeParam TRow - The row type.
  * @param columns - All declared columns.
@@ -21,12 +22,14 @@ export function visibleColumns<TRow>(
   layout: TableLayout,
   mobileIdentityColumns = 3
 ): ColumnDef<TRow>[] {
-  const desktopVisible = columns.filter((c) => !c.hideOnDesktop);
-  if (layout === "desktop") return desktopVisible;
+  if (layout === "desktop") return columns.filter((c) => !c.hideOnDesktop);
+  // Identity anchors come from the desktop view (the columns a user knows),
+  // but mobile filters the FULL declared set so mobile-only columns survive.
   const alwaysShow = new Set(
-    desktopVisible
+    columns
+      .filter((c) => !c.hideOnDesktop)
       .slice(0, Math.max(0, mobileIdentityColumns))
       .map((c) => c.key)
   );
-  return desktopVisible.filter((c) => alwaysShow.has(c.key) || !c.hideOnMobile);
+  return columns.filter((c) => alwaysShow.has(c.key) || !c.hideOnMobile);
 }

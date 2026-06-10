@@ -51,6 +51,20 @@ export class InitError extends Error {}
  * @returns The {@link InitResult}.
  * @throws {InitError} When no readable `package.json` is found.
  */
+/**
+ * A heads-up when the detected Chakra is v3+: `@adapttable/chakra` currently
+ * targets Chakra v2, so the scaffold would not compile as-is.
+ */
+function chakraV3Warning(
+  kit: string,
+  chakraSpec: string | undefined
+): string | undefined {
+  if (kit !== "chakra" || !chakraSpec) return undefined;
+  const major = /^\D*(\d+)/.exec(chakraSpec)?.[1];
+  if (major === undefined || Number(major) < 3) return undefined;
+  return `   Note: @chakra-ui/react ${chakraSpec} detected — @adapttable/chakra currently supports Chakra v2. Pin Chakra v2 or use @adapttable/unstyled until v3 support lands.`;
+}
+
 export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   const raw = io.readFile("package.json");
   if (raw === undefined) {
@@ -69,7 +83,8 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
     throw new InitError("Could not parse package.json — is it valid JSON?");
   }
 
-  const info = detectKit(mergeDependencies(pkg));
+  const deps = mergeDependencies(pkg);
+  const info = detectKit(deps);
   const pm = choosePackageManager(io.listRootFiles());
   const packages = packagesFor(info);
   const command = installCommand(pm, packages);
@@ -86,6 +101,8 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   }
 
   io.log(`AdaptTable — detected ${info.label}.`);
+  const chakraNote = chakraV3Warning(info.kit, deps["@chakra-ui/react"]);
+  if (chakraNote) io.log(chakraNote);
   io.log("");
   io.log("1. Install the packages:");
   io.log(`   ${command}`);
@@ -100,8 +117,9 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   }
   io.log("");
   io.log(
-    "3. Render <PeopleTable /> and you're done. Docs: https://github.com/orwa-mahmoud/adapttable"
+    "3. Wrap your app in your UI kit's provider (MantineProvider / ThemeProvider / ChakraProvider / ConfigProvider — per its docs), render <PeopleTable />, done."
   );
+  io.log("   Docs: https://github.com/orwa-mahmoud/adapttable");
 
   return {
     kit: info.kit,

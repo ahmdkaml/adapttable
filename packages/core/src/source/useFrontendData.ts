@@ -12,6 +12,7 @@ import {
   useTableUrlState,
   type UseTableUrlStateOptions,
 } from "../url/useTableUrlState";
+import { devWarn } from "../utils/devWarn";
 import type { TableSource } from "./TableSource";
 
 /** Narrows an accessor's `ReactNode` to a sortable primitive, else `null`. */
@@ -21,6 +22,35 @@ const toSortable = (value: unknown): SortableValue =>
   typeof value === "boolean"
     ? value
     : null;
+
+/**
+ * Dev-only: surface a sort that cannot resolve values (a silent no-op).
+ * The most common cause is forgetting to pass `columns` to the hook.
+ */
+function warnUnresolvableSort<TRow>(
+  sortBy: string,
+  column: ColumnDef<TRow> | undefined,
+  rows: readonly TRow[],
+  getSortValue?: (row: TRow, columnKey: string) => SortableValue
+): void {
+  if (getSortValue) return;
+  if (!column) {
+    devWarn(
+      `sortBy "${sortBy}" matches no column — pass \`columns\` (or \`getSortValue\`) to useFrontendData so client-side sorting can resolve values.`
+    );
+    return;
+  }
+  const first = rows[0];
+  if (
+    !column.sortValue &&
+    first !== undefined &&
+    toSortable(column.accessor?.(first)) === null
+  ) {
+    devWarn(
+      `column "${sortBy}" has no sortable value — its accessor returns a non-primitive; add a \`sortValue\` extractor to the column.`
+    );
+  }
+}
 
 /** Options for {@link useFrontendData}. */
 export interface UseFrontendDataOptions<TRow> extends Pick<
@@ -131,6 +161,7 @@ export function useFrontendData<TRow>(
   const sorted = useMemo(() => {
     if (!sortBy || !sortDir) return filtered;
     const column = columns?.find((c) => c.key === sortBy);
+    warnUnresolvableSort(sortBy, column, filtered, getSortValue);
     // Resolve a row's sort key: explicit `getSortValue`, else the column's
     // `sortValue`, else the accessor when it yields a sortable primitive — so
     // `sortable: true` works out of the box for plain string/number/boolean
