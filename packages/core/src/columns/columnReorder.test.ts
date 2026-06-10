@@ -161,3 +161,18 @@ describe("columnDropProps", () => {
     expect(move).not.toHaveBeenCalled();
   });
 });
+
+describe("direction detection without a [dir] ancestor", () => {
+  it("falls back to the computed style direction", () => {
+    const move = vi.fn();
+    const props = columnReorderKeyProps("a", 3, move, "Reorder A");
+    const grip = document.createElement("span");
+    document.body.append(grip); // no [dir] anywhere up the tree
+    props.onKeyDown(
+      dragEvent(null, { key: "ArrowLeft", currentTarget: grip }) as never
+    );
+    // jsdom computes direction "ltr" → ArrowLeft moves toward the start.
+    expect(move).toHaveBeenLastCalledWith("a", 2);
+    grip.remove();
+  });
+});

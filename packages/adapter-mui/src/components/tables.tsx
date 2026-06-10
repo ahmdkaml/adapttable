@@ -97,11 +97,16 @@ function RowActionButtons<TRow>({
                 color={muiColor(action.color)}
                 disabled={disabled}
                 aria-label={action.label}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!disabled)
-                    runRowAction(action, row, confirm, cancelLabel);
-                }}
+                onClick={
+                  // The disabled attribute already blocks activation, so
+                  // attach the handler only when the action can run.
+                  disabled
+                    ? undefined
+                    : (e) => {
+                        e.stopPropagation();
+                        runRowAction(action, row, confirm, cancelLabel);
+                      }
+                }
               >
                 {action.icon ?? (
                   <Typography variant="caption">{action.label}</Typography>

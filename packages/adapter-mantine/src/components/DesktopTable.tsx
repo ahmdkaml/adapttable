@@ -153,10 +153,14 @@ function RowActions<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
-        const handleClick = (e: MouseEvent) => {
-          e.stopPropagation();
-          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-        };
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         // Icon-only actions render as an ActionIcon; without an icon, fall
         // back to a text button so the label is actually visible.
         return action.icon ? (

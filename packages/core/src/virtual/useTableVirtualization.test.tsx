@@ -36,6 +36,17 @@ describe("useTableVirtualization", () => {
     } as unknown as ReturnType<typeof useWindowVirtualizer>);
   });
 
+  it("feeds the virtualizer a size estimator and stable item keys", () => {
+    renderHook(() =>
+      useTableVirtualization({ rows, rowKey, enabled: true, estimateSize: 64 })
+    );
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(options.estimateSize(0)).toBe(64);
+    // Item keys come from rowKey; an out-of-range index degrades gracefully.
+    expect(options.getItemKey!(1)).toBe("1");
+    expect(options.getItemKey!(99)).toBe("99");
+  });
+
   it("returns every row when virtualization is disabled", () => {
     const { result } = renderHook(() =>
       useTableVirtualization({

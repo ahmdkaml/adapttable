@@ -127,11 +127,11 @@ export function MobileCards<TRow>({
                     const disabled =
                       reason !== undefined ||
                       (action.isDisabled?.(row) ?? false);
-                    const run = () => {
-                      if (!disabled) {
-                        runRowAction(action, row, confirm, labels.cancel);
-                      }
-                    };
+                    // The disabled attribute already blocks activation, so
+                    // attach the handler only when the action can run.
+                    const run = disabled
+                      ? undefined
+                      : () => runRowAction(action, row, confirm, labels.cancel);
                     return action.icon ? (
                       <Tooltip
                         key={action.key}

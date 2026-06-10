@@ -70,6 +70,50 @@ describe("antd ColumnMenu", () => {
     expect(layout.reset).toHaveBeenCalled();
   });
 
+  it("closes on Escape and reports collapsed state on the trigger", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    const trigger = screen.getByRole("button", { name: "Columns" });
+    fireEvent.click(trigger);
+    await screen.findByText("Reset columns");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // antd's Popover has no built-in Escape handling — the menu adds its own
+    // document listener so keyboard users can dismiss it.
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps the menu open for non-Escape keys", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    const trigger = screen.getByRole("button", { name: "Columns" });
+    fireEvent.click(trigger);
+    await screen.findByText("Reset columns");
+    // Arrow keys reorder columns inside the menu; they must not dismiss it.
+    fireEvent.keyDown(document, { key: "ArrowDown" });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("flips the popover to the start side under RTL", async () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        dir="rtl"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    // Under RTL the popover anchors bottomLeft (the start edge) so it opens
+    // toward the content instead of off-screen.
+    expect(
+      document.querySelector(".ant-popover-placement-bottomLeft")
+    ).not.toBeNull();
+  });
+
   it("renders the hidden-column state (strike-through, eye-off, text button)", async () => {
     const layout = fakeLayout();
     layout.state = { hidden: ["b"], order: [], pinned: {}, widths: {} };

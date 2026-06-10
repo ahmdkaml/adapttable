@@ -140,7 +140,11 @@ export function useTableUrlState(
       );
     }
     return () => {
-      counts.set(ns, (counts.get(ns) ?? 1) - 1);
+      // The registration above guarantees an entry; drop it at zero so the
+      // registry never grows.
+      const remaining = counts.get(ns)! - 1;
+      if (remaining === 0) counts.delete(ns);
+      else counts.set(ns, remaining);
     };
   }, [resolved, ns]);
 

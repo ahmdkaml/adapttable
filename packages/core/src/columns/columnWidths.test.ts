@@ -4,6 +4,7 @@ import type { ColumnDef } from "../types";
 import {
   FALLBACK_PIN_WIDTH,
   parsePxWidth,
+  pinnedColumnWidth,
   resolveColumnWidth,
   tableMinWidth,
 } from "./columnWidths";
@@ -64,5 +65,16 @@ describe("tableMinWidth", () => {
   });
   it("defaults the extra to 0 and works with no options", () => {
     expect(tableMinWidth(cols)).toBe(100);
+  });
+});
+
+describe("pinnedColumnWidth", () => {
+  it("uses the resolved width when one exists", () => {
+    expect(pinnedColumnWidth({ key: "a", width: 120 })).toBe(120);
+    expect(pinnedColumnWidth({ key: "a" }, { a: 90 })).toBe(90);
+  });
+
+  it("falls back to FALLBACK_PIN_WIDTH for natural-width columns", () => {
+    expect(pinnedColumnWidth({ key: "a" })).toBe(150);
   });
 });

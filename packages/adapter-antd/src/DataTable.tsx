@@ -55,15 +55,6 @@ const SR_ONLY: CSSProperties = {
   border: 0,
 };
 
-function tableScrollConfig(
-  virtualize: boolean,
-  virtualWidth: number,
-  virtualHeight: number
-): NonNullable<TableProps<unknown>["scroll"]> {
-  if (!virtualize) return {};
-  return { x: virtualWidth, y: virtualHeight };
-}
-
 /**
  * antd renders virtual rows inside its own fixed-height scroll container, so
  * the page-level infinite-scroll sentinel never reaches the viewport. This
@@ -92,7 +83,9 @@ function sortChangeHandler<TRow>(
 ): NonNullable<TableProps<TRow>["onChange"]> {
   return (_pagination, _filters, sorter, extra) => {
     if (extra.action !== "sort") return;
-    const next = Array.isArray(sorter) ? sorter[0] : sorter;
+    // antd passes an array only under multi-column sort, which buildColumns
+    // never enables — flat() folds both shapes without a dead branch.
+    const next = [sorter].flat()[0];
     const key = next?.columnKey as string | undefined;
     if (!key || !next?.order) {
       source.setSort(undefined);
@@ -124,8 +117,8 @@ function resolveScroll(
   maxHeight: number | undefined,
   minWidth: number
 ): NonNullable<TableProps<unknown>["scroll"]> {
-  if (virtualize)
-    return tableScrollConfig(virtualize, virtualWidth, virtualHeight);
+  // Virtual rows need explicit x/y so antd can size its internal scroller.
+  if (virtualize) return { x: virtualWidth, y: virtualHeight };
   // Pinning needs content-driven width; otherwise a fixed-width column set
   // gets its summed min-width so the table scrolls instead of squishing.
   let x: number | "max-content" | undefined;
@@ -147,8 +140,10 @@ function buildRowSelection<TRow>(
     fixed: fixedLeft ? "left" : undefined,
     selectedRowKeys: [...selection.selectedIds],
     onSelect: (record) => selection.toggle(getRowId(record)),
-    onSelectAll: () => selection.toggleAll(),
     getCheckboxProps: () => ({ title: labels.selectRow }),
+    // Select-all is driven by the custom `columnTitle` checkbox below; with
+    // `columnTitle` set antd never renders its own header checkbox, so an
+    // `onSelectAll` callback could never fire.
     columnTitle: (
       <Checkbox
         aria-label={labels.selectAll}

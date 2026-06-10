@@ -51,8 +51,9 @@ export function FilterPopover({
   useEffect(() => {
     if (!open) return;
     const onClick = (event: MouseEvent) => {
-      const root = rootRef.current;
-      if (!root) return;
+      // The listener only lives while the anchor span is mounted, so the ref
+      // is always set here.
+      const root = rootRef.current!;
       if (root.contains(event.target as Node)) return;
       // A control inside the CARD (not the trigger) still holds focus → keep
       // open so native picker popups don't dismiss it mid-edit.

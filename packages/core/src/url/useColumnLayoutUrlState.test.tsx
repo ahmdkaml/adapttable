@@ -17,6 +17,17 @@ function renderWith(
 }
 
 describe("useColumnLayoutUrlState", () => {
+  it("hydrates from an empty snapshot with the default adapter", () => {
+    window.history.replaceState(null, "", "/?colHide=email");
+    function Probe() {
+      const { layout } = useColumnLayoutUrlState();
+      return <span>{`hidden-${layout.hidden.length}`}</span>;
+    }
+    // Server snapshot must match the server's empty store, not the live URL.
+    expect(renderToString(<Probe />)).toContain("hidden-0");
+    window.history.replaceState(null, "", "/");
+  });
+
   it("reads the layout via the server snapshot during SSR", () => {
     const adapter = createMemoryAdapter("colHide=email");
     function Probe() {

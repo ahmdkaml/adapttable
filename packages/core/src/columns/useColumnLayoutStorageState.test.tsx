@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as env from "../utils/env";
 import type { ColumnLayoutState } from "./useColumnLayout";
 import {
   type LayoutStorage,
@@ -100,5 +101,32 @@ describe("useColumnLayoutStorageState", () => {
     act(() => result.current.onLayoutChange(LAYOUT));
     // State still updated even though persistence failed.
     expect(result.current.layout).toEqual(LAYOUT);
+  });
+});
+
+describe("storage resolution", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    globalThis.localStorage.removeItem("default-t");
+  });
+
+  it("defaults to localStorage in the browser", () => {
+    const { result } = renderHook(() =>
+      useColumnLayoutStorageState({ storageKey: "default-t" })
+    );
+    act(() => result.current.onLayoutChange(LAYOUT));
+    expect(JSON.parse(globalThis.localStorage.getItem("default-t")!)).toEqual(
+      LAYOUT
+    );
+  });
+
+  it("keeps the layout in memory under SSR (no storage at all)", () => {
+    vi.spyOn(env, "isBrowser").mockReturnValue(false);
+    const { result } = renderHook(() =>
+      useColumnLayoutStorageState({ storageKey: "ssr-t" })
+    );
+    act(() => result.current.onLayoutChange(LAYOUT));
+    expect(result.current.layout).toEqual(LAYOUT);
+    expect(globalThis.localStorage.getItem("ssr-t")).toBeNull();
   });
 });

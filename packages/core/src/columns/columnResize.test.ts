@@ -144,3 +144,22 @@ describe("columnResizeHandleProps", () => {
     expect(setWidth).toHaveBeenLastCalledWith("a", 76);
   });
 });
+
+describe("drag-less click", () => {
+  it("commits nothing when the pointer never moves", () => {
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      (cb: FrameRequestCallback): number => {
+        cb(0);
+        return 1;
+      }
+    );
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+    const setWidth = vi.fn();
+    const props = columnResizeHandleProps("a", setWidth, "Resize A");
+    props.onPointerDown(handleEvent(150, { clientX: 100 }) as never);
+    document.dispatchEvent(new MouseEvent("pointerup"));
+    expect(setWidth).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

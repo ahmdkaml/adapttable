@@ -16,7 +16,7 @@ import {
   tableMinWidth,
   tableRenderModel,
 } from "@adapttable/core";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -57,6 +57,14 @@ function RowActionButtons<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         return (
           <button
             key={action.key}
@@ -67,10 +75,7 @@ function RowActionButtons<TRow>({
             data-adapttable-part="action-button"
             data-color={action.color}
             className={classNames.actionButton}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-            }}
+            onClick={handleClick}
           >
             {action.icon ?? action.label}
           </button>

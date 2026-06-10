@@ -729,6 +729,58 @@ describe("<DataTable> (Ant Design)", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("gives a fixed-width column set its summed min-width so it scrolls", () => {
+    const { container } = renderHarness({
+      override: {
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name, width: 200 },
+          { key: "city", header: "City", accessor: (r) => r.city, width: 160 },
+        ],
+      },
+    });
+    // With every column fixed-width (and nothing pinned), scroll.x gets the
+    // summed min-width so the table scrolls horizontally instead of squishing
+    // the columns below their declared widths.
+    expect(container.querySelector("table")).toHaveStyle({ width: "360px" });
+  });
+
+  it("pins the selection checkbox column alongside a left-pinned column", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    // The checkbox column must ride along with the left-fixed data column,
+    // or it would scroll out of view while Name stays pinned.
+    const selectionCell = container.querySelector(
+      "th.ant-table-selection-column"
+    );
+    expect(selectionCell).toHaveClass("ant-table-cell-fix-left");
+  });
+
+  it("keeps the filter popover open on a mousedown over its own trigger", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const button = screen.getByRole("button", { name: /filters/i });
+    fireEvent.click(button);
+    // A mousedown on the trigger must not close the popover — the click that
+    // follows it toggles; closing on mousedown would immediately re-open it.
+    fireEvent.mouseDown(button);
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
+  it("ignores non-Escape keys while the filter popover is open", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    // Only Escape dismisses; other keys (typing in filter inputs) must not.
+    fireEvent.keyDown(document, { key: "Enter" });
+    expect(document.querySelector(".ant-popover")).not.toHaveClass(
+      "ant-popover-hidden"
+    );
+  });
+
   it("wires antd's sticky header when stickyHeader is set", () => {
     const { container } = renderHarness({
       override: { stickyHeader: true, stickyTop: 12 },
@@ -740,6 +792,41 @@ describe("<DataTable> (Ant Design)", () => {
   it("omits the sticky header by default", () => {
     const { container } = renderHarness();
     expect(container.querySelector(".ant-table-sticky-holder")).toBeNull();
+  });
+
+  it("defaults the sticky header offset to 0 when stickyTop is omitted", () => {
+    const { container } = renderHarness({ override: { stickyHeader: true } });
+    // Without a stickyTop the header sticks flush to the viewport top.
+    const holder = container.querySelector(".ant-table-sticky-holder");
+    expect(holder).toHaveStyle({ top: "0px" });
+  });
+
+  it("tightens the card gap for density='compact' on mobile", () => {
+    const { container } = renderHarness({
+      override: { isMobile: true, density: "compact" },
+    });
+    // Compact density halves the vertical rhythm between cards.
+    const list = container.querySelector<HTMLElement>(
+      '[data-adapttable-part="cards"]'
+    );
+    expect(list?.style.gap).toBe("4px");
+  });
+
+  it("disables a mobile card action without attaching a click handler", () => {
+    const onClick = vi.fn();
+    renderHarness({
+      override: {
+        isMobile: true,
+        rowActions: [
+          { key: "d", label: "DisabledAct", onClick, isDisabled: () => true },
+        ],
+      },
+    });
+    // The disabled attribute is what blocks activation — no handler is bound.
+    const button = screen.getAllByRole("button", { name: "DisabledAct" })[0]!;
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it("prefetches a row on card hover in mobile mode", () => {

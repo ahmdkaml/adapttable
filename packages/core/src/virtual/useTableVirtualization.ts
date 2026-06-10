@@ -155,13 +155,13 @@ export function useTableVirtualization<TRow>({
     };
   }
 
-  const first = virtualItems[0];
-  const last = virtualItems.at(-1);
+  // `active` guarantees a non-empty window, so the edges always exist.
+  const first = virtualItems[0]!;
+  const last = virtualItems.at(-1)!;
   const resolvedScrollMargin = virtualizer.options.scrollMargin ?? 0;
-  const paddingTop = first ? first.start - resolvedScrollMargin : 0;
-  const paddingBottom = last
-    ? virtualizer.getTotalSize() - (last.end - resolvedScrollMargin)
-    : 0;
+  const paddingTop = first.start - resolvedScrollMargin;
+  const paddingBottom =
+    virtualizer.getTotalSize() - (last.end - resolvedScrollMargin);
 
   return {
     enabled: true,

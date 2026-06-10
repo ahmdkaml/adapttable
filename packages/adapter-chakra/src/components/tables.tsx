@@ -90,10 +90,14 @@ function RowActionButtons<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
-        const handleClick = (e: React.MouseEvent) => {
-          e.stopPropagation();
-          if (!disabled) runRowAction(action, row, confirm, cancelLabel);
-        };
+        // The disabled attribute already blocks activation, so attach the
+        // handler only when the action can run.
+        const handleClick = disabled
+          ? undefined
+          : (e: React.MouseEvent) => {
+              e.stopPropagation();
+              runRowAction(action, row, confirm, cancelLabel);
+            };
         // Icon-only actions use IconButton (with a tooltip for the name);
         // text actions use a real Button so the label actually renders
         // (IconButton ignores children).

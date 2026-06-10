@@ -7,6 +7,7 @@ import { renderMantine } from "../test-utils";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { BulkActionBar } from "./BulkActionBar";
 import { EmptyState } from "./EmptyState";
+import { FilterPopover } from "./FilterPopover";
 import { PaginationFooter } from "./PaginationFooter";
 import { TableSkeleton } from "./TableSkeleton";
 
@@ -202,5 +203,26 @@ describe("BulkActionBar", () => {
     expect(btn).not.toBeDisabled();
     fireEvent.click(screen.getByText("Archive"));
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+  });
+});
+
+describe("FilterPopover", () => {
+  it("a target click requests opening and never fires onClose", () => {
+    const onClose = vi.fn();
+    renderMantine(
+      <FilterPopover
+        open={false}
+        onClose={onClose}
+        filters={<div>f</div>}
+        activeFilterCount={0}
+        labels={defaultLabels}
+      >
+        <button type="button">Open filters</button>
+      </FilterPopover>
+    );
+    // Mantine reports the toggle through onChange(true); closing is the only
+    // transition this component forwards.
+    fireEvent.click(screen.getByRole("button", { name: "Open filters" }));
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

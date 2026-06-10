@@ -101,10 +101,14 @@ describe("MUI coverage gaps", () => {
     );
   });
 
-  it("closes the filter popover on Escape", async () => {
+  it("closes the filter popover on Escape (and only Escape)", async () => {
     mount({ filters: <div>filter body</div> });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     const body = screen.getByText("filter body");
+    // The document-level listener must ignore every other key — typing in a
+    // filter field (e.g. pressing Enter) must not dismiss the popover.
+    fireEvent.keyDown(body, { key: "Enter" });
+    expect(screen.getByText("filter body")).toBeInTheDocument();
     fireEvent.keyDown(body, { key: "Escape" });
     await vi.waitFor(() =>
       expect(screen.queryByText("filter body")).toBeNull()
@@ -147,6 +151,18 @@ describe("MUI coverage gaps", () => {
     expect(document.querySelector(".MuiPopover-root")).toBeNull();
     fireEvent.click(within(drawer as HTMLElement).getByText("Clear all"));
     expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it("closes the filter drawer from its Done button", async () => {
+    mount({ filters: <div>filter body</div>, filtersMode: "drawer" });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByText("filter body")).toBeInTheDocument();
+    // The drawer's Done button hands control back to DataTable, which flips
+    // filtersOpen off and the drawer slides out and unmounts its content.
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    await vi.waitFor(() =>
+      expect(screen.queryByText("filter body")).toBeNull()
+    );
   });
 
   it("changes the page size from the paged footer's rows-per-page select", () => {
@@ -342,6 +358,16 @@ describe("MUI coverage gaps", () => {
     expect(headCell).toHaveStyle({ position: "sticky" });
   });
 
+  it("pins a sticky header at stickyTop against the document scroller", () => {
+    // Without a maxHeight scroll box the page itself is the sticky context,
+    // so the header sits below a fixed app bar at the stickyTop offset.
+    // (MUI applies `sx` via emotion classes, so read computed styles.)
+    mount({ stickyHeader: true, stickyTop: 64 });
+    const headCell = screen.getByText("Name").closest("th")!;
+    expect(getComputedStyle(headCell).position).toBe("sticky");
+    expect(getComputedStyle(headCell).top).toBe("64px");
+  });
+
   it("renders resize handles on an un-pinned, non-sticky table (needsRelative)", () => {
     // No pin + no sticky header + resizable → headCellSx sets position:relative
     // so the absolute resize handle is positioned (needsRelative === true).
@@ -474,6 +500,15 @@ describe("MUI density → table size", () => {
 
   it("defaults to the medium MUI table when density is omitted", () => {
     const { container } = mount();
+    const cell = container.querySelector("tbody td");
+    expect(cell).toHaveClass("MuiTableCell-sizeMedium");
+    expect(cell).not.toHaveClass("MuiTableCell-sizeSmall");
+  });
+
+  it("lets an explicit size prop win over density (back-compat)", () => {
+    // Pre-density callers passed MUI's `size` directly; it must still take
+    // precedence so upgrading does not change their rendered table.
+    const { container } = mount({ size: "medium", density: "compact" });
     const cell = container.querySelector("tbody td");
     expect(cell).toHaveClass("MuiTableCell-sizeMedium");
     expect(cell).not.toHaveClass("MuiTableCell-sizeSmall");
