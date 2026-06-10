@@ -8,7 +8,7 @@ import {
   useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -132,6 +132,65 @@ describe("<DataTable> (unstyled) gaps", () => {
     expect(btn).toHaveAttribute("title", "Referenced");
   });
 
+  it("keeps a bulk action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        bulkActions: [
+          {
+            key: "del",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("Delete")).not.toBeDisabled();
+  });
+
+  // Sticky header is opt-in (default off). When enabled it is applied to the
+  // header *cells* inline (not a `<thead>`), with a `data-sticky` hook so the
+  // consumer can give them an opaque background.
+  it("does not stick header cells by default (opt-in)", () => {
+    renderHarness();
+    const th = screen.getByText("Name").closest("th");
+    expect(th).not.toHaveStyle({ position: "sticky" });
+  });
+
+  it("sticks header cells when stickyHeader is enabled", () => {
+    renderHarness({ override: { stickyHeader: true } });
+    const th = screen.getByText("Name").closest("th");
+    expect(th).toHaveStyle({ position: "sticky" });
+    expect(th).toHaveAttribute("data-sticky");
+  });
+
+  it("toggles an individual desktop row via its selection checkbox", () => {
+    renderHarness({
+      override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+    });
+    // The per-row checkboxes are distinct from the header "Select all" box.
+    const rowCheckbox = screen.getAllByLabelText("Select row")[0]!;
+    fireEvent.click(rowCheckbox);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+  });
+
+  it("labels a resize handle with the column key for a non-string header", () => {
+    // resizableColumns turns on the resize handle; a non-string header forces
+    // the aria-label to fall back to the column key.
+    renderHarness({
+      override: {
+        resizableColumns: true,
+        columns: [
+          { key: "name", header: <em>Name</em>, accessor: (r) => r.name },
+        ],
+      },
+    });
+    expect(
+      screen.getByRole("button", { name: /resize column: name/i })
+    ).toBeInTheDocument();
+  });
+
   it("fires prefetch on desktop row hover", () => {
     const prefetch = vi.fn();
     renderHarness({ override: { prefetch } });
@@ -159,7 +218,7 @@ describe("<DataTable> (unstyled) gaps", () => {
 
   it("opens a modal filter drawer with backdrop and done action", () => {
     renderHarness({
-      override: { filters: <div>filter body</div> },
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     expect(screen.getByRole("dialog", { name: "Filters" })).toBeInTheDocument();
@@ -169,7 +228,9 @@ describe("<DataTable> (unstyled) gaps", () => {
   });
 
   it("closes the filter drawer on Escape", () => {
-    renderHarness({ override: { filters: <div>filter body</div> } });
+    renderHarness({
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     expect(screen.getByRole("dialog", { name: "Filters" })).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
@@ -219,5 +280,66 @@ describe("<DataTable> (unstyled) gaps", () => {
     });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("fetches the next page when virtualization reaches the end", () => {
+    // The DataTable wires its own onEndReached into useTableVirtualization;
+    // capture it from the mock and fire it to exercise that callback.
+    let onEndReached: (() => void) | undefined;
+    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
+      onEndReached = opts.onEndReached;
+      return {
+        enabled: true,
+        rows: opts.rows.map((row, index) => ({
+          row,
+          index,
+          key: opts.rowKey(row),
+        })),
+        paddingTop: 0,
+        paddingBottom: 0,
+        measureElement: vi.fn(),
+      };
+    });
+    renderHarness(
+      { mode: "infinite", override: { virtualize: true } },
+      "limit=1"
+    );
+    expect(screen.queryByText("Bob")).toBeNull();
+    act(() => onEndReached?.());
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("does not fetch again while a virtual page is already loading", () => {
+    // With no further pages, the guard in handleVirtualEndReached is a no-op:
+    // firing onEndReached must not throw and must not reveal new rows.
+    let onEndReached: (() => void) | undefined;
+    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
+      onEndReached = opts.onEndReached;
+      return {
+        enabled: true,
+        rows: opts.rows.map((row, index) => ({
+          row,
+          index,
+          key: opts.rowKey(row),
+        })),
+        paddingTop: 0,
+        paddingBottom: 0,
+        measureElement: vi.fn(),
+      };
+    });
+    renderHarness({ mode: "infinite", override: { virtualize: true } });
+    // All rows already loaded → no next page → the guard short-circuits.
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    act(() => onEndReached?.());
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("changes the toolbar rows-per-page select in infinite mode", () => {
+    // In infinite (non-paged) mode the toolbar renders its own rows-per-page
+    // select (separate from the footer), covering DataTable's setLimit handler.
+    renderHarness({ mode: "infinite" });
+    const select = screen.getByLabelText("Rows per page");
+    fireEvent.change(select, { target: { value: "50" } });
+    expect(adapter.getSearch()).toContain("limit=50");
   });
 });

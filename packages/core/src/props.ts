@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
@@ -43,6 +44,12 @@ export interface BaseDataTableProps<TRow> {
   labels?: TableLabels;
   /** Text direction. Defaults to `"ltr"`. */
   dir?: Direction;
+  /**
+   * Row density — independent of column pinning. `"comfortable"` (default) is
+   * the roomy layout; `"compact"` tightens row height/padding. Each adapter
+   * maps it to its kit's table size.
+   */
+  density?: "comfortable" | "compact";
   /** Force the mobile layout (otherwise resolved from the viewport). */
   isMobile?: boolean;
   /** Leading desktop-visible columns kept on mobile even if hideOnMobile. */
@@ -53,6 +60,23 @@ export interface BaseDataTableProps<TRow> {
   onRowsChange?: (rows: readonly TRow[]) => void;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
+
+  /* ── Column management ───────────────────────────────────────────── */
+  /** Render the built-in "Columns" menu (show/hide, pin, reorder). */
+  enableColumnMenu?: boolean;
+  /** Enable drag/keyboard column resize handles. Defaults to false (opt-in). */
+  resizableColumns?: boolean;
+  /** Controlled column layout (hidden/order/pinned/widths). */
+  columnLayout?: ColumnLayoutState;
+  /** Change handler for the controlled column layout. */
+  onColumnLayoutChange?: (next: ColumnLayoutState) => void;
+  /** Initial column layout for the uncontrolled mode. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
+  /**
+   * Fixed-height scroll box (px). Enables sideways scrolling + column pinning;
+   * the header and pinned columns pin within this box. Omit for page scroll.
+   */
+  maxHeight?: number;
 
   /* ── Virtualization ──────────────────────────────────────────────── */
   /** Virtualize long infinite lists. Defaults to false. */
@@ -67,8 +91,15 @@ export interface BaseDataTableProps<TRow> {
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
-  /** Filter widgets rendered in the drawer / panel. */
+  /** Filter widgets rendered in the popover / drawer. */
   filters?: ReactNode;
+  /**
+   * How the filter container opens. `"popover"` (default) anchors a card under
+   * the Filters button with a backdrop; `"drawer"` slides in a side panel. The
+   * caller passes the same `filters` content either way — only the container
+   * changes.
+   */
+  filtersMode?: "popover" | "drawer";
   /** Per-filter-key chip label resolvers. */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
   /** Extra chips driven by non-URL state, merged with the derived chips. */
@@ -93,6 +124,8 @@ export interface BaseDataTableProps<TRow> {
   skeletonRows?: number;
   /** Sticky toolbar top offset in px. Defaults to 0. */
   stickyTop?: number;
+  /** Keep the desktop table header sticky while scrolling. Defaults to false (opt-in). */
+  stickyHeader?: boolean;
   /** Scroll back to the table when search/filter/page changes. Defaults to true. */
   scrollToTopOnChange?: boolean;
   /** Extra gap below sticky chrome when scrolling back. Defaults to 8. */

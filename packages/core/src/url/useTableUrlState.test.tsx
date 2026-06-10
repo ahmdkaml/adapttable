@@ -1,6 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as env from "../utils/env";
 import { createMemoryAdapter } from "./adapter";
 import { useTableUrlState } from "./useTableUrlState";
 
@@ -18,6 +20,17 @@ function renderWith(
 }
 
 describe("useTableUrlState", () => {
+  it("reads the initial search via the server snapshot during SSR", () => {
+    const adapter = createMemoryAdapter("page=4");
+    function Probe() {
+      const { page } = useTableUrlState({ adapter });
+      return <span>{`page-${page}`}</span>;
+    }
+    // Server rendering exercises the getServerSnapshot path, which reads the
+    // adapter's current search synchronously.
+    expect(renderToString(<Probe />)).toContain("page-4");
+  });
+
   it("reads page / limit / search / sort from the URL", () => {
     const { result } = renderWith(
       "page=2&limit=50&q=foo&sortBy=name&sortDir=desc"
@@ -130,5 +143,65 @@ describe("useTableUrlState", () => {
     expect(result.current.page).toBe(7);
     act(() => result.current.setPage(2));
     expect(window.location.search).toBe("?page=2");
+  });
+
+  it("uses the memory adapter when enabled but not in a browser (SSR)", () => {
+    const spy = vi.spyOn(env, "isBrowser").mockReturnValue(false);
+    try {
+      window.history.replaceState(null, "", "/?page=8");
+      // Enabled + no adapter, but isBrowser() is false → falls through to the
+      // per-hook memory adapter instead of the history adapter, so the URL is
+      // ignored and never mutated.
+      const { result } = renderHook(() => useTableUrlState());
+      expect(result.current.page).toBe(1);
+      act(() => result.current.setPage(5));
+      expect(result.current.page).toBe(5);
+      expect(window.location.search).toBe("?page=8");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  describe("urlKey namespacing", () => {
+    it("reads only its own namespaced params, ignoring the bare keys", () => {
+      const { result } = renderWith(
+        "left.page=2&left.q=foo&left.sortBy=name&left.sortDir=desc&left.f_team=Core&q=other&page=9",
+        { urlKey: "left", arrayExtraKeys: ["team"] }
+      );
+      expect(result.current.page).toBe(2);
+      expect(result.current.search).toBe("foo");
+      expect(result.current.sortBy).toBe("name");
+      expect(result.current.sortDir).toBe("desc");
+      expect(result.current.extra).toEqual({ team: ["Core"] });
+    });
+
+    it("writes namespaced params and never clobbers another table's keys", () => {
+      const { result, adapter } = renderWith("right.q=keep&right.f_team=Data", {
+        urlKey: "left",
+        arrayExtraKeys: ["team"],
+      });
+      act(() => result.current.setSearch("hi"));
+      act(() => result.current.setSort("name", "asc"));
+      act(() => result.current.setExtra("team", ["Core"]));
+      // Page last — setSort/setExtra reset it, mirroring the real flow.
+      act(() => result.current.setPage(3));
+      const url = adapter.getSearch();
+      expect(url).toContain("left.q=hi");
+      expect(url).toContain("left.page=3");
+      expect(url).toContain("left.sortBy=name");
+      expect(url).toContain("left.f_team=Core");
+      // The other table's params survive untouched.
+      expect(url).toContain("right.q=keep");
+      expect(url).toContain("right.f_team=Data");
+    });
+
+    it("clearAll only wipes its own namespace", () => {
+      const { result, adapter } = renderWith(
+        "left.q=foo&left.f_team=Core&right.q=bar",
+        { urlKey: "left", arrayExtraKeys: ["team"] }
+      );
+      act(() => result.current.clearAll());
+      expect(adapter.getSearch()).toBe("right.q=bar");
+    });
   });
 });

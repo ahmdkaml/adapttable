@@ -1,6 +1,12 @@
 import {
+  type ColumnDef,
   pageSizeOptions,
+  type SelectionState,
+  type TableLabels,
+  tableMinWidth,
   type TableSource,
+  type UseColumnLayoutResult,
+  type UseDataTableResult,
   useInfiniteScroll,
   useTableChrome,
 } from "@adapttable/core";
@@ -29,6 +35,7 @@ import {
   FilterDrawer,
   Toolbar,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { MobileCards } from "./components/MobileCards";
 import type { DataTableProps } from "./types";
 
@@ -89,6 +96,106 @@ function sortChangeHandler<TRow>(
       return;
     }
     source.setSort(key, next.order === "descend" ? "desc" : "asc");
+  };
+}
+
+/** Summed min-width of fixed-width columns, plus the selection/actions cols. */
+function antdMinWidth<TRow>(
+  columns: readonly ColumnDef<TRow>[],
+  widths: Readonly<Record<string, number>>,
+  hasSelection: boolean,
+  hasActions: boolean
+): number {
+  return tableMinWidth(columns, {
+    widths,
+    extra: (hasSelection ? 48 : 0) + (hasActions ? 120 : 0),
+  });
+}
+
+/** antd scroll config: virtual sizing, else x for pinning + y for the box. */
+function resolveScroll(
+  virtualize: boolean,
+  virtualWidth: number,
+  virtualHeight: number,
+  hasPinned: boolean,
+  maxHeight: number | undefined,
+  minWidth: number
+): NonNullable<TableProps<unknown>["scroll"]> {
+  if (virtualize)
+    return tableScrollConfig(virtualize, virtualWidth, virtualHeight);
+  // Pinning needs content-driven width; otherwise a fixed-width column set
+  // gets its summed min-width so the table scrolls instead of squishing.
+  let x: number | "max-content" | undefined;
+  if (hasPinned) x = "max-content";
+  else if (minWidth > 0) x = minWidth;
+  return { x, y: maxHeight };
+}
+
+/** Build antd's rowSelection from the headless selection state. */
+function buildRowSelection<TRow>(
+  selection: SelectionState | null | undefined,
+  getRowId: (row: TRow) => string,
+  labels: Required<TableLabels>,
+  fixedLeft: boolean
+): TableProps<TRow>["rowSelection"] {
+  if (!selection) return undefined;
+  return {
+    // Pin the checkbox column alongside any left-fixed data column.
+    fixed: fixedLeft ? "left" : undefined,
+    selectedRowKeys: [...selection.selectedIds],
+    onSelect: (record) => selection.toggle(getRowId(record)),
+    onSelectAll: () => selection.toggleAll(),
+    getCheckboxProps: () => ({ title: labels.selectRow }),
+    columnTitle: (
+      <Checkbox
+        aria-label={labels.selectAll}
+        checked={selection.headerState === "all"}
+        indeterminate={selection.headerState === "some"}
+        onChange={() => selection.toggleAll()}
+      />
+    ),
+  };
+}
+
+/**
+ * The column-management menu, gated to desktop + opt-in. Rendered as a
+ * component (not an inline ternary) so the `DataTable` body stays flat.
+ */
+function ColumnMenuSlot<TRow>({
+  enabled,
+  allColumns,
+  layout,
+  labels,
+}: Readonly<{
+  enabled: boolean;
+  allColumns: ColumnDef<TRow>[];
+  layout: UseColumnLayoutResult<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  if (!enabled) return null;
+  return <ColumnMenu allColumns={allColumns} layout={layout} labels={labels} />;
+}
+
+/** Build antd's pagination config (undefined in infinite mode → `false`). */
+function buildPagination<TRow>(
+  isPaged: boolean,
+  table: UseDataTableResult<TRow>,
+  source: TableSource<TRow>,
+  labels: Required<TableLabels>
+) {
+  if (!isPaged) return undefined;
+  return {
+    current: table.pagination.safePage,
+    pageSize: source.limit,
+    total: source.total,
+    showSizeChanger: true,
+    pageSizeOptions: pageSizeOptions(source.limit).map(String),
+    showTotal: (total: number, range: [number, number]) =>
+      labels.showing({ from: range[0], to: range[1], total }),
+    onChange: (page: number, pageSize: number) => {
+      if (pageSize === source.limit) source.setPage(page);
+      else source.setLimit(pageSize);
+    },
   };
 }
 
@@ -167,16 +274,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
-    size = "middle",
     bordered = false,
     virtualize = false,
     virtualHeight = 480,
     virtualWidth = 960,
   } = props;
+  // Density drives antd's `size` (independent of column pinning): "compact" →
+  // the small table, "comfortable" (default) → the middle one. An explicit
+  // `size` prop still wins so callers can opt into "large".
+  const size =
+    props.size ??
+    ((props.density ?? "comfortable") === "compact" ? "small" : "middle");
+  const filtersMode = props.filtersMode ?? "popover";
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -202,42 +315,33 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     sortDir: source.sortDir,
     confirm,
     labels,
+    pinned: c.columnLayout.state.pinned,
+    setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
+    columnWidths: c.columnLayout.state.widths,
+    resizeLabel: labels.resizeColumn,
   });
+  const pinnedSides = Object.values(c.columnLayout.state.pinned);
+  const hasPinned = pinnedSides.length > 0;
+  const hasLeftPin = pinnedSides.includes("left");
+  const minWidth = antdMinWidth(
+    table.columns,
+    c.columnLayout.state.widths,
+    Boolean(table.selection),
+    Boolean(props.rowActions?.length)
+  );
 
   const handleChange = sortChangeHandler(source);
 
-  const rowSelection: TableProps<TRow>["rowSelection"] = selection
-    ? {
-        selectedRowKeys: [...selection.selectedIds],
-        onSelect: (record) => selection.toggle(getRowId(record)),
-        onSelectAll: () => selection.toggleAll(),
-        getCheckboxProps: () => ({ title: labels.selectRow }),
-        columnTitle: (
-          <Checkbox
-            aria-label={labels.selectAll}
-            checked={selection.headerState === "all"}
-            indeterminate={selection.headerState === "some"}
-            onChange={() => selection.toggleAll()}
-          />
-        ),
-      }
+  const rowSelection = buildRowSelection(
+    selection,
+    getRowId,
+    labels,
+    hasLeftPin
+  );
+  const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
+  const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
+    ? { offsetHeader: props.stickyTop ?? 0 }
     : undefined;
-
-  const pagination: TableProps<TRow>["pagination"] = c.isPaged
-    ? {
-        current: table.pagination.safePage,
-        pageSize: source.limit,
-        total: source.total,
-        showSizeChanger: true,
-        pageSizeOptions: pageSizeOptions(source.limit).map(String),
-        showTotal: (total, range) =>
-          labels.showing({ from: range[0], to: range[1], total }),
-        onChange: (page, pageSize) => {
-          if (pageSize === source.limit) source.setPage(page);
-          else source.setLimit(pageSize);
-        },
-      }
-    : false;
 
   let bodyRegion: ReactNode;
   if (source.error) {
@@ -287,6 +391,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         size={size}
         bordered={bordered}
         virtual={virtualize}
+        sticky={sticky}
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
         pagination={pagination}
@@ -296,7 +401,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             ? (record) => ({ onMouseEnter: () => props.prefetch?.(record) })
             : undefined
         }
-        scroll={tableScrollConfig(virtualize, virtualWidth, virtualHeight)}
+        scroll={resolveScroll(
+          virtualize,
+          virtualWidth,
+          virtualHeight,
+          hasPinned,
+          props.maxHeight,
+          minWidth
+        )}
         locale={{ emptyText: labels.noData }}
       />
     );
@@ -313,7 +425,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={c.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          filters={props.filters}
+          filtersMode={filtersMode}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          dir={props.dir}
+          columnMenu={
+            <ColumnMenuSlot
+              enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
+              allColumns={c.allColumns}
+              layout={c.columnLayout}
+              labels={labels}
+            />
+          }
           showRowsPerPage={!c.isPaged}
         />
         <Chips
@@ -341,10 +467,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Flex>
         )}
       </Space>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}

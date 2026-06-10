@@ -15,7 +15,11 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   slots?: DataTableSlots;
   /** Class name applied to the outer wrapper. */
   className?: string;
-  /** antd table density. Defaults to `"middle"`. */
+  /**
+   * antd table size. Overrides the size derived from `density`
+   * (`"compact"` → `"small"`, `"comfortable"` → `"middle"`); use it to opt
+   * into `"large"`.
+   */
   size?: "small" | "middle" | "large";
   /** Render the table with cell borders. Defaults to `false`. */
   bordered?: boolean;

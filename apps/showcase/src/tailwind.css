@@ -1,0 +1,86 @@
+/*
+ * Tailwind v4 for the unstyled adapter demos (Tailwind + shadcn tabs).
+ *
+ * Import only the THEME + UTILITIES layers — deliberately NOT preflight.
+ * Preflight is a global reset that would fight the Mantine / MUI / Chakra /
+ * AntD demos rendered in the same app. Without it, Tailwind utilities still
+ * work where applied, and the other kits keep their own resets.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Preflight is skipped (above), so restore border-box sizing — but only inside
+   the unstyled AdaptTable so Tailwind's height/padding utilities measure right
+   without disturbing the Mantine/MUI/Chakra/AntD demos. */
+@layer base {
+  [data-adapttable-part="root"],
+  [data-adapttable-part="root"] *,
+  [data-adapttable-part="root"] ::before,
+  [data-adapttable-part="root"] ::after {
+    box-sizing: border-box;
+  }
+
+  /* Preflight is skipped, so `border-style` defaults to `none` and every
+     Tailwind `border` collapses to 0px. Restore the preflight border defaults,
+     scoped to the table, so `border` / `border-b` etc. actually render. */
+  [data-adapttable-part="root"] *,
+  [data-adapttable-part="root"] ::before,
+  [data-adapttable-part="root"] ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--color-border);
+  }
+
+  /* Preflight is skipped, so native controls keep OS chrome (button borders,
+     select arrows). Reset just buttons inside the unstyled table so the
+     icon/ghost buttons render flat — utility classes still re-add any border
+     or background where a slot asks for one. */
+  [data-adapttable-part="root"] button {
+    appearance: none;
+    background: transparent;
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+}
+
+/* shadcn/ui "neutral" design tokens, exposed as Tailwind colors so the
+   shadcn demo can use real `bg-card`, `text-muted-foreground`, `border`, … */
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(0 0% 3.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 3.9%);
+  --color-muted: hsl(0 0% 96.1%);
+  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-border: hsl(0 0% 89.8%);
+  --color-input: hsl(0 0% 89.8%);
+  --color-primary: hsl(0 0% 9%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-accent: hsl(0 0% 96.1%);
+  --color-accent-foreground: hsl(0 0% 9%);
+  --color-ring: hsl(0 0% 63.9%);
+}
+
+/* Dark shadcn tokens — v4 color utilities compile to `var(--color-*)`, so
+   overriding the vars under [data-theme="dark"] flips the unstyled/shadcn
+   table to dark with no per-cell work. */
+[data-theme="dark"] {
+  --color-background: hsl(0 0% 10%);
+  --color-foreground: hsl(0 0% 95%);
+  --color-card: hsl(0 0% 12.5%);
+  --color-card-foreground: hsl(0 0% 95%);
+  --color-muted: hsl(0 0% 17%);
+  --color-muted-foreground: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 22%);
+  --color-input: hsl(0 0% 26%);
+  --color-primary: hsl(0 0% 92%);
+  --color-primary-foreground: hsl(0 0% 9%);
+  --color-accent: hsl(0 0% 20%);
+  --color-accent-foreground: hsl(0 0% 98%);
+  --color-ring: hsl(0 0% 45%);
+}

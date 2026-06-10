@@ -189,6 +189,55 @@ describe("useTableVirtualization", () => {
     expect(resolveVirtualRows(rows, rowKey, [entry])).toEqual([entry]);
   });
 
+  it("derives item keys from rowKey, falling back to the index when out of range", () => {
+    renderHook(() => useTableVirtualization({ rows, rowKey, enabled: true }));
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)?.[0];
+    const getItemKey = options?.getItemKey as (index: number) => string;
+    // In range: keyed by the row's own id.
+    expect(getItemKey(2)).toBe("2");
+    // Past the end: no row exists, so it falls back to the stringified index.
+    expect(getItemKey(99)).toBe("99");
+  });
+
+  it("skips virtual items whose index is out of the source range", () => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 0, key: "v-0", start: 0, end: 40 },
+        // index 99 has no matching source row, so it is dropped from the slice.
+        { index: 99, key: "v-99", start: 40, end: 80 },
+      ],
+      getTotalSize: () => 80,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { result } = renderHook(() =>
+      useTableVirtualization({ rows, rowKey, enabled: true })
+    );
+
+    // Only the in-range item (index 0) survives; the out-of-range one is gone.
+    expect(result.current.rows.map((entry) => entry.index)).toEqual([0]);
+  });
+
+  it("treats a missing scrollMargin option as zero when active", () => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [{ index: 1, key: "v-1", start: 40, end: 80 }],
+      getTotalSize: () => 200,
+      measureElement: vi.fn(),
+      // No scrollMargin on options → the `?? 0` fallback is used.
+      options: {},
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { result } = renderHook(() =>
+      useTableVirtualization({ rows, rowKey, enabled: true })
+    );
+
+    expect(result.current.enabled).toBe(true);
+    // paddingTop = first.start - 0 = 40; paddingBottom = 200 - (80 - 0) = 120.
+    expect(result.current.paddingTop).toBe(40);
+    expect(result.current.paddingBottom).toBe(120);
+  });
+
   it("computes table spacer column spans", () => {
     expect(virtualColumnSpan(3, false, false)).toBe(3);
     expect(virtualColumnSpan(3, true, true)).toBe(5);

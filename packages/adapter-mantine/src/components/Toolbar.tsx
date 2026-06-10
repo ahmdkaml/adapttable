@@ -1,4 +1,5 @@
 import {
+  type Direction,
   pageSizeOptions,
   type SortByOption,
   type UseDataTableResult,
@@ -7,6 +8,7 @@ import { Badge, Button, Group, Select, Text, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
 import { FiltersIcon, SearchIcon } from "../icons";
+import { FilterPopover } from "./FilterPopover";
 
 /** Props for {@link Toolbar}. */
 export interface ToolbarProps<TRow> {
@@ -17,7 +19,19 @@ export interface ToolbarProps<TRow> {
   customToolbar?: ReactNode;
   hasFilters: boolean;
   activeFilterCount: number;
-  onOpenFilters: () => void;
+  /** Toggle the filter container open/closed (popover mode). */
+  onToggleFilters: () => void;
+  /** Close the filter container. */
+  onCloseFilters: () => void;
+  /** Whether the filter container is open. */
+  filtersOpen: boolean;
+  /** Filter content + how to render its container. */
+  filtersMode: "popover" | "drawer";
+  filters?: ReactNode;
+  onClearFilters?: () => void;
+  dir?: Direction;
+  /** The Columns menu, rendered inline at the end of the toolbar row. */
+  columnMenu?: ReactNode;
   showRowsPerPage: boolean;
   className?: string;
 }
@@ -31,7 +45,14 @@ export function Toolbar<TRow>({
   customToolbar,
   hasFilters,
   activeFilterCount,
-  onOpenFilters,
+  onToggleFilters,
+  onCloseFilters,
+  filtersOpen,
+  filtersMode,
+  filters,
+  onClearFilters,
+  dir,
+  columnMenu,
   showRowsPerPage,
   className,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -44,10 +65,30 @@ export function Toolbar<TRow>({
   const sortOptions =
     sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
 
+  const filtersButton = (
+    <Button
+      variant="default"
+      size="sm"
+      aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+      data-active={filtersOpen || undefined}
+      leftSection={<FiltersIcon size={16} />}
+      rightSection={
+        activeFilterCount > 0 ? (
+          <Badge size="sm" circle>
+            {activeFilterCount}
+          </Badge>
+        ) : undefined
+      }
+      onClick={onToggleFilters}
+    >
+      {labels.filters}
+    </Button>
+  );
+
   return (
     <Group
       gap="sm"
-      wrap="wrap"
+      wrap="nowrap"
       justify="space-between"
       align="center"
       className={className}
@@ -57,10 +98,10 @@ export function Toolbar<TRow>({
           {...searchProps}
           leftSection={<SearchIcon size={14} />}
           size="sm"
-          style={{ flex: 1, minWidth: 200, maxWidth: 360 }}
+          style={{ flex: 1, minWidth: 160, maxWidth: 360 }}
         />
       )}
-      <Group gap="xs" wrap="wrap" align="center">
+      <Group gap="xs" wrap="nowrap" align="center">
         {sortOptions && sortOptions.length > 0 && (
           <Select
             aria-label={labels.sortBy}
@@ -77,23 +118,23 @@ export function Toolbar<TRow>({
           />
         )}
         {customToolbar}
-        {hasFilters && (
-          <Button
-            variant="default"
-            size="sm"
-            leftSection={<FiltersIcon size={16} />}
-            rightSection={
-              activeFilterCount > 0 ? (
-                <Badge size="sm" circle>
-                  {activeFilterCount}
-                </Badge>
-              ) : undefined
-            }
-            onClick={onOpenFilters}
-          >
-            {labels.filters}
-          </Button>
-        )}
+        {hasFilters &&
+          (filtersMode === "popover" ? (
+            <FilterPopover
+              open={filtersOpen}
+              onClose={onCloseFilters}
+              filters={filters}
+              activeFilterCount={activeFilterCount}
+              onClearFilters={onClearFilters}
+              labels={labels}
+              dir={dir}
+            >
+              {filtersButton}
+            </FilterPopover>
+          ) : (
+            filtersButton
+          ))}
+        {columnMenu}
         {showRowsPerPage && (
           <Group gap="xs" align="center">
             <Text fz="xs" c="dimmed">

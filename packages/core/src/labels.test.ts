@@ -32,5 +32,6 @@ describe("defaultLabels", () => {
     );
     expect(defaultLabels.pageOf({ page: 2, total: 5 })).toBe("Page 2 of 5");
     expect(defaultLabels.selectedCount(3)).toBe("3 selected");
+    expect(defaultLabels.goToPage(4)).toBe("Go to page 4");
   });
 });

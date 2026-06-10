@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { useMediaQuery } from "./useMediaQuery";
@@ -52,9 +53,19 @@ describe("useMediaQuery", () => {
 
   it("falls back to the default when matchMedia is unavailable", () => {
     vi.stubGlobal("matchMedia", undefined);
-    const { result } = renderHook(() =>
+    const { result, unmount } = renderHook(() =>
       useMediaQuery("(max-width: 1px)", true)
     );
     expect(result.current).toBe(true);
+    // The no-op subscribe returns a no-op cleanup that must run without error.
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it("uses the server snapshot (default) when rendered on the server", () => {
+    function Probe() {
+      const matches = useMediaQuery("(max-width: 1px)", true);
+      return <span>{matches ? "match" : "no-match"}</span>;
+    }
+    expect(renderToString(<Probe />)).toContain("match");
   });
 });

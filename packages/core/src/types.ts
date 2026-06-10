@@ -207,4 +207,17 @@ export interface TableLabels {
   showing?: (range: { from: number; to: number; total: number }) => string;
   /** Builds the "page X of Y" label. */
   pageOf?: (range: { page: number; total: number }) => string;
+  /** Label for the column-management menu trigger. */
+  columns?: string;
+  /** Pin-column menu actions. */
+  pinLeft?: string;
+  pinRight?: string;
+  unpin?: string;
+  /** Reorder-column menu actions. */
+  moveLeft?: string;
+  moveRight?: string;
+  /** Reset the column layout to defaults. */
+  resetColumns?: string;
+  /** Accessible label for a column-resize handle. */
+  resizeColumn?: string;
 }

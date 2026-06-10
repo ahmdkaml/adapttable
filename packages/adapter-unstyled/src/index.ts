@@ -9,9 +9,18 @@
  */
 
 export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
+export {
+  FilterPopover,
+  type FilterPopoverProps,
+} from "./components/FilterPopover";
+export { FiltersIcon, SearchIcon } from "./components/icons";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";
-export type { DataTableClassNames, DataTableProps } from "./types";
+export type {
+  DataTableClassNames,
+  DataTableProps,
+  DataTableSlots,
+} from "./types";
 
 /* Re-exported headless engine — source builders, hooks, and types. */
 export {

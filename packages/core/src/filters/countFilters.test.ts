@@ -18,6 +18,32 @@ describe("count filter helpers", () => {
     expect(isCountFilterComplete({ op: "between", from: 1 })).toBe(false);
   });
 
+  it("treats a state with no operator as incomplete", () => {
+    expect(isCountFilterComplete({})).toBe(false);
+    expect(isCountFilterComplete({ value: 5 })).toBe(false);
+  });
+
+  it("treats a between filter missing its upper bound as incomplete", () => {
+    expect(isCountFilterComplete({ op: "between", to: 3 })).toBe(false);
+  });
+
+  it("drops non-finite numeric values when rehydrating", () => {
+    // A raw NaN/Infinity is a number but not a finite one, so it must not
+    // survive coercion into a filter value.
+    expect(
+      countFilterStateFromExtra("projects", {
+        projectsOp: "gte",
+        projectsValue: Number.NaN,
+      }).value
+    ).toBeUndefined();
+    expect(
+      countFilterStateFromExtra("projects", {
+        projectsOp: "gte",
+        projectsValue: Number.POSITIVE_INFINITY,
+      }).value
+    ).toBeUndefined();
+  });
+
   it("rehydrates numeric state from string URL values", () => {
     // URL params arrive as strings; they must coerce to numbers, not be
     // treated as incomplete and dropped.

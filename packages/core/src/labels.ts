@@ -29,6 +29,14 @@ export const defaultLabels: Required<TableLabels> = {
   selectedCount: (count) => `${count} selected`,
   showing: ({ from, to, total }) => `Showing ${from}–${to} of ${total}`,
   pageOf: ({ page, total }) => `Page ${page} of ${total}`,
+  columns: "Columns",
+  pinLeft: "Pin left",
+  pinRight: "Pin right",
+  unpin: "Unpin",
+  moveLeft: "Move left",
+  moveRight: "Move right",
+  resetColumns: "Reset columns",
+  resizeColumn: "Resize column",
 };
 
 /**

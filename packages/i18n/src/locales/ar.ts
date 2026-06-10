@@ -26,4 +26,12 @@ export const ar: Required<TableLabels> = {
   selectedCount: (count) => `${count} محدد`,
   showing: ({ from, to, total }) => `عرض ${from}–${to} من ${total}`,
   pageOf: ({ page, total }) => `صفحة ${page} من ${total}`,
+  columns: "الأعمدة",
+  pinLeft: "تثبيت لليسار",
+  pinRight: "تثبيت لليمين",
+  unpin: "إلغاء التثبيت",
+  moveLeft: "نقل لليسار",
+  moveRight: "نقل لليمين",
+  resetColumns: "إعادة تعيين الأعمدة",
+  resizeColumn: "تغيير حجم العمود",
 };

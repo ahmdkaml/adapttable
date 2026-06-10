@@ -1,9 +1,15 @@
 import {
   type ColumnDef,
+  columnResizeHandleProps,
   type ConfirmHandler,
+  edgePinStyle,
+  PIN_Z,
+  type PinLeads,
+  pinnedCellStyle,
   resolveDisabledReason,
   type RowAction,
   runRowAction,
+  tableMinWidth,
   type UseDataTableResult,
   type VirtualTableRow,
 } from "@adapttable/core";
@@ -15,7 +21,21 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import type { CSSProperties, MouseEvent, RefObject } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, RefObject } from "react";
+
+import { type Density, DENSITY_SPACING } from "../density";
+
+/** Inline style for an absolutely-positioned column-resize handle. */
+const RESIZE_HANDLE_STYLE: CSSProperties = {
+  position: "absolute",
+  insetInlineEnd: 0,
+  top: 0,
+  height: "100%",
+  width: 8,
+  cursor: "col-resize",
+  touchAction: "none",
+  userSelect: "none",
+};
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 
@@ -35,6 +55,14 @@ export interface DesktopTableProps<TRow> {
   measureElement?: (element: Element | null) => void;
   stickyHeaderOffset?: number;
   stickyHeader?: boolean;
+  pinOffset?: (
+    key: string
+  ) => { side: "left" | "right"; inset: number } | undefined;
+  maxHeight?: number;
+  setWidth?: (key: string, width: number) => void;
+  columnWidths?: Readonly<Record<string, number>>;
+  resizeLabel?: string;
+  density?: Density;
 }
 
 function SortIcon({
@@ -56,10 +84,12 @@ function HeaderCell<TRow>({
   table,
   column,
   stickyStyle,
+  resizeHandle,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
   stickyStyle: CSSProperties;
+  resizeHandle?: ReactNode;
 }>) {
   const cellProps = table.getHeaderCellProps(column);
   const headerStyle = {
@@ -70,6 +100,7 @@ function HeaderCell<TRow>({
     return (
       <Table.Th {...cellProps} style={headerStyle}>
         {column.header}
+        {resizeHandle}
       </Table.Th>
     );
   }
@@ -95,6 +126,7 @@ function HeaderCell<TRow>({
         <span>{column.header}</span>
         <SortIcon active={active} dir={table.sortDir} />
       </Group>
+      {resizeHandle}
     </Table.Th>
   );
 }
@@ -173,7 +205,13 @@ export function DesktopTable<TRow>({
   paddingBottom = 0,
   measureElement,
   stickyHeaderOffset = 0,
-  stickyHeader = true,
+  stickyHeader = false,
+  pinOffset,
+  maxHeight,
+  setWidth,
+  columnWidths,
+  resizeLabel = "Resize column",
+  density = "comfortable",
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
@@ -186,35 +224,121 @@ export function DesktopTable<TRow>({
     }));
   const columnSpan =
     columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // Pinning needs horizontal scroll, and a `maxHeight` needs vertical scroll;
+  // either makes the wrapper a scroll container (setting one overflow axis to
+  // `auto` computes the other to `auto` too). Inside that container the page
+  // toolbar is irrelevant, so the sticky header sticks to the box top (0).
+  // Only against the document scroller must it clear the toolbar via
+  // `stickyHeaderOffset`.
+  const inScrollBox = maxHeight != null || hasPinned;
   // `position: sticky` on `<thead>` does not engage against the document
   // scroller (only inside an overflow container) — so we stick the header
-  // *cells* instead, which pins reliably at the page level beneath the
-  // sticky toolbar (`stickyHeaderOffset`). Each th carries its own opaque
-  // background so scrolled rows never show through.
+  // *cells* instead. Each th carries its own opaque background so scrolled
+  // rows never show through.
   const headerCellStyle: CSSProperties = stickyHeader
     ? {
         position: "sticky",
-        top: stickyHeaderOffset,
-        zIndex: 2,
+        top: inScrollBox ? 0 : stickyHeaderOffset,
+        zIndex: PIN_Z.header,
         background: "var(--mantine-color-body)",
         boxShadow: "0 1px 0 var(--mantine-color-default-border)",
       }
     : { background: "var(--mantine-color-body)" };
 
+  // The leading checkbox (40px) and trailing actions (120px) columns pin to
+  // the edge alongside the data columns, which therefore start past them.
+  const selectionWidth = 40;
+  const actionsWidth = 120;
+  const leads: PinLeads = {
+    left: selection ? selectionWidth : 0,
+    right: showActions ? actionsWidth : 0,
+  };
+  const hasLeftPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "left"
+  );
+  const hasRightPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "right"
+  );
+
+  // Pinned cells stick to the left/right edge (corner-sticky in the header,
+  // which also sticks to the top). They need an opaque background.
+  const pinBg = "var(--mantine-color-body)";
+  const headerStyleFor = (key: string): CSSProperties => {
+    const merged: CSSProperties = {
+      ...headerCellStyle,
+      ...pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads),
+      width: columnWidths?.[key],
+    };
+    if (setWidth && !merged.position) merged.position = "relative";
+    return merged;
+  };
+  // The checkbox / actions header cells become corner-sticky (top + edge) when
+  // a data column on their side is pinned.
+  const selectionHeaderStyle: CSSProperties = {
+    ...headerCellStyle,
+    ...edgePinStyle("left", hasLeftPin, PIN_Z.headerPinned),
+  };
+  const actionsHeaderStyle: CSSProperties = {
+    ...headerCellStyle,
+    ...edgePinStyle("right", hasRightPin, PIN_Z.headerPinned),
+  };
+  const edgeBodyStyle = (
+    side: "left" | "right",
+    active: boolean
+  ): CSSProperties | undefined => {
+    const pin = edgePinStyle(side, active, PIN_Z.body);
+    return pin ? { ...pin, background: pinBg } : undefined;
+  };
+  const columnName = (column: ColumnDef<TRow>): string =>
+    typeof column.header === "string" ? column.header : column.key;
+  const resizeHandleFor = (column: ColumnDef<TRow>): ReactNode =>
+    setWidth ? (
+      <span
+        {...columnResizeHandleProps(
+          column.key,
+          setWidth,
+          `${resizeLabel}: ${columnName(column)}`
+        )}
+        style={RESIZE_HANDLE_STYLE}
+      />
+    ) : undefined;
+  const bodyPinStyle = (key: string): CSSProperties | undefined => {
+    const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
+    return pin ? { ...pin, background: pinBg } : undefined;
+  };
+
+  const { verticalSpacing, horizontalSpacing } = DENSITY_SPACING[density];
+
+  // Fixed-width columns get a real table min-width (their sum), so the table
+  // overflows and scrolls horizontally instead of squishing columns to fit.
+  const minWidth = tableMinWidth(columns, {
+    widths: columnWidths,
+    extra: (selection ? 40 : 0) + (showActions ? 120 : 0),
+  });
+  const wrapperStyle: CSSProperties =
+    maxHeight == null
+      ? { width: "100%", ...(hasPinned ? { overflowX: "auto" } : {}) }
+      : { width: "100%", maxHeight, overflow: "auto" };
+
   return (
-    <div style={{ width: "100%" }}>
+    <div style={wrapperStyle}>
       <Table
         {...table.getTableProps()}
         className={className}
         highlightOnHover
-        verticalSpacing="sm"
-        horizontalSpacing="md"
-        miw={480}
+        verticalSpacing={verticalSpacing}
+        horizontalSpacing={horizontalSpacing}
+        miw={Math.max(480, minWidth)}
       >
         <Table.Thead style={{ background: "var(--mantine-color-body)" }}>
           <Table.Tr {...table.getHeaderRowProps()}>
             {selection && (
-              <Table.Th w={40} ta="center" style={headerCellStyle}>
+              <Table.Th
+                w={selectionWidth}
+                ta="center"
+                style={selectionHeaderStyle}
+              >
                 <Checkbox
                   aria-label={labels.selectAll}
                   checked={selection.headerState === "all"}
@@ -228,11 +352,12 @@ export function DesktopTable<TRow>({
                 key={column.key}
                 table={table}
                 column={column}
-                stickyStyle={headerCellStyle}
+                stickyStyle={headerStyleFor(column.key)}
+                resizeHandle={resizeHandleFor(column)}
               />
             ))}
             {showActions && (
-              <Table.Th ta="end" w={120} style={headerCellStyle}>
+              <Table.Th ta="end" w={actionsWidth} style={actionsHeaderStyle}>
                 {labels.actions}
               </Table.Th>
             )}
@@ -261,7 +386,10 @@ export function DesktopTable<TRow>({
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               >
                 {selection && (
-                  <Table.Td ta="center">
+                  <Table.Td
+                    ta="center"
+                    style={edgeBodyStyle("left", hasLeftPin)}
+                  >
                     <Checkbox
                       aria-label={labels.selectRow}
                       checked={selection.isSelected(id)}
@@ -270,7 +398,11 @@ export function DesktopTable<TRow>({
                   </Table.Td>
                 )}
                 {columns.map((column) => (
-                  <Table.Td key={column.key} {...table.getCellProps(column)}>
+                  <Table.Td
+                    key={column.key}
+                    {...table.getCellProps(column)}
+                    style={bodyPinStyle(column.key)}
+                  >
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (
@@ -279,7 +411,10 @@ export function DesktopTable<TRow>({
                   </Table.Td>
                 ))}
                 {showActions && (
-                  <Table.Td ta="end">
+                  <Table.Td
+                    ta="end"
+                    style={edgeBodyStyle("right", hasRightPin)}
+                  >
                     <RowActions
                       row={row}
                       actions={rowActions!}

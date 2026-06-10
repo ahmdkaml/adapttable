@@ -1,8 +1,8 @@
-import type { Direction } from "@adapttable/core";
 import {
   type ActiveFilterChip,
   type BulkAction,
   type ConfirmHandler,
+  type Direction,
   pageSizeOptions,
   type PaginationInfo,
   resolveDisabledReason,
@@ -27,6 +27,8 @@ import {
   DrawerOverlay,
   HStack,
   Input,
+  InputGroup,
+  InputLeftElement,
   Select,
   Skeleton,
   Stack,
@@ -42,8 +44,50 @@ import {
 import { isValidElement, type ReactNode } from "react";
 
 import { subtleText } from "../styles";
+import { FilterPopover } from "./FilterPopover";
 
-/** Search + sort select + filters button + rows-per-page. */
+/** Three-line funnel/filter glyph for the Filters button. */
+function FiltersIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  );
+}
+
+/** Magnifier glyph for the search field. */
+function SearchIcon() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx={11} cy={11} r={7} />
+      <path d="M21 21l-4.35-4.35" />
+    </svg>
+  );
+}
+
+/** Search + sort select + filters button + columns menu + rows-per-page. */
 export function Toolbar<TRow>({
   table,
   hideSearch,
@@ -52,9 +96,16 @@ export function Toolbar<TRow>({
   customToolbar,
   hasFilters,
   activeFilterCount,
-  onOpenFilters,
+  filtersMode,
+  filters,
+  filtersOpen,
+  onToggleFilters,
+  onCloseFilters,
+  onClearFilters,
+  columnMenu,
   showRowsPerPage,
   colorScheme,
+  dir,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   hideSearch?: boolean;
@@ -63,9 +114,17 @@ export function Toolbar<TRow>({
   customToolbar?: ReactNode;
   hasFilters: boolean;
   activeFilterCount: number;
-  onOpenFilters: () => void;
+  filtersMode: "popover" | "drawer";
+  filters?: ReactNode;
+  filtersOpen: boolean;
+  onToggleFilters: () => void;
+  onCloseFilters: () => void;
+  onClearFilters?: () => void;
+  /** The Columns menu, rendered inline at the end of the toolbar row. */
+  columnMenu?: ReactNode;
   showRowsPerPage: boolean;
   colorScheme?: string;
+  dir?: Direction;
 }>) {
   const { labels, source } = table;
   const sortOptions =
@@ -73,26 +132,52 @@ export function Toolbar<TRow>({
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
-  return (
-    <HStack spacing={2} flexWrap="wrap" justify="space-between" align="center">
-      {!hideSearch && (
-        <Input
-          size="sm"
-          maxW="360px"
-          flex="1"
-          minW="200px"
-          aria-label={labels.search}
-          type="search"
-          value={searchProps.value as string}
-          placeholder={searchProps.placeholder as string}
-          onChange={
-            searchProps.onChange as (e: {
-              currentTarget: { value: string };
-            }) => void
-          }
-        />
+
+  const filtersButton = (
+    <Button
+      size="sm"
+      variant="outline"
+      colorScheme={colorScheme}
+      leftIcon={<FiltersIcon />}
+      aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+      data-active={filtersOpen || undefined}
+      onClick={onToggleFilters}
+    >
+      {labels.filters}
+      {activeFilterCount > 0 && (
+        <Badge ml={2} colorScheme={colorScheme} borderRadius="full">
+          {activeFilterCount}
+        </Badge>
       )}
-      <HStack spacing={2} flexWrap="wrap" align="center">
+    </Button>
+  );
+
+  return (
+    <HStack
+      spacing={2}
+      flexWrap="nowrap"
+      justify="space-between"
+      align="center"
+    >
+      {!hideSearch && (
+        <InputGroup size="sm" maxW="360px" flex="1" minW="160px">
+          <InputLeftElement pointerEvents="none" {...subtleText}>
+            <SearchIcon />
+          </InputLeftElement>
+          <Input
+            aria-label={labels.search}
+            type="search"
+            value={searchProps.value as string}
+            placeholder={searchProps.placeholder as string}
+            onChange={
+              searchProps.onChange as (e: {
+                currentTarget: { value: string };
+              }) => void
+            }
+          />
+        </InputGroup>
+      )}
+      <HStack spacing={2} flexWrap="nowrap" align="center">
         {sortOptions && sortOptions.length > 0 && (
           <Select
             size="sm"
@@ -115,21 +200,24 @@ export function Toolbar<TRow>({
           </Select>
         )}
         {customToolbar}
-        {hasFilters && (
-          <Button
-            size="sm"
-            variant="outline"
-            colorScheme={colorScheme}
-            onClick={onOpenFilters}
-          >
-            {labels.filters}
-            {activeFilterCount > 0 && (
-              <Badge ml={2} colorScheme={colorScheme} borderRadius="full">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        )}
+        {hasFilters &&
+          (filtersMode === "popover" ? (
+            <FilterPopover
+              open={filtersOpen}
+              onClose={onCloseFilters}
+              filters={filters}
+              activeFilterCount={activeFilterCount}
+              onClearFilters={onClearFilters}
+              labels={labels}
+              colorScheme={colorScheme}
+              dir={dir}
+            >
+              {filtersButton}
+            </FilterPopover>
+          ) : (
+            filtersButton
+          ))}
+        {columnMenu}
         {showRowsPerPage && (
           <Select
             size="sm"

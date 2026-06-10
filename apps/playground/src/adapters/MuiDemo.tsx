@@ -221,6 +221,9 @@ export function MuiDemo({
           searchPlaceholder={s.search}
           rowActions={makeActions(locale)}
           confirm={demoConfirm}
+          enableColumnMenu
+          resizableColumns
+          stickyHeader
           virtualize
           estimateRowSize={56}
           estimateCardSize={140}

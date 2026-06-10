@@ -15,6 +15,9 @@ export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
   slots?: DataTableSlots;
   /** Class name applied to the root `<Paper>`. */
   className?: string;
-  /** MUI table density. Defaults to `"medium"`. */
+  /**
+   * Explicit MUI table size override. When omitted, the size is derived from
+   * `density`: `"comfortable"` → `"medium"`, `"compact"` → `"small"`.
+   */
   size?: "small" | "medium";
 }

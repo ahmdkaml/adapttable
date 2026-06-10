@@ -9,6 +9,7 @@
  *   may itself contain a comma); numbers are parsed back.
  * - Default values are omitted to keep the URL clean.
  */
+import type { ColumnLayoutState } from "../columns/useColumnLayout";
 import type { ExtraFilters, FilterValue, SortDirection } from "../types";
 
 /** Decode a URI component, tolerating malformed input from hand-edited URLs. */
@@ -20,6 +21,15 @@ function safeDecode(value: string): string {
   }
 }
 
+/** Split a comma list into trimmed, non-empty raw (still-encoded) parts. */
+function splitRaw(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export const PARAM_PAGE = "page";
 export const PARAM_LIMIT = "limit";
 export const PARAM_SEARCH = "q";
@@ -27,26 +37,40 @@ export const PARAM_SORT_BY = "sortBy";
 export const PARAM_SORT_DIR = "sortDir";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
+/** Column-layout params (hidden / pinned / order / widths). */
+export const PARAM_COL_HIDDEN = "colHide";
+export const PARAM_COL_PINNED = "colPin";
+export const PARAM_COL_ORDER = "colOrder";
+export const PARAM_COL_WIDTHS = "colW";
 
 /** Read a 1-based page number, falling back when absent/invalid. */
-export function readPage(params: URLSearchParams, fallback: number): number {
-  const raw = params.get(PARAM_PAGE);
+export function readPage(
+  params: URLSearchParams,
+  fallback: number,
+  prefix = ""
+): number {
+  const raw = params.get(prefix + PARAM_PAGE);
   const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
 /** Read a page size, clamped to a sane range, falling back when invalid. */
-export function readLimit(params: URLSearchParams, fallback: number): number {
-  const raw = params.get(PARAM_LIMIT);
+export function readLimit(
+  params: URLSearchParams,
+  fallback: number,
+  prefix = ""
+): number {
+  const raw = params.get(prefix + PARAM_LIMIT);
   const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
   return Number.isFinite(n) && n > 0 && n <= 500 ? n : fallback;
 }
 
 /** Read a sort direction, or `undefined` when missing/invalid. */
 export function readSortDir(
-  params: URLSearchParams
+  params: URLSearchParams,
+  prefix = ""
 ): SortDirection | undefined {
-  const raw = params.get(PARAM_SORT_DIR);
+  const raw = params.get(prefix + PARAM_SORT_DIR);
   return raw === "asc" || raw === "desc" ? raw : undefined;
 }
 
@@ -57,12 +81,14 @@ export function readSortDir(
 export function readExtra(
   params: URLSearchParams,
   numberKeys: readonly string[],
-  arrayKeys: readonly string[]
+  arrayKeys: readonly string[],
+  prefix = ""
 ): ExtraFilters {
+  const filterPrefix = prefix + FILTER_PREFIX;
   const out: ExtraFilters = {};
   params.forEach((raw, key) => {
-    if (!key.startsWith(FILTER_PREFIX) || raw === "") return;
-    const bare = key.slice(FILTER_PREFIX.length);
+    if (!key.startsWith(filterPrefix) || raw === "") return;
+    const bare = key.slice(filterPrefix.length);
     if (arrayKeys.includes(bare)) {
       const arr = raw
         .split(",")
@@ -89,17 +115,22 @@ export function isEmptyFilterValue(value: FilterValue): boolean {
  * Write the full extra-filter bag into `params`, stripping any existing
  * `f_` entries first so cleared keys actually leave the URL.
  */
-export function writeExtra(params: URLSearchParams, extra: ExtraFilters): void {
+export function writeExtra(
+  params: URLSearchParams,
+  extra: ExtraFilters,
+  prefix = ""
+): void {
+  const filterPrefix = prefix + FILTER_PREFIX;
   // Collect existing filter keys first, then delete — mutating while
   // iterating the live key iterator would skip entries.
   const staleKeys: string[] = [];
   params.forEach((_, key) => {
-    if (key.startsWith(FILTER_PREFIX)) staleKeys.push(key);
+    if (key.startsWith(filterPrefix)) staleKeys.push(key);
   });
   for (const key of staleKeys) params.delete(key);
   for (const [key, value] of Object.entries(extra)) {
     if (isEmptyFilterValue(value)) continue;
-    const param = `${FILTER_PREFIX}${key}`;
+    const param = `${filterPrefix}${key}`;
     // Percent-encode each array element so a value may contain the comma
     // delimiter (and survives a single URLSearchParams decode round-trip).
     params.set(
@@ -109,4 +140,85 @@ export function writeExtra(params: URLSearchParams, extra: ExtraFilters): void {
         : String(value)
     );
   }
+}
+
+/**
+ * Read the column layout (hidden / pinned / order / widths) from the URL.
+ * Each column key is percent-encoded so `:` and `,` (the field/pair
+ * delimiters) can never collide with a key. Returns `undefined` when the URL
+ * carries no layout at all, so callers can fall back to their default layout.
+ */
+export function readColumnLayout(
+  params: URLSearchParams,
+  prefix = ""
+): ColumnLayoutState | undefined {
+  const hideRaw = params.get(prefix + PARAM_COL_HIDDEN);
+  const pinRaw = params.get(prefix + PARAM_COL_PINNED);
+  const orderRaw = params.get(prefix + PARAM_COL_ORDER);
+  const widthRaw = params.get(prefix + PARAM_COL_WIDTHS);
+  if (
+    hideRaw === null &&
+    pinRaw === null &&
+    orderRaw === null &&
+    widthRaw === null
+  ) {
+    return undefined;
+  }
+
+  const pinned: Record<string, "left" | "right"> = {};
+  for (const pair of splitRaw(pinRaw)) {
+    const [encKey, side] = pair.split(":");
+    if (encKey && (side === "left" || side === "right")) {
+      pinned[safeDecode(encKey)] = side;
+    }
+  }
+
+  const widths: Record<string, number> = {};
+  for (const pair of splitRaw(widthRaw)) {
+    const [encKey, px] = pair.split(":");
+    const n = Number(px);
+    if (encKey && Number.isFinite(n) && n > 0) widths[safeDecode(encKey)] = n;
+  }
+
+  return {
+    hidden: splitRaw(hideRaw).map(safeDecode),
+    order: splitRaw(orderRaw).map(safeDecode),
+    pinned,
+    widths,
+  };
+}
+
+/**
+ * Write the column layout into `params`, dropping any field that is empty so
+ * a pristine layout leaves no params behind.
+ */
+export function writeColumnLayout(
+  params: URLSearchParams,
+  layout: ColumnLayoutState,
+  prefix = ""
+): void {
+  const setOrDelete = (param: string, value: string): void => {
+    if (value) params.set(prefix + param, value);
+    else params.delete(prefix + param);
+  };
+  setOrDelete(
+    PARAM_COL_HIDDEN,
+    layout.hidden.map((key) => encodeURIComponent(key)).join(",")
+  );
+  setOrDelete(
+    PARAM_COL_PINNED,
+    Object.entries(layout.pinned)
+      .map(([key, side]) => `${encodeURIComponent(key)}:${side}`)
+      .join(",")
+  );
+  setOrDelete(
+    PARAM_COL_ORDER,
+    layout.order.map((key) => encodeURIComponent(key)).join(",")
+  );
+  setOrDelete(
+    PARAM_COL_WIDTHS,
+    Object.entries(layout.widths)
+      .map(([key, px]) => `${encodeURIComponent(key)}:${Math.round(px)}`)
+      .join(",")
+  );
 }

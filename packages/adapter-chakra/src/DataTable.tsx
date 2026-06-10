@@ -18,6 +18,7 @@ import {
   LoadingState,
   Toolbar,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { subtleText } from "./styles";
 import type { DataTableProps } from "./types";
@@ -34,17 +35,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     colorScheme,
-    size = "md",
     virtualize = false,
     estimateRowSize,
     estimateCardSize,
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+  const { filtersMode = "popover" } = props;
+  // Map row density to Chakra's table `size` (independent of column pinning):
+  // compact → "sm", comfortable (default) → "md". An explicit `size` prop, if
+  // given, still wins for backward compatibility.
+  const size =
+    props.size ??
+    ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -85,6 +92,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     paddingTop: virtualization.paddingTop,
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
+    stickyHeader: props.stickyHeader,
+    stickyTop: props.stickyTop,
+    pinOffset: chrome.columnLayout.pinOffset,
+    maxHeight: props.maxHeight,
+    setWidth: props.resizableColumns ? chrome.columnLayout.setWidth : undefined,
+    columnWidths: chrome.columnLayout.state.widths,
+    resizeLabel: table.labels.resizeColumn,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (
@@ -114,9 +128,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={chrome.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          filtersMode={filtersMode}
+          filters={props.filters}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          columnMenu={
+            props.enableColumnMenu && !chrome.isMobile ? (
+              <ColumnMenu
+                allColumns={chrome.allColumns}
+                layout={chrome.columnLayout}
+                labels={table.labels}
+              />
+            ) : undefined
+          }
           showRowsPerPage={!chrome.isPaged}
           colorScheme={colorScheme}
+          dir={props.dir}
         />
         <Chips
           chips={chrome.mergedChips}
@@ -164,10 +193,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={props.onClearFilters}

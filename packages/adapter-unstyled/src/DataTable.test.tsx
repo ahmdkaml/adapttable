@@ -72,6 +72,22 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getByText("Riyadh")).toBeInTheDocument();
   });
 
+  it("defaults the root density hook to comfortable", () => {
+    const { container } = renderHarness();
+    expect(
+      container.querySelector('[data-adapttable-part="root"]')
+    ).toHaveAttribute("data-density", "comfortable");
+  });
+
+  it("surfaces data-density=compact on the root when density is compact", () => {
+    const { container } = renderHarness({
+      override: { density: "compact" },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="root"]')
+    ).toHaveAttribute("data-density", "compact");
+  });
+
   it("renders the empty state", () => {
     renderHarness({ rows: [] });
     expect(screen.getByText("No data")).toBeInTheDocument();
@@ -89,6 +105,38 @@ describe("<DataTable> (unstyled)", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders skeleton cards in the mobile loading state", () => {
+    const { container } = renderHarness({
+      rows: [],
+      isLoading: true,
+      isMobile: true,
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="loading-cards"]')
+    ).toBeInTheDocument();
+    expect(
+      container.querySelectorAll('[data-adapttable-part="loading-card"]').length
+    ).toBeGreaterThan(0);
+  });
+
+  it("renders skeleton header lines for every column while loading", () => {
+    // Three columns exercises the middle-column width branch of the skeleton.
+    const threeCols: ColumnDef<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "city", header: "City", accessor: (r) => r.city },
+      { key: "id", header: "Id", accessor: (r) => r.id },
+    ];
+    const { container } = renderHarness({
+      rows: [],
+      isLoading: true,
+      override: { columns: threeCols },
+    });
+    expect(
+      container.querySelectorAll('[data-adapttable-part="loading-header-cell"]')
+        .length
+    ).toBe(3);
+  });
+
   it("renders a loadingState override", () => {
     renderHarness({
       rows: [],
@@ -96,6 +144,102 @@ describe("<DataTable> (unstyled)", () => {
       override: { loadingState: <div>load-custom</div> },
     });
     expect(screen.getByText("load-custom")).toBeInTheDocument();
+  });
+
+  it("accepts slots.empty / slots.skeleton as aliases that take precedence", () => {
+    const { unmount } = renderHarness({
+      rows: [],
+      override: {
+        emptyState: <div>top-empty</div>,
+        slots: { empty: <div>slot-empty</div> },
+      },
+    });
+    // slots.empty wins over the top-level emptyState prop.
+    expect(screen.getByText("slot-empty")).toBeInTheDocument();
+    expect(screen.queryByText("top-empty")).toBeNull();
+    unmount();
+
+    renderHarness({
+      rows: [],
+      isLoading: true,
+      override: {
+        loadingState: <div>top-load</div>,
+        slots: { skeleton: <div>slot-load</div> },
+      },
+    });
+    expect(screen.getByText("slot-load")).toBeInTheDocument();
+    expect(screen.queryByText("top-load")).toBeNull();
+  });
+
+  it("falls back to emptyState / loadingState when slots are absent", () => {
+    const { unmount } = renderHarness({
+      rows: [],
+      override: { emptyState: <div>top-empty</div>, slots: {} },
+    });
+    expect(screen.getByText("top-empty")).toBeInTheDocument();
+    unmount();
+
+    renderHarness({
+      rows: [],
+      isLoading: true,
+      override: { loadingState: <div>top-load</div>, slots: {} },
+    });
+    expect(screen.getByText("top-load")).toBeInTheDocument();
+  });
+
+  it("renders the search icon glyph inside the search field", () => {
+    const { container } = renderHarness();
+    const field = container.querySelector(
+      '[data-adapttable-part="search-field"]'
+    );
+    expect(field).toBeInTheDocument();
+    expect(
+      field?.querySelector('[data-adapttable-part="search-icon"] svg')
+    ).toBeInTheDocument();
+    // The input still lives inside the field wrapper.
+    expect(
+      field?.querySelector('[data-adapttable-part="search"]')
+    ).toBeInTheDocument();
+  });
+
+  it("renders the funnel icon on the Filters button", () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const button = screen.getByRole("button", { name: /filters/i });
+    expect(
+      button.querySelector('[data-adapttable-part="filters-icon"] svg')
+    ).toBeInTheDocument();
+  });
+
+  it("orders the toolbar as Search · Filters · Columns", () => {
+    const { container } = renderHarness({
+      override: {
+        filters: <div>filter body</div>,
+        enableColumnMenu: true,
+      },
+    });
+    const toolbar = container.querySelector(
+      '[data-adapttable-part="toolbar"]'
+    )!;
+    const search = toolbar.querySelector(
+      '[data-adapttable-part="search-field"]'
+    )!;
+    const filters = toolbar.querySelector(
+      '[data-adapttable-part="filters-anchor"]'
+    )!;
+    const columns = toolbar.querySelector(
+      '[data-adapttable-part="column-menu"]'
+    )!;
+    expect(search).toBeInTheDocument();
+    expect(filters).toBeInTheDocument();
+    expect(columns).toBeInTheDocument();
+    // Document order: Columns comes after Filters which comes after Search.
+    expect(
+      search.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      filters.compareDocumentPosition(columns) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it("renders an error with a working retry", () => {
@@ -182,7 +326,40 @@ describe("<DataTable> (unstyled)", () => {
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
-  it("renders filter chips and toggles the filters panel", () => {
+  it("pins the selection column alongside a left-pinned data column", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        stickyHeader: true,
+        defaultColumnLayout: { pinned: { name: "left" } },
+      },
+    });
+    const selHeader = container.querySelector(
+      '[data-adapttable-part="selection-header"]'
+    );
+    expect(selHeader).toHaveAttribute("data-pinned", "left");
+    expect(selHeader).toHaveStyle({ position: "sticky", left: "0px" });
+    const selCell = container.querySelector(
+      '[data-adapttable-part="selection-cell"]'
+    );
+    expect(selCell).toHaveAttribute("data-pinned", "left");
+    expect(selCell).toHaveStyle({ position: "sticky", left: "0px" });
+  });
+
+  it("leaves the selection column unpinned when nothing is pinned", () => {
+    const { container } = renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      },
+    });
+    const selHeader = container.querySelector(
+      '[data-adapttable-part="selection-header"]'
+    );
+    expect(selHeader).not.toHaveAttribute("data-pinned");
+    expect(selHeader?.getAttribute("style")).toBeNull();
+  });
+
+  it("renders filter chips and toggles the filters popover", () => {
     renderHarness(
       {
         override: {
@@ -196,6 +373,46 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.queryByText("filter body")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(screen.getByText("filter body")).toBeInTheDocument();
+    // Active-filter count badge surfaces alongside the button label.
+    const count = document.querySelector(
+      '[data-adapttable-part="filters-count"]'
+    );
+    expect(count).toHaveTextContent("1");
+  });
+
+  it("closes the filters popover on an outside click with no backdrop scrim", () => {
+    renderHarness({
+      override: { filters: <div>filter body</div> },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByText("filter body")).toBeInTheDocument();
+    // No full-screen scrim is rendered — the background stays interactive.
+    expect(
+      document.querySelector('[data-adapttable-part="filters-backdrop"]')
+    ).toBeNull();
+    // Clicking outside the anchor/popover closes it.
+    fireEvent.click(document.body);
+    expect(screen.queryByText("filter body")).toBeNull();
+    // No drawer dialog in popover mode.
+    expect(
+      document.querySelector('[data-adapttable-part="filters-panel"]')
+    ).toBeNull();
+  });
+
+  it("renders the FilterPanel drawer when filtersMode='drawer'", () => {
+    renderHarness({
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
+    });
+    expect(screen.queryByText("filter body")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByText("filter body")).toBeInTheDocument();
+    // Drawer mode renders the native <dialog> panel, not the popover.
+    expect(
+      document.querySelector('[data-adapttable-part="filters-panel"]')
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="filters-popover"]')
+    ).toBeNull();
   });
 
   it("renders mobile cards when isMobile", () => {
@@ -324,9 +541,10 @@ describe("<DataTable> (unstyled)", () => {
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi
-      .fn()
-      .mockImplementation((cb: IntersectionObserverCallback) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+      cb: IntersectionObserverCallback
+    ) {
+      return {
         observe: () => {
           trigger = () =>
             cb(
@@ -336,7 +554,8 @@ describe("<DataTable> (unstyled)", () => {
         },
         disconnect: () => undefined,
         unobserve: () => undefined,
-      }));
+      };
+    });
     try {
       renderHarness({ mode: "infinite" }, "limit=1");
       expect(screen.queryByText("Bob")).toBeNull();

@@ -56,6 +56,44 @@ describe("createHistoryAdapter", () => {
     spy.mockRestore();
   });
 
+  it("attaches the popstate listener once and detaches only on the last unsubscribe", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const a = createHistoryAdapter();
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+
+    const off1 = a.subscribe(cb1);
+    const popstateAdds = addSpy.mock.calls.filter(([t]) => t === "popstate");
+    expect(popstateAdds).toHaveLength(1);
+
+    // Second subscriber must NOT add another popstate listener.
+    const off2 = a.subscribe(cb2);
+    expect(addSpy.mock.calls.filter(([t]) => t === "popstate")).toHaveLength(1);
+
+    // Both still receive popstate notifications.
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(cb1).toHaveBeenCalledTimes(1);
+    expect(cb2).toHaveBeenCalledTimes(1);
+
+    // Removing one of two keeps the listener attached.
+    off1();
+    expect(removeSpy.mock.calls.filter(([t]) => t === "popstate")).toHaveLength(
+      0
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(cb2).toHaveBeenCalledTimes(2);
+
+    // Removing the last subscriber detaches the popstate listener.
+    off2();
+    expect(removeSpy.mock.calls.filter(([t]) => t === "popstate")).toHaveLength(
+      1
+    );
+
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
   it("notifies on setSearch and on popstate, and detaches on last unsubscribe", () => {
     const a = createHistoryAdapter();
     const cb = vi.fn();

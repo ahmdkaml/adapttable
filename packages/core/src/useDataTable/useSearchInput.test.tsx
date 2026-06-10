@@ -37,6 +37,34 @@ describe("useSearchInput", () => {
     expect(result.current.value).toBe("external");
   });
 
+  it("does not resurrect a pending value when the search is cleared externally", () => {
+    // User types "abc" and it commits.
+    let search = "";
+    const setSearch = vi.fn((s: string) => {
+      search = s;
+    });
+    const { result, rerender } = renderHook(() =>
+      useSearchInput(search, setSearch, 300)
+    );
+    const abcCommits = () =>
+      setSearch.mock.calls.filter(([s]) => s === "abc").length;
+
+    act(() => result.current.setValue("abc"));
+    act(() => vi.advanceTimersByTime(300));
+    expect(abcCommits()).toBe(1);
+    rerender(); // echo: search === "abc"
+
+    // An external "clear all" lands while the debounced value still holds
+    // "abc" (the input was just reset to "" but the debounce hasn't ticked).
+    search = "";
+    act(() => result.current.setValue(""));
+    rerender();
+    act(() => vi.advanceTimersByTime(300));
+    // The stale debounced "abc" must NOT be re-committed over the clear.
+    expect(abcCommits()).toBe(1);
+    expect(result.current.value).toBe("");
+  });
+
   it("keeps later typing when the committed value echoes back (no clobber)", () => {
     let search = "";
     const setSearch = vi.fn((s: string) => {

@@ -102,9 +102,10 @@ describe("<DataTable> (Mantine)", () => {
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi
-      .fn()
-      .mockImplementation((cb: IntersectionObserverCallback) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+      cb: IntersectionObserverCallback
+    ) {
+      return {
         observe: () => {
           trigger = () =>
             cb(
@@ -114,7 +115,8 @@ describe("<DataTable> (Mantine)", () => {
         },
         disconnect: () => undefined,
         unobserve: () => undefined,
-      }));
+      };
+    });
     try {
       renderHarness({ mode: "infinite", initialUrl: "limit=1" });
       expect(screen.queryByText("Bob")).toBeNull();
@@ -328,22 +330,84 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
   });
 
-  // Regression: the sticky header must pin via the header *cells*, not the
-  // `<thead>` (which does not stick against the document scroller) — and it
-  // must NOT live in an `overflow` wrapper that would trap sticky and let the
-  // header overlap the first row. See DesktopTable for the full rationale.
-  it("sticks the header cells by default so they pin to the page", () => {
+  // Sticky header is opt-in (default off). When enabled it must pin via the
+  // header *cells*, not the `<thead>` (which does not stick against the
+  // document scroller), and must NOT live in an `overflow` wrapper that would
+  // trap sticky and let the header overlap the first row.
+  it("does not stick the header cells by default (opt-in)", () => {
     renderHarness();
     const th = screen.getByText("Name").closest("th");
     expect(th).not.toBeNull();
+    expect(th).not.toHaveStyle({ position: "sticky" });
+  });
+
+  it("sticks the header cells when stickyHeader is enabled", () => {
+    renderHarness({ override: { stickyHeader: true } });
+    const th = screen.getByText("Name").closest("th");
     expect(th).toHaveStyle({ position: "sticky" });
     // the table must not sit inside a horizontal-overflow scroll container
     expect(th!.closest("[style*='overflow']")).toBeNull();
   });
 
-  it("does not stick the header cells when stickyHeader is disabled", () => {
-    renderHarness({ override: { stickyHeader: false } });
-    const th = screen.getByText("Name").closest("th");
-    expect(th).not.toHaveStyle({ position: "sticky" });
+  it("renders the Columns menu trigger when enableColumnMenu is set", () => {
+    renderHarness({ override: { enableColumnMenu: true } });
+    expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();
+  });
+
+  // Row density is independent of pinning: it only re-maps the Mantine
+  // `<Table>` spacing. Mantine emits the chosen spacing as the
+  // `--table-vertical-spacing` / `--table-horizontal-spacing` CSS vars on the
+  // table element, so we assert on those.
+  it("uses comfortable spacing (sm / md) by default", () => {
+    renderHarness();
+    const table = screen.getByText("Name").closest("table")!;
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).toBe(
+      "var(--mantine-spacing-sm)"
+    );
+    expect(table.style.getPropertyValue("--table-horizontal-spacing")).toBe(
+      "var(--mantine-spacing-md)"
+    );
+  });
+
+  it("tightens rows when density is compact", () => {
+    renderHarness({ override: { density: "compact" } });
+    const table = screen.getByText("Name").closest("table")!;
+    // 4 -> rem(4) === "0.25rem" (scaled); horizontal drops from md to sm.
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).toContain(
+      "0.25rem"
+    );
+    expect(table.style.getPropertyValue("--table-horizontal-spacing")).toBe(
+      "var(--mantine-spacing-sm)"
+    );
+    // Compact must not equal the comfortable vertical rhythm.
+    expect(table.style.getPropertyValue("--table-vertical-spacing")).not.toBe(
+      "var(--mantine-spacing-sm)"
+    );
+  });
+
+  it("applies compact density to mobile cards too", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: { density: "compact" },
+    });
+    // Compact cards use the tighter `sm` Card padding instead of `md`.
+    const card = container.querySelector('[class*="mantine-Card-root"]');
+    expect(card).not.toBeNull();
+    expect(card!.getAttribute("style") ?? "").toContain(
+      "var(--mantine-spacing-sm)"
+    );
+  });
+
+  it("hides a column via a controlled columnLayout", () => {
+    renderHarness({
+      override: {
+        columnLayout: { hidden: ["city"], order: [], pinned: {}, widths: {} },
+      },
+    });
+    // The header and its values are dropped when the column is hidden.
+    expect(screen.queryByText("City")).toBeNull();
+    expect(screen.queryByText("Dubai")).toBeNull();
+    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 });

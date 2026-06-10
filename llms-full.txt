@@ -277,7 +277,10 @@ const fr = { ...en, search: "Rechercher", noData: "Aucune donnée" };
 
 RTL is first-class. Pass `dir="rtl"` and the adapter applies it through its
 direction provider and logical CSS, flipping layout, alignment, and the
-filter drawer side automatically.
+filter drawer side automatically. Column resizing is direction-aware too:
+the resize handle sits on the column's inline-end edge, so dragging it
+outward (or pressing the leading arrow key) widens the column in both LTR
+and RTL.
 
 Helpers:
 
@@ -369,7 +372,35 @@ const bulkActions = [
 Confirmation is injectable via the `confirm` prop (defaults to
 `window.confirm`); pass your own dialog handler for a styled experience.
 
-## 5. Prop-getters (fully headless)
+## 5. Column management
+
+Let users show/hide, reorder, pin, and resize columns. All opt-in, all driven
+from `@adapttable/core`, so every adapter gets them by passing a prop.
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  enableColumnMenu // "Columns" menu: show/hide, drag- or keyboard-reorder, pin
+  resizableColumns // drag or arrow-key resize handles on every header
+  maxHeight={420} // scroll box so pinned columns stick while scrolling
+  defaultColumnLayout={{ pinned: { name: "left" }, widths: { name: 220 } }}
+/>
+```
+
+- Show/hide, reorder, and pin live in the built-in menu (`enableColumnMenu`).
+  Reorder by dragging a row or with arrow keys on its grip; pinning makes a
+  column sticky to the inline-start edge.
+- Resize (`resizableColumns`) adds a handle to each header — drag it, or focus
+  it and press the arrow keys. It is direction-aware (correct in RTL).
+- Pinning needs a horizontal scroll context to stick: set `maxHeight` or let
+  the table exceed its container width.
+- Preset the layout with `defaultColumnLayout` (uncontrolled), or control it
+  with `columnLayout` + `onColumnLayoutChange`. Shape: `{ hidden, order,
+  pinned, widths }`.
+
+## 6. Prop-getters (fully headless)
 
 Build the entire markup yourself with `@adapttable/core`:
 

@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
 import {
+  useColumnLayout,
+  type UseColumnLayoutResult,
+} from "./columns/useColumnLayout";
+import {
   type ActiveFilterChip,
   mergeFilterChips,
   resolveActiveFilterCount,
@@ -10,7 +14,7 @@ import {
 import { useIsMobile } from "./hooks/useIsMobile";
 import type { BaseDataTableProps } from "./props";
 import type { SelectionState } from "./selection/useSelection";
-import type { BulkAction, SortByOption, TableLabels } from "./types";
+import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
   type UseDataTableResult,
@@ -84,6 +88,10 @@ export interface TableChrome<TRow> {
   body: TableBody;
   /** Whether the paged footer should render. */
   showFooter: boolean;
+  /** User column-layout state + mutators (visibility, order, …). */
+  columnLayout: UseColumnLayoutResult<TRow>;
+  /** All declared columns (pre layout/device filtering) for the column menu. */
+  allColumns: ColumnDef<TRow>[];
 }
 
 /**
@@ -115,15 +123,27 @@ export function useTableChrome<TRow>(
     extraChips,
     activeFilterCount: activeFilterCountProp,
     confirm: confirmProp,
+    columnLayout: columnLayoutProp,
+    onColumnLayoutChange,
+    defaultColumnLayout,
   } = props;
 
   const autoMobile = useIsMobile();
   const isMobile = isMobileProp ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
+  // User column layout (hide/order/…) applied on top of the declared columns,
+  // before device filtering inside useDataTable. The menu uses `allColumns`.
+  const columnLayout = useColumnLayout<TRow>({
+    columns,
+    layout: columnLayoutProp,
+    onLayoutChange: onColumnLayoutChange,
+    defaultLayout: defaultColumnLayout,
+  });
+
   const table = useDataTable<TRow>({
     source,
-    columns,
+    columns: columnLayout.visibleColumns,
     rowKey,
     tableLabel,
     labels,
@@ -172,5 +192,7 @@ export function useTableChrome<TRow>(
     isPaged,
     body,
     showFooter,
+    columnLayout,
+    allColumns: columns,
   };
 }

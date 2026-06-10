@@ -1,6 +1,13 @@
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { ChakraProvider } from "@chakra-ui/react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -146,7 +153,7 @@ describe("<DataTable> (Chakra)", () => {
     expect(onClick).toHaveBeenCalledWith(["a", "b"]);
   });
 
-  it("renders filter chips and opens the drawer", () => {
+  it("renders filter chips and opens the filter popover", async () => {
     renderHarness(
       {
         override: {
@@ -158,7 +165,49 @@ describe("<DataTable> (Chakra)", () => {
     );
     expect(screen.getByText("Status: Active")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
-    expect(screen.getByText("filter body")).toBeInTheDocument();
+    expect(await screen.findByText("filter body")).toBeInTheDocument();
+  });
+
+  it("invokes onClearFilters from the popover header", async () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        override: {
+          filters: <div>filter body</div>,
+          filterLabels: { status: (v) => `Status: ${v}` },
+          onClearFilters,
+        },
+      },
+      "f_status=Active"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    await screen.findByText("filter body");
+    // Scope to the popover so we hit its header "Clear all", not the chip one.
+    const popover = screen.getByTestId("adapttable-filter-popover");
+    // The popover is mid enter-transition (visibility:hidden) under fake
+    // timers, so the accessible name is empty; click the header button by text.
+    fireEvent.click(within(popover).getByText("Clear all"));
+    expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it("renders the filter popover with no scrim and stays interactive", async () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const trigger = screen.getByRole("button", { name: /filters/i });
+    fireEvent.click(trigger);
+    await screen.findByText("filter body");
+    // No backdrop/scrim is rendered — the background stays interactive.
+    expect(
+      screen.queryByTestId("adapttable-filter-scrim")
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // Toggling the trigger closes the popover (controlled open state).
+    act(() => {
+      fireEvent.click(trigger);
+    });
+    await waitFor(() =>
+      expect(screen.queryByText("filter body")).not.toBeInTheDocument()
+    );
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("removes a chip", () => {
@@ -278,6 +327,23 @@ describe("<DataTable> (Chakra)", () => {
     expect(screen.getByText("Delete").closest("button")).toBeDisabled();
   });
 
+  it("keeps a bulk action enabled when disabledReason returns an empty string", () => {
+    renderHarness({
+      override: {
+        bulkActions: [
+          {
+            key: "d",
+            label: "Delete",
+            onClick: vi.fn(),
+            disabledReason: () => "",
+          },
+        ],
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("Delete").closest("button")).not.toBeDisabled();
+  });
+
   it("fires prefetch on desktop row hover and renders a custom Cell", () => {
     const prefetch = vi.fn();
     const cellCols: ColumnDef<Row>[] = [
@@ -304,9 +370,10 @@ describe("<DataTable> (Chakra)", () => {
   it("auto-loads the next page when the sentinel scrolls into view", () => {
     let trigger: (() => void) | undefined;
     const original = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi
-      .fn()
-      .mockImplementation((cb: IntersectionObserverCallback) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(function (
+      cb: IntersectionObserverCallback
+    ) {
+      return {
         observe: () => {
           trigger = () =>
             cb(
@@ -316,7 +383,8 @@ describe("<DataTable> (Chakra)", () => {
         },
         disconnect: () => undefined,
         unobserve: () => undefined,
-      }));
+      };
+    });
     try {
       renderHarness({ mode: "infinite" }, "limit=1");
       expect(screen.queryByText("Bob")).toBeNull();
@@ -368,5 +436,45 @@ describe("<DataTable> (Chakra)", () => {
       },
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
+  });
+});
+
+describe("<DataTable> (Chakra) density → table size", () => {
+  function tableSizeOf(props: Parameters<typeof Harness>[0]): string | null {
+    const { container } = renderHarness(props);
+    return container.querySelector("table")?.getAttribute("data-size") ?? null;
+  }
+  // A genuine size change alters the Chakra-generated class on body cells
+  // (the <table> element class is size-agnostic). Capturing it proves the
+  // size is actually applied, not just echoed onto a data attribute.
+  function cellClassOf(props: Parameters<typeof Harness>[0]): string {
+    const { container } = renderHarness(props);
+    return container.querySelector("tbody td")?.className ?? "";
+  }
+
+  it('maps density="compact" to the smaller "sm" size', () => {
+    expect(tableSizeOf({ override: { density: "compact" } })).toBe("sm");
+  });
+
+  it('maps density="comfortable" to the larger "md" size', () => {
+    expect(tableSizeOf({ override: { density: "comfortable" } })).toBe("md");
+  });
+
+  it('defaults to the larger "md" size when density is omitted', () => {
+    expect(tableSizeOf({})).toBe("md");
+  });
+
+  it("renders distinct cell styling for compact vs comfortable", () => {
+    const compact = cellClassOf({ override: { density: "compact" } });
+    const comfortable = cellClassOf({ override: { density: "comfortable" } });
+    expect(compact).not.toBe("");
+    expect(comfortable).not.toBe("");
+    expect(compact).not.toBe(comfortable);
+  });
+
+  it("lets an explicit size prop win over density", () => {
+    expect(tableSizeOf({ override: { density: "compact", size: "lg" } })).toBe(
+      "lg"
+    );
   });
 });

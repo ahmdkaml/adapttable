@@ -77,10 +77,18 @@ export {
   type UrlStateAdapter,
 } from "./url/adapter";
 export {
+  useColumnLayoutUrlState,
+  type UseColumnLayoutUrlStateOptions,
+  type UseColumnLayoutUrlStateResult,
+} from "./url/useColumnLayoutUrlState";
+export {
   useTableUrlState,
   type UseTableUrlStateOptions,
   type UseTableUrlStateResult,
 } from "./url/useTableUrlState";
+
+/* ── Shared render contracts ───────────────────────────────────────── */
+export type { SharedTableRenderProps } from "./tableRenderProps";
 
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
@@ -136,6 +144,45 @@ export { nextSort, type SortState } from "./sort/cycleSort";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
+export {
+  columnMenuLabel,
+  type ColumnMenuRow,
+  columnMenuRows,
+} from "./columns/columnMenuModel";
+export {
+  COLUMN_DND_MIME,
+  type ColumnDropProps,
+  columnDropProps,
+  type ColumnReorderKeyProps,
+  columnReorderKeyProps,
+  type ColumnRowDragProps,
+  columnRowDragProps,
+} from "./columns/columnReorder";
+export {
+  COLUMN_RESIZE_STEP,
+  type ColumnResizeHandleProps,
+  columnResizeHandleProps,
+  MIN_COLUMN_WIDTH,
+} from "./columns/columnResize";
+export {
+  FALLBACK_PIN_WIDTH,
+  parsePxWidth,
+  resolveColumnWidth,
+  tableMinWidth,
+} from "./columns/columnWidths";
+export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
+export {
+  type ColumnLayoutState,
+  edgePinStyle,
+  EMPTY_COLUMN_LAYOUT,
+  PIN_Z,
+  type PinLeads,
+  type PinnedCellStyle,
+  pinnedCellStyle,
+  useColumnLayout,
+  type UseColumnLayoutOptions,
+  type UseColumnLayoutResult,
+} from "./columns/useColumnLayout";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
 
 /* ── Pagination ────────────────────────────────────────────────────── */

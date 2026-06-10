@@ -17,8 +17,29 @@ import {
   LoadingState,
   Toolbar,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
+
+/**
+ * Map row density to MUI's table `size`, independent of column pinning. An
+ * explicit `size` prop still wins for backward compatibility.
+ */
+function tableSize(
+  size: "small" | "medium" | undefined,
+  density: "comfortable" | "compact" | undefined
+): "small" | "medium" {
+  if (size) return size;
+  return density === "compact" ? "small" : "medium";
+}
+
+/** The width setter only when column resize is enabled (opt-in). */
+function resizeSetter(
+  enabled: boolean | undefined,
+  setWidth: (key: string, width: number) => void
+): ((key: string, width: number) => void) | undefined {
+  return enabled ? setWidth : undefined;
+}
 
 /**
  * Batteries-included Material UI data table. Drop in `columns`, a `source`,
@@ -32,17 +53,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
-    size = "medium",
     virtualize = false,
     estimateRowSize,
     estimateCardSize,
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+  const size = tableSize(props.size, props.density);
+  const { filtersMode = "popover" } = props;
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source } = table;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const columnMenu = props.enableColumnMenu && !c.isMobile && (
+    <ColumnMenu
+      allColumns={c.allColumns}
+      layout={c.columnLayout}
+      labels={labels}
+    />
+  );
   const handleVirtualEndReached = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
@@ -120,6 +149,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
         measureElement={virtualization.measureElement}
+        stickyHeader={props.stickyHeader}
+        stickyTop={props.stickyTop}
+        pinOffset={c.columnLayout.pinOffset}
+        maxHeight={props.maxHeight}
+        setWidth={resizeSetter(props.resizableColumns, c.columnLayout.setWidth)}
+        columnWidths={c.columnLayout.state.widths}
+        resizeLabel={labels.resizeColumn}
       />
     );
   }
@@ -140,8 +176,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={c.activeFilterCount}
-          onOpenFilters={() => setDrawerOpen(true)}
+          onOpenFilters={() =>
+            setFiltersOpen((open) => (filtersMode === "popover" ? !open : true))
+          }
           showRowsPerPage={!c.isPaged}
+          filtersMode={filtersMode}
+          filters={props.filters}
+          filtersOpen={filtersOpen}
+          onCloseFilters={() => setFiltersOpen(false)}
+          onClearFilters={props.onClearFilters}
+          dir={props.dir}
+          columnMenu={columnMenu}
         />
         <Chips
           chips={c.mergedChips}
@@ -188,10 +233,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && (
+      {props.filters && filtersMode === "drawer" && (
         <FilterDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={props.onClearFilters}

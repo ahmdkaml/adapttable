@@ -16,7 +16,10 @@ import {
   Footer,
   LoadingState,
 } from "./components/chrome";
+import { ColumnMenu } from "./components/ColumnMenu";
 import { FilterPanel } from "./components/FilterPanel";
+import { FilterPopover } from "./components/FilterPopover";
+import { FiltersIcon, SearchIcon } from "./components/icons";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
@@ -57,7 +60,7 @@ function DataTableBody<TRow>({
   if (chrome.body === "skeleton") {
     return (
       <>
-        {props.loadingState ?? (
+        {props.slots?.skeleton ?? props.loadingState ?? (
           <LoadingState
             rows={props.skeletonRows ?? props.source.limit}
             columns={chrome.table.columns.length}
@@ -73,7 +76,7 @@ function DataTableBody<TRow>({
   if (chrome.body === "empty") {
     return (
       <>
-        {props.emptyState ?? (
+        {props.slots?.empty ?? props.emptyState ?? (
           <output data-adapttable-part="empty" className={classNames.empty}>
             {labels.noData}
           </output>
@@ -83,21 +86,28 @@ function DataTableBody<TRow>({
   }
   const Renderer = chrome.isMobile ? MobileCards : DesktopTable;
   return (
-    <>
-      <Renderer
-        table={chrome.table}
-        rows={props.source.rows}
-        rowActions={props.rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        classNames={classNames}
-        prefetch={props.prefetch}
-        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-        paddingTop={virtualization.paddingTop}
-        paddingBottom={virtualization.paddingBottom}
-        measureElement={virtualization.measureElement}
-      />
-    </>
+    <Renderer
+      table={chrome.table}
+      rows={props.source.rows}
+      rowActions={props.rowActions}
+      confirm={confirm}
+      getRowId={getRowId}
+      classNames={classNames}
+      prefetch={props.prefetch}
+      rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+      paddingTop={virtualization.paddingTop}
+      paddingBottom={virtualization.paddingBottom}
+      measureElement={virtualization.measureElement}
+      stickyHeader={props.stickyHeader}
+      stickyTop={props.stickyTop}
+      pinOffset={chrome.columnLayout.pinOffset}
+      maxHeight={props.maxHeight}
+      setWidth={
+        props.resizableColumns ? chrome.columnLayout.setWidth : undefined
+      }
+      columnWidths={chrome.columnLayout.state.widths}
+      resizeLabel={labels.resizeColumn}
+    />
   );
 }
 
@@ -117,6 +127,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     dir,
     hideSearch,
     filters,
+    filtersMode = "popover",
     onClearFilters,
     bulkActions,
     classNames = {},
@@ -127,6 +138,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan,
     virtualScrollMargin,
   } = props;
+
+  const density = props.density ?? "comfortable";
 
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
@@ -171,20 +184,72 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const sortOptions =
     sortByOptions ?? (chrome.isMobile ? table.sortByOptions : undefined);
 
+  const filtersButton = (
+    <button
+      type="button"
+      aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+      data-active={filtersOpen || undefined}
+      data-adapttable-part="filters-button"
+      className={classNames.filtersButton}
+      onClick={() => setFiltersOpen((o) => !o)}
+    >
+      <span
+        data-adapttable-part="filters-icon"
+        className={classNames.filtersIcon}
+        style={{ display: "inline-flex" }}
+      >
+        <FiltersIcon />
+      </span>
+      {labels.filters}
+      {chrome.activeFilterCount > 0 && (
+        <span
+          data-adapttable-part="filters-count"
+          className={classNames.filtersCount}
+        >
+          {chrome.activeFilterCount}
+        </span>
+      )}
+    </button>
+  );
+
   return (
     <div
       dir={dir}
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}
+      data-density={density}
       className={cx("adapttable", classNames.root)}
     >
-      <div data-adapttable-part="toolbar" className={classNames.toolbar}>
+      <div
+        data-adapttable-part="toolbar"
+        className={classNames.toolbar}
+        style={{ display: "flex", flexWrap: "nowrap", alignItems: "center" }}
+      >
         {!hideSearch && (
-          <input
-            {...searchProps}
-            data-adapttable-part="search"
-            className={classNames.search}
-          />
+          <span
+            data-adapttable-part="search-field"
+            className={classNames.searchField}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+          >
+            <span
+              data-adapttable-part="search-icon"
+              className={classNames.searchIcon}
+              style={{ display: "inline-flex" }}
+            >
+              <SearchIcon size={14} />
+            </span>
+            <input
+              {...searchProps}
+              data-adapttable-part="search"
+              className={classNames.search}
+              style={{ flex: 1, minWidth: 0 }}
+            />
+          </span>
         )}
         {sortOptions && sortOptions.length > 0 && (
           <label>
@@ -211,19 +276,30 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </label>
         )}
         {customToolbar}
-        {filters && (
-          <button
-            type="button"
-            aria-expanded={filtersOpen}
-            data-adapttable-part="filters-button"
-            className={classNames.filtersButton}
-            onClick={() => setFiltersOpen((o) => !o)}
-          >
-            {labels.filters}
-            {chrome.activeFilterCount > 0
-              ? ` (${chrome.activeFilterCount})`
-              : ""}
-          </button>
+        {filters &&
+          (filtersMode === "popover" ? (
+            <FilterPopover
+              open={filtersOpen}
+              onClose={() => setFiltersOpen(false)}
+              filters={filters}
+              activeFilterCount={chrome.activeFilterCount}
+              onClearFilters={onClearFilters}
+              labels={labels}
+              dir={dir}
+              classNames={classNames}
+            >
+              {filtersButton}
+            </FilterPopover>
+          ) : (
+            filtersButton
+          ))}
+        {props.enableColumnMenu && !chrome.isMobile && (
+          <ColumnMenu
+            allColumns={chrome.allColumns}
+            layout={chrome.columnLayout}
+            labels={labels}
+            classNames={classNames}
+          />
         )}
         {!chrome.isPaged && (
           <label>
@@ -243,7 +319,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         )}
       </div>
 
-      {filters && (
+      {filters && filtersMode === "drawer" && (
         <FilterPanel
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}

@@ -108,7 +108,40 @@ Mantine also supports sticky offset and scroll restoration knobs:
 Consumers rendering their own markup can use the headless
 `useTableVirtualization` and `useScrollToTableTop` hooks directly.
 
-## 7. Prop-getters (fully headless)
+## 7. Column management
+
+Let users show/hide, reorder, pin, and resize columns. All opt-in, all driven
+from `@adapttable/core`, so every adapter gets them by passing a prop.
+
+```tsx
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(r) => r.id}
+  enableColumnMenu // "Columns" menu: show/hide, drag- or keyboard-reorder, pin
+  resizableColumns // drag or arrow-key resize handles on every header
+  maxHeight={420} // scroll box so pinned columns stick while scrolling
+  defaultColumnLayout={{ pinned: { name: "left" }, widths: { name: 220 } }}
+/>
+```
+
+- **Show/hide, reorder, pin** live in the built-in menu (`enableColumnMenu`).
+  Reorder by dragging a row or with the arrow keys on its grip; pinning makes a
+  column sticky to the inline-start edge.
+- **Resize** (`resizableColumns`) adds a handle to each header — drag it, or
+  focus it and press ←/→. It is direction-aware, so it widens the right way in
+  RTL.
+- **Pinning needs a horizontal scroll context** to visibly stick: set
+  `maxHeight` (a scroll box that also scrolls sideways) or let the table exceed
+  its container width.
+- Start from a preset with `defaultColumnLayout` (uncontrolled), or drive it
+  yourself with `columnLayout` + `onColumnLayoutChange` (controlled). The layout
+  shape is `{ hidden, order, pinned, widths }`.
+
+See [examples/mantine-columns.tsx](../examples/mantine-columns.tsx) for a full
+example.
+
+## 8. Prop-getters (fully headless)
 
 Build the entire markup yourself with `@adapttable/core`:
 

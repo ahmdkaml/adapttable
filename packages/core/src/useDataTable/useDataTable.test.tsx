@@ -149,6 +149,14 @@ describe("useDataTable", () => {
       expect(props["aria-label"]).toBe("People");
     });
 
+    it("getHeaderRowProps carries the row role and merges overrides", () => {
+      const { result } = mount();
+      expect(result.current.getHeaderRowProps().role).toBe("row");
+      const props = result.current.getHeaderRowProps({ className: "head" });
+      expect(props.role).toBe("row");
+      expect(props.className).toBe("head");
+    });
+
     it("getHeaderCellProps reports aria-sort and alignment", () => {
       const { result } = mount("sortBy=name&sortDir=asc");
       const sorted = result.current.getHeaderCellProps(cols[0]!);

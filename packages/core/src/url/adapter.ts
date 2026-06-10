@@ -9,6 +9,8 @@
  * for SSR/tests/URL-sync-disabled). Framework adapters (react-router,
  * Next.js) implement the same three methods.
  */
+import { useRef } from "react";
+
 import { isBrowser } from "../utils/env";
 
 export interface UrlStateAdapter {
@@ -122,4 +124,27 @@ export function getHistoryAdapter(): UrlStateAdapter {
  */
 export function resetHistoryAdapter(): void {
   historySingleton = undefined;
+}
+
+/**
+ * Resolve which {@link UrlStateAdapter} a URL-synced hook should use: an
+ * explicit `adapter` wins; otherwise the shared history adapter in the
+ * browser, or a stable per-hook memory adapter when disabled or under SSR.
+ *
+ * @param adapter - Optional explicit adapter (router integration).
+ * @param enabled - When false, always use the local memory adapter.
+ * @returns The adapter to read/write the query string through.
+ */
+export function useResolvedAdapter(
+  adapter: UrlStateAdapter | undefined,
+  enabled: boolean
+): UrlStateAdapter {
+  // A per-hook memory adapter, created once, used when disabled or SSR.
+  const memoryRef = useRef<UrlStateAdapter | null>(null);
+  memoryRef.current ??= createMemoryAdapter();
+
+  if (adapter) return adapter;
+  if (!enabled) return memoryRef.current;
+  if (!isBrowser()) return memoryRef.current;
+  return getHistoryAdapter();
 }
