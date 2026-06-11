@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { resolveColumns } from "../columns/resolveColumns";
 import {
   buildFilterRuntime,
   type FilterDef,
+  type FilterOption,
   type FilterRuntime,
   materializeAutoOptions,
   resolveFilterDefs,
@@ -130,18 +131,65 @@ export function useTableData<TRow>(
   } = options;
 
   const declaredFilters = isDeclarativeFilters(filters) ? filters : undefined;
-  const runtime = useMemo(
-    () =>
-      buildFilterRuntime(
-        materializeAutoOptions(
-          resolveFilterDefs(columns, declaredFilters, locale),
-          // `"auto"` derives from the full frontend dataset; other tiers
-          // only ever see the current page (useFilterOptions dev-warns).
-          data ?? []
-        )
-      ),
-    [columns, declaredFilters, locale, data]
+
+  // Async option loaders: ONE cached promise serves both the chip labels
+  // (here) and the form's `useFilterOptions` (same function identity), so
+  // nothing fetches twice — and once resolved, the defs carry the ARRAY,
+  // which re-labels active chips and makes the form instant.
+  const loaderCacheRef = useRef(
+    new Map<string, () => Promise<readonly FilterOption[]>>()
   );
+  const awaitedRef = useRef(new Set<string>());
+  const [loadedOptions, setLoadedOptions] = useState<
+    Record<string, readonly FilterOption[]>
+  >({});
+
+  const runtime = useMemo(() => {
+    const materialized = materializeAutoOptions(
+      resolveFilterDefs(columns, declaredFilters, locale),
+      // `"auto"` derives from the full frontend dataset; other tiers
+      // only ever see the current page (useFilterOptions dev-warns).
+      data ?? []
+    );
+    const withAsync = materialized.map((def) => {
+      if (typeof def.options !== "function") return def;
+      const loaded = loadedOptions[def.key];
+      if (loaded) return { ...def, options: loaded };
+      let cached = loaderCacheRef.current.get(def.key);
+      if (!cached) {
+        const original = def.options;
+        let inFlight: Promise<readonly FilterOption[]> | null = null;
+        cached = () => (inFlight ??= original());
+        loaderCacheRef.current.set(def.key, cached);
+      }
+      return { ...def, options: cached };
+    });
+    return buildFilterRuntime(withAsync);
+  }, [columns, declaredFilters, locale, data, loadedOptions]);
+
+  useEffect(() => {
+    let alive = true;
+    for (const def of runtime.defs) {
+      if (typeof def.options !== "function") continue;
+      if (awaitedRef.current.has(def.key)) continue;
+      awaitedRef.current.add(def.key);
+      const key = def.key;
+      void def.options().then(
+        (options) => {
+          if (alive) {
+            setLoadedOptions((prev) => ({ ...prev, [key]: options }));
+          }
+        },
+        () => {
+          // The form's useFilterOptions surfaces the failure dev warning;
+          // chips simply keep labeling with raw values.
+        }
+      );
+    }
+    return () => {
+      alive = false;
+    };
+  }, [runtime.defs]);
 
   const mode = resolveTier(source, onQueryChange);
   warnTierMisuse(source, data, onQueryChange);

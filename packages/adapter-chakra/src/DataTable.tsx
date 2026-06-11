@@ -114,7 +114,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     rowClassName: props.rowClassName,
     renderRowDetail: props.renderRowDetail,
     summaryRow: props.summaryRow,
-    expansion: chrome.expansion,
+    expansion: chrome.detail?.expansion,
     dir: props.dir,
   };
   const bodyByRegion: Record<TableBodyRegion, ReactNode> = {

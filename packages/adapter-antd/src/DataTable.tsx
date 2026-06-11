@@ -469,8 +469,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasLeftPin
   );
   const expandable = buildExpandable(
-    props.renderRowDetail,
-    c.expansion,
+    c.detail?.render,
+    c.detail?.expansion,
     getRowId,
     labels
   );
@@ -529,8 +529,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowClassName={props.rowClassName}
         tableLabel={resolvedTableLabel}
         compact={(props.density ?? "comfortable") === "compact"}
-        expansion={c.expansion}
-        renderRowDetail={props.renderRowDetail}
+        expansion={c.detail?.expansion}
+        renderRowDetail={c.detail?.render}
         summaryRow={props.summaryRow}
       />
     );

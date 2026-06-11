@@ -118,7 +118,7 @@ function DataTableBody<TRow>({
       rowClassName={props.rowClassName}
       renderRowDetail={props.renderRowDetail}
       summaryRow={props.summaryRow}
-      expansion={chrome.expansion}
+      expansion={chrome.detail?.expansion}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}

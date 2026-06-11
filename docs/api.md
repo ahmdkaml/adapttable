@@ -132,7 +132,10 @@ Three ways to feed the table, lowest ceremony first:
   desktop rows and a detail section on mobile cards; multiple rows may be
   open, keyed by row id (expansion survives sorting and paging). Headless:
   `useRowExpansion()`. Not recommended with `virtualize` (detail panels are
-  unmeasured sibling rows — a dev warning says so).
+  unmeasured sibling rows — a dev warning says so). Kits with native expand
+  affordances render a custom icon so your `expandRow`/`collapseRow` labels
+  (and the i18n presets) always win — antd's own icon would read its
+  ConfigProvider locale instead.
 
 ### Filter option sources
 

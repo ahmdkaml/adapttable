@@ -139,8 +139,17 @@ export interface TableChrome<TRow> {
    * always offer a working "clear".
    */
   clearFilters: () => void;
-  /** Row-expansion state — present only when `renderRowDetail` is set. */
-  expansion?: RowExpansionState;
+  /**
+   * Row-detail bundle — present iff `renderRowDetail` is set, so ONE guard
+   * narrows both the renderer and the expansion state (no correlated
+   * optionals to re-check).
+   */
+  detail?: {
+    /** The caller's detail-panel renderer. */
+    render: (row: TRow) => ReactNode;
+    /** Expansion state for the chevrons. */
+    expansion: RowExpansionState;
+  };
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -276,7 +285,14 @@ export function useTableChrome<TRow>(
   // Hooks run unconditionally; the state is simply unused (and unexposed)
   // when the caller renders no row details.
   const expansionState = useRowExpansion();
-  const expansion = props.renderRowDetail ? expansionState : undefined;
+  const renderRowDetail = props.renderRowDetail;
+  const detail = useMemo(
+    () =>
+      renderRowDetail
+        ? { render: renderRowDetail, expansion: expansionState }
+        : undefined,
+    [renderRowDetail, expansionState]
+  );
 
   const showFooter =
     isPaged &&
@@ -295,7 +311,7 @@ export function useTableChrome<TRow>(
     emptyVariant,
     isRefreshing,
     clearFilters,
-    expansion,
+    detail,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,

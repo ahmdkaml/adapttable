@@ -57,12 +57,17 @@ export function useFilterOptions<TRow>(
     };
   }, [isLoader, def.key]);
 
-  if (Array.isArray(source)) return { options: source, loading: false };
-  if (isLoader) return { options: loaded ?? EMPTY, loading };
-  if (source === "auto") {
+  // Warn from an effect, not the render path (render stays pure; devWarn
+  // already dedupes, this just keeps StrictMode double-renders silent too).
+  const isLeftoverAuto = source === "auto";
+  useEffect(() => {
+    if (!isLeftoverAuto) return;
     devWarn(
       `filter "${def.key}" uses options: "auto" on a tier with no full dataset — provide an options array or loader.`
     );
-  }
+  }, [isLeftoverAuto, def.key]);
+
+  if (Array.isArray(source)) return { options: source, loading: false };
+  if (isLoader) return { options: loaded ?? EMPTY, loading };
   return { options: EMPTY, loading: false };
 }

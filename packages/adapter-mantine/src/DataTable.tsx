@@ -175,7 +175,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
         summaryRow={props.summaryRow}
-        expansion={chrome.expansion}
+        expansion={chrome.detail?.expansion}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -197,7 +197,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
         summaryRow={props.summaryRow}
-        expansion={chrome.expansion}
+        expansion={chrome.detail?.expansion}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}

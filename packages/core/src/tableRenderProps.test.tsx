@@ -539,11 +539,15 @@ describe("chrome row expansion", () => {
         }),
       };
     });
-    expect(result.current.without.expansion).toBeUndefined();
-    const expansion = result.current.withDetail.expansion!;
-    expect(expansion.isExpanded("a")).toBe(false);
-    act(() => expansion.toggle("a"));
-    expect(result.current.withDetail.expansion!.isExpanded("a")).toBe(true);
+    expect(result.current.without.detail).toBeUndefined();
+    // ONE guard narrows both halves of the bundle.
+    const detail = result.current.withDetail.detail!;
+    expect(detail.render({ id: "a", name: "Alice" })).toBe("Alice");
+    expect(detail.expansion.isExpanded("a")).toBe(false);
+    act(() => detail.expansion.toggle("a"));
+    expect(result.current.withDetail.detail!.expansion.isExpanded("a")).toBe(
+      true
+    );
   });
 
   it("dev-warns when row details meet virtualization", () => {

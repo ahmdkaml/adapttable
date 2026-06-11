@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
@@ -269,5 +269,114 @@ describe("useTableData / useServerData — server tier", () => {
       useServerData<Row>({ rows: ROWS, total: 3, adapter })
     );
     expect(result.current.rows).toBe(ROWS);
+  });
+});
+
+describe("async filter options through useTableData", () => {
+  it("chips re-label once the loader resolves — ONE fetch shared with the form", async () => {
+    const loader = vi.fn(() =>
+      Promise.resolve([{ value: "c1", label: "Acme Corp" }])
+    );
+    const adapter = createMemoryAdapter("f_companyId=c1");
+    const { result } = renderHook(() =>
+      useTableData<Row>({
+        data: ROWS,
+        columns: [{ key: "name" }],
+        filters: [
+          {
+            key: "companyId",
+            type: "select",
+            label: "Company",
+            options: loader,
+          },
+        ],
+        adapter,
+        paginationMode: "paged",
+      })
+    );
+    // Pending: chips label with the raw value; the form would see the SAME
+    // cached promise (def.options identity) — call it like the form does.
+    expect(result.current.runtime.filterLabels.companyId!("c1")).toBe(
+      "Company: c1"
+    );
+    const formSide = result.current.runtime.defs[0]!.options;
+    expect(typeof formSide).toBe("function");
+    await (formSide as () => Promise<unknown>)();
+    await waitFor(() =>
+      expect(result.current.runtime.filterLabels.companyId!("c1")).toBe(
+        "Company: Acme Corp"
+      )
+    );
+    // Chips + form shared one underlying fetch.
+    expect(loader).toHaveBeenCalledTimes(1);
+    // Once loaded the defs carry the ARRAY (instant form).
+    expect(Array.isArray(result.current.runtime.defs[0]!.options)).toBe(true);
+  });
+
+  it("a rejecting loader leaves raw-value chips and never crashes", async () => {
+    const loader = vi.fn(() => Promise.reject(new Error("nope")));
+    const adapter = createMemoryAdapter("f_companyId=c1");
+    const { result } = renderHook(() =>
+      useTableData<Row>({
+        data: ROWS,
+        columns: [{ key: "name" }],
+        filters: [
+          {
+            key: "companyId",
+            type: "select",
+            label: "Company",
+            options: loader,
+          },
+        ],
+        adapter,
+        paginationMode: "paged",
+      })
+    );
+    await waitFor(() => expect(loader).toHaveBeenCalled());
+    expect(result.current.runtime.filterLabels.companyId!("c1")).toBe(
+      "Company: c1"
+    );
+  });
+
+  it("re-renders while pending reuse the cached loader; unmount drops the late result", async () => {
+    let resolve!: (v: readonly { value: string; label: string }[]) => void;
+    const gate = new Promise<readonly { value: string; label: string }[]>(
+      (r) => {
+        resolve = r;
+      }
+    );
+    const loader = vi.fn(() => gate);
+    const adapter = createMemoryAdapter("");
+    const filtersDef = [
+      {
+        key: "companyId",
+        type: "select" as const,
+        label: "Company",
+        options: loader,
+      },
+    ];
+    const { result, rerender, unmount } = renderHook(
+      ({ data }) =>
+        useTableData<Row>({
+          data,
+          columns: [{ key: "name" }],
+          filters: filtersDef,
+          adapter,
+          paginationMode: "paged",
+        }),
+      { initialProps: { data: ROWS } }
+    );
+    const firstFn = result.current.runtime.defs[0]!.options;
+    // New data identity rebuilds the runtime while the load is pending —
+    // the SAME cached loader must come back (no second fetch).
+    rerender({ data: [...ROWS] });
+    expect(result.current.runtime.defs[0]!.options).toBe(firstFn);
+    expect(loader).toHaveBeenCalledTimes(1);
+    unmount();
+    resolve([{ value: "x", label: "X" }]);
+    await gate;
+    // Late resolution after unmount: nothing to assert beyond no crash —
+    // the alive guard swallowed it.
+    expect(loader).toHaveBeenCalledTimes(1);
   });
 });
