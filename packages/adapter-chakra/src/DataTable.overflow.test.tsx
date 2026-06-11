@@ -73,7 +73,7 @@ function installResizeObserver() {
  * exactly the configuration whose wrapper must not become a scroll
  * container while the table fits. Returns the wrapper Box around the table.
  */
-function renderTable(): HTMLElement {
+function renderTable(stickyTop?: number): HTMLElement {
   const adapter = createMemoryAdapter("");
   function Harness() {
     const source = useFrontendData<Row>({
@@ -88,6 +88,7 @@ function renderTable(): HTMLElement {
         columns={columns}
         rowKey={(r) => r.id}
         stickyHeader
+        stickyTop={stickyTop}
       />
     );
   }
@@ -124,6 +125,23 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
     expect(getComputedStyle(wrapper.querySelector("th")!).position).toBe(
       "sticky"
     );
+  });
+
+  it("re-binds the sticky header to the box top once the table overflows", () => {
+    const ro = installResizeObserver();
+    const wrapper = renderTable(120);
+    const th = wrapper.querySelector("th")!;
+    // Fitting table: viewport offset applies (resolved >= the passed 120).
+    expect(
+      Number.parseInt(getComputedStyle(th).top, 10)
+    ).toBeGreaterThanOrEqual(120);
+    setWidths(wrapper, 900, 600);
+    act(() => {
+      ro.fireFor(wrapper);
+    });
+    // The wrapper is now the scroll container: pin to ITS top, or the
+    // header floats down into the rows.
+    expect(getComputedStyle(wrapper.querySelector("th")!).top).toBe("0px");
   });
 
   it("gains overflow-x auto once the table measures wider than the wrapper", () => {

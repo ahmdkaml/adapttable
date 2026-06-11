@@ -449,10 +449,19 @@ export function DesktopTable<TRow>({
   // left/right (corner-sticky in the header) with an opaque background.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
+  // pins, the wrapper only becomes a scroll container when the table is
+  // actually wider than it — an unconditional `overflowX: auto` would trap
+  // the page-scroll sticky header even when everything fits.
+  const overflow = useHorizontalOverflow<HTMLDivElement>();
+  // ANY scroll container (maxHeight, pins, measured overflow) is the sticky
+  // context: pin to ITS top, not a viewport offset.
+  const inScrollBox = maxHeight != null || hasPinned || overflow.overflowing;
   const headSx = stickyHeader
     ? {
         position: "sticky" as const,
-        top: maxHeight == null ? stickyTop : 0,
+        top: inScrollBox ? 0 : stickyTop,
         zIndex: PIN_Z.header,
         bgcolor: "background.paper",
       }
@@ -548,12 +557,6 @@ export function DesktopTable<TRow>({
     selectionLead,
   ]);
 
-  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
-  // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
-  // pins, the wrapper only becomes a scroll container when the table is
-  // actually wider than it — an unconditional `overflowX: auto` would trap
-  // the page-scroll sticky header even when everything fits.
-  const overflow = useHorizontalOverflow<HTMLDivElement>();
   let boxSx: SxProps<Theme> | undefined;
   if (maxHeight != null) {
     boxSx = { maxHeight, overflow: "auto" };

@@ -50,7 +50,7 @@ function installResizeObserver() {
   return { fire: () => callback?.() };
 }
 
-function Harness() {
+function Harness({ stickyTop }: Readonly<{ stickyTop?: number }>) {
   const source = useFrontendData<Row>({
     data: ROWS,
     adapter: createMemoryAdapter(""),
@@ -64,6 +64,8 @@ function Harness() {
       confirm={defaultConfirm}
       getRowId={(r: Row) => r.id}
       size="medium"
+      stickyHeader={stickyTop !== undefined}
+      stickyTop={stickyTop}
     />
   );
 }
@@ -100,5 +102,28 @@ describe("DesktopTable horizontal overflow (MUI)", () => {
       ro.fire();
     });
     expect(getComputedStyle(wrapper).overflowX).not.toBe("auto");
+  });
+
+  it("re-binds the sticky header to the box top once the table overflows", () => {
+    const ro = installResizeObserver();
+    const { container } = renderMui(<Harness stickyTop={120} />);
+    const wrapper = container.querySelector("table")!.parentElement!;
+    const th = () => container.querySelector("th")!;
+    // Fitting table: the viewport offset applies.
+    expect(getComputedStyle(th()).top).toBe("120px");
+    Object.defineProperty(wrapper, "scrollWidth", {
+      value: 900,
+      configurable: true,
+    });
+    Object.defineProperty(wrapper, "clientWidth", {
+      value: 600,
+      configurable: true,
+    });
+    act(() => {
+      ro.fire();
+    });
+    // The wrapper is now the scroll container: pin to ITS top, or the
+    // header floats down into the rows.
+    expect(getComputedStyle(th()).top).toBe("0px");
   });
 });

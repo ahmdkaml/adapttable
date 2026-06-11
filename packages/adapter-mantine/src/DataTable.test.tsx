@@ -687,6 +687,54 @@ describe("<DataTable> (Mantine)", () => {
     }
   });
 
+  it("re-binds a page-sticky header to the box top once the table overflows", () => {
+    type ResizeCallback = (
+      entries: ResizeObserverEntry[],
+      observer: ResizeObserver
+    ) => void;
+    const callbacks: ResizeCallback[] = [];
+    class FakeResizeObserver {
+      constructor(cb: ResizeCallback) {
+        callbacks.push(cb);
+      }
+      observe() {
+        // measurement is driven manually via `fire` below
+      }
+      unobserve() {
+        // not used by the hook
+      }
+      disconnect() {
+        // not used by this test
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const fire = () => {
+      const observer = new FakeResizeObserver(() => undefined);
+      for (const cb of [...callbacks]) cb([], observer);
+    };
+    try {
+      renderHarness({ override: { stickyHeader: true, stickyTop: 120 } });
+      const th = screen.getByText("Name").closest("th")!;
+      const wrapper = th.closest("table")!.parentElement!;
+      // Fitting table: the viewport offset applies (resolved >= stickyTop).
+      expect(Number.parseInt(th.style.top, 10)).toBeGreaterThanOrEqual(120);
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 900,
+        configurable: true,
+      });
+      Object.defineProperty(wrapper, "clientWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      // Now the wrapper IS the scroll container: the header must pin to its
+      // top — keeping the viewport offset would shove it down into the rows.
+      expect(th).toHaveStyle({ top: "0" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("renders the Columns menu trigger when enableColumnMenu is set", () => {
     renderHarness({ override: { enableColumnMenu: true } });
     expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();

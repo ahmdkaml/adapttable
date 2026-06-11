@@ -503,10 +503,21 @@ export function DesktopTable<TRow>({
   // sticky and let the header overlap the first row.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
+  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // With no maxHeight and no pins the wrapper must stay a NON-scroll
+  // container so page-scroll sticky headers keep working — but a table wider
+  // than the card would then bleed past it. Measure, and scroll only when the
+  // content actually overflows.
+  const { ref: overflowRef, overflowing } =
+    useHorizontalOverflow<HTMLDivElement>();
+  // ANY scroll container (maxHeight, pins, measured overflow) becomes the
+  // sticky context: the header must pin to ITS top — a viewport offset
+  // would shove it down into the rows.
+  const inScrollBox = maxHeight != null || hasPinned || overflowing;
   const stickyTh = stickyHeader
     ? {
         position: "sticky" as const,
-        top: maxHeight == null ? `${stickyTop}px` : "0px",
+        top: inScrollBox ? "0px" : `${stickyTop}px`,
         zIndex: PIN_Z.header,
         bg: "chakra-body-bg",
       }
@@ -547,13 +558,6 @@ export function DesktopTable<TRow>({
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
 
-  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
-  // With no maxHeight and no pins the wrapper must stay a NON-scroll
-  // container so page-scroll sticky headers keep working — but a table wider
-  // than the card would then bleed past it. Measure, and scroll only when the
-  // content actually overflows.
-  const { ref: overflowRef, overflowing } =
-    useHorizontalOverflow<HTMLDivElement>();
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {

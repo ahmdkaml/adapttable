@@ -193,6 +193,44 @@ describe("<DataTable> (unstyled) branch coverage", () => {
 
   // tables.tsx sticky top — inside a maxHeight scroll box the box itself is
   // the sticky context, so the header pins to ITS top: a viewport offset
+  // Measured overflow makes the wrapper a scroll container too — the sticky
+  // header must then pin to the BOX top, not the viewport offset, or it
+  // floats down over the first rows.
+  it("re-binds a page-sticky header to the box top once the table overflows", () => {
+    let measure: (() => void) | undefined;
+    class FakeResizeObserver {
+      constructor(cb: () => void) {
+        measure = cb;
+      }
+      observe() {
+        // measurement is driven manually via `measure`
+      }
+      disconnect() {
+        // nothing to tear down in the fake
+      }
+      unobserve() {
+        // not used by the hook
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const scrollWidth = vi
+      .spyOn(Element.prototype, "scrollWidth", "get")
+      .mockReturnValue(900);
+    const clientWidth = vi
+      .spyOn(Element.prototype, "clientWidth", "get")
+      .mockReturnValue(600);
+    try {
+      renderHarness({ override: { stickyHeader: true, stickyTop: 120 } });
+      act(() => measure?.());
+      const th = screen.getByRole("columnheader", { name: /name/i });
+      expect(th).toHaveStyle({ top: "0" });
+    } finally {
+      scrollWidth.mockRestore();
+      clientWidth.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   // (stickyTop) would float the header mid-box and must be ignored.
   it("pins a sticky header to the scroll-box top, ignoring stickyTop", () => {
     renderHarness({

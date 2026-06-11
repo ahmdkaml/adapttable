@@ -463,10 +463,15 @@ export function DesktopTable<TRow>({
   // hooks make that easy to target.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
+  // ANY scroll container (maxHeight, pins, measured overflow) is the sticky
+  // context: pin to ITS top — a viewport offset would shove the header down
+  // into the rows.
+  const rendererHasPinned = columns.some((c) => pinOffset?.(c.key) != null);
+  const inScrollBox = maxHeight != null || rendererHasPinned || overflowing;
   const stickyStyle: CSSProperties | undefined = stickyHeader
     ? {
         position: "sticky",
-        top: maxHeight == null ? stickyTop : 0,
+        top: inScrollBox ? 0 : stickyTop,
         zIndex: PIN_Z.header,
       }
     : undefined;

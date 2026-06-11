@@ -495,7 +495,15 @@ export function DesktopTable<TRow>({
   // toolbar is irrelevant, so the sticky header sticks to the box top (0).
   // Only against the document scroller must it clear the toolbar via
   // `stickyHeaderOffset`.
-  const inScrollBox = maxHeight != null || hasPinned;
+  // Without a `maxHeight`, the wrapper becomes a horizontal scroller only
+  // when it must: pinned columns always need one, otherwise only while the
+  // table is measurably wider than the wrapper (so wide tables scroll instead
+  // of bleeding over the card border). When the table fits, the wrapper stays
+  // a NON-scroll container — any `overflow` would trap the page-scroll sticky
+  // header inside it.
+  const { ref: wrapperRef, overflowing } =
+    useHorizontalOverflow<HTMLDivElement>();
+  const inScrollBox = maxHeight != null || hasPinned || overflowing;
   // `position: sticky` on `<thead>` does not engage against the document
   // scroller (only inside an overflow container) — so we stick the header
   // *cells* instead. Each th carries its own opaque background so scrolled
@@ -627,14 +635,6 @@ export function DesktopTable<TRow>({
     hasLeftPin,
     hasRightPin
   );
-  // Without a `maxHeight`, the wrapper becomes a horizontal scroller only
-  // when it must: pinned columns always need one, otherwise only while the
-  // table is measurably wider than the wrapper (so wide tables scroll instead
-  // of bleeding over the card border). When the table fits, the wrapper stays
-  // a NON-scroll container — any `overflow` would trap the page-scroll sticky
-  // header inside it.
-  const { ref: wrapperRef, overflowing } =
-    useHorizontalOverflow<HTMLDivElement>();
   const wrapperStyle: CSSProperties =
     maxHeight == null
       ? {
