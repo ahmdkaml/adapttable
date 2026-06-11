@@ -1,5 +1,6 @@
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
+import type { CSSProperties } from "react";
 
 import {
   type AvatarCellProps,
@@ -23,6 +24,14 @@ import {
 } from "../data";
 import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
 
+/** Inline style carrying the avatar's hue as a CSS custom property, so the
+ * Tailwind arbitrary values can theme it per light/dark. */
+type AvatarStyle = CSSProperties & { "--avatar-h": string };
+
+const avatarStyle = (name: string): AvatarStyle => ({
+  "--avatar-h": String(nameHue(name)),
+});
+
 const TAILWIND_STATUS = {
   green:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
@@ -35,11 +44,8 @@ const TAILWIND_STATUS = {
 const TAILWIND_CELLS: DemoCells = {
   Avatar: ({ name }: AvatarCellProps) => (
     <span
-      className="inline-grid h-9 w-9 place-items-center rounded-full text-xs font-bold"
-      style={{
-        background: `hsl(${nameHue(name)} 60% 88%)`,
-        color: `hsl(${nameHue(name)} 45% 35%)`,
-      }}
+      className="inline-grid h-9 w-9 place-items-center rounded-full text-xs font-bold [background:hsl(var(--avatar-h)_60%_88%)] [color:hsl(var(--avatar-h)_45%_30%)] dark:[background:hsl(var(--avatar-h)_45%_24%)] dark:[color:hsl(var(--avatar-h)_70%_78%)]"
+      style={avatarStyle(name)}
     >
       {initials(name)}
     </span>

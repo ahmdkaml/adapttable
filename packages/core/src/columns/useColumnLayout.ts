@@ -270,32 +270,38 @@ export function useColumnLayout<TRow>({
 
   const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);
 
-  const pinOffset = useCallback(
-    (key: string) => {
-      const side = state.pinned[key];
-      if (!side) return undefined;
-      const resolveWidth = (k: string): number => {
-        if (typeof state.widths[k] === "number") return state.widths[k];
-        const declared = columns.find((c) => c.key === k)?.width;
-        // Only pixel widths can be summed into a sticky inset; relative units
-        // have no px value here, so fall back to a sane default instead.
-        return parsePxWidth(declared) ?? FALLBACK_PIN_WIDTH;
-      };
+  // Precompute every pinned column's inset once per layout change — adapters
+  // call `pinOffset` per cell per render, so a lookup beats re-walking the
+  // pinned set each time on wide tables.
+  const pinInsets = useMemo(() => {
+    const resolveWidth = (column: ColumnDef<TRow>): number => {
+      const override = state.widths[column.key];
+      if (typeof override === "number") return override;
+      // Only pixel widths can be summed into a sticky inset; relative units
+      // have no px value here, so fall back to a sane default instead.
+      return parsePxWidth(column.width) ?? FALLBACK_PIN_WIDTH;
+    };
+    const insets = new Map<string, { side: "left" | "right"; inset: number }>();
+    for (const side of ["left", "right"] as const) {
+      // Only VISIBLE pinned columns have a rendered cell to stick — a hidden
+      // pinned key stays out of the map and reads back as unpinned.
       const samePinned = visibleColumns.filter(
         (c) => state.pinned[c.key] === side
       );
-      const idx = samePinned.findIndex((c) => c.key === key);
-      // A pinned key that isn't visible (hidden, or filtered by the device
-      // layout) has no rendered cell to stick — report it unpinned instead of
-      // computing a garbage inset from index -1.
-      if (idx === -1) return undefined;
-      // Left: sum widths before this column; right: sum widths after it.
-      const preceding =
-        side === "left" ? samePinned.slice(0, idx) : samePinned.slice(idx + 1);
-      const inset = preceding.reduce((sum, c) => sum + resolveWidth(c.key), 0);
-      return { side, inset };
-    },
-    [columns, state.pinned, state.widths, visibleColumns]
+      // Left: sum widths before each column; right: sum widths after it.
+      const ordered = side === "left" ? samePinned : [...samePinned].reverse();
+      let inset = 0;
+      for (const column of ordered) {
+        insets.set(column.key, { side, inset });
+        inset += resolveWidth(column);
+      }
+    }
+    return insets;
+  }, [state.pinned, state.widths, visibleColumns]);
+
+  const pinOffset = useCallback(
+    (key: string) => pinInsets.get(key),
+    [pinInsets]
   );
 
   return {

@@ -36,6 +36,14 @@
      select arrows). Reset just buttons inside the unstyled table so the
      icon/ghost buttons render flat — utility classes still re-add any border
      or background where a slot asks for one. */
+  /* Native checkboxes pick up the theme's primary so they stay visible on
+     dark surfaces (preflight is skipped, so set it explicitly). */
+  [data-adapttable-part="root"] input[type="checkbox"] {
+    accent-color: var(--color-primary);
+    width: 1rem;
+    height: 1rem;
+  }
+
   [data-adapttable-part="root"] button {
     appearance: none;
     background: transparent;
@@ -83,4 +91,25 @@
   --color-accent: hsl(0 0% 20%);
   --color-accent-foreground: hsl(0 0% 98%);
   --color-ring: hsl(0 0% 45%);
+}
+
+/* UNLAYERED on purpose. Chakra's CSSReset (an emotion GLOBAL style injected by
+   the RTL section's ChakraProvider) applies `:where(*) { border-width: 0 }` to
+   the whole page and, being unlayered, beats every layered Tailwind utility.
+   These scoped restores are unlayered too, so the unstyled demo's borders
+   survive whatever kit is mounted alongside it. */
+[data-adapttable-part="root"] .border {
+  border-width: 1px;
+}
+[data-adapttable-part="root"] .border-b {
+  border-bottom-width: 1px;
+}
+[data-adapttable-part="root"] .border-t {
+  border-top-width: 1px;
+}
+[data-adapttable-part="root"] .border-s {
+  border-inline-start-width: 1px;
+}
+[data-adapttable-part="root"] .border-e {
+  border-inline-end-width: 1px;
 }

@@ -313,6 +313,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {labels.rowsPerPage}{" "}
             <select
               aria-label={labels.rowsPerPage}
+              data-adapttable-part="rows-per-page"
+              className={classNames.rowsPerPageSelect}
               value={source.limit}
               onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
             >

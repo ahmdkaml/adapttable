@@ -762,16 +762,19 @@ export function clearDemoFilters(source: TableSource<Person>): void {
  * adapters supply their own filter components, so this one is class-driven.
  */
 const FILTER = {
-  panel: "flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-200",
-  group: "m-0 flex flex-col gap-1.5 border-0 p-0",
+  panel: "flex flex-col gap-4 text-sm text-foreground",
+  group: "m-0 flex flex-col gap-2 border-0 p-0",
   legend:
-    "p-0 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400",
-  chips: "flex flex-wrap gap-x-4 gap-y-2",
-  chip: "inline-flex items-center gap-1.5",
-  checkbox: "h-4 w-4 accent-indigo-600",
+    "p-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+  chips: "flex flex-wrap gap-1.5",
+  // Toggle PILLS (the design's .at-filter chips): the real checkbox stays for
+  // a11y but renders invisibly; the label is the visual control and flips to
+  // a filled pill when its checkbox is checked.
+  chip: "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground",
+  checkbox: "sr-only",
   grid: "grid grid-cols-2 gap-2",
   field:
-    "flex flex-col gap-1 [&>span]:text-xs [&>span]:text-gray-500 dark:[&>span]:text-gray-400 [&>input]:h-9 [&>input]:rounded-md [&>input]:border [&>input]:border-gray-300 [&>input]:bg-white [&>input]:px-2 [&>input]:outline-none dark:[&>input]:border-gray-600 dark:[&>input]:bg-gray-800 [&>select]:h-9 [&>select]:rounded-md [&>select]:border [&>select]:border-gray-300 [&>select]:bg-white [&>select]:px-2 [&>select]:outline-none dark:[&>select]:border-gray-600 dark:[&>select]:bg-gray-800",
+    "flex flex-col gap-1 [&>span]:text-xs [&>span]:font-medium [&>span]:text-muted-foreground [&>input]:h-9 [&>input]:rounded-md [&>input]:border [&>input]:border-input [&>input]:bg-background [&>input]:px-2.5 [&>input]:text-sm [&>input]:text-foreground [&>input]:outline-none focus-within:[&>input]:ring-2 focus-within:[&>input]:ring-ring [&>select]:h-9 [&>select]:rounded-md [&>select]:border [&>select]:border-input [&>select]:bg-background [&>select]:px-2 [&>select]:text-sm [&>select]:text-foreground [&>select]:outline-none",
 } as const;
 
 export function DemoFilters({
