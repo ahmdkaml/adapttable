@@ -1,4 +1,5 @@
 import {
+  ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
   type TableLabels,
   useChromeBodyData,
@@ -135,6 +136,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const chrome = useTableChrome<TRow>(chromeProps);
   const { table, isMobile, confirm, getRowId } = chrome;
+  // The injected actions column is first-class in the column layout: the
+  // menu lists it under `labels.actions`, hiding it strips the row actions
+  // HERE — before any renderer sees them — so the column, its pin lead and
+  // the spacer/detail spans all disappear together, and pinning it sticks
+  // the column to the inline end without involving any data column.
+  const hasRowActions = (rowActions?.length ?? 0) > 0;
+  const visibleRowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : rowActions;
+  const actionsPinned =
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
   const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
     useChromeBodyData(chrome, chromeProps);
   const [drawerOpened, setDrawerOpened] = useState(false);
@@ -183,7 +195,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <MobileCards
         table={table}
         rows={source.rows}
-        rowActions={rowActions}
+        rowActions={visibleRowActions}
         confirm={confirm}
         getRowId={getRowId}
         onRowClick={props.onRowClick}
@@ -205,7 +217,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <DesktopTable
         table={table}
         rows={source.rows}
-        rowActions={rowActions}
+        rowActions={visibleRowActions}
         confirm={confirm}
         prefetch={prefetch}
         onRowClick={props.onRowClick}
@@ -223,6 +235,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         stickyHeaderOffset={stickyTop + toolbarHeight}
         stickyHeader={stickyHeader}
         pinOffset={chrome.columnLayout.pinOffset}
+        actionsPinned={actionsPinned}
         maxHeight={props.maxHeight}
         virtualScrollRef={virtualScrollRef}
         setWidth={
@@ -287,6 +300,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                     allColumns={chrome.allColumns}
                     layout={chrome.columnLayout}
                     labels={table.labels}
+                    hasRowActions={hasRowActions}
                   />
                 </>
               }

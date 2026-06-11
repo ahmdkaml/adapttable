@@ -38,6 +38,7 @@ const labels = {
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  actions: "Actions",
 };
 
 const byLabel = (name: string) =>
@@ -108,5 +109,60 @@ describe("chakra ColumnMenu", () => {
 
     fireEvent.click(screen.getByText("Reset columns"));
     expect(layout.reset).toHaveBeenCalled();
+  });
+
+  it("lists the actions column with an eye toggle and a one-click end pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The trailing entry is listed by its display name, visible by default.
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+    expect(byLabel("Hide column: Actions")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.click(byLabel("Hide column: Actions"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // Unpinned → ONE click pins straight to the inline end (never left).
+    fireEvent.click(byLabel("Pin right: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+  });
+
+  it("unpins end-pinned actions in one click and marks them hidden", async () => {
+    const layout = fakeLayout();
+    layout.state = {
+      ...layout.state,
+      pinned: { ...layout.state.pinned, actions: "right" },
+    };
+    layout.isHidden = (key) => key === "actions";
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // Hidden → the eye flips to "show" and reads not-pressed.
+    expect(byLabel("Show column: Actions")).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    // Pinned → ONE click unpins (the right↔unpinned toggle, no cycle).
+    fireEvent.click(byLabel("Unpin: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
   });
 });

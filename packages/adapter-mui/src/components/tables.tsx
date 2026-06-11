@@ -63,6 +63,12 @@ interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   size: "small" | "medium";
   /** Text direction — flips the collapsed expand chevron under RTL. */
   dir?: "ltr" | "rtl";
+  /**
+   * End-pin the trailing actions column on its own (the reserved "actions"
+   * layout key pinned right from the Columns menu) — independent of whether
+   * any DATA column is pinned right. Desktop only; cards have no columns.
+   */
+  actionsPinned?: boolean;
 }
 
 /** Width (px) of the leading expand-chevron column (MUI's checkbox cell). */
@@ -419,6 +425,7 @@ export function DesktopTable<TRow>({
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
+  actionsPinned = false,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -449,7 +456,8 @@ export function DesktopTable<TRow>({
   // left/right (corner-sticky in the header) with an opaque background.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
-  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  const hasPinned =
+    actionsPinned || table.columns.some((c) => pinOffset?.(c.key) != null);
   // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
   // pins, the wrapper only becomes a scroll container when the table is
   // actually wider than it — an unconditional `overflowX: auto` would trap
@@ -483,6 +491,10 @@ export function DesktopTable<TRow>({
   const hasRightPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "right"
   );
+  // The actions cells stick to the inline end when a data column is pinned
+  // right (so it never scrolls under them) OR when the actions column itself
+  // is pinned from the Columns menu — one click, no data pin required.
+  const stickActions = hasRightPin || actionsPinned;
   // Built with conditional spreads so no key is ever `undefined` — that keeps
   // the object assignable to MUI's strict `sx` index signature with no cast.
   const headCellSx = (column: ColumnDef<TRow>) => {
@@ -545,7 +557,7 @@ export function DesktopTable<TRow>({
       cells,
       expand: edge("left", hasLeftPin),
       selection: edge("left", hasLeftPin, selectionLead),
-      actions: { ...edge("right", hasRightPin), textAlign: "end" },
+      actions: { ...edge("right", stickActions), textAlign: "end" },
     };
   }, [
     columns,
@@ -553,7 +565,7 @@ export function DesktopTable<TRow>({
     leadLeft,
     leadRight,
     hasLeftPin,
-    hasRightPin,
+    stickActions,
     selectionLead,
   ]);
 
@@ -688,7 +700,7 @@ export function DesktopTable<TRow>({
             })}
             {showActions && (
               <TableCell
-                sx={{ ...edgeHeadSx("right", hasRightPin), textAlign: "end" }}
+                sx={{ ...edgeHeadSx("right", stickActions), textAlign: "end" }}
               >
                 {labels.actions}
               </TableCell>

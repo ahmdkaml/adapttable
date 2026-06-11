@@ -1,4 +1,5 @@
 import {
+  ACTIONS_COLUMN_KEY,
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
@@ -276,10 +277,19 @@ export function buildColumns<TRow>({
   const cols = groupColumns(columns, leaves);
 
   if (rowActions && rowActions.length > 0) {
+    // The actions column rides antd's `fixed: "right"` when the user pins it
+    // from the Columns menu (its reserved layout key, one click, no data pins
+    // required) — OR'd with any right-pinned data column, which drags it
+    // along so antd's right-fixed run stays contiguous through the trailing
+    // edge.
+    const actionsFixed =
+      pinned?.[ACTIONS_COLUMN_KEY] === "right" ||
+      columns.some((column) => pinned?.[column.key] === "right");
     cols.push({
       key: "__actions__",
       title: labels.actions,
       width: 1,
+      fixed: actionsFixed ? "right" : undefined,
       onCell: () => cellStyle("end"),
       onHeaderCell: () => cellStyle("end"),
       render: (_value: unknown, row: TRow) => (

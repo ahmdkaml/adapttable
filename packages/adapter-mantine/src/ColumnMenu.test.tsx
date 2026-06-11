@@ -32,6 +32,7 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
 
 const labels = {
   columns: "Columns",
+  actions: "Actions",
   pinLeft: "Pin left",
   pinRight: "Pin right",
   unpin: "Unpin",
@@ -122,5 +123,75 @@ describe("mantine ColumnMenu", () => {
 
     fireEvent.click(screen.getByText("Reset columns"));
     expect(layout.reset).toHaveBeenCalled();
+
+    // Without hasRowActions the menu never lists the actions column.
+    expect(screen.queryByText("Actions")).toBeNull();
+  });
+
+  it("lists the actions column with eye + one-click end-pin toggles", async () => {
+    const user = userEvent.setup();
+    const layout = fakeLayout();
+    render(
+      <MantineProvider>
+        <ColumnMenu
+          allColumns={cols}
+          layout={layout}
+          labels={labels}
+          hasRowActions
+        />
+      </MantineProvider>
+    );
+    await user.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The actions row gets the same eye toggle as data rows…
+    const eye = byLabel("Hide column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // …and a pin toggle that pins to the inline end in ONE click — no
+    // left-pin stop in the cycle.
+    fireEvent.click(byLabel("Pin right: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+
+    // No drag grip and no draggable row: the actions column always trails.
+    expect(
+      document.querySelector('[aria-label="Move left / Move right: Actions"]')
+    ).toBeNull();
+    expect(screen.getByText("Actions").closest("[draggable]")).toBeNull();
+  });
+
+  it("unpins a pinned actions column and re-shows a hidden one", async () => {
+    const user = userEvent.setup();
+    const layout = fakeLayout();
+    layout.state = {
+      hidden: ["actions"],
+      order: [],
+      pinned: { actions: "right" },
+      widths: {},
+    };
+    layout.isHidden = (key) => key === "actions";
+    render(
+      <MantineProvider>
+        <ColumnMenu
+          allColumns={cols}
+          layout={layout}
+          labels={labels}
+          hasRowActions
+        />
+      </MantineProvider>
+    );
+    await user.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    const eye = byLabel("Show column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // Pinned → one click unpins (right ↔ none, nothing in between).
+    fireEvent.click(byLabel("Unpin: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
   });
 });

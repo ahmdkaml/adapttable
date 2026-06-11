@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -612,6 +613,127 @@ describe("<DataTable> (unstyled)", () => {
     );
     expect(selHeader).not.toHaveAttribute("data-pinned");
     expect(selHeader?.getAttribute("style")).toBeNull();
+  });
+
+  it("end-pins the actions column with ONE click and zero data pins", () => {
+    const onColumnLayoutChange = vi.fn<(next: ColumnLayoutState) => void>();
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        onColumnLayoutChange,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    // No data column is pinned — the actions column sticks on its own.
+    expect(
+      container.querySelector(
+        '[data-adapttable-part="header-cell"][data-pinned]'
+      )
+    ).toBeNull();
+    const header = container.querySelector(
+      '[data-adapttable-part="actions-header"]'
+    );
+    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveStyle({ position: "sticky" });
+    // Logical inset: sticks to the inline END, the correct edge in RTL too.
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+    const cell = container.querySelector(
+      '[data-adapttable-part="actions-cell"]'
+    );
+    expect(cell).toHaveAttribute("data-pinned", "right");
+    expect(cell).toHaveStyle({ position: "sticky" });
+    expect((cell as HTMLElement).style.insetInlineEnd).toBe("0");
+    // The layout state names the reserved "actions" key like any column.
+    expect(onColumnLayoutChange).toHaveBeenCalledWith(
+      expect.objectContaining({ pinned: { actions: "right" } })
+    );
+    // ONE more click unpins it again.
+    fireEvent.click(screen.getByRole("button", { name: "Unpin: Actions" }));
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).not.toHaveAttribute("data-pinned");
+  });
+
+  it("hides and re-shows the actions column from the Columns menu", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Actions" })
+    );
+    // The whole column is gone — header and every row's action buttons.
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).toBeNull();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    // …but the menu still lists Actions, so the eye brings it back.
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Actions" })
+    );
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+  });
+
+  it("round-trips the actions layout (hide + end-pin persist)", () => {
+    const onColumnLayoutChange = vi.fn<(next: ColumnLayoutState) => void>();
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        onColumnLayoutChange,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Actions" })
+    );
+    // The captured layout carries the reserved "actions" key in both maps.
+    const saved = onColumnLayoutChange.mock.calls.at(-1)![0];
+    expect(saved.hidden).toContain("actions");
+    expect(saved.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // A fresh table restored from that layout starts with actions hidden…
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: saved,
+      },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).toBeNull();
+    // …and re-showing it restores the persisted end pin too.
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Actions" })
+    );
+    const header = container.querySelector(
+      '[data-adapttable-part="actions-header"]'
+    );
+    expect(header).toHaveAttribute("data-pinned", "right");
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+  });
+
+  it("strips hidden row actions from mobile cards too", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: { hidden: ["actions"] },
+      },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="card-actions"]')
+    ).toBeNull();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
   });
 
   it("renders filter chips and toggles the filters popover", () => {

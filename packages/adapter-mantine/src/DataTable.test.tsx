@@ -1,6 +1,7 @@
 import {
   createMemoryAdapter,
   type TableSource,
+  useColumnLayoutUrlState,
   useFrontendData,
 } from "@adapttable/core";
 import { MantineProvider } from "@mantine/core";
@@ -795,5 +796,139 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.queryByText("Dubai")).toBeNull();
     expect(screen.getByText("Name")).toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+});
+
+describe("actions column in the column layout", () => {
+  const EDIT_ACTION = [
+    { key: "edit", label: "Edit", onClick: () => undefined },
+  ];
+  const menuToggle = (label: string) =>
+    document.querySelector<HTMLElement>(`[aria-label="${label}"]`)!;
+
+  it("pins the actions column on its own — no data column pinned", () => {
+    renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: { pinned: { actions: "right" } },
+      },
+    });
+    // Header and body cells both turn sticky at the inline end…
+    const th = screen.getByText("Actions").closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
+    const td = screen
+      .getAllByRole("button", { name: "Edit" })[0]!
+      .closest("td")!;
+    expect(td.style.position).toBe("sticky");
+    expect(td.style.insetInlineEnd).toBe("0");
+    // …while every data column stays in normal flow.
+    expect(screen.getByText("Name").closest("th")!.style.position).not.toBe(
+      "sticky"
+    );
+    expect(screen.getByText("City").closest("th")!.style.position).not.toBe(
+      "sticky"
+    );
+  });
+
+  it("hiding the actions column drops the column and its pin lead", () => {
+    // With the actions column visible, a right-pinned data column starts
+    // past the 120px actions lead…
+    const visible = renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: { pinned: { city: "right" } },
+      },
+    });
+    expect(screen.getByText("City").closest("th")!.style.insetInlineEnd).toBe(
+      "120px"
+    );
+    visible.unmount();
+
+    // …hiding it removes the column, its buttons AND the lead together.
+    renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: {
+          hidden: ["actions"],
+          pinned: { city: "right" },
+        },
+      },
+    });
+    expect(screen.queryByText("Actions")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    const cityTh = screen.getByText("City").closest("th")!;
+    expect(cityTh.style.position).toBe("sticky");
+    expect(cityTh.style.insetInlineEnd).toBe("0");
+  });
+
+  it("manages the actions column from the Columns menu", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: EDIT_ACTION },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    const table = () => screen.getByRole("table");
+
+    // ONE click pins: the actions th turns sticky with no data column pinned.
+    fireEvent.click(menuToggle("Pin right: Actions"));
+    const th = within(table()).getByText("Actions").closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
+
+    // The eye hides the whole column; the menu keeps the row to re-show it.
+    fireEvent.click(menuToggle("Hide column: Actions"));
+    expect(within(table()).queryByText("Actions")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    fireEvent.click(menuToggle("Show column: Actions"));
+    // Re-shown AND still pinned from the earlier single click.
+    const restored = within(table()).getByText("Actions").closest("th")!;
+    expect(restored.style.position).toBe("sticky");
+  });
+
+  it("round-trips the actions pin through the URL layout state", async () => {
+    const adapter = createMemoryAdapter("");
+    function UrlHarness() {
+      const { layout, onLayoutChange } = useColumnLayoutUrlState({ adapter });
+      const source = useFrontendData<Row>({ data: ROWS, adapter, columns });
+      return (
+        <DataTable<Row>
+          source={source}
+          columns={columns}
+          rowKey={(r) => r.id}
+          rowActions={EDIT_ACTION}
+          enableColumnMenu
+          columnLayout={layout}
+          onColumnLayoutChange={onLayoutChange}
+        />
+      );
+    }
+    const first = render(
+      <MantineProvider>
+        <UrlHarness />
+      </MantineProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.click(menuToggle("Pin right: Actions"));
+    // The hook debounces the URL write — flush it, then the layout has
+    // serialized the reserved "actions" key like any column key.
+    act(() => vi.advanceTimersByTime(200));
+    expect(decodeURIComponent(adapter.getSearch())).toContain(
+      "colPin=actions:right"
+    );
+    first.unmount();
+
+    // A fresh mount restores the pin from the URL alone.
+    render(
+      <MantineProvider>
+        <UrlHarness />
+      </MantineProvider>
+    );
+    const th = within(screen.getByRole("table"))
+      .getByText("Actions")
+      .closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
   });
 });

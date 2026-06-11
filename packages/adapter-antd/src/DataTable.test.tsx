@@ -1,4 +1,8 @@
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  type ColumnLayoutState,
+  createMemoryAdapter,
+  useFrontendData,
+} from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { ConfigProvider } from "antd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1034,6 +1038,121 @@ describe("<DataTable> (Ant Design)", () => {
     fireEvent.click(pinLeft!);
     // antd renders a sticky/fixed cell once a column is pinned (x: max-content).
     expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+  });
+
+  it("pins the actions column right with one click and zero data pins", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    // Nothing is fixed before the click.
+    expect(container.querySelector(".ant-table-cell-fix-right")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    const pin = document.querySelector<HTMLElement>(
+      '[aria-label="Pin right: Actions"]'
+    );
+    expect(pin).not.toBeNull();
+    fireEvent.click(pin!);
+    // The injected column itself carries antd's fixed-right sticky cell, and
+    // it is the ONLY fixed column — no data pins involved.
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
+    expect(container.querySelector(".ant-table-cell-fix-left")).toBeNull();
+  });
+
+  it("drags the actions column along when a data column pins right", () => {
+    const { container } = renderHarness({
+      override: {
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: { pinned: { city: "right" } },
+      },
+    });
+    // antd needs the right-fixed run contiguous through the trailing edge,
+    // so the unpinned actions column rides along with the pinned data column.
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual([
+      "City",
+      "Actions",
+    ]);
+  });
+
+  it("hides the actions column from the Columns menu like any column", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+        summaryRow: () => ({ name: "2 people" }),
+      },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    // The summary row pads a trailing cell for the actions column.
+    expect(container.querySelectorAll(".ant-table-summary tr td")).toHaveLength(
+      3
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      document.querySelector<HTMLElement>(
+        '[aria-label="Hide column: Actions"]'
+      )!
+    );
+    // The injected column is stripped consistently: no action buttons, no
+    // header cell, and the summary loses its trailing pad cell.
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    expect(
+      within(
+        container.querySelector<HTMLElement>(".ant-table-thead")!
+      ).queryByText("Actions")
+    ).toBeNull();
+    expect(container.querySelectorAll(".ant-table-summary tr td")).toHaveLength(
+      2
+    );
+    // The menu still lists it, now offering to show it again.
+    expect(
+      document.querySelector('[aria-label="Show column: Actions"]')
+    ).not.toBeNull();
+  });
+
+  it("round-trips the actions pin through the layout state", () => {
+    const layouts: ColumnLayoutState[] = [];
+    const rowActions = [{ key: "edit", label: "Edit", onClick: vi.fn() }];
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions,
+        onColumnLayoutChange: (next) => layouts.push(next),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      document.querySelector<HTMLElement>('[aria-label="Pin right: Actions"]')!
+    );
+    // The layout change reports the reserved "actions" key like any column.
+    const captured = layouts[layouts.length - 1];
+    expect(captured?.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // Remount from the captured snapshot: the pin is live with zero clicks…
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions,
+        defaultColumnLayout: captured,
+      },
+    });
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
+    // …and the menu reflects it with the one-click unpin.
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    expect(
+      document.querySelector('[aria-label="Unpin: Actions"]')
+    ).not.toBeNull();
   });
 
   it("stops paging the virtual scroll once there is no next page", () => {

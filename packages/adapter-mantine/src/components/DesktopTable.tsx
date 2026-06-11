@@ -61,6 +61,8 @@ export interface DesktopTableProps<TRow> extends Omit<
   className?: string;
   /** Resolved sticky-header top inset (page `stickyTop` + toolbar height). */
   stickyHeaderOffset?: number;
+  /** The injected actions column is pinned to the inline end on its own. */
+  actionsPinned?: boolean;
   density?: Density;
 }
 
@@ -333,13 +335,13 @@ function pinLayoutSignature<TRow>(
   columns: readonly ColumnDef<TRow>[],
   pinOffset: SharedTableRenderProps<TRow>["pinOffset"],
   hasLeftPin: boolean,
-  hasRightPin: boolean
+  actionsEdgePinned: boolean
 ): string {
   const perColumn = columns.map((column) => {
     const pin = pinOffset?.(column.key);
     return pin ? `${column.key}:${pin.side}${pin.inset}` : column.key;
   });
-  return `${perColumn.join("|")}|${String(hasLeftPin)}|${String(hasRightPin)}`;
+  return `${perColumn.join("|")}|${String(hasLeftPin)}|${String(actionsEdgePinned)}`;
 }
 
 /**
@@ -466,6 +468,7 @@ export function DesktopTable<TRow>({
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
+  actionsPinned = false,
   density = "comfortable",
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
@@ -488,7 +491,15 @@ export function DesktopTable<TRow>({
   // the per-column footer summary cells (`undefined` → no footer).
   const groupCells = headerGroupRow(columns);
   const summaryCells = summaryRow?.(rows);
-  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  const hasRightPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "right"
+  );
+  // The actions column sticks to the inline end either because a data column
+  // is pinned right (it must stay outermost past it) or because the user
+  // pinned the actions column itself — one click, no data column involved.
+  const actionsEdgePinned = showActions && (hasRightPin || actionsPinned);
+  const hasPinned =
+    table.columns.some((c) => pinOffset?.(c.key) != null) || actionsEdgePinned;
   // Pinning needs horizontal scroll, and a `maxHeight` needs vertical scroll;
   // either makes the wrapper a scroll container (setting one overflow axis to
   // `auto` computes the other to `auto` too). Inside that container the page
@@ -532,9 +543,6 @@ export function DesktopTable<TRow>({
   const hasLeftPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "left"
   );
-  const hasRightPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "right"
-  );
 
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
   // which also sticks to the top). They need an opaque background.
@@ -568,7 +576,7 @@ export function DesktopTable<TRow>({
   };
   const actionsHeaderStyle: CSSProperties = {
     ...headerCellStyle,
-    ...edgePinStyle("right", hasRightPin, PIN_Z.headerPinned),
+    ...edgePinStyle("right", actionsEdgePinned, PIN_Z.headerPinned),
   };
   const edgeBodyStyle = (
     side: "left" | "right",
@@ -584,7 +592,7 @@ export function DesktopTable<TRow>({
     PIN_Z.body,
     pinBg
   );
-  const actionsCellStyle = edgeBodyStyle("right", hasRightPin);
+  const actionsCellStyle = edgeBodyStyle("right", actionsEdgePinned);
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
   const resizeHandleFor = (column: ColumnDef<TRow>): ReactNode =>
@@ -633,7 +641,7 @@ export function DesktopTable<TRow>({
     columns,
     pinOffset,
     hasLeftPin,
-    hasRightPin
+    actionsEdgePinned
   );
   const wrapperStyle: CSSProperties =
     maxHeight == null

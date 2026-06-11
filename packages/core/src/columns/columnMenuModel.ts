@@ -49,6 +49,16 @@ export function pinActionLabel(
  * Shared so all five adapters render an identical model and only differ in kit
  * markup.
  */
+/**
+ * Reserved layout key for the injected row-actions column. It is not a
+ * `ColumnDef`, but the layout state treats keys opaquely, so the actions
+ * column hides (`hidden: ["actions"]`) and end-pins
+ * (`pinned: { actions: "right" }`) like any data column — adapters list it
+ * in the Columns menu with a visibility toggle and an end-pin toggle (no
+ * reorder/resize; it always trails).
+ */
+export const ACTIONS_COLUMN_KEY = "actions";
+
 export function columnMenuRows<TRow>(
   allColumns: readonly ColumnDef<TRow>[],
   layout: UseColumnLayoutResult<TRow>

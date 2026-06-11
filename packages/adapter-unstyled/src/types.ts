@@ -65,6 +65,8 @@ export interface DataTableClassNames {
   columnMenuLabel?: string;
   columnMenuVisibility?: string;
   columnMenuPin?: string;
+  /** The separator above the trailing row-actions entry in the menu. */
+  columnMenuSeparator?: string;
   columnMenuReset?: string;
   /** The saved-views menu trigger button. */
   viewsButton?: string;

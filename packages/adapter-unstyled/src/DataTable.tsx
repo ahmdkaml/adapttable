@@ -1,4 +1,5 @@
 import {
+  ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
   type TableSource,
   type TableVirtualization,
@@ -67,6 +68,15 @@ function DataTableBody<TRow>({
   virtualScrollRef,
   labels,
 }: Readonly<DataTableBodyProps<TRow>>): ReactElement {
+  // The injected actions column obeys the user column layout like any data
+  // column: hiding it strips `rowActions` before the renderers (desktop and
+  // cards alike), and an end-pin sticks it without needing a data pin.
+  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : props.rowActions;
+  const actionsPinned =
+    (rowActions?.length ?? 0) > 0 &&
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] !== undefined;
   if (chrome.body === "skeleton") {
     return (
       <>
@@ -77,7 +87,7 @@ function DataTableBody<TRow>({
             variant={chrome.isMobile ? "cards" : "table"}
             labels={labels}
             classNames={classNames}
-            hasActions={(props.rowActions?.length ?? 0) > 0}
+            hasActions={(rowActions?.length ?? 0) > 0}
           />
         )}
       </>
@@ -112,7 +122,8 @@ function DataTableBody<TRow>({
     <Renderer
       table={chrome.table}
       rows={props.source.rows}
-      rowActions={props.rowActions}
+      rowActions={rowActions}
+      actionsPinned={actionsPinned}
       confirm={confirm}
       getRowId={getRowId}
       classNames={classNames}
@@ -351,6 +362,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             layout={chrome.columnLayout}
             labels={labels}
             classNames={classNames}
+            hasRowActions={(props.rowActions?.length ?? 0) > 0}
           />
         )}
         {props.savedViews && (

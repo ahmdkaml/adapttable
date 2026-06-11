@@ -1,4 +1,6 @@
+import type { RowAction, UseColumnLayoutResult } from "@adapttable/core";
 import {
+  ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
@@ -50,6 +52,33 @@ function resizeSetter(
   setWidth: (key: string, width: number) => void
 ): ((key: string, width: number) => void) | undefined {
   return enabled ? setWidth : undefined;
+}
+
+/**
+ * The injected actions column is first-class in column management: the
+ * layout state treats keys opaquely, so the reserved "actions" key hides and
+ * end-pins like any data column. Hiding strips `rowActions` BEFORE the
+ * renderers, so the column, its pin lead, and the colSpans all disappear
+ * consistently (desktop and mobile alike). `actionsPinned` reports the
+ * Columns-menu end pin — only meaningful while the column renders.
+ */
+function resolveActionsColumn<TRow>(
+  declared: RowAction<TRow>[] | undefined,
+  layout: UseColumnLayoutResult<TRow>
+): {
+  hasRowActions: boolean;
+  rowActions: RowAction<TRow>[] | undefined;
+  actionsPinned: boolean;
+} {
+  const hasRowActions = (declared?.length ?? 0) > 0;
+  const rowActions =
+    hasRowActions && !layout.isHidden(ACTIONS_COLUMN_KEY)
+      ? declared
+      : undefined;
+  const actionsPinned =
+    rowActions !== undefined &&
+    layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+  return { hasRowActions, rowActions, actionsPinned };
 }
 
 /**
@@ -116,11 +145,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   useChromeScrollReset(rootRef, c, chromeProps);
   const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
     useChromeBodyData(c, chromeProps);
+  const { hasRowActions, rowActions, actionsPinned } = resolveActionsColumn(
+    props.rowActions,
+    c.columnLayout
+  );
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
       layout={c.columnLayout}
       labels={labels}
+      hasRowActions={hasRowActions}
     />
   );
   // Saved views capture the table's own URL params, so the menu defaults to
@@ -163,7 +197,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <MobileCards
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
         size={size}
@@ -184,7 +218,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <DesktopTable
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
+        actionsPinned={actionsPinned}
         confirm={confirm}
         getRowId={getRowId}
         size={size}

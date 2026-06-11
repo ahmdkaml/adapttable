@@ -204,6 +204,7 @@ export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
+  ACTIONS_COLUMN_KEY,
   type ColumnMenuChromeProps,
   columnMenuLabel,
   type ColumnMenuLabels,

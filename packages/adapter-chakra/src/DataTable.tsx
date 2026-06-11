@@ -1,4 +1,5 @@
 import {
+  ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
   type TableBodyRegion,
   useChromeBodyData,
@@ -91,10 +92,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
     useChromeBodyData(chrome, chromeProps);
 
+  // The injected actions column is first-class in column management: the
+  // layout state treats its reserved key like any column key, so the Columns
+  // menu can hide it (strip rowActions before the renderers) or end-pin it
+  // (the renderers stick the actions cells, with zero data columns pinned).
+  const hasRowActions = Boolean(props.rowActions?.length);
+  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : props.rowActions;
+  const actionsPinned =
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+
   const tableProps = {
     table,
     rows: source.rows,
-    rowActions: props.rowActions,
+    rowActions,
+    actionsPinned,
     confirm,
     getRowId,
     size,
@@ -201,6 +214,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 allColumns={chrome.allColumns}
                 layout={chrome.columnLayout}
                 labels={table.labels}
+                hasRowActions={hasRowActions}
               />
             ) : undefined
           }

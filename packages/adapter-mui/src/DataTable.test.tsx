@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { act, fireEvent, render, screen } from "@testing-library/react";
@@ -645,5 +646,106 @@ describe("<DataTable> (MUI)", () => {
       },
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
+  });
+});
+
+describe("actions column management (MUI)", () => {
+  const edit = { key: "e", label: "Edit", onClick: vi.fn() };
+  /** The actions header cell — "Actions" also names the open menu's row. */
+  const actionsHeader = () =>
+    screen
+      .queryAllByText("Actions")
+      .map((el) => el.closest("th"))
+      .find((th) => th !== null);
+  const openMenu = async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+  };
+  // The menu is a modal Popover that aria-hides the table behind it, so
+  // close it before asserting on the table's accessibility tree.
+  const closeMenu = async () => {
+    fireEvent.click(document.querySelector(".MuiBackdrop-root")!);
+    await vi.waitFor(() =>
+      expect(screen.queryByText("Reset columns")).toBeNull()
+    );
+  };
+
+  it("pins the actions column with ONE click — sticky with NO data pins", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: [edit] },
+    });
+    // In normal flow before the pin: nothing anywhere is pinned.
+    expect(getComputedStyle(actionsHeader()!).position).not.toBe("sticky");
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
+    await closeMenu();
+    // One click → the header and every body actions cell stick to the inline
+    // end on their own; no data column is pinned right.
+    expect(getComputedStyle(actionsHeader()!).position).toBe("sticky");
+    const cell = screen
+      .getAllByRole("button", { name: "Edit" })[0]!
+      .closest("td")!;
+    expect(getComputedStyle(cell).position).toBe("sticky");
+    // The pin control now offers the one-click reverse.
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Unpin: Actions"));
+    await closeMenu();
+    expect(getComputedStyle(actionsHeader()!).position).not.toBe("sticky");
+  });
+
+  it("hides and re-shows the actions column from the Columns menu", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: [edit] },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Hide column: Actions"));
+    await closeMenu();
+    // The header cell and every per-row action disappear together…
+    expect(actionsHeader()).toBeUndefined();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    // …while the menu keeps the entry, so one click brings it all back.
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Show column: Actions"));
+    await closeMenu();
+    expect(actionsHeader()).toBeDefined();
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+  });
+
+  it("layout persistence round-trips the reserved actions key", async () => {
+    // Phase 1: pin via the menu and capture the persisted layout state.
+    let persisted: ColumnLayoutState | undefined;
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [edit],
+        onColumnLayoutChange: (next) => (persisted = next),
+      },
+    });
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
+    expect(persisted?.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // Phase 2: a fresh mount restores the pin from the captured state alone.
+    renderHarness({
+      override: { rowActions: [edit], defaultColumnLayout: persisted },
+    });
+    expect(getComputedStyle(actionsHeader()!).position).toBe("sticky");
+  });
+
+  it("a persisted hidden actions column strips actions on desktop and mobile", () => {
+    const defaultColumnLayout = { hidden: ["actions"] };
+    const first = renderHarness({
+      override: { rowActions: [edit], defaultColumnLayout },
+    });
+    expect(actionsHeader()).toBeUndefined();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    first.unmount();
+    renderHarness({
+      isMobile: true,
+      override: { rowActions: [edit], defaultColumnLayout },
+    });
+    expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 });

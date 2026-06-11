@@ -104,7 +104,11 @@ export function AntdDemo({
         pageMode={pageMode}
         urlKey={urlKey}
         defaultColumnLayout={
-          wide ? { pinned: { person: "left" } } : LIVE_DEFAULT_LAYOUT
+          // The wide showcase pins BOTH edges by default: person at the
+          // start, the actions column at the end (it pins like any column).
+          wide
+            ? { pinned: { person: "left", actions: "right" } }
+            : LIVE_DEFAULT_LAYOUT
         }
         render={(source, columns) => (
           <DataTable

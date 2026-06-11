@@ -1,5 +1,6 @@
-import type { ColumnMenuChromeProps } from "@adapttable/core";
+import type { ColumnMenuChromeProps, ColumnMenuLabels } from "@adapttable/core";
 import {
+  ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
   EyeIcon,
@@ -22,19 +23,94 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-/** Props for the column menu — the shared core contract. */
-export type ColumnMenuProps<TRow> = ColumnMenuChromeProps<TRow>;
+/**
+ * Props for the column menu — the shared core contract, plus the injected
+ * row-actions column entry (`hasRowActions` + its `actions` display name).
+ */
+export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
+  /** Resolved labels, including the actions column's display name. */
+  labels: ColumnMenuLabels & { actions: string };
+  /**
+   * List the injected row-actions column as a separated trailing row with
+   * the standard visibility toggle and a one-click end-pin toggle (the
+   * actions column always trails, so it never reorders or pins left).
+   */
+  hasRowActions?: boolean;
+}
+
+/** Eye toggle for one menu row (a data column or the actions entry). */
+function VisibilityToggle({
+  hidden,
+  name,
+  labels,
+  onToggle,
+}: Readonly<{
+  hidden: boolean;
+  name: string;
+  labels: ColumnMenuLabels;
+  onToggle: () => void;
+}>) {
+  return (
+    <IconButton
+      size="xs"
+      variant="ghost"
+      aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
+      aria-pressed={!hidden}
+      icon={<EyeIcon off={hidden} />}
+      onClick={onToggle}
+    />
+  );
+}
+
+/** Menu-row label, struck through while its column is hidden. */
+function RowName({
+  hidden,
+  name,
+}: Readonly<{ hidden: boolean; name: string }>) {
+  return (
+    <Text
+      fontSize="sm"
+      flex={1}
+      color={hidden ? "gray.500" : undefined}
+      textDecoration={hidden ? "line-through" : undefined}
+    >
+      {name}
+    </Text>
+  );
+}
+
+/** Pin toggle for one menu row; `label` names the action it performs next. */
+function PinToggle({
+  pinned,
+  label,
+  onClick,
+}: Readonly<{ pinned: boolean; label: string; onClick: () => void }>) {
+  return (
+    <IconButton
+      size="xs"
+      variant={pinned ? "solid" : "ghost"}
+      colorScheme={pinned ? "teal" : "gray"}
+      aria-label={label}
+      icon={<PinIcon />}
+      onClick={onClick}
+    />
+  );
+}
 
 /**
  * Chakra column-management popover: per-column drag grip (reorder), eye
- * (show/hide), and pin toggle.
+ * (show/hide), and pin toggle — plus, when the table has row actions, a
+ * trailing entry that hides or end-pins the injected actions column.
  */
 export function ColumnMenu<TRow>({
   allColumns,
   layout,
   labels,
+  hasRowActions,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
+  const actionsHidden = layout.isHidden(ACTIONS_COLUMN_KEY);
+  const actionsPinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
   return (
     <Popover placement="bottom-end" isLazy>
       <PopoverTrigger>
@@ -89,28 +165,16 @@ export function ColumnMenu<TRow>({
                       `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
                     )}
                   />
-                  <IconButton
-                    size="xs"
-                    variant="ghost"
-                    aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
-                    aria-pressed={!r.hidden}
-                    icon={<EyeIcon off={r.hidden} />}
-                    onClick={() => layout.toggleVisible(r.key)}
+                  <VisibilityToggle
+                    hidden={r.hidden}
+                    name={r.name}
+                    labels={labels}
+                    onToggle={() => layout.toggleVisible(r.key)}
                   />
-                  <Text
-                    fontSize="sm"
-                    flex={1}
-                    color={r.hidden ? "gray.500" : undefined}
-                    textDecoration={r.hidden ? "line-through" : undefined}
-                  >
-                    {r.name}
-                  </Text>
-                  <IconButton
-                    size="xs"
-                    variant={r.pinned ? "solid" : "ghost"}
-                    colorScheme={r.pinned ? "teal" : "gray"}
-                    aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-                    icon={<PinIcon />}
+                  <RowName hidden={r.hidden} name={r.name} />
+                  <PinToggle
+                    pinned={Boolean(r.pinned)}
+                    label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
                     onClick={() =>
                       layout.setPinned(r.key, nextPinSide(r.pinned))
                     }
@@ -118,6 +182,30 @@ export function ColumnMenu<TRow>({
                 </HStack>
               );
             })}
+            {hasRowActions && (
+              <>
+                <Divider my={1} />
+                <HStack spacing={1} py={0.5}>
+                  <VisibilityToggle
+                    hidden={actionsHidden}
+                    name={labels.actions}
+                    labels={labels}
+                    onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+                  />
+                  <RowName hidden={actionsHidden} name={labels.actions} />
+                  <PinToggle
+                    pinned={actionsPinned}
+                    label={`${actionsPinned ? labels.unpin : labels.pinRight}: ${labels.actions}`}
+                    onClick={() =>
+                      layout.setPinned(
+                        ACTIONS_COLUMN_KEY,
+                        actionsPinned ? undefined : "right"
+                      )
+                    }
+                  />
+                </HStack>
+              </>
+            )}
             <Divider my={1} />
             <Button size="xs" variant="ghost" onClick={() => layout.reset()}>
               {labels.resetColumns}

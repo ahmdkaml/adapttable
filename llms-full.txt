@@ -989,6 +989,10 @@ Three ways to feed the table, lowest ceremony first:
 - On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
   `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
   `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`.
+- The injected row-actions column manages like any other under the reserved
+  key `ACTIONS_COLUMN_KEY` (`"actions"`): hide it (`hidden: ["actions"]`),
+  pin it to the end on its own (`pinned: { actions: "right" }` — one click
+  in the Columns menu), no data-column pin required.
 
 ### Orchestration / headless rendering
 

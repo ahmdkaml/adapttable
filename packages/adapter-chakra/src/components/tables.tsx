@@ -80,6 +80,11 @@ interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   colorScheme?: string;
   /** Text direction — flips the expand chevron for RTL. */
   dir?: Direction;
+  /**
+   * The injected actions column is end-pinned (via the Columns menu), so
+   * its cells stick to the inline end even with zero data columns pinned.
+   */
+  actionsPinned?: boolean;
 }
 
 /** Join the static class hook with a conditional per-row class. */
@@ -277,7 +282,8 @@ interface DesktopRowApi<TRow> {
   measureElement?: (element: Element | null) => void;
   leads: PinLeads;
   hasLeftPin: boolean;
-  hasRightPin: boolean;
+  /** Actions cells stick: a data column is right-pinned OR actions are end-pinned. */
+  actionsStick: boolean;
 }
 
 /** The visual inputs of one desktop row — exactly what the memo compares. */
@@ -422,7 +428,7 @@ function DesktopRowBase<TRow>({
         {showActions && (
           <Td
             textAlign="end"
-            style={edgeCellStyle("right", live.hasRightPin, PIN_Z.body)}
+            style={edgeCellStyle("right", live.actionsStick, PIN_Z.body)}
           >
             <RowActionButtons
               row={row}
@@ -481,6 +487,7 @@ export function DesktopTable<TRow>({
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
+  actionsPinned = false,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -503,7 +510,10 @@ export function DesktopTable<TRow>({
   // sticky and let the header overlap the first row.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
-  const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // End-pinned actions count as a pin too: sticking them needs the wrapper
+  // to be the horizontal scroll container, exactly like a pinned data column.
+  const hasPinned =
+    actionsPinned || table.columns.some((c) => pinOffset?.(c.key) != null);
   // With no maxHeight and no pins the wrapper must stay a NON-scroll
   // container so page-scroll sticky headers keep working — but a table wider
   // than the card would then bleed past it. Measure, and scroll only when the
@@ -537,6 +547,10 @@ export function DesktopTable<TRow>({
   const hasRightPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "right"
   );
+  // The actions cells stick flush to the inline end when a data column is
+  // pinned right (so it can't slide beneath them) OR when the actions column
+  // itself is end-pinned from the Columns menu — independently, in one click.
+  const actionsStick = hasRightPin || actionsPinned;
   // Header-cell style merging pin + user width; the resize handle is absolute,
   // so add a positioning context when the cell is not already sticky/pinned.
   const headCellStyle = (
@@ -583,7 +597,7 @@ export function DesktopTable<TRow>({
     measureElement,
     leads,
     hasLeftPin,
-    hasRightPin,
+    actionsStick,
   };
   const api = useRef(rowApi);
   api.current = rowApi;
@@ -594,12 +608,15 @@ export function DesktopTable<TRow>({
   const Row = useMemo(() => createDesktopRow<TRow>(), []);
   // `pinOffset` is a fresh closure whenever the layout changes, so rows
   // compare this serialized pin geometry instead of a function identity.
-  const pinSignature = columns
-    .map((column) => {
+  // The actions edge is part of the geometry: end-pinning the actions column
+  // must re-render the memoized rows so their actions cells turn sticky.
+  const pinSignature = [
+    actionsStick ? "actions:right" : "",
+    ...columns.map((column) => {
       const pin = pinOffset?.(column.key);
       return pin ? `${column.key}:${pin.side}:${pin.inset}` : "";
-    })
-    .join("|");
+    }),
+  ].join("|");
 
   return (
     <Box
@@ -742,7 +759,7 @@ export function DesktopTable<TRow>({
               <Th
                 textAlign="end"
                 {...stickyTh}
-                style={edgeCellStyle("right", hasRightPin, PIN_Z.headerPinned)}
+                style={edgeCellStyle("right", actionsStick, PIN_Z.headerPinned)}
               >
                 {labels.actions}
               </Th>

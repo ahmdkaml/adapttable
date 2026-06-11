@@ -64,6 +64,12 @@ function scrollBoxStyle(
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   classNames: DataTableClassNames;
+  /**
+   * Whether the user pinned the injected actions column to the inline end
+   * (one click in the Columns menu) — sticks it independently of any data
+   * pin on that side.
+   */
+  actionsPinned?: boolean;
 }
 
 function RowActionButtons<TRow>({
@@ -182,6 +188,8 @@ interface DesktopRowProps<TRow> {
   pinSignature: string;
   hasLeftPin: boolean;
   hasRightPin: boolean;
+  /** Whether the actions column is user-pinned (sticks without a data pin). */
+  actionsPinned: boolean;
   /** Pre-computed `rowClassName(row, index)` output (value-compared). */
   rowClass: string | undefined;
   clickable: boolean;
@@ -221,6 +229,7 @@ function desktopRowPropsEqual<TRow>(
     prev.pinSignature === next.pinSignature &&
     prev.hasLeftPin === next.hasLeftPin &&
     prev.hasRightPin === next.hasRightPin &&
+    prev.actionsPinned === next.actionsPinned &&
     prev.rowClass === next.rowClass &&
     prev.clickable === next.clickable &&
     prev.hasPrefetch === next.hasPrefetch
@@ -247,6 +256,7 @@ function DesktopRowBase<TRow>(
     pinOffset,
     hasLeftPin,
     hasRightPin,
+    actionsPinned,
     rowClass,
     clickable,
     hasPrefetch,
@@ -328,8 +338,12 @@ function DesktopRowBase<TRow>(
         {showActions && (
           <td
             data-adapttable-part="actions-cell"
-            data-pinned={hasRightPin ? "right" : undefined}
-            style={edgePinStyle("right", hasRightPin, PIN_Z.body)}
+            data-pinned={hasRightPin || actionsPinned ? "right" : undefined}
+            style={edgePinStyle(
+              "right",
+              hasRightPin || actionsPinned,
+              PIN_Z.body
+            )}
             className={cx(classNames.cell, classNames.actionsCell)}
           >
             <RowActionButtons
@@ -393,6 +407,7 @@ export function DesktopTable<TRow>({
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
+  actionsPinned = false,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -406,6 +421,9 @@ export function DesktopTable<TRow>({
       renderRowDetail,
       expansion,
     });
+  // The actions column sticks when the user end-pins IT in the Columns menu —
+  // independently of any data pin on that side (and only while it renders).
+  const stickActions = showActions && actionsPinned;
   // Expansion is active only when BOTH halves arrive (the chrome only builds
   // the state when `renderRowDetail` is set).
   const expansionState = renderRowDetail ? expansion : undefined;
@@ -465,9 +483,11 @@ export function DesktopTable<TRow>({
   // the header pins to ITS top — a viewport offset would float it mid-box.
   // ANY scroll container (maxHeight, pins, measured overflow) is the sticky
   // context: pin to ITS top — a viewport offset would shove the header down
-  // into the rows.
-  const rendererHasPinned = columns.some((c) => pinOffset?.(c.key) != null);
-  const inScrollBox = maxHeight != null || rendererHasPinned || overflowing;
+  // into the rows. A user-pinned actions column counts: it needs the same
+  // horizontal scroll container to stick to.
+  const hasPinned =
+    columns.some((c) => pinOffset?.(c.key) != null) || stickActions;
+  const inScrollBox = maxHeight != null || hasPinned || overflowing;
   const stickyStyle: CSSProperties | undefined = stickyHeader
     ? {
         position: "sticky",
@@ -675,8 +695,8 @@ export function DesktopTable<TRow>({
             <th
               data-adapttable-part="actions-header"
               data-sticky={stickyAttr}
-              data-pinned={hasRightPin ? "right" : undefined}
-              style={edgeHeadStyle("right", hasRightPin)}
+              data-pinned={hasRightPin || stickActions ? "right" : undefined}
+              style={edgeHeadStyle("right", hasRightPin || stickActions)}
               className={cx(classNames.headerCell, classNames.actionsCell)}
             >
               {labels.actions}
@@ -718,6 +738,7 @@ export function DesktopTable<TRow>({
               pinSignature={pinSignature}
               hasLeftPin={hasLeftPin}
               hasRightPin={hasRightPin}
+              actionsPinned={stickActions}
               rowClass={rowClassName?.(row, index)}
               clickable={Boolean(onRowClick)}
               hasPrefetch={Boolean(prefetch)}
@@ -769,7 +790,6 @@ export function DesktopTable<TRow>({
   // table measurably wider than its container, or a bounding `maxHeight`.
   // While the table fits, the wrapper carries NO overflow style — see
   // `scrollBoxStyle` for the page-scroll sticky-header trap that avoids.
-  const hasPinned = columns.some((c) => pinOffset?.(c.key) != null);
   return (
     <div
       ref={(node) => {

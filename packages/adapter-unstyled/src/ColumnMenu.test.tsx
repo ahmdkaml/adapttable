@@ -42,15 +42,17 @@ const labels = {
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  actions: "Actions",
 };
 
-function open(layout: UseColumnLayoutResult<Row>) {
+function open(layout: UseColumnLayoutResult<Row>, hasRowActions = false) {
   const view = render(
     <ColumnMenu
       allColumns={cols}
       layout={layout}
       labels={labels}
       classNames={{}}
+      hasRowActions={hasRowActions}
     />
   );
   fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -170,6 +172,66 @@ describe("unstyled ColumnMenu", () => {
       screen.getByRole("button", { name: "Show column: Charlie" })
     );
     expect(layout.toggleVisible).toHaveBeenCalledWith("c");
+  });
+
+  it("omits the actions row when the table has no row actions", () => {
+    open(fakeLayout());
+    expect(screen.queryByText("Actions")).toBeNull();
+    expect(
+      document.querySelector('[data-adapttable-part="column-menu-separator"]')
+    ).toBeNull();
+  });
+
+  it("lists a separated actions row with an eye and a ONE-CLICK end pin", () => {
+    const layout = fakeLayout();
+    open(layout, true);
+    // Separated trailing row, labelled with labels.actions, no reorder grip.
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="column-menu-separator"]')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Move left / Move right: Actions" })
+    ).toBeNull();
+    // The eye hides it like any data column.
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Actions" })
+    );
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+    // ONE click pins straight to the inline end (no left step in the cycle).
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+  });
+
+  it("unpins a pinned actions row with one click", () => {
+    const layout = fakeLayout({
+      state: {
+        hidden: [],
+        order: [],
+        pinned: { actions: "right" },
+        widths: {},
+      },
+    });
+    open(layout, true);
+    const row = screen
+      .getByText("Actions")
+      .closest('[data-adapttable-part="column-menu-item"]');
+    expect(row).toHaveAttribute("data-pinned", "right");
+    fireEvent.click(screen.getByRole("button", { name: "Unpin: Actions" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("shows a hidden actions row back via its eye", () => {
+    const layout = fakeLayout({ isHidden: (k) => k === "actions" });
+    open(layout, true);
+    const row = screen
+      .getByText("Actions")
+      .closest('[data-adapttable-part="column-menu-item"]');
+    expect(row).toHaveAttribute("data-hidden");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Actions" })
+    );
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
   });
 
   it("resets the layout", () => {

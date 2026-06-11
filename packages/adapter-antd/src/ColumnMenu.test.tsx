@@ -38,6 +38,7 @@ const labels = {
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  actions: "Actions",
 };
 
 const byLabel = (name: string) =>
@@ -152,6 +153,87 @@ describe("antd ColumnMenu", () => {
     expect(
       document.querySelector(".ant-popover-placement-bottomLeft")
     ).not.toBeNull();
+  });
+
+  it("lists the actions column as a separated row: eye + one-click end pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The actions row never reorders: no draggable row, no keyboard grip.
+    expect(screen.getByText("Actions").closest("[draggable]")).toBeNull();
+    expect(
+      document.querySelector('[aria-label="Move left / Move right: Actions"]')
+    ).toBeNull();
+
+    // The standard eye toggle targets the reserved "actions" layout key.
+    const eye = byLabel("Hide column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // ONE click pins to the end — no left stop in the cycle.
+    fireEvent.click(byLabel("Pin right: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+  });
+
+  it("unpins a right-pinned actions column with one click", async () => {
+    const layout = fakeLayout();
+    layout.state = {
+      hidden: [],
+      order: [],
+      pinned: { actions: "right" },
+      widths: {},
+    };
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    // Pinned right → the one-click toggle goes straight back to unpinned.
+    fireEvent.click(byLabel("Unpin: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("offers to show a hidden actions column", async () => {
+    const layout = fakeLayout();
+    layout.isHidden = (key) => key === "actions";
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    const eye = byLabel("Show column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+  });
+
+  it("omits the actions row when the table has no row actions", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.queryByText("Actions")).toBeNull();
   });
 
   it("renders the hidden-column state (strike-through, eye-off, text button)", async () => {

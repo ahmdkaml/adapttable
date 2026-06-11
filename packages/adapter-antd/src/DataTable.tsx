@@ -1,4 +1,5 @@
 import {
+  ACTIONS_COLUMN_KEY,
   type ColumnDef,
   type FilterRuntime,
   isDeclarativeFilters,
@@ -228,12 +229,14 @@ function ColumnMenuSlot<TRow>({
   layout,
   labels,
   dir,
+  hasRowActions,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
   layout: UseColumnLayoutResult<TRow>;
   labels: Required<TableLabels>;
   dir?: "ltr" | "rtl";
+  hasRowActions: boolean;
 }>) {
   if (!enabled) return null;
   return (
@@ -242,6 +245,7 @@ function ColumnMenuSlot<TRow>({
       layout={layout}
       labels={labels}
       dir={dir}
+      hasRowActions={hasRowActions}
     />
   );
 }
@@ -472,6 +476,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const c = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
+  // The injected actions column is first-class in column management: it lives
+  // in the layout state under its reserved key, so hiding it strips the
+  // rowActions BEFORE buildColumns — the trailing column, summary spans, and
+  // min-width all adjust together. The Columns menu still lists it (from the
+  // raw prop) so it can be shown again.
+  const rowActions = c.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : props.rowActions;
+  const hasRowActions = Boolean(rowActions?.length);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -496,7 +509,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const columns = buildColumns<TRow>({
     columns: table.columns,
-    rowActions: props.rowActions,
+    rowActions,
     sortBy: source.sortBy,
     sortDir: source.sortDir,
     confirm,
@@ -517,7 +530,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     table.columns,
     c.columnLayout.state.widths,
     Boolean(table.selection),
-    Boolean(props.rowActions?.length)
+    hasRowActions
   );
 
   const handleChange = sortChangeHandler(source);
@@ -540,7 +553,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     props.summaryRow,
     table.columns,
     summaryLeadingCells(rowSelection, expandable),
-    Boolean(props.rowActions?.length)
+    hasRowActions
   );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
@@ -570,7 +583,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         loadingLabel={labels.loading}
         size={size}
         bordered={bordered}
-        hasActions={(props.rowActions?.length ?? 0) > 0}
+        hasActions={hasRowActions}
       />
     );
   } else if (c.body === "empty") {
@@ -580,7 +593,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <MobileCards
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
         prefetch={props.prefetch}
@@ -664,6 +677,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               layout={c.columnLayout}
               labels={labels}
               dir={props.dir}
+              hasRowActions={Boolean(props.rowActions?.length)}
             />
           }
           savedViewsMenu={
