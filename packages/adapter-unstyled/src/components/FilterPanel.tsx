@@ -1,5 +1,6 @@
 import type { Direction, TableLabels } from "@adapttable/core";
 import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
@@ -51,7 +52,11 @@ export function FilterPanel({
 
   if (!open) return null;
 
-  return (
+  // PORTAL to <body>: the drawer is position-fixed, and any transformed /
+  // filtered ancestor (animations, marketing chrome) would otherwise become
+  // its containing block — re-anchoring the "fixed" sheet inside the page.
+  // Open-only rendering keeps this SSR-safe.
+  return createPortal(
     <>
       <button
         type="button"
@@ -70,8 +75,27 @@ export function FilterPanel({
         aria-modal="true"
         aria-label={labels.filters}
         data-adapttable-part="filters-panel"
+        // Real dir, not just the styling hook: the portal moves the dialog
+        // out of the table's [dir] subtree, so logical insets (and the
+        // panel's own text direction) must carry their own context.
+        dir={dir}
         data-dir={dir}
         className={cx("adapttable-filters-panel", classNames.filtersPanel)}
+        // Structural side-sheet geometry (consumer classes style the
+        // surface): the <dialog> UA stylesheet centers via auto margins and
+        // inset-inline 0/0 — pin to the inline END edge, full height,
+        // following the writing direction.
+        style={{
+          position: "fixed",
+          insetBlock: 0,
+          insetInlineEnd: 0,
+          insetInlineStart: "auto",
+          margin: 0,
+          maxHeight: "none",
+          maxWidth: "none",
+          height: "100%",
+          zIndex: 200,
+        }}
       >
         <header
           data-adapttable-part="filters-header"
@@ -123,6 +147,7 @@ export function FilterPanel({
           </button>
         </footer>
       </dialog>
-    </>
+    </>,
+    document.body
   );
 }

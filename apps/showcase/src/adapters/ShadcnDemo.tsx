@@ -1,7 +1,12 @@
 import type { DataTableClassNames } from "@adapttable/unstyled";
 
 import { type Locale } from "../data";
-import { type DataMode, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 import { UnstyledLike } from "./UnstyledLike";
 
 // shadcn/ui = Tailwind utilities over headless primitives — exactly what the
@@ -100,12 +105,14 @@ export function ShadcnDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   return (
     <UnstyledLike
@@ -114,6 +121,7 @@ export function ShadcnDemo({
       pageMode={pageMode}
       urlKey={urlKey}
       density={density}
+      filtersUi={filtersUi}
       classNames={SHADCN}
     />
   );

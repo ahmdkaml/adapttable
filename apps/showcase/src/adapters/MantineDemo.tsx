@@ -24,7 +24,13 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  DemoBody,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 
 /** Mantine-native cell visuals (Avatar · Badge · Progress). */
 const MANTINE_CELLS: DemoCells = {
@@ -53,6 +59,7 @@ export function MantineDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -60,6 +67,7 @@ export function MantineDemo({
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   const s = strings(locale);
   return (
@@ -76,6 +84,7 @@ export function MantineDemo({
             rowKey={(r) => r.id}
             {...columns}
             density={density}
+            filtersMode={filtersUi}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

@@ -14,6 +14,7 @@ import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 export type DataMode = "frontend" | "backend";
 export type PageMode = "paged" | "infinite";
 export type Density = "comfortable" | "compact";
+export type FiltersUi = "popover" | "drawer";
 
 /** A small page size so both modes show real pagination over 30 rows. */
 const DEFAULTS = { limit: 8 };

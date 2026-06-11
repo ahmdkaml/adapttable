@@ -15,7 +15,12 @@ import {
   type DemoNotice,
   type Locale,
 } from "./data";
-import { type DataMode, type Density, type PageMode } from "./Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
 import { Columns, Layers, Pin, Resize } from "./sectionIcons";
 import {
@@ -36,6 +41,7 @@ type DemoComponent = (
     locale: Locale;
     dark?: boolean;
     pageMode?: PageMode;
+    filtersUi?: FiltersUi;
     urlKey?: string;
     density?: Density;
   }>
@@ -95,6 +101,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [locale, setLocale] = useState<Locale>("en");
   const [pageMode, setPageMode] = useState<PageMode>("paged");
   const [density, setDensity] = useState<Density>("comfortable");
+  const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
@@ -163,6 +170,17 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Filters">
+          <Segmented
+            label="filters container"
+            value={filtersUi}
+            onChange={setFiltersUi}
+            options={[
+              { value: "popover", label: "Popover" },
+              { value: "drawer", label: "Drawer" },
+            ]}
+          />
+        </Control>
         <Control label="Density">
           <Segmented
             label="density"
@@ -186,7 +204,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
         </div>
         <div
           className="demo-surface__body"
-          key={`${adapter}-${mode}-${locale}-${pageMode}-${density}-${dark ? "d" : "l"}`}
+          key={`${adapter}-${mode}-${locale}-${pageMode}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
         >
           <Demo
             mode={mode}
@@ -194,6 +212,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             pageMode={pageMode}
             density={density}
+            filtersUi={filtersUi}
             urlKey="live"
           />
         </div>

@@ -1,7 +1,12 @@
 import type { DataTableClassNames } from "@adapttable/unstyled";
 
 import { type Locale } from "../data";
-import { type DataMode, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 import { UnstyledLike } from "./UnstyledLike";
 
 // Plain "bring your own Tailwind classes" look — deliberately distinct from the
@@ -99,12 +104,14 @@ export function UnstyledDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   return (
     <UnstyledLike
@@ -113,6 +120,7 @@ export function UnstyledDemo({
       pageMode={pageMode}
       urlKey={urlKey}
       density={density}
+      filtersUi={filtersUi}
       classNames={TAILWIND}
     />
   );

@@ -6,7 +6,7 @@ import { FilterPanel } from "./FilterPanel";
 
 describe("FilterPanel", () => {
   it("places the drawer on the left in RTL mode", () => {
-    const { container } = render(
+    render(
       <FilterPanel
         open
         onClose={vi.fn()}
@@ -17,7 +17,9 @@ describe("FilterPanel", () => {
         classNames={{ filtersPanel: "panel-rtl" }}
       />
     );
-    expect(container.querySelector('[data-dir="rtl"]')).toBeTruthy();
+    // The drawer PORTALS to <body> (transformed ancestors must not become
+    // its containing block), so query the document, not the container.
+    expect(document.querySelector('[data-dir="rtl"]')).toBeTruthy();
   });
 
   it("invokes onClearFilters from the clear button when filters are active", () => {

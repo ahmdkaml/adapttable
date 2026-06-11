@@ -27,7 +27,13 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  DemoBody,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 
 const MUI_CHIP_COLOR = {
   green: "success",
@@ -80,6 +86,7 @@ export function MuiDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -87,6 +94,7 @@ export function MuiDemo({
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -104,6 +112,7 @@ export function MuiDemo({
             rowKey={(r) => r.id}
             {...columns}
             density={density}
+            filtersMode={filtersUi}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

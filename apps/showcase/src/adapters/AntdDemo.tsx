@@ -27,7 +27,13 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  DemoBody,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 
 const ANTD_TAG_COLOR = {
   green: "green",
@@ -72,6 +78,7 @@ export function AntdDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
   wide,
 }: Readonly<{
   mode: DataMode;
@@ -80,6 +87,7 @@ export function AntdDemo({
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
 }>) {
@@ -109,6 +117,7 @@ export function AntdDemo({
             rowKey={(r) => r.id}
             {...columns}
             density={density}
+            filtersMode={filtersUi}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

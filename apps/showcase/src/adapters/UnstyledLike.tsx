@@ -19,7 +19,13 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  DemoBody,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 
 /** Inline style carrying the avatar's hue as a CSS custom property, so the
  * Tailwind arbitrary values can theme it per light/dark. */
@@ -99,6 +105,7 @@ export function UnstyledLike({
   pageMode,
   urlKey,
   density = "comfortable",
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -106,6 +113,7 @@ export function UnstyledLike({
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   const s = strings(locale);
   const styled = withDensity(classNames, density);
@@ -123,6 +131,7 @@ export function UnstyledLike({
             rowKey={(r) => r.id}
             {...columns}
             density={density}
+            filtersMode={filtersUi}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

@@ -26,7 +26,13 @@ import {
   statusTone,
   strings,
 } from "../data";
-import { type DataMode, DemoBody, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  DemoBody,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 
 /** Chakra-native cell visuals (Avatar · Badge · Progress). */
 const CHAKRA_CELLS: DemoCells = {
@@ -64,6 +70,7 @@ export function ChakraDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -71,6 +78,7 @@ export function ChakraDemo({
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   const s = strings(locale);
   const scheme: ColorModeWithSystem = dark ? "dark" : "light";
@@ -102,6 +110,7 @@ export function ChakraDemo({
             rowKey={(r) => r.id}
             {...columns}
             density={density}
+            filtersMode={filtersUi}
             labels={getLabels(locale)}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
