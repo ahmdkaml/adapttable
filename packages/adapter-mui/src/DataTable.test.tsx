@@ -295,7 +295,101 @@ describe("<DataTable> (MUI)", () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  describe("select-all-matching banner", () => {
+    const MANY: Row[] = [
+      ...ROWS,
+      { id: "c", name: "Cara", city: "Doha" },
+      { id: "d", name: "Dina", city: "Muscat" },
+    ];
+    const bulkActions = [{ key: "x", label: "X", onClick: vi.fn() }];
+
+    it("stays hidden when the page already holds every match", () => {
+      renderHarness({ override: { bulkActions } });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.queryByText(/on this page selected/)).toBeNull();
+      expect(screen.queryByText(/matching/)).toBeNull();
+    });
+
+    it("flips from the offer to the active state and back to none via clear", () => {
+      renderHarness({ rows: MANY, override: { bulkActions } }, "limit=2");
+      fireEvent.click(screen.getByLabelText("Select all"));
+      // Offer: full page selected, more rows match elsewhere.
+      expect(
+        screen.getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      // Active: scope widened to every matching row.
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+      // The banner's own clear button drops the whole selection.
+      fireEvent.click(screen.getAllByRole("button", { name: "Clear all" })[0]!);
+      expect(screen.queryByText(/selected/)).toBeNull();
+    });
+
+    it("confirms by the matching TOTAL and passes the all-matching context", async () => {
+      const onClick = vi.fn();
+      const confirm = vi.fn((r: { message: string; onConfirm: () => void }) =>
+        r.onConfirm()
+      );
+      renderHarness(
+        {
+          rows: MANY,
+          override: {
+            bulkActions: [
+              {
+                key: "del",
+                label: "Delete",
+                onClick,
+                confirm: {
+                  title: "t",
+                  message: (n) => `Delete ${n}`,
+                  confirmLabel: "Yes",
+                },
+              },
+            ],
+            confirm,
+          },
+        },
+        "limit=2"
+      );
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByText("Delete"));
+        await Promise.resolve();
+      });
+      expect(confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Delete 4" })
+      );
+      expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+        allMatching: true,
+        total: 4,
+      });
+    });
+
+    it("narrows back to the page scope on a single row toggle", () => {
+      renderHarness({ rows: MANY, override: { bulkActions } }, "limit=2");
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      expect(screen.queryByText("All 4 matching selected")).toBeNull();
+      expect(screen.queryByText(/matching/)).toBeNull();
+      expect(screen.getByText("1 selected")).toBeInTheDocument();
+    });
   });
 
   it("renders filter chips and opens the filter popover", () => {

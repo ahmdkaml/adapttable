@@ -68,6 +68,12 @@ export interface DataTableClassNames {
   resizeHandle?: string;
   bulkBar?: string;
   bulkButton?: string;
+  /** The cross-page banner inside the bulk bar (full page selected). */
+  selectAllBanner?: string;
+  /** The banner's status text (page selected / all matching selected). */
+  selectAllText?: string;
+  /** The banner's action button (select all matching / clear all). */
+  selectAllButton?: string;
   table?: string;
   thead?: string;
   headerRow?: string;

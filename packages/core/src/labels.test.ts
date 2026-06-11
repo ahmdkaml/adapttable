@@ -35,3 +35,11 @@ describe("defaultLabels", () => {
     expect(defaultLabels.goToPage(4)).toBe("Go to page 4");
   });
 });
+
+it("formats the select-all-matching banner labels", () => {
+  expect(defaultLabels.pageSelected(8)).toBe("All 8 on this page selected");
+  expect(defaultLabels.selectAllMatching(57)).toBe("Select all 57 matching");
+  expect(defaultLabels.allMatchingSelected(57)).toBe(
+    "All 57 matching selected"
+  );
+});

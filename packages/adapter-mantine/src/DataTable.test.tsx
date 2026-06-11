@@ -10,6 +10,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -354,7 +355,10 @@ describe("<DataTable> (Mantine)", () => {
       await Promise.resolve();
     });
     expect(confirm).toHaveBeenCalled();
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
   });
 
   it("renders filter chips from filterLabels and clears one", () => {
@@ -363,6 +367,123 @@ describe("<DataTable> (Mantine)", () => {
       override: { filterLabels: { status: (v) => `Status: ${v}` } },
     });
     expect(screen.getByText("Status: Active")).toBeInTheDocument();
+  });
+
+  describe("all-matching scope banner", () => {
+    const MANY_ROWS: Row[] = [
+      { id: "r1", name: "Alice", city: "Dubai" },
+      { id: "r2", name: "Bob", city: "Riyadh" },
+      { id: "r3", name: "Cara", city: "Doha" },
+      { id: "r4", name: "Dina", city: "Muscat" },
+    ];
+    const archive = { key: "arch", label: "Archive", onClick: vi.fn() };
+
+    it("never renders when the page already holds every matching row", () => {
+      renderHarness({ override: { bulkActions: [archive] } });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Select all 2 matching" })
+      ).toBeNull();
+    });
+
+    it("offers the wider scope and flips to all-matching on click", () => {
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: { bulkActions: [archive] },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      const banner = screen.getByRole("status");
+      expect(
+        within(banner).getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      fireEvent.click(
+        within(banner).getByRole("button", { name: "Select all 4 matching" })
+      );
+      // The banner swaps to the active-scope message + a clear affordance.
+      const active = screen.getByRole("status");
+      expect(
+        within(active).getByText("All 4 matching selected")
+      ).toBeInTheDocument();
+      expect(
+        within(active).getByRole("button", { name: "Clear all" })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Select all 4 matching" })
+      ).toBeNull();
+    });
+
+    it("confirm message and onClick context size by the TOTAL in all-matching scope", async () => {
+      const onClick = vi.fn();
+      const confirm = vi.fn((req: { onConfirm: () => void }) =>
+        req.onConfirm()
+      );
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "Sure?",
+                message: (n) => `Delete ${n}?`,
+                confirmLabel: "Yes",
+                danger: true,
+              },
+            },
+          ],
+          confirm,
+        },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByText("Delete"));
+        await Promise.resolve();
+      });
+      expect(confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Delete 4?" })
+      );
+      expect(onClick).toHaveBeenCalledWith(["r1", "r2"], {
+        allMatching: true,
+        total: 4,
+      });
+    });
+
+    it("a single row toggle narrows the scope back to the offer state", () => {
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: { bulkActions: [archive] },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      // Deselect one row: the page is no longer fully selected, so the
+      // banner disappears AND the scope narrows back to concrete ids.
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.queryByText("All 4 matching selected")).toBeNull();
+      // Re-selecting the row restores a fully-selected page — the banner
+      // returns in the OFFER state, proving allMatching did not survive.
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      const banner = screen.getByRole("status");
+      expect(
+        within(banner).getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      expect(
+        within(banner).getByRole("button", { name: "Select all 4 matching" })
+      ).toBeInTheDocument();
+    });
   });
 
   it("opens the filter drawer", async () => {

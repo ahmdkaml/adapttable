@@ -164,10 +164,25 @@ export interface BulkAction {
    * bulk button explains itself.
    */
   disabledReason?: (ids: string[]) => string | undefined;
-  /** Action handler; receives the selected ids. May be async. */
-  onClick: (ids: string[]) => void | Promise<unknown>;
+  /**
+   * Action handler; receives the selected page ids plus a context: with
+   * `allMatching` true the user chose "select all N matching" — act on the
+   * whole filtered set server-side (`total` is its size), not just `ids`.
+   */
+  onClick: (
+    ids: string[],
+    context: BulkActionContext
+  ) => void | Promise<unknown>;
   /** Optional confirmation dialog wiring (receives the selection count). */
   confirm?: ActionConfirm<number>;
+}
+
+/** Scope context handed to a bulk action. */
+export interface BulkActionContext {
+  /** True when the user chose "select all matching" across every page. */
+  allMatching: boolean;
+  /** Total rows in the current filtered set (= ids.length unless allMatching). */
+  total: number;
 }
 
 /** Option entry for a sort-by select control. */
@@ -211,6 +226,12 @@ export interface TableLabels {
   expandRow?: string;
   /** Collapse-row chevron label. */
   collapseRow?: string;
+  /** Banner: every row on this page is selected. */
+  pageSelected?: (count: number) => string;
+  /** Banner action: extend the selection to every matching row. */
+  selectAllMatching?: (total: number) => string;
+  /** Banner: the whole matching set is selected. */
+  allMatchingSelected?: (total: number) => string;
   loading?: string;
   loadMore?: string;
   filters?: string;

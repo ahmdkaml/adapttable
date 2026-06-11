@@ -83,6 +83,11 @@ export interface ToolbarChromeProps<TRow> {
 export interface BulkBarChromeProps {
   /** Current selection state. */
   selection: SelectionState;
+  /**
+   * Total rows in the filtered set — drives the "select all N matching"
+   * banner when a full page is selected and more rows match elsewhere.
+   */
+  total: number;
   /** Caller-supplied bulk actions. */
   bulkActions: BulkAction[];
   /** Confirmation handler for actions that declare a `confirm` block. */

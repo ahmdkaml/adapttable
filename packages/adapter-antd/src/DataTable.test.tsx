@@ -15,6 +15,13 @@ const ROWS: Row[] = [
   { id: "a", name: "Alice", city: "Dubai" },
   { id: "b", name: "Bob", city: "Riyadh" },
 ];
+// More rows than one `limit=2` page — exercises the cross-page banner.
+const MANY: Row[] = [
+  ...ROWS,
+  { id: "c", name: "Cara", city: "Doha" },
+  { id: "d", name: "Dan", city: "Muscat" },
+  { id: "e", name: "Eve", city: "Amman" },
+];
 const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
   { key: "city", header: "City", accessor: (r) => r.city },
@@ -247,11 +254,107 @@ describe("<DataTable> (Ant Design)", () => {
     });
     fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
     expect(screen.getByText("2 selected")).toBeInTheDocument();
+    // Every matching row is already visible — no cross-page banner.
+    expect(screen.queryByText(/Select all \d+ matching/)).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  it("offers select-all-matching when a full page is selected, flips to the active state, and clears", () => {
+    renderHarness(
+      {
+        rows: MANY,
+        override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    // Offer state: the page is fully selected but 3 more rows match elsewhere.
+    expect(screen.getByText("All 2 on this page selected")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    // Active state: the scope widened to the whole matching set.
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+    // The banner's clear link (first in DOM order; both clear) collapses it.
+    fireEvent.click(screen.getAllByRole("button", { name: "Clear all" })[0]!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.queryByText(/selected/)).toBeNull();
+  });
+
+  it("runs a bulk action across the matching set: confirm and onClick see the total", async () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn((r: { message: string; onConfirm: () => void }) =>
+      r.onConfirm()
+    );
+    renderHarness(
+      {
+        rows: MANY,
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "t",
+                message: (n) => `Delete ${n}`,
+                confirmLabel: "Yes",
+              },
+            },
+          ],
+          confirm,
+        },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
+    // The confirm count and the handler scope reflect the WHOLE matching
+    // set (5), even though only the visible page ids are concrete.
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 5" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: true,
+      total: 5,
+    });
+  });
+
+  it("narrows back to a page selection when a row is toggled while all-matching", () => {
+    const { container } = renderHarness(
+      {
+        rows: MANY,
+        override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    // Unticking one row narrows the scope back to concrete ids.
+    const rowCheckbox = container.querySelector<HTMLInputElement>(
+      'tbody [title="Select row"] input[type="checkbox"]'
+    );
+    expect(rowCheckbox).not.toBeNull();
+    fireEvent.click(rowCheckbox!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
   it("renders filter chips and opens the filter popover", () => {

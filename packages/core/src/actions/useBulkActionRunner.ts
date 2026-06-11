@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import type { BulkAction } from "../types";
+import type { BulkActionContext } from "../types";
 import type { ConfirmHandler } from "./confirm";
 
 /** Options for {@link useBulkActionRunner}. */
@@ -17,8 +18,11 @@ export interface UseBulkActionRunnerOptions {
 export interface BulkActionRunner {
   /** Key of the action currently running, or `null`. */
   pending: string | null;
-  /** Run a bulk action against the given ids (confirming first if needed). */
-  run: (action: BulkAction, ids: string[]) => void;
+  /**
+   * Run a bulk action against the given ids (confirming first if needed).
+   * Omit `context` for the plain page-selection scope.
+   */
+  run: (action: BulkAction, ids: string[], context?: BulkActionContext) => void;
 }
 
 /**
@@ -37,12 +41,16 @@ export function useBulkActionRunner({
   const [pending, setPending] = useState<string | null>(null);
 
   const run = useCallback(
-    (action: BulkAction, ids: string[]) => {
+    (action: BulkAction, ids: string[], context?: BulkActionContext) => {
       if (ids.length === 0) return;
+      const scope: BulkActionContext = context ?? {
+        allMatching: false,
+        total: ids.length,
+      };
       const fire = async () => {
         try {
           setPending(action.key);
-          await action.onClick(ids);
+          await action.onClick(ids, scope);
           onComplete?.();
         } finally {
           setPending(null);
@@ -51,7 +59,9 @@ export function useBulkActionRunner({
       if (action.confirm) {
         confirm({
           title: action.confirm.title,
-          message: action.confirm.message(ids.length),
+          // The confirm count reflects the SCOPE: the whole matching set
+          // when "select all matching" is active, the page ids otherwise.
+          message: action.confirm.message(scope.total),
           confirmLabel: action.confirm.confirmLabel,
           cancelLabel,
           danger: action.confirm.danger,

@@ -7,6 +7,10 @@ export const pt: Required<TableLabels> = {
   searchPlaceholder: "Pesquisar…",
   noData: "Sem dados",
   noResults: "Nenhum resultado corresponde aos filtros",
+  pageSelected: (count) => `Todos os ${count} desta página selecionados`,
+  selectAllMatching: (total) => `Selecionar todos os ${total} correspondentes`,
+  allMatchingSelected: (total) =>
+    `Todos os ${total} correspondentes selecionados`,
   expandRow: "Expandir linha",
   collapseRow: "Recolher linha",
   loading: "Carregando…",

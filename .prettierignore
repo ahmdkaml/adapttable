@@ -5,3 +5,8 @@
 pnpm-lock.yaml
 CHANGELOG.md
 **/CHANGELOG.md
+
+# Astro docs app — generated artifacts + content synced from docs/
+apps/docs/.astro/
+apps/docs/src/content/docs/
+apps/docs/dist/

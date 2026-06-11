@@ -1,11 +1,9 @@
 import {
   type ActiveFilterChip,
-  type BulkAction,
-  type ConfirmHandler,
+  type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
   resolveDisabledReason,
-  type SelectionState,
   type TableLabels,
   type TableSource,
   useBulkActionRunner,
@@ -68,18 +66,21 @@ export function Chips({
 /** Selection toolbar with bulk-action buttons. */
 export function BulkBar({
   selection,
+  total,
   bulkActions,
   confirm,
   labels,
   classNames,
-}: Readonly<{
-  selection: SelectionState;
-  bulkActions: BulkAction[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-  classNames: DataTableClassNames;
-}>) {
-  const { selectedIds, selectedCount, clear } = selection;
+}: Readonly<BulkBarChromeProps & { classNames: DataTableClassNames }>) {
+  const {
+    selectedIds,
+    selectedCount,
+    clear,
+    headerState,
+    visibleIds,
+    allMatching,
+    selectAllMatching,
+  } = selection;
   const { pending, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
@@ -87,10 +88,37 @@ export function BulkBar({
   });
   if (selectedCount === 0) return null;
   const ids = [...selectedIds];
+  // Offer the cross-page scope only when a full page is selected and more
+  // rows match elsewhere; once active, actions run against the whole set.
+  const showBanner = headerState === "all" && total > visibleIds.length;
+  const scope = allMatching ? { allMatching: true, total } : undefined;
 
   return (
     <div data-adapttable-part="bulk-bar" className={classNames.bulkBar}>
       <span>{labels.selectedCount(selectedCount)}</span>
+      {showBanner && (
+        <div
+          data-adapttable-part="select-all-banner"
+          className={classNames.selectAllBanner}
+        >
+          <span
+            data-adapttable-part="select-all-text"
+            className={classNames.selectAllText}
+          >
+            {allMatching
+              ? labels.allMatchingSelected(total)
+              : labels.pageSelected(visibleIds.length)}
+          </span>
+          <button
+            type="button"
+            data-adapttable-part="select-all-button"
+            className={classNames.selectAllButton}
+            onClick={allMatching ? clear : selectAllMatching}
+          >
+            {allMatching ? labels.clearAll : labels.selectAllMatching(total)}
+          </button>
+        </div>
+      )}
       <button type="button" onClick={clear} disabled={pending !== null}>
         {labels.clearAll}
       </button>
@@ -105,7 +133,7 @@ export function BulkBar({
             data-adapttable-part="bulk-button"
             data-color={action.color}
             className={classNames.bulkButton}
-            onClick={() => run(action, ids)}
+            onClick={() => run(action, ids, scope)}
           >
             {action.icon}
             {action.label}

@@ -1,12 +1,10 @@
 import {
   type ActiveFilterChip,
-  type BulkAction,
-  type ConfirmHandler,
+  type BulkBarChromeProps,
   type Direction,
   pageSizeOptions,
   type PaginationInfo,
   resolveDisabledReason,
-  type SelectionState,
   type TableLabels,
   type ToolbarChromeProps,
   useBulkActionRunner,
@@ -274,17 +272,12 @@ export function Chips({
 /** Selection toolbar. */
 export function BulkBar({
   selection,
+  total,
   bulkActions,
   confirm,
   labels,
   colorScheme,
-}: Readonly<{
-  selection: SelectionState;
-  bulkActions: BulkAction[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-  colorScheme?: string;
-}>) {
+}: Readonly<BulkBarChromeProps & { colorScheme?: string }>) {
   const { selectedIds, selectedCount, clear } = selection;
   const { pending, run } = useBulkActionRunner({
     confirm,
@@ -293,9 +286,44 @@ export function BulkBar({
   });
   if (selectedCount === 0) return null;
   const ids = [...selectedIds];
+  // A full page is selected but more rows match elsewhere → show the
+  // two-state "select all N matching" banner instead of the plain count.
+  const expandable =
+    selection.headerState === "all" && total > selection.visibleIds.length;
+  // When "all matching" is active, bulk actions act on the WHOLE filtered
+  // set: the context tells the handler (and the confirm count) so.
+  const scope = selection.allMatching
+    ? { allMatching: true, total }
+    : undefined;
+  const banner = selection.allMatching
+    ? {
+        text: labels.allMatchingSelected(total),
+        action: labels.clearAll,
+        onClick: clear,
+      }
+    : {
+        text: labels.pageSelected(selection.visibleIds.length),
+        action: labels.selectAllMatching(total),
+        onClick: selection.selectAllMatching,
+      };
   return (
     <HStack spacing={2} justify="space-between" flexWrap="wrap">
-      <Text fontSize="sm">{labels.selectedCount(selectedCount)}</Text>
+      {expandable ? (
+        <HStack spacing={2} flexWrap="wrap">
+          <Text fontSize="sm">{banner.text}</Text>
+          <Button
+            size="xs"
+            variant="link"
+            colorScheme={colorScheme}
+            isDisabled={pending !== null}
+            onClick={banner.onClick}
+          >
+            {banner.action}
+          </Button>
+        </HStack>
+      ) : (
+        <Text fontSize="sm">{labels.selectedCount(selectedCount)}</Text>
+      )}
       <HStack spacing={2} flexWrap="wrap">
         <Button
           size="xs"
@@ -314,7 +342,7 @@ export function BulkBar({
                 colorScheme={action.color ?? colorScheme}
                 leftIcon={isValidElement(action.icon) ? action.icon : undefined}
                 isDisabled={reason !== undefined || pending !== null}
-                onClick={() => run(action, ids)}
+                onClick={() => run(action, ids, scope)}
               >
                 {action.label}
               </Button>

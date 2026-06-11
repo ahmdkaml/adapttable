@@ -380,6 +380,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       {table.selection && bulkActions && (
         <BulkBar
           selection={table.selection}
+          total={source.total}
           bulkActions={bulkActions}
           confirm={confirm}
           labels={labels}

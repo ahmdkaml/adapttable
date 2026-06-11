@@ -170,7 +170,7 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 - [x] `@adapttable/cli`
 - [x] Column management — show/hide, reorder, pin (sticky), and resize
 - [x] Docs (markdown + `llms.txt`) + examples
-- [ ] Hosted docs site + live playground
+- [x] Hosted docs site + live playground (`apps/docs`, deployed to GitHub Pages on every push to `main` — enable Pages → "GitHub Actions" in repo settings once)
 - [x] Optional row/card virtualization (windowing) for very large lists
 - [ ] `v1.0`
 

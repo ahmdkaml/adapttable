@@ -440,7 +440,142 @@ describe("<DataTable> (unstyled)", () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    // Plain page selection: the runner reports the page scope.
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  it("hides the select-all banner when the page holds every match", () => {
+    renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      },
+    });
+    // Partial selection: the bulk bar shows but the banner does not.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+    // Full page selected, but total === visible: still no banner.
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+  });
+
+  it("offers select-all-matching on a full page and flips to the active state", () => {
+    renderHarness(
+      {
+        override: {
+          bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+          classNames: {
+            selectAllBanner: "my-banner",
+            selectAllText: "my-text",
+            selectAllButton: "my-button",
+          },
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    const banner = () => {
+      const el = document.querySelector(
+        '[data-adapttable-part="select-all-banner"]'
+      );
+      if (!(el instanceof HTMLElement)) throw new Error("banner missing");
+      return el;
+    };
+    expect(banner()).toHaveClass("my-banner");
+    const text = banner().querySelector(
+      '[data-adapttable-part="select-all-text"]'
+    );
+    expect(text).toHaveClass("my-text");
+    expect(text).toHaveTextContent("All 1 on this page selected");
+    const offer = within(banner()).getByRole("button", {
+      name: "Select all 2 matching",
+    });
+    expect(offer).toHaveClass("my-button");
+    fireEvent.click(offer);
+    // Active state: status text swaps and the button becomes a clear-all.
+    expect(banner()).toHaveTextContent("All 2 matching selected");
+    const clearButton = within(banner()).getByRole("button", {
+      name: "Clear all",
+    });
+    expect(clearButton).toHaveClass("my-button");
+    fireEvent.click(clearButton);
+    expect(screen.queryByText("1 selected")).toBeNull();
+  });
+
+  it("confirms by the matching TOTAL and runs with the all-matching scope", async () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());
+    renderHarness(
+      {
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "t",
+                message: (n) => `Delete ${n}`,
+                confirmLabel: "Yes",
+              },
+            },
+          ],
+          confirm,
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
+    // The confirm size reflects the WHOLE matching set, not the page ids.
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 2" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a"], {
+      allMatching: true,
+      total: 2,
+    });
+  });
+
+  it("narrows back to the page scope when the selection is mutated", () => {
+    renderHarness(
+      {
+        override: {
+          bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    );
+    expect(screen.getByText("All 2 matching selected")).toBeInTheDocument();
+    // Any explicit mutation narrows the scope: deselect, then reselect.
+    fireEvent.click(screen.getByLabelText("Select row"));
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+    fireEvent.click(screen.getByLabelText("Select row"));
+    // Back to the OFFER state — all-matching did not survive the toggle.
+    expect(screen.getByText("All 1 on this page selected")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    ).toBeInTheDocument();
   });
 
   it("pins the selection column alongside a left-pinned data column", () => {

@@ -43,6 +43,10 @@ export interface SelectionState {
   clear: () => void;
   /** The visible ids, in row order. */
   visibleIds: string[];
+  /** True when the user chose "select all matching" across every page. */
+  allMatching: boolean;
+  /** Extend the selection to every matching row (across all pages). */
+  selectAllMatching: () => void;
 }
 
 /**
@@ -62,6 +66,7 @@ export function useSelection<TRow>({
   onChange,
 }: UseSelectionOptions<TRow>): SelectionState {
   const [internal, setInternal] = useState<Set<string>>(() => new Set());
+  const [allMatching, setAllMatching] = useState(false);
   const controlled = selected !== undefined;
   const selectedIds = useMemo(
     () => (selected === undefined ? internal : new Set(selected)),
@@ -78,6 +83,8 @@ export function useSelection<TRow>({
   /** Route a change to the parent (controlled) or internal state. */
   const commit = useCallback(
     (compute: (prev: ReadonlySet<string>) => Set<string>) => {
+      // Any explicit mutation narrows the scope back to concrete ids.
+      setAllMatching(false);
       const live = modeRef.current;
       if (live.controlled) {
         live.onChange?.([...compute(live.selectedIds)]);
@@ -87,6 +94,8 @@ export function useSelection<TRow>({
     },
     []
   );
+
+  const selectAllMatching = useCallback(() => setAllMatching(true), []);
 
   // Clear on reset-key change, but not on first mount. The effect reads the
   // LATEST size through a ref so only `resetKey` retriggers it.
@@ -161,7 +170,19 @@ export function useSelection<TRow>({
       toggleAll,
       clear,
       visibleIds,
+      allMatching,
+      selectAllMatching,
     }),
-    [selectedIds, headerState, isSelected, toggle, toggleAll, clear, visibleIds]
+    [
+      selectedIds,
+      headerState,
+      isSelected,
+      toggle,
+      toggleAll,
+      clear,
+      visibleIds,
+      allMatching,
+      selectAllMatching,
+    ]
   );
 }
