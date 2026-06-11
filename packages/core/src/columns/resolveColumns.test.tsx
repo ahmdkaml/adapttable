@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ColumnDef } from "../types";
 import { humanizeKey } from "../utils/humanizeKey";
 import { getPath } from "../utils/path";
-import { resolveColumns } from "./resolveColumns";
+import { localizedColumnPath, resolveColumns } from "./resolveColumns";
 
 interface Row {
   id: string;
@@ -91,5 +91,63 @@ describe("humanizeKey", () => {
     expect(humanizeKey("department.name")).toBe("Name");
     expect(humanizeKey("id")).toBe("Id");
     expect(humanizeKey("ipV4Address")).toBe("Ip V4 Address");
+  });
+});
+
+describe("i18n column paths", () => {
+  interface LocalizedRow {
+    nameEn: string;
+    nameAr: string;
+    dept: { en: string; ar: string };
+  }
+  const ROW: LocalizedRow = {
+    nameEn: "Engineering",
+    nameAr: "الهندسة",
+    dept: { en: "Core", ar: "الأساسية" },
+  };
+
+  it("resolves exact tag, then primary subtag, then falls back to key", () => {
+    const col = { key: "nameEn", i18n: { ar: "nameAr", "fr-CA": "nameFr" } };
+    expect(localizedColumnPath(col, "ar")).toBe("nameAr");
+    expect(localizedColumnPath(col, "ar-EG")).toBe("nameAr");
+    expect(localizedColumnPath(col, "fr-CA")).toBe("nameFr");
+    expect(localizedColumnPath(col, "de")).toBe("nameEn");
+    expect(localizedColumnPath(col, undefined)).toBe("nameEn");
+    expect(localizedColumnPath({ key: "plain" }, "ar")).toBe("plain");
+  });
+
+  it("the generated accessor reads the locale's path — flat fields", () => {
+    const [col] = resolveColumns<LocalizedRow>(
+      [{ key: "nameEn", i18n: { ar: "nameAr" } }],
+      "ar"
+    );
+    expect(col!.accessor!(ROW)).toBe("الهندسة");
+  });
+
+  it("nested per-locale objects work the same way (paths are paths)", () => {
+    const [col] = resolveColumns<LocalizedRow>(
+      [{ key: "dept.en", i18n: { ar: "dept.ar" } }],
+      "ar"
+    );
+    expect(col!.accessor!(ROW)).toBe("الأساسية");
+    const [en] = resolveColumns<LocalizedRow>(
+      [{ key: "dept.en", i18n: { ar: "dept.ar" } }],
+      "en"
+    );
+    expect(en!.accessor!(ROW)).toBe("Core");
+  });
+
+  it("an explicit accessor always wins over the i18n mapping", () => {
+    const [col] = resolveColumns<LocalizedRow>(
+      [
+        {
+          key: "nameEn",
+          i18n: { ar: "nameAr" },
+          accessor: (r) => r.nameEn.toUpperCase(),
+        },
+      ],
+      "ar"
+    );
+    expect(col!.accessor!(ROW)).toBe("ENGINEERING");
   });
 });

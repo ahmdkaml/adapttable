@@ -159,6 +159,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Resolve the data tier (prebuilt source > server > frontend) and the
   // declarative-filter runtime (URL keys, chip labels, predicate).
   const { source, runtime } = useTableData<TRow>({
+    locale: props.locale,
     source: props.source,
     data,
     total,

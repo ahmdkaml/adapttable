@@ -72,6 +72,15 @@ export interface ColumnDef<TRow> {
    * with the table-level `filters` array; a `filters` entry with the same
    * key wins.
    */
+  /**
+   * Per-locale data paths for this column's VALUE. The active table
+   * `locale` picks the path (exact tag first, then its primary subtag, then
+   * `key`): `{ key: "nameEn", i18n: { ar: "nameAr" } }` for flat fields, or
+   * `{ key: "name.en", i18n: { ar: "name.ar" } }` for nested objects. The
+   * cell, client-side sort and the column's declarative filter all follow
+   * the resolved path. Header TEXT stays whatever you pass in `header`.
+   */
+  i18n?: Readonly<Record<string, string>>;
   filter?: ColumnFilter<TRow>;
   /**
    * Component rendered per row. Define at module level (or memoise) so

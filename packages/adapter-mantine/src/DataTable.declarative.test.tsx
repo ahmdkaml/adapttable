@@ -64,6 +64,42 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> declarative columns + filters (Mantine)", () => {
+  it("locale + column i18n: cells, sort and filter follow the Arabic field", () => {
+    interface LPerson {
+      id: string;
+      nameEn: string;
+      nameAr: string;
+    }
+    const L_PEOPLE: LPerson[] = [
+      { id: "1", nameEn: "Beta", nameAr: "بيتا" },
+      { id: "2", nameEn: "Alpha", nameAr: "ألفا" },
+    ];
+    const adapter = createMemoryAdapter("f_nameEn=بيتا");
+    renderMantine(
+      <DataTable<LPerson>
+        data={L_PEOPLE}
+        locale="ar"
+        columns={[
+          {
+            key: "nameEn",
+            header: "الاسم",
+            i18n: { ar: "nameAr" },
+            sortable: true,
+            filter: "text",
+          },
+        ]}
+        rowKey={(r) => r.id}
+        urlAdapter={adapter}
+        isMobile={false}
+      />
+    );
+    // The cell shows the Arabic field, and the URL-restored text filter
+    // matched against it (بيتا ⊂ nameAr of row 1 only).
+    expect(screen.getByText("بيتا")).toBeInTheDocument();
+    expect(screen.queryByText("ألفا")).not.toBeInTheDocument();
+    expect(screen.queryByText("Beta")).not.toBeInTheDocument();
+  });
+
   it("column filter shorthands alone (no filters prop) render the auto form", async () => {
     const adapter = createMemoryAdapter("");
     renderMantine(

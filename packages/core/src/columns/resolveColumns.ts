@@ -17,23 +17,43 @@ function pathCell(value: unknown): string | null {
 }
 
 /**
+ * The data path a column reads for the active locale: the exact locale tag
+ * first (`"ar-EG"`), then its primary subtag (`"ar"`), then the key itself.
+ * Works for flat per-language fields and nested objects alike — both are
+ * just paths.
+ */
+export function localizedColumnPath(
+  column: Pick<ColumnDef<unknown>, "key" | "i18n">,
+  locale: string | undefined
+): string {
+  if (!column.i18n || !locale) return column.key;
+  return (
+    column.i18n[locale] ?? column.i18n[locale.split("-")[0]!] ?? column.key
+  );
+}
+
+/**
  * Fill a column's declarative defaults: a missing `header` is humanized from
- * the key, and a column without `accessor`/`Cell` reads the row by `key` as
- * a dot path (`"department.name"`). Already-complete columns pass through
+ * the key, and a column without `accessor`/`Cell` reads the row by its
+ * locale-resolved data path (`i18n` map, else `key` — dot paths reach nested
+ * values). Client-side sorting follows the generated accessor, so localized
+ * columns sort by the localized text. Already-complete columns pass through
  * untouched, so the resolution is idempotent and cheap to repeat.
  */
 export function resolveColumns<TRow>(
-  columns: readonly ColumnDef<TRow>[]
+  columns: readonly ColumnDef<TRow>[],
+  locale?: string
 ): ColumnDef<TRow>[] {
   return columns.map((column) => {
     const needsHeader = column.header === undefined;
     const needsAccessor = !column.accessor && !column.Cell;
     if (!needsHeader && !needsAccessor) return column;
+    const path = localizedColumnPath(column, locale);
     return {
       ...column,
       header: needsHeader ? humanizeKey(column.key) : column.header,
       accessor: needsAccessor
-        ? (row: TRow) => pathCell(getPath(row, column.key))
+        ? (row: TRow) => pathCell(getPath(row, path))
         : column.accessor,
     };
   });

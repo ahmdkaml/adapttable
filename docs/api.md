@@ -25,6 +25,12 @@ Three ways to feed the table, lowest ceremony first:
 - `ColumnDef.key` doubles as a dot-path accessor (`"department.name"`);
   `header` is optional (auto-humanized: `hiredAt` → "Hired At" — explicit
   headers always win, in any language).
+- `ColumnDef.i18n` + table `locale` — per-locale data paths
+  (`{ key: "nameEn", i18n: { ar: "nameAr" } }`, or nested
+  `{ key: "name.en", i18n: { ar: "name.ar" } }`): the active locale (exact
+  tag → primary subtag → key) picks the path, and the cell, client-side
+  sort and the column's filter all follow it. Header text stays whatever
+  you pass in `header`.
 - `ColumnDef.filter` — `"text" | "select" | "multiSelect" | "dateRange" |
 "numberRange"` or a definition object; merged with the table-level
   `filters` array (a `filters` entry with the same key wins, with a dev
@@ -112,7 +118,8 @@ Three ways to feed the table, lowest ceremony first:
   uncontrolled split as `columnLayout`).
 - `rowClassName(row, index)` — conditional per-row class, applied to desktop
   rows and mobile cards alike (e.g. highlight overdue rows).
-- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
+- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter,
+  with ArrowUp/ArrowDown roving focus across rows;
   interactive children (actions, checkboxes, links) keep their own behaviour.
   Headless consumers: `rowClickProps(row, onRowClick)`.
 - `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV

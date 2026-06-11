@@ -244,3 +244,44 @@ describe("buildFilterRuntime", () => {
     });
   });
 });
+
+describe("i18n-aware column filters", () => {
+  interface LRow {
+    statusEn: string;
+    statusAr: string;
+  }
+  const ROW_L: LRow = { statusEn: "active", statusAr: "نشط" };
+
+  it("a localized column's filter matches the locale-resolved value", () => {
+    const defs = resolveFilterDefs<LRow>(
+      [
+        {
+          key: "statusEn",
+          i18n: { ar: "statusAr" },
+          filter: "select",
+        },
+      ],
+      undefined,
+      "ar"
+    );
+    const p = filterPredicate(defs[0]!);
+    expect(p(ROW_L, { statusEn: "نشط" })).toBe(true);
+    expect(p(ROW_L, { statusEn: "active" })).toBe(false);
+  });
+
+  it("a shorthand with its own getValue keeps it", () => {
+    const defs = resolveFilterDefs<LRow>(
+      [
+        {
+          key: "statusEn",
+          i18n: { ar: "statusAr" },
+          filter: { type: "select", getValue: () => "custom" },
+        },
+      ],
+      undefined,
+      "ar"
+    );
+    const p = filterPredicate(defs[0]!);
+    expect(p(ROW_L, { statusEn: "custom" })).toBe(true);
+  });
+});

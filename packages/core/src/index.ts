@@ -78,7 +78,7 @@ export {
   type BulkBarChromeProps,
   type ChromeBodyData,
   type FilterTriggerToggle,
-  type TableBody,
+  type TableBodyRegion,
   type TableChrome,
   type ToolbarChromeProps,
   useChromeBodyData,

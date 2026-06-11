@@ -21,13 +21,11 @@ import {
   Checkbox,
   Empty,
   Flex,
-  Skeleton,
   Space,
   Table,
   type TableProps,
 } from "antd";
 import {
-  type CSSProperties,
   type ReactNode,
   type UIEventHandler,
   useMemo,
@@ -46,20 +44,8 @@ import {
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
 import { MobileCards } from "./components/MobileCards";
+import { SkeletonTable } from "./components/SkeletonTable";
 import type { DataTableProps } from "./types";
-
-/** Visually-hidden style for the screen-reader loading announcement. */
-const SR_ONLY: CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
 
 /**
  * antd renders virtual rows inside its own fixed-height scroll container, so
@@ -260,67 +246,6 @@ function buildPagination<TRow>(
   };
 }
 
-function skeletonLineWidth(isActions: boolean, index: number): string {
-  if (isActions) return "72px";
-  if (index === 0) return "70%";
-  return "55%";
-}
-
-function skeletonWidth(index: number, total: number): string {
-  if (index === 0) return "34%";
-  if (index === total - 1) return "12%";
-  return `${Math.max(12, Math.floor(72 / Math.max(total - 2, 1)))}%`;
-}
-
-function SkeletonTable({
-  columnCount,
-  rowCount,
-  loadingLabel,
-  size,
-  bordered,
-  hasActions,
-}: Readonly<{
-  columnCount: number;
-  rowCount: number;
-  loadingLabel: string;
-  size: "small" | "middle" | "large";
-  bordered: boolean;
-  hasActions?: boolean;
-}>) {
-  const dataColumns = Math.max(columnCount, 1);
-  const totalColumns = dataColumns + (hasActions ? 1 : 0);
-  const skeletonColumns = Array.from({ length: totalColumns }, (_, i) => {
-    const isActions = Boolean(hasActions && i === totalColumns - 1);
-    const width = isActions ? "96px" : skeletonWidth(i, dataColumns);
-    const lineWidth = skeletonLineWidth(isActions, i);
-    return {
-      key: `skeleton-${i}`,
-      width,
-      title: (
-        <Skeleton.Input active size="small" style={{ width: lineWidth }} />
-      ),
-      render: () => (
-        <Skeleton.Input active size="small" style={{ width: lineWidth }} />
-      ),
-    };
-  });
-  const rows = Array.from({ length: rowCount }, (_, i) => ({
-    key: `row-${i}`,
-  }));
-  return (
-    <div role="status" aria-busy="true" aria-live="polite">
-      <Table
-        columns={skeletonColumns}
-        dataSource={rows}
-        pagination={false}
-        size={size}
-        bordered={bordered}
-      />
-      <span style={SR_ONLY}>{loadingLabel}</span>
-    </div>
-  );
-}
-
 /**
  * The auto-built form for a declarative `filters` array — nothing when the
  * runtime resolved zero definitions (no column shorthands, empty array).
@@ -371,6 +296,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // and the declarative-filter runtime; everything below — pagination, row
   // selection, the sentinel — uses the RESOLVED source via `table.source`.
   const { source: resolvedSource, runtime } = useTableData<TRow>({
+    locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,

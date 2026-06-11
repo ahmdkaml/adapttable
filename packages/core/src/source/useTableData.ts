@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 
+import { resolveColumns } from "../columns/resolveColumns";
 import {
   buildFilterRuntime,
   type FilterDef,
@@ -48,6 +49,8 @@ export interface UseTableDataOptions<TRow> extends Pick<
   getSearchText?: (row: TRow) => string;
   /** Frontend tier: sort-value resolver. */
   getSortValue?: (row: TRow, columnKey: string) => SortableValue;
+  /** Active locale — drives per-column `i18n` path resolution. */
+  locale?: string;
 }
 
 /** Result of {@link useTableData}. */
@@ -121,13 +124,15 @@ export function useTableData<TRow>(
     paginationMode,
     getSearchText,
     getSortValue,
+    locale,
     ...urlOptions
   } = options;
 
   const declaredFilters = isDeclarativeFilters(filters) ? filters : undefined;
   const runtime = useMemo(
-    () => buildFilterRuntime(resolveFilterDefs(columns, declaredFilters)),
-    [columns, declaredFilters]
+    () =>
+      buildFilterRuntime(resolveFilterDefs(columns, declaredFilters, locale)),
+    [columns, declaredFilters, locale]
   );
 
   const mode = resolveTier(source, onQueryChange);
@@ -144,11 +149,15 @@ export function useTableData<TRow>(
 
   // Hooks must run unconditionally; the inactive tiers run disabled (memory
   // URL store, empty data, no emitter) and cost nothing.
+  const resolvedColumns = useMemo(
+    () => resolveColumns(columns, locale),
+    [columns, locale]
+  );
   const frontend = useFrontendData<TRow>({
     ...urlOptions,
     enabled: mode === "frontend" ? urlOptions.enabled : false,
     data: mode === "frontend" ? (data ?? []) : [],
-    columns,
+    columns: resolvedColumns,
     filterFn: combinedFilterFn,
     arrayExtraKeys: runtime.arrayExtraKeys,
     numberExtraKeys: runtime.numberExtraKeys,

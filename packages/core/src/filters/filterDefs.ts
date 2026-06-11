@@ -5,6 +5,7 @@
  * predicate. Definitions come from two places — a column's `filter` shorthand
  * and the table-level `filters` array — merged by {@link resolveFilterDefs}.
  */
+import { localizedColumnPath } from "../columns/resolveColumns";
 import type { ColumnDef, ExtraFilters, FilterValue } from "../types";
 import { devWarn } from "../utils/devWarn";
 import { humanizeKey } from "../utils/humanizeKey";
@@ -83,7 +84,8 @@ export function filterStateKeys(
  */
 export function resolveFilterDefs<TRow>(
   columns: readonly ColumnDef<TRow>[],
-  filters: readonly FilterDef<TRow>[] | undefined
+  filters: readonly FilterDef<TRow>[] | undefined,
+  locale?: string
 ): FilterDef<TRow>[] {
   const standalone = filters ?? [];
   const standaloneKeys = new Set(standalone.map((d) => d.key));
@@ -100,11 +102,17 @@ export function resolveFilterDefs<TRow>(
       );
       continue;
     }
+    // A localized column's filter matches against the same locale-resolved
+    // path the cell shows (unless the shorthand brings its own getValue).
+    const path = localizedColumnPath(column, locale);
     fromColumns.push({
       key: column.key,
       label:
         base.label ??
         (typeof column.header === "string" ? column.header : undefined),
+      ...(path === column.key
+        ? {}
+        : { getValue: (row: TRow) => getPath(row, path) }),
       ...base,
     });
   }

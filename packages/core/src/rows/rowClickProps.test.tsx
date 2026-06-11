@@ -91,4 +91,84 @@ describe("rowClickProps", () => {
     fireEvent.keyDown(row, { key: "a" });
     expect(onRowClick).toHaveBeenCalledTimes(1);
   });
+
+  it("ArrowDown/ArrowUp move focus across sibling rows without wrapping", () => {
+    const onRowClick = vi.fn();
+    render(
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-testid="r1" {...rowClickProps({ id: 1 }, onRowClick)}>
+            <td>One</td>
+          </tr>
+          <tr data-testid="r2" {...rowClickProps({ id: 2 }, onRowClick)}>
+            <td>Two</td>
+          </tr>
+          <tr data-testid="r3" {...rowClickProps({ id: 3 }, onRowClick)}>
+            <td>Three</td>
+          </tr>
+        </tbody>
+      </table>
+    );
+    const r1 = screen.getByTestId("r1");
+    const r2 = screen.getByTestId("r2");
+    r1.focus();
+    fireEvent.keyDown(r1, { key: "ArrowDown" });
+    expect(r2).toHaveFocus();
+    fireEvent.keyDown(r2, { key: "ArrowUp" });
+    expect(r1).toHaveFocus();
+    // Edge: no wrap-around.
+    fireEvent.keyDown(r1, { key: "ArrowUp" });
+    expect(r1).toHaveFocus();
+    const r3 = screen.getByTestId("r3");
+    r3.focus();
+    fireEvent.keyDown(r3, { key: "ArrowDown" });
+    expect(r3).toHaveFocus();
+    // Arrows never activate the row.
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it("arrow keys from an interactive child do not steal focus", () => {
+    const onRowClick = vi.fn();
+    render(
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-testid="row" {...rowClickProps({ id: 1 }, onRowClick)}>
+            <td>
+              <input data-testid="inner" aria-label="x" />
+            </td>
+          </tr>
+          <tr {...rowClickProps({ id: 2 }, onRowClick)}>
+            <td>Two</td>
+          </tr>
+        </tbody>
+      </table>
+    );
+    const inner = screen.getByTestId("inner");
+    inner.focus();
+    fireEvent.keyDown(inner, { key: "ArrowDown" });
+    expect(inner).toHaveFocus();
+  });
+
+  it("a detached row (no parent) is a safe no-op for arrow navigation", () => {
+    const props = rowClickProps({ id: 1 }, vi.fn())!;
+    const detached = document.createElement("tr");
+    expect(() =>
+      props.onKeyDown({
+        key: "ArrowDown",
+        target: detached,
+        currentTarget: detached,
+        preventDefault: () => undefined,
+      } as never)
+    ).not.toThrow();
+  });
 });

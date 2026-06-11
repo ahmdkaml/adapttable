@@ -1,6 +1,6 @@
 import {
   isDeclarativeFilters,
-  type TableBody,
+  type TableBodyRegion,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
@@ -47,6 +47,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Resolve the data tier (source > onQueryChange server > frontend) and the
   // declarative-filter runtime (defs, chip labels, URL keys, predicate).
   const { source, runtime } = useTableData<TRow>({
+    locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,
@@ -112,7 +113,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onRowClick: props.onRowClick,
     rowClassName: props.rowClassName,
   };
-  const bodyByRegion: Record<TableBody, ReactNode> = {
+  const bodyByRegion: Record<TableBodyRegion, ReactNode> = {
     skeleton: slots?.skeleton ?? (
       <LoadingState
         rows={props.skeletonRows ?? source.limit}

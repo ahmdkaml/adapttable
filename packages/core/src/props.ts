@@ -46,6 +46,11 @@ export interface BaseDataTableProps<TRow> {
   /** Text direction. Defaults to `"ltr"`. */
   dir?: Direction;
   /**
+   * Active locale tag (e.g. `"ar"`, `"ar-EG"`). Drives per-column `i18n`
+   * data-path resolution; labels stay a separate concern (`labels`).
+   */
+  locale?: string;
+  /**
    * Row density — independent of column pinning. `"comfortable"` (default) is
    * the roomy layout; `"compact"` tightens row height/padding. Each adapter
    * maps it to its kit's table size.

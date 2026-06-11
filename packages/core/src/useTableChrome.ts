@@ -86,8 +86,12 @@ export interface BulkBarChromeProps {
   labels: Required<TableLabels>;
 }
 
-/** Which body region a {@link DataTable} should render. */
-export type TableBody = "skeleton" | "empty" | "mobile" | "desktop";
+/**
+ * Which body region a `DataTable` should render. Named `TableBodyRegion`
+ * (not `TableBody`) so it never collides with MUI's `TableBody` component
+ * in consumer imports.
+ */
+export type TableBodyRegion = "skeleton" | "empty" | "mobile" | "desktop";
 
 /** The shared, UI-agnostic orchestration result for an adapter table. */
 export interface TableChrome<TRow> {
@@ -106,7 +110,7 @@ export interface TableChrome<TRow> {
   /** Whether the resolved pagination mode is `"paged"`. */
   isPaged: boolean;
   /** Which body region to render. */
-  body: TableBody;
+  body: TableBodyRegion;
   /**
    * Why the body is empty: `"noResults"` when an active search/filter
    * produced zero rows (offer a clear-filters CTA), `"noData"` when the
@@ -176,7 +180,10 @@ export function useTableChrome<TRow>(
 
   // Declarative defaults (auto headers, dot-path accessors) resolve once
   // here, so the layout, the column menu and the table all see them.
-  const resolvedColumns = useMemo(() => resolveColumns(columns), [columns]);
+  const resolvedColumns = useMemo(
+    () => resolveColumns(columns, props.locale),
+    [columns, props.locale]
+  );
 
   // User column layout (hide/order/…) applied on top of the declared columns,
   // before device filtering inside useDataTable. The menu uses `allColumns`.
@@ -232,7 +239,7 @@ export function useTableChrome<TRow>(
 
   const isPaged = source.paginationMode === "paged";
 
-  let body: TableBody;
+  let body: TableBodyRegion;
   if (source.isLoading && source.rows.length === 0) body = "skeleton";
   else if (table.isEmpty) body = "empty";
   else if (isMobile) body = "mobile";

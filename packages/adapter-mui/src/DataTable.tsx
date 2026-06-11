@@ -60,6 +60,7 @@ function resizeSetter(
  */
 function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { source, runtime } = useTableData<TRow>({
+    locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,
