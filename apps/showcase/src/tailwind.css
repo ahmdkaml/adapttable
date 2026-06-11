@@ -10,6 +10,10 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Bind `dark:` to the site's theme toggle (data-theme), not the OS media
+   query, so the demos flip with the navbar switch like everything else. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Preflight is skipped (above), so restore border-box sizing — but only inside
    the unstyled AdaptTable so Tailwind's height/padding utilities measure right
    without disturbing the Mantine/MUI/Chakra/AntD demos. */

@@ -7,6 +7,7 @@ import { ChakraDemo } from "./adapters/ChakraDemo";
 import { MantineDemo } from "./adapters/MantineDemo";
 import { MuiDemo } from "./adapters/MuiDemo";
 import { ShadcnDemo } from "./adapters/ShadcnDemo";
+import { UnstyledDemo } from "./adapters/UnstyledDemo";
 import { cssVars } from "./cssVars";
 import {
   DEMO_CONFIRM_EVENT,
@@ -46,6 +47,7 @@ const ADAPTERS: Record<string, DemoComponent> = {
   chakra: ChakraDemo,
   antd: AntdDemo,
   shadcn: ShadcnDemo,
+  tailwind: UnstyledDemo,
 };
 
 function Segmented<T extends string>({
