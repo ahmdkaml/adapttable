@@ -232,6 +232,28 @@ export interface TableLabels {
   expandRow?: string;
   /** Collapse-row chevron label. */
   collapseRow?: string;
+  /** Range-widget operator select placeholder. */
+  operator?: string;
+  /** Range-widget single-value placeholder. */
+  value?: string;
+  /** Range-widget lower-bound placeholder. */
+  from?: string;
+  /** Range-widget upper-bound placeholder. */
+  to?: string;
+  /** Number operator: exactly equal. */
+  opEqual?: string;
+  /** Number operator: greater than or equal. */
+  opAtLeast?: string;
+  /** Number operator: less than or equal. */
+  opAtMost?: string;
+  /** Operator: inclusive range. */
+  opBetween?: string;
+  /** Date operator: exactly on the day. */
+  opOn?: string;
+  /** Date operator: on or after the day. */
+  opOnOrAfter?: string;
+  /** Date operator: on or before the day. */
+  opOnOrBefore?: string;
   /** Saved-views menu trigger / list title. */
   savedViews?: string;
   /** Save-current-view action. */

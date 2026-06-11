@@ -296,4 +296,27 @@ describe("multiSort (shift-click chain on antd headers)", () => {
     expect(adapter.getSearch()).toContain("sortBy=name");
     expect(adapter.getSearch()).not.toContain("sort=");
   });
+
+  it("urlSync={false} keeps state in memory and never touches the adapter", () => {
+    const spy = {
+      getSearch: vi.fn(() => ""),
+      setSearch: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    };
+    render(
+      <ConfigProvider>
+        <DataTable<Row>
+          data={ROWS}
+          columns={baseColumns}
+          rowKey={(r) => r.id}
+          urlAdapter={spy}
+          urlSync={false}
+        />
+      </ConfigProvider>
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(spy.getSearch).not.toHaveBeenCalled();
+    expect(spy.setSearch).not.toHaveBeenCalled();
+    expect(spy.subscribe).not.toHaveBeenCalled();
+  });
 });

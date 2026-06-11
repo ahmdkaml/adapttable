@@ -2,6 +2,7 @@ import type { RowAction, UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
+  resolveLabels,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
@@ -98,7 +99,8 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onQueryChange: props.onQueryChange,
     columns: props.columns,
     filters: props.filters,
-    adapter: props.urlAdapter,
+    adapter: props.urlSync === false ? undefined : props.urlAdapter,
+    enabled: props.urlSync,
     urlKey: props.urlKey,
   });
   let filtersNode: ReactNode;
@@ -107,7 +109,11 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
   if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
     filtersNode =
       runtime.defs.length > 0 ? (
-        <AutoFilterForm defs={runtime.defs} source={source} />
+        <AutoFilterForm
+          defs={runtime.defs}
+          source={source}
+          labels={resolveLabels(props.labels)}
+        />
       ) : undefined;
   } else {
     filtersNode = props.filters;

@@ -4,9 +4,15 @@ import {
   filterLabel,
   filterStateKeys,
   type FilterValue,
-  RANGE_SUFFIXES,
+  RANGE_OP_LABEL_KEYS,
+  RANGE_OPS,
+  type RangeOp,
+  readRangeWidget,
+  resolveLabels,
+  type TableLabels,
   type TableSource,
   useFilterOptions,
+  writeRangeWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -19,14 +25,14 @@ import {
   Spinner,
   Stack,
 } from "@chakra-ui/react";
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import { selectIconRootProps } from "./chrome";
 
 /** The slice of the table source the auto-built form reads and writes. */
 export type FilterFormSource<TRow> = Pick<
   TableSource<TRow>,
-  "extra" | "setExtra"
+  "extra" | "setExtra" | "setExtras"
 >;
 
 /** Props for {@link AutoFilterForm}. */
@@ -35,10 +41,12 @@ export interface AutoFilterFormProps<TRow> {
   dir?: Direction;
   /** The resolved filter definitions, in render order. */
   defs: readonly FilterDef<TRow>[];
-  /** The resolved table source (filter bag + setter). */
+  /** The resolved table source (filter bag + setters). */
   source: FilterFormSource<TRow>;
   /** Chakra color scheme for option checkboxes. */
   colorScheme?: string;
+  /** Pre-translated label overrides (operator names, From/To, …). */
+  labels?: TableLabels;
 }
 
 /** A scalar filter value as input text ("" when unset; numbers stringify). */
@@ -52,15 +60,116 @@ function list(value: FilterValue): string[] {
   return value == null || value === "" ? [] : [String(value)];
 }
 
+/**
+ * Operator-first range widget (`numberRange` / `dateRange`): a comparison
+ * select, then ONE bound input — or a From/To pair for "Between". The
+ * persisted state stays the inclusive `Min`/`Max` (`From`/`To`) pair, so the
+ * operator itself is UI state seeded from the pair: the user's choice must
+ * survive an emptied input, which clears both keys.
+ */
+function RangeField<TRow>({
+  def,
+  source,
+  labels,
+  dir,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+  dir?: Direction;
+}>) {
+  const id = useId();
+  const { extra, setExtras } = source;
+  const label = filterLabel(def);
+  const [lowKey, highKey] = filterStateKeys(def);
+  const opLabels =
+    RANGE_OP_LABEL_KEYS[def.type === "dateRange" ? "date" : "number"];
+  const inputType = def.type === "dateRange" ? "date" : "number";
+  const [op, setOp] = useState<RangeOp | undefined>(
+    () => readRangeWidget(extra, lowKey!, highKey!).op
+  );
+  // Bounds derive from the persisted pair, so URL state and chip clears stay
+  // the source of truth: "At most" reads the upper key, everything else the
+  // lower one ("Equal" wrote both identical), "Between" reads both.
+  const a = scalar(extra[op === "lte" ? highKey! : lowKey!]);
+  const b = scalar(extra[highKey!]);
+  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
+    setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
+  return (
+    <FormControl>
+      <FormLabel fontSize="sm" mb={1}>
+        {label}
+      </FormLabel>
+      <Stack spacing={2}>
+        {/* Chakra renders `placeholder` as the empty first option, so the
+            operator placeholder doubles as the "no comparison" clear choice. */}
+        <Select
+          size="sm"
+          rootProps={selectIconRootProps(dir)}
+          placeholder={labels.operator}
+          value={op ?? ""}
+          onChange={(e) => {
+            const next = RANGE_OPS.find((o) => o === e.target.value);
+            setOp(next);
+            write(next, a, b);
+          }}
+        >
+          {RANGE_OPS.map((o) => (
+            <option key={o} value={o}>
+              {labels[opLabels[o]]}
+            </option>
+          ))}
+        </Select>
+        {op === "between" ? (
+          <HStack spacing={2}>
+            <Input
+              id={`${id}-a`}
+              size="sm"
+              type={inputType}
+              aria-label={labels.from}
+              placeholder={labels.from}
+              value={a}
+              onChange={(e) => write(op, e.target.value, b)}
+            />
+            <Input
+              id={`${id}-b`}
+              size="sm"
+              type={inputType}
+              aria-label={labels.to}
+              placeholder={labels.to}
+              value={b}
+              onChange={(e) => write(op, a, e.target.value)}
+            />
+          </HStack>
+        ) : (
+          op && (
+            <Input
+              id={`${id}-a`}
+              size="sm"
+              type={inputType}
+              aria-label={labels.value}
+              placeholder={labels.value}
+              value={a}
+              onChange={(e) => write(op, e.target.value, "")}
+            />
+          )
+        )}
+      </Stack>
+    </FormControl>
+  );
+}
+
 /** One definition rendered as its kit-native Chakra control. */
 function AutoFilterField<TRow>({
   def,
   source,
+  labels,
   colorScheme,
   dir,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
   colorScheme?: string;
   dir?: Direction;
 }>) {
@@ -145,36 +254,8 @@ function AutoFilterField<TRow>({
         </FormControl>
       );
     case "dateRange":
-    case "numberRange": {
-      const [startKey, endKey] = filterStateKeys(def);
-      const suffixes = RANGE_SUFFIXES[def.type];
-      const inputType = def.type === "dateRange" ? "date" : "number";
-      return (
-        <FormControl>
-          <FormLabel fontSize="sm" mb={1} htmlFor={`${id}-start`}>
-            {label}
-          </FormLabel>
-          <HStack spacing={2}>
-            <Input
-              id={`${id}-start`}
-              size="sm"
-              type={inputType}
-              aria-label={`${label} ${suffixes.start}`}
-              value={scalar(extra[startKey!])}
-              onChange={(e) => setExtra(startKey!, e.target.value)}
-            />
-            <Input
-              id={`${id}-end`}
-              size="sm"
-              type={inputType}
-              aria-label={`${label} ${suffixes.end}`}
-              value={scalar(extra[endKey!])}
-              onChange={(e) => setExtra(endKey!, e.target.value)}
-            />
-          </HStack>
-        </FormControl>
-      );
-    }
+    case "numberRange":
+      return <RangeField def={def} source={source} labels={labels} dir={dir} />;
   }
 }
 
@@ -191,7 +272,9 @@ export function AutoFilterForm<TRow>({
   source,
   colorScheme,
   dir,
+  labels,
 }: Readonly<AutoFilterFormProps<TRow>>) {
+  const resolved = resolveLabels(labels);
   return (
     <Stack spacing={3}>
       {defs.map((def) => (
@@ -199,6 +282,7 @@ export function AutoFilterForm<TRow>({
           key={def.key}
           def={def}
           source={source}
+          labels={resolved}
           colorScheme={colorScheme}
           dir={dir}
         />

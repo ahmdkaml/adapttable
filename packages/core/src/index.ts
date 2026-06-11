@@ -66,6 +66,14 @@ export {
   resolveFilterDefs,
 } from "./filters/filterDefs";
 export {
+  RANGE_OP_LABEL_KEYS,
+  RANGE_OPS,
+  type RangeOp,
+  type RangeWidgetState,
+  readRangeWidget,
+  writeRangeWidget,
+} from "./filters/rangeWidget";
+export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";

@@ -4,6 +4,7 @@ import {
   type FilterRuntime,
   isDeclarativeFilters,
   pageSizeOptions,
+  resolveLabels,
   rowClickProps,
   type RowExpansionState,
   type SelectionState,
@@ -108,6 +109,14 @@ function EmptyState({
       <Button onClick={onClearFilters}>{labels.clearAll}</Button>
     </Empty>
   );
+}
+
+/** The URL adapter the table should use — none at all when sync is off. */
+function resolveUrlAdapter(
+  urlSync: boolean | undefined,
+  adapter: UrlStateAdapter | undefined
+): UrlStateAdapter | undefined {
+  return urlSync === false ? undefined : adapter;
 }
 
 /** Map antd's `onChange` sort event back onto the source's sort state. */
@@ -401,10 +410,11 @@ function PagedFooter<TRow>({
  */
 function autoFilterForm<TRow>(
   runtime: FilterRuntime<TRow>,
-  source: TableSource<TRow>
+  source: TableSource<TRow>,
+  labels: Required<TableLabels>
 ) {
   if (runtime.defs.length === 0) return undefined;
-  return <AutoFilterForm defs={runtime.defs} source={source} />;
+  return <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />;
 }
 
 /**
@@ -451,17 +461,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     total: props.total,
     loading: props.loading,
     onQueryChange: props.onQueryChange,
-    adapter: props.urlAdapter,
+    adapter: resolveUrlAdapter(props.urlSync, props.urlAdapter),
+    enabled: props.urlSync,
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
   });
   // A declarative `filters` array becomes the auto-built form; JSX passes
   // through untouched. Column-level `filter` shorthands alone (no `filters`
-  // prop) must still render the form — only explicit JSX takes over.
+  // prop) must still render the form — only explicit JSX takes over. The
+  // form needs the resolved labels before `useTableChrome` resolves its own
+  // (the chrome consumes the form node), so resolve the same prop here.
+  const formLabels = useMemo(() => resolveLabels(props.labels), [props.labels]);
   const filtersNode =
     isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoFilterForm(runtime, resolvedSource)
+      ? autoFilterForm(runtime, resolvedSource, formLabels)
       : props.filters;
   const filterLabels = useMemo(
     () => ({ ...runtime.filterLabels, ...props.filterLabels }),

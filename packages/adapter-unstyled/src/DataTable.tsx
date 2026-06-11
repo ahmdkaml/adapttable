@@ -187,7 +187,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     total,
     loading,
     onQueryChange,
-    adapter: urlAdapter,
+    adapter: props.urlSync === false ? undefined : urlAdapter,
+    enabled: props.urlSync,
     urlKey,
     columns: props.columns,
     filters: props.filters,
@@ -200,6 +201,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         defs={runtime.defs}
         source={source}
         classNames={classNames}
+        labels={props.labels}
       />
     ) : undefined;
   // Column-level `filter` shorthands alone must still render the auto form —

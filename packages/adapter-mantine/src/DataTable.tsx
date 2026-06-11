@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
+  resolveLabels,
   type TableLabels,
   useChromeBodyData,
   useChromeScrollReset,
@@ -77,8 +78,13 @@ function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
     columns: props.columns,
     filters: props.filters,
     urlKey: props.urlKey,
-    adapter: props.urlAdapter,
+    adapter: props.urlSync === false ? undefined : props.urlAdapter,
+    enabled: props.urlSync,
   });
+
+  // The same resolution `useTableChrome` applies — the auto form needs the
+  // operator/value strings before the chrome exists.
+  const labels = useMemo(() => resolveLabels(props.labels), [props.labels]);
 
   let filters: ReactNode;
   // Column-level `filter` shorthands alone must still render the auto form —
@@ -86,7 +92,7 @@ function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
   if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
     filters =
       runtime.defs.length > 0 ? (
-        <AutoFilterForm defs={runtime.defs} source={source} />
+        <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />
       ) : undefined;
   } else {
     filters = props.filters;

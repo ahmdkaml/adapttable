@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { DataTable } from "./DataTable";
 import type { ColumnDef, FilterDef, FilterOption, TableQuery } from "./index";
+import { defaultLabels } from "./index";
 import { renderMui } from "./test-utils";
 
 interface Person {
@@ -106,6 +107,12 @@ const openFilters = () =>
 
 const param = (adapter: ReturnType<typeof createMemoryAdapter>, key: string) =>
   new URLSearchParams(adapter.getSearch()).get(key);
+
+// Each range widget renders as a labeled fieldset; re-query per assertion so
+// re-renders never leave a stale DOM scope behind.
+const budgetGroup = () => within(screen.getByRole("group", { name: "Budget" }));
+const hiredGroup = () =>
+  within(screen.getByRole("group", { name: "Hired At" }));
 
 describe("declarative DataTable (MUI)", () => {
   it("column filter shorthands alone (no filters prop) render the auto form", () => {
@@ -262,32 +269,93 @@ describe("declarative DataTable (MUI)", () => {
     expect(param(adapter, "f_department.name")).toBeNull();
   });
 
-  it("dateRange writes <key>From / <key>To as dates and filters rows", () => {
-    const adapter = mountTable();
+  it("range widgets are operator-first with per-flavour localized operators", () => {
+    mountTable({ labels: { opAtLeast: "Mindestens" } });
     openFilters();
-    fireEvent.change(screen.getByLabelText("Hired At From"), {
-      target: { value: "2025-03-01" },
-    });
-    fireEvent.change(screen.getByLabelText("Hired At To"), {
-      target: { value: "2025-12-31" },
-    });
-    expect(param(adapter, "f_hiredAtFrom")).toBe("2025-03-01");
-    expect(param(adapter, "f_hiredAtTo")).toBe("2025-12-31");
-    // Only Bob (2025-06-01) hires inside the window.
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-    expect(screen.queryByText("Alice")).toBeNull();
-    expect(screen.queryByText("Cara")).toBeNull();
-    // Two chips, one per bound.
-    expect(screen.getByText("Hired At ≥ 2025-03-01")).toBeInTheDocument();
-    expect(screen.getByText("Hired At ≤ 2025-12-31")).toBeInTheDocument();
+    // Number flavour: equal / at-least / at-most / between (plus the clear
+    // item) — and a `labels` override localizes the list.
+    const budgetOps = budgetGroup()
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(budgetOps).toEqual([
+      "",
+      "Equal",
+      "Mindestens",
+      "At most",
+      "Between",
+    ]);
+    // Date flavour: on / on-or-after / on-or-before / between.
+    const hiredOps = hiredGroup()
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(hiredOps).toEqual([
+      "",
+      "On",
+      "On or after",
+      "On or before",
+      "Between",
+    ]);
+    // Operator-first: no value input until a comparison is chosen.
+    expect(budgetGroup().queryByLabelText("Value")).toBeNull();
+    expect(budgetGroup().queryByLabelText("From")).toBeNull();
   });
 
-  it("numberRange writes <key>Min / <key>Max as numbers and empty clears", () => {
+  it('"At least" writes only Min — switching to "At most" migrates it to Max', () => {
     const adapter = mountTable();
     openFilters();
-    const min = screen.getByLabelText("Budget Min");
-    fireEvent.change(min, { target: { value: "300" } });
-    fireEvent.change(screen.getByLabelText("Budget Max"), {
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "gte" },
+    });
+    fireEvent.change(budgetGroup().getByLabelText("Value"), {
+      target: { value: "300" },
+    });
+    expect(param(adapter, "f_budgetMin")).toBe("300");
+    expect(param(adapter, "f_budgetMax")).toBeNull();
+    // Budgets >= 300: Bob (900) and Cara (500); Alice (100) drops.
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("Cara")).toBeInTheDocument();
+
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "lte" },
+    });
+    expect(param(adapter, "f_budgetMin")).toBeNull();
+    expect(param(adapter, "f_budgetMax")).toBe("300");
+    // The typed bound carried across the comparison switch.
+    expect(budgetGroup().getByLabelText("Value")).toHaveValue(300);
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.queryByText("Bob")).toBeNull();
+  });
+
+  it('"Equal" writes BOTH keys with the one value', () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "eq" },
+    });
+    fireEvent.change(budgetGroup().getByLabelText("Value"), {
+      target: { value: "500" },
+    });
+    expect(param(adapter, "f_budgetMin")).toBe("500");
+    expect(param(adapter, "f_budgetMax")).toBe("500");
+    // Only Cara's budget is exactly 500.
+    expect(screen.getByText("Cara")).toBeInTheDocument();
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.queryByText("Bob")).toBeNull();
+  });
+
+  it('"Between" renders From/To and writes both keys', () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "between" },
+    });
+    // Two labeled bounds replace the single value input.
+    expect(budgetGroup().queryByLabelText("Value")).toBeNull();
+    fireEvent.change(budgetGroup().getByLabelText("From"), {
+      target: { value: "300" },
+    });
+    fireEvent.change(budgetGroup().getByLabelText("To"), {
       target: { value: "600" },
     });
     expect(param(adapter, "f_budgetMin")).toBe("300");
@@ -296,20 +364,76 @@ describe("declarative DataTable (MUI)", () => {
     expect(screen.getByText("Cara")).toBeInTheDocument();
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.queryByText("Bob")).toBeNull();
-    // The committed value round-trips as a number into the input.
-    expect(min).toHaveValue(300);
-    // Clearing the field writes "" which drops the param.
-    fireEvent.change(min, { target: { value: "" } });
-    expect(param(adapter, "f_budgetMin")).toBeNull();
   });
 
-  it("restores numberRange values from the URL into the inputs", () => {
-    mountTable({}, "f_budgetMin=300");
+  it("clearing the operator clears the persisted pair", () => {
+    const adapter = mountTable();
     openFilters();
-    expect(screen.getByLabelText("Budget Min")).toHaveValue(300);
-    // The predicate applied on mount: only budgets >= 300 remain.
-    expect(screen.queryByText("Alice")).toBeNull();
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "between" },
+    });
+    fireEvent.change(budgetGroup().getByLabelText("From"), {
+      target: { value: "300" },
+    });
+    fireEvent.change(budgetGroup().getByLabelText("To"), {
+      target: { value: "600" },
+    });
+    expect(param(adapter, "f_budgetMin")).toBe("300");
+    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
+      target: { value: "" },
+    });
+    expect(param(adapter, "f_budgetMin")).toBeNull();
+    expect(param(adapter, "f_budgetMax")).toBeNull();
+    expect(budgetGroup().queryByLabelText("From")).toBeNull();
+    // Every row is back once the pair clears.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("Cara")).toBeInTheDocument();
+  });
+
+  it("URL f_budgetMin=5&f_budgetMax=5 mounts as Equal with the one value", () => {
+    mountTable({}, "f_budgetMin=5&f_budgetMax=5");
+    openFilters();
+    expect(budgetGroup().getByLabelText("Operator")).toHaveValue("eq");
+    expect(budgetGroup().getByLabelText("Value")).toHaveValue(5);
+    // The restored pair predicate applied on mount: no budget equals 5.
+    expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.queryByText("Bob")).toBeNull();
+    expect(screen.queryByText("Cara")).toBeNull();
+    expect(
+      screen.getByText("No results match your filters")
+    ).toBeInTheDocument();
+  });
+
+  it("dateRange: On-or-after writes From; Between adds To; chips per bound", () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
+      target: { value: "gte" },
+    });
+    fireEvent.change(hiredGroup().getByLabelText("Value"), {
+      target: { value: "2025-03-01" },
+    });
+    expect(param(adapter, "f_hiredAtFrom")).toBe("2025-03-01");
+    expect(param(adapter, "f_hiredAtTo")).toBeNull();
+    // Alice (2025-01-15) hires before the bound.
+    expect(screen.queryByText("Alice")).toBeNull();
+
+    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
+      target: { value: "between" },
+    });
+    // The single value carried over as the lower bound.
+    expect(param(adapter, "f_hiredAtFrom")).toBe("2025-03-01");
+    fireEvent.change(hiredGroup().getByLabelText("To"), {
+      target: { value: "2025-12-31" },
+    });
+    expect(param(adapter, "f_hiredAtTo")).toBe("2025-12-31");
+    // Only Bob (2025-06-01) hires inside the window.
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByText("Cara")).toBeNull();
+    // Two chips, one per bound — the pair contract is unchanged.
+    expect(screen.getByText("Hired At ≥ 2025-03-01")).toBeInTheDocument();
+    expect(screen.getByText("Hired At ≤ 2025-12-31")).toBeInTheDocument();
   });
 });
 
@@ -376,7 +500,8 @@ describe("<AutoFilterForm> (MUI)", () => {
           { key: "status", type: "select" },
           { key: "department.name", type: "multiSelect", label: "Department" },
         ]}
-        source={{ extra: {}, setExtra }}
+        source={{ extra: {}, setExtra, setExtras: vi.fn() }}
+        labels={defaultLabels}
       />
     );
     // The select still offers the "All" reset option…
@@ -388,5 +513,18 @@ describe("<AutoFilterForm> (MUI)", () => {
     // …and the option-less group renders its legend with no checkboxes.
     expect(screen.getByText("Department")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+
+  it("urlSync={false} keeps state in memory and never touches the adapter", () => {
+    const spy = {
+      getSearch: vi.fn(() => ""),
+      setSearch: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    };
+    mountTable({ urlAdapter: spy, urlSync: false });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(spy.getSearch).not.toHaveBeenCalled();
+    expect(spy.setSearch).not.toHaveBeenCalled();
+    expect(spy.subscribe).not.toHaveBeenCalled();
   });
 });

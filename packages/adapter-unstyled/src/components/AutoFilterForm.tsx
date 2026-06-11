@@ -2,11 +2,18 @@ import {
   type FilterDef,
   filterLabel,
   type FilterValue,
+  RANGE_OP_LABEL_KEYS,
+  RANGE_OPS,
   RANGE_SUFFIXES,
+  type RangeOp,
+  readRangeWidget,
+  resolveLabels,
+  type TableLabels,
   type TableSource,
   useFilterOptions,
+  writeRangeWidget,
 } from "@adapttable/core";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 
 import type { DataTableClassNames } from "../types";
 
@@ -66,8 +73,6 @@ interface BagInputProps<TRow> {
   stateKey: string;
   type: "text" | "date" | "number";
   placeholder?: string;
-  /** Accessible name for inputs without a wrapping label (range halves). */
-  ariaLabel?: string;
   classNames: DataTableClassNames;
 }
 
@@ -77,14 +82,12 @@ function BagInput<TRow>({
   stateKey,
   type,
   placeholder,
-  ariaLabel,
   classNames,
 }: Readonly<BagInputProps<TRow>>) {
   return (
     <input
       type={type}
       placeholder={placeholder}
-      aria-label={ariaLabel}
       data-adapttable-part="filter-input"
       className={classNames.filterInput}
       value={asText(source.extra[stateKey])}
@@ -207,48 +210,137 @@ function MultiSelectField<TRow>({
   );
 }
 
-interface RangeFieldProps<TRow> extends DefFieldProps<TRow> {
-  inputType: "date" | "number";
-  suffixes: { readonly start: string; readonly end: string };
+interface RangeValueInputProps {
+  type: "date" | "number";
+  /** Placeholder AND accessible name (`Value`, `From`, or `To`). */
+  label: string;
+  value: string;
+  onValue: (next: string) => void;
+  classNames: DataTableClassNames;
 }
 
-/** Two-input range field writing `<key><start>` / `<key><end>` state keys. */
+/** One bound of a range widget; the parent owns the write-through. */
+function RangeValueInput({
+  type,
+  label,
+  value,
+  onValue,
+  classNames,
+}: Readonly<RangeValueInputProps>) {
+  return (
+    <input
+      type={type}
+      placeholder={label}
+      aria-label={label}
+      data-adapttable-part="filter-input"
+      className={classNames.filterInput}
+      value={value}
+      onChange={(e) => onValue(e.currentTarget.value)}
+    />
+  );
+}
+
+interface RangeFieldProps<TRow> extends DefFieldProps<TRow> {
+  /** Input type AND the `RANGE_OP_LABEL_KEYS` flavour (number vs date). */
+  inputType: "date" | "number";
+  suffixes: { readonly start: string; readonly end: string };
+  labels: Required<TableLabels>;
+}
+
+/**
+ * Operator-first range field: a comparison `<select>` (its placeholder
+ * option clears the pair), then ONE value input — or a labeled From/To
+ * pair for `between`. The persisted state stays the inclusive
+ * `<key><start>` / `<key><end>` pair, written through `setExtras`.
+ */
 function RangeField<TRow>({
   def,
   source,
   classNames,
   inputType,
   suffixes,
+  labels,
 }: Readonly<RangeFieldProps<TRow>>) {
-  const caption = filterLabel(def);
+  const lowKey = def.key + suffixes.start;
+  const highKey = def.key + suffixes.end;
+  // The chosen comparison is widget-local UI state (an operator with no
+  // value persists nothing); it seeds from the persisted pair, so a
+  // URL-restored pair reopens on its matching operator.
+  const [op, setOp] = useState<RangeOp | undefined>(
+    () => readRangeWidget(source.extra, lowKey, highKey).op
+  );
+  // Values stay bag-driven so chips / Clear all reset them live. The
+  // single-value operators read the bound they write — `lte` the upper.
+  const a = asText(source.extra[op === "lte" ? highKey : lowKey]);
+  const b = asText(source.extra[highKey]);
+  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
+    source.setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey, highKey));
+  const opLabelKeys = RANGE_OP_LABEL_KEYS[inputType];
   return (
-    <GroupField caption={caption} classNames={classNames}>
-      {/* Structural layout only (like the toolbar): halves sit side by side. */}
+    <GroupField caption={filterLabel(def)} classNames={classNames}>
+      {/* Structural layout only (like the toolbar): parts sit side by side. */}
       <div style={{ display: "flex", gap: 8 }}>
-        <BagInput
-          source={source}
-          stateKey={def.key + suffixes.start}
-          type={inputType}
-          ariaLabel={`${caption} ${suffixes.start}`}
-          classNames={classNames}
-        />
-        <BagInput
-          source={source}
-          stateKey={def.key + suffixes.end}
-          type={inputType}
-          ariaLabel={`${caption} ${suffixes.end}`}
-          classNames={classNames}
-        />
+        <select
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
+          className={classNames.filterOperator}
+          value={op ?? ""}
+          onChange={(e) => {
+            // Find (not cast) the next operator; "" → undefined → clear.
+            const next = RANGE_OPS.find((o) => o === e.currentTarget.value);
+            setOp(next);
+            write(next, a, b);
+          }}
+        >
+          <option value="">{labels.operator}</option>
+          {RANGE_OPS.map((o) => (
+            <option key={o} value={o}>
+              {labels[opLabelKeys[o]]}
+            </option>
+          ))}
+        </select>
+        {op === "between" && (
+          <>
+            <RangeValueInput
+              type={inputType}
+              label={labels.from}
+              value={a}
+              onValue={(next) => write(op, next, b)}
+              classNames={classNames}
+            />
+            <RangeValueInput
+              type={inputType}
+              label={labels.to}
+              value={b}
+              onValue={(next) => write(op, a, next)}
+              classNames={classNames}
+            />
+          </>
+        )}
+        {op !== undefined && op !== "between" && (
+          <RangeValueInput
+            type={inputType}
+            label={labels.value}
+            value={a}
+            onValue={(next) => write(op, next, "")}
+            classNames={classNames}
+          />
+        )}
       </div>
     </GroupField>
   );
+}
+
+interface FilterFieldProps<TRow> extends DefFieldProps<TRow> {
+  labels: Required<TableLabels>;
 }
 
 function FilterField<TRow>({
   def,
   source,
   classNames,
-}: Readonly<DefFieldProps<TRow>>): ReactElement {
+  labels,
+}: Readonly<FilterFieldProps<TRow>>): ReactElement {
   switch (def.type) {
     case "text":
       return <TextField def={def} source={source} classNames={classNames} />;
@@ -266,6 +358,7 @@ function FilterField<TRow>({
           classNames={classNames}
           inputType="date"
           suffixes={RANGE_SUFFIXES.dateRange}
+          labels={labels}
         />
       );
     case "numberRange":
@@ -276,6 +369,7 @@ function FilterField<TRow>({
           classNames={classNames}
           inputType="number"
           suffixes={RANGE_SUFFIXES.numberRange}
+          labels={labels}
         />
       );
   }
@@ -289,15 +383,20 @@ export interface AutoFilterFormProps<TRow> {
   source: TableSource<TRow>;
   /** Per-part class name overrides (the `filter*` keys). */
   classNames?: DataTableClassNames;
+  /**
+   * Label overrides for the range widgets (`operator`, `value`, `from`,
+   * `to`, and the `op*` operator names); English defaults merge in.
+   */
+  labels?: TableLabels;
 }
 
 /**
  * The auto-built filter form for the declarative `filters` array: one
  * semantic field per definition (`text` input, `select` with an "All"
- * option, `multiSelect` checkbox list, `dateRange` / `numberRange` input
- * pairs), each carrying `data-adapttable-part` hooks and `classNames`
- * overrides. Controls read `source.extra` and write through
- * `source.setExtra` — an empty value clears the key.
+ * option, `multiSelect` checkbox list, operator-first `dateRange` /
+ * `numberRange` widgets), each carrying `data-adapttable-part` hooks and
+ * `classNames` overrides. Controls read `source.extra` and write through
+ * `source.setExtra` / `source.setExtras` — an empty value clears its key.
  *
  * @typeParam TRow - The row type.
  */
@@ -305,7 +404,9 @@ export function AutoFilterForm<TRow>({
   defs,
   source,
   classNames = {},
+  labels,
 }: Readonly<AutoFilterFormProps<TRow>>) {
+  const resolvedLabels = resolveLabels(labels);
   return (
     <>
       {defs.map((def) => (
@@ -314,6 +415,7 @@ export function AutoFilterForm<TRow>({
           def={def}
           source={source}
           classNames={classNames}
+          labels={resolvedLabels}
         />
       ))}
     </>

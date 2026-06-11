@@ -1,11 +1,16 @@
 import {
   type FilterDef,
   filterLabel,
-  filterStateKeys,
   type FilterValue,
+  RANGE_OP_LABEL_KEYS,
+  RANGE_OPS,
   RANGE_SUFFIXES,
+  type RangeOp,
+  readRangeWidget,
+  type TableLabels,
   type TableSource,
   useFilterOptions,
+  writeRangeWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -17,9 +22,14 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import type { ReactNode } from "react";
+import { useState } from "react";
 
 /** The slice of the source the auto-built form reads and writes. */
-type FilterBag<TRow> = Pick<TableSource<TRow>, "extra" | "setExtra">;
+type FilterBag<TRow> = Pick<
+  TableSource<TRow>,
+  "extra" | "setExtra" | "setExtras"
+>;
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -27,12 +37,19 @@ export interface AutoFilterFormProps<TRow> {
   defs: readonly FilterDef<TRow>[];
   /** The filter bag the widgets read from and write to. */
   source: FilterBag<TRow>;
+  /** Resolved labels for the operator-first range widgets. */
+  labels: Required<TableLabels>;
 }
 
 /** Props for one rendered filter widget. */
 interface FieldProps<TRow> {
   def: FilterDef<TRow>;
   source: FilterBag<TRow>;
+}
+
+/** Field props for the widgets that also render resolved labels. */
+interface LabeledFieldProps<TRow> extends FieldProps<TRow> {
+  labels: Required<TableLabels>;
 }
 
 /** A scalar filter value as input text (arrays/blanks render empty). */
@@ -123,41 +140,100 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
   );
 }
 
+/**
+ * Operator-first range widget: a comparison select, then one value input —
+ * or a From/To pair for "between". The UI state is the operator alone; the
+ * bounds always live in the source's `Min`/`Max` (`From`/`To`) pair, so
+ * URLs, chips, and predicates are untouched by the operator presentation.
+ */
 function RangeFilter<TRow>({
   def,
   type,
   source,
-}: Readonly<FieldProps<TRow> & { type: keyof typeof RANGE_SUFFIXES }>) {
-  const label = filterLabel(def);
+  labels,
+}: Readonly<LabeledFieldProps<TRow> & { type: keyof typeof RANGE_SUFFIXES }>) {
   const suffixes = RANGE_SUFFIXES[type];
-  const fields = filterStateKeys(def).map((key, i) => ({
-    key,
-    suffix: i === 0 ? suffixes.start : suffixes.end,
-  }));
-  const write = (key: string, raw: string) =>
-    source.setExtra(
-      key,
-      type === "numberRange" && raw !== "" ? Number(raw) : raw
+  const lowKey = def.key + suffixes.start;
+  const highKey = def.key + suffixes.end;
+  const opLabelKeys =
+    RANGE_OP_LABEL_KEYS[type === "dateRange" ? "date" : "number"];
+  const state = readRangeWidget(source.extra, lowKey, highKey);
+  // The operator is presentation state, seeded from the persisted pair so a
+  // restored URL reopens on the comparison it encodes.
+  const [op, setOp] = useState<RangeOp | undefined>(state.op);
+  // The single bound lives under the high key for "at most", low otherwise.
+  const single = op === "lte" ? state.b : state.a;
+  const commit = (next: RangeOp | undefined, a: string, b: string) =>
+    source.setExtras(writeRangeWidget(next, a, b, lowKey, highKey));
+  const changeOp = (raw: string) => {
+    const next = RANGE_OPS.find((candidate) => candidate === raw);
+    setOp(next);
+    // Carry the value into the new comparison; the upper bound only
+    // survives while "between" keeps a field for it.
+    commit(next, single, op === "between" ? state.b : "");
+  };
+  const input = (
+    label: string,
+    value: string,
+    write: (raw: string) => void
+  ) => (
+    <TextField
+      size="small"
+      type={type === "dateRange" ? "date" : "number"}
+      label={label}
+      value={value}
+      onChange={(e) => write(e.target.value)}
+      slotProps={{ inputLabel: { shrink: true } }}
+      sx={{ flex: 1 }}
+    />
+  );
+  let bounds: ReactNode = null;
+  if (op === "between") {
+    bounds = (
+      <>
+        {input(labels.from, state.a, (raw) => commit("between", raw, state.b))}
+        {input(labels.to, state.b, (raw) => commit("between", state.a, raw))}
+      </>
     );
+  } else if (op !== undefined) {
+    bounds = input(labels.value, single, (raw) => commit(op, raw, ""));
+  }
   return (
-    <Stack direction="row" spacing={1}>
-      {fields.map((field) => (
+    <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
+      <FormLabel component="legend" sx={{ mb: 0.75 }}>
+        {filterLabel(def)}
+      </FormLabel>
+      <Stack direction="row" spacing={1}>
         <TextField
-          key={field.key}
+          select
           size="small"
-          type={type === "dateRange" ? "date" : "number"}
-          label={`${label} ${field.suffix}`}
-          value={scalarText(source.extra[field.key])}
-          onChange={(e) => write(field.key, e.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
+          label={labels.operator}
+          value={op ?? ""}
+          onChange={(e) => changeOp(e.target.value)}
+          slotProps={{
+            select: { native: true },
+            inputLabel: { shrink: true },
+          }}
           sx={{ flex: 1 }}
-        />
-      ))}
-    </Stack>
+        >
+          <option value="" />
+          {RANGE_OPS.map((candidate) => (
+            <option key={candidate} value={candidate}>
+              {labels[opLabelKeys[candidate]]}
+            </option>
+          ))}
+        </TextField>
+        {bounds}
+      </Stack>
+    </FormControl>
   );
 }
 
-function FilterField<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
+function FilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<LabeledFieldProps<TRow>>) {
   switch (def.type) {
     case "text":
       return <TextFilter def={def} source={source} />;
@@ -167,26 +243,34 @@ function FilterField<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       return <MultiSelectFilter def={def} source={source} />;
     case "dateRange":
     case "numberRange":
-      return <RangeFilter def={def} type={def.type} source={source} />;
+      return (
+        <RangeFilter
+          def={def}
+          type={def.type}
+          source={source}
+          labels={labels}
+        />
+      );
   }
 }
 
 /**
  * The auto-built filter form: one MUI widget per declarative definition,
  * reading and writing the source's extra-filter bag (so chips, URL state
- * and — on frontend data — the row predicate all stay in sync). The select
- * renders natively, so every control works inline, without portal menus.
+ * and — on frontend data — the row predicate all stay in sync). The selects
+ * render natively, so every control works inline, without portal menus.
  *
  * @typeParam TRow - The row type.
  */
 export function AutoFilterForm<TRow>({
   defs,
   source,
+  labels,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
     <Stack spacing={1.5}>
       {defs.map((def) => (
-        <FilterField key={def.key} def={def} source={source} />
+        <FilterField key={def.key} def={def} source={source} labels={labels} />
       ))}
     </Stack>
   );
