@@ -4,6 +4,7 @@ import {
   type TableVirtualization,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -198,6 +199,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
   const bodyData = useChromeBodyData(chrome, chromeProps);
@@ -223,7 +225,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       data-adapttable-part="filters-button"
       className={classNames.filtersButton}
       style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-      onClick={() => setFiltersOpen((o) => !o)}
+      onPointerDown={filtersTrigger.onPointerDown}
+      onClick={filtersTrigger.onClick}
     >
       <span
         data-adapttable-part="filters-icon"

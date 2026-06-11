@@ -137,7 +137,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
       </div>
 
       <div className="controls">
-        <Control label="Data source">
+        <Control label="Data">
           <Segmented
             label="data source"
             value={mode}
@@ -159,7 +159,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
-        <Control label="Pagination">
+        <Control label="Paging">
           <Segmented
             label="pagination"
             value={pageMode}

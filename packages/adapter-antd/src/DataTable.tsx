@@ -11,6 +11,7 @@ import {
   useChromeScrollReset,
   type UseColumnLayoutResult,
   type UseDataTableResult,
+  useFilterTriggerToggle,
   useInfiniteScroll,
   useTableChrome,
   useTableData,
@@ -401,6 +402,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
@@ -556,7 +558,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           filters={filtersNode}
           filtersMode={filtersMode}
           filtersOpen={filtersOpen}
-          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onToggleFilters={filtersTrigger.onClick}
+          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
           onClearFilters={c.clearFilters}
           isRefreshing={c.isRefreshing}

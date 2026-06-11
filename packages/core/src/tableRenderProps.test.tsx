@@ -9,6 +9,7 @@ import type { UseDataTableResult } from "./useDataTable/useDataTable";
 import {
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
 
@@ -453,5 +454,59 @@ describe("useChromeBodyData eligibility edges", () => {
       return useChromeBodyData<Row>(chrome, props);
     });
     expect(desktop.result.current.virtualization.enabled).toBe(true);
+  });
+});
+
+describe("useFilterTriggerToggle", () => {
+  it("opens on a plain click when closed", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(false, setOpen));
+    act(() => {
+      result.current.onPointerDown();
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+    const updater = setOpen.mock.calls[0]![0] as (c: boolean) => boolean;
+    expect(updater(false)).toBe(true);
+  });
+
+  it("closes when the kit leaves the popover open through pointer-down", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(true, setOpen));
+    act(() => {
+      result.current.onPointerDown();
+      // The kit did NOT close on pointer-down (open stays true) — the click
+      // must close it.
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+    const updater = setOpen.mock.calls[0]![0] as (c: boolean) => boolean;
+    expect(updater(true)).toBe(false);
+  });
+
+  it("swallows the click when the kit closed on the same pointer-down", () => {
+    const setOpen = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ open }) => useFilterTriggerToggle(open, setOpen),
+      { initialProps: { open: true } }
+    );
+    act(() => result.current.onPointerDown());
+    // Kit's outside-close fired between pointer-down and click.
+    rerender({ open: false });
+    act(() => result.current.onClick());
+    expect(setOpen).not.toHaveBeenCalled();
+    // The NEXT plain click opens again (the marker was consumed).
+    act(() => {
+      result.current.onPointerDown();
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("a keyboard click (no pointer-down) toggles normally", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(true, setOpen));
+    act(() => result.current.onClick());
+    expect(setOpen).toHaveBeenCalledTimes(1);
   });
 });

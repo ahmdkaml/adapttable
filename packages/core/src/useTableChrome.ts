@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
 import { resolveColumns } from "./columns/resolveColumns";
@@ -56,6 +56,12 @@ export interface ToolbarChromeProps<TRow> {
   filtersOpen: boolean;
   /** Toggle the filter container (popover and drawer alike). */
   onToggleFilters: () => void;
+  /**
+   * Bind to the trigger's `onPointerDown` (see
+   * {@link useFilterTriggerToggle}) so a click on the open trigger CLOSES
+   * the popover instead of racing the kit's outside-close and reopening.
+   */
+  onFiltersTriggerPointerDown?: () => void;
   /** Whether to show the rows-per-page control (infinite mode). */
   showRowsPerPage: boolean;
   /** Built column-menu node, when `enableColumnMenu` is set. */
@@ -360,4 +366,38 @@ export function useChromeScrollReset<TRow>(
     offset: props.stickyTop,
     gap: props.scrollTopGap,
   });
+}
+
+/** Pointer/click handlers returned by {@link useFilterTriggerToggle}. */
+export interface FilterTriggerToggle {
+  onPointerDown: () => void;
+  onClick: () => void;
+}
+
+/**
+ * A toggle for the Filters trigger that survives every kit's outside-close
+ * behavior. Some kits (Chakra `closeOnBlur`, outside `mousedown` handlers)
+ * close the popover on the trigger's own pointer-down — a plain
+ * `setOpen(o => !o)` on click then instantly REOPENS it, so the button can
+ * never close the popover. This records whether the popover was open at
+ * pointer-down: if the kit closed it in between, the click is swallowed;
+ * otherwise the click toggles normally (kits that exclude the trigger from
+ * outside-close keep working unchanged).
+ */
+export function useFilterTriggerToggle(
+  open: boolean,
+  setOpen: (next: boolean | ((current: boolean) => boolean)) => void
+): FilterTriggerToggle {
+  const wasOpenAtPointerDown = useRef(false);
+  return {
+    onPointerDown: useCallback(() => {
+      wasOpenAtPointerDown.current = open;
+    }, [open]),
+    onClick: useCallback(() => {
+      const closedByKit = wasOpenAtPointerDown.current && !open;
+      wasOpenAtPointerDown.current = false;
+      if (closedByKit) return;
+      setOpen((current) => !current);
+    }, [open, setOpen]),
+  };
 }

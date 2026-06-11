@@ -111,6 +111,7 @@ export function Toolbar<TRow>({
   filters,
   filtersOpen,
   onToggleFilters,
+  onFiltersTriggerPointerDown,
   onCloseFilters,
   onClearFilters,
   dir,
@@ -132,6 +133,7 @@ export function Toolbar<TRow>({
         size="small"
         startIcon={<FiltersIcon />}
         aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+        onPointerDown={onFiltersTriggerPointerDown}
         onClick={onToggleFilters}
       >
         {labels.filters}

@@ -77,11 +77,13 @@ export {
 export {
   type BulkBarChromeProps,
   type ChromeBodyData,
+  type FilterTriggerToggle,
   type TableBody,
   type TableChrome,
   type ToolbarChromeProps,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
 export { humanizeKey } from "./utils/humanizeKey";

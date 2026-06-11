@@ -2,6 +2,7 @@ import {
   isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -108,6 +109,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { table, confirm, getRowId } = c;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
   const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
@@ -210,7 +212,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           filtersMode={filtersMode}
           filters={filtersNode}
           filtersOpen={filtersOpen}
-          onToggleFilters={() => setFiltersOpen((open) => !open)}
+          onToggleFilters={filtersTrigger.onClick}
+          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
           onClearFilters={c.clearFilters}
           dir={props.dir}

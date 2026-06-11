@@ -30,6 +30,7 @@ export function Toolbar<TRow>({
   hasFilters,
   activeFilterCount,
   onToggleFilters,
+  onFiltersTriggerPointerDown,
   onCloseFilters,
   filtersOpen,
   filtersMode,
@@ -63,6 +64,7 @@ export function Toolbar<TRow>({
           </Badge>
         ) : undefined
       }
+      onPointerDown={onFiltersTriggerPointerDown}
       onClick={onToggleFilters}
     >
       {labels.filters}

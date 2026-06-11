@@ -2,12 +2,13 @@ import {
   isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
-import { useDisclosure, useElementSize } from "@mantine/hooks";
-import { type ReactNode, useMemo, useRef } from "react";
+import { useElementSize } from "@mantine/hooks";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
@@ -120,7 +121,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     chrome,
     chromeProps
   );
-  const [drawerOpened, drawer] = useDisclosure(false);
+  const [drawerOpened, setDrawerOpened] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(drawerOpened, setDrawerOpened);
   const rootRef = useRef<HTMLDivElement>(null);
   const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
 
@@ -238,8 +240,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               filtersMode={filtersMode}
               filters={filters}
               filtersOpen={drawerOpened}
-              onToggleFilters={drawer.toggle}
-              onCloseFilters={drawer.close}
+              onToggleFilters={filtersTrigger.onClick}
+              onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
+              onCloseFilters={() => setDrawerOpened(false)}
               onClearFilters={chrome.clearFilters}
               dir={dir}
               columnMenu={
@@ -324,7 +327,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       {filters && filtersMode === "drawer" && (
         <FilterDrawer
           opened={drawerOpened}
-          onClose={drawer.close}
+          onClose={() => setDrawerOpened(false)}
           filters={filters}
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={chrome.clearFilters}
