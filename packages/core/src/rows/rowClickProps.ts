@@ -6,6 +6,8 @@ export interface RowClickProps {
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   /** Clickable rows must be reachable, or Enter activation can never fire. */
   tabIndex: 0;
+  /** Marks the element as an arrow-key navigation stop among its siblings. */
+  "data-adapttable-row": "";
   style: { cursor: "pointer" };
 }
 
@@ -25,11 +27,28 @@ function fromInteractiveChild(target: EventTarget | null): boolean {
 }
 
 /**
+ * Move focus to the previous/next sibling row (any element carrying the
+ * `data-adapttable-row` stop marker under the same parent — `<tr>`s in a
+ * tbody and mobile cards in a list alike). No wrap-around: the edges are a
+ * natural stop, matching native listbox behaviour.
+ */
+function moveRowFocus(current: HTMLElement, delta: -1 | 1): void {
+  const parent = current.parentElement;
+  if (!parent) return;
+  const stops = [...parent.children].filter(
+    (el): el is HTMLElement =>
+      el instanceof HTMLElement && "adapttableRow" in el.dataset
+  );
+  const next = stops[stops.indexOf(current) + delta];
+  next?.focus();
+}
+
+/**
  * Build the row-activation props for `onRowClick`: a guarded click handler
- * (interactive children keep their own behaviour), Enter-key activation for
- * keyboard users when the row itself has focus, and the pointer cursor.
- * Returns `undefined` when no handler is configured, so adapters can spread
- * the result unconditionally.
+ * (interactive children keep their own behaviour), Enter-key activation
+ * when the row itself has focus, ArrowUp/ArrowDown roving focus across the
+ * sibling rows, and the pointer cursor. Returns `undefined` when no handler
+ * is configured, so adapters can spread the result unconditionally.
  *
  * @typeParam TRow - The row type.
  * @param row - The row this element renders.
@@ -42,15 +61,21 @@ export function rowClickProps<TRow>(
   if (!onRowClick) return undefined;
   return {
     tabIndex: 0,
+    "data-adapttable-row": "",
     onClick: (event) => {
       if (!fromInteractiveChild(event.target)) onRowClick(row);
     },
     onKeyDown: (event) => {
-      if (event.key !== "Enter" || event.target !== event.currentTarget) {
+      if (event.target !== event.currentTarget) return;
+      if (event.key === "Enter") {
+        event.preventDefault();
+        onRowClick(row);
         return;
       }
-      event.preventDefault();
-      onRowClick(row);
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        moveRowFocus(event.currentTarget, event.key === "ArrowDown" ? 1 : -1);
+      }
     },
     style: { cursor: "pointer" },
   };

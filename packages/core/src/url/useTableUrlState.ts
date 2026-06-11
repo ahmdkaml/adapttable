@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LIMIT } from "../constants";
+import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
   FilterValue,
@@ -22,7 +23,9 @@ import {
   readLimit,
   readPage,
   readSortDir,
+  readSortLevels,
   writeExtra,
+  writeSortLevels,
 } from "./serialize";
 
 /** Options for {@link useTableUrlState}. */
@@ -54,7 +57,7 @@ export interface UseTableUrlStateOptions {
 }
 
 /** State + setters returned by {@link useTableUrlState}. */
-export interface UseTableUrlStateResult {
+export interface UseTableUrlStateResult extends TableStateMutators {
   /** Current 1-based page. */
   page: number;
   /** Current page size. */
@@ -67,22 +70,6 @@ export interface UseTableUrlStateResult {
   sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   extra: ExtraFilters;
-  /** Set the page. Page `1` is the default and is dropped from the URL. */
-  setPage: (next: number) => void;
-  /** Set the page size; resets to page 1. */
-  setLimit: (next: number) => void;
-  /** Set or clear the sort; resets to page 1. */
-  setSort: (key: string | undefined, dir?: SortDirection) => void;
-  /** Set or clear the search term; resets to page 1. */
-  setSearch: (next: string) => void;
-  /** Set a single extra filter; resets to page 1. */
-  setExtra: (key: string, value: FilterValue) => void;
-  /** Set several extra filters in one commit; resets to page 1. */
-  setExtras: (updates: ExtraFilters) => void;
-  /** Clear every extra filter (and reset the page) — search/sort stay. */
-  clearExtras: () => void;
-  /** Clear search, sort, page, and every extra filter in one commit. */
-  clearAll: () => void;
 }
 
 /** Mounted namespaces per adapter, for the duplicate-urlKey dev warning. */
@@ -178,6 +165,7 @@ export function useTableUrlState(
     sortBy === undefined
       ? undefined
       : (readSortDir(params, ns) ?? sortDirFallback);
+  const sortLevels = useMemo(() => readSortLevels(params, ns), [params, ns]);
 
   /** Merge `defaults.extra` under the URL bag, honouring cleared markers. */
   const mergeDefaultExtra = useCallback(
@@ -279,6 +267,9 @@ export function useTableUrlState(
   const setSort = useCallback(
     (key: string | undefined, dir: SortDirection = "asc") =>
       commit((p) => {
+        // A plain (single) sort RESETS any multi-sort chain — otherwise the
+        // chain keeps superseding it and the click appears dead.
+        writeSortLevels(p, [], ns);
         if (key) {
           p.set(ns + PARAM_SORT_BY, key);
           p.set(ns + PARAM_SORT_DIR, dir);
@@ -290,6 +281,26 @@ export function useTableUrlState(
         resetPage(p);
       }),
     [commit, defaults.sortBy, ns, resetPage]
+  );
+
+  const toggleSortLevel = useCallback(
+    (key: string) =>
+      commit((p) => {
+        const levels = [...readSortLevels(p, ns)];
+        const index = levels.findIndex((l) => l.key === key);
+        if (index === -1) levels.push({ key, dir: "asc" });
+        else if (levels[index]!.dir === "asc")
+          levels[index] = { key, dir: "desc" };
+        else levels.splice(index, 1);
+        writeSortLevels(p, levels, ns);
+        // The chain supersedes the single-sort params while present.
+        if (levels.length > 0) {
+          p.delete(ns + PARAM_SORT_BY);
+          p.delete(ns + PARAM_SORT_DIR);
+        }
+        resetPage(p);
+      }),
+    [commit, ns, resetPage]
   );
 
   const setExtra = useCallback(
@@ -350,6 +361,8 @@ export function useTableUrlState(
     setPage,
     setLimit,
     setSort,
+    sortLevels,
+    toggleSortLevel,
     setSearch,
     setExtra,
     setExtras,

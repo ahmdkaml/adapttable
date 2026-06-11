@@ -311,6 +311,7 @@ describe("tables.tsx branches", () => {
       },
       loadMoreRef: createRef<HTMLDivElement>(),
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     mount({ virtualize: true, estimateCardSize: 40 }, "", {
       mode: "infinite",
@@ -350,6 +351,7 @@ describe("DataTable.tsx branches", () => {
       },
       loadMoreRef: createRef<HTMLDivElement>(),
       canLoadMore: false,
+      virtualScrollRef: () => undefined,
     });
     mount({}, "limit=1", { mode: "infinite" });
     expect(

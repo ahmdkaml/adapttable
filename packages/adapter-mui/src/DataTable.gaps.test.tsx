@@ -166,6 +166,7 @@ describe("MUI gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     mount({ virtualize: true, estimateRowSize: 40 }, "infinite");
     expect(screen.queryByText("Alice")).toBeNull();
@@ -189,6 +190,7 @@ describe("MUI gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: false,
+      virtualScrollRef: () => undefined,
     });
     mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();

@@ -1,35 +1,60 @@
 import {
-  pageSizeOptions,
+  ACTIONS_COLUMN_KEY,
+  isDeclarativeFilters,
+  type TableSource,
   type TableVirtualization,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
-import type { MutableRefObject, ReactElement } from "react";
+import type { MutableRefObject, ReactElement, ReactNode } from "react";
 import { useRef, useState } from "react";
 
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
   ErrorState,
   Footer,
   LoadingState,
+  RowsPerPageSelect,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
 import { FilterPanel } from "./components/FilterPanel";
 import { FilterPopover } from "./components/FilterPopover";
 import { FiltersIcon, SearchIcon } from "./components/icons";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
-import type { DataTableProps } from "./types";
+import type { DataTableClassNames, DataTableProps } from "./types";
+
+// A stable default: the memoized desktop rows compare `classNames` by
+// identity, so an inline `{}` default would defeat them on every render.
+const NO_CLASSNAMES: DataTableClassNames = {};
+
+/**
+ * `DataTableProps` after tier resolution: the source is definite (whichever
+ * tier provided it) and `filters` is plain JSX (the auto-built form when the
+ * caller passed the declarative array).
+ */
+type ResolvedDataTableProps<TRow> = Omit<
+  DataTableProps<TRow>,
+  "source" | "filters"
+> & {
+  source: TableSource<TRow>;
+  filters?: ReactNode;
+};
 
 interface DataTableBodyProps<TRow> {
   chrome: ReturnType<typeof useTableChrome<TRow>>;
-  props: Readonly<DataTableProps<TRow>>;
+  props: Readonly<ResolvedDataTableProps<TRow>>;
   classNames: NonNullable<DataTableProps<TRow>["classNames"]>;
   confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
   getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
   virtualization: TableVirtualization<TRow>;
+  virtualScrollRef: (node: HTMLElement | null) => void;
   labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
 }
 
@@ -40,8 +65,18 @@ function DataTableBody<TRow>({
   confirm,
   getRowId,
   virtualization,
+  virtualScrollRef,
   labels,
 }: Readonly<DataTableBodyProps<TRow>>): ReactElement {
+  // The injected actions column obeys the user column layout like any data
+  // column: hiding it strips `rowActions` before the renderers (desktop and
+  // cards alike), and an end-pin sticks it without needing a data pin.
+  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : props.rowActions;
+  const actionsPinned =
+    (rowActions?.length ?? 0) > 0 &&
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] !== undefined;
   if (chrome.body === "skeleton") {
     return (
       <>
@@ -52,7 +87,7 @@ function DataTableBody<TRow>({
             variant={chrome.isMobile ? "cards" : "table"}
             labels={labels}
             classNames={classNames}
-            hasActions={(props.rowActions?.length ?? 0) > 0}
+            hasActions={(rowActions?.length ?? 0) > 0}
           />
         )}
       </>
@@ -87,13 +122,17 @@ function DataTableBody<TRow>({
     <Renderer
       table={chrome.table}
       rows={props.source.rows}
-      rowActions={props.rowActions}
+      rowActions={rowActions}
+      actionsPinned={actionsPinned}
       confirm={confirm}
       getRowId={getRowId}
       classNames={classNames}
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
       rowClassName={props.rowClassName}
+      renderRowDetail={props.renderRowDetail}
+      summaryRow={props.summaryRow}
+      expansion={chrome.detail?.expansion}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}
@@ -102,6 +141,7 @@ function DataTableBody<TRow>({
       stickyTop={props.stickyTop}
       pinOffset={chrome.columnLayout.pinOffset}
       maxHeight={props.maxHeight}
+      virtualScrollRef={virtualScrollRef}
       setWidth={
         props.resizableColumns ? chrome.columnLayout.setWidth : undefined
       }
@@ -120,27 +160,72 @@ function DataTableBody<TRow>({
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
-    source,
+    data,
+    total,
+    loading,
+    onQueryChange,
+    urlAdapter,
+    urlKey,
     searchPlaceholder,
     sortByOptions,
     dir,
     hideSearch,
-    filters,
     filtersMode = "popover",
     bulkActions,
-    classNames = {},
+    classNames = NO_CLASSNAMES,
     toolbar: customToolbar,
   } = props;
 
   const density = props.density ?? "comfortable";
 
-  const chrome = useTableChrome<TRow>(props);
+  // Resolve the data tier (prebuilt source > server > frontend) and the
+  // declarative-filter runtime (URL keys, chip labels, predicate).
+  const { source, runtime } = useTableData<TRow>({
+    locale: props.locale,
+    source: props.source,
+    data,
+    total,
+    loading,
+    onQueryChange,
+    adapter: urlAdapter,
+    urlKey,
+    columns: props.columns,
+    filters: props.filters,
+  });
+
+  // The declarative array becomes the auto-built form; JSX passes through.
+  const autoForm =
+    runtime.defs.length > 0 ? (
+      <AutoFilterForm
+        defs={runtime.defs}
+        source={source}
+        classNames={classNames}
+      />
+    ) : undefined;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  const filters =
+    isDeclarativeFilters(props.filters) || props.filters === undefined
+      ? autoForm
+      : props.filters;
+
+  // Everything downstream sees the RESOLVED source and plain-JSX filters,
+  // with the runtime's chip labels under the caller's overrides.
+  const chromeProps: ResolvedDataTableProps<TRow> = {
+    ...props,
+    source,
+    filters,
+    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+  };
+
+  const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, props);
-  const bodyData = useChromeBodyData(chrome, props);
+  useChromeScrollReset(rootRef, chrome, chromeProps);
+  const bodyData = useChromeBodyData(chrome, chromeProps);
   const { virtualization, canLoadMore } = bodyData;
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
   // null>` through interface variance; the same object viewed through its
@@ -162,7 +247,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       data-active={filtersOpen || undefined}
       data-adapttable-part="filters-button"
       className={classNames.filtersButton}
-      onClick={() => setFiltersOpen((o) => !o)}
+      style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+      onPointerDown={filtersTrigger.onPointerDown}
+      onClick={filtersTrigger.onClick}
     >
       <span
         data-adapttable-part="filters-icon"
@@ -275,25 +362,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             layout={chrome.columnLayout}
             labels={labels}
             classNames={classNames}
+            hasRowActions={(props.rowActions?.length ?? 0) > 0}
           />
         )}
-        {!chrome.isPaged && (
-          <label>
-            {labels.rowsPerPage}{" "}
-            <select
-              aria-label={labels.rowsPerPage}
-              data-adapttable-part="rows-per-page"
-              className={classNames.rowsPerPageSelect}
-              value={source.limit}
-              onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
-            >
-              {pageSizeOptions(source.limit).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
+        {props.savedViews && (
+          // The menu must capture/apply through the SAME URL backend and
+          // namespace the table reads, so those default from the table's
+          // own props (explicit option values still win).
+          <SavedViewsMenu
+            options={{ adapter: urlAdapter, urlKey, ...props.savedViews }}
+            labels={labels}
+            classNames={classNames}
+          />
+        )}
+        {canLoadMore && (
+          <RowsPerPageSelect
+            source={source}
+            labels={labels}
+            classNames={classNames}
+          />
         )}
       </div>
 
@@ -320,6 +407,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       {table.selection && bulkActions && (
         <BulkBar
           selection={table.selection}
+          total={source.total}
           bulkActions={bulkActions}
           confirm={confirm}
           labels={labels}
@@ -328,8 +416,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       )}
 
       {chrome.isRefreshing && (
-        <div
-          role="progressbar"
+        // Native indeterminate progress (no `value`) — implicit progressbar
+        // role with correct semantics on every device.
+        <progress
           aria-label={labels.loading}
           data-adapttable-part="refresh-indicator"
           className={classNames.refreshIndicator}
@@ -346,11 +435,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : (
         <DataTableBody
           chrome={chrome}
-          props={props}
+          props={chromeProps}
           classNames={classNames}
           confirm={confirm}
           getRowId={getRowId}
           virtualization={virtualization}
+          virtualScrollRef={bodyData.virtualScrollRef}
           labels={labels}
         />
       )}

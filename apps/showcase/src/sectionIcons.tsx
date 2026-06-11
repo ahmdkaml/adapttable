@@ -44,6 +44,9 @@ export const External = make([
   "M20 4l-9 9",
   "M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5",
 ]);
+export const Star = make([
+  "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z",
+]);
 export const Pin = make(["M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z", "M12 15v5"]);
 export const Resize = make(["M9 3H5v4", "M15 21h4v-4", "M5 7l14 10"]);
 export const Columns = make(["M4 5h16v14H4z", "M12 5v14", "M16 5v14"]);

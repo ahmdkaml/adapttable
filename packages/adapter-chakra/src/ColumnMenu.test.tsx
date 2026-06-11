@@ -38,12 +38,53 @@ const labels = {
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  actions: "Actions",
 };
 
 const byLabel = (name: string) =>
   document.querySelector<HTMLElement>(`[aria-label="${name}"]`)!;
 
 describe("chakra ColumnMenu", () => {
+  it("shows drop-position feedback while dragging a row", async () => {
+    const layout = fakeLayout();
+    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    const dt = {
+      data: new Map<string, string>(),
+      effectAllowed: "",
+      dropEffect: "",
+      get types() {
+        return [...this.data.keys()];
+      },
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+      getData(type: string) {
+        return this.data.get(type) ?? "";
+      },
+    };
+    const rowOf = (name: string) =>
+      screen.getByText(name).closest("[draggable]")!;
+    fireEvent.dragStart(rowOf("Alpha"), { dataTransfer: dt });
+    fireEvent.dragOver(rowOf("Charlie"), { dataTransfer: dt });
+    // The source dims; the hovered target marks its landing edge.
+    expect(rowOf("Alpha")).toHaveAttribute("data-dragging");
+    expect(rowOf("Charlie")).toHaveAttribute("data-drop", "after");
+    fireEvent.drop(rowOf("Charlie"), { dataTransfer: dt });
+    expect(layout.move).toHaveBeenCalledWith("a", 2);
+    expect(rowOf("Alpha")).not.toHaveAttribute("data-dragging");
+    expect(rowOf("Charlie")).not.toHaveAttribute("data-drop");
+
+    // Reverse drag: hovering an EARLIER row marks the "before" edge.
+    fireEvent.dragStart(rowOf("Charlie"), { dataTransfer: dt });
+    fireEvent.dragOver(rowOf("Alpha"), { dataTransfer: dt });
+    expect(rowOf("Alpha")).toHaveAttribute("data-drop", "before");
+    fireEvent.dragEnd(rowOf("Charlie"), { dataTransfer: dt });
+    expect(rowOf("Alpha")).not.toHaveAttribute("data-drop");
+  });
+
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
     render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
@@ -68,5 +109,60 @@ describe("chakra ColumnMenu", () => {
 
     fireEvent.click(screen.getByText("Reset columns"));
     expect(layout.reset).toHaveBeenCalled();
+  });
+
+  it("lists the actions column with an eye toggle and a one-click end pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The trailing entry is listed by its display name, visible by default.
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+    expect(byLabel("Hide column: Actions")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.click(byLabel("Hide column: Actions"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // Unpinned → ONE click pins straight to the inline end (never left).
+    fireEvent.click(byLabel("Pin right: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+  });
+
+  it("unpins end-pinned actions in one click and marks them hidden", async () => {
+    const layout = fakeLayout();
+    layout.state = {
+      ...layout.state,
+      pinned: { ...layout.state.pinned, actions: "right" },
+    };
+    layout.isHidden = (key) => key === "actions";
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // Hidden → the eye flips to "show" and reads not-pressed.
+    expect(byLabel("Show column: Actions")).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    // Pinned → ONE click unpins (the right↔unpinned toggle, no cycle).
+    fireEvent.click(byLabel("Unpin: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
   });
 });

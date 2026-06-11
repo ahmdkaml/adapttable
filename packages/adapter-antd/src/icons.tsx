@@ -37,3 +37,10 @@ export const SearchIcon = (p: IconProps) => (
     <path d="m21 21-4.3-4.3" />
   </Svg>
 );
+
+/** Right-pointing chevron for the row-expansion toggles. */
+export const ChevronRightIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9 18 6-6-6-6" />
+  </Svg>
+);

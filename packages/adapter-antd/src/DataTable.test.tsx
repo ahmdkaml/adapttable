@@ -1,10 +1,14 @@
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  type ColumnLayoutState,
+  createMemoryAdapter,
+  useFrontendData,
+} from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { ConfigProvider } from "antd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
-import type { ColumnDef } from "./index";
+import type { ColumnDef, FilterDef } from "./index";
 
 interface Row {
   id: string;
@@ -14,6 +18,13 @@ interface Row {
 const ROWS: Row[] = [
   { id: "a", name: "Alice", city: "Dubai" },
   { id: "b", name: "Bob", city: "Riyadh" },
+];
+// More rows than one `limit=2` page — exercises the cross-page banner.
+const MANY: Row[] = [
+  ...ROWS,
+  { id: "c", name: "Cara", city: "Doha" },
+  { id: "d", name: "Dan", city: "Muscat" },
+  { id: "e", name: "Eve", city: "Amman" },
 ];
 const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
@@ -182,12 +193,16 @@ describe("<DataTable> (Ant Design)", () => {
     expect(adapter.getSearch()).toContain("page=2");
   });
 
-  it("changes the page size via the antd pager size changer", () => {
+  it("changes the page size via the footer rows-per-page select", () => {
     renderHarness();
-    // The paged footer's size changer is the only combobox in this layout.
-    fireEvent.mouseDown(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByText("50 / page"));
+    // The split footer's labelled Select replaces antd's "N / page" changer.
+    fireEvent.mouseDown(
+      screen.getByRole("combobox", { name: "Rows per page" })
+    );
+    fireEvent.click(screen.getByTitle("50"));
     expect(adapter.getSearch()).toContain("limit=50");
+    // The showing text comes from the same labels the other kits use.
+    expect(screen.getByText(/Showing 1–/)).toBeInTheDocument();
   });
 
   it("changes rows-per-page and sort via the toolbar selects (infinite)", () => {
@@ -247,11 +262,107 @@ describe("<DataTable> (Ant Design)", () => {
     });
     fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
     expect(screen.getByText("2 selected")).toBeInTheDocument();
+    // Every matching row is already visible — no cross-page banner.
+    expect(screen.queryByText(/Select all \d+ matching/)).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  it("offers select-all-matching when a full page is selected, flips to the active state, and clears", () => {
+    renderHarness(
+      {
+        rows: MANY,
+        override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    // Offer state: the page is fully selected but 3 more rows match elsewhere.
+    expect(screen.getByText("All 2 on this page selected")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    // Active state: the scope widened to the whole matching set.
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+    // The banner's clear link (first in DOM order; both clear) collapses it.
+    fireEvent.click(screen.getAllByRole("button", { name: "Clear all" })[0]!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.queryByText(/selected/)).toBeNull();
+  });
+
+  it("runs a bulk action across the matching set: confirm and onClick see the total", async () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn((r: { message: string; onConfirm: () => void }) =>
+      r.onConfirm()
+    );
+    renderHarness(
+      {
+        rows: MANY,
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "t",
+                message: (n) => `Delete ${n}`,
+                confirmLabel: "Yes",
+              },
+            },
+          ],
+          confirm,
+        },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
+    // The confirm count and the handler scope reflect the WHOLE matching
+    // set (5), even though only the visible page ids are concrete.
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 5" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: true,
+      total: 5,
+    });
+  });
+
+  it("narrows back to a page selection when a row is toggled while all-matching", () => {
+    const { container } = renderHarness(
+      {
+        rows: MANY,
+        override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
+      },
+      "limit=2"
+    );
+    fireEvent.click(screen.getAllByLabelText("Select all")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    // Unticking one row narrows the scope back to concrete ids.
+    const rowCheckbox = container.querySelector<HTMLInputElement>(
+      'tbody [title="Select row"] input[type="checkbox"]'
+    );
+    expect(rowCheckbox).not.toBeNull();
+    fireEvent.click(rowCheckbox!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
   it("renders filter chips and opens the filter popover", () => {
@@ -929,6 +1040,121 @@ describe("<DataTable> (Ant Design)", () => {
     expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
   });
 
+  it("pins the actions column right with one click and zero data pins", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    // Nothing is fixed before the click.
+    expect(container.querySelector(".ant-table-cell-fix-right")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    const pin = document.querySelector<HTMLElement>(
+      '[aria-label="Pin right: Actions"]'
+    );
+    expect(pin).not.toBeNull();
+    fireEvent.click(pin!);
+    // The injected column itself carries antd's fixed-right sticky cell, and
+    // it is the ONLY fixed column — no data pins involved.
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
+    expect(container.querySelector(".ant-table-cell-fix-left")).toBeNull();
+  });
+
+  it("drags the actions column along when a data column pins right", () => {
+    const { container } = renderHarness({
+      override: {
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: { pinned: { city: "right" } },
+      },
+    });
+    // antd needs the right-fixed run contiguous through the trailing edge,
+    // so the unpinned actions column rides along with the pinned data column.
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual([
+      "City",
+      "Actions",
+    ]);
+  });
+
+  it("hides the actions column from the Columns menu like any column", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
+        summaryRow: () => ({ name: "2 people" }),
+      },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    // The summary row pads a trailing cell for the actions column.
+    expect(container.querySelectorAll(".ant-table-summary tr td")).toHaveLength(
+      3
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      document.querySelector<HTMLElement>(
+        '[aria-label="Hide column: Actions"]'
+      )!
+    );
+    // The injected column is stripped consistently: no action buttons, no
+    // header cell, and the summary loses its trailing pad cell.
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    expect(
+      within(
+        container.querySelector<HTMLElement>(".ant-table-thead")!
+      ).queryByText("Actions")
+    ).toBeNull();
+    expect(container.querySelectorAll(".ant-table-summary tr td")).toHaveLength(
+      2
+    );
+    // The menu still lists it, now offering to show it again.
+    expect(
+      document.querySelector('[aria-label="Show column: Actions"]')
+    ).not.toBeNull();
+  });
+
+  it("round-trips the actions pin through the layout state", () => {
+    const layouts: ColumnLayoutState[] = [];
+    const rowActions = [{ key: "edit", label: "Edit", onClick: vi.fn() }];
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions,
+        onColumnLayoutChange: (next) => layouts.push(next),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      document.querySelector<HTMLElement>('[aria-label="Pin right: Actions"]')!
+    );
+    // The layout change reports the reserved "actions" key like any column.
+    const captured = layouts[layouts.length - 1];
+    expect(captured?.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // Remount from the captured snapshot: the pin is live with zero clicks…
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions,
+        defaultColumnLayout: captured,
+      },
+    });
+    const fixedHeaders = container.querySelectorAll(
+      "th.ant-table-cell-fix-right"
+    );
+    expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
+    // …and the menu reflects it with the one-click unpin.
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    expect(
+      document.querySelector('[aria-label="Unpin: Actions"]')
+    ).not.toBeNull();
+  });
+
   it("stops paging the virtual scroll once there is no next page", () => {
     // All rows fit in the first page → infinite mode has no next page, but the
     // virtual scroll handler is still active (virtualize && !paged && !error).
@@ -1070,5 +1296,443 @@ describe("<DataTable> (Ant Design)", () => {
     const vip = container.querySelectorAll(".ant-card.card-vip");
     expect(vip).toHaveLength(1);
     expect(vip[0]).toHaveTextContent("Alice");
+  });
+
+  it("renders no expand affordance without renderRowDetail", () => {
+    renderHarness();
+    expect(screen.queryByRole("button", { name: "Expand row" })).toBeNull();
+  });
+
+  it("expands and collapses a row detail via antd's native expandable", () => {
+    const onRowClick = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+      },
+    });
+    // Nothing expanded initially: no detail row in the DOM at all.
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+    const toggles = screen.getAllByRole("button", { name: "Expand row" });
+    expect(toggles).toHaveLength(2); // one per row
+    expect(toggles[0]).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggles[0]!);
+    // Controlled round-trip: the icon toggles chrome state, chrome state
+    // feeds antd's expandedRowKeys, antd renders the dedicated detail row.
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    expect(
+      document.querySelector(".ant-table-expanded-row")
+    ).toBeInTheDocument();
+    const collapse = screen.getByRole("button", { name: "Collapse row" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    // The expand icon is an interactive child — it never activates the row.
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    fireEvent.click(collapse);
+    // rc-table keeps a once-expanded detail row mounted but hidden.
+    expect(screen.getByText("detail-Alice").closest("tr")).not.toBeVisible();
+    expect(screen.getAllByRole("button", { name: "Expand row" })).toHaveLength(
+      2
+    );
+  });
+
+  it("keeps a row's detail open across sorting (id-keyed expandedRowKeys)", () => {
+    renderHarness({
+      override: { renderRowDetail: (r) => <div>detail-{r.name}</div> },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "Expand row" })[0]!);
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    // Sort descending: Bob now leads, but Alice's panel stays open because
+    // the expansion state is keyed by row id, not position.
+    const header = () => screen.getByRole("columnheader", { name: /name/i });
+    fireEvent.click(header());
+    fireEvent.click(header());
+    expect(adapter.getSearch()).toContain("sortDir=desc");
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Collapse row" })
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("honors labels.expandRow/collapseRow on the expand icon", () => {
+    renderHarness({
+      override: {
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        labels: { expandRow: "Open details", collapseRow: "Close details" },
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Open details" })[0]!
+    );
+    expect(
+      screen.getByRole("button", { name: "Close details" })
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("expands and collapses a mobile card's detail section via the chevron", () => {
+    renderHarness({
+      override: {
+        isMobile: true,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+      },
+    });
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+    const toggle = screen.getAllByRole("button", { name: "Expand row" })[0]!;
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const detail = screen.getByText("detail-Alice");
+    // The detail section renders inside the card itself.
+    expect(
+      detail.closest('[data-adapttable-part="card-detail"]')
+    ).not.toBeNull();
+    expect(detail.closest(".ant-card")).not.toBeNull();
+    // The second card stays collapsed.
+    expect(screen.queryByText("detail-Bob")).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+  });
+
+  it("renders the mobile chevron beside row actions, without activating the row", () => {
+    const onRowClick = vi.fn();
+    renderHarness({
+      override: {
+        isMobile: true,
+        onRowClick,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    // The first card carries both the chevron and the action button.
+    const card = screen.getAllByRole("listitem")[0]!;
+    expect(
+      within(card).getByRole("button", { name: "Expand row" })
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Edit" })
+    ).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Expand row" }));
+    expect(screen.getByText("detail-Alice")).toBeInTheDocument();
+    // The chevron is an interactive child — it never activates the row…
+    expect(onRowClick).not.toHaveBeenCalled();
+    // …while a click on the card body still does.
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+  });
+
+  it("memoizes mobile cards: a search keystroke re-invokes no accessors for unchanged cards", () => {
+    const nameAccessor = vi.fn((r: Row) => r.name);
+    const cityAccessor = vi.fn((r: Row) => r.city);
+    renderHarness({
+      override: {
+        isMobile: true,
+        columns: [
+          { key: "name", header: "Name", accessor: nameAccessor },
+          { key: "city", header: "City", accessor: cityAccessor },
+        ],
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        rowClassName: (r) => (r.name === "Alice" ? "card-vip" : undefined),
+        onRowClick: vi.fn(),
+        prefetch: vi.fn(),
+      },
+    });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(nameAccessor).toHaveBeenCalled();
+    nameAccessor.mockClear();
+    cityAccessor.mockClear();
+
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "a" },
+    });
+    // The toolbar re-rendered (controlled search input)…
+    expect(screen.getByLabelText("Search")).toHaveValue("a");
+    // …but every unchanged card bailed out: no accessor ran again.
+    expect(nameAccessor).not.toHaveBeenCalled();
+    expect(cityAccessor).not.toHaveBeenCalled();
+
+    // A real change (selecting a card) re-renders that card.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+  });
+});
+
+/* ── Declarative columns, filters & data tiers ─────────────────────── */
+
+interface Person {
+  id: string;
+  firstName: string;
+  city: string;
+  role: string;
+  hiredAt: string;
+  age: number;
+  department: { name: string };
+}
+
+const PEOPLE: Person[] = [
+  {
+    id: "1",
+    firstName: "Alice",
+    city: "Dubai",
+    role: "admin",
+    hiredAt: "2026-01-15",
+    age: 30,
+    department: { name: "Engineering" },
+  },
+  {
+    id: "2",
+    firstName: "Bob",
+    city: "Riyadh",
+    role: "editor",
+    hiredAt: "2025-06-01",
+    age: 45,
+    department: { name: "Sales" },
+  },
+];
+
+// Zero ceremony: no headers, no accessors — and a column-level filter.
+const personColumns: ColumnDef<Person>[] = [
+  { key: "firstName", filter: "text" },
+  { key: "city" },
+  { key: "department.name" },
+];
+
+const CITY_FILTER: FilterDef<Person>[] = [
+  {
+    key: "city",
+    type: "select",
+    options: [
+      { value: "Dubai", label: "Dubai" },
+      { value: "Riyadh", label: "Riyadh" },
+    ],
+  },
+];
+
+const TYPE_FILTERS: FilterDef<Person>[] = [
+  { key: "firstName", type: "text", placeholder: "Type a name" },
+  ...CITY_FILTER,
+  {
+    key: "role",
+    type: "multiSelect",
+    options: [
+      { value: "admin", label: "Admin" },
+      { value: "editor", label: "Editor" },
+    ],
+  },
+  { key: "hiredAt", type: "dateRange" },
+  { key: "age", type: "numberRange" },
+];
+
+function renderZero(
+  override: Partial<Parameters<typeof DataTable<Person>>[0]> = {},
+  url = ""
+) {
+  adapter = createMemoryAdapter(url);
+  return render(
+    <ConfigProvider>
+      <DataTable<Person>
+        data={PEOPLE}
+        columns={personColumns}
+        rowKey={(r) => r.id}
+        urlAdapter={adapter}
+        {...override}
+      />
+    </ConfigProvider>
+  );
+}
+
+/** Open the Filters popover and return its floating container. */
+function openFilters(): HTMLElement {
+  fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+  return document.querySelector<HTMLElement>(".ant-popover")!;
+}
+
+/** The adapter's query string, percent-decoded for readable assertions. */
+const urlState = () => decodeURIComponent(adapter.getSearch());
+
+describe("<DataTable> declarative engine (Ant Design)", () => {
+  it("column filter shorthands alone (no filters prop) render the auto form", () => {
+    renderZero();
+    const popover = openFilters();
+    // personColumns declares `filter: "text"` on firstName — the form must
+    // appear without any `filters` prop at all.
+    expect(
+      popover.querySelector('input[type="text"], .ant-input')
+    ).not.toBeNull();
+  });
+
+  it("filters rows, shows chips, and clears — end to end with zero ceremony", () => {
+    renderZero({ filters: CITY_FILTER });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+
+    // The column `filter: "text"` shorthand renders in the auto-built form.
+    const popover = openFilters();
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "ali" },
+    });
+    expect(urlState()).toContain("f_firstName=ali");
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.queryByText("Bob")).toBeNull();
+    expect(screen.getByText("First Name: ali")).toBeInTheDocument();
+
+    // The standalone select definition narrows further and chips up too.
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "Dubai" },
+    });
+    expect(urlState()).toContain("f_city=Dubai");
+    expect(screen.getByText("City: Dubai")).toBeInTheDocument();
+
+    // Clear-all from the chip strip restores every row and the URL.
+    const chipStrip = screen.getByRole("list", { name: "Filters" });
+    fireEvent.click(within(chipStrip).getByText("Clear all"));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(urlState()).not.toContain("f_");
+  });
+
+  it("derives headers from column keys when none are declared", () => {
+    renderZero();
+    expect(
+      screen.getByRole("columnheader", { name: "First Name" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "City" })
+    ).toBeInTheDocument();
+    // "department.name" humanizes its last path segment.
+    expect(
+      screen.getByRole("columnheader", { name: "Name" })
+    ).toBeInTheDocument();
+  });
+
+  it("renders nested values through dot-path column keys", () => {
+    renderZero();
+    expect(screen.getByText("Engineering")).toBeInTheDocument();
+    expect(screen.getByText("Sales")).toBeInTheDocument();
+  });
+
+  it("server tier: emits once on mount with URL-restored params and leaves rows untouched", () => {
+    adapter = createMemoryAdapter("page=2&q=ali&f_city=Dubai");
+    const onQueryChange = vi.fn();
+    render(
+      <ConfigProvider>
+        <DataTable<Person>
+          data={PEOPLE}
+          total={57}
+          onQueryChange={onQueryChange}
+          columns={personColumns}
+          filters={CITY_FILTER}
+          rowKey={(r) => r.id}
+          urlAdapter={adapter}
+        />
+      </ConfigProvider>
+    );
+    expect(onQueryChange).toHaveBeenCalledTimes(1);
+    const [query, info] = onQueryChange.mock.calls[0] as [
+      { page: number; search: string; limit: number; filters: object },
+      { signal: AbortSignal },
+    ];
+    expect(query).toMatchObject({
+      page: 2,
+      limit: 25,
+      search: "ali",
+      filters: { city: "Dubai" },
+    });
+    expect(info.signal).toBeInstanceOf(AbortSignal);
+    // Rows render exactly as handed in — no client-side predicate, even
+    // though the search and the city filter are active.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    // The antd pager reflects the server total, not the row count.
+    expect(screen.getByText("Showing 26–50 of 57")).toBeInTheDocument();
+  });
+
+  it("writes the right state key(s) for every declarative filter type", () => {
+    renderZero({ columns: [{ key: "firstName" }], filters: TYPE_FILTERS });
+    const popover = openFilters();
+
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "ali" },
+    });
+    expect(urlState()).toContain("f_firstName=ali");
+    expect(
+      within(popover).getByPlaceholderText("Type a name")
+    ).toBeInTheDocument();
+
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "Dubai" },
+    });
+    expect(urlState()).toContain("f_city=Dubai");
+
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    expect(urlState()).toContain("f_role=admin");
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Editor" }));
+    expect(urlState()).toContain("f_role=admin,editor");
+
+    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+      target: { value: "2026-01-01" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Hired At to"), {
+      target: { value: "2026-01-31" },
+    });
+    expect(urlState()).toContain("f_hiredAtFrom=2026-01-01");
+    expect(urlState()).toContain("f_hiredAtTo=2026-01-31");
+
+    fireEvent.change(within(popover).getByLabelText("Age min"), {
+      target: { value: "30" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Age max"), {
+      target: { value: "40" },
+    });
+    expect(urlState()).toContain("f_ageMin=30");
+    expect(urlState()).toContain("f_ageMax=40");
+  });
+
+  it("restores control values from the URL and clears their keys when emptied", () => {
+    renderZero(
+      { columns: [{ key: "firstName" }], filters: TYPE_FILTERS },
+      "f_firstName=ali&f_city=Dubai&f_role=admin&f_ageMin=30&f_ageMax=40&f_hiredAtFrom=2026-01-01"
+    );
+    const popover = openFilters();
+
+    // Every control rehydrates from its URL-restored state key.
+    expect(within(popover).getByLabelText("First Name")).toHaveValue("ali");
+    expect(within(popover).getByLabelText("City")).toHaveValue("Dubai");
+    expect(
+      within(popover).getByRole("checkbox", { name: "Admin" })
+    ).toBeChecked();
+    expect(within(popover).getByLabelText("Age min")).toHaveValue("30");
+    expect(within(popover).getByLabelText("Hired At from")).toHaveValue(
+      "2026-01-01"
+    );
+
+    // Emptying each control removes its key (and URL param) entirely.
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "" },
+    });
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    fireEvent.change(within(popover).getByLabelText("Age min"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Age max"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+      target: { value: "" },
+    });
+    expect(urlState()).not.toContain("f_");
+  });
+
+  it("hides the filters button when the declarative array resolves to no definitions", () => {
+    renderZero({ columns: [{ key: "firstName" }], filters: [] });
+    expect(screen.queryByRole("button", { name: /filters/i })).toBeNull();
   });
 });

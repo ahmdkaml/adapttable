@@ -139,6 +139,7 @@ function hiddenLayout(): UseColumnLayoutResult<MenuRow> {
 
 const menuLabels = {
   columns: "Columns",
+  actions: "Actions",
   pinLeft: "Pin left",
   pinRight: "Pin right",
   unpin: "Unpin",

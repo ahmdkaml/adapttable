@@ -12,8 +12,11 @@
  *
  * @typeParam TRow - The row type.
  */
+import type { ReactNode } from "react";
+
 import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
+import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
@@ -40,6 +43,12 @@ export interface SharedTableRenderProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
+  renderRowDetail?: (row: TRow) => ReactNode;
+  /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /** Expansion state, present when `renderRowDetail` is set. */
+  expansion?: RowExpansionState;
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];
   /** Spacer height above the virtual window. */
@@ -56,6 +65,11 @@ export interface SharedTableRenderProps<TRow> {
   pinOffset?: (key: string) => PinOffset | undefined;
   /** Optional max height (px) that turns the table into a scroll box. */
   maxHeight?: number;
+  /**
+   * Attach to the `maxHeight` scroll box so an element-mode virtual window
+   * tracks the box's scrolling (from `useChromeBodyData`).
+   */
+  virtualScrollRef?: (node: HTMLElement | null) => void;
   /** Commit a new width (px) for a resizable column. */
   setWidth?: (key: string, width: number) => void;
   /** Current per-column widths (px), keyed by column key. */
@@ -73,7 +87,7 @@ export interface TableRenderModel<TRow> {
   showActions: boolean;
   /** Materialised row entries (virtual window or the full set). */
   entries: readonly VirtualTableRow<TRow>[];
-  /** Spacer-row colSpan covering selection + data + actions columns. */
+  /** Spacer/detail colSpan: expansion + selection + data + actions. */
   columnSpan: number;
 }
 
@@ -87,7 +101,13 @@ export interface TableRenderModel<TRow> {
 export function tableRenderModel<TRow>(
   props: Pick<
     SharedTableRenderProps<TRow>,
-    "table" | "rows" | "rowActions" | "getRowId" | "rowEntries"
+    | "table"
+    | "rows"
+    | "rowActions"
+    | "getRowId"
+    | "rowEntries"
+    | "renderRowDetail"
+    | "expansion"
   >
 ): TableRenderModel<TRow> {
   const { columns, selection, labels } = props.table;
@@ -106,7 +126,8 @@ export function tableRenderModel<TRow>(
     columnSpan: virtualColumnSpan(
       columns.length,
       Boolean(selection),
-      showActions
+      showActions,
+      Boolean(props.renderRowDetail && props.expansion)
     ),
   };
 }

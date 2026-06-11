@@ -18,8 +18,8 @@ interface Page {
 }
 
 const columns: ColumnDef<Person>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "city", header: "City", accessor: (r) => r.city },
+  { key: "name", sortable: true },
+  { key: "city" },
 ];
 
 /** Replace with your real API call. */
@@ -52,7 +52,11 @@ function usePeopleQuery(params: {
 
 const queryClient = new QueryClient();
 
-/** Server-paginated table — the component is identical to the client one. */
+/**
+ * Server data, query-library tier: `useBackendData` + TanStack Query gives
+ * caching, infinite mode and prefetching. No query library? See
+ * `mantine-server.tsx` — `onQueryChange` needs nothing but `fetch`.
+ */
 export function MuiBackendExample() {
   return (
     <QueryClientProvider client={queryClient}>

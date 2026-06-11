@@ -111,6 +111,7 @@ export function Toolbar<TRow>({
   filters,
   filtersOpen,
   onToggleFilters,
+  onFiltersTriggerPointerDown,
   onCloseFilters,
   onClearFilters,
   dir,
@@ -132,6 +133,7 @@ export function Toolbar<TRow>({
         size="small"
         startIcon={<FiltersIcon />}
         aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
+        onPointerDown={onFiltersTriggerPointerDown}
         onClick={onToggleFilters}
       >
         {labels.filters}
@@ -281,11 +283,20 @@ export function Chips({
 /** Selection toolbar. */
 export function BulkBar({
   selection,
+  total,
   bulkActions,
   confirm,
   labels,
 }: Readonly<BulkBarChromeProps>) {
-  const { selectedIds, selectedCount, clear } = selection;
+  const {
+    selectedIds,
+    selectedCount,
+    headerState,
+    visibleIds,
+    allMatching,
+    selectAllMatching,
+    clear,
+  } = selection;
   const { pending, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
@@ -293,6 +304,9 @@ export function BulkBar({
   });
   if (selectedCount === 0) return null;
   const ids = [...selectedIds];
+  // Offer "select all N matching" only when the whole page is selected and
+  // more rows match beyond it; once active, show the cross-page scope.
+  const showBanner = headerState === "all" && total > visibleIds.length;
   return (
     <Stack
       direction="row"
@@ -302,9 +316,47 @@ export function BulkBar({
       flexWrap="wrap"
       useFlexGap
     >
-      <Typography variant="body2">
-        {labels.selectedCount(selectedCount)}
-      </Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        flexWrap="wrap"
+        useFlexGap
+      >
+        <Typography variant="body2">
+          {labels.selectedCount(selectedCount)}
+        </Typography>
+        {showBanner &&
+          (allMatching ? (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                {labels.allMatchingSelected(total)}
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                onClick={clear}
+                disabled={pending !== null}
+              >
+                {labels.clearAll}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                {labels.pageSelected(visibleIds.length)}
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                onClick={selectAllMatching}
+                disabled={pending !== null}
+              >
+                {labels.selectAllMatching(total)}
+              </Button>
+            </>
+          ))}
+      </Stack>
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         <Button
           size="small"
@@ -325,7 +377,13 @@ export function BulkBar({
                   color={action.color as "primary" | undefined}
                   startIcon={action.icon}
                   disabled={reason !== undefined || pending !== null}
-                  onClick={() => run(action, ids)}
+                  onClick={() =>
+                    run(
+                      action,
+                      ids,
+                      allMatching ? { allMatching: true, total } : undefined
+                    )
+                  }
                 >
                   {action.label}
                 </Button>

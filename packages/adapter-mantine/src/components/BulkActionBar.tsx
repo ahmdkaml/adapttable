@@ -1,29 +1,22 @@
 import {
   type BulkAction,
-  type ConfirmHandler,
+  type BulkBarChromeProps,
   resolveDisabledReason,
   type SelectionState,
   type TableLabels,
   useBulkActionRunner,
 } from "@adapttable/core";
-import { Button, Group, Text, Tooltip } from "@mantine/core";
-
-/** Props for {@link BulkActionBar}. */
-export interface BulkActionBarProps {
-  selection: SelectionState;
-  bulkActions: BulkAction[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-}
+import { Button, Group, Stack, Text, Tooltip } from "@mantine/core";
 
 /** Selection toolbar: count, clear, and the configured bulk-action buttons. */
 export function BulkActionBar({
   selection,
+  total,
   bulkActions,
   confirm,
   labels,
-}: Readonly<BulkActionBarProps>) {
-  const { selectedIds, selectedCount, clear } = selection;
+}: Readonly<BulkBarChromeProps>) {
+  const { selectedIds, selectedCount, clear, allMatching } = selection;
   const { pending, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
@@ -34,27 +27,77 @@ export function BulkActionBar({
 
   const ids = [...selectedIds];
   return (
-    <Group justify="space-between" wrap="wrap" gap="sm">
-      <Text fz="sm">{labels.selectedCount(selectedCount)}</Text>
-      <Group gap="xs" wrap="wrap">
-        <Button
-          size="xs"
-          variant="subtle"
-          onClick={clear}
-          disabled={pending !== null}
-        >
-          {labels.clearAll}
-        </Button>
-        {bulkActions.map((action) => (
-          <BulkButton
-            key={action.key}
-            action={action}
-            ids={ids}
-            pending={pending}
-            onRun={(a) => run(a, ids)}
-          />
-        ))}
+    <Stack gap="xs">
+      <Group justify="space-between" wrap="wrap" gap="sm">
+        <Text fz="sm">{labels.selectedCount(selectedCount)}</Text>
+        <Group gap="xs" wrap="wrap">
+          <Button
+            size="xs"
+            variant="subtle"
+            onClick={clear}
+            disabled={pending !== null}
+          >
+            {labels.clearAll}
+          </Button>
+          {bulkActions.map((action) => (
+            <BulkButton
+              key={action.key}
+              action={action}
+              ids={ids}
+              pending={pending}
+              onRun={(a) => {
+                // Widened scope: the action receives the page ids plus the
+                // all-matching context, so confirm counts size by `total`.
+                if (allMatching) run(a, ids, { allMatching: true, total });
+                else run(a, ids);
+              }}
+            />
+          ))}
+        </Group>
       </Group>
+      <ScopeBanner selection={selection} total={total} labels={labels} />
+    </Stack>
+  );
+}
+
+/**
+ * Gmail-style scope banner. When every row on the page is selected but more
+ * rows match elsewhere, offer to widen the selection to all matching rows;
+ * once widened, announce the scope and offer to clear it.
+ */
+function ScopeBanner({
+  selection,
+  total,
+  labels,
+}: Readonly<{
+  selection: SelectionState;
+  total: number;
+  labels: Required<TableLabels>;
+}>) {
+  if (selection.headerState !== "all" || total <= selection.visibleIds.length) {
+    return null;
+  }
+  return (
+    <Group role="status" gap="xs" wrap="wrap">
+      {selection.allMatching ? (
+        <>
+          <Text fz="sm">{labels.allMatchingSelected(total)}</Text>
+          <Button size="xs" variant="subtle" onClick={selection.clear}>
+            {labels.clearAll}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Text fz="sm">{labels.pageSelected(selection.selectedCount)}</Text>
+          <Button
+            size="xs"
+            variant="light"
+            onClick={selection.selectAllMatching}
+          >
+            {labels.selectAllMatching(total)}
+          </Button>
+        </>
+      )}
     </Group>
   );
 }

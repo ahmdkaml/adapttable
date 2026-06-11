@@ -1,5 +1,5 @@
 import type { SelectionState } from "@adapttable/core";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { defaultLabels } from "../index";
@@ -120,7 +120,10 @@ describe("TableSkeleton", () => {
   });
 });
 
-function makeSelection(count: number): SelectionState {
+function makeSelection(
+  count: number,
+  overrides: Partial<SelectionState> = {}
+): SelectionState {
   return {
     selectedIds: new Set(count > 0 ? ["a", "b"].slice(0, count) : []),
     selectedCount: count,
@@ -130,6 +133,9 @@ function makeSelection(count: number): SelectionState {
     toggleAll: vi.fn(),
     clear: vi.fn(),
     visibleIds: ["a", "b"],
+    allMatching: false,
+    selectAllMatching: vi.fn(),
+    ...overrides,
   };
 }
 
@@ -138,6 +144,7 @@ describe("BulkActionBar", () => {
     renderMantine(
       <BulkActionBar
         selection={makeSelection(0)}
+        total={2}
         bulkActions={[{ key: "x", label: "X", onClick: vi.fn() }]}
         confirm={vi.fn()}
         labels={labels}
@@ -147,11 +154,12 @@ describe("BulkActionBar", () => {
     expect(screen.queryByText(/selected/)).toBeNull();
   });
 
-  it("runs a no-confirm action immediately", () => {
+  it("runs a no-confirm action immediately in the page scope", () => {
     const onClick = vi.fn().mockResolvedValue(undefined);
     renderMantine(
       <BulkActionBar
         selection={makeSelection(2)}
+        total={2}
         bulkActions={[{ key: "x", label: "Archive", onClick }]}
         confirm={vi.fn()}
         labels={labels}
@@ -159,7 +167,10 @@ describe("BulkActionBar", () => {
     );
     expect(screen.getByText("2 selected")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Archive"));
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
   });
 
   it("disables a button with a disabledReason and shows the tooltip text", () => {
@@ -167,6 +178,7 @@ describe("BulkActionBar", () => {
     renderMantine(
       <BulkActionBar
         selection={makeSelection(2)}
+        total={2}
         bulkActions={[
           {
             key: "x",
@@ -192,6 +204,7 @@ describe("BulkActionBar", () => {
     renderMantine(
       <BulkActionBar
         selection={makeSelection(2)}
+        total={2}
         bulkActions={[
           { key: "x", label: "Archive", onClick, disabledReason: () => "" },
         ]}
@@ -202,7 +215,98 @@ describe("BulkActionBar", () => {
     const btn = screen.getByText("Archive").closest("button");
     expect(btn).not.toBeDisabled();
     fireEvent.click(screen.getByText("Archive"));
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  it("hides the scope banner when the page holds every matching row", () => {
+    renderMantine(
+      <BulkActionBar
+        selection={makeSelection(2)}
+        total={2}
+        bulkActions={[{ key: "x", label: "Archive", onClick: vi.fn() }]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+  });
+
+  it("hides the scope banner when only part of the page is selected", () => {
+    renderMantine(
+      <BulkActionBar
+        selection={makeSelection(1, { headerState: "some" })}
+        total={9}
+        bulkActions={[{ key: "x", label: "Archive", onClick: vi.fn() }]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("offers to select all matching rows and forwards the click", () => {
+    const selection = makeSelection(2);
+    renderMantine(
+      <BulkActionBar
+        selection={selection}
+        total={9}
+        bulkActions={[{ key: "x", label: "Archive", onClick: vi.fn() }]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    const banner = screen.getByRole("status");
+    expect(
+      within(banner).getByText("All 2 on this page selected")
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(banner).getByRole("button", { name: "Select all 9 matching" })
+    );
+    expect(selection.selectAllMatching).toHaveBeenCalledTimes(1);
+  });
+
+  it("announces the widened scope and clears it from the banner", () => {
+    const selection = makeSelection(2, { allMatching: true });
+    renderMantine(
+      <BulkActionBar
+        selection={selection}
+        total={9}
+        bulkActions={[{ key: "x", label: "Archive", onClick: vi.fn() }]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    const banner = screen.getByRole("status");
+    expect(
+      within(banner).getByText("All 9 matching selected")
+    ).toBeInTheDocument();
+    expect(
+      within(banner).queryByRole("button", { name: "Select all 9 matching" })
+    ).toBeNull();
+    fireEvent.click(within(banner).getByRole("button", { name: "Clear all" }));
+    expect(selection.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs bulk actions with the all-matching context when the scope is widened", () => {
+    const onClick = vi.fn().mockResolvedValue(undefined);
+    renderMantine(
+      <BulkActionBar
+        selection={makeSelection(2, { allMatching: true })}
+        total={9}
+        bulkActions={[{ key: "x", label: "Archive", onClick }]}
+        confirm={vi.fn()}
+        labels={labels}
+      />
+    );
+    fireEvent.click(screen.getByText("Archive"));
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: true,
+      total: 9,
+    });
   });
 });
 

@@ -123,7 +123,10 @@ describe("useBulkActionRunner", () => {
       result.current.run({ key: "x", label: "X", onClick }, ["a", "b"]);
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
     expect(onComplete).toHaveBeenCalled();
   });
 
@@ -156,6 +159,44 @@ describe("useBulkActionRunner", () => {
       result.current.run(action, ["a"]);
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a"]);
+    expect(onClick).toHaveBeenCalledWith(["a"], {
+      allMatching: false,
+      total: 1,
+    });
+  });
+});
+
+describe("all-matching bulk scope", () => {
+  it("threads the scope into onClick and sizes the confirm by total", () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn(({ onConfirm }: { onConfirm: () => void }) =>
+      onConfirm()
+    );
+    const { result } = renderHook(() =>
+      useBulkActionRunner({ confirm, cancelLabel: "Cancel" })
+    );
+    act(() =>
+      result.current.run(
+        {
+          key: "x",
+          label: "X",
+          onClick,
+          confirm: {
+            title: "Sure?",
+            message: (count) => `Delete ${count}?`,
+            confirmLabel: "Yes",
+          },
+        },
+        ["a", "b"],
+        { allMatching: true, total: 57 }
+      )
+    );
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 57?" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: true,
+      total: 57,
+    });
   });
 });

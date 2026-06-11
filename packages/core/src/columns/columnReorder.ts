@@ -1,4 +1,5 @@
 import type { DragEvent, KeyboardEvent } from "react";
+import { useCallback, useState } from "react";
 
 /** MIME type carrying the dragged column key during a reorder drag. */
 export const COLUMN_DND_MIME = "application/x-adapttable-column";
@@ -130,5 +131,110 @@ export function columnDropProps(
       event.preventDefault();
       move(key, index);
     },
+  };
+}
+
+/** Indicator attributes for a column-menu row during a reorder drag. */
+export interface ColumnDragRowAttrs {
+  /** Present on the row being dragged (kits dim it). */
+  "data-dragging"?: "";
+  /** Present on the hovered drop target, with the insertion edge. */
+  "data-drop"?: "before" | "after";
+}
+
+/** Live drag state + composed prop builders from {@link useColumnDragState}. */
+export interface ColumnDragState {
+  /** Key currently being dragged, or `null` outside a drag. */
+  draggingKey: string | null;
+  /** Hovered drop index, or `null`. */
+  overIndex: number | null;
+  /** Drag props for a row — {@link columnRowDragProps} + state tracking. */
+  rowDragProps: (
+    key: string,
+    index: number
+  ) => ColumnRowDragProps & {
+    onDragEnd: () => void;
+  };
+  /** Drop props for a row — {@link columnDropProps} + hover tracking. */
+  dropProps: (
+    index: number,
+    move: (key: string, toIndex: number) => void
+  ) => ColumnDropProps;
+  /** Indicator data-attributes for a row; style them with kit CSS. */
+  rowAttrs: (key: string, index: number) => ColumnDragRowAttrs;
+}
+
+/**
+ * Drop-position feedback for the column-menu reorder. Composes the existing
+ * drag/drop prop builders with the tracking they lack, so adapters can show
+ * WHERE the dragged column will land instead of leaving the user to guess:
+ * the dragged row carries `data-dragging` (dim it) and the hovered target
+ * carries `data-drop="before" | "after"` (draw an insertion line on that
+ * edge). State clears on drop, drag end, and drag cancel alike.
+ */
+export function useColumnDragState(): ColumnDragState {
+  const [drag, setDrag] = useState<{ key: string; from: number } | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  const reset = useCallback(() => {
+    setDrag(null);
+    setOverIndex(null);
+  }, []);
+
+  const rowDragProps = useCallback<ColumnDragState["rowDragProps"]>(
+    (key, index) => {
+      const base = columnRowDragProps(key);
+      return {
+        ...base,
+        onDragStart: (event) => {
+          base.onDragStart(event);
+          // The base handler cancels drags that start on interactive
+          // controls — only track the ones it allowed.
+          if (!event.defaultPrevented) setDrag({ key, from: index });
+        },
+        onDragEnd: reset,
+      };
+    },
+    [reset]
+  );
+
+  const dropProps = useCallback<ColumnDragState["dropProps"]>(
+    (index, move) => {
+      const base = columnDropProps(index, move);
+      return {
+        onDragOver: (event) => {
+          base.onDragOver(event);
+          // Only a column drag (accepted above) marks a target.
+          if (event.defaultPrevented) setOverIndex(index);
+        },
+        onDrop: (event) => {
+          base.onDrop(event);
+          reset();
+        },
+      };
+    },
+    [reset]
+  );
+
+  const rowAttrs = useCallback<ColumnDragState["rowAttrs"]>(
+    (key, index) => {
+      if (!drag) return {};
+      // The source row matches by key here, so the hovered-target branch
+      // below can never be the dragged row itself.
+      if (drag.key === key) return { "data-dragging": "" };
+      if (overIndex !== index) return {};
+      // `move` inserts the dragged column AT this index: coming from later
+      // in the order it lands before this row, from earlier it lands after.
+      return { "data-drop": index < drag.from ? "before" : "after" };
+    },
+    [drag, overIndex]
+  );
+
+  return {
+    draggingKey: drag?.key ?? null,
+    overIndex,
+    rowDragProps,
+    dropProps,
+    rowAttrs,
   };
 }

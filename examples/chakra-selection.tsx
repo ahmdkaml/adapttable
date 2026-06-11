@@ -1,4 +1,4 @@
-import { type ColumnDef, DataTable, useFrontendData } from "@adapttable/chakra";
+import { type ColumnDef, DataTable } from "@adapttable/chakra";
 import { ChakraProvider } from "@chakra-ui/react";
 
 interface Invoice {
@@ -15,30 +15,23 @@ const INVOICES: Invoice[] = [
 ];
 
 const columns: ColumnDef<Invoice>[] = [
-  {
-    key: "number",
-    header: "Invoice",
-    accessor: (r) => r.number,
-    sortable: true,
-  },
+  { key: "number", header: "Invoice", sortable: true },
   {
     key: "amount",
-    header: "Amount",
     accessor: (r) => `$${r.amount}`,
     sortValue: (r) => r.amount,
     sortable: true,
     align: "end",
   },
-  { key: "status", header: "Status", accessor: (r) => r.status },
+  { key: "status" },
 ];
 
 /** Selection + bulk actions with a confirmation dialog. */
 export function ChakraSelectionExample() {
-  const source = useFrontendData({ data: INVOICES, columns });
   return (
     <ChakraProvider>
       <DataTable
-        source={source}
+        data={INVOICES}
         columns={columns}
         rowKey={(r) => r.id}
         colorScheme="teal"

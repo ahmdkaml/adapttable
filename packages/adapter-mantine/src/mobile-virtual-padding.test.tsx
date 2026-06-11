@@ -50,6 +50,7 @@ beforeEach(() => {
     },
     loadMoreRef: { current: null },
     canLoadMore: true,
+    virtualScrollRef: () => undefined,
   }));
 });
 

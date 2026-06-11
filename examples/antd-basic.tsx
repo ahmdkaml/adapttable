@@ -1,4 +1,4 @@
-import { type ColumnDef, DataTable, useFrontendData } from "@adapttable/antd";
+import { type ColumnDef, DataTable } from "@adapttable/antd";
 import { ConfigProvider, theme } from "antd";
 
 interface Product {
@@ -14,12 +14,13 @@ const PRODUCTS: Product[] = [
   { id: "3", name: "Mouse", category: "Peripherals", price: 40 },
 ];
 
+// Bare keys render and title themselves; `accessor` appears only where a
+// cell needs real formatting (money), with `sortValue` keeping sorts numeric.
 const columns: ColumnDef<Product>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "category", header: "Category", accessor: (r) => r.category },
+  { key: "name", sortable: true },
+  { key: "category" },
   {
     key: "price",
-    header: "Price",
     accessor: (r) => `$${r.price}`,
     sortValue: (r) => r.price,
     sortable: true,
@@ -33,11 +34,10 @@ const columns: ColumnDef<Product>[] = [
  * as every other adapter.
  */
 export function AntdBasicExample() {
-  const source = useFrontendData({ data: PRODUCTS, columns });
   return (
     <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
       <DataTable
-        source={source}
+        data={PRODUCTS}
         columns={columns}
         rowKey={(r) => r.id}
         bordered

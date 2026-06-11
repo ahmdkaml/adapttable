@@ -4,209 +4,299 @@
     "name": "Ada Lovelace",
     "email": "ada.lovelace@example.com",
     "role": "Engineer",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "آدا لوفليس",
+    "roleAr": "مهندس",
+    "teamAr": "الأساسية"
   },
   {
     "id": "2",
     "name": "Alan Turing",
     "email": "alan.turing@example.com",
     "role": "Founder",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "آلان تورينغ",
+    "roleAr": "مؤسس",
+    "teamAr": "المنصة"
   },
   {
     "id": "3",
     "name": "Grace Hopper",
     "email": "grace.hopper@example.com",
     "role": "Designer",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "غريس هوبر",
+    "roleAr": "مصمم",
+    "teamAr": "البيانات"
   },
   {
     "id": "4",
     "name": "Katherine Johnson",
     "email": "katherine.johnson@example.com",
     "role": "Researcher",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "كاثرين جونسون",
+    "roleAr": "باحث",
+    "teamAr": "الويب"
   },
   {
     "id": "5",
     "name": "Margaret Hamilton",
     "email": "margaret.hamilton@example.com",
     "role": "Manager",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "مارغريت هاميلتون",
+    "roleAr": "مدير",
+    "teamAr": "الجوال"
   },
   {
     "id": "6",
     "name": "Barbara Liskov",
     "email": "barbara.liskov@example.com",
     "role": "Analyst",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "باربرا ليسكوف",
+    "roleAr": "محلل",
+    "teamAr": "الأساسية"
   },
   {
     "id": "7",
     "name": "Donald Knuth",
     "email": "donald.knuth@example.com",
     "role": "Engineer",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "دونالد كنوث",
+    "roleAr": "مهندس",
+    "teamAr": "المنصة"
   },
   {
     "id": "8",
     "name": "Linus Torvalds",
     "email": "linus.torvalds@example.com",
     "role": "Founder",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "لينوس تورفالدس",
+    "roleAr": "مؤسس",
+    "teamAr": "البيانات"
   },
   {
     "id": "9",
     "name": "Edsger Dijkstra",
     "email": "edsger.dijkstra@example.com",
     "role": "Designer",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "إدسخر ديكسترا",
+    "roleAr": "مصمم",
+    "teamAr": "الويب"
   },
   {
     "id": "10",
     "name": "Tim Berners-Lee",
     "email": "tim.bernerslee@example.com",
     "role": "Researcher",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "تيم بيرنرز-لي",
+    "roleAr": "باحث",
+    "teamAr": "الجوال"
   },
   {
     "id": "11",
     "name": "Radia Perlman",
     "email": "radia.perlman@example.com",
     "role": "Manager",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "راديا بيرلمان",
+    "roleAr": "مدير",
+    "teamAr": "الأساسية"
   },
   {
     "id": "12",
     "name": "Vint Cerf",
     "email": "vint.cerf@example.com",
     "role": "Analyst",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "فينت سيرف",
+    "roleAr": "محلل",
+    "teamAr": "المنصة"
   },
   {
     "id": "13",
     "name": "Dennis Ritchie",
     "email": "dennis.ritchie@example.com",
     "role": "Engineer",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "دينيس ريتشي",
+    "roleAr": "مهندس",
+    "teamAr": "البيانات"
   },
   {
     "id": "14",
     "name": "Ken Thompson",
     "email": "ken.thompson@example.com",
     "role": "Founder",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "كين طومسون",
+    "roleAr": "مؤسس",
+    "teamAr": "الويب"
   },
   {
     "id": "15",
     "name": "Guido van Rossum",
     "email": "guido.rossum@example.com",
     "role": "Designer",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "غيدو فان روسوم",
+    "roleAr": "مصمم",
+    "teamAr": "الجوال"
   },
   {
     "id": "16",
     "name": "Brendan Eich",
     "email": "brendan.eich@example.com",
     "role": "Researcher",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "برندان آيك",
+    "roleAr": "باحث",
+    "teamAr": "الأساسية"
   },
   {
     "id": "17",
     "name": "James Gosling",
     "email": "james.gosling@example.com",
     "role": "Manager",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "جيمس غوسلينغ",
+    "roleAr": "مدير",
+    "teamAr": "المنصة"
   },
   {
     "id": "18",
     "name": "Bjarne Stroustrup",
     "email": "bjarne.stroustrup@example.com",
     "role": "Analyst",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "بيارن ستروستروب",
+    "roleAr": "محلل",
+    "teamAr": "البيانات"
   },
   {
     "id": "19",
     "name": "John McCarthy",
     "email": "john.mccarthy@example.com",
     "role": "Engineer",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "جون مكارثي",
+    "roleAr": "مهندس",
+    "teamAr": "الويب"
   },
   {
     "id": "20",
     "name": "Claude Shannon",
     "email": "claude.shannon@example.com",
     "role": "Founder",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "كلود شانون",
+    "roleAr": "مؤسس",
+    "teamAr": "الجوال"
   },
   {
     "id": "21",
     "name": "Marissa Mayer",
     "email": "marissa.mayer@example.com",
     "role": "Designer",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "ماريسا ماير",
+    "roleAr": "مصمم",
+    "teamAr": "الأساسية"
   },
   {
     "id": "22",
     "name": "Sheryl Sandberg",
     "email": "sheryl.sandberg@example.com",
     "role": "Researcher",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "شيريل ساندبرغ",
+    "roleAr": "باحث",
+    "teamAr": "المنصة"
   },
   {
     "id": "23",
     "name": "Satya Nadella",
     "email": "satya.nadella@example.com",
     "role": "Manager",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "ساتيا ناديلا",
+    "roleAr": "مدير",
+    "teamAr": "البيانات"
   },
   {
     "id": "24",
     "name": "Sundar Pichai",
     "email": "sundar.pichai@example.com",
     "role": "Analyst",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "سوندار بيتشاي",
+    "roleAr": "محلل",
+    "teamAr": "الويب"
   },
   {
     "id": "25",
     "name": "Jensen Huang",
     "email": "jensen.huang@example.com",
     "role": "Engineer",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "جينسن هوانغ",
+    "roleAr": "مهندس",
+    "teamAr": "الجوال"
   },
   {
     "id": "26",
     "name": "Lisa Su",
     "email": "lisa.su@example.com",
     "role": "Founder",
-    "team": "Core"
+    "team": "Core",
+    "nameAr": "ليزا سو",
+    "roleAr": "مؤسس",
+    "teamAr": "الأساسية"
   },
   {
     "id": "27",
     "name": "Andrew Ng",
     "email": "andrew.ng@example.com",
     "role": "Designer",
-    "team": "Platform"
+    "team": "Platform",
+    "nameAr": "أندرو نج",
+    "roleAr": "مصمم",
+    "teamAr": "المنصة"
   },
   {
     "id": "28",
     "name": "Fei-Fei Li",
     "email": "feifei.li@example.com",
     "role": "Researcher",
-    "team": "Data"
+    "team": "Data",
+    "nameAr": "فاي-فاي لي",
+    "roleAr": "باحث",
+    "teamAr": "البيانات"
   },
   {
     "id": "29",
     "name": "Yann LeCun",
     "email": "yann.lecun@example.com",
     "role": "Manager",
-    "team": "Web"
+    "team": "Web",
+    "nameAr": "يان لوكون",
+    "roleAr": "مدير",
+    "teamAr": "الويب"
   },
   {
     "id": "30",
     "name": "Geoffrey Hinton",
     "email": "geoffrey.hinton@example.com",
     "role": "Analyst",
-    "team": "Mobile"
+    "team": "Mobile",
+    "nameAr": "جيفري هينتون",
+    "roleAr": "محلل",
+    "teamAr": "الجوال"
   }
 ]

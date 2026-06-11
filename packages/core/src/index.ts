@@ -45,17 +45,56 @@ export {
 } from "./actions/useBulkActionRunner";
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
+/* ── Declarative filters & data tiers ──────────────────────────────── */
+export { resolveColumns } from "./columns/resolveColumns";
+export {
+  AUTO_OPTIONS_LIMIT,
+  buildFilterRuntime,
+  clearedFilterExtras,
+  type ColumnFilter,
+  FILTER_TYPES,
+  type FilterDef,
+  filterLabel,
+  type FilterOption,
+  type FilterOptionsSource,
+  filterPredicate,
+  type FilterRuntime,
+  filterStateKeys,
+  type FilterType,
+  materializeAutoOptions,
+  RANGE_SUFFIXES,
+  resolveFilterDefs,
+} from "./filters/filterDefs";
+export {
+  type ResolvedFilterOptions,
+  useFilterOptions,
+} from "./filters/useFilterOptions";
 export type { BaseDataTableProps } from "./props";
+export {
+  type TableQuery,
+  useServerData,
+  type UseServerDataOptions,
+} from "./source/useServerData";
+export {
+  isDeclarativeFilters,
+  useTableData,
+  type UseTableDataOptions,
+  type UseTableDataResult,
+} from "./source/useTableData";
 export {
   type BulkBarChromeProps,
   type ChromeBodyData,
-  type TableBody,
+  type FilterTriggerToggle,
+  type TableBodyRegion,
   type TableChrome,
   type ToolbarChromeProps,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
+export { humanizeKey } from "./utils/humanizeKey";
+export { getPath } from "./utils/path";
 
 /* ── Labels ────────────────────────────────────────────────────────── */
 export { defaultLabels, resolveLabels } from "./labels";
@@ -73,6 +112,7 @@ export {
 } from "./constants";
 
 /* ── URL state ─────────────────────────────────────────────────────── */
+export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
 export {
   createHistoryAdapter,
   createMemoryAdapter,
@@ -84,6 +124,12 @@ export {
   type UseColumnLayoutUrlStateOptions,
   type UseColumnLayoutUrlStateResult,
 } from "./url/useColumnLayoutUrlState";
+export {
+  type SavedView,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
+} from "./url/useSavedViews";
 export {
   useTableUrlState,
   type UseTableUrlStateOptions,
@@ -110,6 +156,7 @@ export {
   useFrontendData,
   type UseFrontendDataOptions,
 } from "./source/useFrontendData";
+export type { TableStateMutators } from "./tableStateMutators";
 
 /* ── Filters / chips ───────────────────────────────────────────────── */
 export {
@@ -146,13 +193,21 @@ export {
 } from "./selection/useSelection";
 
 /* ── Sorting ───────────────────────────────────────────────────────── */
-export { compareValues, sortRows } from "./sort/compare";
+export {
+  compareValues,
+  type SortLevel,
+  sortRows,
+  sortRowsMulti,
+} from "./sort/compare";
 export { nextSort, type SortState } from "./sort/cycleSort";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
+  ACTIONS_COLUMN_KEY,
+  type ColumnMenuChromeProps,
   columnMenuLabel,
+  type ColumnMenuLabels,
   type ColumnMenuRow,
   columnMenuRows,
   nextPinSide,
@@ -161,12 +216,15 @@ export {
 } from "./columns/columnMenuModel";
 export {
   COLUMN_DND_MIME,
+  type ColumnDragRowAttrs,
+  type ColumnDragState,
   type ColumnDropProps,
   columnDropProps,
   type ColumnReorderKeyProps,
   columnReorderKeyProps,
   type ColumnRowDragProps,
   columnRowDragProps,
+  useColumnDragState,
 } from "./columns/columnReorder";
 export {
   COLUMN_RESIZE_STEP,
@@ -203,6 +261,10 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
+export {
+  type HorizontalOverflow,
+  useHorizontalOverflow,
+} from "./layout/useHorizontalOverflow";
 
 /* ── Pagination ────────────────────────────────────────────────────── */
 export {
@@ -251,7 +313,6 @@ export {
   type UseTableVirtualizationOptions,
   virtualColumnSpan,
   type VirtualTableRow,
-  warnVirtualizeInScrollBox,
 } from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */
@@ -260,6 +321,10 @@ export { stableKey } from "./utils/stableKey";
 
 /* ── Rows ──────────────────────────────────────────────────────────── */
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+export {
+  type RowExpansionState,
+  useRowExpansion,
+} from "./rows/useRowExpansion";
 
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";

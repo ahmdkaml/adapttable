@@ -21,7 +21,7 @@ Or install manually (Mantine shown; swap for `mui`, `chakra`, `antd`, or
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react react-dom
 ```
 
-## Your first table
+## Your first table — zero ceremony
 
 Each adapter renders with its UI kit's own components, so your app needs that
 kit's provider once at the root — exactly as the kit's docs describe (Mantine
@@ -37,6 +37,81 @@ import { MantineProvider } from "@mantine/core";
   <App />
 </MantineProvider>;
 ```
+
+Then pass `data` and declare columns — that's the whole thing:
+
+```tsx
+import { DataTable } from "@adapttable/mantine";
+
+export function People({ data }: { data: Person[] }) {
+  return (
+    <DataTable
+      data={data}
+      columns={[
+        { key: "name", sortable: true },
+        { key: "department.name" },
+        { key: "status", filter: { type: "select", options: STATUSES } },
+        { key: "hiredAt", filter: "dateRange" },
+        { key: "salary", filter: "numberRange" },
+      ]}
+      rowKey={(r) => r.id}
+    />
+  );
+}
+```
+
+What you just got without writing any of it: search, sorting, pagination,
+URL-synced state (reload-safe, shareable links), and a **filter form built
+from those `filter` declarations** with kit-native widgets — each filter also
+drives its own removable chip, URL parsing, and row predicate. Headers
+auto-derive from keys (`hiredAt` → "Hired At"; pass `header` to control the
+text in any language), and dot-path keys reach nested values. Filters that
+aren't columns go in a table-level array:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  filters={[
+    { key: "companyId", type: "select", label: "Company", options: companies },
+    { key: "budget", type: "numberRange" },
+  ]}
+  rowKey={(r) => r.id}
+/>
+```
+
+## Server data without a query library
+
+Keep the same table, add `onQueryChange`: the table owns the query state
+(URL, widgets, chips, debounce) and emits one consolidated event per real
+change — including the initial mount with URL-restored values. Forward the
+`signal` and out-of-order responses are aborted for you:
+
+```tsx
+const [rows, setRows] = useState<Person[]>([]);
+const [total, setTotal] = useState(0);
+const [loading, setLoading] = useState(false);
+
+<DataTable
+  data={rows}
+  total={total}
+  loading={loading}
+  onQueryChange={async (q, { signal }) => {
+    setLoading(true);
+    const res = await fetch(api.people(q), { signal }).then((r) => r.json());
+    setRows(res.items);
+    setTotal(res.total);
+    setLoading(false);
+  }}
+  columns={columns}
+  rowKey={(r) => r.id}
+/>;
+```
+
+## Full control with a source (query libraries)
+
+For TanStack Query integration, caching, infinite scroll and prefetching,
+build a `source` — everything else stays identical:
 
 ```tsx
 import {

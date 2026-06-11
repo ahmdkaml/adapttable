@@ -115,4 +115,48 @@ describe("controlled selection", () => {
     rerender({ resetKey: "k2" });
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("toggle identity is permanently stable and never computes from a stale set", () => {
+    // A memoized row holds the FIRST render's toggle; with parent-applied
+    // controlled updates, sequential toggles must accumulate, not drop.
+    let applied: string[] = [];
+    const onChange = (ids: string[]) => {
+      applied = ids;
+      rerender({ selected: ids });
+    };
+    const { result, rerender } = renderHook(
+      ({ selected }) => useSelection({ rows, getId, selected, onChange }),
+      { initialProps: { selected: [] as string[] } }
+    );
+    const heldToggle = result.current.toggle;
+    act(() => heldToggle("a"));
+    expect(applied).toEqual(["a"]);
+    // The held (first-render) toggle must see the updated set.
+    act(() => heldToggle("b"));
+    expect(applied).toEqual(["a", "b"]);
+    expect(result.current.toggle).toBe(heldToggle);
+  });
+
+  it("selectAllMatching widens the scope; any mutation narrows it back", () => {
+    const { result } = renderHook(() => useSelection({ rows, getId }));
+    act(() => result.current.toggleAll());
+    expect(result.current.allMatching).toBe(false);
+    act(() => result.current.selectAllMatching());
+    expect(result.current.allMatching).toBe(true);
+    // Deselecting one row leaves a concrete id set — scope narrows.
+    act(() => result.current.toggle("a"));
+    expect(result.current.allMatching).toBe(false);
+  });
+
+  it("a resetKey change also drops the all-matching scope", () => {
+    const { result, rerender } = renderHook(
+      ({ resetKey }) => useSelection({ rows, getId, resetKey }),
+      { initialProps: { resetKey: "k1" } }
+    );
+    act(() => result.current.toggleAll());
+    act(() => result.current.selectAllMatching());
+    rerender({ resetKey: "k2" });
+    expect(result.current.allMatching).toBe(false);
+    expect(result.current.selectedCount).toBe(0);
+  });
 });

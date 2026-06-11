@@ -18,6 +18,7 @@ import {
   Space,
   Spin,
   Tag,
+  Typography,
 } from "antd";
 import type { ReactNode } from "react";
 
@@ -29,6 +30,8 @@ import { FilterPopover } from "./FilterPopover";
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Filter content (anchored popover or drawer). */
   filters?: ReactNode;
+  /** The saved-views menu trigger, when the `savedViews` prop opts in. */
+  savedViewsMenu?: ReactNode;
   /** Whether to anchor a popover or open the drawer. */
   filtersMode: "popover" | "drawer";
   /** Close the filter container. */
@@ -52,11 +55,13 @@ export function Toolbar<TRow>({
   filtersMode,
   filtersOpen,
   onToggleFilters,
+  onFiltersTriggerPointerDown,
   onCloseFilters,
   onClearFilters,
   isRefreshing,
   dir,
   columnMenu,
+  savedViewsMenu,
   showRowsPerPage,
 }: Readonly<ToolbarProps<TRow>>) {
   const { labels, source } = table;
@@ -72,6 +77,7 @@ export function Toolbar<TRow>({
         icon={<FiltersIcon size={16} />}
         aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
         data-active={filtersOpen || undefined}
+        onPointerDown={onFiltersTriggerPointerDown}
         onClick={onToggleFilters}
       >
         {labels.filters}
@@ -133,6 +139,7 @@ export function Toolbar<TRow>({
             filtersButton
           ))}
         {columnMenu}
+        {savedViewsMenu}
         {showRowsPerPage && (
           <Select
             style={{ minWidth: 110 }}
@@ -186,11 +193,36 @@ export function Chips({
 }
 
 /**
+ * One state of the cross-page selection banner: a status text plus an
+ * inline link widening the scope ("select all N matching") or backing out
+ * of it ("clear all").
+ */
+function bannerLine(
+  text: string,
+  actionLabel: string,
+  onClick: () => void,
+  disabled: boolean
+) {
+  return (
+    <Space size={4} wrap>
+      <Typography.Text>{text}</Typography.Text>
+      <Button size="small" type="link" disabled={disabled} onClick={onClick}>
+        {actionLabel}
+      </Button>
+    </Space>
+  );
+}
+
+/**
  * Selection bar, rendered with antd's idiomatic `Alert` + `action` slot
- * (the pattern antd's own Table docs use for batch operations).
+ * (the pattern antd's own Table docs use for batch operations). When a
+ * full page is selected and more rows match on other pages, the message
+ * becomes a two-state banner: offer "select all N matching", then report
+ * the widened scope — bulk actions run with `allMatching` so the backend
+ * can act on the whole filtered set.
  */
 export function BulkBar(props: Readonly<BulkBarChromeProps>) {
-  const { selection, bulkActions, confirm, labels } = props;
+  const { selection, total, bulkActions, confirm, labels } = props;
   const runner = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
@@ -199,11 +231,32 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
   if (selection.selectedCount === 0) return null;
   const ids = [...selection.selectedIds];
   const busy = runner.pending !== null;
+  const crossPage =
+    selection.headerState === "all" && total > selection.visibleIds.length;
+  const context = selection.allMatching
+    ? { allMatching: true, total }
+    : undefined;
+  let message: ReactNode = labels.selectedCount(selection.selectedCount);
+  if (crossPage) {
+    message = selection.allMatching
+      ? bannerLine(
+          labels.allMatchingSelected(total),
+          labels.clearAll,
+          selection.clear,
+          busy
+        )
+      : bannerLine(
+          labels.pageSelected(selection.visibleIds.length),
+          labels.selectAllMatching(total),
+          selection.selectAllMatching,
+          busy
+        );
+  }
   return (
     <Alert
       type="info"
       banner
-      message={labels.selectedCount(selection.selectedCount)}
+      message={message}
       action={
         <Space size="small" wrap>
           <Button
@@ -223,7 +276,7 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
               icon={action.icon}
               title={action.disabledReason?.(ids)}
               disabled={action.disabledReason?.(ids) !== undefined || busy}
-              onClick={() => runner.run(action, ids)}
+              onClick={() => runner.run(action, ids, context)}
             >
               {action.label}
             </Button>

@@ -18,6 +18,7 @@ import {
 import type { RefObject } from "react";
 
 import type { Density } from "../density";
+import { ExpandToggle } from "./ExpandToggle";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared
@@ -33,6 +34,9 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "getRowId"
   | "onRowClick"
   | "rowClassName"
+  | "renderRowDetail"
+  | "summaryRow"
+  | "expansion"
   | "rowEntries"
   | "paddingTop"
   | "paddingBottom"
@@ -66,9 +70,14 @@ export function MobileCards<TRow>({
   density = "comfortable",
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  summaryRow,
+  expansion,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
+  const cardPadding = compact ? "sm" : "md";
+  const cardGap = compact ? 4 : "xs";
   const entries =
     rowEntries ??
     rows.map((row, index) => ({
@@ -76,6 +85,10 @@ export function MobileCards<TRow>({
       index,
       key: getRowId(row),
     }));
+  // Header groups and multi-sort are desktop-only: cards have no column axis
+  // to span a group label across or to chain a sort on, so neither renders
+  // here. The footer summary still applies — it closes the list as one card.
+  const summaryCells = summaryRow?.(rows);
 
   return (
     <Stack
@@ -96,17 +109,27 @@ export function MobileCards<TRow>({
             data-index={index}
             withBorder
             radius="md"
-            padding={compact ? "sm" : "md"}
+            padding={cardPadding}
             role="listitem"
             data-stagger=""
           >
-            <Stack gap={compact ? 4 : "xs"}>
+            <Stack gap={cardGap}>
               {selection && (
                 <Checkbox
                   aria-label={labels.selectRow}
                   checked={selection.isSelected(id)}
                   onChange={() => selection.toggle(id)}
                 />
+              )}
+              {expansion && (
+                <Group justify="flex-end">
+                  <ExpandToggle
+                    expanded={expansion.isExpanded(id)}
+                    expandLabel={labels.expandRow}
+                    collapseLabel={labels.collapseRow}
+                    onToggle={() => expansion.toggle(id)}
+                  />
+                </Group>
               )}
               {columns.map((column) => (
                 <div key={column.key}>
@@ -122,6 +145,9 @@ export function MobileCards<TRow>({
                   </Text>
                 </div>
               ))}
+              {expansion?.isExpanded(id) === true && (
+                <div>{renderRowDetail!(row)}</div>
+              )}
               {rowActions && rowActions.length > 0 && (
                 <Group gap={4} justify="flex-end" pt={4}>
                   {rowActions.map((action) => {
@@ -176,6 +202,24 @@ export function MobileCards<TRow>({
       })}
       {paddingBottom > 0 && (
         <div aria-hidden style={{ height: paddingBottom }} />
+      )}
+      {summaryCells && (
+        <Card withBorder radius="md" padding={cardPadding} role="listitem">
+          <Stack gap={cardGap}>
+            {columns
+              .filter((column) => summaryCells[column.key] !== undefined)
+              .map((column) => (
+                <div key={column.key}>
+                  <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                    {mobileLabel(column)}
+                  </Text>
+                  <Text fz="sm" fw={600}>
+                    {summaryCells[column.key]}
+                  </Text>
+                </div>
+              ))}
+          </Stack>
+        </Card>
       )}
     </Stack>
   );

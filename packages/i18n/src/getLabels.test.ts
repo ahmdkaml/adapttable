@@ -68,3 +68,26 @@ describe("presets", () => {
     }
   });
 });
+
+it("every function label in every locale formats with its numbers", () => {
+  for (const [tag, labels] of Object.entries(locales)) {
+    for (const [key, value] of Object.entries(labels)) {
+      if (typeof value !== "function") continue;
+      let out: string;
+      if (key === "showing") {
+        out = (
+          value as (a: { from: number; to: number; total: number }) => string
+        )({ from: 1, to: 8, total: 42 });
+      } else if (key === "pageOf") {
+        out = (value as (a: { page: number; total: number }) => string)({
+          page: 42,
+          total: 99,
+        });
+      } else {
+        out = (value as (n: number) => string)(42);
+      }
+      expect(out, `${tag}.${key}`).toEqual(expect.any(String));
+      expect(out, `${tag}.${key}`).toContain("42");
+    }
+  }
+});

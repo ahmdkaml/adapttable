@@ -20,12 +20,20 @@ export {
   ActiveFilterChips,
   type ActiveFilterChipsProps,
 } from "./components/ActiveFilterChips";
+export {
+  AutoFilterForm,
+  type AutoFilterFormProps,
+} from "./components/AutoFilterForm";
 export { EmptyState, type EmptyStateProps } from "./components/EmptyState";
 export { ErrorState, type ErrorStateProps } from "./components/ErrorState";
 export {
   PaginationFooter,
   type PaginationFooterProps,
 } from "./components/PaginationFooter";
+export {
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
 export {
   TableSkeleton,
   type TableSkeletonProps,
@@ -50,13 +58,18 @@ export {
   defaultLabels,
   type Direction,
   type ExtraFilters,
+  type FilterDef,
+  type FilterOption,
+  type FilterType,
   type FilterValue,
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
+  type TableQuery,
   type TableQueryParams,
   type TableSource,
   useBackendData,
@@ -65,6 +78,9 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
   useTableUrlState,
 } from "@adapttable/core";
 

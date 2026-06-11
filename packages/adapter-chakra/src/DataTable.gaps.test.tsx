@@ -55,6 +55,7 @@ function mockBodyData(rows: VirtualTableRow<Row>[], padding: number) {
     },
     loadMoreRef: createRef<HTMLDivElement>(),
     canLoadMore: true,
+    virtualScrollRef: () => undefined,
   });
 }
 

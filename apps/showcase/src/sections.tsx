@@ -11,6 +11,7 @@ import {
   Moon,
   Resize,
   Server,
+  Star,
   Sun,
 } from "./sectionIcons";
 import { ADAPTER_TOKENS } from "./themeTokens";
@@ -42,7 +43,9 @@ export function Nav({
           <a href="#demo">Live demo</a>
           <a href="#columns">Columns</a>
           <a href="#scale">Scale</a>
+          <a href="#rtl">RTL</a>
           <a href="#custom">Customize</a>
+          <a href="#get-started">Get started</a>
         </nav>
         <div className="nav__right">
           <button
@@ -53,12 +56,17 @@ export function Nav({
           >
             {dark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
-          <a className="nav__ghost" href="#top">
+          <a
+            className="nav__ghost"
+            href={DOCS_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
             Docs
           </a>
           <a
             className="nav__cta"
-            href="https://github.com/"
+            href={REPO_URL}
             target="_blank"
             rel="noreferrer"
           >
@@ -70,19 +78,22 @@ export function Nav({
   );
 }
 
+const DOCS_URL = "https://orwa-mahmoud.github.io/adapttable/";
+const REPO_URL = "https://github.com/orwa-mahmoud/adapttable";
+
 function Install({ large = false }: Readonly<{ large?: boolean }>) {
   const [copied, setCopied] = useState(false);
   return (
     <div className={large ? "install install--lg" : "install"}>
       <span className="install__prompt">$</span>
-      <code>npm i @adapttable/core</code>
+      <code>npx @adapttable/cli init</code>
       {!large && (
         <button
           type="button"
           className={copied ? "install__copy ok" : "install__copy"}
           aria-label="Copy install command"
           onClick={() => {
-            void navigator.clipboard?.writeText("npm i @adapttable/core");
+            void navigator.clipboard?.writeText("npx @adapttable/cli init");
             setCopied(true);
             window.setTimeout(() => setCopied(false), 1200);
           }}
@@ -249,6 +260,68 @@ export function FeatureGrid() {
   );
 }
 
+const FOOT_LINKS = [
+  { label: "Docs", href: DOCS_URL },
+  { label: "Get started", href: `${DOCS_URL}getting-started/` },
+  { label: "API", href: `${DOCS_URL}api/` },
+  { label: "Compare", href: `${DOCS_URL}comparison/` },
+  { label: "GitHub", href: REPO_URL },
+];
+
+/**
+ * Install + first-table section: the showcase is the marketing surface, so
+ * it must answer "how do I actually run this?" inline and hand off to the
+ * docs site for everything deeper.
+ */
+export function GetStarted() {
+  return (
+    <section className="sec shell" id="get-started">
+      <SectionHead kicker="Get started" title="Five lines to your first table.">
+        The CLI detects your UI kit and scaffolds a working table; the docs
+        cover every prop, the three data tiers, theming, i18n/RTL and the
+        TanStack comparison.
+      </SectionHead>
+      <div className="getstarted">
+        <pre className="spcard__code getstarted__code">
+          <code>{GETTING_STARTED_SNIPPET}</code>
+        </pre>
+        <div className="getstarted__actions">
+          <Install large />
+          <div className="getstarted__btns">
+            <a
+              className="gs-btn gs-btn--primary"
+              href={`${DOCS_URL}getting-started/`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the docs
+            </a>
+            <a
+              className="gs-btn gs-btn--ghost"
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Star size={15} /> Star it on GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const GETTING_STARTED_SNIPPET = `import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+
+<DataTable
+  data={people}
+  columns={[
+    { key: "name" },
+    { key: "team", filter: "multiSelect" },
+    { key: "hiredAt", filter: "dateRange" },
+  ]}
+/>`;
+
 export function Footer() {
   return (
     <footer className="foot">
@@ -259,13 +332,11 @@ export function Footer() {
         </div>
         <Install large />
         <div className="foot__links">
-          {["Docs", "Adapters", "Migrating from TanStack", "GitHub", "npm"].map(
-            (l) => (
-              <a key={l} href="#top">
-                {l}
-              </a>
-            )
-          )}
+          {FOOT_LINKS.map((l) => (
+            <a key={l.label} href={l.href} target="_blank" rel="noreferrer">
+              {l.label}
+            </a>
+          ))}
         </div>
       </div>
     </footer>

@@ -1,34 +1,105 @@
 import type {
-  ColumnDef,
+  ColumnDragState,
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
   ColumnMenuRow,
   UseColumnLayoutResult,
 } from "@adapttable/core";
 import {
-  columnDropProps,
+  ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
-  columnRowDragProps,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
+  useColumnDragState,
 } from "@adapttable/core";
-import { useEffect, useRef, useState } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
+import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
 
-export interface ColumnMenuLabels {
-  columns: string;
-  pinLeft: string;
-  pinRight: string;
-  unpin: string;
-  moveLeft: string;
-  moveRight: string;
-  resetColumns: string;
-  showColumn: string;
-  hideColumn: string;
+/** Menu labels: the shared chrome contract plus the actions row's name. */
+type ColumnMenuRowLabels = ColumnMenuLabels & { actions: string };
+
+/** The eye toggle shared by data-column rows and the actions row. */
+function VisibilityToggle({
+  hidden,
+  name,
+  labels,
+  classNames,
+  onToggle,
+}: Readonly<{
+  hidden: boolean;
+  name: string;
+  labels: Pick<ColumnMenuLabels, "showColumn" | "hideColumn">;
+  classNames: DataTableClassNames;
+  onToggle: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      data-adapttable-part="column-menu-visibility"
+      data-active={!hidden || undefined}
+      aria-pressed={!hidden}
+      aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
+      className={classNames.columnMenuVisibility}
+      onClick={onToggle}
+    >
+      <EyeIcon off={hidden} />
+    </button>
+  );
+}
+
+/** The row's name caption, shared by data-column rows and the actions row. */
+function RowName({
+  hidden,
+  name,
+  classNames,
+}: Readonly<{
+  hidden: boolean;
+  name: string;
+  classNames: DataTableClassNames;
+}>) {
+  return (
+    <span
+      data-adapttable-part="column-menu-label"
+      data-hidden={hidden || undefined}
+      className={classNames.columnMenuLabel}
+    >
+      {name}
+    </span>
+  );
+}
+
+/** The pin toggle shared by data-column rows and the actions row. */
+function PinToggle({
+  active,
+  actionLabel,
+  classNames,
+  onClick,
+}: Readonly<{
+  active: boolean;
+  /** What clicking will DO next (e.g. "Pin right: Actions"). */
+  actionLabel: string;
+  classNames: DataTableClassNames;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      data-adapttable-part="column-menu-pin"
+      data-active={active || undefined}
+      aria-pressed={active}
+      aria-label={actionLabel}
+      className={classNames.columnMenuPin}
+      onClick={onClick}
+    >
+      <PinIcon />
+    </button>
+  );
 }
 
 interface ColumnMenuRowProps<TRow> {
@@ -36,6 +107,7 @@ interface ColumnMenuRowProps<TRow> {
   layout: UseColumnLayoutResult<TRow>;
   labels: ColumnMenuLabels;
   classNames: DataTableClassNames;
+  drag: ColumnDragState;
 }
 
 function ColumnMenuRowItem<TRow>({
@@ -43,6 +115,7 @@ function ColumnMenuRowItem<TRow>({
   layout,
   labels,
   classNames,
+  drag,
 }: Readonly<ColumnMenuRowProps<TRow>>) {
   const { key, name, hidden, pinned, index } = row;
   return (
@@ -52,8 +125,9 @@ function ColumnMenuRowItem<TRow>({
       data-pinned={pinned}
       className={classNames.columnMenuItem}
       style={{ cursor: "grab" }}
-      {...columnRowDragProps(key)}
-      {...columnDropProps(index, layout.move)}
+      {...drag.rowDragProps(key, index)}
+      {...drag.dropProps(index, layout.move)}
+      {...drag.rowAttrs(key, index)}
     >
       <span
         data-adapttable-part="column-menu-grip"
@@ -67,44 +141,81 @@ function ColumnMenuRowItem<TRow>({
       >
         <GripIcon />
       </span>
-      <button
-        type="button"
-        data-adapttable-part="column-menu-visibility"
-        data-active={!hidden || undefined}
-        aria-pressed={!hidden}
-        aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
-        className={classNames.columnMenuVisibility}
-        onClick={() => layout.toggleVisible(key)}
-      >
-        <EyeIcon off={hidden} />
-      </button>
-      <span
-        data-adapttable-part="column-menu-label"
-        data-hidden={hidden || undefined}
-        className={classNames.columnMenuLabel}
-      >
-        {name}
-      </span>
-      <button
-        type="button"
-        data-adapttable-part="column-menu-pin"
-        data-active={pinned !== undefined || undefined}
-        aria-pressed={pinned !== undefined}
-        aria-label={`${pinActionLabel(pinned, labels)}: ${name}`}
-        className={classNames.columnMenuPin}
+      <VisibilityToggle
+        hidden={hidden}
+        name={name}
+        labels={labels}
+        classNames={classNames}
+        onToggle={() => layout.toggleVisible(key)}
+      />
+      <RowName hidden={hidden} name={name} classNames={classNames} />
+      <PinToggle
+        active={pinned !== undefined}
+        actionLabel={`${pinActionLabel(pinned, labels)}: ${name}`}
+        classNames={classNames}
         onClick={() => layout.setPinned(key, nextPinSide(pinned))}
-      >
-        <PinIcon />
-      </button>
+      />
     </div>
   );
 }
 
-export interface ColumnMenuProps<TRow> {
-  allColumns: ColumnDef<TRow>[];
+interface ActionsMenuRowProps<TRow> {
   layout: UseColumnLayoutResult<TRow>;
-  labels: ColumnMenuLabels;
+  labels: ColumnMenuRowLabels;
   classNames: DataTableClassNames;
+}
+
+/**
+ * The injected row-actions column as a first-class menu row: the same eye
+ * toggle as a data column plus a ONE-CLICK end-pin toggle (right ↔ unpinned).
+ * The column always trails, so there is no left pin and no reorder grip.
+ */
+function ActionsMenuRowItem<TRow>({
+  layout,
+  labels,
+  classNames,
+}: Readonly<ActionsMenuRowProps<TRow>>) {
+  const hidden = layout.isHidden(ACTIONS_COLUMN_KEY);
+  const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] !== undefined;
+  const name = labels.actions;
+  return (
+    <div
+      data-adapttable-part="column-menu-item"
+      data-actions=""
+      data-hidden={hidden || undefined}
+      data-pinned={pinned ? "right" : undefined}
+      className={classNames.columnMenuItem}
+    >
+      <VisibilityToggle
+        hidden={hidden}
+        name={name}
+        labels={labels}
+        classNames={classNames}
+        onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+      />
+      <RowName hidden={hidden} name={name} classNames={classNames} />
+      <PinToggle
+        active={pinned}
+        actionLabel={`${pinned ? labels.unpin : labels.pinRight}: ${name}`}
+        classNames={classNames}
+        onClick={() =>
+          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "right")
+        }
+      />
+    </div>
+  );
+}
+
+export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
+  classNames: DataTableClassNames;
+  /** Resolved labels — the shared contract plus the actions row's name. */
+  labels: ColumnMenuRowLabels;
+  /**
+   * Whether the table renders row actions. When true the menu lists the
+   * injected actions column as a separated trailing row, so it hides and
+   * end-pins like any data column.
+   */
+  hasRowActions?: boolean;
 }
 
 /**
@@ -118,30 +229,10 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   classNames,
+  hasRowActions,
 }: Readonly<ColumnMenuProps<TRow>>) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      // Escape strands keyboard focus inside the removed panel — hand it
-      // back to the trigger (outside clicks keep their own focus target).
-      triggerRef.current?.focus();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const drag = useColumnDragState();
+  const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
 
   return (
     <div
@@ -158,6 +249,7 @@ export function ColumnMenu<TRow>({
         data-adapttable-part="column-menu-button"
         data-active={open || undefined}
         className={classNames.columnMenuButton}
+        style={{ flexShrink: 0, whiteSpace: "nowrap" }}
         onClick={() => setOpen((v) => !v)}
       >
         {labels.columns}
@@ -167,15 +259,7 @@ export function ColumnMenu<TRow>({
           aria-label={labels.columns}
           data-adapttable-part="column-menu-panel"
           className={classNames.columnMenuPanel}
-          style={{
-            position: "absolute",
-            zIndex: 40,
-            insetInlineEnd: 0,
-            margin: 0,
-            border: 0,
-            padding: 0,
-            minInlineSize: 0,
-          }}
+          style={MENU_PANEL_STYLE}
         >
           <div
             data-adapttable-part="column-menu-header"
@@ -195,8 +279,22 @@ export function ColumnMenu<TRow>({
               layout={layout}
               labels={labels}
               classNames={classNames}
+              drag={drag}
             />
           ))}
+          {hasRowActions && (
+            <>
+              <hr
+                data-adapttable-part="column-menu-separator"
+                className={classNames.columnMenuSeparator}
+              />
+              <ActionsMenuRowItem
+                layout={layout}
+                labels={labels}
+                classNames={classNames}
+              />
+            </>
+          )}
           <button
             type="button"
             data-adapttable-part="column-menu-reset"

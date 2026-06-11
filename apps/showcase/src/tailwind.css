@@ -6,9 +6,19 @@
  * AntD demos rendered in the same app. Without it, Tailwind utilities still
  * work where applied, and the other kits keep their own resets.
  */
-@layer theme, base, components, utilities;
+@layer theme, base, components;
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+/* Utilities are imported UNLAYERED on purpose. The kit demos inject global,
+   unlayered resets (Chakra's CSSReset sets `button { padding: 0; background:
+   transparent }`, `:where(*) { border-width: 0 }`, …) and unlayered CSS beats
+   every @layer-ed rule regardless of specificity — which silently killed the
+   demo's `px-*` / `bg-*` / `border*` utilities. Unlayered, a utility class
+   (specificity 0,1,0) wins over those element/universal resets. */
+@import "tailwindcss/utilities.css";
+
+/* Bind `dark:` to the site's theme toggle (data-theme), not the OS media
+   query, so the demos flip with the navbar switch like everything else. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* Preflight is skipped (above), so restore border-box sizing — but only inside
    the unstyled AdaptTable so Tailwind's height/padding utilities measure right
@@ -91,25 +101,4 @@
   --color-accent: hsl(0 0% 20%);
   --color-accent-foreground: hsl(0 0% 98%);
   --color-ring: hsl(0 0% 45%);
-}
-
-/* UNLAYERED on purpose. Chakra's CSSReset (an emotion GLOBAL style injected by
-   the RTL section's ChakraProvider) applies `:where(*) { border-width: 0 }` to
-   the whole page and, being unlayered, beats every layered Tailwind utility.
-   These scoped restores are unlayered too, so the unstyled demo's borders
-   survive whatever kit is mounted alongside it. */
-[data-adapttable-part="root"] .border {
-  border-width: 1px;
-}
-[data-adapttable-part="root"] .border-b {
-  border-bottom-width: 1px;
-}
-[data-adapttable-part="root"] .border-t {
-  border-top-width: 1px;
-}
-[data-adapttable-part="root"] .border-s {
-  border-inline-start-width: 1px;
-}
-[data-adapttable-part="root"] .border-e {
-  border-inline-end-width: 1px;
 }

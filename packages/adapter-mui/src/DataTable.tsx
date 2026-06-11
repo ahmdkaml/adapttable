@@ -1,7 +1,12 @@
+import type { RowAction, UseColumnLayoutResult } from "@adapttable/core";
 import {
+  ACTIONS_COLUMN_KEY,
+  isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import {
   Box,
@@ -11,8 +16,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -23,6 +30,7 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
 
@@ -47,10 +55,78 @@ function resizeSetter(
 }
 
 /**
- * Batteries-included Material UI data table. Drop in `columns`, a `source`,
- * and a `rowKey` for a fully styled, sortable, filterable, paginated MUI
- * table with selection, bulk actions, RTL, and dark mode — a free
- * DataGrid-style experience on the headless `@adapttable/core` engine.
+ * The injected actions column is first-class in column management: the
+ * layout state treats keys opaquely, so the reserved "actions" key hides and
+ * end-pins like any data column. Hiding strips `rowActions` BEFORE the
+ * renderers, so the column, its pin lead, and the colSpans all disappear
+ * consistently (desktop and mobile alike). `actionsPinned` reports the
+ * Columns-menu end pin — only meaningful while the column renders.
+ */
+function resolveActionsColumn<TRow>(
+  declared: RowAction<TRow>[] | undefined,
+  layout: UseColumnLayoutResult<TRow>
+): {
+  hasRowActions: boolean;
+  rowActions: RowAction<TRow>[] | undefined;
+  actionsPinned: boolean;
+} {
+  const hasRowActions = (declared?.length ?? 0) > 0;
+  const rowActions =
+    hasRowActions && !layout.isHidden(ACTIONS_COLUMN_KEY)
+      ? declared
+      : undefined;
+  const actionsPinned =
+    rowActions !== undefined &&
+    layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+  return { hasRowActions, rowActions, actionsPinned };
+}
+
+/**
+ * Resolve the data tier (`source` > `data` + `onQueryChange` > `data`) and
+ * the filter content, then overlay them on the caller's props: caller JSX
+ * filters pass through; the declarative array becomes the auto-built
+ * {@link AutoFilterForm} (or nothing, when no definitions resolved); the
+ * runtime's chip-label resolvers merge under any caller overrides.
+ */
+function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  const { source, runtime } = useTableData<TRow>({
+    locale: props.locale,
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    columns: props.columns,
+    filters: props.filters,
+    adapter: props.urlAdapter,
+    urlKey: props.urlKey,
+  });
+  let filtersNode: ReactNode;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
+    filtersNode =
+      runtime.defs.length > 0 ? (
+        <AutoFilterForm defs={runtime.defs} source={source} />
+      ) : undefined;
+  } else {
+    filtersNode = props.filters;
+  }
+  return {
+    ...props,
+    source,
+    filters: filtersNode,
+    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+  };
+}
+
+/**
+ * Batteries-included Material UI data table. Drop in `columns`, `data` (or
+ * `data` + `onQueryChange` for server fetching, or a full `source`), and a
+ * `rowKey` for a fully styled, sortable, filterable, paginated MUI table
+ * with selection, bulk actions, RTL, and dark mode — a free DataGrid-style
+ * experience on the headless `@adapttable/core` engine. Declarative
+ * `filters` (and column `filter` shorthands) render an auto-built form.
  *
  * @typeParam TRow - The row type.
  */
@@ -58,20 +134,38 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { slots, className } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
-  const c = useTableChrome<TRow>(props);
+  const chromeProps = useChromeProps(props);
+  const { source, filters: filtersNode } = chromeProps;
+  const c = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = c;
-  const { labels, source } = table;
+  const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, c, props);
-  const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
-    c,
-    props
+  useChromeScrollReset(rootRef, c, chromeProps);
+  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
+    useChromeBodyData(c, chromeProps);
+  const { hasRowActions, rowActions, actionsPinned } = resolveActionsColumn(
+    props.rowActions,
+    c.columnLayout
   );
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
       layout={c.columnLayout}
+      labels={labels}
+      hasRowActions={hasRowActions}
+    />
+  );
+  // Saved views capture the table's own URL params, so the menu defaults to
+  // the table's URL backend + namespace (an explicit option still wins).
+  const savedViewsMenu = props.savedViews && (
+    <SavedViewsMenu
+      options={{
+        adapter: props.urlAdapter,
+        urlKey: props.urlKey,
+        ...props.savedViews,
+      }}
       labels={labels}
     />
   );
@@ -103,12 +197,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <MobileCards
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
         size={size}
+        dir={props.dir}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
+        expansion={c.detail?.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -120,13 +218,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <DesktopTable
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
+        actionsPinned={actionsPinned}
         confirm={confirm}
         getRowId={getRowId}
         size={size}
+        dir={props.dir}
         prefetch={props.prefetch}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
+        expansion={c.detail?.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -135,6 +238,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         stickyTop={props.stickyTop}
         pinOffset={c.columnLayout.pinOffset}
         maxHeight={props.maxHeight}
+        virtualScrollRef={virtualScrollRef}
         setWidth={resizeSetter(props.resizableColumns, c.columnLayout.setWidth)}
         columnWidths={c.columnLayout.state.widths}
         resizeLabel={labels.resizeColumn}
@@ -157,14 +261,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           hideSearch={props.hideSearch}
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
-          customToolbar={props.toolbar}
-          hasFilters={Boolean(props.filters)}
+          customToolbar={
+            <>
+              {savedViewsMenu}
+              {props.toolbar}
+            </>
+          }
+          hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
-          showRowsPerPage={!c.isPaged}
+          showRowsPerPage={canLoadMore}
           filtersMode={filtersMode}
-          filters={props.filters}
+          filters={filtersNode}
           filtersOpen={filtersOpen}
-          onToggleFilters={() => setFiltersOpen((open) => !open)}
+          onToggleFilters={filtersTrigger.onClick}
+          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
           onClearFilters={c.clearFilters}
           dir={props.dir}
@@ -179,6 +289,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}
+            total={source.total}
             bulkActions={props.bulkActions}
             confirm={confirm}
             labels={labels}
@@ -216,11 +327,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && filtersMode === "drawer" && (
+      {filtersNode && filtersMode === "drawer" && (
         <FilterDrawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          filters={props.filters}
+          filters={filtersNode}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={c.clearFilters}
           labels={labels}

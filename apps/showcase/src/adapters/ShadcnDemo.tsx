@@ -1,7 +1,12 @@
 import type { DataTableClassNames } from "@adapttable/unstyled";
 
 import { type Locale } from "../data";
-import { type DataMode, type Density, type PageMode } from "../Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "../Demo";
 import { UnstyledLike } from "./UnstyledLike";
 
 // shadcn/ui = Tailwind utilities over headless primitives — exactly what the
@@ -10,7 +15,7 @@ import { UnstyledLike } from "./UnstyledLike";
 // tailwind.css. The look is deliberately MONOCHROME with ring focus — the
 // shadcn signature — to contrast with the indigo "plain Tailwind" demo.
 const SHADCN: DataTableClassNames = {
-  root: "rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm",
+  root: "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
   toolbar: "flex flex-wrap items-center gap-2 p-3 border-b border-border",
   searchField:
     "flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1 focus-within:ring-offset-background",
@@ -21,12 +26,12 @@ const SHADCN: DataTableClassNames = {
   rowsPerPageSelect:
     "h-8 rounded-md border border-input bg-background px-1.5 text-sm text-foreground",
   filtersButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
   filtersPanel:
     "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
   filtersPopover:
-    "mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
+    "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
   filtersCount:
     "inline-grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-bold leading-none text-primary-foreground",
   filtersHeader:
@@ -34,7 +39,17 @@ const SHADCN: DataTableClassNames = {
   filtersTitle: "text-base font-semibold",
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted-foreground hover:bg-accent",
-  filtersBody: "flex-1 overflow-auto p-4",
+  filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
+  // ── Auto-built filter form (declarative `filters` definitions) ──
+  filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterLabel: "p-0 text-xs font-medium text-muted-foreground",
+  filterInput:
+    "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterSelect:
+    "h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterCheckboxGroup: "flex flex-wrap gap-1.5",
+  filterCheckbox:
+    "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:
     "flex items-center justify-between gap-2 border-t border-border p-4",
   filtersClear:
@@ -59,9 +74,9 @@ const SHADCN: DataTableClassNames = {
   chip: "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground",
   // ── Column popover ──────────────────────────────────────────────
   columnMenuButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent data-[active]:bg-accent",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent data-[active]:bg-accent",
   columnMenuPanel:
-    "min-w-[264px] rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl",
+    "z-50 min-w-[264px] rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl",
   columnMenuHeader: "px-1.5 pb-1.5 pt-1",
   columnMenuTitle:
     "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
@@ -90,12 +105,14 @@ export function ShadcnDemo({
   pageMode,
   urlKey,
   density,
+  filtersUi,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
   pageMode?: PageMode;
   urlKey?: string;
   density?: Density;
+  filtersUi?: FiltersUi;
 }>) {
   return (
     <UnstyledLike
@@ -104,6 +121,7 @@ export function ShadcnDemo({
       pageMode={pageMode}
       urlKey={urlKey}
       density={density}
+      filtersUi={filtersUi}
       classNames={SHADCN}
     />
   );

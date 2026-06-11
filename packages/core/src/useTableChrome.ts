@@ -1,7 +1,8 @@
-import type { ReactNode, RefObject } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import type { ReactNode, RefCallback, RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
+import { resolveColumns } from "./columns/resolveColumns";
 import {
   useColumnLayout,
   type UseColumnLayoutResult,
@@ -16,16 +17,20 @@ import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
+import {
+  type RowExpansionState,
+  useRowExpansion,
+} from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
   type UseDataTableResult,
 } from "./useDataTable/useDataTable";
+import { devWarn } from "./utils/devWarn";
 import {
   type TableVirtualization,
   useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "./virtual/useTableVirtualization";
 
 /**
@@ -55,6 +60,12 @@ export interface ToolbarChromeProps<TRow> {
   filtersOpen: boolean;
   /** Toggle the filter container (popover and drawer alike). */
   onToggleFilters: () => void;
+  /**
+   * Bind to the trigger's `onPointerDown` (see
+   * {@link useFilterTriggerToggle}) so a click on the open trigger CLOSES
+   * the popover instead of racing the kit's outside-close and reopening.
+   */
+  onFiltersTriggerPointerDown?: () => void;
   /** Whether to show the rows-per-page control (infinite mode). */
   showRowsPerPage: boolean;
   /** Built column-menu node, when `enableColumnMenu` is set. */
@@ -71,6 +82,11 @@ export interface ToolbarChromeProps<TRow> {
 export interface BulkBarChromeProps {
   /** Current selection state. */
   selection: SelectionState;
+  /**
+   * Total rows in the filtered set — drives the "select all N matching"
+   * banner when a full page is selected and more rows match elsewhere.
+   */
+  total: number;
   /** Caller-supplied bulk actions. */
   bulkActions: BulkAction[];
   /** Confirmation handler for actions that declare a `confirm` block. */
@@ -79,8 +95,12 @@ export interface BulkBarChromeProps {
   labels: Required<TableLabels>;
 }
 
-/** Which body region a {@link DataTable} should render. */
-export type TableBody = "skeleton" | "empty" | "mobile" | "desktop";
+/**
+ * Which body region a `DataTable` should render. Named `TableBodyRegion`
+ * (not `TableBody`) so it never collides with MUI's `TableBody` component
+ * in consumer imports.
+ */
+export type TableBodyRegion = "skeleton" | "empty" | "mobile" | "desktop";
 
 /** The shared, UI-agnostic orchestration result for an adapter table. */
 export interface TableChrome<TRow> {
@@ -99,7 +119,7 @@ export interface TableChrome<TRow> {
   /** Whether the resolved pagination mode is `"paged"`. */
   isPaged: boolean;
   /** Which body region to render. */
-  body: TableBody;
+  body: TableBodyRegion;
   /**
    * Why the body is empty: `"noResults"` when an active search/filter
    * produced zero rows (offer a clear-filters CTA), `"noData"` when the
@@ -118,6 +138,17 @@ export interface TableChrome<TRow> {
    * always offer a working "clear".
    */
   clearFilters: () => void;
+  /**
+   * Row-detail bundle — present iff `renderRowDetail` is set, so ONE guard
+   * narrows both the renderer and the expansion state (no correlated
+   * optionals to re-check).
+   */
+  detail?: {
+    /** The caller's detail-panel renderer. */
+    render: (row: TRow) => ReactNode;
+    /** Expansion state for the chevrons. */
+    expansion: RowExpansionState;
+  };
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -167,10 +198,17 @@ export function useTableChrome<TRow>(
   const isMobile = isMobileProp ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
+  // Declarative defaults (auto headers, dot-path accessors) resolve once
+  // here, so the layout, the column menu and the table all see them.
+  const resolvedColumns = useMemo(
+    () => resolveColumns(columns, props.locale),
+    [columns, props.locale]
+  );
+
   // User column layout (hide/order/…) applied on top of the declared columns,
   // before device filtering inside useDataTable. The menu uses `allColumns`.
   const columnLayout = useColumnLayout<TRow>({
-    columns,
+    columns: resolvedColumns,
     layout: columnLayoutProp,
     onLayoutChange: onColumnLayoutChange,
     defaultLayout: defaultColumnLayout,
@@ -190,6 +228,7 @@ export function useTableChrome<TRow>(
     selectedIds: selectedIdsProp,
     onSelectedIdsChange: onSelectionChange,
     filterLabels,
+    multiSort: props.multiSort,
   });
 
   useEffect(() => {
@@ -221,7 +260,7 @@ export function useTableChrome<TRow>(
 
   const isPaged = source.paginationMode === "paged";
 
-  let body: TableBody;
+  let body: TableBodyRegion;
   if (source.isLoading && source.rows.length === 0) body = "skeleton";
   else if (table.isEmpty) body = "empty";
   else if (isMobile) body = "mobile";
@@ -242,6 +281,18 @@ export function useTableChrome<TRow>(
     else source.clearExtras();
   }, [onClearFilters, source]);
 
+  // Hooks run unconditionally; the state is simply unused (and unexposed)
+  // when the caller renders no row details.
+  const expansionState = useRowExpansion();
+  const renderRowDetail = props.renderRowDetail;
+  const detail = useMemo(
+    () =>
+      renderRowDetail
+        ? { render: renderRowDetail, expansion: expansionState }
+        : undefined,
+    [renderRowDetail, expansionState]
+  );
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -259,9 +310,10 @@ export function useTableChrome<TRow>(
     emptyVariant,
     isRefreshing,
     clearFilters,
+    detail,
     showFooter,
     columnLayout,
-    allColumns: columns,
+    allColumns: resolvedColumns,
   };
 }
 
@@ -273,6 +325,12 @@ export interface ChromeBodyData<TRow> {
   loadMoreRef: RefObject<HTMLDivElement>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
   canLoadMore: boolean;
+  /**
+   * Attach to the `maxHeight` scroll box (when one renders) so the virtual
+   * window tracks the box's scrolling instead of the page's. Harmless to
+   * attach when virtualization is off.
+   */
+  virtualScrollRef: RefCallback<HTMLElement>;
 }
 
 /**
@@ -292,13 +350,24 @@ export function useChromeBodyData<TRow>(
   props: BaseDataTableProps<TRow>
 ): ChromeBodyData<TRow> {
   const { source, rowKey, virtualize = false } = props;
-  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
+  if (virtualize && props.renderRowDetail) {
+    devWarn(
+      "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
+    );
+  }
   // One guarded loader for both triggers (virtual end + sentinel).
   const fetchNext = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
     }
   }, [source]);
+  // Inside a maxHeight box the BOX is the scroller, so the virtual window
+  // must track it (element mode); otherwise the page scrolls (window mode).
+  const scrollBoxRef = useRef<HTMLElement | null>(null);
+  const virtualScrollRef = useCallback((node: HTMLElement | null) => {
+    scrollBoxRef.current = node;
+  }, []);
+  const inScrollBox = props.maxHeight != null;
   const virtualization = useTableVirtualization({
     rows: source.rows,
     rowKey,
@@ -312,9 +381,15 @@ export function useChromeBodyData<TRow>(
       : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
+    getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
   });
-  const canLoadMore = !chrome.isPaged && !source.error;
+  // A virtual window INSIDE a maxHeight box extends itself at the box's
+  // scroll end — the box never grows, so a page-level sentinel below it
+  // would stay visible and fire forever (and a Load-more button appends
+  // rows the window doesn't show). Both yield to the box.
+  const boxVirtual = virtualization.enabled && inScrollBox;
+  const canLoadMore = !chrome.isPaged && !source.error && !boxVirtual;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
@@ -322,7 +397,7 @@ export function useChromeBodyData<TRow>(
     itemCount: source.rows.length,
     enabled: canLoadMore,
   });
-  return { virtualization, loadMoreRef, canLoadMore };
+  return { virtualization, loadMoreRef, canLoadMore, virtualScrollRef };
 }
 
 /**
@@ -355,4 +430,38 @@ export function useChromeScrollReset<TRow>(
     offset: props.stickyTop,
     gap: props.scrollTopGap,
   });
+}
+
+/** Pointer/click handlers returned by {@link useFilterTriggerToggle}. */
+export interface FilterTriggerToggle {
+  onPointerDown: () => void;
+  onClick: () => void;
+}
+
+/**
+ * A toggle for the Filters trigger that survives every kit's outside-close
+ * behavior. Some kits (Chakra `closeOnBlur`, outside `mousedown` handlers)
+ * close the popover on the trigger's own pointer-down — a plain
+ * `setOpen(o => !o)` on click then instantly REOPENS it, so the button can
+ * never close the popover. This records whether the popover was open at
+ * pointer-down: if the kit closed it in between, the click is swallowed;
+ * otherwise the click toggles normally (kits that exclude the trigger from
+ * outside-close keep working unchanged).
+ */
+export function useFilterTriggerToggle(
+  open: boolean,
+  setOpen: (next: boolean | ((current: boolean) => boolean)) => void
+): FilterTriggerToggle {
+  const wasOpenAtPointerDown = useRef(false);
+  return {
+    onPointerDown: useCallback(() => {
+      wasOpenAtPointerDown.current = open;
+    }, [open]),
+    onClick: useCallback(() => {
+      const closedByKit = wasOpenAtPointerDown.current && !open;
+      wasOpenAtPointerDown.current = false;
+      if (closedByKit) return;
+      setOpen((current) => !current);
+    }, [open, setOpen]),
+  };
 }

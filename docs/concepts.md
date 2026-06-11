@@ -111,8 +111,11 @@ no-ops, leaving the Load more button as the path forward.
 
 Long infinite lists can opt into row/card windowing with `virtualize`. The
 core exports `useTableVirtualization`, and the ready adapters wire it into
-their desktop rows and mobile cards. Ant Design maps the same `virtualize`
-prop to antd's native virtual table mode.
+their desktop rows and mobile cards. With no `maxHeight` the window tracks
+the page scroll; add `maxHeight` and the same prop virtualizes inside the
+scroll box instead — fifty thousand rows in a 380px panel stay a handful of
+DOM nodes. Ant Design maps the same `virtualize` prop to antd's native
+virtual table mode.
 
 ```tsx
 <DataTable

@@ -38,12 +38,53 @@ const labels = {
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  actions: "Actions",
 };
 
 const byLabel = (name: string) =>
   document.querySelector<HTMLElement>(`[aria-label="${name}"]`)!;
 
 describe("antd ColumnMenu", () => {
+  it("shows drop-position feedback while dragging a row", async () => {
+    const layout = fakeLayout();
+    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    const dt = {
+      data: new Map<string, string>(),
+      effectAllowed: "",
+      dropEffect: "",
+      get types() {
+        return [...this.data.keys()];
+      },
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+      getData(type: string) {
+        return this.data.get(type) ?? "";
+      },
+    };
+    const rowOf = (name: string) =>
+      screen.getByText(name).closest("[draggable]")!;
+    fireEvent.dragStart(rowOf("Alpha"), { dataTransfer: dt });
+    fireEvent.dragOver(rowOf("Charlie"), { dataTransfer: dt });
+    // The source dims; the hovered target marks its landing edge.
+    expect(rowOf("Alpha")).toHaveAttribute("data-dragging");
+    expect(rowOf("Charlie")).toHaveAttribute("data-drop", "after");
+    fireEvent.drop(rowOf("Charlie"), { dataTransfer: dt });
+    expect(layout.move).toHaveBeenCalledWith("a", 2);
+    expect(rowOf("Alpha")).not.toHaveAttribute("data-dragging");
+    expect(rowOf("Charlie")).not.toHaveAttribute("data-drop");
+
+    // Reverse drag: hovering an EARLIER row marks the "before" edge.
+    fireEvent.dragStart(rowOf("Charlie"), { dataTransfer: dt });
+    fireEvent.dragOver(rowOf("Alpha"), { dataTransfer: dt });
+    expect(rowOf("Alpha")).toHaveAttribute("data-drop", "before");
+    fireEvent.dragEnd(rowOf("Charlie"), { dataTransfer: dt });
+    expect(rowOf("Alpha")).not.toHaveAttribute("data-drop");
+  });
+
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
     render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
@@ -112,6 +153,87 @@ describe("antd ColumnMenu", () => {
     expect(
       document.querySelector(".ant-popover-placement-bottomLeft")
     ).not.toBeNull();
+  });
+
+  it("lists the actions column as a separated row: eye + one-click end pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+
+    // The actions row never reorders: no draggable row, no keyboard grip.
+    expect(screen.getByText("Actions").closest("[draggable]")).toBeNull();
+    expect(
+      document.querySelector('[aria-label="Move left / Move right: Actions"]')
+    ).toBeNull();
+
+    // The standard eye toggle targets the reserved "actions" layout key.
+    const eye = byLabel("Hide column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+
+    // ONE click pins to the end — no left stop in the cycle.
+    fireEvent.click(byLabel("Pin right: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+  });
+
+  it("unpins a right-pinned actions column with one click", async () => {
+    const layout = fakeLayout();
+    layout.state = {
+      hidden: [],
+      order: [],
+      pinned: { actions: "right" },
+      widths: {},
+    };
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    // Pinned right → the one-click toggle goes straight back to unpinned.
+    fireEvent.click(byLabel("Unpin: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("offers to show a hidden actions column", async () => {
+    const layout = fakeLayout();
+    layout.isHidden = (key) => key === "actions";
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowActions
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    const eye = byLabel("Show column: Actions");
+    expect(eye).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(eye);
+    expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+  });
+
+  it("omits the actions row when the table has no row actions", async () => {
+    render(
+      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.queryByText("Actions")).toBeNull();
   });
 
   it("renders the hidden-column state (strike-through, eye-off, text button)", async () => {

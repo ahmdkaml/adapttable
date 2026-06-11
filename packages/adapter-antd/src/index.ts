@@ -7,6 +7,11 @@
  * @packageDocumentation
  */
 
+export {
+  type SavedViewsLabels,
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
 export { DataTable } from "./DataTable";
 export type { DataTableProps, DataTableSlots } from "./types";
 
@@ -17,19 +22,25 @@ export {
   type CellProps,
   type ColorScheme,
   type ColumnDef,
+  type ColumnFilter,
   type ConfirmHandler,
   type ConfirmRequest,
   defaultConfirm,
   defaultLabels,
   type Direction,
   type ExtraFilters,
+  type FilterDef,
+  type FilterOption,
+  type FilterType,
   type FilterValue,
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
+  type TableQuery,
   type TableSource,
   useBackendData,
   type UseBackendDataOptions,
@@ -37,6 +48,9 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
   useTableUrlState,
 } from "@adapttable/core";
 

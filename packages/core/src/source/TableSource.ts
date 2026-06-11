@@ -1,6 +1,6 @@
+import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
-  FilterValue,
   ResolvedPaginationMode,
   SortDirection,
 } from "../types";
@@ -14,7 +14,7 @@ import type {
  *
  * @typeParam TRow - The row item type.
  */
-export interface TableSource<TRow> {
+export interface TableSource<TRow> extends TableStateMutators {
   /* ── Data ────────────────────────────────────────────────────────── */
   /** The current materialised rows for the active page/slice. */
   readonly rows: readonly TRow[];
@@ -51,15 +51,5 @@ export interface TableSource<TRow> {
   /** The extra-filter bag. */
   readonly extra: ExtraFilters;
 
-  /* ── State (write) ───────────────────────────────────────────────── */
-  setPage: (next: number) => void;
-  setLimit: (next: number) => void;
-  setSort: (key: string | undefined, dir?: SortDirection) => void;
-  setSearch: (next: string) => void;
-  setExtra: (key: string, value: FilterValue) => void;
-  setExtras: (updates: ExtraFilters) => void;
-  /** Clear every extra filter (and reset the page) — search/sort stay. */
-  clearExtras: () => void;
-  /** Clear search + sort + page + every extra filter in one commit. */
-  clearAll: () => void;
+  /* State (write) is the shared {@link TableStateMutators} contract. */
 }

@@ -1,0 +1,4 @@
+dist/
+.astro/
+# generated from ../../docs by sync-docs.mjs
+src/content/docs/

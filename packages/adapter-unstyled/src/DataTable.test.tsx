@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -440,7 +441,142 @@ describe("<DataTable> (unstyled)", () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    // Plain page selection: the runner reports the page scope.
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  it("hides the select-all banner when the page holds every match", () => {
+    renderHarness({
+      override: {
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      },
+    });
+    // Partial selection: the bulk bar shows but the banner does not.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+    // Full page selected, but total === visible: still no banner.
+    fireEvent.click(screen.getByLabelText("Select all"));
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+  });
+
+  it("offers select-all-matching on a full page and flips to the active state", () => {
+    renderHarness(
+      {
+        override: {
+          bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+          classNames: {
+            selectAllBanner: "my-banner",
+            selectAllText: "my-text",
+            selectAllButton: "my-button",
+          },
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    const banner = () => {
+      const el = document.querySelector(
+        '[data-adapttable-part="select-all-banner"]'
+      );
+      if (!(el instanceof HTMLElement)) throw new Error("banner missing");
+      return el;
+    };
+    expect(banner()).toHaveClass("my-banner");
+    const text = banner().querySelector(
+      '[data-adapttable-part="select-all-text"]'
+    );
+    expect(text).toHaveClass("my-text");
+    expect(text).toHaveTextContent("All 1 on this page selected");
+    const offer = within(banner()).getByRole("button", {
+      name: "Select all 2 matching",
+    });
+    expect(offer).toHaveClass("my-button");
+    fireEvent.click(offer);
+    // Active state: status text swaps and the button becomes a clear-all.
+    expect(banner()).toHaveTextContent("All 2 matching selected");
+    const clearButton = within(banner()).getByRole("button", {
+      name: "Clear all",
+    });
+    expect(clearButton).toHaveClass("my-button");
+    fireEvent.click(clearButton);
+    expect(screen.queryByText("1 selected")).toBeNull();
+  });
+
+  it("confirms by the matching TOTAL and runs with the all-matching scope", async () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());
+    renderHarness(
+      {
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "t",
+                message: (n) => `Delete ${n}`,
+                confirmLabel: "Yes",
+              },
+            },
+          ],
+          confirm,
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
+    // The confirm size reflects the WHOLE matching set, not the page ids.
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 2" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a"], {
+      allMatching: true,
+      total: 2,
+    });
+  });
+
+  it("narrows back to the page scope when the selection is mutated", () => {
+    renderHarness(
+      {
+        override: {
+          bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        },
+      },
+      "limit=1"
+    );
+    fireEvent.click(screen.getByLabelText("Select all"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    );
+    expect(screen.getByText("All 2 matching selected")).toBeInTheDocument();
+    // Any explicit mutation narrows the scope: deselect, then reselect.
+    fireEvent.click(screen.getByLabelText("Select row"));
+    expect(
+      document.querySelector('[data-adapttable-part="select-all-banner"]')
+    ).toBeNull();
+    fireEvent.click(screen.getByLabelText("Select row"));
+    // Back to the OFFER state — all-matching did not survive the toggle.
+    expect(screen.getByText("All 1 on this page selected")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Select all 2 matching" })
+    ).toBeInTheDocument();
   });
 
   it("pins the selection column alongside a left-pinned data column", () => {
@@ -477,6 +613,127 @@ describe("<DataTable> (unstyled)", () => {
     );
     expect(selHeader).not.toHaveAttribute("data-pinned");
     expect(selHeader?.getAttribute("style")).toBeNull();
+  });
+
+  it("end-pins the actions column with ONE click and zero data pins", () => {
+    const onColumnLayoutChange = vi.fn<(next: ColumnLayoutState) => void>();
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        onColumnLayoutChange,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    // No data column is pinned — the actions column sticks on its own.
+    expect(
+      container.querySelector(
+        '[data-adapttable-part="header-cell"][data-pinned]'
+      )
+    ).toBeNull();
+    const header = container.querySelector(
+      '[data-adapttable-part="actions-header"]'
+    );
+    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveStyle({ position: "sticky" });
+    // Logical inset: sticks to the inline END, the correct edge in RTL too.
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+    const cell = container.querySelector(
+      '[data-adapttable-part="actions-cell"]'
+    );
+    expect(cell).toHaveAttribute("data-pinned", "right");
+    expect(cell).toHaveStyle({ position: "sticky" });
+    expect((cell as HTMLElement).style.insetInlineEnd).toBe("0");
+    // The layout state names the reserved "actions" key like any column.
+    expect(onColumnLayoutChange).toHaveBeenCalledWith(
+      expect.objectContaining({ pinned: { actions: "right" } })
+    );
+    // ONE more click unpins it again.
+    fireEvent.click(screen.getByRole("button", { name: "Unpin: Actions" }));
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).not.toHaveAttribute("data-pinned");
+  });
+
+  it("hides and re-shows the actions column from the Columns menu", () => {
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Actions" })
+    );
+    // The whole column is gone — header and every row's action buttons.
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).toBeNull();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    // …but the menu still lists Actions, so the eye brings it back.
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Actions" })
+    );
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+  });
+
+  it("round-trips the actions layout (hide + end-pin persist)", () => {
+    const onColumnLayoutChange = vi.fn<(next: ColumnLayoutState) => void>();
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        onColumnLayoutChange,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Actions" })
+    );
+    // The captured layout carries the reserved "actions" key in both maps.
+    const saved = onColumnLayoutChange.mock.calls.at(-1)![0];
+    expect(saved.hidden).toContain("actions");
+    expect(saved.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // A fresh table restored from that layout starts with actions hidden…
+    const { container } = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: saved,
+      },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="actions-header"]')
+    ).toBeNull();
+    // …and re-showing it restores the persisted end pin too.
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show column: Actions" })
+    );
+    const header = container.querySelector(
+      '[data-adapttable-part="actions-header"]'
+    );
+    expect(header).toHaveAttribute("data-pinned", "right");
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+  });
+
+  it("strips hidden row actions from mobile cards too", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        defaultColumnLayout: { hidden: ["actions"] },
+      },
+    });
+    expect(
+      container.querySelector('[data-adapttable-part="card-actions"]')
+    ).toBeNull();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
   });
 
   it("renders filter chips and toggles the filters popover", () => {

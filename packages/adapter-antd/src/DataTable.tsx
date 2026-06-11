@@ -1,36 +1,47 @@
 import {
+  ACTIONS_COLUMN_KEY,
   type ColumnDef,
+  type FilterRuntime,
+  isDeclarativeFilters,
   pageSizeOptions,
   rowClickProps,
+  type RowExpansionState,
   type SelectionState,
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  type UrlStateAdapter,
   useChromeScrollReset,
   type UseColumnLayoutResult,
   type UseDataTableResult,
+  useFilterTriggerToggle,
   useInfiniteScroll,
+  type UseSavedViewsOptions,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import {
   Button,
   Checkbox,
   Empty,
   Flex,
-  Skeleton,
+  Pagination,
+  Select,
   Space,
   Table,
   type TableProps,
+  Typography,
 } from "antd";
 import {
-  type CSSProperties,
   type ReactNode,
   type UIEventHandler,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
-import { buildColumns } from "./columns";
+import { buildColumns, logicalAlign } from "./columns";
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -39,21 +50,11 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ExpandToggle } from "./components/ExpandToggle";
 import { MobileCards } from "./components/MobileCards";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SkeletonTable } from "./components/SkeletonTable";
 import type { DataTableProps } from "./types";
-
-/** Visually-hidden style for the screen-reader loading announcement. */
-const SR_ONLY: CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
 
 /**
  * antd renders virtual rows inside its own fixed-height scroll container, so
@@ -113,8 +114,9 @@ function EmptyState({
 function sortChangeHandler<TRow>(
   source: TableSource<TRow>
 ): NonNullable<TableProps<TRow>["onChange"]> {
-  return (_pagination, _filters, sorter, extra) => {
-    if (extra.action !== "sort") return;
+  // Sorting is the only antd-internal feature left wired (pagination is the
+  // split footer, filtering is ours), so every onChange IS a sort event.
+  return (_pagination, _filters, sorter) => {
     // antd passes an array only under multi-column sort, which buildColumns
     // never enables — flat() folds both shapes without a dead branch.
     const next = [sorter].flat()[0];
@@ -188,6 +190,36 @@ function buildRowSelection<TRow>(
 }
 
 /**
+ * Map the shared row-expansion contract onto antd's NATIVE `expandable` API:
+ * chrome's id-keyed state drives `expandedRowKeys` (so an open panel survives
+ * sorting and paging), the icon toggles back through chrome, and the detail
+ * panel renders via `expandedRowRender`. antd's built-in expand icon does
+ * carry `aria-expanded` and an `aria-label`, but the label comes from antd's
+ * ConfigProvider locale — a custom `expandIcon` keeps the configurable
+ * `labels.expandRow` / `labels.collapseRow` contract instead.
+ */
+function buildExpandable<TRow>(
+  renderRowDetail: ((row: TRow) => ReactNode) | undefined,
+  expansion: RowExpansionState | undefined,
+  getRowId: (row: TRow) => string,
+  labels: Required<TableLabels>
+): TableProps<TRow>["expandable"] {
+  if (!renderRowDetail || !expansion) return undefined;
+  return {
+    expandedRowKeys: [...expansion.expandedIds],
+    onExpand: (_open, row) => expansion.toggle(getRowId(row)),
+    expandedRowRender: (row) => renderRowDetail(row),
+    expandIcon: ({ expanded, record, onExpand }) => (
+      <ExpandToggle
+        expanded={expanded}
+        labels={labels}
+        onClick={(event) => onExpand(record, event)}
+      />
+    ),
+  };
+}
+
+/**
  * The column-management menu, gated to desktop + opt-in. Rendered as a
  * component (not an inline ternary) so the `DataTable` body stays flat.
  */
@@ -197,18 +229,49 @@ function ColumnMenuSlot<TRow>({
   layout,
   labels,
   dir,
+  hasRowActions,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
   layout: UseColumnLayoutResult<TRow>;
   labels: Required<TableLabels>;
   dir?: "ltr" | "rtl";
+  hasRowActions: boolean;
 }>) {
   if (!enabled) return null;
   return (
     <ColumnMenu
       allColumns={allColumns}
       layout={layout}
+      labels={labels}
+      dir={dir}
+      hasRowActions={hasRowActions}
+    />
+  );
+}
+
+/**
+ * The saved-views menu, mounted when the `savedViews` prop opts in. The
+ * table's own `urlAdapter` / `urlKey` are the defaults so a captured view
+ * holds THIS table's params; explicit options win.
+ */
+function SavedViewsSlot({
+  options,
+  urlAdapter,
+  urlKey,
+  labels,
+  dir,
+}: Readonly<{
+  options: UseSavedViewsOptions | undefined;
+  urlAdapter: UrlStateAdapter | undefined;
+  urlKey: string | undefined;
+  labels: Required<TableLabels>;
+  dir?: "ltr" | "rtl";
+}>) {
+  if (!options) return null;
+  return (
+    <SavedViewsMenu
+      options={{ adapter: urlAdapter, urlKey, ...options }}
       labels={labels}
       dir={dir}
     />
@@ -231,88 +294,130 @@ function sentinelEnabled(
   return !isPaged && !error && !(virtualize && body === "desktop");
 }
 
-/** Build antd's pagination config (undefined in infinite mode → `false`). */
-function buildPagination<TRow>(
-  isPaged: boolean,
-  table: UseDataTableResult<TRow>,
-  source: TableSource<TRow>,
-  labels: Required<TableLabels>
-) {
-  if (!isPaged) return undefined;
-  return {
-    current: table.pagination.safePage,
-    pageSize: source.limit,
-    total: source.total,
-    showSizeChanger: true,
-    pageSizeOptions: pageSizeOptions(source.limit).map(String),
-    showTotal: (total: number, range: [number, number]) =>
-      labels.showing({ from: range[0], to: range[1], total }),
-    onChange: (page: number, pageSize: number) => {
-      if (pageSize === source.limit) source.setPage(page);
-      else source.setLimit(pageSize);
-    },
+/**
+ * Map the shared `summaryRow` contract onto antd's NATIVE `summary` slot: one
+ * `Table.Summary.Row` whose cells line up under the data columns. antd
+ * injects its expand/selection columns at the START of the grid, so the row
+ * first pads with one empty cell per injected column, then renders a cell per
+ * visible column (keys absent from the result stay empty, logical alignment
+ * preserved for RTL), then pads for the trailing actions column.
+ */
+function buildSummary<TRow>(
+  summaryRow:
+    | ((rows: readonly TRow[]) => Partial<Record<string, ReactNode>>)
+    | undefined,
+  columns: readonly ColumnDef<TRow>[],
+  leadingCells: number,
+  hasActions: boolean
+): TableProps<TRow>["summary"] {
+  if (!summaryRow) return undefined;
+  return function SummaryCells(rows) {
+    const cells = summaryRow(rows);
+    return (
+      <Table.Summary.Row>
+        {Array.from({ length: leadingCells }, (_, i) => (
+          <Table.Summary.Cell key={`lead-${i}`} index={i} />
+        ))}
+        {columns.map((column, i) => (
+          <Table.Summary.Cell key={column.key} index={leadingCells + i}>
+            <div style={{ textAlign: logicalAlign(column.align) }}>
+              {cells[column.key]}
+            </div>
+          </Table.Summary.Cell>
+        ))}
+        {hasActions && (
+          <Table.Summary.Cell index={leadingCells + columns.length} />
+        )}
+      </Table.Summary.Row>
+    );
   };
 }
 
-function skeletonLineWidth(isActions: boolean, index: number): string {
-  if (isActions) return "72px";
-  if (index === 0) return "70%";
-  return "55%";
+/** How many non-data columns antd injects ahead of ours (expand, selection). */
+function summaryLeadingCells(rowSelection: unknown, expandable: unknown) {
+  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0);
 }
 
-function skeletonWidth(index: number, total: number): string {
-  if (index === 0) return "34%";
-  if (index === total - 1) return "12%";
-  return `${Math.max(12, Math.floor(72 / Math.max(total - 2, 1)))}%`;
+/** The shift-click chain toggler — only when `multiSort` is opted in. */
+function chainToggler<TRow>(
+  multiSort: boolean | undefined,
+  source: TableSource<TRow>
+): ((key: string) => void) | undefined {
+  if (!multiSort) return undefined;
+  return (key) => source.toggleSortLevel(key);
 }
 
-function SkeletonTable({
-  columnCount,
-  rowCount,
-  loadingLabel,
-  size,
-  bordered,
-  hasActions,
+/**
+ * The split footer every kit shares — rows-per-page + showing on the start
+ * side, the pager on the end side — built from antd's own Select and
+ * Pagination instead of the table-internal pagination (which crams
+ * everything, size changer included, onto one end).
+ */
+function PagedFooter<TRow>({
+  table,
+  source,
+  labels,
 }: Readonly<{
-  columnCount: number;
-  rowCount: number;
-  loadingLabel: string;
-  size: "small" | "middle" | "large";
-  bordered: boolean;
-  hasActions?: boolean;
+  table: UseDataTableResult<TRow>;
+  source: TableSource<TRow>;
+  labels: Required<TableLabels>;
 }>) {
-  const dataColumns = Math.max(columnCount, 1);
-  const totalColumns = dataColumns + (hasActions ? 1 : 0);
-  const skeletonColumns = Array.from({ length: totalColumns }, (_, i) => {
-    const isActions = Boolean(hasActions && i === totalColumns - 1);
-    const width = isActions ? "96px" : skeletonWidth(i, dataColumns);
-    const lineWidth = skeletonLineWidth(isActions, i);
-    return {
-      key: `skeleton-${i}`,
-      width,
-      title: (
-        <Skeleton.Input active size="small" style={{ width: lineWidth }} />
-      ),
-      render: () => (
-        <Skeleton.Input active size="small" style={{ width: lineWidth }} />
-      ),
-    };
-  });
-  const rows = Array.from({ length: rowCount }, (_, i) => ({
-    key: `row-${i}`,
-  }));
+  const from = (table.pagination.safePage - 1) * source.limit + 1;
+  const to = Math.min(table.pagination.safePage * source.limit, source.total);
   return (
-    <div role="status" aria-busy="true" aria-live="polite">
-      <Table
-        columns={skeletonColumns}
-        dataSource={rows}
-        pagination={false}
-        size={size}
-        bordered={bordered}
+    <Flex justify="space-between" align="center" wrap gap={8}>
+      <Flex align="center" gap={8}>
+        <Typography.Text type="secondary">{labels.rowsPerPage}</Typography.Text>
+        <Select
+          size="small"
+          aria-label={labels.rowsPerPage}
+          value={source.limit}
+          onChange={(value: number) => source.setLimit(value)}
+          options={pageSizeOptions(source.limit).map((n) => ({
+            value: n,
+            label: n,
+          }))}
+        />
+        {source.total > 0 && (
+          <Typography.Text type="secondary">
+            {labels.showing({ from, to, total: source.total })}
+          </Typography.Text>
+        )}
+      </Flex>
+      <Pagination
+        current={table.pagination.safePage}
+        pageSize={source.limit}
+        total={source.total}
+        showSizeChanger={false}
+        onChange={(page: number) => source.setPage(page)}
       />
-      <span style={SR_ONLY}>{loadingLabel}</span>
-    </div>
+    </Flex>
   );
+}
+
+/**
+ * The auto-built form for a declarative `filters` array — nothing when the
+ * runtime resolved zero definitions (no column shorthands, empty array).
+ */
+function autoFilterForm<TRow>(
+  runtime: FilterRuntime<TRow>,
+  source: TableSource<TRow>
+) {
+  if (runtime.defs.length === 0) return undefined;
+  return <AutoFilterForm defs={runtime.defs} source={source} />;
+}
+
+/**
+ * antd table size from the shared `density` contract (independent of column
+ * pinning): "compact" → the small table, "comfortable" (default) → the middle
+ * one. An explicit `size` prop wins so callers can opt into "large".
+ */
+function resolveSize(
+  size: "small" | "middle" | "large" | undefined,
+  density: "comfortable" | "compact" | undefined
+): "small" | "middle" | "large" {
+  if (size) return size;
+  return (density ?? "comfortable") === "compact" ? "small" : "middle";
 }
 
 /**
@@ -334,19 +439,56 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualHeight = 480,
     virtualWidth = 960,
   } = props;
-  // Density drives antd's `size` (independent of column pinning): "compact" →
-  // the small table, "comfortable" (default) → the middle one. An explicit
-  // `size` prop still wins so callers can opt into "large".
-  const size =
-    props.size ??
-    ((props.density ?? "comfortable") === "compact" ? "small" : "middle");
+  const size = resolveSize(props.size, props.density);
   const filtersMode = props.filtersMode ?? "popover";
-  const c = useTableChrome<TRow>(props);
+  // Resolve the data tier (source > onQueryChange server > frontend data)
+  // and the declarative-filter runtime; everything below — pagination, row
+  // selection, the sentinel — uses the RESOLVED source via `table.source`.
+  const { source: resolvedSource, runtime } = useTableData<TRow>({
+    locale: props.locale,
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    adapter: props.urlAdapter,
+    urlKey: props.urlKey,
+    columns: props.columns,
+    filters: props.filters,
+  });
+  // A declarative `filters` array becomes the auto-built form; JSX passes
+  // through untouched. Column-level `filter` shorthands alone (no `filters`
+  // prop) must still render the form — only explicit JSX takes over.
+  const filtersNode =
+    isDeclarativeFilters(props.filters) || props.filters === undefined
+      ? autoFilterForm(runtime, resolvedSource)
+      : props.filters;
+  const filterLabels = useMemo(
+    () => ({ ...runtime.filterLabels, ...props.filterLabels }),
+    [runtime.filterLabels, props.filterLabels]
+  );
+  const chromeProps = {
+    ...props,
+    source: resolvedSource,
+    filters: filtersNode,
+    filterLabels,
+  };
+  const c = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
+  // The injected actions column is first-class in column management: it lives
+  // in the layout state under its reserved key, so hiding it strips the
+  // rowActions BEFORE buildColumns — the trailing column, summary spans, and
+  // min-width all adjust together. The Columns menu still lists it (from the
+  // raw prop) so it can be shown again.
+  const rowActions = c.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
+    ? undefined
+    : props.rowActions;
+  const hasRowActions = Boolean(rowActions?.length);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, c, props);
+  useChromeScrollReset(rootRef, c, chromeProps);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -367,7 +509,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const columns = buildColumns<TRow>({
     columns: table.columns,
-    rowActions: props.rowActions,
+    rowActions,
     sortBy: source.sortBy,
     sortDir: source.sortDir,
     confirm,
@@ -376,6 +518,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
     columnWidths: c.columnLayout.state.widths,
     resizeLabel: labels.resizeColumn,
+    sortLevels: source.sortLevels,
+    // Shift-click multi-sort is opt-in; without it antd keeps full control
+    // of header clicks (single-sort via `onChange`).
+    onToggleSortLevel: chainToggler(props.multiSort, source),
   });
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
@@ -384,7 +530,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     table.columns,
     c.columnLayout.state.widths,
     Boolean(table.selection),
-    Boolean(props.rowActions?.length)
+    hasRowActions
   );
 
   const handleChange = sortChangeHandler(source);
@@ -395,7 +541,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     labels,
     hasLeftPin
   );
-  const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
+  const expandable = buildExpandable(
+    c.detail?.render,
+    c.detail?.expansion,
+    getRowId,
+    labels
+  );
+  // The summary row pads one leading cell per column antd injects (expand
+  // first, then selection) so its cells stay aligned under the data columns.
+  const summary = buildSummary(
+    props.summaryRow,
+    table.columns,
+    summaryLeadingCells(rowSelection, expandable),
+    hasRowActions
+  );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
     : undefined;
@@ -424,7 +583,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         loadingLabel={labels.loading}
         size={size}
         bordered={bordered}
-        hasActions={(props.rowActions?.length ?? 0) > 0}
+        hasActions={hasRowActions}
       />
     );
   } else if (c.body === "empty") {
@@ -434,7 +593,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <MobileCards
         table={table}
         rows={source.rows}
-        rowActions={props.rowActions}
+        rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
         prefetch={props.prefetch}
@@ -442,6 +601,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowClassName={props.rowClassName}
         tableLabel={resolvedTableLabel}
         compact={(props.density ?? "comfortable") === "compact"}
+        expansion={c.detail?.expansion}
+        renderRowDetail={c.detail?.render}
+        summaryRow={props.summaryRow}
       />
     );
   } else {
@@ -457,7 +619,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         sticky={sticky}
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
-        pagination={pagination}
+        expandable={expandable}
+        summary={summary}
+        pagination={false}
         rowClassName={
           props.rowClassName ? buildRowClassName(props.rowClassName) : undefined
         }
@@ -495,12 +659,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
           customToolbar={props.toolbar}
-          hasFilters={Boolean(props.filters)}
+          hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
-          filters={props.filters}
+          filters={filtersNode}
           filtersMode={filtersMode}
           filtersOpen={filtersOpen}
-          onToggleFilters={() => setFiltersOpen((o) => !o)}
+          onToggleFilters={filtersTrigger.onClick}
+          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
           onClearFilters={c.clearFilters}
           isRefreshing={c.isRefreshing}
@@ -510,6 +675,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
               allColumns={c.allColumns}
               layout={c.columnLayout}
+              labels={labels}
+              dir={props.dir}
+              hasRowActions={Boolean(props.rowActions?.length)}
+            />
+          }
+          savedViewsMenu={
+            <SavedViewsSlot
+              options={props.savedViews}
+              urlAdapter={props.urlAdapter}
+              urlKey={props.urlKey}
               labels={labels}
               dir={props.dir}
             />
@@ -524,12 +699,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {selection && props.bulkActions && (
           <BulkBar
             selection={selection}
+            total={source.total}
             bulkActions={props.bulkActions}
             confirm={confirm}
             labels={labels}
           />
         )}
         {bodyRegion}
+        {c.isPaged && !source.error && c.body === "desktop" && (
+          <PagedFooter table={table} source={source} labels={labels} />
+        )}
         {!c.isPaged && !source.error && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center">
             <Button
@@ -541,11 +720,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Flex>
         )}
       </Space>
-      {props.filters && filtersMode === "drawer" && (
+      {filtersNode && filtersMode === "drawer" && (
         <FilterDrawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          filters={props.filters}
+          filters={filtersNode}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={c.clearFilters}
           labels={labels}

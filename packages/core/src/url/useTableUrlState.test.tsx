@@ -344,3 +344,52 @@ describe("clearExtras", () => {
     expect(adapter.getSearch()).toContain("f_team=");
   });
 });
+
+describe("multi-sort chain", () => {
+  it("toggleSortLevel cycles asc → desc → removed and supersedes single sort", () => {
+    const adapter = createMemoryAdapter("sortBy=name&sortDir=desc");
+    const { result } = renderHook(() => useTableUrlState({ adapter }));
+    act(() => result.current.toggleSortLevel("team"));
+    expect(result.current.sortLevels).toEqual([{ key: "team", dir: "asc" }]);
+    // Single-sort params dropped once a chain exists.
+    expect(adapter.getSearch()).not.toContain("sortBy");
+    act(() => result.current.toggleSortLevel("age"));
+    act(() => result.current.toggleSortLevel("team"));
+    expect(result.current.sortLevels).toEqual([
+      { key: "team", dir: "desc" },
+      { key: "age", dir: "asc" },
+    ]);
+    act(() => result.current.toggleSortLevel("team"));
+    act(() => result.current.toggleSortLevel("team"));
+    act(() => result.current.toggleSortLevel("team"));
+    expect(result.current.sortLevels).toEqual([
+      { key: "age", dir: "asc" },
+      { key: "team", dir: "desc" },
+    ]);
+  });
+
+  it("round-trips the chain through the URL", () => {
+    const adapter = createMemoryAdapter("sort=name%3Aasc,age%3Adesc");
+    const { result } = renderHook(() => useTableUrlState({ adapter }));
+    expect(result.current.sortLevels).toEqual([
+      { key: "name", dir: "asc" },
+      { key: "age", dir: "desc" },
+    ]);
+  });
+
+  it("ignores malformed chain pairs from hand-edited URLs", () => {
+    const adapter = createMemoryAdapter("sort=name%3Aasc,bogus,age%3Asideways");
+    const { result } = renderHook(() => useTableUrlState({ adapter }));
+    expect(result.current.sortLevels).toEqual([{ key: "name", dir: "asc" }]);
+  });
+
+  it("a plain setSort resets an active chain (clicks never look dead)", () => {
+    const adapter = createMemoryAdapter("sort=name%3Aasc,age%3Adesc");
+    const { result } = renderHook(() => useTableUrlState({ adapter }));
+    expect(result.current.sortLevels).toHaveLength(2);
+    act(() => result.current.setSort("city", "asc"));
+    expect(result.current.sortLevels).toEqual([]);
+    expect(result.current.sortBy).toBe("city");
+    expect(adapter.getSearch()).not.toContain("sort=");
+  });
+});

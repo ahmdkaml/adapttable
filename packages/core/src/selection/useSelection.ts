@@ -43,6 +43,10 @@ export interface SelectionState {
   clear: () => void;
   /** The visible ids, in row order. */
   visibleIds: string[];
+  /** True when the user chose "select all matching" across every page. */
+  allMatching: boolean;
+  /** Extend the selection to every matching row (across all pages). */
+  selectAllMatching: () => void;
 }
 
 /**
@@ -62,26 +66,39 @@ export function useSelection<TRow>({
   onChange,
 }: UseSelectionOptions<TRow>): SelectionState {
   const [internal, setInternal] = useState<Set<string>>(() => new Set());
+  const [allMatching, setAllMatching] = useState(false);
   const controlled = selected !== undefined;
   const selectedIds = useMemo(
     () => (selected === undefined ? internal : new Set(selected)),
     [selected, internal]
   );
 
+  // The mutators below close over `commit`; reading the live mode/state
+  // through this ref keeps their identities PERMANENTLY stable — memoized
+  // adapter rows can hold `toggle` forever without computing from a stale
+  // set in the controlled mode.
+  const modeRef = useRef({ controlled, onChange, selectedIds });
+  modeRef.current = { controlled, onChange, selectedIds };
+
   /** Route a change to the parent (controlled) or internal state. */
   const commit = useCallback(
     (compute: (prev: ReadonlySet<string>) => Set<string>) => {
-      if (controlled) {
-        onChange?.([...compute(selectedIds)]);
+      // Any explicit mutation narrows the scope back to concrete ids.
+      setAllMatching(false);
+      const live = modeRef.current;
+      if (live.controlled) {
+        live.onChange?.([...compute(live.selectedIds)]);
       } else {
         setInternal((prev) => compute(prev));
       }
     },
-    [controlled, onChange, selectedIds]
+    []
   );
 
+  const selectAllMatching = useCallback(() => setAllMatching(true), []);
+
   // Clear on reset-key change, but not on first mount. The effect reads the
-  // LATEST commit/selection through refs so only `resetKey` retriggers it.
+  // LATEST size through a ref so only `resetKey` retriggers it.
   const liveRef = useRef({ commit, size: selectedIds.size });
   liveRef.current = { commit, size: selectedIds.size };
   const firstRef = useRef(true);
@@ -141,14 +158,31 @@ export function useSelection<TRow>({
 
   const clear = useCallback(() => commit(() => new Set()), [commit]);
 
-  return {
-    selectedIds,
-    selectedCount: selectedIds.size,
-    headerState,
-    isSelected,
-    toggle,
-    toggleAll,
-    clear,
-    visibleIds,
-  };
+  // Stable identity: row-level React.memo in the adapters depends on the
+  // selection object only changing when the selection actually changes.
+  return useMemo(
+    () => ({
+      selectedIds,
+      selectedCount: selectedIds.size,
+      headerState,
+      isSelected,
+      toggle,
+      toggleAll,
+      clear,
+      visibleIds,
+      allMatching,
+      selectAllMatching,
+    }),
+    [
+      selectedIds,
+      headerState,
+      isSelected,
+      toggle,
+      toggleAll,
+      clear,
+      visibleIds,
+      allMatching,
+      selectAllMatching,
+    ]
+  );
 }

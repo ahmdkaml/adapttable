@@ -1,9 +1,5 @@
 import { getDirection, getLabels } from "@adapttable/i18n";
-import {
-  type ColumnDef,
-  DataTable,
-  useFrontendData,
-} from "@adapttable/unstyled";
+import { type ColumnDef, DataTable } from "@adapttable/unstyled";
 
 interface Product {
   id: string;
@@ -18,10 +14,9 @@ const PRODUCTS: Product[] = [
 ];
 
 const columns: ColumnDef<Product>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
+  { key: "name", sortable: true },
   {
     key: "price",
-    header: "Price",
     accessor: (r) => `$${r.price}`,
     sortValue: (r) => r.price,
     sortable: true,
@@ -37,10 +32,9 @@ export function UnstyledTailwindExample({
 }: Readonly<{
   locale?: string;
 }>) {
-  const source = useFrontendData({ data: PRODUCTS, columns });
   return (
     <DataTable
-      source={source}
+      data={PRODUCTS}
       columns={columns}
       rowKey={(r) => r.id}
       labels={getLabels(locale)}

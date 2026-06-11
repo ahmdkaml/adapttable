@@ -10,6 +10,8 @@
 
 import type { ComponentType, ReactNode } from "react";
 
+import type { ColumnFilter } from "./filters/filterDefs";
+
 /** Sort direction for a column. */
 export type SortDirection = "asc" | "desc";
 
@@ -53,10 +55,39 @@ export interface CellProps<TRow> {
  * lighter {@link ColumnDef.accessor} function.
  */
 export interface ColumnDef<TRow> {
-  /** Unique within the table. Also the value sent to a backend as `sortBy`. */
+  /**
+   * Unique within the table. Also the value sent to a backend as `sortBy`,
+   * and — when no `accessor`/`Cell` is given — the row's data path for the
+   * cell value (dot paths reach nested values: `"department.name"`).
+   */
   key: string;
-  /** Header content. Pre-translated by the caller. */
-  header: ReactNode;
+  /**
+   * Header content. Pre-translated by the caller. Omit it and the header is
+   * auto-derived from `key` (`"hiredAt"` → `"Hired At"`).
+   */
+  header?: ReactNode;
+  /**
+   * Declarative filter for this column: a bare type (`"dateRange"`) or a
+   * definition without `key`/`label` (inherited from the column). Merged
+   * with the table-level `filters` array; a `filters` entry with the same
+   * key wins.
+   */
+  /**
+   * Presentational header group: contiguous columns sharing a `group`
+   * render under one spanning header cell. Reordering columns apart
+   * splits the group (adjacency-based, never lies about layout).
+   */
+  group?: string;
+  /**
+   * Per-locale data paths for this column's VALUE. The active table
+   * `locale` picks the path (exact tag first, then its primary subtag, then
+   * `key`): `{ key: "nameEn", i18n: { ar: "nameAr" } }` for flat fields, or
+   * `{ key: "name.en", i18n: { ar: "name.ar" } }` for nested objects. The
+   * cell, client-side sort and the column's declarative filter all follow
+   * the resolved path. Header TEXT stays whatever you pass in `header`.
+   */
+  i18n?: Readonly<Record<string, string>>;
+  filter?: ColumnFilter<TRow>;
   /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.
@@ -139,10 +170,25 @@ export interface BulkAction {
    * bulk button explains itself.
    */
   disabledReason?: (ids: string[]) => string | undefined;
-  /** Action handler; receives the selected ids. May be async. */
-  onClick: (ids: string[]) => void | Promise<unknown>;
+  /**
+   * Action handler; receives the selected page ids plus a context: with
+   * `allMatching` true the user chose "select all N matching" — act on the
+   * whole filtered set server-side (`total` is its size), not just `ids`.
+   */
+  onClick: (
+    ids: string[],
+    context: BulkActionContext
+  ) => void | Promise<unknown>;
   /** Optional confirmation dialog wiring (receives the selection count). */
   confirm?: ActionConfirm<number>;
+}
+
+/** Scope context handed to a bulk action. */
+export interface BulkActionContext {
+  /** True when the user chose "select all matching" across every page. */
+  allMatching: boolean;
+  /** Total rows in the current filtered set (= ids.length unless allMatching). */
+  total: number;
 }
 
 /** Option entry for a sort-by select control. */
@@ -182,6 +228,24 @@ export interface TableLabels {
   noData?: string;
   /** Empty state when an active search/filter matched nothing. */
   noResults?: string;
+  /** Expand-row chevron label (suffixed with the row identity). */
+  expandRow?: string;
+  /** Collapse-row chevron label. */
+  collapseRow?: string;
+  /** Saved-views menu trigger / list title. */
+  savedViews?: string;
+  /** Save-current-view action. */
+  saveView?: string;
+  /** Placeholder/label for the view-name input. */
+  viewName?: string;
+  /** Delete-a-view action (suffixed with the view name). */
+  deleteView?: string;
+  /** Banner: every row on this page is selected. */
+  pageSelected?: (count: number) => string;
+  /** Banner action: extend the selection to every matching row. */
+  selectAllMatching?: (total: number) => string;
+  /** Banner: the whole matching set is selected. */
+  allMatchingSelected?: (total: number) => string;
   loading?: string;
   loadMore?: string;
   filters?: string;

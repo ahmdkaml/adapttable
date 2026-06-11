@@ -35,6 +35,8 @@ export const PARAM_LIMIT = "limit";
 export const PARAM_SEARCH = "q";
 export const PARAM_SORT_BY = "sortBy";
 export const PARAM_SORT_DIR = "sortDir";
+/** Multi-sort chain: `sort=name:asc,age:desc` (keys percent-encoded). */
+export const PARAM_SORT = "sort";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
 /** Column-layout params (hidden / pinned / order / widths). */
@@ -225,5 +227,36 @@ export function writeColumnLayout(
     Object.entries(layout.widths)
       .map(([key, px]) => `${encodeURIComponent(key)}:${Math.round(px)}`)
       .join(",")
+  );
+}
+
+/** Read the multi-sort chain (`sort=key:dir,key2:dir2`). */
+export function readSortLevels(
+  params: URLSearchParams,
+  prefix = ""
+): { key: string; dir: SortDirection }[] {
+  const out: { key: string; dir: SortDirection }[] = [];
+  for (const pair of splitRaw(params.get(prefix + PARAM_SORT))) {
+    const [encKey, dir] = pair.split(":");
+    if (encKey && (dir === "asc" || dir === "desc")) {
+      out.push({ key: safeDecode(encKey), dir });
+    }
+  }
+  return out;
+}
+
+/** Write (or clear, when empty) the multi-sort chain. */
+export function writeSortLevels(
+  params: URLSearchParams,
+  levels: readonly { key: string; dir: SortDirection }[],
+  prefix = ""
+): void {
+  if (levels.length === 0) {
+    params.delete(prefix + PARAM_SORT);
+    return;
+  }
+  params.set(
+    prefix + PARAM_SORT,
+    levels.map((l) => `${encodeURIComponent(l.key)}:${l.dir}`).join(",")
   );
 }

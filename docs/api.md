@@ -5,10 +5,41 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ## `@adapttable/core`
 
-### Source builders
+### Data tiers
 
-- `useFrontendData<TRow>(options): TableSource<TRow>`
-- `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+Three ways to feed the table, lowest ceremony first:
+
+- `data={rows}` — frontend tier: the table filters/sorts/pages in memory.
+- `data` + `total` + `loading` + `onQueryChange(query, { signal })` — server
+  tier: the table owns the query state and emits one consolidated
+  `TableQuery` per change (initial mount included); you fetch and hand back
+  rows. Superseded requests are aborted through `signal`.
+- `source={...}` — full control via the source builders:
+  - `useFrontendData<TRow>(options): TableSource<TRow>`
+  - `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+  - `useServerData<TRow>(options)` / `useTableData<TRow>(options)` — the
+    hooks behind the first two tiers, exported for headless use.
+
+### Declarative columns & filters
+
+- `ColumnDef.key` doubles as a dot-path accessor (`"department.name"`);
+  `header` is optional (auto-humanized: `hiredAt` → "Hired At" — explicit
+  headers always win, in any language).
+- `ColumnDef.i18n` + table `locale` — per-locale data paths
+  (`{ key: "nameEn", i18n: { ar: "nameAr" } }`, or nested
+  `{ key: "name.en", i18n: { ar: "name.ar" } }`): the active locale (exact
+  tag → primary subtag → key) picks the path, and the cell, client-side
+  sort and the column's filter all follow it. Header text stays whatever
+  you pass in `header`.
+- `ColumnDef.filter` — `"text" | "select" | "multiSelect" | "dateRange" |
+"numberRange"` or a definition object; merged with the table-level
+  `filters` array (a `filters` entry with the same key wins, with a dev
+  warning). Each definition drives the kit-native widget, the URL parsing,
+  the chip label, and (frontend tier) the row predicate.
+- `filters` prop: `FilterDef[]` (the adapter builds the form) **or** JSX
+  (you draw it). Helpers: `FILTER_TYPES`, `filterLabel`, `filterStateKeys`,
+  `resolveFilterDefs`, `buildFilterRuntime`, `filterPredicate`,
+  `clearedFilterExtras`, `getPath`, `humanizeKey`, `resolveColumns`.
 
 ### State
 
@@ -36,6 +67,10 @@ and JSDoc, so editor autocomplete is the canonical reference.
 - On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
   `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
   `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`.
+- The injected row-actions column manages like any other under the reserved
+  key `ACTIONS_COLUMN_KEY` (`"actions"`): hide it (`hidden: ["actions"]`),
+  pin it to the end on its own (`pinned: { actions: "right" }` — one click
+  in the Columns menu), no data-column pin required.
 
 ### Orchestration / headless rendering
 
@@ -65,7 +100,8 @@ and JSDoc, so editor autocomplete is the canonical reference.
   `useColorScheme` (resolves `"light" | "dark" | "auto"`)
 - `useInfiniteScroll` — IntersectionObserver sentinel that auto-loads the
   next page in infinite mode (returns a ref; re-arms on `itemCount`)
-- `useTableVirtualization` — headless window virtualization for rows/cards.
+- `useTableVirtualization` — headless row/card windowing: page-scroll by
+  default, or element-scroll inside a `maxHeight` box via `getScrollElement`.
 - `useScrollToTableTop` — optional sticky-chrome scroll restoration.
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
   `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`,
@@ -87,12 +123,57 @@ and JSDoc, so editor autocomplete is the canonical reference.
   uncontrolled split as `columnLayout`).
 - `rowClassName(row, index)` — conditional per-row class, applied to desktop
   rows and mobile cards alike (e.g. highlight overdue rows).
-- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
+- `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter,
+  with ArrowUp/ArrowDown roving focus across rows;
   interactive children (actions, checkboxes, links) keep their own behaviour.
   Headless consumers: `rowClickProps(row, onRowClick)`.
 - `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV
   export from the table's own column definitions (free; pair with the
   `toolbar` slot).
+
+### Row expansion
+
+- `renderRowDetail(row)` — its presence enables a leading expand chevron on
+  desktop rows and a detail section on mobile cards; multiple rows may be
+  open, keyed by row id (expansion survives sorting and paging). Headless:
+  `useRowExpansion()`. Not recommended with `virtualize` (detail panels are
+  unmeasured sibling rows — a dev warning says so). Kits with native expand
+  affordances render a custom icon so your `expandRow`/`collapseRow` labels
+  (and the i18n presets) always win — antd's own icon would read its
+  ConfigProvider locale instead.
+
+### Filter option sources
+
+`FilterDef.options` accepts three sources:
+
+- a static `FilterOption[]`;
+- `"auto"` — distinct values derived from the frontend dataset (sorted,
+  capped at `AUTO_OPTIONS_LIMIT`); other tiers dev-warn (no full dataset);
+- `() => Promise<FilterOption[]>` — resolved lazily when the form first
+  renders, with each kit's native loading affordance
+  (`useFilterOptions(def)` for custom forms).
+
+### Summary, groups & multi-sort
+
+- `summaryRow(rows)` — map the current page's rows to per-column footer
+  cells (`{ budget: <b>{total}</b> }`); renders in each kit's table footer
+  (and as a summary card on mobile).
+- `ColumnDef.group` — contiguous same-group columns render under one
+  spanning header cell; reordering them apart splits the group
+  (adjacency-based; headless: `headerGroupRow(columns)`).
+- `multiSort` — shift-click chains columns (asc → desc → removed), with a
+  1-based order badge (`data-sort-index`) and `sort=key:asc,key2:desc` in
+  the URL; plain clicks keep single-sorting. Frontend tier sorts the chain
+  with ties falling through; the server tier emits `query.sortLevels`.
+- `useSavedViews({ storageKey, adapter, urlKey })` — headless named views:
+  capture/apply/remove this table's URL params (search, sort, filters,
+  layout) without touching other tables; wire any menu in the `toolbar`
+  slot.
+- `savedViews={{ storageKey: "people-views" }}` — or skip the wiring: every
+  adapter ships a ready-made `SavedViewsMenu` (list, apply, delete, save
+  with a name input), mounted in the toolbar by this prop. `adapter` and
+  `urlKey` default to the table's own, and the `savedViews` / `saveView` /
+  `viewName` / `deleteView` labels are localized by the i18n presets.
 
 ### Empty & refresh states
 
@@ -106,7 +187,7 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 Misconfiguration warns once per message in development (silent in
 production): unresolvable sorts, duplicate column keys, two tables sharing a
-URL namespace without `urlKey`, and `virtualize` combined with `maxHeight`.
+URL namespace without `urlKey`, and `virtualize` with `renderRowDetail`.
 
 ## Adapters
 

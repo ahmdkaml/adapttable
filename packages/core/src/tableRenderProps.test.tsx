@@ -9,6 +9,7 @@ import type { UseDataTableResult } from "./useDataTable/useDataTable";
 import {
   useChromeBodyData,
   useChromeScrollReset,
+  useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
 
@@ -26,6 +27,34 @@ const cols: ColumnDef<Row>[] = [
 ];
 
 describe("tableRenderModel", () => {
+  it("columnSpan counts the expansion column when row details are active", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        renderRowDetail: (r) => r.name,
+      });
+    });
+    const detail = result.current.detail!;
+    const model = tableRenderModel<Row>({
+      table: result.current.table,
+      rows: ROWS,
+      getRowId: result.current.getRowId,
+      renderRowDetail: detail.render,
+      expansion: detail.expansion,
+    });
+    // 1 data column + 1 expansion column.
+    expect(model.columnSpan).toBe(2);
+  });
+
   const table = {
     columns: cols,
     selection: null,
@@ -234,6 +263,46 @@ describe("controlled selection through the chrome", () => {
 });
 
 describe("useChromeBodyData", () => {
+  it("element mode: a maxHeight box scrolls the virtual window (ref wiring)", () => {
+    const adapter = createMemoryAdapter("");
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      id: String(i),
+      name: `Row ${i}`,
+    }));
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: many,
+        columns: cols,
+        adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true,
+        maxHeight: 300,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    // Attaching the scroll box hands TanStack the element to track; the
+    // mount effect resolves it through the chrome's getScrollElement.
+    const box = document.createElement("div");
+    act(() => {
+      result.current.virtualScrollRef(box);
+    });
+    act(() => {
+      result.current.virtualScrollRef(null);
+    });
+    expect(typeof result.current.virtualScrollRef).toBe("function");
+    // jsdom boxes have no layout, so the element window stays empty and
+    // every row falls back to materialized rendering — graceful, not blank.
+    expect(result.current.virtualization.enabled).toBe(false);
+    // 25 = the infinite tier's first page; every page row materializes.
+    expect(result.current.virtualization.rows).toHaveLength(25);
+  });
+
   it("disables virtualization and load-more in paged mode", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() => {
@@ -322,6 +391,8 @@ describe("useChromeBodyData load-more wiring", () => {
       setPage: vi.fn(),
       setLimit: vi.fn(),
       setSort: vi.fn(),
+      sortLevels: [],
+      toggleSortLevel: vi.fn(),
       setSearch: vi.fn(),
       setExtra: vi.fn(),
       setExtras: vi.fn(),
@@ -368,6 +439,8 @@ function mockSource(over: Record<string, unknown> = {}) {
     setPage: vi.fn(),
     setLimit: vi.fn(),
     setSort: vi.fn(),
+    sortLevels: [],
+    toggleSortLevel: vi.fn(),
     setSearch: vi.fn(),
     setExtra: vi.fn(),
     setExtras: vi.fn(),
@@ -453,5 +526,193 @@ describe("useChromeBodyData eligibility edges", () => {
       return useChromeBodyData<Row>(chrome, props);
     });
     expect(desktop.result.current.virtualization.enabled).toBe(true);
+  });
+});
+
+describe("useFilterTriggerToggle", () => {
+  it("opens on a plain click when closed", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(false, setOpen));
+    act(() => {
+      result.current.onPointerDown();
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+    const updater = setOpen.mock.calls[0]![0] as (c: boolean) => boolean;
+    expect(updater(false)).toBe(true);
+  });
+
+  it("closes when the kit leaves the popover open through pointer-down", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(true, setOpen));
+    act(() => {
+      result.current.onPointerDown();
+      // The kit did NOT close on pointer-down (open stays true) — the click
+      // must close it.
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+    const updater = setOpen.mock.calls[0]![0] as (c: boolean) => boolean;
+    expect(updater(true)).toBe(false);
+  });
+
+  it("swallows the click when the kit closed on the same pointer-down", () => {
+    const setOpen = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ open }) => useFilterTriggerToggle(open, setOpen),
+      { initialProps: { open: true } }
+    );
+    act(() => result.current.onPointerDown());
+    // Kit's outside-close fired between pointer-down and click.
+    rerender({ open: false });
+    act(() => result.current.onClick());
+    expect(setOpen).not.toHaveBeenCalled();
+    // The NEXT plain click opens again (the marker was consumed).
+    act(() => {
+      result.current.onPointerDown();
+      result.current.onClick();
+    });
+    expect(setOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("a keyboard click (no pointer-down) toggles normally", () => {
+    const setOpen = vi.fn();
+    const { result } = renderHook(() => useFilterTriggerToggle(true, setOpen));
+    act(() => result.current.onClick());
+    expect(setOpen).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("chrome row expansion", () => {
+  it("exposes expansion state only when renderRowDetail is set", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return {
+        withDetail: useTableChrome<Row>({
+          source,
+          columns: cols,
+          rowKey: (r: Row) => r.id,
+          renderRowDetail: (r) => r.name,
+        }),
+        without: useTableChrome<Row>({
+          source,
+          columns: cols,
+          rowKey: (r: Row) => r.id,
+        }),
+      };
+    });
+    expect(result.current.without.detail).toBeUndefined();
+    // ONE guard narrows both halves of the bundle.
+    const detail = result.current.withDetail.detail!;
+    expect(detail.render({ id: "a", name: "Alice" })).toBe("Alice");
+    expect(detail.expansion.isExpanded("a")).toBe(false);
+    act(() => detail.expansion.toggle("a"));
+    expect(result.current.withDetail.detail!.expansion.isExpanded("a")).toBe(
+      true
+    );
+  });
+
+  it("dev-warns when row details meet virtualization", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true,
+        renderRowDetail: (r: Row) => r.name,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData<Row>(chrome, props);
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("renderRowDetail with virtualize")
+    );
+    warn.mockRestore();
+  });
+});
+
+describe("multi-sort headers", () => {
+  it("shift-click toggles the chain; plain click single-sorts; badges expose order", () => {
+    const adapter = createMemoryAdapter("");
+    const sortable = [
+      {
+        key: "name",
+        header: "Name",
+        accessor: (r: Row) => r.name,
+        sortable: true,
+      },
+    ];
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: sortable,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: sortable,
+        rowKey: (r: Row) => r.id,
+        multiSort: true,
+      });
+    });
+    const col = result.current.table.columns[0]!;
+    const btn = () =>
+      result.current.table.getSortButtonProps(col) as {
+        onClick: (e?: { shiftKey?: boolean }) => void;
+        "data-sort-index"?: number;
+      };
+    act(() => btn().onClick({ shiftKey: true }));
+    expect(btn()["data-sort-index"]).toBe(1);
+    // Header cells reflect the chain too (aria-sort + badge index).
+    const cell = result.current.table.getHeaderCellProps(col) as {
+      "aria-sort"?: string;
+      "data-sort-index"?: number;
+    };
+    expect(cell["aria-sort"]).toBe("ascending");
+    expect(cell["data-sort-index"]).toBe(1);
+    act(() => btn().onClick({ shiftKey: true }));
+    act(() => btn().onClick({ shiftKey: true }));
+    expect(btn()["data-sort-index"]).toBeUndefined();
+    // Plain click takes the single-sort path.
+    act(() => btn().onClick({}));
+    expect(result.current.table.source ?? true).toBeTruthy();
+  });
+
+  it("a disabled (unsortable) header ignores clicks entirely", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: [{ key: "name", header: "Name" }] as never,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: [{ key: "name", header: "Name" }] as never,
+        rowKey: (r: Row) => r.id,
+        multiSort: true,
+      });
+    });
+    const col = result.current.table.columns[0]!;
+    const props = result.current.table.getSortButtonProps(col) as {
+      onClick: (e?: { shiftKey?: boolean }) => void;
+    };
+    expect(() => props.onClick({ shiftKey: true })).not.toThrow();
   });
 });

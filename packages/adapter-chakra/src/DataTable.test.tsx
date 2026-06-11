@@ -291,7 +291,10 @@ describe("<DataTable> (Chakra)", () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
   });
 
   it("renders filter chips and opens the filter popover", async () => {
@@ -617,5 +620,104 @@ describe("<DataTable> (Chakra) density → table size", () => {
     expect(tableSizeOf({ override: { density: "compact", size: "lg" } })).toBe(
       "lg"
     );
+  });
+});
+
+describe("select-all-matching banner (Chakra)", () => {
+  const MANY: Row[] = [
+    ...ROWS,
+    { id: "c", name: "Cara", city: "Doha" },
+    { id: "d", name: "Dina", city: "Muscat" },
+    { id: "e", name: "Evan", city: "Amman" },
+  ];
+  const bulkX = [{ key: "x", label: "X", onClick: vi.fn() }];
+  const selectPage = () => fireEvent.click(screen.getByLabelText("Select all"));
+
+  it("stays absent when the whole filtered set is already selected", () => {
+    renderHarness({ override: { bulkActions: bulkX } });
+    selectPage();
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+    expect(screen.queryByText(/on this page selected/)).toBeNull();
+    expect(screen.queryByText(/matching/)).toBeNull();
+  });
+
+  it("offers all matching for a full page, flips to active, and clears", () => {
+    renderHarness({ rows: MANY, override: { bulkActions: bulkX } }, "limit=2");
+    selectPage();
+    // Offer state: the page count replaces the plain "n selected" text.
+    expect(screen.getByText("All 2 on this page selected")).toBeInTheDocument();
+    expect(screen.queryByText("2 selected")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    // Active state.
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+    // The banner's own Clear all empties the selection and hides the bar.
+    const clears = screen.getAllByRole("button", { name: "Clear all" });
+    expect(clears).toHaveLength(2);
+    fireEvent.click(clears[0]!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.queryByText("X")).toBeNull();
+  });
+
+  it("confirms with the matching TOTAL and passes the all-matching context", async () => {
+    const onClick = vi.fn();
+    const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());
+    renderHarness(
+      {
+        rows: MANY,
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "t",
+                message: (n) => `Delete ${n}`,
+                confirmLabel: "Yes",
+              },
+            },
+          ],
+          confirm,
+        },
+      },
+      "limit=2"
+    );
+    selectPage();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+    });
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Delete 5" })
+    );
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: true,
+      total: 5,
+    });
+  });
+
+  it("narrows back to the page scope on any selection change", () => {
+    renderHarness({ rows: MANY, override: { bulkActions: bulkX } }, "limit=2");
+    selectPage();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    );
+    expect(screen.getByText("All 5 matching selected")).toBeInTheDocument();
+    // Any explicit mutation auto-narrows the scope back to concrete ids.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.queryByText("All 5 matching selected")).toBeNull();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    // Re-completing the page lands on the OFFER, not the active state.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("All 2 on this page selected")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Select all 5 matching" })
+    ).toBeInTheDocument();
   });
 });

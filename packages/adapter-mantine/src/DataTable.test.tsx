@@ -1,6 +1,7 @@
 import {
   createMemoryAdapter,
   type TableSource,
+  useColumnLayoutUrlState,
   useFrontendData,
 } from "@adapttable/core";
 import { MantineProvider } from "@mantine/core";
@@ -10,6 +11,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -117,6 +119,8 @@ describe("<DataTable> (Mantine)", () => {
       setPage: () => undefined,
       setLimit: () => undefined,
       setSort: () => undefined,
+      sortLevels: [],
+      toggleSortLevel: () => undefined,
       setSearch: () => undefined,
       setExtra: () => undefined,
       setExtras: () => undefined,
@@ -171,6 +175,16 @@ describe("<DataTable> (Mantine)", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(await screen.findByText("drawer body")).toBeInTheDocument();
+  });
+
+  it("drawer mode: the Done button closes the drawer again", async () => {
+    renderHarness({
+      override: { filters: <div>drawer body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("drawer body")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    await waitFor(() => expect(screen.queryByText("drawer body")).toBeNull());
   });
 
   it("popover mode: Escape closes and clear-all fires the handler", async () => {
@@ -344,7 +358,10 @@ describe("<DataTable> (Mantine)", () => {
       await Promise.resolve();
     });
     expect(confirm).toHaveBeenCalled();
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
   });
 
   it("renders filter chips from filterLabels and clears one", () => {
@@ -353,6 +370,123 @@ describe("<DataTable> (Mantine)", () => {
       override: { filterLabels: { status: (v) => `Status: ${v}` } },
     });
     expect(screen.getByText("Status: Active")).toBeInTheDocument();
+  });
+
+  describe("all-matching scope banner", () => {
+    const MANY_ROWS: Row[] = [
+      { id: "r1", name: "Alice", city: "Dubai" },
+      { id: "r2", name: "Bob", city: "Riyadh" },
+      { id: "r3", name: "Cara", city: "Doha" },
+      { id: "r4", name: "Dina", city: "Muscat" },
+    ];
+    const archive = { key: "arch", label: "Archive", onClick: vi.fn() };
+
+    it("never renders when the page already holds every matching row", () => {
+      renderHarness({ override: { bulkActions: [archive] } });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Select all 2 matching" })
+      ).toBeNull();
+    });
+
+    it("offers the wider scope and flips to all-matching on click", () => {
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: { bulkActions: [archive] },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      const banner = screen.getByRole("status");
+      expect(
+        within(banner).getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      fireEvent.click(
+        within(banner).getByRole("button", { name: "Select all 4 matching" })
+      );
+      // The banner swaps to the active-scope message + a clear affordance.
+      const active = screen.getByRole("status");
+      expect(
+        within(active).getByText("All 4 matching selected")
+      ).toBeInTheDocument();
+      expect(
+        within(active).getByRole("button", { name: "Clear all" })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Select all 4 matching" })
+      ).toBeNull();
+    });
+
+    it("confirm message and onClick context size by the TOTAL in all-matching scope", async () => {
+      const onClick = vi.fn();
+      const confirm = vi.fn((req: { onConfirm: () => void }) =>
+        req.onConfirm()
+      );
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: {
+          bulkActions: [
+            {
+              key: "del",
+              label: "Delete",
+              onClick,
+              confirm: {
+                title: "Sure?",
+                message: (n) => `Delete ${n}?`,
+                confirmLabel: "Yes",
+                danger: true,
+              },
+            },
+          ],
+          confirm,
+        },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByText("Delete"));
+        await Promise.resolve();
+      });
+      expect(confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Delete 4?" })
+      );
+      expect(onClick).toHaveBeenCalledWith(["r1", "r2"], {
+        allMatching: true,
+        total: 4,
+      });
+    });
+
+    it("a single row toggle narrows the scope back to the offer state", () => {
+      renderHarness({
+        rows: MANY_ROWS,
+        initialUrl: "limit=2",
+        override: { bulkActions: [archive] },
+      });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      // Deselect one row: the page is no longer fully selected, so the
+      // banner disappears AND the scope narrows back to concrete ids.
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.queryByText("All 4 matching selected")).toBeNull();
+      // Re-selecting the row restores a fully-selected page — the banner
+      // returns in the OFFER state, proving allMatching did not survive.
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      const banner = screen.getByRole("status");
+      expect(
+        within(banner).getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      expect(
+        within(banner).getByRole("button", { name: "Select all 4 matching" })
+      ).toBeInTheDocument();
+    });
   });
 
   it("opens the filter drawer", async () => {
@@ -419,6 +553,8 @@ describe("<DataTable> (Mantine)", () => {
       setPage: () => undefined,
       setLimit: () => undefined,
       setSort: () => undefined,
+      sortLevels: [],
+      toggleSortLevel: () => undefined,
       setSearch: () => undefined,
       setExtra: () => undefined,
       setExtras: () => undefined,
@@ -496,6 +632,110 @@ describe("<DataTable> (Mantine)", () => {
     expect(th!.closest("[style*='overflow']")).toBeNull();
   });
 
+  // With no `maxHeight` and nothing pinned, the wrapper turns into a
+  // horizontal scroller ONLY while the table is measurably wider than it
+  // (otherwise wide tables bleed over the card border). When the table fits
+  // it must stay a non-scroll container so sticky headers keep working.
+  it("adds overflow-x only while the table is wider than its wrapper", () => {
+    type ResizeCallback = (
+      entries: ResizeObserverEntry[],
+      observer: ResizeObserver
+    ) => void;
+    const callbacks: ResizeCallback[] = [];
+    class FakeResizeObserver {
+      constructor(cb: ResizeCallback) {
+        callbacks.push(cb);
+      }
+      observe() {
+        // measurement is driven manually via `fire` below
+      }
+      unobserve() {
+        // not used by the hook
+      }
+      disconnect() {
+        // not used by this test
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const fire = () => {
+      const observer = new FakeResizeObserver(() => undefined);
+      for (const cb of [...callbacks]) cb([], observer);
+    };
+    try {
+      renderHarness();
+      const wrapper = screen.getByText("Name").closest("table")!.parentElement!;
+      // jsdom measures 0x0 at mount -> the table fits -> NOT a scroll box.
+      expect(wrapper.style.overflowX).toBe("");
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 900,
+        configurable: true,
+      });
+      Object.defineProperty(wrapper, "clientWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      expect(wrapper).toHaveStyle({ overflowX: "auto" });
+      // ... and it relinquishes the scroll container once the table fits.
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      expect(wrapper.style.overflowX).toBe("");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("re-binds a page-sticky header to the box top once the table overflows", () => {
+    type ResizeCallback = (
+      entries: ResizeObserverEntry[],
+      observer: ResizeObserver
+    ) => void;
+    const callbacks: ResizeCallback[] = [];
+    class FakeResizeObserver {
+      constructor(cb: ResizeCallback) {
+        callbacks.push(cb);
+      }
+      observe() {
+        // measurement is driven manually via `fire` below
+      }
+      unobserve() {
+        // not used by the hook
+      }
+      disconnect() {
+        // not used by this test
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const fire = () => {
+      const observer = new FakeResizeObserver(() => undefined);
+      for (const cb of [...callbacks]) cb([], observer);
+    };
+    try {
+      renderHarness({ override: { stickyHeader: true, stickyTop: 120 } });
+      const th = screen.getByText("Name").closest("th")!;
+      const wrapper = th.closest("table")!.parentElement!;
+      // Fitting table: the viewport offset applies (resolved >= stickyTop).
+      expect(Number.parseInt(th.style.top, 10)).toBeGreaterThanOrEqual(120);
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 900,
+        configurable: true,
+      });
+      Object.defineProperty(wrapper, "clientWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      // Now the wrapper IS the scroll container: the header must pin to its
+      // top — keeping the viewport offset would shove it down into the rows.
+      expect(th).toHaveStyle({ top: "0" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("renders the Columns menu trigger when enableColumnMenu is set", () => {
     renderHarness({ override: { enableColumnMenu: true } });
     expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();
@@ -556,5 +796,139 @@ describe("<DataTable> (Mantine)", () => {
     expect(screen.queryByText("Dubai")).toBeNull();
     expect(screen.getByText("Name")).toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+});
+
+describe("actions column in the column layout", () => {
+  const EDIT_ACTION = [
+    { key: "edit", label: "Edit", onClick: () => undefined },
+  ];
+  const menuToggle = (label: string) =>
+    document.querySelector<HTMLElement>(`[aria-label="${label}"]`)!;
+
+  it("pins the actions column on its own — no data column pinned", () => {
+    renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: { pinned: { actions: "right" } },
+      },
+    });
+    // Header and body cells both turn sticky at the inline end…
+    const th = screen.getByText("Actions").closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
+    const td = screen
+      .getAllByRole("button", { name: "Edit" })[0]!
+      .closest("td")!;
+    expect(td.style.position).toBe("sticky");
+    expect(td.style.insetInlineEnd).toBe("0");
+    // …while every data column stays in normal flow.
+    expect(screen.getByText("Name").closest("th")!.style.position).not.toBe(
+      "sticky"
+    );
+    expect(screen.getByText("City").closest("th")!.style.position).not.toBe(
+      "sticky"
+    );
+  });
+
+  it("hiding the actions column drops the column and its pin lead", () => {
+    // With the actions column visible, a right-pinned data column starts
+    // past the 120px actions lead…
+    const visible = renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: { pinned: { city: "right" } },
+      },
+    });
+    expect(screen.getByText("City").closest("th")!.style.insetInlineEnd).toBe(
+      "120px"
+    );
+    visible.unmount();
+
+    // …hiding it removes the column, its buttons AND the lead together.
+    renderHarness({
+      override: {
+        rowActions: EDIT_ACTION,
+        defaultColumnLayout: {
+          hidden: ["actions"],
+          pinned: { city: "right" },
+        },
+      },
+    });
+    expect(screen.queryByText("Actions")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    const cityTh = screen.getByText("City").closest("th")!;
+    expect(cityTh.style.position).toBe("sticky");
+    expect(cityTh.style.insetInlineEnd).toBe("0");
+  });
+
+  it("manages the actions column from the Columns menu", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: EDIT_ACTION },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    const table = () => screen.getByRole("table");
+
+    // ONE click pins: the actions th turns sticky with no data column pinned.
+    fireEvent.click(menuToggle("Pin right: Actions"));
+    const th = within(table()).getByText("Actions").closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
+
+    // The eye hides the whole column; the menu keeps the row to re-show it.
+    fireEvent.click(menuToggle("Hide column: Actions"));
+    expect(within(table()).queryByText("Actions")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    fireEvent.click(menuToggle("Show column: Actions"));
+    // Re-shown AND still pinned from the earlier single click.
+    const restored = within(table()).getByText("Actions").closest("th")!;
+    expect(restored.style.position).toBe("sticky");
+  });
+
+  it("round-trips the actions pin through the URL layout state", async () => {
+    const adapter = createMemoryAdapter("");
+    function UrlHarness() {
+      const { layout, onLayoutChange } = useColumnLayoutUrlState({ adapter });
+      const source = useFrontendData<Row>({ data: ROWS, adapter, columns });
+      return (
+        <DataTable<Row>
+          source={source}
+          columns={columns}
+          rowKey={(r) => r.id}
+          rowActions={EDIT_ACTION}
+          enableColumnMenu
+          columnLayout={layout}
+          onColumnLayoutChange={onLayoutChange}
+        />
+      );
+    }
+    const first = render(
+      <MantineProvider>
+        <UrlHarness />
+      </MantineProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.click(menuToggle("Pin right: Actions"));
+    // The hook debounces the URL write — flush it, then the layout has
+    // serialized the reserved "actions" key like any column key.
+    act(() => vi.advanceTimersByTime(200));
+    expect(decodeURIComponent(adapter.getSearch())).toContain(
+      "colPin=actions:right"
+    );
+    first.unmount();
+
+    // A fresh mount restores the pin from the URL alone.
+    render(
+      <MantineProvider>
+        <UrlHarness />
+      </MantineProvider>
+    );
+    const th = within(screen.getByRole("table"))
+      .getByText("Actions")
+      .closest("th")!;
+    expect(th.style.position).toBe("sticky");
+    expect(th.style.insetInlineEnd).toBe("0");
   });
 });

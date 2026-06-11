@@ -207,3 +207,57 @@ describe("defaultSearchText", () => {
     expect(defaultSearchText(null)).toBe("");
   });
 });
+
+describe("multi-sort chain on the frontend tier", () => {
+  interface TeamRow {
+    id: string;
+    name: string;
+    team: string;
+  }
+
+  it("sorts by the URL chain, ties falling through", () => {
+    const adapter = createMemoryAdapter("sort=team%3Aasc,name%3Adesc");
+    const { result } = renderHook(() =>
+      useFrontendData<TeamRow>({
+        data: [
+          { id: "1", name: "Ann", team: "b" },
+          { id: "2", name: "Zoe", team: "a" },
+          { id: "3", name: "Bob", team: "a" },
+        ],
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name },
+          { key: "team", header: "Team", accessor: (r) => r.team },
+        ],
+        adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.rows.map((r) => r.name)).toEqual([
+      "Zoe",
+      "Bob",
+      "Ann",
+    ]);
+    expect(result.current.sortLevels).toHaveLength(2);
+  });
+
+  it("toggling the chain down to empty restores the unsorted order", () => {
+    const adapter = createMemoryAdapter("sort=name%3Aasc");
+    const { result } = renderHook(() =>
+      useFrontendData<Pick<TeamRow, "id" | "name">>({
+        data: [
+          { id: "1", name: "Zoe" },
+          { id: "2", name: "Ann" },
+        ],
+        columns: [{ key: "name", header: "Name", accessor: (r) => r.name }],
+        adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.rows[0]!.name).toBe("Ann");
+    act(() => result.current.toggleSortLevel("name")); // asc → desc
+    expect(result.current.rows[0]!.name).toBe("Zoe");
+    act(() => result.current.toggleSortLevel("name")); // desc → removed
+    expect(result.current.rows[0]!.name).toBe("Zoe"); // original order
+    expect(result.current.sortLevels).toEqual([]);
+  });
+});

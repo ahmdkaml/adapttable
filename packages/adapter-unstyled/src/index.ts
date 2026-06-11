@@ -8,12 +8,21 @@
  * @packageDocumentation
  */
 
+export {
+  AutoFilterForm,
+  type AutoFilterFormProps,
+} from "./components/AutoFilterForm";
 export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
 export {
   FilterPopover,
   type FilterPopoverProps,
 } from "./components/FilterPopover";
 export { FiltersIcon, SearchIcon } from "./components/icons";
+export {
+  type SavedViewsLabels,
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";
 export type {
@@ -35,13 +44,21 @@ export {
   defaultLabels,
   type Direction,
   type ExtraFilters,
+  FILTER_TYPES,
+  type FilterDef,
+  filterLabel,
+  type FilterOption,
+  filterStateKeys,
+  type FilterType,
   type FilterValue,
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
+  type TableQuery,
   type TableSource,
   useBackendData,
   type UseBackendDataOptions,
@@ -49,12 +66,21 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
+  useServerData,
+  type UseServerDataOptions,
+  useTableData,
+  type UseTableDataOptions,
+  type UseTableDataResult,
   useTableUrlState,
 } from "@adapttable/core";
 
 /* Router / custom-source integration types (re-exported from core). */
 export {
   type ActionConfirm,
+  type ColumnFilter,
   createHistoryAdapter,
   createMemoryAdapter,
   deriveSortByOptions,

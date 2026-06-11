@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { act, fireEvent, render, screen } from "@testing-library/react";
@@ -295,7 +296,101 @@ describe("<DataTable> (MUI)", () => {
       fireEvent.click(screen.getByText("Delete"));
       await Promise.resolve();
     });
-    expect(onClick).toHaveBeenCalledWith(["a", "b"]);
+    expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+      allMatching: false,
+      total: 2,
+    });
+  });
+
+  describe("select-all-matching banner", () => {
+    const MANY: Row[] = [
+      ...ROWS,
+      { id: "c", name: "Cara", city: "Doha" },
+      { id: "d", name: "Dina", city: "Muscat" },
+    ];
+    const bulkActions = [{ key: "x", label: "X", onClick: vi.fn() }];
+
+    it("stays hidden when the page already holds every match", () => {
+      renderHarness({ override: { bulkActions } });
+      fireEvent.click(screen.getByLabelText("Select all"));
+      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.queryByText(/on this page selected/)).toBeNull();
+      expect(screen.queryByText(/matching/)).toBeNull();
+    });
+
+    it("flips from the offer to the active state and back to none via clear", () => {
+      renderHarness({ rows: MANY, override: { bulkActions } }, "limit=2");
+      fireEvent.click(screen.getByLabelText("Select all"));
+      // Offer: full page selected, more rows match elsewhere.
+      expect(
+        screen.getByText("All 2 on this page selected")
+      ).toBeInTheDocument();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      // Active: scope widened to every matching row.
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      expect(screen.queryByText("All 2 on this page selected")).toBeNull();
+      // The banner's own clear button drops the whole selection.
+      fireEvent.click(screen.getAllByRole("button", { name: "Clear all" })[0]!);
+      expect(screen.queryByText(/selected/)).toBeNull();
+    });
+
+    it("confirms by the matching TOTAL and passes the all-matching context", async () => {
+      const onClick = vi.fn();
+      const confirm = vi.fn((r: { message: string; onConfirm: () => void }) =>
+        r.onConfirm()
+      );
+      renderHarness(
+        {
+          rows: MANY,
+          override: {
+            bulkActions: [
+              {
+                key: "del",
+                label: "Delete",
+                onClick,
+                confirm: {
+                  title: "t",
+                  message: (n) => `Delete ${n}`,
+                  confirmLabel: "Yes",
+                },
+              },
+            ],
+            confirm,
+          },
+        },
+        "limit=2"
+      );
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByText("Delete"));
+        await Promise.resolve();
+      });
+      expect(confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Delete 4" })
+      );
+      expect(onClick).toHaveBeenCalledWith(["a", "b"], {
+        allMatching: true,
+        total: 4,
+      });
+    });
+
+    it("narrows back to the page scope on a single row toggle", () => {
+      renderHarness({ rows: MANY, override: { bulkActions } }, "limit=2");
+      fireEvent.click(screen.getByLabelText("Select all"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Select all 4 matching" })
+      );
+      expect(screen.getByText("All 4 matching selected")).toBeInTheDocument();
+      fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+      expect(screen.queryByText("All 4 matching selected")).toBeNull();
+      expect(screen.queryByText(/matching/)).toBeNull();
+      expect(screen.getByText("1 selected")).toBeInTheDocument();
+    });
   });
 
   it("renders filter chips and opens the filter popover", () => {
@@ -551,5 +646,106 @@ describe("<DataTable> (MUI)", () => {
       },
     });
     expect(screen.getAllByText("name").length).toBeGreaterThan(0);
+  });
+});
+
+describe("actions column management (MUI)", () => {
+  const edit = { key: "e", label: "Edit", onClick: vi.fn() };
+  /** The actions header cell — "Actions" also names the open menu's row. */
+  const actionsHeader = () =>
+    screen
+      .queryAllByText("Actions")
+      .map((el) => el.closest("th"))
+      .find((th) => th !== null);
+  const openMenu = async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+  };
+  // The menu is a modal Popover that aria-hides the table behind it, so
+  // close it before asserting on the table's accessibility tree.
+  const closeMenu = async () => {
+    fireEvent.click(document.querySelector(".MuiBackdrop-root")!);
+    await vi.waitFor(() =>
+      expect(screen.queryByText("Reset columns")).toBeNull()
+    );
+  };
+
+  it("pins the actions column with ONE click — sticky with NO data pins", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: [edit] },
+    });
+    // In normal flow before the pin: nothing anywhere is pinned.
+    expect(getComputedStyle(actionsHeader()!).position).not.toBe("sticky");
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
+    await closeMenu();
+    // One click → the header and every body actions cell stick to the inline
+    // end on their own; no data column is pinned right.
+    expect(getComputedStyle(actionsHeader()!).position).toBe("sticky");
+    const cell = screen
+      .getAllByRole("button", { name: "Edit" })[0]!
+      .closest("td")!;
+    expect(getComputedStyle(cell).position).toBe("sticky");
+    // The pin control now offers the one-click reverse.
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Unpin: Actions"));
+    await closeMenu();
+    expect(getComputedStyle(actionsHeader()!).position).not.toBe("sticky");
+  });
+
+  it("hides and re-shows the actions column from the Columns menu", async () => {
+    renderHarness({
+      override: { enableColumnMenu: true, rowActions: [edit] },
+    });
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Hide column: Actions"));
+    await closeMenu();
+    // The header cell and every per-row action disappear together…
+    expect(actionsHeader()).toBeUndefined();
+    expect(screen.queryAllByRole("button", { name: "Edit" })).toHaveLength(0);
+    // …while the menu keeps the entry, so one click brings it all back.
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Show column: Actions"));
+    await closeMenu();
+    expect(actionsHeader()).toBeDefined();
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(2);
+  });
+
+  it("layout persistence round-trips the reserved actions key", async () => {
+    // Phase 1: pin via the menu and capture the persisted layout state.
+    let persisted: ColumnLayoutState | undefined;
+    const first = renderHarness({
+      override: {
+        enableColumnMenu: true,
+        rowActions: [edit],
+        onColumnLayoutChange: (next) => (persisted = next),
+      },
+    });
+    await openMenu();
+    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
+    expect(persisted?.pinned).toEqual({ actions: "right" });
+    first.unmount();
+    // Phase 2: a fresh mount restores the pin from the captured state alone.
+    renderHarness({
+      override: { rowActions: [edit], defaultColumnLayout: persisted },
+    });
+    expect(getComputedStyle(actionsHeader()!).position).toBe("sticky");
+  });
+
+  it("a persisted hidden actions column strips actions on desktop and mobile", () => {
+    const defaultColumnLayout = { hidden: ["actions"] };
+    const first = renderHarness({
+      override: { rowActions: [edit], defaultColumnLayout },
+    });
+    expect(actionsHeader()).toBeUndefined();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    first.unmount();
+    renderHarness({
+      isMobile: true,
+      override: { rowActions: [edit], defaultColumnLayout },
+    });
+    expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 });

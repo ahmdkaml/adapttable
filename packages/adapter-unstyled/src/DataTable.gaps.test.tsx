@@ -49,6 +49,7 @@ beforeEach(() => {
     },
     loadMoreRef: { current: null },
     canLoadMore: !chrome.isPaged && !props.source.error,
+    virtualScrollRef: () => undefined,
   }));
 });
 
@@ -257,6 +258,7 @@ describe("<DataTable> (unstyled) gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     renderHarness({
       mode: "infinite",
@@ -283,6 +285,7 @@ describe("<DataTable> (unstyled) gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     renderHarness({
       isMobile: true,

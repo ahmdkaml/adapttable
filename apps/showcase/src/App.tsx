@@ -7,6 +7,7 @@ import { ChakraDemo } from "./adapters/ChakraDemo";
 import { MantineDemo } from "./adapters/MantineDemo";
 import { MuiDemo } from "./adapters/MuiDemo";
 import { ShadcnDemo } from "./adapters/ShadcnDemo";
+import { UnstyledDemo } from "./adapters/UnstyledDemo";
 import { cssVars } from "./cssVars";
 import {
   DEMO_CONFIRM_EVENT,
@@ -14,12 +15,18 @@ import {
   type DemoNotice,
   type Locale,
 } from "./data";
-import { type DataMode, type Density, type PageMode } from "./Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
 import { Columns, Layers, Pin, Resize } from "./sectionIcons";
 import {
   FeatureGrid,
   Footer,
+  GetStarted,
   Hero,
   Nav,
   SectionHead,
@@ -35,6 +42,7 @@ type DemoComponent = (
     locale: Locale;
     dark?: boolean;
     pageMode?: PageMode;
+    filtersUi?: FiltersUi;
     urlKey?: string;
     density?: Density;
   }>
@@ -46,6 +54,7 @@ const ADAPTERS: Record<string, DemoComponent> = {
   chakra: ChakraDemo,
   antd: AntdDemo,
   shadcn: ShadcnDemo,
+  tailwind: UnstyledDemo,
 };
 
 function Segmented<T extends string>({
@@ -91,8 +100,8 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState("mantine");
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
-  const [pageMode, setPageMode] = useState<PageMode>("paged");
   const [density, setDensity] = useState<Density>("comfortable");
+  const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
@@ -128,7 +137,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
       </div>
 
       <div className="controls">
-        <Control label="Data source">
+        <Control label="Data">
           <Segmented
             label="data source"
             value={mode}
@@ -150,14 +159,14 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
-        <Control label="Pagination">
+        <Control label="Filters">
           <Segmented
-            label="pagination"
-            value={pageMode}
-            onChange={setPageMode}
+            label="filters container"
+            value={filtersUi}
+            onChange={setFiltersUi}
             options={[
-              { value: "paged", label: "Paged" },
-              { value: "infinite", label: "Infinite" },
+              { value: "popover", label: "Popover" },
+              { value: "drawer", label: "Drawer" },
             ]}
           />
         </Control>
@@ -184,14 +193,14 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
         </div>
         <div
           className="demo-surface__body"
-          key={`${adapter}-${mode}-${locale}-${pageMode}-${density}-${dark ? "d" : "l"}`}
+          key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
         >
           <Demo
             mode={mode}
             locale={locale}
             dark={dark}
-            pageMode={pageMode}
             density={density}
+            filtersUi={filtersUi}
             urlKey="live"
           />
         </div>
@@ -238,20 +247,21 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ScaleSection() {
+function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="scale">
       <SectionHead
         kicker="Virtualization"
         title="Scrolls 50,000 rows without flinching."
       >
-        Opt-in virtualization renders only what&apos;s on screen. Type to filter
-        the whole set; the window re-computes instantly. This list holds fifty
-        thousand people.
+        This list really holds fifty thousand people, but the DOM only ever
+        contains the handful of rows inside the scroll box — scroll and watch
+        new rows materialize with zero lag. Type to filter: the whole set is
+        searched and the window re-computes instantly.
       </SectionHead>
       <div className="pad-surface">
         <div className="pad-surface__body">
-          <ScaleDemo />
+          <ScaleDemo dark={dark} />
         </div>
       </div>
     </section>
@@ -260,7 +270,7 @@ function ScaleSection() {
 
 function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
-    <section className="sec shell">
+    <section className="sec shell" id="rtl">
       <SectionHead kicker="i18n + RTL" title="Right-to-left, for real.">
         Switch to Arabic and the entire layout mirrors — toolbar, sort arrows,
         pinned columns, pagination. Not just translated strings: a genuinely
@@ -309,7 +319,7 @@ export function App() {
         <Hero dark={dark} />
         <LiveDemo dark={dark} />
         <ColumnsDemo dark={dark} />
-        <ScaleSection />
+        <ScaleSection dark={dark} />
         <RtlSection dark={dark} />
         <section className="sec shell" id="custom">
           <SectionHead
@@ -329,6 +339,7 @@ export function App() {
           <FeatureGrid />
         </section>
       </main>
+      <GetStarted />
       <Footer />
 
       {notice && (

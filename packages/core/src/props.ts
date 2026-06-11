@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { FilterDef } from "./filters/filterDefs";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
@@ -45,6 +46,11 @@ export interface BaseDataTableProps<TRow> {
   /** Text direction. Defaults to `"ltr"`. */
   dir?: Direction;
   /**
+   * Active locale tag (e.g. `"ar"`, `"ar-EG"`). Drives per-column `i18n`
+   * data-path resolution; labels stay a separate concern (`labels`).
+   */
+  locale?: string;
+  /**
    * Row density — independent of column pinning. `"comfortable"` (default) is
    * the roomy layout; `"compact"` tightens row height/padding. Each adapter
    * maps it to its kit's table size.
@@ -69,8 +75,26 @@ export interface BaseDataTableProps<TRow> {
    * adapter's own row classes on desktop rows and mobile cards alike.
    */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /**
+   * Row expansion: render a detail panel under a row. Its presence enables
+   * the leading expand chevron on desktop rows and the detail section on
+   * mobile cards; multiple rows may be open, keyed by row id.
+   */
+  renderRowDetail?: (row: TRow) => ReactNode;
+  /**
+   * Footer summary: map the CURRENT page's rows to per-column summary cells
+   * (`{ budget: <b>{total}</b> }`). Rendered as a table footer row aligned
+   * under its columns; keys absent from the result render empty cells.
+   */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
+  /**
+   * Opt into multi-column sorting: shift-click (or shift-Enter) on a header
+   * adds the column to the sort chain (asc → desc → removed); a plain click
+   * still single-sorts. Sorted headers expose `data-sort-index` for badges.
+   */
+  multiSort?: boolean;
 
   /* ── Column management ───────────────────────────────────────────── */
   /** Render the built-in "Columns" menu (show/hide, pin, reorder). */
@@ -102,8 +126,14 @@ export interface BaseDataTableProps<TRow> {
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
-  /** Filter widgets rendered in the popover / drawer. */
-  filters?: ReactNode;
+  /**
+   * The table's filters. Pass a declarative array and the adapter builds the
+   * form with kit-native widgets (each definition also drives URL parsing,
+   * chips and — on frontend data — the row predicate); pass JSX to draw the
+   * form yourself. Column-level `filter` shorthands merge in; a `filters`
+   * entry with the same key wins.
+   */
+  filters?: readonly FilterDef<TRow>[] | ReactNode;
   /**
    * How the filter container opens. `"popover"` (default) anchors a light
    * card under the Filters button — no backdrop, closing on Escape and

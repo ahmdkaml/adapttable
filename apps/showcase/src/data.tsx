@@ -1,26 +1,13 @@
 import type {
-  ActiveFilterChip,
   BulkAction,
   ColumnDef,
   ColumnLayoutState,
   ConfirmHandler,
   ConfirmRequest,
-  CountFilterState,
-  CountOperator,
-  FilterValue,
+  FilterDef,
   RowAction,
-  TableSource,
 } from "@adapttable/core";
-import {
-  clearCountFilterExtra,
-  COUNT_OPERATOR_SYMBOL,
-  COUNT_OPERATORS,
-  countFilterChipLabel,
-  countFilterExtra,
-  countFilterStateFromExtra,
-  isCountFilterComplete,
-  sanitizeCountFilterParams,
-} from "@adapttable/core";
+import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -40,6 +27,10 @@ export interface Person {
   email: string;
   role: string;
   team: string;
+  /** Arabic-localized fields — the `i18n` column mapping points here. */
+  nameAr: string;
+  roleAr: string;
+  teamAr: string;
 }
 
 export const PEOPLE = people as Person[];
@@ -63,12 +54,6 @@ interface Strings {
   load: string;
   allocationFilter: string;
   budgetFilter: string;
-  countOperator: string;
-  countValue: string;
-  countFrom: string;
-  countTo: string;
-  dateFrom: string;
-  dateTo: string;
   edit: string;
   remove: string;
   confirmMessage: (name: string) => string;
@@ -93,12 +78,6 @@ const STRINGS: Record<Locale, Strings> = {
     load: "Load",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
-    countOperator: "Operator",
-    countValue: "Count",
-    countFrom: "From",
-    countTo: "To",
-    dateFrom: "Start from",
-    dateTo: "Start to",
     edit: "Edit",
     remove: "Delete",
     confirmTitle: "Delete person?",
@@ -121,12 +100,6 @@ const STRINGS: Record<Locale, Strings> = {
     load: "الحمل",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
-    countOperator: "المعامل",
-    countValue: "العدد",
-    countFrom: "من",
-    countTo: "إلى",
-    dateFrom: "البداية من",
-    dateTo: "البداية إلى",
     edit: "تعديل",
     remove: "حذف",
     confirmTitle: "حذف الشخص؟",
@@ -137,6 +110,45 @@ const STRINGS: Record<Locale, Strings> = {
 export function strings(locale: Locale): Strings {
   return STRINGS[locale];
 }
+
+/** The row's display name in the demo's active language. */
+export function personName(row: Person, locale: Locale): string {
+  return locale === "ar" ? row.nameAr : row.name;
+}
+
+/** The row's display role in the demo's active language. */
+export function personRole(row: Person, locale: Locale): string {
+  return locale === "ar" ? row.roleAr : row.role;
+}
+
+/** Localized labels for the canonical status values (values stay stable). */
+export const STATUS_LABELS: Record<Locale, Record<DemoStatus, string>> = {
+  en: {
+    Active: "Active",
+    Planned: "Planned",
+    Blocked: "Blocked",
+    Archived: "Archived",
+  },
+  ar: { Active: "نشط", Planned: "مخطط", Blocked: "محظور", Archived: "مؤرشف" },
+};
+
+/** Localized labels for the canonical team values (values stay stable). */
+export const TEAM_LABELS: Record<Locale, Record<string, string>> = {
+  en: {
+    Core: "Core",
+    Platform: "Platform",
+    Data: "Data",
+    Web: "Web",
+    Mobile: "Mobile",
+  },
+  ar: {
+    Core: "الأساسية",
+    Platform: "المنصة",
+    Data: "البيانات",
+    Web: "الويب",
+    Mobile: "الجوال",
+  },
+};
 
 export function notifyDemo(notice: DemoNotice): void {
   window.dispatchEvent(
@@ -291,11 +303,13 @@ export function makeColumns(
       width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Avatar name={row.name} />
+          <Avatar name={personName(row, locale)} />
           <span style={cellStack}>
-            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <strong style={{ fontWeight: 600 }}>
+              {personName(row, locale)}
+            </strong>
             <small style={{ opacity: 0.55, fontSize: "0.8em" }}>
-              {row.role}
+              {personRole(row, locale)}
             </small>
           </span>
         </span>
@@ -312,9 +326,11 @@ export function makeColumns(
       mobileLabel: s.email,
     },
     {
+      // The library's own column i18n: under `locale="ar"` the cell, sort
+      // and filter all follow the `teamAr` path — no accessor needed.
       key: "team",
       header: s.team,
-      accessor: (r) => r.team,
+      i18n: { ar: "teamAr" },
       width: 130,
       mobileLabel: s.team,
     },
@@ -322,7 +338,10 @@ export function makeColumns(
       key: "status",
       header: s.status,
       accessor: (r) => (
-        <Status status={personStatus(r)} label={personStatus(r)} />
+        <Status
+          status={personStatus(r)}
+          label={STATUS_LABELS[locale][personStatus(r)]}
+        />
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
@@ -399,9 +418,11 @@ export function makeWideColumns(
       width: 240,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Avatar name={row.name} />
+          <Avatar name={personName(row, locale)} />
           <span style={cellStack}>
-            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <strong style={{ fontWeight: 600 }}>
+              {personName(row, locale)}
+            </strong>
             <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
               {row.email}
             </small>
@@ -409,12 +430,16 @@ export function makeWideColumns(
         </span>
       ),
     },
-    { key: "role", header: s.role, accessor: (r) => r.role, width: 150 },
+    {
+      key: "role",
+      header: s.role,
+      i18n: { ar: "roleAr" },
+      width: 150,
+    },
     {
       key: "team",
       header: s.team,
-      accessor: (r) => r.team,
-      sortValue: (r) => r.team,
+      i18n: { ar: "teamAr" },
       sortable: true,
       width: 130,
     },
@@ -422,7 +447,10 @@ export function makeWideColumns(
       key: "status",
       header: s.status,
       accessor: (r) => (
-        <Status status={personStatus(r)} label={personStatus(r)} />
+        <Status
+          status={personStatus(r)}
+          label={STATUS_LABELS[locale][personStatus(r)]}
+        />
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
@@ -522,25 +550,11 @@ export function makeBulkActions(locale: Locale): BulkAction[] {
   ];
 }
 
-/* ── Team filter (used by every adapter demo + the mock API) ────────── */
+/* ── Demo filters (used by every adapter demo + the mock API) ───────── */
 
 export const TEAMS = ["Core", "Platform", "Data", "Web", "Mobile"];
 export const STATUSES = ["Active", "Planned", "Blocked", "Archived"] as const;
 export type DemoStatus = (typeof STATUSES)[number];
-const ALLOCATION_BUCKET = "allocations";
-const BUDGET_BUCKET = "budget";
-export const COUNT_NUMBER_EXTRA_KEYS = [
-  "allocationsValue",
-  "allocationsFrom",
-  "allocationsTo",
-  "budgetValue",
-  "budgetFrom",
-  "budgetTo",
-] as const;
-export const COUNT_OPTIONS = COUNT_OPERATORS.map((op) => ({
-  op,
-  label: COUNT_OPERATOR_SYMBOL[op],
-}));
 
 export function allocationCount(row: Person): number {
   return ((Number(row.id) * 3) % 9) + 1;
@@ -592,407 +606,67 @@ export function formatPercent(value: number, locale: Locale = "en"): string {
   }).format(value / 100);
 }
 
-/** Localized chip label resolvers for the `team` filter. */
-export function makeFilterLabels(
-  locale: Locale
-): Record<string, (value: string) => string> {
+/**
+ * The showcase's entire filter wiring, as data. Each adapter auto-builds a
+ * kit-native form from these definitions, and the chips, the URL params
+ * (array/number keys self-register) and the client-side predicate are all
+ * derived — no hand-built panels, label maps, chip builders or clear
+ * handlers anywhere in the showcase.
+ */
+export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
   const s = STRINGS[locale];
-  return {
-    team: (value) => `${s.team}: ${value}`,
-    status: (value) => `${s.status}: ${value}`,
-    startFrom: (value) => `${s.dateFrom}: ${value}`,
-    startTo: (value) => `${s.dateTo}: ${value}`,
-  };
-}
-
-/** Normalise the `team` extra value (string | string[] | …) to a string[]. */
-export function selectedTeams(value: FilterValue): string[] {
-  if (Array.isArray(value)) return value;
-  if (value != null) return [String(value)];
-  return [];
-}
-
-export function selectedStatuses(value: FilterValue): string[] {
-  return selectedTeams(value).filter((status) =>
-    STATUSES.includes(status as DemoStatus)
-  );
-}
-
-/** Client-side predicate; the mock API applies the same logic server-side. */
-export function matchesTeam(
-  row: Person,
-  extra: Readonly<Record<string, FilterValue>>
-): boolean {
-  const selected = selectedTeams(extra.team);
-  return selected.length === 0 || selected.includes(row.team);
-}
-
-function compareCount(count: number, state: CountFilterState): boolean {
-  if (!isCountFilterComplete(state) || !state.op) return true;
-  switch (state.op) {
-    case "eq":
-      return count === state.value;
-    case "gte":
-      return count >= state.value!;
-    case "lte":
-      return count <= state.value!;
-    case "gt":
-      return count > state.value!;
-    case "lt":
-      return count < state.value!;
-    case "between":
-      return count >= state.from! && count <= state.to!;
-  }
-}
-
-function matchesDateRange(
-  date: Date,
-  extra: Readonly<Record<string, FilterValue>>
-): boolean {
-  const from = extra.startFrom ? new Date(String(extra.startFrom)) : undefined;
-  const to = extra.startTo ? new Date(String(extra.startTo)) : undefined;
-  if (from && date < from) return false;
-  if (to && date > to) return false;
-  return true;
-}
-
-export function matchesDemoFilters(
-  row: Person,
-  extra: Readonly<Record<string, FilterValue>>
-): boolean {
-  const selectedStatus = selectedStatuses(extra.status);
-  return (
-    matchesTeam(row, extra) &&
-    (selectedStatus.length === 0 ||
-      selectedStatus.includes(personStatus(row))) &&
-    matchesDateRange(startDate(row), extra) &&
-    compareCount(
-      allocationCount(row),
-      countFilterStateFromExtra(ALLOCATION_BUCKET, extra)
-    ) &&
-    compareCount(budget(row), countFilterStateFromExtra(BUDGET_BUCKET, extra))
-  );
-}
-
-export function sanitizeDemoParams<P extends Record<string, unknown>>(
-  params: P
-): P {
-  return sanitizeCountFilterParams(params, [ALLOCATION_BUCKET, BUDGET_BUCKET]);
-}
-
-/** Flip a team in/out of the selection (for kits without a checkbox group). */
-export function toggleTeam(selected: string[], team: string): string[] {
-  return selected.includes(team)
-    ? selected.filter((t) => t !== team)
-    : [...selected, team];
-}
-
-export function demoFilterChips(
-  source: TableSource<Person>,
-  locale: Locale
-): ActiveFilterChip[] {
-  const s = STRINGS[locale];
-  const allocationLabel = countFilterChipLabel(
-    s.allocationFilter,
-    countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra)
-  );
-  const budgetLabel = countFilterChipLabel(
-    s.budgetFilter,
-    countFilterStateFromExtra(BUDGET_BUCKET, source.extra)
-  );
   return [
-    allocationLabel
-      ? {
-          key: "count:allocations",
-          label: allocationLabel,
-          onRemove: () =>
-            source.setExtras(clearCountFilterExtra(ALLOCATION_BUCKET)),
-        }
-      : undefined,
-    budgetLabel
-      ? {
-          key: "count:budget",
-          label: budgetLabel,
-          onRemove: () =>
-            source.setExtras(clearCountFilterExtra(BUDGET_BUCKET)),
-        }
-      : undefined,
-  ].filter((chip): chip is ActiveFilterChip => chip !== undefined);
-}
-
-export function allocationFilterState(
-  source: TableSource<Person>
-): CountFilterState {
-  return countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra);
-}
-
-export function budgetFilterState(
-  source: TableSource<Person>
-): CountFilterState {
-  return countFilterStateFromExtra(BUDGET_BUCKET, source.extra);
-}
-
-export function setAllocationFilter(
-  source: TableSource<Person>,
-  next: CountFilterState
-): void {
-  source.setExtras(countFilterExtra(ALLOCATION_BUCKET, next));
-}
-
-export function setBudgetFilter(
-  source: TableSource<Person>,
-  next: CountFilterState
-): void {
-  source.setExtras(countFilterExtra(BUDGET_BUCKET, next));
-}
-
-export function clearDemoFilters(source: TableSource<Person>): void {
-  source.setExtras({
-    team: undefined,
-    status: undefined,
-    startFrom: undefined,
-    startTo: undefined,
-    ...clearCountFilterExtra(ALLOCATION_BUCKET),
-    ...clearCountFilterExtra(BUDGET_BUCKET),
-  });
+    {
+      key: "team",
+      type: "multiSelect",
+      label: s.team,
+      options: TEAMS.map((team) => ({
+        value: team,
+        label: TEAM_LABELS[locale][team] ?? team,
+      })),
+      // Filtering matches the CANONICAL value whatever language is shown.
+      getValue: (row) => row.team,
+    },
+    {
+      key: "status",
+      type: "multiSelect",
+      label: s.status,
+      options: STATUSES.map((status) => ({
+        value: status,
+        label: STATUS_LABELS[locale][status],
+      })),
+      getValue: personStatus,
+    },
+    {
+      key: "start",
+      type: "dateRange",
+      label: s.startDate,
+      getValue: (row) => startDate(row).toISOString(),
+    },
+    {
+      key: "allocations",
+      type: "numberRange",
+      label: s.allocationFilter,
+      getValue: allocationCount,
+    },
+    {
+      key: "budget",
+      type: "numberRange",
+      label: s.budgetFilter,
+      getValue: budget,
+    },
+  ];
 }
 
 /**
- * Tailwind class hooks for the shared (unstyled/shadcn) filter panel — the kit
- * adapters supply their own filter components, so this one is class-driven.
+ * The derived filter runtime — predicate, array/number URL keys — shared by
+ * BOTH data modes (the frontend hook filters rows with `filterFn`; the mock
+ * backend applies the very same predicate server-side). Locale only changes
+ * labels, never keys or matching, so one runtime serves every demo.
  */
-const FILTER = {
-  panel: "flex flex-col gap-4 text-sm text-foreground",
-  group: "m-0 flex flex-col gap-2 border-0 p-0",
-  legend:
-    "p-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
-  chips: "flex flex-wrap gap-1.5",
-  // Toggle PILLS (the design's .at-filter chips): the real checkbox stays for
-  // a11y but renders invisibly; the label is the visual control and flips to
-  // a filled pill when its checkbox is checked.
-  chip: "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground",
-  checkbox: "sr-only",
-  grid: "grid grid-cols-2 gap-2",
-  field:
-    "flex flex-col gap-1 [&>span]:text-xs [&>span]:font-medium [&>span]:text-muted-foreground [&>input]:h-9 [&>input]:rounded-md [&>input]:border [&>input]:border-input [&>input]:bg-background [&>input]:px-2.5 [&>input]:text-sm [&>input]:text-foreground [&>input]:outline-none focus-within:[&>input]:ring-2 focus-within:[&>input]:ring-ring [&>select]:h-9 [&>select]:rounded-md [&>select]:border [&>select]:border-input [&>select]:bg-background [&>select]:px-2 [&>select]:text-sm [&>select]:text-foreground [&>select]:outline-none",
-} as const;
+export const DEMO_FILTER_RUNTIME = buildFilterRuntime(
+  resolveFilterDefs<Person>([], demoFilterDefs("en"))
+);
 
-export function DemoFilters({
-  source,
-  locale,
-}: Readonly<{
-  source: TableSource<Person>;
-  locale: Locale;
-}>) {
-  const s = STRINGS[locale];
-  const selected = selectedTeams(source.extra.team);
-  const statuses = selectedStatuses(source.extra.status);
-  const countState = countFilterStateFromExtra(ALLOCATION_BUCKET, source.extra);
-  const budgetState = countFilterStateFromExtra(BUDGET_BUCKET, source.extra);
-  const setCount = (next: CountFilterState) =>
-    source.setExtras(countFilterExtra(ALLOCATION_BUCKET, next));
-  const setBudget = (next: CountFilterState) =>
-    source.setExtras(countFilterExtra(BUDGET_BUCKET, next));
-  return (
-    <div className={FILTER.panel}>
-      <fieldset className={FILTER.group}>
-        <legend className={FILTER.legend}>{s.team}</legend>
-        <div className={FILTER.chips}>
-          {TEAMS.map((team) => (
-            <label key={team} className={FILTER.chip}>
-              <input
-                type="checkbox"
-                className={FILTER.checkbox}
-                checked={selected.includes(team)}
-                onChange={() =>
-                  source.setExtra("team", toggleTeam(selected, team))
-                }
-              />
-              <span>{team}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className={FILTER.group}>
-        <legend className={FILTER.legend}>{s.status}</legend>
-        <div className={FILTER.chips}>
-          {STATUSES.map((status) => (
-            <label key={status} className={FILTER.chip}>
-              <input
-                type="checkbox"
-                className={FILTER.checkbox}
-                checked={statuses.includes(status)}
-                onChange={() =>
-                  source.setExtra(
-                    "status",
-                    statuses.includes(status)
-                      ? statuses.filter((item) => item !== status)
-                      : [...statuses, status]
-                  )
-                }
-              />
-              <span>{status}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className={FILTER.group}>
-        <legend className={FILTER.legend}>{s.startDate}</legend>
-        <div className={FILTER.grid}>
-          <label className={FILTER.field}>
-            <span>{s.dateFrom}</span>
-            <input
-              type="date"
-              value={String(source.extra.startFrom ?? "")}
-              onChange={(event) =>
-                source.setExtra("startFrom", event.currentTarget.value)
-              }
-            />
-          </label>
-          <label className={FILTER.field}>
-            <span>{s.dateTo}</span>
-            <input
-              type="date"
-              value={String(source.extra.startTo ?? "")}
-              onChange={(event) =>
-                source.setExtra("startTo", event.currentTarget.value)
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className={FILTER.group}>
-        <legend className={FILTER.legend}>{s.allocationFilter}</legend>
-        <div className={FILTER.grid}>
-          <label className={FILTER.field}>
-            <span>{s.countOperator}</span>
-            <select
-              value={countState.op ?? ""}
-              onChange={(event) => {
-                const op = (event.currentTarget.value || undefined) as
-                  | CountOperator
-                  | undefined;
-                setCount({
-                  op,
-                  value: op && op !== "between" ? countState.value : undefined,
-                  from: op === "between" ? countState.from : undefined,
-                  to: op === "between" ? countState.to : undefined,
-                });
-              }}
-            >
-              <option value="">-</option>
-              {COUNT_OPTIONS.map((option) => (
-                <option key={option.op} value={option.op}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {countState.op === "between" ? (
-            <>
-              <label className={FILTER.field}>
-                <span>{s.countFrom}</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={countState.from ?? ""}
-                  onChange={(event) =>
-                    setCount({
-                      ...countState,
-                      from: event.currentTarget.value
-                        ? Number(event.currentTarget.value)
-                        : undefined,
-                    })
-                  }
-                />
-              </label>
-              <label className={FILTER.field}>
-                <span>{s.countTo}</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={countState.to ?? ""}
-                  onChange={(event) =>
-                    setCount({
-                      ...countState,
-                      to: event.currentTarget.value
-                        ? Number(event.currentTarget.value)
-                        : undefined,
-                    })
-                  }
-                />
-              </label>
-            </>
-          ) : (
-            <label className={FILTER.field}>
-              <span>{s.countValue}</span>
-              <input
-                type="number"
-                min={0}
-                value={countState.value ?? ""}
-                onChange={(event) =>
-                  setCount({
-                    ...countState,
-                    value: event.currentTarget.value
-                      ? Number(event.currentTarget.value)
-                      : undefined,
-                  })
-                }
-              />
-            </label>
-          )}
-        </div>
-      </fieldset>
-
-      <fieldset className={FILTER.group}>
-        <legend className={FILTER.legend}>{s.budgetFilter}</legend>
-        <div className={FILTER.grid}>
-          <label className={FILTER.field}>
-            <span>{s.countOperator}</span>
-            <select
-              value={budgetState.op ?? ""}
-              onChange={(event) => {
-                const op = (event.currentTarget.value || undefined) as
-                  | CountOperator
-                  | undefined;
-                setBudget({
-                  op,
-                  value: op && op !== "between" ? budgetState.value : undefined,
-                  from: op === "between" ? budgetState.from : undefined,
-                  to: op === "between" ? budgetState.to : undefined,
-                });
-              }}
-            >
-              <option value="">-</option>
-              {COUNT_OPTIONS.map((option) => (
-                <option key={option.op} value={option.op}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={FILTER.field}>
-            <span>{s.countValue}</span>
-            <input
-              type="number"
-              min={0}
-              value={budgetState.value ?? ""}
-              onChange={(event) =>
-                setBudget({
-                  ...budgetState,
-                  value: event.currentTarget.value
-                    ? Number(event.currentTarget.value)
-                    : undefined,
-                })
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
-    </div>
-  );
-}
+/** Client-side predicate; the mock API applies the same logic server-side. */
+export const matchesDemoFilters = DEMO_FILTER_RUNTIME.filterFn;

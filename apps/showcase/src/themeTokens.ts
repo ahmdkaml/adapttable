@@ -45,4 +45,11 @@ export const ADAPTER_TOKENS: AdapterToken[] = [
     accentLight: "oklch(0.28 0.01 264)",
     accentDark: "oklch(0.92 0.004 264)",
   },
+  {
+    key: "tailwind",
+    label: "Custom Tailwind",
+    blurb: "Same unstyled adapter, your classes",
+    accentLight: "oklch(0.55 0.2 277)",
+    accentDark: "oklch(0.68 0.17 277)",
+  },
 ];
