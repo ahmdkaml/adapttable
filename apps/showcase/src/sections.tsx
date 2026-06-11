@@ -11,6 +11,7 @@ import {
   Moon,
   Resize,
   Server,
+  Star,
   Sun,
 } from "./sectionIcons";
 import { ADAPTER_TOKENS } from "./themeTokens";
@@ -301,7 +302,7 @@ export function GetStarted() {
               target="_blank"
               rel="noreferrer"
             >
-              <External size={15} /> Star it on GitHub
+              <Star size={15} /> Star it on GitHub
             </a>
           </div>
         </div>
