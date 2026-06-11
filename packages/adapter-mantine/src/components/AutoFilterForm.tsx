@@ -112,6 +112,7 @@ function RangeField<TRow>({
       <NumberInput
         size="sm"
         hideControls
+        style={{ flex: "1 1 6rem", minWidth: "6rem" }}
         aria-label={`${label} ${text}`}
         placeholder={text}
         value={value}
@@ -121,6 +122,7 @@ function RangeField<TRow>({
       <TextInput
         type="date"
         size="sm"
+        style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
         aria-label={`${label} ${text}`}
         placeholder={text}
         value={value}
@@ -131,10 +133,10 @@ function RangeField<TRow>({
   let values: ReactNode = null;
   if (op === "between") {
     values = (
-      <Group gap="xs" grow wrap="nowrap">
+      <>
         {valueInput(labels.from, low, (next) => write("between", next, high))}
         {valueInput(labels.to, high, (next) => write("between", low, next))}
-      </Group>
+      </>
     );
   } else if (op) {
     values = valueInput(labels.value, single, (next) => write(op, next, ""));
@@ -143,17 +145,23 @@ function RangeField<TRow>({
   return (
     <Stack gap={4}>
       <Input.Label size="sm">{label}</Input.Label>
-      <Select
-        size="sm"
-        clearable
-        aria-label={`${label} ${labels.operator}`}
-        placeholder={labels.operator}
-        data={data}
-        value={op}
-        onChange={handleOp}
-        comboboxProps={{ withinPortal: false }}
-      />
-      {values}
+      {/* Operator and value(s) share a row when they fit — "At least [5]" —
+          and wrap when they don't (date inputs have a wide native minimum,
+          so "Between" two dates takes a second row in narrow drawers). */}
+      <Group gap="xs" align="flex-start">
+        <Select
+          size="sm"
+          clearable
+          style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
+          aria-label={`${label} ${labels.operator}`}
+          placeholder={labels.operator}
+          data={data}
+          value={op}
+          onChange={handleOp}
+          comboboxProps={{ withinPortal: false }}
+        />
+        {values}
+      </Group>
     </Stack>
   );
 }

@@ -901,7 +901,9 @@ export function MobileCards<TRow>({
                   <Text fontSize="xs" {...subtleText} textTransform="uppercase">
                     {mobileLabel(column)}
                   </Text>
-                  <Text fontSize="sm">
+                  {/* Cells are arbitrary ReactNode (often block elements) —
+                      a <p> wrapper would be invalid HTML. */}
+                  <Text as="div" fontSize="sm">
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (

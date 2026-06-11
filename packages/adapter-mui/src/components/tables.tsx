@@ -869,7 +869,9 @@ export function MobileCards<TRow>({
                   >
                     {mobileLabel(column)}
                   </Typography>
-                  <Typography variant="body2">
+                  {/* Cells are arbitrary ReactNode (often block elements) —
+                      a <p> wrapper would be invalid HTML. */}
+                  <Typography component="div" variant="body2">
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (
@@ -914,7 +916,9 @@ export function MobileCards<TRow>({
                   >
                     {mobileLabel(column)}
                   </Typography>
-                  <Typography variant="body2">{value}</Typography>
+                  <Typography component="div" variant="body2">
+                    {value}
+                  </Typography>
                 </Box>
               );
             })}
