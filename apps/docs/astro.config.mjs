@@ -5,6 +5,9 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://orwa-mahmoud.github.io",
   base: "/adapttable",
+  // The root IS the docs: land straight on Getting started instead of a
+  // separate marketing page (the showcase at /demo plays that role).
+  redirects: { "/": "/adapttable/getting-started/" },
   integrations: [
     starlight({
       title: "AdaptTable",
