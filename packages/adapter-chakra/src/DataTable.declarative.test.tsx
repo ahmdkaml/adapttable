@@ -95,16 +95,32 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
     expect(screen.queryByText("Status: Active")).toBeNull();
   });
 
-  it("zero-ceremony e2e: a standalone numberRange def filters rows through the URL number keys", () => {
+  it("zero-ceremony e2e: the operator-first numberRange filters rows through the URL number keys", () => {
     renderTable();
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
-    fireEvent.change(screen.getByLabelText("Age Min"), {
+    // Operator first: pick the comparison, then fill the single value.
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "gte" },
+    });
+    fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "40" },
     });
     expect(screen.getByText("Carol")).toBeInTheDocument();
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.queryByText("Bob")).toBeNull();
     expect(screen.getByText("Age ≥ 40")).toBeInTheDocument();
+  });
+
+  it("restores Equal from a URL where both range keys carry the same value", () => {
+    renderTable({
+      urlAdapter: createMemoryAdapter("f_budgetMin=5&f_budgetMax=5"),
+      filters: [{ key: "budget", type: "numberRange" }],
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByLabelText("Budget")).toHaveValue("eq");
+    expect(screen.getByLabelText("Value")).toHaveValue(5);
+    expect(screen.queryByLabelText("From")).toBeNull();
+    expect(screen.queryByLabelText("To")).toBeNull();
   });
 
   it("derives headers from keys: firstName → First Name", () => {
@@ -167,5 +183,18 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
 
     // The pager derives from `total`: 60 rows at 25/page, restored to page 2.
     expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+  });
+
+  it("urlSync={false} keeps state in memory and never touches the adapter", () => {
+    const spy = {
+      getSearch: vi.fn(() => ""),
+      setSearch: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    };
+    renderTable({ urlAdapter: spy, urlSync: false });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(spy.getSearch).not.toHaveBeenCalled();
+    expect(spy.setSearch).not.toHaveBeenCalled();
+    expect(spy.subscribe).not.toHaveBeenCalled();
   });
 });

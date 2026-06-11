@@ -46,6 +46,8 @@ export interface DataTableClassNames {
   filterInput?: string;
   /** The `<select>` of an auto-built `select` field. */
   filterSelect?: string;
+  /** The operator `<select>` of an auto-built range field. */
+  filterOperator?: string;
   /** The checkbox-list container of an auto-built `multiSelect` field. */
   filterCheckboxGroup?: string;
   /** One checkbox option (`<label>` + checkbox) in a `multiSelect` field. */
@@ -189,6 +191,14 @@ export interface DataTableProps<TRow> extends Omit<
    * adapter for tests/SSR). Defaults to the browser History API.
    */
   urlAdapter?: UrlStateAdapter;
+  /**
+   * Sync table state (search, sort, page, filters) to the URL. `false`
+   * keeps everything in memory — the table works identically, the address
+   * bar never changes, and any `urlAdapter` is ignored.
+   *
+   * @default true
+   */
+  urlSync?: boolean;
   /** Per-table URL namespace (e.g. `"left"` → `left.q`, `left.page`). */
   urlKey?: string;
   /**

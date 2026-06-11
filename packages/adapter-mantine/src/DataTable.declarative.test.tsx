@@ -134,12 +134,19 @@ describe("<DataTable> declarative columns + filters (Mantine)", () => {
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.getByText("Beta")).toBeInTheDocument();
 
-    // The range shows ONE visible group label; inputs keep aria-labels.
+    // The range shows ONE visible group label; the widget is operator-first.
     const dropdown = await openFiltersPopover("Budget");
     // The form carries one control per definition: the column's select and
-    // the standalone numberRange pair.
-    expect(within(dropdown).getByLabelText("Budget Min")).toBeInTheDocument();
-    expect(within(dropdown).getByLabelText("Budget Max")).toBeInTheDocument();
+    // the standalone numberRange's operator select (no value input until an
+    // operator is chosen).
+    // Both the combobox input and its options list carry the aria-label, so
+    // scope the query to the input element.
+    expect(
+      within(dropdown).getByLabelText("Budget Operator", { selector: "input" })
+    ).toBeInTheDocument();
+    expect(
+      within(dropdown).queryByLabelText("Budget Value", { selector: "input" })
+    ).toBeNull();
 
     fireEvent.change(within(dropdown).getByLabelText("Status"), {
       target: { value: "active" },
@@ -274,5 +281,26 @@ describe("<DataTable> declarative columns + filters (Mantine)", () => {
     );
     expect(screen.queryByText("Alpha")).toBeNull();
     expect(screen.getByText("Beta")).toBeInTheDocument();
+  });
+
+  it("urlSync={false} keeps state in memory and never touches the adapter", () => {
+    const spy = {
+      getSearch: vi.fn(() => ""),
+      setSearch: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    };
+    renderMantine(
+      <DataTable<Person>
+        data={PEOPLE}
+        columns={FILTERABLE_COLUMNS}
+        rowKey={(r) => r.id}
+        urlAdapter={spy}
+        urlSync={false}
+      />
+    );
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(spy.getSearch).not.toHaveBeenCalled();
+    expect(spy.setSearch).not.toHaveBeenCalled();
+    expect(spy.subscribe).not.toHaveBeenCalled();
   });
 });

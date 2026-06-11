@@ -1,5 +1,6 @@
 import {
   createMemoryAdapter,
+  type TableLabels,
   type UrlStateAdapter,
   useFrontendData,
 } from "@adapttable/core";
@@ -78,7 +79,11 @@ const chipsStrip = () => {
   return strip as HTMLElement;
 };
 
-function renderAllTypes(initialUrl = "", classNames?: DataTableClassNames) {
+function renderAllTypes(
+  initialUrl = "",
+  classNames?: DataTableClassNames,
+  labels?: TableLabels
+) {
   const adapter = createMemoryAdapter(initialUrl);
   render(
     <DataTable<Row>
@@ -88,11 +93,22 @@ function renderAllTypes(initialUrl = "", classNames?: DataTableClassNames) {
       columns={[{ key: "firstName" }]}
       filters={ALL_TYPE_FILTERS}
       classNames={classNames}
+      labels={labels}
     />
   );
   openFilters();
   return adapter;
 }
+
+/** The Operator `<select>` of the named range field's group. */
+const rangeOperator = (groupName: string, name = "Operator") =>
+  within(screen.getByRole("group", { name: groupName })).getByRole("combobox", {
+    name,
+  });
+
+/** A value input (`Value` / `From` / `To`) inside the named range group. */
+const rangeInput = (groupName: string, label: string) =>
+  within(screen.getByRole("group", { name: groupName })).getByLabelText(label);
 
 describe("<DataTable> declarative columns + filters (unstyled)", () => {
   it("zero ceremony: data + filters array filter rows, chip, clear all", () => {
@@ -219,12 +235,44 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(params(adapter).get("f_department.name")).toBeNull();
   });
 
-  it("dateRange writes the From/To state keys with range chips", () => {
+  it("lists the localized operators per range flavour", () => {
+    renderAllTypes("", undefined, {
+      operator: "Vergleich",
+      opAtLeast: "Mindestens",
+      opOn: "Am",
+    });
+    const optionTexts = (groupName: string) =>
+      within(rangeOperator(groupName, "Vergleich"))
+        .getAllByRole("option")
+        .map((option) => option.textContent);
+    // The placeholder option carries the (localized) Operator label, then
+    // the four comparisons in their number wording…
+    expect(optionTexts("Age")).toEqual([
+      "Vergleich",
+      "Equal",
+      "Mindestens",
+      "At most",
+      "Between",
+    ]);
+    // …and the date flavour swaps in the On/On-or wordings.
+    expect(optionTexts("Hired At")).toEqual([
+      "Vergleich",
+      "Am",
+      "On or after",
+      "On or before",
+      "Between",
+    ]);
+  });
+
+  it("dateRange: Between exposes labeled From/To inputs writing both keys", () => {
     const adapter = renderAllTypes();
-    fireEvent.change(screen.getByLabelText("Hired At From"), {
+    fireEvent.change(rangeOperator("Hired At"), {
+      target: { value: "between" },
+    });
+    fireEvent.change(rangeInput("Hired At", "From"), {
       target: { value: "2025-01-01" },
     });
-    fireEvent.change(screen.getByLabelText("Hired At To"), {
+    fireEvent.change(rangeInput("Hired At", "To"), {
       target: { value: "2026-12-31" },
     });
     const p = params(adapter);
@@ -237,23 +285,75 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
-  it("numberRange writes the Min/Max state keys and filters rows", () => {
+  it("numberRange: At least types into ONE input and writes only the Min key", () => {
     const adapter = renderAllTypes();
-    fireEvent.change(screen.getByLabelText("Age Min"), {
-      target: { value: "40" },
-    });
-    fireEvent.change(screen.getByLabelText("Age Max"), {
-      target: { value: "50" },
-    });
+    fireEvent.change(rangeOperator("Age"), { target: { value: "gte" } });
+    // The single-value operators expose exactly one bound input.
+    const age = screen.getByRole("group", { name: "Age" });
+    expect(within(age).getAllByRole("spinbutton")).toHaveLength(1);
+    fireEvent.change(rangeInput("Age", "Value"), { target: { value: "40" } });
+    const p = params(adapter);
+    expect(p.get("f_ageMin")).toBe("40");
+    expect(p.get("f_ageMax")).toBeNull();
+    // The committed (number-parsed) value round-trips into the input.
+    expect(rangeInput("Age", "Value")).toHaveValue(40);
+    // Alice (30) falls below the bound; Bob (45) and Carol (52) stay.
+    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("Carol")).toBeInTheDocument();
+  });
+
+  it("numberRange: Equal writes BOTH keys with the single value", () => {
+    const adapter = renderAllTypes();
+    fireEvent.change(rangeOperator("Age"), { target: { value: "eq" } });
+    fireEvent.change(rangeInput("Age", "Value"), { target: { value: "45" } });
+    const p = params(adapter);
+    expect(p.get("f_ageMin")).toBe("45");
+    expect(p.get("f_ageMax")).toBe("45");
+    // Only Bob (45) sits inside the collapsed [45, 45] range.
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+    expect(screen.queryByText("Carol")).not.toBeInTheDocument();
+  });
+
+  it("numberRange: Between writes both keys and filters rows", () => {
+    const adapter = renderAllTypes();
+    fireEvent.change(rangeOperator("Age"), { target: { value: "between" } });
+    fireEvent.change(rangeInput("Age", "From"), { target: { value: "40" } });
+    fireEvent.change(rangeInput("Age", "To"), { target: { value: "50" } });
     const p = params(adapter);
     expect(p.get("f_ageMin")).toBe("40");
     expect(p.get("f_ageMax")).toBe("50");
-    // The committed (number-parsed) value round-trips into the input.
-    expect(screen.getByLabelText("Age Min")).toHaveValue(40);
     // Alice (30) and Carol (52) fall outside [40, 50].
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(screen.queryByText("Carol")).not.toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("selecting the operator placeholder clears the persisted pair", () => {
+    const adapter = renderAllTypes("f_ageMin=40&f_ageMax=50");
+    // Distinct URL bounds mount as Between with both inputs filled.
+    const operator = rangeOperator("Age");
+    expect(operator).toHaveValue("between");
+    expect(rangeInput("Age", "From")).toHaveValue(40);
+    expect(rangeInput("Age", "To")).toHaveValue(50);
+    fireEvent.change(operator, { target: { value: "" } });
+    const p = params(adapter);
+    expect(p.get("f_ageMin")).toBeNull();
+    expect(p.get("f_ageMax")).toBeNull();
+    // The value inputs collapse until a comparison is chosen again.
+    const age = screen.getByRole("group", { name: "Age" });
+    expect(within(age).queryByLabelText("From")).toBeNull();
+    expect(within(age).queryByLabelText("Value")).toBeNull();
+    // All rows return once the range filter is gone.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Carol")).toBeInTheDocument();
+  });
+
+  it("an equal Min/Max pair in the URL mounts as Equal with its value", () => {
+    renderAllTypes("f_ageMin=5&f_ageMax=5");
+    expect(rangeOperator("Age")).toHaveValue("eq");
+    expect(rangeInput("Age", "Value")).toHaveValue(5);
   });
 
   it("URL-restored values populate every control", () => {
@@ -261,15 +361,20 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(screen.getByRole("combobox", { name: "City" })).toHaveValue("Dubai");
     expect(screen.getByRole("checkbox", { name: "Sales" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Ops" })).toBeChecked();
-    expect(screen.getByLabelText("Age Min")).toHaveValue(25);
+    // A lone Min bound mounts as "At least" with its value in place.
+    expect(rangeOperator("Age")).toHaveValue("gte");
+    expect(rangeInput("Age", "Value")).toHaveValue(25);
   });
 
   it("applies every auto-form classNames hook", () => {
-    renderAllTypes("", {
+    // The Min/Max pair mounts the number range on Between, so its two
+    // bound inputs render alongside the text input.
+    renderAllTypes("f_ageMin=40&f_ageMax=50", {
       filterField: "c-field",
       filterLabel: "c-label",
       filterInput: "c-input",
       filterSelect: "c-select",
+      filterOperator: "c-op",
       filterCheckboxGroup: "c-group",
       filterCheckbox: "c-check",
     });
@@ -278,9 +383,11 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     // Five definitions → five field wrappers and captions.
     expect(count('[data-adapttable-part="filter-field"].c-field')).toBe(5);
     expect(count('[data-adapttable-part="filter-label"].c-label')).toBe(5);
-    // One text + two date + two number inputs.
-    expect(count('[data-adapttable-part="filter-input"].c-input')).toBe(5);
+    // One text input + the URL-restored Between pair on the number range.
+    expect(count('[data-adapttable-part="filter-input"].c-input')).toBe(3);
     expect(count('[data-adapttable-part="filter-select"].c-select')).toBe(1);
+    // One operator select per range definition.
+    expect(count('[data-adapttable-part="filter-operator"].c-op')).toBe(2);
     expect(
       count('[data-adapttable-part="filter-checkbox-group"].c-group')
     ).toBe(1);
@@ -377,5 +484,26 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(screen.getByRole("checkbox", { name: "Riyadh" })).not.toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "Riyadh" }));
     expect(params(adapter).get("f_city")).toBe("Dubai,Riyadh");
+  });
+
+  it("urlSync={false} keeps state in memory and never touches the adapter", () => {
+    const spy = {
+      getSearch: vi.fn(() => ""),
+      setSearch: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    };
+    render(
+      <DataTable<Row>
+        data={ROWS}
+        columns={[{ key: "firstName" }]}
+        rowKey={(r) => r.id}
+        urlAdapter={spy}
+        urlSync={false}
+      />
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(spy.getSearch).not.toHaveBeenCalled();
+    expect(spy.setSearch).not.toHaveBeenCalled();
+    expect(spy.subscribe).not.toHaveBeenCalled();
   });
 });

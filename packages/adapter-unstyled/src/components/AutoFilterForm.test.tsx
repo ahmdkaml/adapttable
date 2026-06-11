@@ -10,6 +10,7 @@ interface Row {
 
 function stubSource(extra: ExtraFilters) {
   const setExtra = vi.fn();
+  const setExtras = vi.fn();
   const source: TableSource<Row> = {
     rows: [],
     total: 0,
@@ -33,11 +34,11 @@ function stubSource(extra: ExtraFilters) {
     setSort: () => undefined,
     setSearch: () => undefined,
     setExtra,
-    setExtras: () => undefined,
+    setExtras,
     clearExtras: () => undefined,
     clearAll: () => undefined,
   };
-  return { source, setExtra };
+  return { source, setExtra, setExtras };
 }
 
 const OPTIONS = [
@@ -142,5 +143,63 @@ describe("<AutoFilterForm> standalone", () => {
     ).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Beta" })).toBeInTheDocument();
+  });
+
+  it("range: a lone upper bound mounts as At most showing THAT bound, and an operator switch re-maps it", () => {
+    const { source, setExtras } = stubSource({ ageMax: "9" });
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "age", type: "numberRange" }]}
+        source={source}
+      />
+    );
+    const operator = screen.getByRole("combobox", { name: "Operator" });
+    expect(operator).toHaveValue("lte");
+    // The single input shows the bound the operator owns — the upper one.
+    expect(screen.getByLabelText("Value")).toHaveValue(9);
+    // Switching to "At least" carries the value onto the lower bound.
+    fireEvent.change(operator, { target: { value: "gte" } });
+    expect(setExtras).toHaveBeenCalledWith({ ageMin: "9", ageMax: undefined });
+  });
+
+  it("range: each Between input patches only its own bound (empty clears it)", () => {
+    const { source, setExtras } = stubSource({ ageMin: "2", ageMax: "9" });
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "age", type: "numberRange" }]}
+        source={source}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("To"), { target: { value: "12" } });
+    expect(setExtras).toHaveBeenCalledWith({ ageMin: "2", ageMax: "12" });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "" } });
+    expect(setExtras).toHaveBeenCalledWith({ ageMin: undefined, ageMax: "9" });
+  });
+
+  it("range: dateRange uses From/To state keys and the date input type", () => {
+    const { source, setExtras } = stubSource({});
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "hiredAt", type: "dateRange" }]}
+        source={source}
+      />
+    );
+    // Nothing persisted → the operator placeholder and no value inputs yet.
+    const operator = screen.getByRole("combobox", { name: "Operator" });
+    expect(operator).toHaveValue("");
+    expect(screen.queryByLabelText("Value")).toBeNull();
+    fireEvent.change(operator, { target: { value: "lte" } });
+    expect(setExtras).toHaveBeenCalledWith({
+      hiredAtFrom: undefined,
+      hiredAtTo: undefined,
+    });
+    const input = screen.getByLabelText("Value");
+    expect(input).toHaveAttribute("type", "date");
+    expect(input).toHaveAttribute("placeholder", "Value");
+    fireEvent.change(input, { target: { value: "2026-01-01" } });
+    expect(setExtras).toHaveBeenCalledWith({
+      hiredAtFrom: undefined,
+      hiredAtTo: "2026-01-01",
+    });
   });
 });

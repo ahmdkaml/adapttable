@@ -36,6 +36,12 @@ Three ways to feed the table, lowest ceremony first:
   `filters` array (a `filters` entry with the same key wins, with a dev
   warning). Each definition drives the kit-native widget, the URL parsing,
   the chip label, and (frontend tier) the row predicate.
+- Range widgets are operator-first: pick `Equal` / `At least` / `At most` /
+  `Between` (dates: `On` / `On or after` / `On or before` / `Between`), then
+  fill one labeled value — or From/To for Between. The persisted state stays
+  the inclusive `${key}Min`/`${key}Max` (`${key}From`/`${key}To`) pair, so
+  URLs, chips, predicates and the server `TableQuery` are unchanged.
+  Headless: `readRangeWidget` / `writeRangeWidget` / `RANGE_OPS`.
 - `filters` prop: `FilterDef[]` (the adapter builds the form) **or** JSX
   (you draw it). Helpers: `FILTER_TYPES`, `filterLabel`, `filterStateKeys`,
   `resolveFilterDefs`, `buildFilterRuntime`, `filterPredicate`,
@@ -66,7 +72,8 @@ Three ways to feed the table, lowest ceremony first:
 - Width helpers: `tableMinWidth`, `resolveColumnWidth`, `parsePxWidth`.
 - On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
   `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
-  `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`.
+  `density: "comfortable" | "compact"`, `maxHeight`, `stickyHeader`,
+  `urlSync` (`false` keeps all state in memory — no URL writes).
 - The injected row-actions column manages like any other under the reserved
   key `ACTIONS_COLUMN_KEY` (`"actions"`): hide it (`hidden: ["actions"]`),
   pin it to the end on its own (`pinned: { actions: "right" }` — one click

@@ -55,7 +55,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     total: props.total,
     loading: props.loading,
     onQueryChange: props.onQueryChange,
-    adapter: props.urlAdapter,
+    adapter: props.urlSync === false ? undefined : props.urlAdapter,
+    enabled: props.urlSync,
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
@@ -68,6 +69,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         source={source}
         colorScheme={colorScheme}
         dir={props.dir}
+        labels={props.labels}
       />
     ) : undefined;
   // Column-level `filter` shorthands alone must still render the auto form —

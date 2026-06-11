@@ -64,6 +64,14 @@ export interface DataTableProps<TRow> extends Omit<
    */
   urlAdapter?: UrlStateAdapter;
   /**
+   * Sync table state (search, sort, page, filters) to the URL. `false`
+   * keeps everything in memory — the table works identically, the address
+   * bar never changes, and any `urlAdapter` is ignored.
+   *
+   * @default true
+   */
+  urlSync?: boolean;
+  /**
    * Saved views: capture the table's current URL state (search, sort, page,
    * filters, column layout) under a name and re-apply it on demand. Setting
    * this renders a Saved-views menu in the toolbar next to the Columns

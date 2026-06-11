@@ -6,6 +6,7 @@ import type {
   FilterDef,
   FilterOption,
   FilterValue,
+  TableLabels,
 } from "../index";
 import { renderChakra } from "../test-utils";
 import { AutoFilterForm } from "./AutoFilterForm";
@@ -19,15 +20,26 @@ const TAG_OPTIONS = [
   { value: "b", label: "Beta" },
 ];
 
-function renderForm(defs: readonly FilterDef[], extra: ExtraFilters = {}) {
+function renderForm(
+  defs: readonly FilterDef[],
+  extra: ExtraFilters = {},
+  labels?: TableLabels
+) {
   const setExtra = vi.fn<(key: string, value: FilterValue) => void>();
-  renderChakra(<AutoFilterForm defs={defs} source={{ extra, setExtra }} />);
-  return setExtra;
+  const setExtras = vi.fn<(updates: ExtraFilters) => void>();
+  renderChakra(
+    <AutoFilterForm
+      defs={defs}
+      source={{ extra, setExtra, setExtras }}
+      labels={labels}
+    />
+  );
+  return { setExtra, setExtras };
 }
 
 describe("<AutoFilterForm> (Chakra)", () => {
   it("text: labels from the humanized key, shows the placeholder, writes the key", () => {
-    const setExtra = renderForm([
+    const { setExtra } = renderForm([
       { key: "firstName", type: "text", placeholder: "Type a name" },
     ]);
     const input = screen.getByLabelText("First Name");
@@ -38,7 +50,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
   });
 
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
-    const setExtra = renderForm(
+    const { setExtra } = renderForm(
       [{ key: "status", type: "select", options: STATUS_OPTIONS }],
       { status: "active" }
     );
@@ -67,7 +79,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
   });
 
   it("multiSelect: tolerates a scalar value and appends the next selection", () => {
-    const setExtra = renderForm(
+    const { setExtra } = renderForm(
       [{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }],
       { tags: "a" }
     );
@@ -78,7 +90,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
   });
 
   it("multiSelect: unchecking the last option writes [] (clears)", () => {
-    const setExtra = renderForm(
+    const { setExtra } = renderForm(
       [{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }],
       { tags: ["a"] }
     );
@@ -94,19 +106,153 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(screen.getByLabelText("Beta")).not.toBeChecked();
   });
 
-  it("dateRange: reads and writes the From/To state keys as date inputs", () => {
-    const setExtra = renderForm([{ key: "hiredAt", type: "dateRange" }], {
+  it("dateRange: a lower-bound state mounts as On or after; typing writes only the From key", () => {
+    const { setExtras } = renderForm([{ key: "hiredAt", type: "dateRange" }], {
       hiredAtFrom: "2026-01-01",
     });
-    const from = screen.getByLabelText("Hired At From");
-    expect(from).toHaveAttribute("type", "date");
-    expect(from).toHaveValue("2026-01-01");
-    fireEvent.change(from, { target: { value: "2026-02-01" } });
-    expect(setExtra).toHaveBeenCalledWith("hiredAtFrom", "2026-02-01");
-    fireEvent.change(screen.getByLabelText("Hired At To"), {
-      target: { value: "2026-03-31" },
+    const select = screen.getByLabelText("Hired At");
+    expect(select).toHaveValue("gte");
+    // The date flavour lists the date operator labels, with the operator
+    // placeholder doubling as the clear option.
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent)
+    ).toEqual(["Operator", "On", "On or after", "On or before", "Between"]);
+    const input = screen.getByLabelText("Value");
+    expect(input).toHaveAttribute("type", "date");
+    expect(input).toHaveValue("2026-01-01");
+    fireEvent.change(input, { target: { value: "2026-02-01" } });
+    expect(setExtras).toHaveBeenCalledWith({
+      hiredAtFrom: "2026-02-01",
+      hiredAtTo: undefined,
     });
-    expect(setExtra).toHaveBeenCalledWith("hiredAtTo", "2026-03-31");
+  });
+
+  it("numberRange: lists the localized number operators behind the operator placeholder", () => {
+    renderForm(
+      [{ key: "budget", type: "numberRange" }],
+      {},
+      {
+        operator: "Vergleich",
+        opEqual: "Gleich",
+        opAtLeast: "Mindestens",
+        opAtMost: "Höchstens",
+        opBetween: "Zwischen",
+      }
+    );
+    const select = screen.getByLabelText("Budget");
+    expect(select).toHaveValue("");
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent)
+    ).toEqual(["Vergleich", "Gleich", "Mindestens", "Höchstens", "Zwischen"]);
+    // No operator picked yet → no value input.
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByLabelText("Value")).toBeNull();
+  });
+
+  it("numberRange: choosing At least then typing writes only the Min key", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }]);
+    fireEvent.change(screen.getByLabelText("Budget"), {
+      target: { value: "gte" },
+    });
+    const input = screen.getByLabelText("Value");
+    expect(input).toHaveAttribute("type", "number");
+    fireEvent.change(input, { target: { value: "5" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "5",
+      budgetMax: undefined,
+    });
+  });
+
+  it("numberRange: Equal writes BOTH keys with the one value", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }]);
+    fireEvent.change(screen.getByLabelText("Budget"), {
+      target: { value: "eq" },
+    });
+    fireEvent.change(screen.getByLabelText("Value"), {
+      target: { value: "10" },
+    });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "10",
+      budgetMax: "10",
+    });
+  });
+
+  it("numberRange: an upper-bound state mounts as At most reading the Max key", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }], {
+      budgetMax: 9,
+    });
+    expect(screen.getByLabelText("Budget")).toHaveValue("lte");
+    const input = screen.getByLabelText("Value");
+    expect(input).toHaveValue(9);
+    fireEvent.change(input, { target: { value: "7" } });
+    expect(setExtras).toHaveBeenCalledWith({
+      budgetMin: undefined,
+      budgetMax: "7",
+    });
+  });
+
+  it("numberRange: Between renders the From/To pair and writes both keys", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }], {
+      budgetMin: 2,
+      budgetMax: 8,
+    });
+    expect(screen.getByLabelText("Budget")).toHaveValue("between");
+    const from = screen.getByLabelText("From");
+    const to = screen.getByLabelText("To");
+    expect(from).toHaveValue(2);
+    expect(to).toHaveValue(8);
+    fireEvent.change(to, { target: { value: "9" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "2",
+      budgetMax: "9",
+    });
+    fireEvent.change(from, { target: { value: "3" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "3",
+      budgetMax: "8",
+    });
+  });
+
+  it("numberRange: equal bounds mount as Equal with the single shared value", () => {
+    renderForm([{ key: "budget", type: "numberRange" }], {
+      budgetMin: 5,
+      budgetMax: 5,
+    });
+    expect(screen.getByLabelText("Budget")).toHaveValue("eq");
+    expect(screen.getByLabelText("Value")).toHaveValue(5);
+    expect(screen.queryByLabelText("From")).toBeNull();
+    expect(screen.queryByLabelText("To")).toBeNull();
+  });
+
+  it("numberRange: resetting the select to the placeholder clears the pair", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }], {
+      budgetMin: 3,
+    });
+    const select = screen.getByLabelText("Budget");
+    expect(select).toHaveValue("gte");
+    fireEvent.change(select, { target: { value: "" } });
+    expect(setExtras).toHaveBeenCalledWith({
+      budgetMin: undefined,
+      budgetMax: undefined,
+    });
+    // Back to the untouched widget: operator placeholder, no value input.
+    expect(select).toHaveValue("");
+    expect(screen.queryByLabelText("Value")).toBeNull();
+  });
+
+  it("numberRange: switching Equal to Between carries the value into both bounds", () => {
+    const { setExtras } = renderForm([{ key: "budget", type: "numberRange" }], {
+      budgetMin: 5,
+      budgetMax: 5,
+    });
+    fireEvent.change(screen.getByLabelText("Budget"), {
+      target: { value: "between" },
+    });
+    expect(setExtras).toHaveBeenCalledWith({ budgetMin: "5", budgetMax: "5" });
   });
 
   it("select: shows one disabled placeholder option while async options load", async () => {
@@ -151,7 +297,10 @@ describe("<AutoFilterForm> (Chakra)", () => {
       },
     ];
     const { container } = renderChakra(
-      <AutoFilterForm defs={defs} source={{ extra: {}, setExtra: vi.fn() }} />
+      <AutoFilterForm
+        defs={defs}
+        source={{ extra: {}, setExtra: vi.fn(), setExtras: vi.fn() }}
+      />
     );
     expect(container.querySelector(".chakra-spinner")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
@@ -162,21 +311,5 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(container.querySelector(".chakra-spinner")).toBeNull();
     expect(screen.getByLabelText("Alpha")).toBeInTheDocument();
     expect(screen.getByLabelText("Beta")).toBeInTheDocument();
-  });
-
-  it("numberRange: reads numbers from the URL state and writes the Min/Max keys", () => {
-    const setExtra = renderForm(
-      [{ key: "age", type: "numberRange", label: "Age" }],
-      { ageMin: 30 }
-    );
-    const min = screen.getByLabelText("Age Min");
-    expect(min).toHaveAttribute("type", "number");
-    expect(min).toHaveValue(30);
-    fireEvent.change(min, { target: { value: "21" } });
-    expect(setExtra).toHaveBeenCalledWith("ageMin", "21");
-    fireEvent.change(screen.getByLabelText("Age Max"), {
-      target: { value: "55" },
-    });
-    expect(setExtra).toHaveBeenCalledWith("ageMax", "55");
   });
 });

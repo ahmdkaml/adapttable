@@ -49,6 +49,14 @@ export interface DataTableProps<TRow> extends Omit<
    */
   urlAdapter?: UrlStateAdapter;
   /**
+   * Sync table state (search, sort, page, filters) to the URL. `false`
+   * keeps everything in memory — the table works identically, the address
+   * bar never changes, and any `urlAdapter` is ignored.
+   *
+   * @default true
+   */
+  urlSync?: boolean;
+  /**
    * Namespace for this table's URL params (`left.q`, `left.f_status`, …) so
    * multiple tables can share one URL without colliding.
    */

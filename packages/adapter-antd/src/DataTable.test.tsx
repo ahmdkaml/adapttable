@@ -1674,19 +1674,28 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     fireEvent.click(within(popover).getByRole("checkbox", { name: "Editor" }));
     expect(urlState()).toContain("f_role=admin,editor");
 
-    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+    // dateRange is operator-first: a single-bound comparison plus one value
+    // writes ONLY that bound's key.
+    fireEvent.mouseDown(
+      within(popover).getByRole("combobox", { name: "Hired At Operator" })
+    );
+    fireEvent.click(within(popover).getByTitle("On or after"));
+    fireEvent.change(within(popover).getByLabelText("Hired At Value"), {
       target: { value: "2026-01-01" },
     });
-    fireEvent.change(within(popover).getByLabelText("Hired At to"), {
-      target: { value: "2026-01-31" },
-    });
     expect(urlState()).toContain("f_hiredAtFrom=2026-01-01");
-    expect(urlState()).toContain("f_hiredAtTo=2026-01-31");
+    expect(urlState()).not.toContain("f_hiredAtTo");
 
-    fireEvent.change(within(popover).getByLabelText("Age min"), {
+    // numberRange "Between" swaps in the labeled From/To pair → both keys.
+    fireEvent.mouseDown(
+      within(popover).getByRole("combobox", { name: "Age Operator" })
+    );
+    // Both flavours list "Between"; the age dropdown rendered last.
+    fireEvent.click(within(popover).getAllByTitle("Between").at(-1)!);
+    fireEvent.change(within(popover).getByLabelText("Age From"), {
       target: { value: "30" },
     });
-    fireEvent.change(within(popover).getByLabelText("Age max"), {
+    fireEvent.change(within(popover).getByLabelText("Age To"), {
       target: { value: "40" },
     });
     expect(urlState()).toContain("f_ageMin=30");
@@ -1700,14 +1709,19 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     );
     const popover = openFilters();
 
-    // Every control rehydrates from its URL-restored state key.
+    // Every control rehydrates from its URL-restored state key. The range
+    // widgets derive their operator from the persisted pair: distinct
+    // bounds → Between, a lower bound alone → On or after.
     expect(within(popover).getByLabelText("First Name")).toHaveValue("ali");
     expect(within(popover).getByLabelText("City")).toHaveValue("Dubai");
     expect(
       within(popover).getByRole("checkbox", { name: "Admin" })
     ).toBeChecked();
-    expect(within(popover).getByLabelText("Age min")).toHaveValue("30");
-    expect(within(popover).getByLabelText("Hired At from")).toHaveValue(
+    expect(within(popover).getByTitle("Between")).toBeInTheDocument();
+    expect(within(popover).getByLabelText("Age From")).toHaveValue("30");
+    expect(within(popover).getByLabelText("Age To")).toHaveValue("40");
+    expect(within(popover).getByTitle("On or after")).toBeInTheDocument();
+    expect(within(popover).getByLabelText("Hired At Value")).toHaveValue(
       "2026-01-01"
     );
 
@@ -1719,16 +1733,34 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
       target: { value: "" },
     });
     fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
-    fireEvent.change(within(popover).getByLabelText("Age min"), {
+    fireEvent.change(within(popover).getByLabelText("Age From"), {
       target: { value: "" },
     });
-    fireEvent.change(within(popover).getByLabelText("Age max"), {
+    fireEvent.change(within(popover).getByLabelText("Age To"), {
       target: { value: "" },
     });
-    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+    fireEvent.change(within(popover).getByLabelText("Hired At Value"), {
       target: { value: "" },
     });
     expect(urlState()).not.toContain("f_");
+  });
+
+  it("mounts the range widget as Equal+value when the URL pair matches", () => {
+    renderZero(
+      {
+        columns: [{ key: "firstName" }],
+        filters: [{ key: "budget", type: "numberRange" }],
+      },
+      "f_budgetMin=5&f_budgetMax=5"
+    );
+    const popover = openFilters();
+    expect(within(popover).getByTitle("Equal")).toBeInTheDocument();
+    const value = within(popover).getByLabelText("Budget Value");
+    expect(value).toHaveValue("5");
+    // Equal keeps mirroring: editing the value rewrites BOTH keys.
+    fireEvent.change(value, { target: { value: "7" } });
+    expect(urlState()).toContain("f_budgetMin=7");
+    expect(urlState()).toContain("f_budgetMax=7");
   });
 
   it("hides the filters button when the declarative array resolves to no definitions", () => {

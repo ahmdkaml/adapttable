@@ -55,6 +55,14 @@ interface UrlStateAdapter {
 - **`createMemoryAdapter()`** — in-memory; used for SSR, tests, and when URL
   sync is disabled (the table still gets fully working local state).
 
+## Turning URL sync off
+
+One prop: `urlSync={false}` on any `<DataTable>`. Search, sort, filters and
+pagination keep working exactly the same — the state just lives in memory,
+the address bar never changes, and any `urlAdapter` is ignored. (Column
+layout was already opt-in: it only reaches the URL if you wire
+`useColumnLayoutUrlState` yourself.)
+
 Integrate with an existing router by implementing the same three methods.
 Copy-paste recipes:
 

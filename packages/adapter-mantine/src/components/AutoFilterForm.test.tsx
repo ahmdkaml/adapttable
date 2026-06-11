@@ -1,4 +1,10 @@
-import type { ExtraFilters, FilterDef, TableSource } from "@adapttable/core";
+import {
+  defaultLabels,
+  type ExtraFilters,
+  type FilterDef,
+  type TableLabels,
+  type TableSource,
+} from "@adapttable/core";
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -11,6 +17,7 @@ interface Row {
 
 function makeSource(extra: ExtraFilters = {}) {
   const setExtra = vi.fn();
+  const setExtras = vi.fn();
   const source: TableSource<Row> = {
     rows: [],
     total: 0,
@@ -34,12 +41,32 @@ function makeSource(extra: ExtraFilters = {}) {
     toggleSortLevel: () => undefined,
     setSearch: () => undefined,
     setExtra,
-    setExtras: () => undefined,
+    setExtras,
     clearExtras: () => undefined,
     clearAll: () => undefined,
   };
-  return { source, setExtra };
+  return { source, setExtra, setExtras };
 }
+
+const renderForm = (
+  defs: readonly FilterDef<Row>[],
+  source: TableSource<Row>,
+  labels: Required<TableLabels> = defaultLabels
+) =>
+  renderMantine(<AutoFilterForm defs={defs} source={source} labels={labels} />);
+
+/** Open a range widget's operator select (a Mantine combobox textbox). */
+const openOperatorSelect = (name: string) => {
+  const trigger = screen.getByRole("textbox", { name });
+  fireEvent.click(trigger);
+  return trigger;
+};
+
+/** Open the operator select and click one of its options. */
+const pickOperator = (selectName: string, optionLabel: string) => {
+  openOperatorSelect(selectName);
+  fireEvent.click(screen.getByRole("option", { name: optionLabel }));
+};
 
 const TAGS_DEF: FilterDef<Row> = {
   key: "tags",
@@ -50,15 +77,18 @@ const TAGS_DEF: FilterDef<Row> = {
   ],
 };
 
+const BUDGET_DEF: FilterDef<Row> = {
+  key: "budget",
+  type: "numberRange",
+  label: "Budget",
+};
+
+const HIRED_DEF: FilterDef<Row> = { key: "hired", type: "dateRange" };
+
 describe("<AutoFilterForm>", () => {
   it("text: shows the current value + placeholder and writes the state key", () => {
     const { source, setExtra } = makeSource({ name: "al" });
-    renderMantine(
-      <AutoFilterForm
-        defs={[{ key: "name", type: "text", placeholder: "Find…" }]}
-        source={source}
-      />
-    );
+    renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);
     const input = screen.getByLabelText("Name");
     expect(input).toHaveValue("al");
     expect(input).toHaveAttribute("placeholder", "Find…");
@@ -70,12 +100,7 @@ describe("<AutoFilterForm>", () => {
 
   it("select: prepends a clearing All option and writes the chosen value", () => {
     const { source, setExtra } = makeSource();
-    renderMantine(
-      <AutoFilterForm
-        defs={[{ key: "status", type: "select" }]}
-        source={source}
-      />
-    );
+    renderForm([{ key: "status", type: "select" }], source);
     const select = screen.getByLabelText("Status");
     // No options declared → only the built-in "All" entry, valued "".
     expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
@@ -86,7 +111,7 @@ describe("<AutoFilterForm>", () => {
 
   it("multiSelect: wraps a scalar URL value and appends on check", () => {
     const { source, setExtra } = makeSource({ tags: "urgent" });
-    renderMantine(<AutoFilterForm defs={[TAGS_DEF]} source={source} />);
+    renderForm([TAGS_DEF], source);
     expect(screen.getByLabelText("Urgent")).toBeChecked();
     expect(screen.getByLabelText("Low")).not.toBeChecked();
     fireEvent.click(screen.getByLabelText("Low"));
@@ -95,7 +120,7 @@ describe("<AutoFilterForm>", () => {
 
   it("multiSelect: unchecking the last value clears with an empty array", () => {
     const { source, setExtra } = makeSource({ tags: ["low"] });
-    renderMantine(<AutoFilterForm defs={[TAGS_DEF]} source={source} />);
+    renderForm([TAGS_DEF], source);
     expect(screen.getByLabelText("Low")).toBeChecked();
     fireEvent.click(screen.getByLabelText("Low"));
     expect(setExtra).toHaveBeenCalledWith("tags", []);
@@ -103,24 +128,22 @@ describe("<AutoFilterForm>", () => {
 
   it("multiSelect: an empty-string value reads as nothing selected", () => {
     const { source } = makeSource({ tags: "" });
-    renderMantine(<AutoFilterForm defs={[TAGS_DEF]} source={source} />);
+    renderForm([TAGS_DEF], source);
     expect(screen.getByLabelText("Urgent")).not.toBeChecked();
     expect(screen.getByLabelText("Low")).not.toBeChecked();
   });
 
   it("select: an async loader shows a disabled placeholder, then the options", async () => {
     const { source } = makeSource();
-    renderMantine(
-      <AutoFilterForm
-        defs={[
-          {
-            key: "status",
-            type: "select",
-            options: () => Promise.resolve([{ value: "act", label: "Active" }]),
-          },
-        ]}
-        source={source}
-      />
+    renderForm(
+      [
+        {
+          key: "status",
+          type: "select",
+          options: () => Promise.resolve([{ value: "act", label: "Active" }]),
+        },
+      ],
+      source
     );
     // While the loader is in flight: a single disabled "…" option.
     const placeholder = screen.getByRole("option", { name: "…" });
@@ -136,18 +159,16 @@ describe("<AutoFilterForm>", () => {
 
   it("multiSelect: an async loader shows a spinner, then the checkboxes", async () => {
     const { source } = makeSource();
-    const { container } = renderMantine(
-      <AutoFilterForm
-        defs={[
-          {
-            key: "tags",
-            type: "multiSelect",
-            options: () =>
-              Promise.resolve([{ value: "urgent", label: "Urgent" }]),
-          },
-        ]}
-        source={source}
-      />
+    const { container } = renderForm(
+      [
+        {
+          key: "tags",
+          type: "multiSelect",
+          options: () =>
+            Promise.resolve([{ value: "urgent", label: "Urgent" }]),
+        },
+      ],
+      source
     );
     // While the loader is in flight: a Loader instead of checkboxes.
     expect(container.querySelector(".mantine-Loader-root")).not.toBeNull();
@@ -157,40 +178,190 @@ describe("<AutoFilterForm>", () => {
     expect(container.querySelector(".mantine-Loader-root")).toBeNull();
   });
 
-  it("dateRange: renders From/To date inputs and writes the paired keys", () => {
-    const { source, setExtra } = makeSource({ hiredFrom: "2026-01-01" });
-    renderMantine(
-      <AutoFilterForm
-        defs={[{ key: "hired", type: "dateRange" }]}
-        source={source}
-      />
+  it("numberRange: the operator select lists the localized number operators", () => {
+    const { source } = makeSource();
+    renderForm([BUDGET_DEF], source, {
+      ...defaultLabels,
+      opAtLeast: "Mindestens",
+    });
+    // No operator yet → no value input, just the labeled select.
+    expect(screen.queryByRole("textbox", { name: "Budget Value" })).toBeNull();
+    openOperatorSelect("Budget Operator");
+    expect(screen.getByRole("option", { name: "Equal" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Mindestens" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "At most" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Between" })).toBeInTheDocument();
+  });
+
+  it("numberRange: choosing At least + typing writes the Min key only", () => {
+    const { source, setExtras } = makeSource();
+    renderForm([BUDGET_DEF], source);
+    pickOperator("Budget Operator", "At least");
+    // Choosing with no value yet keeps the pair clear.
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: undefined,
+      budgetMax: undefined,
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
+      target: { value: "150" },
+    });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "150",
+      budgetMax: undefined,
+    });
+  });
+
+  it("numberRange: choosing Equal + typing writes BOTH keys with one value", () => {
+    const { source, setExtras } = makeSource();
+    renderForm([BUDGET_DEF], source);
+    pickOperator("Budget Operator", "Equal");
+    fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
+      target: { value: "5" },
+    });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "5",
+      budgetMax: "5",
+    });
+  });
+
+  it("numberRange: a Max-only URL mounts as At most and rewrites the Max key", () => {
+    const { source, setExtras } = makeSource({ budgetMax: 700 });
+    renderForm([BUDGET_DEF], source);
+    expect(
+      screen.getByRole("textbox", { name: "Budget Operator" })
+    ).toHaveValue("At most");
+    const value = screen.getByRole("textbox", { name: "Budget Value" });
+    expect(value).toHaveValue("700");
+    fireEvent.change(value, { target: { value: "200" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: undefined,
+      budgetMax: "200",
+    });
+  });
+
+  it("numberRange: Between shows labeled From/To inputs and writes both keys", () => {
+    const { source, setExtras } = makeSource({
+      budgetMin: 100,
+      budgetMax: 900,
+    });
+    renderForm([BUDGET_DEF], source);
+    expect(
+      screen.getByRole("textbox", { name: "Budget Operator" })
+    ).toHaveValue("Between");
+    const from = screen.getByRole("textbox", { name: "Budget From" });
+    const to = screen.getByRole("textbox", { name: "Budget To" });
+    expect(from).toHaveValue("100");
+    expect(to).toHaveValue("900");
+    fireEvent.change(to, { target: { value: "1200" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "100",
+      budgetMax: "1200",
+    });
+    fireEvent.change(from, { target: { value: "150" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "150",
+      budgetMax: "900",
+    });
+  });
+
+  it("numberRange: clearing the operator clears both keys", () => {
+    const { source, setExtras } = makeSource({
+      budgetMin: 100,
+      budgetMax: 900,
+    });
+    renderForm([BUDGET_DEF], source);
+    // Clicking the selected option deselects it (Mantine allowDeselect).
+    pickOperator("Budget Operator", "Between");
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: undefined,
+      budgetMax: undefined,
+    });
+  });
+
+  it("numberRange: equal URL bounds mount as Equal, and switching keeps the value", () => {
+    const { source, setExtras } = makeSource({ budgetMin: 5, budgetMax: 5 });
+    renderForm([BUDGET_DEF], source);
+    expect(
+      screen.getByRole("textbox", { name: "Budget Operator" })
+    ).toHaveValue("Equal");
+    expect(screen.getByRole("textbox", { name: "Budget Value" })).toHaveValue(
+      "5"
+    );
+    // Switching the operator carries the value across.
+    pickOperator("Budget Operator", "At least");
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: "5",
+      budgetMax: undefined,
+    });
+  });
+
+  it("numberRange: emptying the value clears the pair but keeps the operator", () => {
+    const { source, setExtras } = makeSource({ budgetMin: 100 });
+    renderForm([BUDGET_DEF], source);
+    const operator = screen.getByRole("textbox", { name: "Budget Operator" });
+    expect(operator).toHaveValue("At least");
+    fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
+      target: { value: "" },
+    });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      budgetMin: undefined,
+      budgetMax: undefined,
+    });
+    expect(operator).toHaveValue("At least");
+  });
+
+  it("dateRange: the operator select lists the localized date operators", () => {
+    const { source } = makeSource();
+    renderForm([HIRED_DEF], source);
+    openOperatorSelect("Hired Operator");
+    expect(screen.getByRole("option", { name: "On" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "On or after" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "On or before" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Between" })).toBeInTheDocument();
+  });
+
+  it("dateRange: choosing On or after + picking a date writes the From key only", () => {
+    const { source, setExtras } = makeSource();
+    renderForm([HIRED_DEF], source);
+    pickOperator("Hired Operator", "On or after");
+    const value = screen.getByLabelText("Hired Value");
+    expect(value).toHaveAttribute("type", "date");
+    fireEvent.change(value, { target: { value: "2026-01-01" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      hiredFrom: "2026-01-01",
+      hiredTo: undefined,
+    });
+  });
+
+  it("dateRange: Between shows From/To date inputs and writes both keys", () => {
+    const { source, setExtras } = makeSource({
+      hiredFrom: "2026-01-01",
+      hiredTo: "2026-02-01",
+    });
+    renderForm([HIRED_DEF], source);
+    expect(screen.getByRole("textbox", { name: "Hired Operator" })).toHaveValue(
+      "Between"
     );
     const from = screen.getByLabelText("Hired From");
     const to = screen.getByLabelText("Hired To");
     expect(from).toHaveAttribute("type", "date");
     expect(from).toHaveValue("2026-01-01");
-    expect(to).toHaveValue("");
-    fireEvent.change(to, { target: { value: "2026-02-01" } });
-    expect(setExtra).toHaveBeenCalledWith("hiredTo", "2026-02-01");
-    fireEvent.change(from, { target: { value: "" } });
-    expect(setExtra).toHaveBeenCalledWith("hiredFrom", "");
-  });
-
-  it("numberRange: renders Min/Max number inputs and writes the paired keys", () => {
-    const { source, setExtra } = makeSource({ budgetMin: 100 });
-    renderMantine(
-      <AutoFilterForm
-        defs={[{ key: "budget", type: "numberRange", label: "Budget" }]}
-        source={source}
-      />
-    );
-    const min = screen.getByLabelText("Budget Min");
-    const max = screen.getByLabelText("Budget Max");
-    expect(min).toHaveAttribute("type", "number");
-    expect(min).toHaveValue(100);
-    fireEvent.change(max, { target: { value: "900" } });
-    expect(setExtra).toHaveBeenCalledWith("budgetMax", "900");
-    fireEvent.change(min, { target: { value: "150" } });
-    expect(setExtra).toHaveBeenCalledWith("budgetMin", "150");
+    expect(to).toHaveValue("2026-02-01");
+    fireEvent.change(from, { target: { value: "2026-01-15" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      hiredFrom: "2026-01-15",
+      hiredTo: "2026-02-01",
+    });
+    fireEvent.change(to, { target: { value: "2026-03-01" } });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      hiredFrom: "2026-01-01",
+      hiredTo: "2026-03-01",
+    });
   });
 });
