@@ -418,8 +418,18 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
+  // Core's span already counts the expand column (it sees `renderRowDetail`
+  // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
   const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
+    tableRenderModel({
+      table,
+      rows,
+      rowActions,
+      getRowId,
+      rowEntries,
+      renderRowDetail,
+      expansion,
+    });
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
   const groupRow = headerGroupRow(columns);
@@ -430,8 +440,6 @@ export function DesktopTable<TRow>({
   const isExpanded =
     expansion && renderRowDetail ? expansion.isExpanded : undefined;
   const expandActive = isExpanded !== undefined;
-  // Spacer + detail rows span the expand column too.
-  const fullSpan = expandActive ? columnSpan + 1 : columnSpan;
   const onToggleSelect = useStableToggle(selection);
   const onToggleExpand = useStableToggle(expansion);
   // `position: sticky` on a `<thead>` does not pin against the document
@@ -674,7 +682,10 @@ export function DesktopTable<TRow>({
         <TableBody>
           {paddingTop > 0 && (
             <TableRow aria-hidden>
-              <TableCell colSpan={fullSpan} sx={{ height: paddingTop, p: 0 }} />
+              <TableCell
+                colSpan={columnSpan}
+                sx={{ height: paddingTop, p: 0 }}
+              />
             </TableRow>
           )}
           {entries.map(({ row, index, key }) => {
@@ -688,7 +699,7 @@ export function DesktopTable<TRow>({
                 expanded={isExpanded ? isExpanded(id) : false}
                 columns={columns}
                 sx={rowSx}
-                columnSpan={fullSpan}
+                columnSpan={columnSpan}
                 size={size}
                 dir={dir}
                 className={rowClassName?.(row, index)}
@@ -714,7 +725,7 @@ export function DesktopTable<TRow>({
           {paddingBottom > 0 && (
             <TableRow aria-hidden>
               <TableCell
-                colSpan={fullSpan}
+                colSpan={columnSpan}
                 sx={{ height: paddingBottom, p: 0 }}
               />
             </TableRow>

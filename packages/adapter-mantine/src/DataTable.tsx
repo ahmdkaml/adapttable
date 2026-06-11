@@ -1,8 +1,11 @@
 import {
   isDeclarativeFilters,
+  type TableLabels,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
+  useSavedViews,
+  type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -21,6 +24,7 @@ import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
 import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
@@ -40,6 +44,18 @@ function ColumnMenuSlot<TRow>({
 }: Readonly<{ enabled: boolean } & ColumnMenuProps<TRow>>) {
   if (!enabled) return null;
   return <ColumnMenu {...props} />;
+}
+
+/**
+ * The Saved-views menu in the toolbar. A component (not inline JSX) so
+ * `useSavedViews` only runs when the `savedViews` prop is set.
+ */
+function SavedViewsSlot({
+  options,
+  labels,
+}: Readonly<{ options: UseSavedViewsOptions; labels: Required<TableLabels> }>) {
+  const views = useSavedViews(options);
+  return <SavedViewsMenu views={views} labels={labels} />;
 }
 
 /**
@@ -113,6 +129,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
+    savedViews,
   } = chromeProps;
   const density = chromeProps.density ?? "comfortable";
 
@@ -253,12 +270,26 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               onClearFilters={chrome.clearFilters}
               dir={dir}
               columnMenu={
-                <ColumnMenuSlot
-                  enabled={enableColumnMenu && !isMobile}
-                  allColumns={chrome.allColumns}
-                  layout={chrome.columnLayout}
-                  labels={table.labels}
-                />
+                <>
+                  {savedViews && (
+                    <SavedViewsSlot
+                      // The table's own URL backend/namespace are the
+                      // defaults — an explicit option still wins.
+                      options={{
+                        adapter: chromeProps.urlAdapter,
+                        urlKey: chromeProps.urlKey,
+                        ...savedViews,
+                      }}
+                      labels={table.labels}
+                    />
+                  )}
+                  <ColumnMenuSlot
+                    enabled={enableColumnMenu && !isMobile}
+                    allColumns={chrome.allColumns}
+                    layout={chrome.columnLayout}
+                    labels={table.labels}
+                  />
+                </>
               }
               showRowsPerPage={!chrome.isPaged}
             />

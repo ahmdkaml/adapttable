@@ -232,6 +232,14 @@ export interface TableLabels {
   expandRow?: string;
   /** Collapse-row chevron label. */
   collapseRow?: string;
+  /** Saved-views menu trigger / list title. */
+  savedViews?: string;
+  /** Save-current-view action. */
+  saveView?: string;
+  /** Placeholder/label for the view-name input. */
+  viewName?: string;
+  /** Delete-a-view action (suffixed with the view name). */
+  deleteView?: string;
   /** Banner: every row on this page is selected. */
   pageSelected?: (count: number) => string;
   /** Banner action: extend the selection to every matching row. */

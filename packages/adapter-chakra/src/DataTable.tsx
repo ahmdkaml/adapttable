@@ -21,6 +21,7 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { subtleText } from "./styles";
 import type { DataTableProps } from "./types";
@@ -181,6 +182,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
           onClearFilters={chrome.clearFilters}
+          savedViewsMenu={
+            props.savedViews ? (
+              <SavedViewsMenu
+                options={{
+                  adapter: props.urlAdapter,
+                  urlKey: props.urlKey,
+                  ...props.savedViews,
+                }}
+                labels={labels}
+                colorScheme={colorScheme}
+              />
+            ) : undefined
+          }
           columnMenu={
             props.enableColumnMenu && !chrome.isMobile ? (
               <ColumnMenu

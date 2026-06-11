@@ -1,6 +1,7 @@
 import type {
   BaseDataTableProps,
   UrlStateAdapter,
+  UseSavedViewsOptions,
   UseTableDataOptions,
 } from "@adapttable/core";
 import type { ReactNode } from "react";
@@ -28,6 +29,12 @@ export interface DataTableProps<TRow>
    * Ignored when a prebuilt `source` is supplied (the source owns its state).
    */
   urlAdapter?: UrlStateAdapter;
+  /**
+   * Mount the built-in saved-views menu in the toolbar. Options are forwarded
+   * to core's `useSavedViews`; `adapter` and `urlKey` default to the table's
+   * own `urlAdapter` / `urlKey` so views capture THIS table's params.
+   */
+  savedViews?: UseSavedViewsOptions;
   /** Replace sub-components (skeleton, empty-state). */
   slots?: DataTableSlots;
   /** Class name applied to the outer wrapper. */

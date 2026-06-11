@@ -2,6 +2,7 @@ import type {
   BaseDataTableProps,
   TableSource,
   UrlStateAdapter,
+  UseSavedViewsOptions,
   UseTableDataOptions,
 } from "@adapttable/core";
 import type { ReactNode } from "react";
@@ -65,6 +66,18 @@ export interface DataTableClassNames {
   columnMenuVisibility?: string;
   columnMenuPin?: string;
   columnMenuReset?: string;
+  /** The saved-views menu trigger button. */
+  viewsButton?: string;
+  /** The saved-views dropdown panel. */
+  viewsPanel?: string;
+  /** One saved view's apply button in the list. */
+  viewsItem?: string;
+  /** A saved view's delete button. */
+  viewsDelete?: string;
+  /** The view-name input in the save row. */
+  viewsInput?: string;
+  /** The save-view button in the save row. */
+  viewsSave?: string;
   resizeHandle?: string;
   bulkBar?: string;
   bulkButton?: string;
@@ -176,6 +189,11 @@ export interface DataTableProps<TRow> extends Omit<
   urlAdapter?: UrlStateAdapter;
   /** Per-table URL namespace (e.g. `"left"` → `left.q`, `left.page`). */
   urlKey?: string;
+  /**
+   * Mounts a saved-views menu in the toolbar (beside the Columns button).
+   * The table's own `urlAdapter` / `urlKey` fill in unless overridden here.
+   */
+  savedViews?: UseSavedViewsOptions;
   /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
   /** Empty-state node override. */

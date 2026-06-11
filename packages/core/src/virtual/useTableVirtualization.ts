@@ -68,13 +68,19 @@ export function resolveVirtualRows<TRow>(
   );
 }
 
-/** Column span for virtual spacer cells in table-based adapters. */
+/** Column span for spacer/detail/summary cells in table-based adapters. */
 export function virtualColumnSpan(
   columnCount: number,
   hasSelection: boolean,
-  hasActions: boolean
+  hasActions: boolean,
+  hasExpansion = false
 ): number {
-  return columnCount + (hasSelection ? 1 : 0) + (hasActions ? 1 : 0);
+  return (
+    columnCount +
+    (hasSelection ? 1 : 0) +
+    (hasActions ? 1 : 0) +
+    (hasExpansion ? 1 : 0)
+  );
 }
 
 /**

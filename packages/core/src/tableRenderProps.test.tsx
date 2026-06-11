@@ -27,6 +27,34 @@ const cols: ColumnDef<Row>[] = [
 ];
 
 describe("tableRenderModel", () => {
+  it("columnSpan counts the expansion column when row details are active", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        renderRowDetail: (r) => r.name,
+      });
+    });
+    const detail = result.current.detail!;
+    const model = tableRenderModel<Row>({
+      table: result.current.table,
+      rows: ROWS,
+      getRowId: result.current.getRowId,
+      renderRowDetail: detail.render,
+      expansion: detail.expansion,
+    });
+    // 1 data column + 1 expansion column.
+    expect(model.columnSpan).toBe(2);
+  });
+
   const table = {
     columns: cols,
     selection: null,

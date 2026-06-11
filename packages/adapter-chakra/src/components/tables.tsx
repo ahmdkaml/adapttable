@@ -21,7 +21,7 @@ import {
   type SharedTableRenderProps,
   type TableLabels,
   tableMinWidth,
-  virtualColumnSpan,
+  tableRenderModel,
 } from "@adapttable/core";
 import {
   Box,
@@ -480,13 +480,20 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
+  // Core's render model counts the expansion column in `columnSpan` when
+  // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
+  // so spacer and detail rows span it without local `+ 1` math.
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({
+      table,
+      rows,
+      rowActions,
+      getRowId,
+      rowEntries,
+      renderRowDetail,
+      expansion,
+    });
   const expandable = expansion !== undefined;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan =
-    virtualColumnSpan(columns.length, Boolean(selection), showActions) +
-    (expandable ? 1 : 0);
   const groups = headerGroupRow(columns);
   const summary = summaryRow?.(rows);
   // Stick the header *cells* (a `<thead>` does not pin against the document

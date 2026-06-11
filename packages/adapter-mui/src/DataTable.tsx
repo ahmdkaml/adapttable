@@ -28,6 +28,7 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
 
@@ -124,6 +125,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       labels={labels}
     />
   );
+  // Saved views capture the table's own URL params, so the menu defaults to
+  // the table's URL backend + namespace (an explicit option still wins).
+  const savedViewsMenu = props.savedViews && (
+    <SavedViewsMenu
+      options={{
+        adapter: props.urlAdapter,
+        urlKey: props.urlKey,
+        ...props.savedViews,
+      }}
+      labels={labels}
+    />
+  );
 
   let body: React.ReactNode;
   if (c.body === "skeleton") {
@@ -214,7 +227,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           hideSearch={props.hideSearch}
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
-          customToolbar={props.toolbar}
+          customToolbar={
+            <>
+              {savedViewsMenu}
+              {props.toolbar}
+            </>
+          }
           hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
           showRowsPerPage={!c.isPaged}

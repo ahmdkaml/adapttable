@@ -7,6 +7,11 @@
  * @packageDocumentation
  */
 
+export {
+  type SavedViewsLabels,
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
 export { DataTable } from "./DataTable";
 export type { DataTableProps, DataTableSlots } from "./types";
 
@@ -31,6 +36,7 @@ export {
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
@@ -42,6 +48,9 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
   useTableUrlState,
 } from "@adapttable/core";
 

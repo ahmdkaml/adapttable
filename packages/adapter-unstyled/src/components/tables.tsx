@@ -152,7 +152,7 @@ interface DesktopRowProps<TRow> {
   showActions: boolean;
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
-  /** Spacer span over selection + data + actions (detail adds the expand col). */
+  /** Full-width colSpan (expansion + selection + data + actions), core-computed. */
   columnSpan: number;
   /**
    * Comparator-only input: body cells inherit widths from the header's table
@@ -327,7 +327,7 @@ function DesktopRowBase<TRow>(
       {expandable && expanded && (
         <tr data-adapttable-part="detail-row" className={classNames.detailRow}>
           <td
-            colSpan={columnSpan + 1}
+            colSpan={columnSpan}
             data-adapttable-part="detail-cell"
             className={classNames.detailCell}
           >
@@ -375,14 +375,22 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
 }: Readonly<SharedProps<TRow>>) {
+  // The model's columnSpan already counts the expand chevron column (core
+  // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
   const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
+    tableRenderModel({
+      table,
+      rows,
+      rowActions,
+      getRowId,
+      rowEntries,
+      renderRowDetail,
+      expansion,
+    });
   // Expansion is active only when BOTH halves arrive (the chrome only builds
   // the state when `renderRowDetail` is set).
   const expansionState = renderRowDetail ? expansion : undefined;
   const expandable = expansionState !== undefined;
-  // The expand chevron adds a leading column, so full-width spacers span it.
-  const spacerSpan = expandable ? columnSpan + 1 : columnSpan;
 
   // The memoized row compares visual inputs only; callbacks reach it through
   // these identity-stable wrappers that always invoke the LATEST handler
@@ -651,7 +659,7 @@ export function DesktopTable<TRow>({
         {paddingTop > 0 && (
           <tr>
             <td
-              colSpan={spacerSpan}
+              colSpan={columnSpan}
               style={{ height: paddingTop, padding: 0 }}
             />
           </tr>
@@ -696,7 +704,7 @@ export function DesktopTable<TRow>({
         {paddingBottom > 0 && (
           <tr>
             <td
-              colSpan={spacerSpan}
+              colSpan={columnSpan}
               style={{ height: paddingBottom, padding: 0 }}
             />
           </tr>

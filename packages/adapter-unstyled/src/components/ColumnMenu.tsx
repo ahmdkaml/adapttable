@@ -15,10 +15,10 @@ import {
   PinIcon,
   useColumnDragState,
 } from "@adapttable/core";
-import { useEffect, useRef, useState } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
+import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
 
 interface ColumnMenuRowProps<TRow> {
   row: ColumnMenuRow<TRow>;
@@ -109,29 +109,7 @@ export function ColumnMenu<TRow>({
   classNames,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      // Escape strands keyboard focus inside the removed panel — hand it
-      // back to the trigger (outside clicks keep their own focus target).
-      triggerRef.current?.focus();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
 
   return (
     <div
@@ -158,15 +136,7 @@ export function ColumnMenu<TRow>({
           aria-label={labels.columns}
           data-adapttable-part="column-menu-panel"
           className={classNames.columnMenuPanel}
-          style={{
-            position: "absolute",
-            zIndex: 200,
-            insetInlineEnd: 0,
-            margin: 0,
-            border: 0,
-            padding: 0,
-            minInlineSize: 0,
-          }}
+          style={MENU_PANEL_STYLE}
         >
           <div
             data-adapttable-part="column-menu-header"

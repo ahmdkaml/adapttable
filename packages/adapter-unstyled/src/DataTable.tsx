@@ -24,6 +24,7 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { FilterPanel } from "./components/FilterPanel";
 import { FilterPopover } from "./components/FilterPopover";
 import { FiltersIcon, SearchIcon } from "./components/icons";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableClassNames, DataTableProps } from "./types";
@@ -345,6 +346,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           <ColumnMenu
             allColumns={chrome.allColumns}
             layout={chrome.columnLayout}
+            labels={labels}
+            classNames={classNames}
+          />
+        )}
+        {props.savedViews && (
+          // The menu must capture/apply through the SAME URL backend and
+          // namespace the table reads, so those default from the table's
+          // own props (explicit option values still win).
+          <SavedViewsMenu
+            options={{ adapter: urlAdapter, urlKey, ...props.savedViews }}
             labels={labels}
             classNames={classNames}
           />

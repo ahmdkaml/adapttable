@@ -2,6 +2,7 @@ import type {
   BaseDataTableProps,
   TableSource,
   UrlStateAdapter,
+  UseSavedViewsOptions,
   UseServerDataOptions,
 } from "@adapttable/core";
 import type { ReactNode } from "react";
@@ -62,6 +63,14 @@ export interface DataTableProps<TRow> extends Omit<
    * existing navigation stack.
    */
   urlAdapter?: UrlStateAdapter;
+  /**
+   * Saved views: capture the table's current URL state (search, sort, page,
+   * filters, column layout) under a name and re-apply it on demand. Setting
+   * this renders a Saved-views menu in the toolbar next to the Columns
+   * button. `adapter` / `urlKey` default to the table's own `urlAdapter` /
+   * `urlKey`, so usually only `storageKey` is needed.
+   */
+  savedViews?: UseSavedViewsOptions;
   /** Replace sub-components (skeleton, empty-state). */
   slots?: DataTableSlots;
   /** Per-part class name overrides. */

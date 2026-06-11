@@ -164,6 +164,11 @@ Three ways to feed the table, lowest ceremony first:
   capture/apply/remove this table's URL params (search, sort, filters,
   layout) without touching other tables; wire any menu in the `toolbar`
   slot.
+- `savedViews={{ storageKey: "people-views" }}` — or skip the wiring: every
+  adapter ships a ready-made `SavedViewsMenu` (list, apply, delete, save
+  with a name input), mounted in the toolbar by this prop. `adapter` and
+  `urlKey` default to the table's own, and the `savedViews` / `saveView` /
+  `viewName` / `deleteView` labels are localized by the i18n presets.
 
 ### Empty & refresh states
 

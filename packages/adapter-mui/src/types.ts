@@ -2,6 +2,7 @@ import type {
   BaseDataTableProps,
   TableSource,
   UrlStateAdapter,
+  UseSavedViewsOptions,
   UseServerDataOptions,
 } from "@adapttable/core";
 import type { ReactNode } from "react";
@@ -52,6 +53,13 @@ export interface DataTableProps<TRow> extends Omit<
    * multiple tables can share one URL without colliding.
    */
   urlKey?: string;
+  /**
+   * Mount a saved-views menu in the toolbar: name and capture the table's
+   * current URL state (search, sort, page, filters, column layout), then
+   * re-apply it on demand. `adapter`/`urlKey` default to the table's own
+   * `urlAdapter`/`urlKey`, so usually only `storageKey` is needed.
+   */
+  savedViews?: UseSavedViewsOptions;
   /** Replace sub-components (skeleton, empty-state). */
   slots?: DataTableSlots;
   /** Class name applied to the root `<Paper>`. */

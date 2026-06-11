@@ -82,7 +82,7 @@ export interface TableRenderModel<TRow> {
   showActions: boolean;
   /** Materialised row entries (virtual window or the full set). */
   entries: readonly VirtualTableRow<TRow>[];
-  /** Spacer-row colSpan covering selection + data + actions columns. */
+  /** Spacer/detail colSpan: expansion + selection + data + actions. */
   columnSpan: number;
 }
 
@@ -96,7 +96,13 @@ export interface TableRenderModel<TRow> {
 export function tableRenderModel<TRow>(
   props: Pick<
     SharedTableRenderProps<TRow>,
-    "table" | "rows" | "rowActions" | "getRowId" | "rowEntries"
+    | "table"
+    | "rows"
+    | "rowActions"
+    | "getRowId"
+    | "rowEntries"
+    | "renderRowDetail"
+    | "expansion"
   >
 ): TableRenderModel<TRow> {
   const { columns, selection, labels } = props.table;
@@ -115,7 +121,8 @@ export function tableRenderModel<TRow>(
     columnSpan: virtualColumnSpan(
       columns.length,
       Boolean(selection),
-      showActions
+      showActions,
+      Boolean(props.renderRowDetail && props.expansion)
     ),
   };
 }

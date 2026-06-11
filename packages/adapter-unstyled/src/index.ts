@@ -18,6 +18,11 @@ export {
   type FilterPopoverProps,
 } from "./components/FilterPopover";
 export { FiltersIcon, SearchIcon } from "./components/icons";
+export {
+  type SavedViewsLabels,
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";
 export type {
@@ -49,6 +54,7 @@ export {
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
@@ -60,6 +66,9 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
   useServerData,
   type UseServerDataOptions,
   useTableData,

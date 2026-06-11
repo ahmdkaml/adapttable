@@ -14,6 +14,7 @@ import {
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
+  tableRenderModel,
   type UseDataTableResult,
 } from "@adapttable/core";
 import {
@@ -465,22 +466,22 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   density = "comfortable",
 }: Readonly<DesktopTableProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const showActions = (rowActions?.length ?? 0) > 0;
+  // The shared render prelude from core — including `columnSpan` for the
+  // spacer/detail cells, which counts the expansion column itself when
+  // `renderRowDetail` + `expansion` are wired.
+  const { columns, selection, labels, showActions, entries, columnSpan } =
+    tableRenderModel({
+      table,
+      rows,
+      rowActions,
+      getRowId,
+      rowEntries,
+      renderRowDetail,
+      expansion,
+    });
   // Expansion state only exists when `renderRowDetail` is set (the chrome
   // couples them), so its presence alone decides the leading chevron column.
   const expandable = expansion !== undefined;
-  // `getRowId` IS the key (getRowProps derives its key from the same
-  // extractor) — building full row props per row just to read it back would
-  // double the per-row work.
-  const entries =
-    rowEntries ??
-    rows.map((row, index) => ({ row, index, key: getRowId(row) }));
-  const columnSpan =
-    columns.length +
-    (expandable ? 1 : 0) +
-    (selection ? 1 : 0) +
-    (showActions ? 1 : 0);
   // Grouped header row over the VISIBLE columns (`null` → no extra row) and
   // the per-column footer summary cells (`undefined` → no footer).
   const groupCells = headerGroupRow(columns);

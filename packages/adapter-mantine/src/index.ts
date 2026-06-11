@@ -31,6 +31,10 @@ export {
   type PaginationFooterProps,
 } from "./components/PaginationFooter";
 export {
+  SavedViewsMenu,
+  type SavedViewsMenuProps,
+} from "./components/SavedViewsMenu";
+export {
   TableSkeleton,
   type TableSkeletonProps,
 } from "./components/TableSkeleton";
@@ -61,6 +65,7 @@ export {
   type PaginatedResponse,
   type PaginationMode,
   type RowAction,
+  type SavedView,
   type SortByOption,
   type SortDirection,
   type TableLabels,
@@ -73,6 +78,9 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
   useTableUrlState,
 } from "@adapttable/core";
 

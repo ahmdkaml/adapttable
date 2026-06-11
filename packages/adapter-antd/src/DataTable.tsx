@@ -9,11 +9,13 @@ import {
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  type UrlStateAdapter,
   useChromeScrollReset,
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useFilterTriggerToggle,
   useInfiniteScroll,
+  type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -46,6 +48,7 @@ import {
 import { ColumnMenu } from "./components/ColumnMenu";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { MobileCards } from "./components/MobileCards";
+import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { SkeletonTable } from "./components/SkeletonTable";
 import type { DataTableProps } from "./types";
 
@@ -233,6 +236,34 @@ function ColumnMenuSlot<TRow>({
     <ColumnMenu
       allColumns={allColumns}
       layout={layout}
+      labels={labels}
+      dir={dir}
+    />
+  );
+}
+
+/**
+ * The saved-views menu, mounted when the `savedViews` prop opts in. The
+ * table's own `urlAdapter` / `urlKey` are the defaults so a captured view
+ * holds THIS table's params; explicit options win.
+ */
+function SavedViewsSlot({
+  options,
+  urlAdapter,
+  urlKey,
+  labels,
+  dir,
+}: Readonly<{
+  options: UseSavedViewsOptions | undefined;
+  urlAdapter: UrlStateAdapter | undefined;
+  urlKey: string | undefined;
+  labels: Required<TableLabels>;
+  dir?: "ltr" | "rtl";
+}>) {
+  if (!options) return null;
+  return (
+    <SavedViewsMenu
+      options={{ adapter: urlAdapter, urlKey, ...options }}
       labels={labels}
       dir={dir}
     />
@@ -603,6 +634,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
               allColumns={c.allColumns}
               layout={c.columnLayout}
+              labels={labels}
+              dir={props.dir}
+            />
+          }
+          savedViewsMenu={
+            <SavedViewsSlot
+              options={props.savedViews}
+              urlAdapter={props.urlAdapter}
+              urlKey={props.urlKey}
               labels={labels}
               dir={props.dir}
             />
