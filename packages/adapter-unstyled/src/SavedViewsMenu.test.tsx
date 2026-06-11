@@ -50,7 +50,8 @@ function renderMenu({
 }
 
 const trigger = () => screen.getByRole("button", { name: "Saved views" });
-const panel = () => screen.queryByRole("group", { name: "Saved views" });
+const panel = () =>
+  document.querySelector('[data-adapttable-part="views-panel"]');
 
 describe("unstyled SavedViewsMenu", () => {
   it("saves the table-scoped params under the trimmed name and clears the input", () => {

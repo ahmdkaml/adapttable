@@ -37,7 +37,7 @@ function moveRowFocus(current: HTMLElement, delta: -1 | 1): void {
   if (!parent) return;
   const stops = [...parent.children].filter(
     (el): el is HTMLElement =>
-      el instanceof HTMLElement && el.hasAttribute("data-adapttable-row")
+      el instanceof HTMLElement && "adapttableRow" in el.dataset
   );
   const next = stops[stops.indexOf(current) + delta];
   next?.focus();

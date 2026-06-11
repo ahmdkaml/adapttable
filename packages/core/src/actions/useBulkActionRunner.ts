@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 
-import type { BulkAction } from "../types";
-import type { BulkActionContext } from "../types";
+import type { BulkAction, BulkActionContext } from "../types";
 import type { ConfirmHandler } from "./confirm";
 
 /** Options for {@link useBulkActionRunner}. */

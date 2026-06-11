@@ -56,8 +56,6 @@ export function SavedViewsMenu({
       </button>
       {open && (
         <div
-          role="group"
-          aria-label={labels.savedViews}
           data-adapttable-part="views-panel"
           className={classNames.viewsPanel}
           style={MENU_PANEL_STYLE}

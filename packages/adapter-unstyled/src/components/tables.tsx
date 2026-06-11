@@ -241,7 +241,7 @@ function DesktopRowBase<TRow>(
   } = props;
   const expandable = expanded !== undefined;
   const leads: PinLeads = {
-    left: selected !== undefined ? SELECTION_WIDTH : 0,
+    left: selected === undefined ? 0 : SELECTION_WIDTH,
     right: showActions ? ACTIONS_WIDTH : 0,
   };
   const bodyPinStyle = (key: string): CSSProperties | undefined =>
