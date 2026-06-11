@@ -50,6 +50,7 @@ beforeEach(() => {
     },
     loadMoreRef: { current: null },
     canLoadMore: !chrome.isPaged && !props.source.error,
+    virtualScrollRef: () => undefined,
   }));
 });
 
@@ -243,6 +244,7 @@ describe("<DataTable> gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
 
     render(
@@ -279,6 +281,7 @@ describe("<DataTable> gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
 
     render(

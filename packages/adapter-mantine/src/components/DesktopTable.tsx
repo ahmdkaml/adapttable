@@ -16,6 +16,7 @@ import {
   tableMinWidth,
   tableRenderModel,
   type UseDataTableResult,
+  useHorizontalOverflow,
 } from "@adapttable/core";
 import {
   ActionIcon,
@@ -461,6 +462,7 @@ export function DesktopTable<TRow>({
   stickyHeader = false,
   pinOffset,
   maxHeight,
+  virtualScrollRef,
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
@@ -625,13 +627,30 @@ export function DesktopTable<TRow>({
     hasLeftPin,
     hasRightPin
   );
+  // Without a `maxHeight`, the wrapper becomes a horizontal scroller only
+  // when it must: pinned columns always need one, otherwise only while the
+  // table is measurably wider than the wrapper (so wide tables scroll instead
+  // of bleeding over the card border). When the table fits, the wrapper stays
+  // a NON-scroll container — any `overflow` would trap the page-scroll sticky
+  // header inside it.
+  const { ref: wrapperRef, overflowing } =
+    useHorizontalOverflow<HTMLDivElement>();
   const wrapperStyle: CSSProperties =
     maxHeight == null
-      ? { width: "100%", ...(hasPinned ? { overflowX: "auto" } : {}) }
+      ? {
+          width: "100%",
+          ...(hasPinned || overflowing ? { overflowX: "auto" } : {}),
+        }
       : { width: "100%", maxHeight, overflow: "auto" };
 
   return (
-    <div style={wrapperStyle}>
+    <div
+      ref={(node) => {
+        wrapperRef(node);
+        virtualScrollRef?.(node);
+      }}
+      style={wrapperStyle}
+    >
       <Table
         {...table.getTableProps()}
         className={className}

@@ -22,6 +22,7 @@ import {
   type TableLabels,
   tableMinWidth,
   tableRenderModel,
+  useHorizontalOverflow,
 } from "@adapttable/core";
 import {
   Box,
@@ -476,6 +477,7 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  virtualScrollRef,
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
@@ -546,6 +548,12 @@ export function DesktopTable<TRow>({
     typeof column.header === "string" ? column.header : column.key;
 
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // With no maxHeight and no pins the wrapper must stay a NON-scroll
+  // container so page-scroll sticky headers keep working — but a table wider
+  // than the card would then bleed past it. Measure, and scroll only when the
+  // content actually overflows.
+  const { ref: overflowRef, overflowing } =
+    useHorizontalOverflow<HTMLDivElement>();
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
@@ -591,8 +599,14 @@ export function DesktopTable<TRow>({
 
   return (
     <Box
+      ref={(node: HTMLDivElement | null) => {
+        overflowRef(node);
+        virtualScrollRef?.(node);
+      }}
       maxH={maxHeight == null ? undefined : `${maxHeight}px`}
-      overflowX={maxHeight != null || hasPinned ? "auto" : undefined}
+      overflowX={
+        maxHeight != null || hasPinned || overflowing ? "auto" : undefined
+      }
       overflowY={maxHeight == null ? undefined : "auto"}
     >
       <Table

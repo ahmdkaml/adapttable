@@ -65,6 +65,11 @@ export interface SharedTableRenderProps<TRow> {
   pinOffset?: (key: string) => PinOffset | undefined;
   /** Optional max height (px) that turns the table into a scroll box. */
   maxHeight?: number;
+  /**
+   * Attach to the `maxHeight` scroll box so an element-mode virtual window
+   * tracks the box's scrolling (from `useChromeBodyData`).
+   */
+  virtualScrollRef?: (node: HTMLElement | null) => void;
   /** Commit a new width (px) for a resizable column. */
   setWidth?: (key: string, width: number) => void;
   /** Current per-column widths (px), keyed by column key. */

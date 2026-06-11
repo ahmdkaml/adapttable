@@ -631,6 +631,62 @@ describe("<DataTable> (Mantine)", () => {
     expect(th!.closest("[style*='overflow']")).toBeNull();
   });
 
+  // With no `maxHeight` and nothing pinned, the wrapper turns into a
+  // horizontal scroller ONLY while the table is measurably wider than it
+  // (otherwise wide tables bleed over the card border). When the table fits
+  // it must stay a non-scroll container so sticky headers keep working.
+  it("adds overflow-x only while the table is wider than its wrapper", () => {
+    type ResizeCallback = (
+      entries: ResizeObserverEntry[],
+      observer: ResizeObserver
+    ) => void;
+    const callbacks: ResizeCallback[] = [];
+    class FakeResizeObserver {
+      constructor(cb: ResizeCallback) {
+        callbacks.push(cb);
+      }
+      observe() {
+        // measurement is driven manually via `fire` below
+      }
+      unobserve() {
+        // not used by the hook
+      }
+      disconnect() {
+        // not used by this test
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const fire = () => {
+      const observer = new FakeResizeObserver(() => undefined);
+      for (const cb of [...callbacks]) cb([], observer);
+    };
+    try {
+      renderHarness();
+      const wrapper = screen.getByText("Name").closest("table")!.parentElement!;
+      // jsdom measures 0x0 at mount -> the table fits -> NOT a scroll box.
+      expect(wrapper.style.overflowX).toBe("");
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 900,
+        configurable: true,
+      });
+      Object.defineProperty(wrapper, "clientWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      expect(wrapper).toHaveStyle({ overflowX: "auto" });
+      // ... and it relinquishes the scroll container once the table fits.
+      Object.defineProperty(wrapper, "scrollWidth", {
+        value: 600,
+        configurable: true,
+      });
+      act(() => fire());
+      expect(wrapper.style.overflowX).toBe("");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("renders the Columns menu trigger when enableColumnMenu is set", () => {
     renderHarness({ override: { enableColumnMenu: true } });
     expect(screen.getByRole("button", { name: "Columns" })).toBeInTheDocument();

@@ -260,6 +260,10 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
+export {
+  type HorizontalOverflow,
+  useHorizontalOverflow,
+} from "./layout/useHorizontalOverflow";
 
 /* ── Pagination ────────────────────────────────────────────────────── */
 export {
@@ -308,7 +312,6 @@ export {
   type UseTableVirtualizationOptions,
   virtualColumnSpan,
   type VirtualTableRow,
-  warnVirtualizeInScrollBox,
 } from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */

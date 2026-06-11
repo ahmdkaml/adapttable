@@ -53,6 +53,7 @@ interface DataTableBodyProps<TRow> {
   confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
   getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
   virtualization: TableVirtualization<TRow>;
+  virtualScrollRef: (node: HTMLElement | null) => void;
   labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
 }
 
@@ -63,6 +64,7 @@ function DataTableBody<TRow>({
   confirm,
   getRowId,
   virtualization,
+  virtualScrollRef,
   labels,
 }: Readonly<DataTableBodyProps<TRow>>): ReactElement {
   if (chrome.body === "skeleton") {
@@ -128,6 +130,7 @@ function DataTableBody<TRow>({
       stickyTop={props.stickyTop}
       pinOffset={chrome.columnLayout.pinOffset}
       maxHeight={props.maxHeight}
+      virtualScrollRef={virtualScrollRef}
       setWidth={
         props.resizableColumns ? chrome.columnLayout.setWidth : undefined
       }
@@ -425,6 +428,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           confirm={confirm}
           getRowId={getRowId}
           virtualization={virtualization}
+          virtualScrollRef={bodyData.virtualScrollRef}
           labels={labels}
         />
       )}

@@ -16,6 +16,7 @@ import {
   type SharedTableRenderProps,
   tableMinWidth,
   tableRenderModel,
+  useHorizontalOverflow,
 } from "@adapttable/core";
 import type { MouseEventHandler, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
@@ -414,6 +415,7 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  virtualScrollRef,
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
@@ -547,10 +549,15 @@ export function DesktopTable<TRow>({
   ]);
 
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
+  // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
+  // pins, the wrapper only becomes a scroll container when the table is
+  // actually wider than it — an unconditional `overflowX: auto` would trap
+  // the page-scroll sticky header even when everything fits.
+  const overflow = useHorizontalOverflow<HTMLDivElement>();
   let boxSx: SxProps<Theme> | undefined;
   if (maxHeight != null) {
     boxSx = { maxHeight, overflow: "auto" };
-  } else if (hasPinned) {
+  } else if (hasPinned || overflow.overflowing) {
     boxSx = { overflowX: "auto" };
   }
   // Fixed-width columns get a real table min-width (their sum), so the table
@@ -561,7 +568,13 @@ export function DesktopTable<TRow>({
   });
 
   return (
-    <Box sx={boxSx}>
+    <Box
+      ref={(node: HTMLDivElement | null) => {
+        overflow.ref(node);
+        virtualScrollRef?.(node);
+      }}
+      sx={boxSx}
+    >
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"] as string}

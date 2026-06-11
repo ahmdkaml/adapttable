@@ -96,7 +96,8 @@ Three ways to feed the table, lowest ceremony first:
   `useColorScheme` (resolves `"light" | "dark" | "auto"`)
 - `useInfiniteScroll` — IntersectionObserver sentinel that auto-loads the
   next page in infinite mode (returns a ref; re-arms on `itemCount`)
-- `useTableVirtualization` — headless window virtualization for rows/cards.
+- `useTableVirtualization` — headless row/card windowing: page-scroll by
+  default, or element-scroll inside a `maxHeight` box via `getScrollElement`.
 - `useScrollToTableTop` — optional sticky-chrome scroll restoration.
 - `compareValues`, `sortRows`, `nextSort`, `computePagination`,
   `visibleColumns`, `mergeProps`, `stableKey`, `resolveLabels`,
@@ -182,7 +183,7 @@ Three ways to feed the table, lowest ceremony first:
 
 Misconfiguration warns once per message in development (silent in
 production): unresolvable sorts, duplicate column keys, two tables sharing a
-URL namespace without `urlKey`, and `virtualize` combined with `maxHeight`.
+URL namespace without `urlKey`, and `virtualize` with `renderRowDetail`.
 
 ## Adapters
 

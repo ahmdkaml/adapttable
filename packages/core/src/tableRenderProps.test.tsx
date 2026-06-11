@@ -263,6 +263,46 @@ describe("controlled selection through the chrome", () => {
 });
 
 describe("useChromeBodyData", () => {
+  it("element mode: a maxHeight box scrolls the virtual window (ref wiring)", () => {
+    const adapter = createMemoryAdapter("");
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      id: String(i),
+      name: `Row ${i}`,
+    }));
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: many,
+        columns: cols,
+        adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true,
+        maxHeight: 300,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    // Attaching the scroll box hands TanStack the element to track; the
+    // mount effect resolves it through the chrome's getScrollElement.
+    const box = document.createElement("div");
+    act(() => {
+      result.current.virtualScrollRef(box);
+    });
+    act(() => {
+      result.current.virtualScrollRef(null);
+    });
+    expect(typeof result.current.virtualScrollRef).toBe("function");
+    // jsdom boxes have no layout, so the element window stays empty and
+    // every row falls back to materialized rendering — graceful, not blank.
+    expect(result.current.virtualization.enabled).toBe(false);
+    // 25 = the infinite tier's first page; every page row materializes.
+    expect(result.current.virtualization.rows).toHaveLength(25);
+  });
+
   it("disables virtualization and load-more in paged mode", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() => {

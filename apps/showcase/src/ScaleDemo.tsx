@@ -151,6 +151,11 @@ export function ScaleDemo() {
     data: rows,
     columns: COLUMNS,
     urlKey: "scale",
+    // Virtualization needs a continuous list, not pages: infinite mode
+    // keeps ONE growing window that the virtualizer extends automatically
+    // whenever the scroller nears the end (no Load-more button needed).
+    paginationMode: "infinite",
+    defaults: { limit: 500 },
   });
   return (
     <DataTable

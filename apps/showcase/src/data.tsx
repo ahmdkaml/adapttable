@@ -27,6 +27,10 @@ export interface Person {
   email: string;
   role: string;
   team: string;
+  /** Arabic-localized fields — the `i18n` column mapping points here. */
+  nameAr: string;
+  roleAr: string;
+  teamAr: string;
 }
 
 export const PEOPLE = people as Person[];
@@ -106,6 +110,45 @@ const STRINGS: Record<Locale, Strings> = {
 export function strings(locale: Locale): Strings {
   return STRINGS[locale];
 }
+
+/** The row's display name in the demo's active language. */
+export function personName(row: Person, locale: Locale): string {
+  return locale === "ar" ? row.nameAr : row.name;
+}
+
+/** The row's display role in the demo's active language. */
+export function personRole(row: Person, locale: Locale): string {
+  return locale === "ar" ? row.roleAr : row.role;
+}
+
+/** Localized labels for the canonical status values (values stay stable). */
+export const STATUS_LABELS: Record<Locale, Record<DemoStatus, string>> = {
+  en: {
+    Active: "Active",
+    Planned: "Planned",
+    Blocked: "Blocked",
+    Archived: "Archived",
+  },
+  ar: { Active: "نشط", Planned: "مخطط", Blocked: "محظور", Archived: "مؤرشف" },
+};
+
+/** Localized labels for the canonical team values (values stay stable). */
+export const TEAM_LABELS: Record<Locale, Record<string, string>> = {
+  en: {
+    Core: "Core",
+    Platform: "Platform",
+    Data: "Data",
+    Web: "Web",
+    Mobile: "Mobile",
+  },
+  ar: {
+    Core: "الأساسية",
+    Platform: "المنصة",
+    Data: "البيانات",
+    Web: "الويب",
+    Mobile: "الجوال",
+  },
+};
 
 export function notifyDemo(notice: DemoNotice): void {
   window.dispatchEvent(
@@ -260,11 +303,13 @@ export function makeColumns(
       width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Avatar name={row.name} />
+          <Avatar name={personName(row, locale)} />
           <span style={cellStack}>
-            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <strong style={{ fontWeight: 600 }}>
+              {personName(row, locale)}
+            </strong>
             <small style={{ opacity: 0.55, fontSize: "0.8em" }}>
-              {row.role}
+              {personRole(row, locale)}
             </small>
           </span>
         </span>
@@ -281,9 +326,11 @@ export function makeColumns(
       mobileLabel: s.email,
     },
     {
+      // The library's own column i18n: under `locale="ar"` the cell, sort
+      // and filter all follow the `teamAr` path — no accessor needed.
       key: "team",
       header: s.team,
-      accessor: (r) => r.team,
+      i18n: { ar: "teamAr" },
       width: 130,
       mobileLabel: s.team,
     },
@@ -291,7 +338,10 @@ export function makeColumns(
       key: "status",
       header: s.status,
       accessor: (r) => (
-        <Status status={personStatus(r)} label={personStatus(r)} />
+        <Status
+          status={personStatus(r)}
+          label={STATUS_LABELS[locale][personStatus(r)]}
+        />
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
@@ -368,9 +418,11 @@ export function makeWideColumns(
       width: 240,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Avatar name={row.name} />
+          <Avatar name={personName(row, locale)} />
           <span style={cellStack}>
-            <strong style={{ fontWeight: 600 }}>{row.name}</strong>
+            <strong style={{ fontWeight: 600 }}>
+              {personName(row, locale)}
+            </strong>
             <small style={{ opacity: 0.6, fontSize: "0.82em" }}>
               {row.email}
             </small>
@@ -378,12 +430,16 @@ export function makeWideColumns(
         </span>
       ),
     },
-    { key: "role", header: s.role, accessor: (r) => r.role, width: 150 },
+    {
+      key: "role",
+      header: s.role,
+      i18n: { ar: "roleAr" },
+      width: 150,
+    },
     {
       key: "team",
       header: s.team,
-      accessor: (r) => r.team,
-      sortValue: (r) => r.team,
+      i18n: { ar: "teamAr" },
       sortable: true,
       width: 130,
     },
@@ -391,7 +447,10 @@ export function makeWideColumns(
       key: "status",
       header: s.status,
       accessor: (r) => (
-        <Status status={personStatus(r)} label={personStatus(r)} />
+        <Status
+          status={personStatus(r)}
+          label={STATUS_LABELS[locale][personStatus(r)]}
+        />
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
@@ -561,13 +620,21 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
       key: "team",
       type: "multiSelect",
       label: s.team,
-      options: TEAMS.map((team) => ({ value: team, label: team })),
+      options: TEAMS.map((team) => ({
+        value: team,
+        label: TEAM_LABELS[locale][team] ?? team,
+      })),
+      // Filtering matches the CANONICAL value whatever language is shown.
+      getValue: (row) => row.team,
     },
     {
       key: "status",
       type: "multiSelect",
       label: s.status,
-      options: STATUSES.map((status) => ({ value: status, label: status })),
+      options: STATUSES.map((status) => ({
+        value: status,
+        label: STATUS_LABELS[locale][status],
+      })),
       getValue: personStatus,
     },
     {

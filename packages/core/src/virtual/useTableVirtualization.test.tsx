@@ -1,17 +1,16 @@
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, useWindowVirtualizer } from "@tanstack/react-virtual";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetDevWarnings } from "../utils/devWarn";
 import {
   resolveVirtualRows,
   useTableVirtualization,
   virtualColumnSpan,
-  warnVirtualizeInScrollBox,
 } from "./useTableVirtualization";
 
 vi.mock("@tanstack/react-virtual", () => ({
   useWindowVirtualizer: vi.fn(),
+  useVirtualizer: vi.fn(),
 }));
 
 interface Row {
@@ -34,6 +33,12 @@ describe("useTableVirtualization", () => {
       measureElement: vi.fn(),
       options: { scrollMargin: 0 },
     } as unknown as ReturnType<typeof useWindowVirtualizer>);
+    vi.mocked(useVirtualizer).mockReturnValue({
+      getVirtualItems: () => [],
+      getTotalSize: () => 0,
+      measureElement: vi.fn(),
+      options: {},
+    } as unknown as ReturnType<typeof useVirtualizer>);
   });
 
   it("feeds the virtualizer a size estimator and stable item keys", () => {
@@ -257,15 +262,54 @@ describe("useTableVirtualization", () => {
   });
 });
 
-describe("warnVirtualizeInScrollBox", () => {
-  it("warns only when virtualize and maxHeight are combined", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    warnVirtualizeInScrollBox(true, undefined);
-    warnVirtualizeInScrollBox(false, 400);
-    expect(warn).not.toHaveBeenCalled();
-    warnVirtualizeInScrollBox(true, 400);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("maxHeight"));
-    resetDevWarnings();
-    vi.restoreAllMocks();
+describe("element-mode virtualization (maxHeight scroll boxes)", () => {
+  it("window mode hands the disabled element virtualizer a null scroller", () => {
+    renderHook(() =>
+      useTableVirtualization({ rows, rowKey, enabled: true, estimateSize: 56 })
+    );
+    const elementOptions = vi.mocked(useVirtualizer).mock.calls.at(-1)![0];
+    expect(elementOptions.enabled).toBe(false);
+    expect(elementOptions.getScrollElement()).toBeNull();
+  });
+
+  it("getScrollElement switches to the element virtualizer", () => {
+    const box = document.createElement("div");
+    const items = [
+      { index: 1, start: 56, end: 112, key: "1" },
+      { index: 2, start: 112, end: 168, key: "2" },
+    ];
+    const measureElement = vi.fn();
+    vi.mocked(useVirtualizer).mockReturnValue({
+      getVirtualItems: () => items,
+      getTotalSize: () => 280,
+      measureElement,
+      options: {},
+    } as unknown as ReturnType<typeof useVirtualizer>);
+    const { result } = renderHook(() =>
+      useTableVirtualization({
+        rows,
+        rowKey,
+        enabled: true,
+        estimateSize: 56,
+        getScrollElement: () => box,
+      })
+    );
+    // The element virtualizer was enabled, the window one disabled.
+    const elementOptions = vi.mocked(useVirtualizer).mock.calls.at(-1)![0];
+    const windowOptions = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(elementOptions.enabled).toBe(true);
+    expect(windowOptions.enabled).toBe(false);
+    expect(elementOptions.getScrollElement()).toBe(box);
+    expect(elementOptions.estimateSize(0)).toBe(56);
+    expect(elementOptions.getItemKey!(1)).toBe("1");
+    // Element mode has no scrollMargin: spacers come straight from starts.
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.rows.map((entry) => entry.row.id)).toEqual([
+      "1",
+      "2",
+    ]);
+    expect(result.current.paddingTop).toBe(56);
+    expect(result.current.paddingBottom).toBe(280 - 168);
+    expect(result.current.measureElement).toBe(measureElement);
   });
 });

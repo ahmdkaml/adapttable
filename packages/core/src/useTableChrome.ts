@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode, RefCallback, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
@@ -31,7 +31,6 @@ import { devWarn } from "./utils/devWarn";
 import {
   type TableVirtualization,
   useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "./virtual/useTableVirtualization";
 
 /**
@@ -326,6 +325,12 @@ export interface ChromeBodyData<TRow> {
   loadMoreRef: RefObject<HTMLDivElement>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
   canLoadMore: boolean;
+  /**
+   * Attach to the `maxHeight` scroll box (when one renders) so the virtual
+   * window tracks the box's scrolling instead of the page's. Harmless to
+   * attach when virtualization is off.
+   */
+  virtualScrollRef: RefCallback<HTMLElement>;
 }
 
 /**
@@ -345,7 +350,6 @@ export function useChromeBodyData<TRow>(
   props: BaseDataTableProps<TRow>
 ): ChromeBodyData<TRow> {
   const { source, rowKey, virtualize = false } = props;
-  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   if (virtualize && props.renderRowDetail) {
     devWarn(
       "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
@@ -357,6 +361,13 @@ export function useChromeBodyData<TRow>(
       source.fetchNextPage();
     }
   }, [source]);
+  // Inside a maxHeight box the BOX is the scroller, so the virtual window
+  // must track it (element mode); otherwise the page scrolls (window mode).
+  const scrollBoxRef = useRef<HTMLElement | null>(null);
+  const virtualScrollRef = useCallback((node: HTMLElement | null) => {
+    scrollBoxRef.current = node;
+  }, []);
+  const inScrollBox = props.maxHeight != null;
   const virtualization = useTableVirtualization({
     rows: source.rows,
     rowKey,
@@ -370,6 +381,7 @@ export function useChromeBodyData<TRow>(
       : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
+    getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
   });
   const canLoadMore = !chrome.isPaged && !source.error;
@@ -380,7 +392,7 @@ export function useChromeBodyData<TRow>(
     itemCount: source.rows.length,
     enabled: canLoadMore,
   });
-  return { virtualization, loadMoreRef, canLoadMore };
+  return { virtualization, loadMoreRef, canLoadMore, virtualScrollRef };
 }
 
 /**

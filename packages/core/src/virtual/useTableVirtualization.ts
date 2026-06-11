@@ -1,12 +1,11 @@
 import {
+  useVirtualizer,
   useWindowVirtualizer,
   type VirtualItem,
-  type Virtualizer,
 } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef } from "react";
 
 import { VIRTUAL_OVERSCAN } from "../constants";
-import { devWarn } from "../utils/devWarn";
 
 /** One row/card entry materialized from a virtual window. */
 export interface VirtualTableRow<TRow> {
@@ -31,7 +30,7 @@ export interface TableVirtualization<TRow> {
   /** Spacer after the rendered slice. */
   paddingBottom: number;
   /** Element measurement callback for virtualized rows/cards. */
-  measureElement?: Virtualizer<Window, Element>["measureElement"];
+  measureElement?: (node: Element | null) => void;
 }
 
 /** Options for {@link useTableVirtualization}. */
@@ -48,6 +47,12 @@ export interface UseTableVirtualizationOptions<TRow> {
   overscan?: number;
   /** Window virtualizer scroll margin, usually sticky header height. */
   scrollMargin?: number;
+  /**
+   * Scroll container accessor. When provided, the virtual window tracks
+   * THIS element's scrolling (a `maxHeight` box) instead of the page —
+   * that's how `virtualize` + `maxHeight` compose.
+   */
+  getScrollElement?: () => Element | null;
   /** Called when the virtual window reaches the last source row. */
   onEndReached?: () => void;
 }
@@ -95,19 +100,33 @@ export function useTableVirtualization<TRow>({
   estimateSize = 56,
   overscan = VIRTUAL_OVERSCAN,
   scrollMargin = 0,
+  getScrollElement,
   onEndReached,
 }: UseTableVirtualizationOptions<TRow>): TableVirtualization<TRow> {
-  const virtualizer = useWindowVirtualizer({
+  const elementMode = getScrollElement !== undefined;
+  const getItemKey = (index: number): string => {
+    const row = rows[index];
+    return row === undefined ? String(index) : rowKey(row);
+  };
+  // Both hooks must run unconditionally (rules of hooks); exactly one is
+  // enabled. Window mode tracks the page; element mode tracks the box.
+  const windowVirtualizer = useWindowVirtualizer({
     count: rows.length,
-    enabled,
+    enabled: enabled && !elementMode,
     estimateSize: () => estimateSize,
-    getItemKey: (index) => {
-      const row = rows[index];
-      return row === undefined ? String(index) : rowKey(row);
-    },
+    getItemKey,
     overscan,
     scrollMargin,
   });
+  const elementVirtualizer = useVirtualizer({
+    count: rows.length,
+    enabled: enabled && elementMode,
+    getScrollElement: getScrollElement ?? (() => null),
+    estimateSize: () => estimateSize,
+    getItemKey,
+    overscan,
+  });
+  const virtualizer = elementMode ? elementVirtualizer : windowVirtualizer;
 
   const virtualItems = virtualizer.getVirtualItems();
   const active = enabled && virtualItems.length > 0;
@@ -176,21 +195,4 @@ export function useTableVirtualization<TRow>({
     paddingBottom: Math.max(0, paddingBottom),
     measureElement: virtualizer.measureElement,
   };
-}
-
-/**
- * Dev-only: `virtualize` windows against the PAGE scroll and cannot observe
- * rows inside a `maxHeight` scroll box — combined, the window never moves and
- * the slice never updates. Adapters call this once per render so the
- * misconfiguration is caught in development instead of failing silently.
- */
-export function warnVirtualizeInScrollBox(
-  virtualize: boolean,
-  maxHeight: number | undefined
-): void {
-  if (virtualize && maxHeight != null) {
-    devWarn(
-      "`virtualize` uses window scrolling and cannot see rows inside a `maxHeight` scroll box — use one or the other (antd is the exception: it virtualizes natively inside its own box)."
-    );
-  }
 }

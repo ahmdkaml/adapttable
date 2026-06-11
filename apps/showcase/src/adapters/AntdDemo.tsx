@@ -119,6 +119,7 @@ export function AntdDemo({
             density={density}
             filtersMode={filtersUi}
             labels={getLabels(locale)}
+            locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={makeActions(locale)}

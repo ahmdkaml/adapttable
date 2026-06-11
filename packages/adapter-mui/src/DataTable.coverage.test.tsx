@@ -384,6 +384,7 @@ describe("MUI coverage gaps", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     mount({ isMobile: true, virtualize: true }, "infinite");
     const list = screen.getByRole("list");

@@ -26,6 +26,7 @@ import { Columns, Layers, Pin, Resize } from "./sectionIcons";
 import {
   FeatureGrid,
   Footer,
+  GetStarted,
   Hero,
   Nav,
   SectionHead,
@@ -266,9 +267,10 @@ function ScaleSection() {
         kicker="Virtualization"
         title="Scrolls 50,000 rows without flinching."
       >
-        Opt-in virtualization renders only what&apos;s on screen. Type to filter
-        the whole set; the window re-computes instantly. This list holds fifty
-        thousand people.
+        This list really holds fifty thousand people, but the DOM only ever
+        contains the handful of rows inside the scroll box — scroll and watch
+        new rows materialize with zero lag. Type to filter: the whole set is
+        searched and the window re-computes instantly.
       </SectionHead>
       <div className="pad-surface">
         <div className="pad-surface__body">
@@ -350,6 +352,7 @@ export function App() {
           <FeatureGrid />
         </section>
       </main>
+      <GetStarted />
       <Footer />
 
       {notice && (

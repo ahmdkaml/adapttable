@@ -87,10 +87,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
-  const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
-    chrome,
-    chromeProps
-  );
+  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
+    useChromeBodyData(chrome, chromeProps);
 
   const tableProps = {
     table,
@@ -108,6 +106,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     stickyTop: props.stickyTop,
     pinOffset: chrome.columnLayout.pinOffset,
     maxHeight: props.maxHeight,
+    virtualScrollRef,
     setWidth: props.resizableColumns ? chrome.columnLayout.setWidth : undefined,
     columnWidths: chrome.columnLayout.state.widths,
     resizeLabel: table.labels.resizeColumn,

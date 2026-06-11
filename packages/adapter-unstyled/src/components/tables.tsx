@@ -19,6 +19,7 @@ import {
   tableMinWidth,
   tableRenderModel,
   type UseDataTableResult,
+  useHorizontalOverflow,
 } from "@adapttable/core";
 import type { CSSProperties, MouseEvent, ReactElement, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
@@ -43,6 +44,23 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 // edge alongside the data columns, which therefore start past them.
 const SELECTION_WIDTH = 44;
 const ACTIONS_WIDTH = 120;
+
+/**
+ * Scroll-box style: a `maxHeight`-bounded box scrolls on both axes; otherwise
+ * the wrapper scrolls sideways only when something needs it (a pinned column,
+ * or measured horizontal overflow). When the table fits, the wrapper carries
+ * NO overflow style — `overflow-x: auto` makes `overflow-y` compute to `auto`
+ * too, which would trap a page-scroll sticky header inside the box.
+ */
+function scrollBoxStyle(
+  maxHeight: number | undefined,
+  scrollX: boolean
+): CSSProperties | undefined {
+  if (maxHeight != null) {
+    return { maxHeight, overflowX: "auto", overflowY: "auto" };
+  }
+  return scrollX ? { overflowX: "auto" } : undefined;
+}
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   classNames: DataTableClassNames;
@@ -371,6 +389,7 @@ export function DesktopTable<TRow>({
   stickyTop = 0,
   pinOffset,
   maxHeight,
+  virtualScrollRef,
   setWidth,
   columnWidths,
   resizeLabel = "Resize column",
@@ -432,6 +451,11 @@ export function DesktopTable<TRow>({
     []
   );
   const Row = useMemo(() => createDesktopRow<TRow>(), []);
+
+  // Measures the always-rendered scroll-box wrapper so it can turn into a
+  // horizontal scroller exactly while the table is wider than it.
+  const { ref: overflowRef, overflowing } =
+    useHorizontalOverflow<HTMLDivElement>();
 
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller). The adapter ships no colours, so consumers must give their
@@ -734,20 +758,21 @@ export function DesktopTable<TRow>({
     </table>
   );
 
-  // A pinned column needs a horizontal scroll container to stick to, so wrap
-  // the table whenever something is pinned (or a `maxHeight` bounds it). We do
-  // NOT wrap a plain table — `overflow-x:auto` makes `overflow-y` compute to
-  // `auto` too, which would trap a page-scroll sticky header inside the box.
+  // The wrapper ALWAYS renders so the overflow hook has an element to
+  // measure, but it gains a scroll style only when something needs one: a
+  // pinned column (which needs a horizontal scroll container to stick to), a
+  // table measurably wider than its container, or a bounding `maxHeight`.
+  // While the table fits, the wrapper carries NO overflow style — see
+  // `scrollBoxStyle` for the page-scroll sticky-header trap that avoids.
   const hasPinned = columns.some((c) => pinOffset?.(c.key) != null);
-  if (maxHeight == null && !hasPinned) return tableEl;
   return (
     <div
+      ref={(node) => {
+        overflowRef(node);
+        virtualScrollRef?.(node);
+      }}
       data-adapttable-part="scroll-box"
-      style={
-        maxHeight == null
-          ? { overflowX: "auto" }
-          : { maxHeight, overflowX: "auto", overflowY: "auto" }
-      }
+      style={scrollBoxStyle(maxHeight, hasPinned || overflowing)}
     >
       {tableEl}
     </div>

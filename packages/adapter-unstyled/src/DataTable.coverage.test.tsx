@@ -13,7 +13,7 @@ import {
   useFrontendData,
   type VirtualTableRow,
 } from "@adapttable/core";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -53,6 +53,7 @@ beforeEach(() => {
     },
     loadMoreRef: { current: null },
     canLoadMore: !chrome.isPaged && !props.source.error,
+    virtualScrollRef: () => undefined,
   }));
 });
 
@@ -120,14 +121,65 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     expect(adapter.getSearch()).not.toContain("sortBy=name");
   });
 
-  // tables.tsx scroll-box — present only when pinning needs a horizontal
-  // scroller (or a `maxHeight` bounds it); a plain table is left unwrapped so a
-  // page-scroll sticky header is not trapped in an overflow box.
-  it("does not wrap a plain desktop table in a scroll box", () => {
+  // tables.tsx scroll-box — the wrapper always renders (the overflow hook
+  // needs an element to measure), but a plain fitting table leaves it with NO
+  // overflow style at all (no style attribute), so `overflow-y` stays
+  // `visible` and a page-scroll sticky header is not trapped in the box.
+  it("leaves the scroll box of a plain fitting table free of overflow styles", () => {
     const { container } = renderHarness();
-    expect(
-      container.querySelector('[data-adapttable-part="scroll-box"]')
-    ).toBeNull();
+    const box = container.querySelector('[data-adapttable-part="scroll-box"]');
+    expect(box).toBeInTheDocument();
+    expect(box).not.toHaveAttribute("style");
+    expect(box).toContainElement(
+      container.querySelector<HTMLElement>('[data-adapttable-part="table"]')
+    );
+  });
+
+  // tables.tsx scroll-box — with nothing pinned and no maxHeight, the wrapper
+  // becomes a horizontal scroller exactly while the measured table is wider
+  // than it (many visible columns must scroll sideways, not bleed over the
+  // card border), and drops the style again once the table fits.
+  it("scrolls sideways only while the measured table overflows the wrapper", () => {
+    let measure: (() => void) | undefined;
+    class FakeResizeObserver {
+      constructor(cb: () => void) {
+        measure = cb;
+      }
+      observe() {
+        // measurement is driven manually via `measure`
+      }
+      disconnect() {
+        // nothing to tear down in the fake
+      }
+      unobserve() {
+        // not used by the hook
+      }
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    const scrollWidth = vi
+      .spyOn(Element.prototype, "scrollWidth", "get")
+      .mockReturnValue(900);
+    const clientWidth = vi
+      .spyOn(Element.prototype, "clientWidth", "get")
+      .mockReturnValue(600);
+    try {
+      const { container } = renderHarness();
+      const box = container.querySelector(
+        '[data-adapttable-part="scroll-box"]'
+      );
+      expect(box).toHaveStyle({ overflowX: "auto" });
+      // Sideways ONLY — overflow-y must stay visible for sticky headers.
+      expect(box?.getAttribute("style")).not.toContain("overflow-y");
+      // The table fits again (columns hidden/resized): the ResizeObserver
+      // re-measure clears every overflow style from the wrapper.
+      scrollWidth.mockReturnValue(600);
+      act(() => measure?.());
+      expect(box?.getAttribute("style") ?? "").not.toContain("overflow");
+    } finally {
+      scrollWidth.mockRestore();
+      clientWidth.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("wraps in a sideways-scrolling box when a column is pinned", () => {
@@ -228,6 +280,7 @@ describe("<DataTable> (unstyled) branch coverage", () => {
       },
       loadMoreRef: { current: null },
       canLoadMore: true,
+      virtualScrollRef: () => undefined,
     });
     const { container } = renderHarness({
       isMobile: true,
