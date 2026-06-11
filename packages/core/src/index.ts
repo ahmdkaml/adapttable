@@ -45,7 +45,35 @@ export {
 } from "./actions/useBulkActionRunner";
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
+/* ── Declarative filters & data tiers ──────────────────────────────── */
+export { resolveColumns } from "./columns/resolveColumns";
+export {
+  buildFilterRuntime,
+  clearedFilterExtras,
+  type ColumnFilter,
+  FILTER_TYPES,
+  type FilterDef,
+  filterLabel,
+  type FilterOption,
+  filterPredicate,
+  type FilterRuntime,
+  filterStateKeys,
+  type FilterType,
+  RANGE_SUFFIXES,
+  resolveFilterDefs,
+} from "./filters/filterDefs";
 export type { BaseDataTableProps } from "./props";
+export {
+  type TableQuery,
+  useServerData,
+  type UseServerDataOptions,
+} from "./source/useServerData";
+export {
+  isDeclarativeFilters,
+  useTableData,
+  type UseTableDataOptions,
+  type UseTableDataResult,
+} from "./source/useTableData";
 export {
   type BulkBarChromeProps,
   type ChromeBodyData,
@@ -56,6 +84,8 @@ export {
   useChromeScrollReset,
   useTableChrome,
 } from "./useTableChrome";
+export { humanizeKey } from "./utils/humanizeKey";
+export { getPath } from "./utils/path";
 
 /* ── Labels ────────────────────────────────────────────────────────── */
 export { defaultLabels, resolveLabels } from "./labels";

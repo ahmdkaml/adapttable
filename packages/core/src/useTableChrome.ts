@@ -2,6 +2,7 @@ import type { ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
+import { resolveColumns } from "./columns/resolveColumns";
 import {
   useColumnLayout,
   type UseColumnLayoutResult,
@@ -167,10 +168,14 @@ export function useTableChrome<TRow>(
   const isMobile = isMobileProp ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
+  // Declarative defaults (auto headers, dot-path accessors) resolve once
+  // here, so the layout, the column menu and the table all see them.
+  const resolvedColumns = useMemo(() => resolveColumns(columns), [columns]);
+
   // User column layout (hide/order/…) applied on top of the declared columns,
   // before device filtering inside useDataTable. The menu uses `allColumns`.
   const columnLayout = useColumnLayout<TRow>({
-    columns,
+    columns: resolvedColumns,
     layout: columnLayoutProp,
     onLayoutChange: onColumnLayoutChange,
     defaultLayout: defaultColumnLayout,
@@ -261,7 +266,7 @@ export function useTableChrome<TRow>(
     clearFilters,
     showFooter,
     columnLayout,
-    allColumns: columns,
+    allColumns: resolvedColumns,
   };
 }
 

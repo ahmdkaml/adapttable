@@ -1,22 +1,26 @@
 # Comparison
 
-How AdaptTable compares to popular React table libraries.
+How AdaptTable compares to popular React table libraries — scoped to what
+each ships **built-in**. Every one of these projects is excellent at what it
+targets; the table below is about scope fit, not quality. A "✗" means "not a
+built-in feature" — most gaps can be closed with custom code or third-party
+libraries.
 
-| Feature                                        |  ag-grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**       |
+| Feature                                        |  AG Grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**       |
 | ---------------------------------------------- | :-------: | :------------------: | :---------------: | :------------: | :-----------------------: |
 | Headless core                                  |     ✗     |          ✓           |         ✗         |       ✗        |           **✓**           |
 | Works across UI kits                           |     ✗     | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters**  |
 | Client **and** server data, same API           |  partial  |   wire it yourself   |         ✗         |    partial     |   **✓ (`TableSource`)**   |
 | URL-synced state (shareable links)             |     ✗     |          ✗           |         ✗         |       ✗        |           **✓**           |
 | Filter drawer + removable chips                |     ✗     |          ✗           |         ✗         |    partial     |      **✓ built-in**       |
-| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**    |
+| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |      partial      |    ✓ (paid)    |   **✓ auto by device**    |
 | Responsive mobile card layout                  |  partial  |  build it yourself   |      partial      |    partial     | **✓ automatic + tunable** |
 | Optional row/card virtualization               |     ✓     |      ✓ (manual)      |         ✗         |    ✓ (paid)    |   **✓ built-in opt-in**   |
 | i18n + **RTL / Arabic** first-class            |  partial  |          ✗           |         ✗         |    partial     |           **✓**           |
 | Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**       |
 | MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |           **✓**           |
 
-<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers.</sub>
+<sub>Comparison as of June 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
 
 ## When to choose AdaptTable
 
@@ -33,7 +37,7 @@ How AdaptTable compares to popular React table libraries.
 ## When another library may fit better
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing today → **ag-grid** / **MUI X DataGrid (paid)**.
+  Excel-style editing today → **AG Grid** / **MUI X DataGrid (paid)**.
 - You're on a framework other than React → **TanStack Table** (multi-
   framework). AdaptTable is React-only for v1.
 - You need a spreadsheet-like editing surface today, not a responsive data

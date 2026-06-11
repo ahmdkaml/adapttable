@@ -1,13 +1,17 @@
 import {
+  isDeclarativeFilters,
   pageSizeOptions,
+  type TableSource,
   type TableVirtualization,
   useChromeBodyData,
   useChromeScrollReset,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
-import type { MutableRefObject, ReactElement } from "react";
+import type { MutableRefObject, ReactElement, ReactNode } from "react";
 import { useRef, useState } from "react";
 
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -23,9 +27,22 @@ import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
 import type { DataTableProps } from "./types";
 
+/**
+ * `DataTableProps` after tier resolution: the source is definite (whichever
+ * tier provided it) and `filters` is plain JSX (the auto-built form when the
+ * caller passed the declarative array).
+ */
+type ResolvedDataTableProps<TRow> = Omit<
+  DataTableProps<TRow>,
+  "source" | "filters"
+> & {
+  source: TableSource<TRow>;
+  filters?: ReactNode;
+};
+
 interface DataTableBodyProps<TRow> {
   chrome: ReturnType<typeof useTableChrome<TRow>>;
-  props: Readonly<DataTableProps<TRow>>;
+  props: Readonly<ResolvedDataTableProps<TRow>>;
   classNames: NonNullable<DataTableProps<TRow>["classNames"]>;
   confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
   getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
@@ -120,12 +137,16 @@ function DataTableBody<TRow>({
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
-    source,
+    data,
+    total,
+    loading,
+    onQueryChange,
+    urlAdapter,
+    urlKey,
     searchPlaceholder,
     sortByOptions,
     dir,
     hideSearch,
-    filters,
     filtersMode = "popover",
     bulkActions,
     classNames = {},
@@ -134,13 +155,52 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const density = props.density ?? "comfortable";
 
-  const chrome = useTableChrome<TRow>(props);
+  // Resolve the data tier (prebuilt source > server > frontend) and the
+  // declarative-filter runtime (URL keys, chip labels, predicate).
+  const { source, runtime } = useTableData<TRow>({
+    source: props.source,
+    data,
+    total,
+    loading,
+    onQueryChange,
+    adapter: urlAdapter,
+    urlKey,
+    columns: props.columns,
+    filters: props.filters,
+  });
+
+  // The declarative array becomes the auto-built form; JSX passes through.
+  const autoForm =
+    runtime.defs.length > 0 ? (
+      <AutoFilterForm
+        defs={runtime.defs}
+        source={source}
+        classNames={classNames}
+      />
+    ) : undefined;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  const filters =
+    isDeclarativeFilters(props.filters) || props.filters === undefined
+      ? autoForm
+      : props.filters;
+
+  // Everything downstream sees the RESOLVED source and plain-JSX filters,
+  // with the runtime's chip labels under the caller's overrides.
+  const chromeProps: ResolvedDataTableProps<TRow> = {
+    ...props,
+    source,
+    filters,
+    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+  };
+
+  const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, props);
-  const bodyData = useChromeBodyData(chrome, props);
+  useChromeScrollReset(rootRef, chrome, chromeProps);
+  const bodyData = useChromeBodyData(chrome, chromeProps);
   const { virtualization, canLoadMore } = bodyData;
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
   // null>` through interface variance; the same object viewed through its
@@ -346,7 +406,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : (
         <DataTableBody
           chrome={chrome}
-          props={props}
+          props={chromeProps}
           classNames={classNames}
           confirm={confirm}
           getRowId={getRowId}

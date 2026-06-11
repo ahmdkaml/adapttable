@@ -4,7 +4,7 @@ import { ConfigProvider } from "antd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
-import type { ColumnDef } from "./index";
+import type { ColumnDef, FilterDef } from "./index";
 
 interface Row {
   id: string;
@@ -1070,5 +1070,279 @@ describe("<DataTable> (Ant Design)", () => {
     const vip = container.querySelectorAll(".ant-card.card-vip");
     expect(vip).toHaveLength(1);
     expect(vip[0]).toHaveTextContent("Alice");
+  });
+});
+
+/* ── Declarative columns, filters & data tiers ─────────────────────── */
+
+interface Person {
+  id: string;
+  firstName: string;
+  city: string;
+  role: string;
+  hiredAt: string;
+  age: number;
+  department: { name: string };
+}
+
+const PEOPLE: Person[] = [
+  {
+    id: "1",
+    firstName: "Alice",
+    city: "Dubai",
+    role: "admin",
+    hiredAt: "2026-01-15",
+    age: 30,
+    department: { name: "Engineering" },
+  },
+  {
+    id: "2",
+    firstName: "Bob",
+    city: "Riyadh",
+    role: "editor",
+    hiredAt: "2025-06-01",
+    age: 45,
+    department: { name: "Sales" },
+  },
+];
+
+// Zero ceremony: no headers, no accessors — and a column-level filter.
+const personColumns: ColumnDef<Person>[] = [
+  { key: "firstName", filter: "text" },
+  { key: "city" },
+  { key: "department.name" },
+];
+
+const CITY_FILTER: FilterDef<Person>[] = [
+  {
+    key: "city",
+    type: "select",
+    options: [
+      { value: "Dubai", label: "Dubai" },
+      { value: "Riyadh", label: "Riyadh" },
+    ],
+  },
+];
+
+const TYPE_FILTERS: FilterDef<Person>[] = [
+  { key: "firstName", type: "text", placeholder: "Type a name" },
+  ...CITY_FILTER,
+  {
+    key: "role",
+    type: "multiSelect",
+    options: [
+      { value: "admin", label: "Admin" },
+      { value: "editor", label: "Editor" },
+    ],
+  },
+  { key: "hiredAt", type: "dateRange" },
+  { key: "age", type: "numberRange" },
+];
+
+function renderZero(
+  override: Partial<Parameters<typeof DataTable<Person>>[0]> = {},
+  url = ""
+) {
+  adapter = createMemoryAdapter(url);
+  return render(
+    <ConfigProvider>
+      <DataTable<Person>
+        data={PEOPLE}
+        columns={personColumns}
+        rowKey={(r) => r.id}
+        urlAdapter={adapter}
+        {...override}
+      />
+    </ConfigProvider>
+  );
+}
+
+/** Open the Filters popover and return its floating container. */
+function openFilters(): HTMLElement {
+  fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+  return document.querySelector<HTMLElement>(".ant-popover")!;
+}
+
+/** The adapter's query string, percent-decoded for readable assertions. */
+const urlState = () => decodeURIComponent(adapter.getSearch());
+
+describe("<DataTable> declarative engine (Ant Design)", () => {
+  it("column filter shorthands alone (no filters prop) render the auto form", () => {
+    renderZero();
+    const popover = openFilters();
+    // personColumns declares `filter: "text"` on firstName — the form must
+    // appear without any `filters` prop at all.
+    expect(
+      popover.querySelector('input[type="text"], .ant-input')
+    ).not.toBeNull();
+  });
+
+  it("filters rows, shows chips, and clears — end to end with zero ceremony", () => {
+    renderZero({ filters: CITY_FILTER });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+
+    // The column `filter: "text"` shorthand renders in the auto-built form.
+    const popover = openFilters();
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "ali" },
+    });
+    expect(urlState()).toContain("f_firstName=ali");
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.queryByText("Bob")).toBeNull();
+    expect(screen.getByText("First Name: ali")).toBeInTheDocument();
+
+    // The standalone select definition narrows further and chips up too.
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "Dubai" },
+    });
+    expect(urlState()).toContain("f_city=Dubai");
+    expect(screen.getByText("City: Dubai")).toBeInTheDocument();
+
+    // Clear-all from the chip strip restores every row and the URL.
+    const chipStrip = screen.getByRole("list", { name: "Filters" });
+    fireEvent.click(within(chipStrip).getByText("Clear all"));
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(urlState()).not.toContain("f_");
+  });
+
+  it("derives headers from column keys when none are declared", () => {
+    renderZero();
+    expect(
+      screen.getByRole("columnheader", { name: "First Name" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "City" })
+    ).toBeInTheDocument();
+    // "department.name" humanizes its last path segment.
+    expect(
+      screen.getByRole("columnheader", { name: "Name" })
+    ).toBeInTheDocument();
+  });
+
+  it("renders nested values through dot-path column keys", () => {
+    renderZero();
+    expect(screen.getByText("Engineering")).toBeInTheDocument();
+    expect(screen.getByText("Sales")).toBeInTheDocument();
+  });
+
+  it("server tier: emits once on mount with URL-restored params and leaves rows untouched", () => {
+    adapter = createMemoryAdapter("page=2&q=ali&f_city=Dubai");
+    const onQueryChange = vi.fn();
+    render(
+      <ConfigProvider>
+        <DataTable<Person>
+          data={PEOPLE}
+          total={57}
+          onQueryChange={onQueryChange}
+          columns={personColumns}
+          filters={CITY_FILTER}
+          rowKey={(r) => r.id}
+          urlAdapter={adapter}
+        />
+      </ConfigProvider>
+    );
+    expect(onQueryChange).toHaveBeenCalledTimes(1);
+    const [query, info] = onQueryChange.mock.calls[0] as [
+      { page: number; search: string; limit: number; filters: object },
+      { signal: AbortSignal },
+    ];
+    expect(query).toMatchObject({
+      page: 2,
+      limit: 25,
+      search: "ali",
+      filters: { city: "Dubai" },
+    });
+    expect(info.signal).toBeInstanceOf(AbortSignal);
+    // Rows render exactly as handed in — no client-side predicate, even
+    // though the search and the city filter are active.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    // The antd pager reflects the server total, not the row count.
+    expect(screen.getByText("Showing 26–50 of 57")).toBeInTheDocument();
+  });
+
+  it("writes the right state key(s) for every declarative filter type", () => {
+    renderZero({ columns: [{ key: "firstName" }], filters: TYPE_FILTERS });
+    const popover = openFilters();
+
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "ali" },
+    });
+    expect(urlState()).toContain("f_firstName=ali");
+    expect(
+      within(popover).getByPlaceholderText("Type a name")
+    ).toBeInTheDocument();
+
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "Dubai" },
+    });
+    expect(urlState()).toContain("f_city=Dubai");
+
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    expect(urlState()).toContain("f_role=admin");
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Editor" }));
+    expect(urlState()).toContain("f_role=admin,editor");
+
+    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+      target: { value: "2026-01-01" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Hired At to"), {
+      target: { value: "2026-01-31" },
+    });
+    expect(urlState()).toContain("f_hiredAtFrom=2026-01-01");
+    expect(urlState()).toContain("f_hiredAtTo=2026-01-31");
+
+    fireEvent.change(within(popover).getByLabelText("Age min"), {
+      target: { value: "30" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Age max"), {
+      target: { value: "40" },
+    });
+    expect(urlState()).toContain("f_ageMin=30");
+    expect(urlState()).toContain("f_ageMax=40");
+  });
+
+  it("restores control values from the URL and clears their keys when emptied", () => {
+    renderZero(
+      { columns: [{ key: "firstName" }], filters: TYPE_FILTERS },
+      "f_firstName=ali&f_city=Dubai&f_role=admin&f_ageMin=30&f_ageMax=40&f_hiredAtFrom=2026-01-01"
+    );
+    const popover = openFilters();
+
+    // Every control rehydrates from its URL-restored state key.
+    expect(within(popover).getByLabelText("First Name")).toHaveValue("ali");
+    expect(within(popover).getByLabelText("City")).toHaveValue("Dubai");
+    expect(
+      within(popover).getByRole("checkbox", { name: "Admin" })
+    ).toBeChecked();
+    expect(within(popover).getByLabelText("Age min")).toHaveValue("30");
+    expect(within(popover).getByLabelText("Hired At from")).toHaveValue(
+      "2026-01-01"
+    );
+
+    // Emptying each control removes its key (and URL param) entirely.
+    fireEvent.change(within(popover).getByLabelText("First Name"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("City"), {
+      target: { value: "" },
+    });
+    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    fireEvent.change(within(popover).getByLabelText("Age min"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Age max"), {
+      target: { value: "" },
+    });
+    fireEvent.change(within(popover).getByLabelText("Hired At from"), {
+      target: { value: "" },
+    });
+    expect(urlState()).not.toContain("f_");
+  });
+
+  it("hides the filters button when the declarative array resolves to no definitions", () => {
+    renderZero({ columns: [{ key: "firstName" }], filters: [] });
+    expect(screen.queryByRole("button", { name: /filters/i })).toBeNull();
   });
 });

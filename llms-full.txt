@@ -28,7 +28,7 @@ Or install manually (Mantine shown; swap for `mui`, `chakra`, `antd`, or
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks react react-dom
 ```
 
-## Your first table
+## Your first table — zero ceremony
 
 Each adapter renders with its UI kit's own components, so your app needs that
 kit's provider once at the root — exactly as the kit's docs describe (Mantine
@@ -44,6 +44,81 @@ import { MantineProvider } from "@mantine/core";
   <App />
 </MantineProvider>;
 ```
+
+Then pass `data` and declare columns — that's the whole thing:
+
+```tsx
+import { DataTable } from "@adapttable/mantine";
+
+export function People({ data }: { data: Person[] }) {
+  return (
+    <DataTable
+      data={data}
+      columns={[
+        { key: "name", sortable: true },
+        { key: "department.name" },
+        { key: "status", filter: { type: "select", options: STATUSES } },
+        { key: "hiredAt", filter: "dateRange" },
+        { key: "salary", filter: "numberRange" },
+      ]}
+      rowKey={(r) => r.id}
+    />
+  );
+}
+```
+
+What you just got without writing any of it: search, sorting, pagination,
+URL-synced state (reload-safe, shareable links), and a **filter form built
+from those `filter` declarations** with kit-native widgets — each filter also
+drives its own removable chip, URL parsing, and row predicate. Headers
+auto-derive from keys (`hiredAt` → "Hired At"; pass `header` to control the
+text in any language), and dot-path keys reach nested values. Filters that
+aren't columns go in a table-level array:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  filters={[
+    { key: "companyId", type: "select", label: "Company", options: companies },
+    { key: "budget", type: "numberRange" },
+  ]}
+  rowKey={(r) => r.id}
+/>
+```
+
+## Server data without a query library
+
+Keep the same table, add `onQueryChange`: the table owns the query state
+(URL, widgets, chips, debounce) and emits one consolidated event per real
+change — including the initial mount with URL-restored values. Forward the
+`signal` and out-of-order responses are aborted for you:
+
+```tsx
+const [rows, setRows] = useState<Person[]>([]);
+const [total, setTotal] = useState(0);
+const [loading, setLoading] = useState(false);
+
+<DataTable
+  data={rows}
+  total={total}
+  loading={loading}
+  onQueryChange={async (q, { signal }) => {
+    setLoading(true);
+    const res = await fetch(api.people(q), { signal }).then((r) => r.json());
+    setRows(res.items);
+    setTotal(res.total);
+    setLoading(false);
+  }}
+  columns={columns}
+  rowKey={(r) => r.id}
+/>;
+```
+
+## Full control with a source (query libraries)
+
+For TanStack Query integration, caching, infinite scroll and prefetching,
+build a `source` — everything else stays identical:
 
 ```tsx
 import {
@@ -767,7 +842,11 @@ change requests:
 
 ```tsx
 const [ids, setIds] = useState<string[]>(["42"]);
-<DataTable bulkActions={actions} selectedIds={ids} onSelectionChange={setIds} />;
+<DataTable
+  bulkActions={actions}
+  selectedIds={ids}
+  onSelectionChange={setIds}
+/>;
 ```
 
 ---
@@ -779,10 +858,35 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ## `@adapttable/core`
 
-### Source builders
+### Data tiers
 
-- `useFrontendData<TRow>(options): TableSource<TRow>`
-- `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+Three ways to feed the table, lowest ceremony first:
+
+- `data={rows}` — frontend tier: the table filters/sorts/pages in memory.
+- `data` + `total` + `loading` + `onQueryChange(query, { signal })` — server
+  tier: the table owns the query state and emits one consolidated
+  `TableQuery` per change (initial mount included); you fetch and hand back
+  rows. Superseded requests are aborted through `signal`.
+- `source={...}` — full control via the source builders:
+  - `useFrontendData<TRow>(options): TableSource<TRow>`
+  - `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+  - `useServerData<TRow>(options)` / `useTableData<TRow>(options)` — the
+    hooks behind the first two tiers, exported for headless use.
+
+### Declarative columns & filters
+
+- `ColumnDef.key` doubles as a dot-path accessor (`"department.name"`);
+  `header` is optional (auto-humanized: `hiredAt` → "Hired At" — explicit
+  headers always win, in any language).
+- `ColumnDef.filter` — `"text" | "select" | "multiSelect" | "dateRange" |
+  "numberRange"` or a definition object; merged with the table-level
+  `filters` array (a `filters` entry with the same key wins, with a dev
+  warning). Each definition drives the kit-native widget, the URL parsing,
+  the chip label, and (frontend tier) the row predicate.
+- `filters` prop: `FilterDef[]` (the adapter builds the form) **or** JSX
+  (you draw it). Helpers: `FILTER_TYPES`, `filterLabel`, `filterStateKeys`,
+  `resolveFilterDefs`, `buildFilterRuntime`, `filterPredicate`,
+  `clearedFilterExtras`, `getPath`, `humanizeKey`, `resolveColumns`.
 
 ### State
 
@@ -907,23 +1011,27 @@ URL namespace without `urlKey`, and `virtualize` combined with `maxHeight`.
 
 # Comparison
 
-How AdaptTable compares to popular React table libraries.
+How AdaptTable compares to popular React table libraries — scoped to what
+each ships **built-in**. Every one of these projects is excellent at what it
+targets; the table below is about scope fit, not quality. A "✗" means "not a
+built-in feature" — most gaps can be closed with custom code or third-party
+libraries.
 
-| Feature                                        |  ag-grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**       |
+| Feature                                        |  AG Grid  |    TanStack Table    | mantine-datatable | MUI X DataGrid |      **AdaptTable**       |
 | ---------------------------------------------- | :-------: | :------------------: | :---------------: | :------------: | :-----------------------: |
 | Headless core                                  |     ✗     |          ✓           |         ✗         |       ✗        |           **✓**           |
 | Works across UI kits                           |     ✗     | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters**  |
 | Client **and** server data, same API           |  partial  |   wire it yourself   |         ✗         |    partial     |   **✓ (`TableSource`)**   |
 | URL-synced state (shareable links)             |     ✗     |          ✗           |         ✗         |       ✗        |           **✓**           |
 | Filter drawer + removable chips                |     ✗     |          ✗           |         ✗         |    partial     |      **✓ built-in**       |
-| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |    paged only     |    ✓ (paid)    |   **✓ auto by device**    |
+| Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |      partial      |    ✓ (paid)    |   **✓ auto by device**    |
 | Responsive mobile card layout                  |  partial  |  build it yourself   |      partial      |    partial     | **✓ automatic + tunable** |
 | Optional row/card virtualization               |     ✓     |      ✓ (manual)      |         ✗         |    ✓ (paid)    |   **✓ built-in opt-in**   |
 | i18n + **RTL / Arabic** first-class            |  partial  |          ✗           |         ✗         |    partial     |           **✓**           |
 | Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**       |
 | MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |           **✓**           |
 
-<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers.</sub>
+<sub>Comparison as of June 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
 
 ## When to choose AdaptTable
 
@@ -940,7 +1048,7 @@ How AdaptTable compares to popular React table libraries.
 ## When another library may fit better
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing today → **ag-grid** / **MUI X DataGrid (paid)**.
+  Excel-style editing today → **AG Grid** / **MUI X DataGrid (paid)**.
 - You're on a framework other than React → **TanStack Table** (multi-
   framework). AdaptTable is React-only for v1.
 - You need a spreadsheet-like editing surface today, not a responsive data

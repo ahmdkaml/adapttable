@@ -1,5 +1,7 @@
 import {
   type ColumnDef,
+  type FilterRuntime,
+  isDeclarativeFilters,
   pageSizeOptions,
   rowClickProps,
   type SelectionState,
@@ -11,6 +13,7 @@ import {
   type UseDataTableResult,
   useInfiniteScroll,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import {
   Button,
@@ -26,11 +29,13 @@ import {
   type CSSProperties,
   type ReactNode,
   type UIEventHandler,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 import { buildColumns } from "./columns";
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -316,6 +321,31 @@ function SkeletonTable({
 }
 
 /**
+ * The auto-built form for a declarative `filters` array — nothing when the
+ * runtime resolved zero definitions (no column shorthands, empty array).
+ */
+function autoFilterForm<TRow>(
+  runtime: FilterRuntime<TRow>,
+  source: TableSource<TRow>
+) {
+  if (runtime.defs.length === 0) return undefined;
+  return <AutoFilterForm defs={runtime.defs} source={source} />;
+}
+
+/**
+ * antd table size from the shared `density` contract (independent of column
+ * pinning): "compact" → the small table, "comfortable" (default) → the middle
+ * one. An explicit `size` prop wins so callers can opt into "large".
+ */
+function resolveSize(
+  size: "small" | "middle" | "large" | undefined,
+  density: "comfortable" | "compact" | undefined
+): "small" | "middle" | "large" {
+  if (size) return size;
+  return (density ?? "comfortable") === "compact" ? "small" : "middle";
+}
+
+/**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully wired antd `<Table>` — sorting, selection,
  * filtering, URL-synced state, RTL, and dark mode — on the headless
@@ -334,19 +364,45 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualHeight = 480,
     virtualWidth = 960,
   } = props;
-  // Density drives antd's `size` (independent of column pinning): "compact" →
-  // the small table, "comfortable" (default) → the middle one. An explicit
-  // `size` prop still wins so callers can opt into "large".
-  const size =
-    props.size ??
-    ((props.density ?? "comfortable") === "compact" ? "small" : "middle");
+  const size = resolveSize(props.size, props.density);
   const filtersMode = props.filtersMode ?? "popover";
-  const c = useTableChrome<TRow>(props);
+  // Resolve the data tier (source > onQueryChange server > frontend data)
+  // and the declarative-filter runtime; everything below — pagination, row
+  // selection, the sentinel — uses the RESOLVED source via `table.source`.
+  const { source: resolvedSource, runtime } = useTableData<TRow>({
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    adapter: props.urlAdapter,
+    urlKey: props.urlKey,
+    columns: props.columns,
+    filters: props.filters,
+  });
+  // A declarative `filters` array becomes the auto-built form; JSX passes
+  // through untouched. Column-level `filter` shorthands alone (no `filters`
+  // prop) must still render the form — only explicit JSX takes over.
+  const filtersNode =
+    isDeclarativeFilters(props.filters) || props.filters === undefined
+      ? autoFilterForm(runtime, resolvedSource)
+      : props.filters;
+  const filterLabels = useMemo(
+    () => ({ ...runtime.filterLabels, ...props.filterLabels }),
+    [runtime.filterLabels, props.filterLabels]
+  );
+  const chromeProps = {
+    ...props,
+    source: resolvedSource,
+    filters: filtersNode,
+    filterLabels,
+  };
+  const c = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, c, props);
+  useChromeScrollReset(rootRef, c, chromeProps);
   const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -495,9 +551,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
           customToolbar={props.toolbar}
-          hasFilters={Boolean(props.filters)}
+          hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
-          filters={props.filters}
+          filters={filtersNode}
           filtersMode={filtersMode}
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((o) => !o)}
@@ -541,11 +597,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Flex>
         )}
       </Space>
-      {props.filters && filtersMode === "drawer" && (
+      {filtersNode && filtersMode === "drawer" && (
         <FilterDrawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          filters={props.filters}
+          filters={filtersNode}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={c.clearFilters}
           labels={labels}

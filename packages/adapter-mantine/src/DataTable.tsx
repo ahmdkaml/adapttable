@@ -1,14 +1,17 @@
 import {
+  isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
 import { useDisclosure, useElementSize } from "@mantine/hooks";
-import { useRef } from "react";
+import { type ReactNode, useMemo, useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkActionBar } from "./components/BulkActionBar";
 import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
 import { DesktopTable } from "./components/DesktopTable";
@@ -39,14 +42,56 @@ function ColumnMenuSlot<TRow>({
 }
 
 /**
- * Batteries-included Mantine data table. Drop in `columns`, a `source`
- * (from `useFrontendData` / `useBackendData`), and a `rowKey` to get a
- * fully styled, sortable, filterable, paginated table with selection,
- * bulk actions, RTL, dark mode, and optional entrance animation.
+ * Resolve the data tier (source ▸ server ▸ frontend) and the declarative
+ * filter runtime into the full chrome prop set: the RESOLVED source, the
+ * filters node (auto-built form for the declarative array, JSX as-is) and
+ * the chip-label resolvers (derived under the caller's — the user wins
+ * per key). Everything downstream consumes these.
+ */
+function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  const { source, runtime } = useTableData<TRow>({
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    columns: props.columns,
+    filters: props.filters,
+    urlKey: props.urlKey,
+    adapter: props.urlAdapter,
+  });
+
+  let filters: ReactNode;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
+    filters =
+      runtime.defs.length > 0 ? (
+        <AutoFilterForm defs={runtime.defs} source={source} />
+      ) : undefined;
+  } else {
+    filters = props.filters;
+  }
+
+  const filterLabels = useMemo(
+    () => ({ ...runtime.filterLabels, ...props.filterLabels }),
+    [runtime.filterLabels, props.filterLabels]
+  );
+
+  return { ...props, source, filters, filterLabels };
+}
+
+/**
+ * Batteries-included Mantine data table. Drop in `columns`, a `rowKey`,
+ * and a data tier — raw `data` (frontend), `data` + `onQueryChange`
+ * (server), or a prebuilt `source` — to get a fully styled, sortable,
+ * filterable, paginated table with selection, bulk actions, RTL, dark
+ * mode, and optional entrance animation.
  *
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  const chromeProps = useResolvedTableProps(props);
   const {
     source,
     rowActions,
@@ -66,14 +111,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
-  } = props;
-  const density = props.density ?? "comfortable";
+  } = chromeProps;
+  const density = chromeProps.density ?? "comfortable";
 
-  const chrome = useTableChrome<TRow>(props);
+  const chrome = useTableChrome<TRow>(chromeProps);
   const { table, isMobile, confirm, getRowId } = chrome;
   const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
     chrome,
-    props
+    chromeProps
   );
   const [drawerOpened, drawer] = useDisclosure(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -81,7 +126,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, props);
+  useChromeScrollReset(rootRef, chrome, chromeProps);
 
   useMountStagger(
     isMobile ? mobileBodyRef : desktopBodyRef,

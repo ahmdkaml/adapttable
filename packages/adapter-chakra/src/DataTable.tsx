@@ -1,12 +1,15 @@
 import {
+  isDeclarativeFilters,
   type TableBody,
   useChromeBodyData,
   useChromeScrollReset,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import { Box, Button, Flex, Progress, Stack, Text } from "@chakra-ui/react";
 import { type ReactNode, useRef, useState } from "react";
 
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -22,10 +25,12 @@ import { subtleText } from "./styles";
 import type { DataTableProps } from "./types";
 
 /**
- * Batteries-included Chakra UI data table. Drop in `columns`, a `source`,
- * and a `rowKey` for a fully styled, sortable, filterable, paginated Chakra
- * table with selection, bulk actions, RTL, and dark mode — on the headless
- * `@adapttable/core` engine.
+ * Batteries-included Chakra UI data table. Drop in `columns`, a `rowKey`,
+ * and either raw `data` (frontend tier — add `onQueryChange` for the server
+ * tier) or a prebuilt `source`, for a fully styled, sortable, filterable,
+ * paginated Chakra table with selection, bulk actions, RTL, and dark mode —
+ * on the headless `@adapttable/core` engine. A declarative `filters` array
+ * renders the auto-built Chakra filter form.
  *
  * @typeParam TRow - The row type.
  */
@@ -38,15 +43,49 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const size =
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
-  const chrome = useTableChrome<TRow>(props);
+  // Resolve the data tier (source > onQueryChange server > frontend) and the
+  // declarative-filter runtime (defs, chip labels, URL keys, predicate).
+  const { source, runtime } = useTableData<TRow>({
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    adapter: props.urlAdapter,
+    urlKey: props.urlKey,
+    columns: props.columns,
+    filters: props.filters,
+  });
+  // Declarative `filters` array → the auto-built form; JSX passes through.
+  const autoForm =
+    runtime.defs.length > 0 ? (
+      <AutoFilterForm
+        defs={runtime.defs}
+        source={source}
+        colorScheme={colorScheme}
+      />
+    ) : undefined;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  const filtersNode =
+    isDeclarativeFilters(props.filters) || props.filters === undefined
+      ? autoForm
+      : props.filters;
+  const chromeProps = {
+    ...props,
+    source,
+    filters: filtersNode,
+    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+  };
+  const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
-  const { labels, source } = table;
+  const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, props);
+  useChromeScrollReset(rootRef, chrome, chromeProps);
   const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
     chrome,
-    props
+    chromeProps
   );
 
   const tableProps = {
@@ -126,10 +165,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
           customToolbar={props.toolbar}
-          hasFilters={Boolean(props.filters)}
+          hasFilters={Boolean(filtersNode)}
           activeFilterCount={chrome.activeFilterCount}
           filtersMode={filtersMode}
-          filters={props.filters}
+          filters={filtersNode}
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((o) => !o)}
           onCloseFilters={() => setFiltersOpen(false)}
@@ -197,11 +236,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && filtersMode === "drawer" && (
+      {filtersNode && filtersMode === "drawer" && (
         <FilterDrawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          filters={props.filters}
+          filters={filtersNode}
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={chrome.clearFilters}
           labels={labels}

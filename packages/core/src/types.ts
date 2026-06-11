@@ -10,6 +10,8 @@
 
 import type { ComponentType, ReactNode } from "react";
 
+import type { ColumnFilter } from "./filters/filterDefs";
+
 /** Sort direction for a column. */
 export type SortDirection = "asc" | "desc";
 
@@ -53,10 +55,24 @@ export interface CellProps<TRow> {
  * lighter {@link ColumnDef.accessor} function.
  */
 export interface ColumnDef<TRow> {
-  /** Unique within the table. Also the value sent to a backend as `sortBy`. */
+  /**
+   * Unique within the table. Also the value sent to a backend as `sortBy`,
+   * and — when no `accessor`/`Cell` is given — the row's data path for the
+   * cell value (dot paths reach nested values: `"department.name"`).
+   */
   key: string;
-  /** Header content. Pre-translated by the caller. */
-  header: ReactNode;
+  /**
+   * Header content. Pre-translated by the caller. Omit it and the header is
+   * auto-derived from `key` (`"hiredAt"` → `"Hired At"`).
+   */
+  header?: ReactNode;
+  /**
+   * Declarative filter for this column: a bare type (`"dateRange"`) or a
+   * definition without `key`/`label` (inherited from the column). Merged
+   * with the table-level `filters` array; a `filters` entry with the same
+   * key wins.
+   */
+  filter?: ColumnFilter<TRow>;
   /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.

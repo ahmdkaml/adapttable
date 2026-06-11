@@ -34,7 +34,17 @@ const SHADCN: DataTableClassNames = {
   filtersTitle: "text-base font-semibold",
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted-foreground hover:bg-accent",
-  filtersBody: "flex-1 overflow-auto p-4",
+  filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
+  // ── Auto-built filter form (declarative `filters` definitions) ──
+  filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterLabel: "p-0 text-xs font-medium text-muted-foreground",
+  filterInput:
+    "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterSelect:
+    "h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterCheckboxGroup: "flex flex-wrap gap-1.5",
+  filterCheckbox:
+    "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:
     "flex items-center justify-between gap-2 border-t border-border p-4",
   filtersClear:

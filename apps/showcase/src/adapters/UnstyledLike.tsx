@@ -4,11 +4,9 @@ import type { CSSProperties } from "react";
 
 import {
   type AvatarCellProps,
-  clearDemoFilters,
   type DemoCells,
   demoConfirm,
-  demoFilterChips,
-  DemoFilters,
+  demoFilterDefs,
   initials,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
@@ -16,7 +14,6 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
-  makeFilterLabels,
   nameHue,
   type StatusCellProps,
   statusTone,
@@ -135,11 +132,8 @@ export function UnstyledLike({
             enableColumnMenu
             resizableColumns
             stickyHeader
-            filterLabels={makeFilterLabels(locale)}
-            extraChips={demoFilterChips(source, locale)}
-            onClearFilters={() => clearDemoFilters(source)}
             classNames={styled}
-            filters={<DemoFilters source={source} locale={locale} />}
+            filters={demoFilterDefs(locale)}
           />
         );
       }}

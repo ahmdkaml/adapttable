@@ -8,6 +8,10 @@
  * @packageDocumentation
  */
 
+export {
+  AutoFilterForm,
+  type AutoFilterFormProps,
+} from "./components/AutoFilterForm";
 export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
 export {
   FilterPopover,
@@ -35,6 +39,12 @@ export {
   defaultLabels,
   type Direction,
   type ExtraFilters,
+  FILTER_TYPES,
+  type FilterDef,
+  filterLabel,
+  type FilterOption,
+  filterStateKeys,
+  type FilterType,
   type FilterValue,
   type PaginatedResponse,
   type PaginationMode,
@@ -42,6 +52,7 @@ export {
   type SortByOption,
   type SortDirection,
   type TableLabels,
+  type TableQuery,
   type TableSource,
   useBackendData,
   type UseBackendDataOptions,
@@ -49,12 +60,18 @@ export {
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useServerData,
+  type UseServerDataOptions,
+  useTableData,
+  type UseTableDataOptions,
+  type UseTableDataResult,
   useTableUrlState,
 } from "@adapttable/core";
 
 /* Router / custom-source integration types (re-exported from core). */
 export {
   type ActionConfirm,
+  type ColumnFilter,
   createHistoryAdapter,
   createMemoryAdapter,
   deriveSortByOptions,

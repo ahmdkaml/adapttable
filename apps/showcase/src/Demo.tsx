@@ -8,14 +8,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { type ReactNode, useCallback } from "react";
 
-import {
-  BASE_COLUMNS,
-  COUNT_NUMBER_EXTRA_KEYS,
-  matchesDemoFilters,
-  PEOPLE,
-  type Person,
-  sanitizeDemoParams,
-} from "./data";
+import { BASE_COLUMNS, DEMO_FILTER_RUNTIME, PEOPLE, type Person } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
 export type DataMode = "frontend" | "backend";
@@ -77,9 +70,9 @@ function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
   const source = useFrontendData<Person>({
     data: PEOPLE,
     columns: BASE_COLUMNS,
-    arrayExtraKeys: ["team"],
-    numberExtraKeys: COUNT_NUMBER_EXTRA_KEYS,
-    filterFn: matchesDemoFilters,
+    arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
+    numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
+    filterFn: DEMO_FILTER_RUNTIME.filterFn,
     defaults: DEFAULTS,
     paginationMode: pageMode,
     urlKey,
@@ -90,10 +83,9 @@ function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
 function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
   const source = useBackendData<Person, PeopleParams, PeoplePage>({
     usePaginatedQuery: usePeopleQuery,
-    arrayExtraKeys: ["team"],
-    numberExtraKeys: COUNT_NUMBER_EXTRA_KEYS,
+    arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
+    numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     defaults: DEFAULTS,
-    sanitizeParams: sanitizeDemoParams,
     paginationMode: pageMode,
     urlKey,
   });

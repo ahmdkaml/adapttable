@@ -5,10 +5,35 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ## `@adapttable/core`
 
-### Source builders
+### Data tiers
 
-- `useFrontendData<TRow>(options): TableSource<TRow>`
-- `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+Three ways to feed the table, lowest ceremony first:
+
+- `data={rows}` — frontend tier: the table filters/sorts/pages in memory.
+- `data` + `total` + `loading` + `onQueryChange(query, { signal })` — server
+  tier: the table owns the query state and emits one consolidated
+  `TableQuery` per change (initial mount included); you fetch and hand back
+  rows. Superseded requests are aborted through `signal`.
+- `source={...}` — full control via the source builders:
+  - `useFrontendData<TRow>(options): TableSource<TRow>`
+  - `useBackendData<TRow, TParams, TPage>(options): TableSource<TRow>`
+  - `useServerData<TRow>(options)` / `useTableData<TRow>(options)` — the
+    hooks behind the first two tiers, exported for headless use.
+
+### Declarative columns & filters
+
+- `ColumnDef.key` doubles as a dot-path accessor (`"department.name"`);
+  `header` is optional (auto-humanized: `hiredAt` → "Hired At" — explicit
+  headers always win, in any language).
+- `ColumnDef.filter` — `"text" | "select" | "multiSelect" | "dateRange" |
+"numberRange"` or a definition object; merged with the table-level
+  `filters` array (a `filters` entry with the same key wins, with a dev
+  warning). Each definition drives the kit-native widget, the URL parsing,
+  the chip label, and (frontend tier) the row predicate.
+- `filters` prop: `FilterDef[]` (the adapter builds the form) **or** JSX
+  (you draw it). Helpers: `FILTER_TYPES`, `filterLabel`, `filterStateKeys`,
+  `resolveFilterDefs`, `buildFilterRuntime`, `filterPredicate`,
+  `clearedFilterExtras`, `getPath`, `humanizeKey`, `resolveColumns`.
 
 ### State
 

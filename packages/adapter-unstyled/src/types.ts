@@ -1,4 +1,9 @@
-import type { BaseDataTableProps } from "@adapttable/core";
+import type {
+  BaseDataTableProps,
+  TableSource,
+  UrlStateAdapter,
+  UseTableDataOptions,
+} from "@adapttable/core";
 import type { ReactNode } from "react";
 
 /**
@@ -32,6 +37,18 @@ export interface DataTableClassNames {
   filtersFooter?: string;
   filtersClear?: string;
   filtersDone?: string;
+  /** One auto-built filter field (the `<label>`/`<fieldset>` wrapper). */
+  filterField?: string;
+  /** The field's caption (the `<span>`/`<legend>` holding the label text). */
+  filterLabel?: string;
+  /** Text / date / number inputs inside an auto-built field. */
+  filterInput?: string;
+  /** The `<select>` of an auto-built `select` field. */
+  filterSelect?: string;
+  /** The checkbox-list container of an auto-built `multiSelect` field. */
+  filterCheckboxGroup?: string;
+  /** One checkbox option (`<label>` + checkbox) in a `multiSelect` field. */
+  filterCheckbox?: string;
   chips?: string;
   chip?: string;
   chipRemove?: string;
@@ -93,7 +110,38 @@ export interface DataTableSlots {
 }
 
 /** Props for the unstyled `<DataTable>`. */
-export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
+export interface DataTableProps<TRow> extends Omit<
+  BaseDataTableProps<TRow>,
+  "source"
+> {
+  /**
+   * Full-control tier: a prebuilt source (`useFrontendData`,
+   * `useBackendData`, …), used as-is. Omit it and pass `data` instead for
+   * the managed tiers.
+   */
+  source?: TableSource<TRow>;
+  /**
+   * The rows. Alone: frontend tier — the table filters/sorts/pages them.
+   * With `onQueryChange`: server tier — the current page, as returned.
+   */
+  data?: readonly TRow[];
+  /** Server tier: total row count across all pages (drives the pager). */
+  total?: number;
+  /** Server tier: request in flight. */
+  loading?: boolean;
+  /**
+   * Server tier: fired with the consolidated query (page, search, sort,
+   * filters) whenever it changes — including once on mount with the
+   * URL-restored values. The caller fetches and hands back `data` + `total`.
+   */
+  onQueryChange?: UseTableDataOptions<TRow>["onQueryChange"];
+  /**
+   * URL-state adapter for the managed tiers (router integration, memory
+   * adapter for tests/SSR). Defaults to the browser History API.
+   */
+  urlAdapter?: UrlStateAdapter;
+  /** Per-table URL namespace (e.g. `"left"` → `left.q`, `left.page`). */
+  urlKey?: string;
   /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
   /** Empty-state node override. */

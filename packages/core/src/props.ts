@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { FilterDef } from "./filters/filterDefs";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
@@ -102,8 +103,14 @@ export interface BaseDataTableProps<TRow> {
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
-  /** Filter widgets rendered in the popover / drawer. */
-  filters?: ReactNode;
+  /**
+   * The table's filters. Pass a declarative array and the adapter builds the
+   * form with kit-native widgets (each definition also drives URL parsing,
+   * chips and — on frontend data — the row predicate); pass JSX to draw the
+   * form yourself. Column-level `filter` shorthands merge in; a `filters`
+   * entry with the same key wins.
+   */
+  filters?: readonly FilterDef<TRow>[] | ReactNode;
   /**
    * How the filter container opens. `"popover"` (default) anchors a light
    * card under the Filters button — no backdrop, closing on Escape and

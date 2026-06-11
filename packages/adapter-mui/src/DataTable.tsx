@@ -1,7 +1,9 @@
 import {
+  isDeclarativeFilters,
   useChromeBodyData,
   useChromeScrollReset,
   useTableChrome,
+  useTableData,
 } from "@adapttable/core";
 import {
   Box,
@@ -11,8 +13,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
+import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
   Chips,
@@ -47,10 +51,50 @@ function resizeSetter(
 }
 
 /**
- * Batteries-included Material UI data table. Drop in `columns`, a `source`,
- * and a `rowKey` for a fully styled, sortable, filterable, paginated MUI
- * table with selection, bulk actions, RTL, and dark mode — a free
- * DataGrid-style experience on the headless `@adapttable/core` engine.
+ * Resolve the data tier (`source` > `data` + `onQueryChange` > `data`) and
+ * the filter content, then overlay them on the caller's props: caller JSX
+ * filters pass through; the declarative array becomes the auto-built
+ * {@link AutoFilterForm} (or nothing, when no definitions resolved); the
+ * runtime's chip-label resolvers merge under any caller overrides.
+ */
+function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  const { source, runtime } = useTableData<TRow>({
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    onQueryChange: props.onQueryChange,
+    columns: props.columns,
+    filters: props.filters,
+    adapter: props.urlAdapter,
+    urlKey: props.urlKey,
+  });
+  let filtersNode: ReactNode;
+  // Column-level `filter` shorthands alone must still render the auto form —
+  // only explicit JSX takes over the drawing.
+  if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
+    filtersNode =
+      runtime.defs.length > 0 ? (
+        <AutoFilterForm defs={runtime.defs} source={source} />
+      ) : undefined;
+  } else {
+    filtersNode = props.filters;
+  }
+  return {
+    ...props,
+    source,
+    filters: filtersNode,
+    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+  };
+}
+
+/**
+ * Batteries-included Material UI data table. Drop in `columns`, `data` (or
+ * `data` + `onQueryChange` for server fetching, or a full `source`), and a
+ * `rowKey` for a fully styled, sortable, filterable, paginated MUI table
+ * with selection, bulk actions, RTL, and dark mode — a free DataGrid-style
+ * experience on the headless `@adapttable/core` engine. Declarative
+ * `filters` (and column `filter` shorthands) render an auto-built form.
  *
  * @typeParam TRow - The row type.
  */
@@ -58,15 +102,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { slots, className } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
-  const c = useTableChrome<TRow>(props);
+  const chromeProps = useChromeProps(props);
+  const { source, filters: filtersNode } = chromeProps;
+  const c = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = c;
-  const { labels, source } = table;
+  const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, c, props);
+  useChromeScrollReset(rootRef, c, chromeProps);
   const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
     c,
-    props
+    chromeProps
   );
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
@@ -158,11 +204,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           searchPlaceholder={props.searchPlaceholder}
           sortByOptions={props.sortByOptions}
           customToolbar={props.toolbar}
-          hasFilters={Boolean(props.filters)}
+          hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
           showRowsPerPage={!c.isPaged}
           filtersMode={filtersMode}
-          filters={props.filters}
+          filters={filtersNode}
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((open) => !open)}
           onCloseFilters={() => setFiltersOpen(false)}
@@ -216,11 +262,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
       </Stack>
-      {props.filters && filtersMode === "drawer" && (
+      {filtersNode && filtersMode === "drawer" && (
         <FilterDrawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          filters={props.filters}
+          filters={filtersNode}
           activeFilterCount={c.activeFilterCount}
           onClearFilters={c.clearFilters}
           labels={labels}

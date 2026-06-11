@@ -1,4 +1,9 @@
-import type { BaseDataTableProps } from "@adapttable/core";
+import type {
+  BaseDataTableProps,
+  TableSource,
+  UrlStateAdapter,
+  UseServerDataOptions,
+} from "@adapttable/core";
 import type { ReactNode } from "react";
 
 /** Overridable sub-components. Each defaults to a styled Mantine part. */
@@ -19,7 +24,44 @@ export interface DataTableClassNames {
 }
 
 /** Props for the Mantine `<DataTable>`. */
-export interface DataTableProps<TRow> extends BaseDataTableProps<TRow> {
+export interface DataTableProps<TRow> extends Omit<
+  BaseDataTableProps<TRow>,
+  "source"
+> {
+  /**
+   * Full-control tier: a prebuilt source (`useFrontendData` /
+   * `useBackendData`). Omit it and pass `data` for the zero-ceremony tiers.
+   */
+  source?: TableSource<TRow>;
+  /**
+   * Frontend tier: the raw rows — the table filters, sorts and pages them.
+   * Combined with `onQueryChange` it becomes the server tier: `data` is the
+   * current page, rendered as-is.
+   */
+  data?: readonly TRow[];
+  /** Server tier: total row count across all pages (drives the pager). */
+  total?: number;
+  /** Server tier: a request is in flight. */
+  loading?: boolean;
+  /**
+   * Server tier: fired with the consolidated query (page, limit, search,
+   * sort, filters) whenever it changes — including once on mount with the
+   * URL-restored values. Fetch in response and hand back `data` + `total`.
+   */
+  onQueryChange?: UseServerDataOptions<TRow>["onQueryChange"];
+  /**
+   * Namespace for this table's URL params (`urlKey="left"` → `left.q`,
+   * `left.page`, …) so multiple tables can share one URL. Applies to the
+   * `data` / `onQueryChange` tiers; a prebuilt `source` owns its own state.
+   */
+  urlKey?: string;
+  /**
+   * URL-state backend for the `data` / `onQueryChange` tiers. Defaults to
+   * the browser History API; supply a router adapter (react-router,
+   * Next.js) — or `createMemoryAdapter()` in tests — to integrate with an
+   * existing navigation stack.
+   */
+  urlAdapter?: UrlStateAdapter;
   /** Replace sub-components (skeleton, empty-state). */
   slots?: DataTableSlots;
   /** Per-part class name overrides. */
