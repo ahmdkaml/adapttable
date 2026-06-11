@@ -6,6 +6,7 @@ export const zh: Required<TableLabels> = {
   search: "搜索",
   searchPlaceholder: "搜索…",
   noData: "暂无数据",
+  noResults: "没有符合筛选条件的结果",
   loading: "加载中…",
   loadMore: "加载更多",
   filters: "筛选",

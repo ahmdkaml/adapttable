@@ -12,6 +12,7 @@ import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
 import {
   FILTER_PREFIX,
   isEmptyFilterValue,
+  MAX_LIMIT,
   PARAM_LIMIT,
   PARAM_PAGE,
   PARAM_SEARCH,
@@ -78,12 +79,21 @@ export interface UseTableUrlStateResult {
   setExtra: (key: string, value: FilterValue) => void;
   /** Set several extra filters in one commit; resets to page 1. */
   setExtras: (updates: ExtraFilters) => void;
+  /** Clear every extra filter (and reset the page) — search/sort stay. */
+  clearExtras: () => void;
   /** Clear search, sort, page, and every extra filter in one commit. */
   clearAll: () => void;
 }
 
 /** Mounted namespaces per adapter, for the duplicate-urlKey dev warning. */
 const nsRegistry = new WeakMap<UrlStateAdapter, Map<string, number>>();
+
+/**
+ * Stable default for the key registries. Destructuring defaults (`= []`)
+ * would mint a fresh array per render, invalidating the `extra` memo and
+ * re-running the host's whole filter/sort pipeline on EVERY re-render.
+ */
+const NO_KEYS: readonly string[] = [];
 
 /**
  * Headless URL-synced table state. Keeps page / limit / search / sort and
@@ -108,8 +118,8 @@ export function useTableUrlState(
     adapter,
     enabled = true,
     defaults = {},
-    numberExtraKeys = [],
-    arrayExtraKeys = [],
+    numberExtraKeys = NO_KEYS,
+    arrayExtraKeys = NO_KEYS,
     urlKey,
   } = options;
   // Per-table namespace, e.g. "left." → left.q / left.page / left.f_status.
@@ -245,8 +255,8 @@ export function useTableUrlState(
     (next: number) =>
       commit((p) => {
         // Keep the written value inside the range the read side accepts
-        // (readLimit clamps to 1..500) so URL and table state never diverge.
-        const clamped = Math.min(Math.max(1, Math.round(next)), 500);
+        // so URL and table state never diverge.
+        const clamped = Math.min(Math.max(1, Math.round(next)), MAX_LIMIT);
         if (clamped === initialLimit) p.delete(ns + PARAM_LIMIT);
         else p.set(ns + PARAM_LIMIT, String(clamped));
         resetPage(p);
@@ -300,6 +310,15 @@ export function useTableUrlState(
     [commit, readEffectiveExtra, resetPage, writeExtraWithDefaults]
   );
 
+  const clearExtras = useCallback(
+    () =>
+      commit((p) => {
+        writeExtraWithDefaults(p, {});
+        resetPage(p);
+      }),
+    [commit, resetPage, writeExtraWithDefaults]
+  );
+
   const clearAll = useCallback(
     () =>
       commit((p) => {
@@ -334,6 +353,7 @@ export function useTableUrlState(
     setSearch,
     setExtra,
     setExtras,
+    clearExtras,
     clearAll,
   };
 }

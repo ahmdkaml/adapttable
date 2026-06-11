@@ -8,7 +8,8 @@ export interface FilterPopoverProps {
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  /** Clear-filters handler (always supplied by the table chrome). */
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
   /** The Filters trigger button — becomes the popover anchor. */
@@ -50,7 +51,7 @@ export function FilterPopover({
           <Button
             variant="subtle"
             size="compact-xs"
-            onClick={() => onClearFilters?.()}
+            onClick={onClearFilters}
             disabled={activeFilterCount === 0}
           >
             {labels.clearAll}

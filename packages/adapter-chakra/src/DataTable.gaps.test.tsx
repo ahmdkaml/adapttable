@@ -1,12 +1,14 @@
 /** Gap-fill: footer prev, clear-all link, bulk clear. */
+import type * as CoreModule from "@adapttable/core";
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
 import { ChakraProvider } from "@chakra-ui/react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -25,27 +27,36 @@ const columns: ColumnDef<Row>[] = [
 ];
 
 vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof CoreModule>();
   return {
-    ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    ...actual,
+    useChromeBodyData: vi.fn(actual.useChromeBodyData),
   };
 });
+
+const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({
-      row,
-      index,
-      key: rowKey(row),
-    })),
-    paddingTop: 0,
-    paddingBottom: 0,
-  }));
+  // Default: delegate to the real hook so non-virtual tests run untouched.
+  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
 });
+
+/** A controlled virtual-window body for the virtualization render tests. */
+function mockBodyData(rows: VirtualTableRow<Row>[], padding: number) {
+  vi.mocked(useChromeBodyData).mockReturnValue({
+    virtualization: {
+      enabled: true,
+      rows,
+      paddingTop: padding,
+      paddingBottom: padding,
+      measureElement: vi.fn(),
+    },
+    loadMoreRef: createRef<HTMLDivElement>(),
+    canLoadMore: true,
+  });
+}
 
 function mount(
   override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
@@ -118,62 +129,14 @@ describe("Chakra gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 40,
-      paddingBottom: 40,
-      measureElement: vi.fn(),
-    });
+    mockBodyData([{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }], 40);
     mount({ virtualize: true, estimateRowSize: 40 }, "", "infinite");
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
-  it("fetches the next page from the virtual onEndReached", () => {
-    let endReached: (() => void) | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation(
-      ({ rows, rowKey, onEndReached }) => {
-        endReached = onEndReached;
-        return {
-          enabled: true,
-          rows: rows.map((row, index) => ({
-            row,
-            index,
-            key: rowKey(row),
-          })),
-          paddingTop: 0,
-          paddingBottom: 0,
-          measureElement: vi.fn(),
-        };
-      }
-    );
-    mount({ virtualize: true }, "limit=1", "infinite");
-    expect(screen.queryByText("Bob")).toBeNull();
-    act(() => endReached?.());
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-  });
-
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 132,
-      paddingBottom: 0,
-      measureElement: vi.fn(),
-    });
+    mockBodyData([{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }], 132);
     mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();

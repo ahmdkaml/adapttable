@@ -95,6 +95,7 @@ export function DesktopTable<TRow>({
   classNames,
   prefetch,
   onRowClick,
+  rowClassName,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -295,7 +296,7 @@ export function DesktopTable<TRow>({
               data-adapttable-part="row"
               data-selected={selection?.isSelected(id) ? "" : undefined}
               data-clickable={onRowClick ? "" : undefined}
-              className={classNames.row}
+              className={cx(classNames.row, rowClassName?.(row, index))}
               onMouseEnter={prefetch ? () => prefetch(row) : undefined}
             >
               {selection && (
@@ -395,6 +396,7 @@ export function MobileCards<TRow>({
   getRowId,
   classNames,
   onRowClick,
+  rowClassName,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -427,7 +429,7 @@ export function MobileCards<TRow>({
             data-adapttable-part="card"
             data-selected={selection?.isSelected(id) ? "" : undefined}
             data-clickable={onRowClick ? "" : undefined}
-            className={classNames.card}
+            className={cx(classNames.card, rowClassName?.(row, index))}
           >
             {selection && (
               <input

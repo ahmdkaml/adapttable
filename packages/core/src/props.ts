@@ -64,6 +64,11 @@ export interface BaseDataTableProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Called whenever the materialized source rows change. */
   onRowsChange?: (rows: readonly TRow[]) => void;
+  /**
+   * Conditional per-row class: `(row, index) => "overdue"` — appended to the
+   * adapter's own row classes on desktop rows and mobile cards alike.
+   */
+  rowClassName?: (row: TRow, index: number) => string | undefined;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
 
@@ -100,10 +105,11 @@ export interface BaseDataTableProps<TRow> {
   /** Filter widgets rendered in the popover / drawer. */
   filters?: ReactNode;
   /**
-   * How the filter container opens. `"popover"` (default) anchors a card under
-   * the Filters button with a backdrop; `"drawer"` slides in a side panel. The
-   * caller passes the same `filters` content either way — only the container
-   * changes.
+   * How the filter container opens. `"popover"` (default) anchors a light
+   * card under the Filters button — no backdrop, closing on Escape and
+   * outside click; `"drawer"` slides in a side panel with a real backdrop.
+   * The caller passes the same `filters` content either way — only the
+   * container changes.
    */
   filtersMode?: "popover" | "drawer";
   /** Per-filter-key chip label resolvers. */
@@ -120,6 +126,20 @@ export interface BaseDataTableProps<TRow> {
   bulkActions?: BulkAction[];
   /** Selection id extractor; defaults to `rowKey`. */
   selectionGetId?: (row: TRow) => string;
+  /**
+   * Controlled selection. When provided, the table reads the selection from
+   * this value and reports every change request through `onSelectionChange`
+   * — the same controlled/uncontrolled split as `columnLayout`. Omit it for
+   * the internal (uncontrolled) selection.
+   */
+  selectedIds?: readonly string[];
+  /**
+   * Selection change channel. Uncontrolled: an observer that fires with the
+   * selected ids whenever the set changes (toggles, select-all, automatic
+   * resets on search/filter change). Controlled (`selectedIds` provided):
+   * the change-request handler — apply the ids to your state to accept.
+   */
+  onSelectionChange?: (selectedIds: string[]) => void;
 
   /* ── Customisation (common) ──────────────────────────────────────── */
   /** Inline toolbar slot for custom controls (view toggles, etc.). */

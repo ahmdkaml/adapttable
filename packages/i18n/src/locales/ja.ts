@@ -6,6 +6,7 @@ export const ja: Required<TableLabels> = {
   search: "検索",
   searchPlaceholder: "検索…",
   noData: "データがありません",
+  noResults: "条件に一致する結果がありません",
   loading: "読み込み中…",
   loadMore: "さらに読み込む",
   filters: "フィルター",

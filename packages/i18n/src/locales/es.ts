@@ -6,6 +6,7 @@ export const es: Required<TableLabels> = {
   search: "Buscar",
   searchPlaceholder: "Buscar…",
   noData: "Sin datos",
+  noResults: "No hay resultados que coincidan con los filtros",
   loading: "Cargando…",
   loadMore: "Cargar más",
   filters: "Filtros",

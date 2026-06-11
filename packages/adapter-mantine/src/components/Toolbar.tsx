@@ -1,38 +1,22 @@
-import {
-  type Direction,
-  pageSizeOptions,
-  type SortByOption,
-  type UseDataTableResult,
-} from "@adapttable/core";
+import { pageSizeOptions, type ToolbarChromeProps } from "@adapttable/core";
 import { Badge, Button, Group, Select, Text, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
 import { FiltersIcon, SearchIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
 
-/** Props for {@link Toolbar}. */
-export interface ToolbarProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  hideSearch?: boolean;
-  searchPlaceholder?: string;
-  sortByOptions?: SortByOption[];
-  customToolbar?: ReactNode;
-  hasFilters: boolean;
-  activeFilterCount: number;
-  /** Toggle the filter container open/closed (popover mode). */
-  onToggleFilters: () => void;
+/**
+ * Props for {@link Toolbar}: the shared chrome surface from core plus the
+ * Mantine-specific filter-container wiring.
+ */
+export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Close the filter container. */
   onCloseFilters: () => void;
-  /** Whether the filter container is open. */
-  filtersOpen: boolean;
   /** Filter content + how to render its container. */
   filtersMode: "popover" | "drawer";
   filters?: ReactNode;
-  onClearFilters?: () => void;
-  dir?: Direction;
-  /** The Columns menu, rendered inline at the end of the toolbar row. */
-  columnMenu?: ReactNode;
-  showRowsPerPage: boolean;
+  /** Clear-filters handler used by the popover's clear-all button. */
+  onClearFilters: () => void;
   className?: string;
 }
 

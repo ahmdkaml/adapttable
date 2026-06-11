@@ -161,22 +161,29 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
     expect(screen.queryByText("filter body")).toBeNull();
   });
 
-  it("clear-all filters button is a no-op when no handler is given", async () => {
+  it("clear-all falls back to clearing source extras when no handler is given", async () => {
     renderHarness(
-      { override: { filters: <div>body</div> } },
+      {
+        override: {
+          filters: <div>body</div>,
+          filterLabels: { status: (v) => `Status: ${v}` },
+        },
+      },
       "f_status=Active"
     );
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     await screen.findByText("body", undefined, { timeout: 5000 });
-    // Clear-all inside the popover header; without onClearFilters it must not
-    // throw. WAIT for the role: the card exists before Popper finishes
-    // positioning it (visibility:hidden), and byRole rightly excludes
-    // invisible elements — asserting synchronously races the positioner.
+    // Without onClearFilters, chrome.clearFilters falls back to the source's
+    // clearExtras — so Clear all genuinely clears the URL filters. WAIT for
+    // the role: the popover card exists before Popper finishes positioning it
+    // (visibility:hidden), and byRole rightly excludes invisible elements —
+    // asserting synchronously races the positioner.
     const clearButtons = await screen.findAllByRole(
       "button",
       { name: "Clear all" },
       { timeout: 5000 }
     );
-    expect(() => fireEvent.click(clearButtons[0]!)).not.toThrow();
+    fireEvent.click(clearButtons[0]!);
+    expect(adapter.getSearch()).not.toContain("f_status");
   });
 });

@@ -77,6 +77,38 @@ function virtualScrollEndHandler<TRow>(
   };
 }
 
+/**
+ * Adapt the shared `(row, index) => string | undefined` contract to antd's
+ * `rowClassName`, which expects a string for every row.
+ */
+function buildRowClassName<TRow>(
+  rowClassName: (row: TRow, index: number) => string | undefined
+): (record: TRow, index: number) => string {
+  return (record, index) => rowClassName(record, index) ?? "";
+}
+
+/**
+ * Variant-aware empty state: `"noResults"` (zero rows under an active
+ * search/filter) names the cause and offers a clear-filters CTA;
+ * `"noData"` stays the plain antd `Empty`.
+ */
+function EmptyState({
+  variant,
+  labels,
+  onClearFilters,
+}: Readonly<{
+  variant: "noData" | "noResults";
+  labels: Required<TableLabels>;
+  onClearFilters: () => void;
+}>) {
+  if (variant === "noData") return <Empty description={labels.noData} />;
+  return (
+    <Empty description={labels.noResults}>
+      <Button onClick={onClearFilters}>{labels.clearAll}</Button>
+    </Empty>
+  );
+}
+
 /** Map antd's `onChange` sort event back onto the source's sort state. */
 function sortChangeHandler<TRow>(
   source: TableSource<TRow>
@@ -367,6 +399,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
     : undefined;
+  const emptyNode = (
+    <EmptyState
+      variant={c.emptyVariant}
+      labels={labels}
+      onClearFilters={c.clearFilters}
+    />
+  );
 
   let bodyRegion: ReactNode;
   if (source.error) {
@@ -389,11 +428,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     );
   } else if (c.body === "empty") {
-    bodyRegion = slots?.empty ?? (
-      <output>
-        <Empty description={labels.noData} />
-      </output>
-    );
+    bodyRegion = slots?.empty ?? <output>{emptyNode}</output>;
   } else if (c.body === "mobile") {
     bodyRegion = (
       <MobileCards
@@ -404,6 +439,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         prefetch={props.prefetch}
         onRowClick={props.onRowClick}
+        rowClassName={props.rowClassName}
         tableLabel={resolvedTableLabel}
         compact={(props.density ?? "comfortable") === "compact"}
       />
@@ -422,6 +458,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
         pagination={pagination}
+        rowClassName={
+          props.rowClassName ? buildRowClassName(props.rowClassName) : undefined
+        }
         onChange={handleChange}
         onRow={(record) => ({
           ...rowClickProps(record, props.onRowClick),
@@ -437,13 +476,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           props.maxHeight,
           minWidth
         )}
-        locale={{ emptyText: labels.noData }}
+        locale={{ emptyText: emptyNode }}
       />
     );
   }
 
   return (
-    <div ref={rootRef} dir={props.dir} className={className}>
+    <div
+      ref={rootRef}
+      dir={props.dir}
+      className={className}
+      aria-busy={c.isRefreshing || undefined}
+    >
       <Space direction="vertical" size="small" style={{ width: "100%" }}>
         <Toolbar
           table={table}
@@ -458,7 +502,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((o) => !o)}
           onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={c.clearFilters}
+          isRefreshing={c.isRefreshing}
           dir={props.dir}
           columnMenu={
             <ColumnMenuSlot
@@ -473,7 +518,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
         <Chips
           chips={c.mergedChips}
-          onClearAll={props.onClearFilters}
+          onClearAll={c.clearFilters}
           labels={labels}
         />
         {selection && props.bulkActions && (
@@ -502,7 +547,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={c.clearFilters}
           labels={labels}
           dir={props.dir}
         />

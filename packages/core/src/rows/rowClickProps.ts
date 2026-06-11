@@ -4,6 +4,8 @@ import type { KeyboardEvent, MouseEvent } from "react";
 export interface RowClickProps {
   onClick: (event: MouseEvent<HTMLElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+  /** Clickable rows must be reachable, or Enter activation can never fire. */
+  tabIndex: 0;
   style: { cursor: "pointer" };
 }
 
@@ -39,6 +41,7 @@ export function rowClickProps<TRow>(
 ): RowClickProps | undefined {
   if (!onRowClick) return undefined;
   return {
+    tabIndex: 0,
     onClick: (event) => {
       if (!fromInteractiveChild(event.target)) onRowClick(row);
     },

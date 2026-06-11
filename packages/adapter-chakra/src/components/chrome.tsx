@@ -7,10 +7,9 @@ import {
   type PaginationInfo,
   resolveDisabledReason,
   type SelectionState,
-  type SortByOption,
   type TableLabels,
+  type ToolbarChromeProps,
   useBulkActionRunner,
-  type UseDataTableResult,
 } from "@adapttable/core";
 import {
   Alert,
@@ -87,6 +86,22 @@ function SearchIcon() {
   );
 }
 
+/** Props for {@link Toolbar}: the shared chrome surface + Chakra extras. */
+export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
+  /** Which filter container opens from the Filters button. */
+  filtersMode: "popover" | "drawer";
+  /** Filter widgets rendered inside the popover container. */
+  filters?: ReactNode;
+  /** Close the filter popover (Escape / outside click). */
+  onCloseFilters: () => void;
+  /** Clear-filters handler for the popover header. */
+  onClearFilters: () => void;
+  /** Chakra color scheme for primary accents. */
+  colorScheme?: string;
+  /** Class hook for the toolbar row. */
+  className?: string;
+}
+
 /** Search + sort select + filters button + columns menu + rows-per-page. */
 export function Toolbar<TRow>({
   table,
@@ -107,28 +122,7 @@ export function Toolbar<TRow>({
   colorScheme,
   dir,
   className,
-}: Readonly<{
-  table: UseDataTableResult<TRow>;
-  hideSearch?: boolean;
-  searchPlaceholder?: string;
-  sortByOptions?: SortByOption[];
-  customToolbar?: ReactNode;
-  hasFilters: boolean;
-  activeFilterCount: number;
-  filtersMode: "popover" | "drawer";
-  filters?: ReactNode;
-  filtersOpen: boolean;
-  onToggleFilters: () => void;
-  onCloseFilters: () => void;
-  onClearFilters?: () => void;
-  /** The Columns menu, rendered inline at the end of the toolbar row. */
-  columnMenu?: ReactNode;
-  showRowsPerPage: boolean;
-  colorScheme?: string;
-  dir?: Direction;
-  /** Class hook for the toolbar row. */
-  className?: string;
-}>) {
+}: Readonly<ToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
     sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
@@ -249,7 +243,7 @@ export function Chips({
   labels,
 }: Readonly<{
   chips: readonly ActiveFilterChip[];
-  onClearAll?: () => void;
+  onClearAll: () => void;
   labels: Required<TableLabels>;
 }>) {
   if (chips.length === 0) return null;
@@ -266,13 +260,11 @@ export function Chips({
           </Tag>
         </WrapItem>
       ))}
-      {onClearAll && (
-        <WrapItem as="li">
-          <Button size="xs" variant="link" onClick={onClearAll}>
-            {labels.clearAll}
-          </Button>
-        </WrapItem>
-      )}
+      <WrapItem as="li">
+        <Button size="xs" variant="link" onClick={onClearAll}>
+          {labels.clearAll}
+        </Button>
+      </WrapItem>
     </Wrap>
   );
 }
@@ -473,7 +465,7 @@ export function FilterDrawer({
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   colorScheme?: string;
   dir?: Direction;
@@ -495,7 +487,7 @@ export function FilterDrawer({
         <DrawerFooter justifyContent="space-between">
           <Button
             variant="ghost"
-            onClick={() => onClearFilters?.()}
+            onClick={onClearFilters}
             isDisabled={activeFilterCount === 0}
           >
             {labels.clearAll}

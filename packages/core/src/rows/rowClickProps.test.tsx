@@ -72,11 +72,7 @@ describe("rowClickProps", () => {
           </tr>
         </thead>
         <tbody>
-          <tr
-            data-testid="row"
-            tabIndex={0}
-            {...rowClickProps(ROW, onRowClick)}
-          >
+          <tr data-testid="row" {...rowClickProps(ROW, onRowClick)}>
             <td>
               <button type="button">Delete</button>
             </td>
@@ -85,6 +81,8 @@ describe("rowClickProps", () => {
       </table>
     );
     const row = screen.getByTestId("row");
+    // The props themselves make the row reachable — adapters add nothing.
+    expect(row).toHaveAttribute("tabindex", "0");
     fireEvent.keyDown(row, { key: "Enter" });
     expect(onRowClick).toHaveBeenCalledTimes(1);
     // Enter on a child button must not double-activate the row.

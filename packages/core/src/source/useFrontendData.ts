@@ -148,15 +148,24 @@ export function useFrontendData<TRow>(
   const state = useTableUrlState(urlOptions);
   const { page, limit, search, sortBy, sortDir } = state;
 
+  // Project each row's searchable text ONCE per dataset — not once per row
+  // per keystroke. On large arrays the projector (which may JSON.stringify
+  // nested values) dominates search cost; the per-term work is then just a
+  // string `includes` over this index.
+  const searchIndex = useMemo(
+    () => data.map((row) => getSearchText(row).toLowerCase()),
+    [data, getSearchText]
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const bySearch = term
-      ? data.filter((row) => getSearchText(row).toLowerCase().includes(term))
+      ? data.filter((_, index) => searchIndex[index]!.includes(term))
       : data;
     return filterFn
       ? bySearch.filter((row) => filterFn(row, state.extra))
       : bySearch;
-  }, [data, search, getSearchText, filterFn, state.extra]);
+  }, [data, searchIndex, search, filterFn, state.extra]);
 
   const sorted = useMemo(() => {
     if (!sortBy || !sortDir) return filtered;
@@ -215,6 +224,7 @@ export function useFrontendData<TRow>(
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,
+    clearExtras: state.clearExtras,
     clearAll: state.clearAll,
   };
 }

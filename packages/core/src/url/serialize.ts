@@ -54,6 +54,9 @@ export function readPage(
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/** Largest accepted page size — shared by the reader and the setter. */
+export const MAX_LIMIT = 500;
+
 /** Read a page size, clamped to a sane range, falling back when invalid. */
 export function readLimit(
   params: URLSearchParams,
@@ -62,7 +65,7 @@ export function readLimit(
 ): number {
   const raw = params.get(prefix + PARAM_LIMIT);
   const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
-  return Number.isFinite(n) && n > 0 && n <= 500 ? n : fallback;
+  return Number.isFinite(n) && n > 0 && n <= MAX_LIMIT ? n : fallback;
 }
 
 /** Read a sort direction, or `undefined` when missing/invalid. */

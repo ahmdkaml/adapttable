@@ -11,9 +11,9 @@ import {
   type RowAction,
   rowClickProps,
   runRowAction,
+  type SharedTableRenderProps,
   tableMinWidth,
   type UseDataTableResult,
-  type VirtualTableRow,
 } from "@adapttable/core";
 import {
   ActionIcon,
@@ -41,31 +41,19 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 
-/** Props for {@link DesktopTable}. */
-export interface DesktopTableProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  rows: readonly TRow[];
-  rowActions?: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  prefetch?: (row: TRow) => void;
-  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
-  onRowClick?: (row: TRow) => void;
-  getRowId: (row: TRow) => string;
+/**
+ * Props for {@link DesktopTable}: the shared render contract from core
+ * (minus `stickyTop` — the resolved `stickyHeaderOffset` replaces it) plus
+ * the Mantine-specific extras.
+ */
+export interface DesktopTableProps<TRow> extends Omit<
+  SharedTableRenderProps<TRow>,
+  "stickyTop"
+> {
   bodyRef: RefObject<HTMLTableSectionElement>;
   className?: string;
-  rowEntries?: readonly VirtualTableRow<TRow>[];
-  paddingTop?: number;
-  paddingBottom?: number;
-  measureElement?: (element: Element | null) => void;
+  /** Resolved sticky-header top inset (page `stickyTop` + toolbar height). */
   stickyHeaderOffset?: number;
-  stickyHeader?: boolean;
-  pinOffset?: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
-  maxHeight?: number;
-  setWidth?: (key: string, width: number) => void;
-  columnWidths?: Readonly<Record<string, number>>;
-  resizeLabel?: string;
   density?: Density;
 }
 
@@ -206,6 +194,7 @@ export function DesktopTable<TRow>({
   confirm,
   prefetch,
   onRowClick,
+  rowClassName,
   getRowId,
   bodyRef,
   className,
@@ -224,13 +213,12 @@ export function DesktopTable<TRow>({
 }: Readonly<DesktopTableProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  // `getRowId` IS the key (getRowProps derives its key from the same
+  // extractor) — building full row props per row just to read it back would
+  // double the per-row work.
   const entries =
     rowEntries ??
-    rows.map((row, index) => ({
-      row,
-      index,
-      key: table.getRowProps(row, index).key as string,
-    }));
+    rows.map((row, index) => ({ row, index, key: getRowId(row) }));
   const columnSpan =
     columns.length + (selection ? 1 : 0) + (showActions ? 1 : 0);
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
@@ -397,6 +385,7 @@ export function DesktopTable<TRow>({
                 key={key}
                 {...rowProps}
                 {...rowClickProps(row, onRowClick)}
+                className={rowClassName?.(row, index)}
                 ref={measureElement}
                 data-stagger=""
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}

@@ -1,14 +1,17 @@
 import {
-  DEFAULT_CARD_SIZE_PX,
-  DEFAULT_ROW_SIZE_PX,
+  useChromeBodyData,
   useChromeScrollReset,
-  useInfiniteScroll,
   useTableChrome,
-  useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
-import { useCallback, useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -52,24 +55,19 @@ function resizeSetter(
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const {
-    slots,
-    className,
-    virtualize = false,
-    estimateRowSize,
-    estimateCardSize,
-    virtualOverscan,
-    virtualScrollMargin,
-  } = props;
+  const { slots, className } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
-  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const c = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = c;
   const { labels, source } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, props);
+  const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
+    c,
+    props
+  );
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
@@ -77,33 +75,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       labels={labels}
     />
   );
-  const handleVirtualEndReached = useCallback(() => {
-    if (source.hasNextPage && !source.isFetchingNextPage) {
-      source.fetchNextPage();
-    }
-  }, [source]);
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey: props.rowKey,
-    enabled:
-      virtualize &&
-      !c.isPaged &&
-      !source.error &&
-      (c.body === "desktop" || c.body === "mobile"),
-    estimateSize: c.isMobile
-      ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-      : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
-    overscan: virtualOverscan,
-    scrollMargin: virtualScrollMargin,
-    onEndReached: handleVirtualEndReached,
-  });
-  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
-    hasNextPage: Boolean(source.hasNextPage),
-    isFetchingNextPage: Boolean(source.isFetchingNextPage),
-    fetchNextPage: () => source.fetchNextPage(),
-    itemCount: source.rows.length,
-    enabled: !c.isPaged && !source.error,
-  });
 
   let body: React.ReactNode;
   if (c.body === "skeleton") {
@@ -116,14 +87,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (c.body === "empty") {
     body = slots?.empty ?? (
-      <Typography
-        role="status"
-        color="text.secondary"
-        align="center"
-        sx={{ py: 6 }}
-      >
-        {labels.noData}
-      </Typography>
+      <Stack role="status" spacing={1.5} alignItems="center" sx={{ py: 6 }}>
+        <Typography color="text.secondary" align="center">
+          {c.emptyVariant === "noResults" ? labels.noResults : labels.noData}
+        </Typography>
+        {c.emptyVariant === "noResults" && (
+          <Button variant="outlined" size="small" onClick={c.clearFilters}>
+            {labels.clearAll}
+          </Button>
+        )}
+      </Stack>
     );
   } else if (c.body === "mobile") {
     body = (
@@ -135,6 +108,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         size={size}
         onRowClick={props.onRowClick}
+        rowClassName={props.rowClassName}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -152,6 +126,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         size={size}
         prefetch={props.prefetch}
         onRowClick={props.onRowClick}
+        rowClassName={props.rowClassName}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -173,6 +148,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       variant="outlined"
       dir={props.dir}
       className={className}
+      aria-busy={c.isRefreshing || undefined}
       sx={{ p: 1.5 }}
     >
       <Stack spacing={1.5}>
@@ -184,21 +160,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           customToolbar={props.toolbar}
           hasFilters={Boolean(props.filters)}
           activeFilterCount={c.activeFilterCount}
-          onOpenFilters={() =>
-            setFiltersOpen((open) => (filtersMode === "popover" ? !open : true))
-          }
           showRowsPerPage={!c.isPaged}
           filtersMode={filtersMode}
           filters={props.filters}
           filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((open) => !open)}
           onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={c.clearFilters}
           dir={props.dir}
           columnMenu={columnMenu}
         />
+        {c.isRefreshing && <LinearProgress aria-label={labels.loading} />}
         <Chips
           chips={c.mergedChips}
-          onClearAll={props.onClearFilters}
+          onClearAll={c.clearFilters}
           labels={labels}
         />
         {table.selection && props.bulkActions && (
@@ -218,7 +193,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         ) : (
           body
         )}
-        {!c.isPaged && !source.error && source.hasNextPage && (
+        {canLoadMore && source.hasNextPage && (
           <Box ref={loadMoreRef} display="flex" justifyContent="center" py={1}>
             <Button
               variant="outlined"
@@ -247,7 +222,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={c.activeFilterCount}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={c.clearFilters}
           labels={labels}
           dir={props.dir}
         />

@@ -8,7 +8,8 @@ export interface FilterDrawerProps {
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  /** Clear-filters handler (always supplied by the table chrome). */
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
 }
@@ -38,7 +39,7 @@ export function FilterDrawer({
         <Group justify="space-between" pt="md">
           <Button
             variant="subtle"
-            onClick={() => onClearFilters?.()}
+            onClick={onClearFilters}
             disabled={activeFilterCount === 0}
           >
             {labels.clearAll}

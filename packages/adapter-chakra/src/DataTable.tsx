@@ -1,15 +1,11 @@
 import {
-  DEFAULT_CARD_SIZE_PX,
-  DEFAULT_ROW_SIZE_PX,
   type TableBody,
+  useChromeBodyData,
   useChromeScrollReset,
-  useInfiniteScroll,
   useTableChrome,
-  useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
-import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { Box, Button, Flex, Progress, Stack, Text } from "@chakra-ui/react";
+import { type ReactNode, useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -34,15 +30,7 @@ import type { DataTableProps } from "./types";
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const {
-    slots,
-    colorScheme,
-    virtualize = false,
-    estimateRowSize,
-    estimateCardSize,
-    virtualOverscan,
-    virtualScrollMargin,
-  } = props;
+  const { slots, colorScheme } = props;
   const { filtersMode = "popover" } = props;
   // Map row density to Chakra's table `size` (independent of column pinning):
   // compact → "sm", comfortable (default) → "md". An explicit `size` prop, if
@@ -50,40 +38,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const size =
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
-  warnVirtualizeInScrollBox(props.virtualize ?? false, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels, source } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, props);
-  const handleVirtualEndReached = useCallback(() => {
-    if (source.hasNextPage && !source.isFetchingNextPage) {
-      source.fetchNextPage();
-    }
-  }, [source]);
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey: props.rowKey,
-    enabled:
-      virtualize &&
-      !chrome.isPaged &&
-      !source.error &&
-      (chrome.body === "desktop" || chrome.body === "mobile"),
-    estimateSize: chrome.isMobile
-      ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-      : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
-    overscan: virtualOverscan,
-    scrollMargin: virtualScrollMargin,
-    onEndReached: handleVirtualEndReached,
-  });
-  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
-    hasNextPage: Boolean(source.hasNextPage),
-    isFetchingNextPage: Boolean(source.isFetchingNextPage),
-    fetchNextPage: () => source.fetchNextPage(),
-    itemCount: source.rows.length,
-    enabled: !chrome.isPaged && !source.error,
-  });
+  const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
+    chrome,
+    props
+  );
 
   const tableProps = {
     table,
@@ -105,6 +69,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     columnWidths: chrome.columnLayout.state.widths,
     resizeLabel: table.labels.resizeColumn,
     onRowClick: props.onRowClick,
+    rowClassName: props.rowClassName,
   };
   const bodyByRegion: Record<TableBody, ReactNode> = {
     skeleton: slots?.skeleton ?? (
@@ -114,11 +79,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         loadingLabel={labels.loading}
       />
     ),
-    empty: slots?.empty ?? (
-      <Text role="status" {...subtleText} textAlign="center" py={10}>
-        {labels.noData}
-      </Text>
-    ),
+    empty:
+      slots?.empty ??
+      (chrome.emptyVariant === "noResults" ? (
+        <Stack role="status" align="center" py={10} spacing={3}>
+          <Text {...subtleText}>{labels.noResults}</Text>
+          <Button
+            size="sm"
+            variant="outline"
+            colorScheme={colorScheme}
+            onClick={chrome.clearFilters}
+          >
+            {labels.clearAll}
+          </Button>
+        </Stack>
+      ) : (
+        <Text role="status" {...subtleText} textAlign="center" py={10}>
+          {labels.noData}
+        </Text>
+      )),
     mobile: <MobileCards {...tableProps} className={props.classNames?.card} />,
     desktop: (
       <DesktopTable
@@ -134,6 +113,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ref={rootRef}
       dir={props.dir}
       className={props.classNames?.root}
+      aria-busy={chrome.isRefreshing || undefined}
       borderWidth="1px"
       borderRadius="md"
       p={3}
@@ -153,7 +133,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((o) => !o)}
           onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={chrome.clearFilters}
           columnMenu={
             props.enableColumnMenu && !chrome.isMobile ? (
               <ColumnMenu
@@ -167,9 +147,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           colorScheme={colorScheme}
           dir={props.dir}
         />
+        {chrome.isRefreshing && (
+          <Progress size="xs" isIndeterminate aria-label={labels.loading} />
+        )}
         <Chips
           chips={chrome.mergedChips}
-          onClearAll={props.onClearFilters}
+          onClearAll={chrome.clearFilters}
           labels={labels}
         />
         {table.selection && props.bulkActions && (
@@ -190,7 +173,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         ) : (
           bodyByRegion[chrome.body]
         )}
-        {!chrome.isPaged && !source.error && source.hasNextPage && (
+        {canLoadMore && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center" py={2}>
             <Button
               size="sm"
@@ -220,7 +203,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClose={() => setFiltersOpen(false)}
           filters={props.filters}
           activeFilterCount={chrome.activeFilterCount}
-          onClearFilters={props.onClearFilters}
+          onClearFilters={chrome.clearFilters}
           labels={labels}
           colorScheme={colorScheme}
           dir={props.dir}

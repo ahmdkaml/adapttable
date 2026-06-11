@@ -36,6 +36,7 @@ function Harness(props: {
   error?: Error | null;
   refetch?: () => void;
   isLoading?: boolean;
+  isFetching?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
 }) {
   const source = useFrontendData<Row>({
@@ -46,6 +47,7 @@ function Harness(props: {
     error: props.error ?? null,
     refetch: props.refetch,
     isLoading: props.isLoading,
+    isFetching: props.isFetching,
   });
   return (
     <DataTable
@@ -122,6 +124,103 @@ describe("<DataTable> (Chakra)", () => {
   it("renders the empty state", () => {
     renderHarness({ rows: [] });
     expect(screen.getByText("No data")).toBeInTheDocument();
+  });
+
+  it("renders the noResults empty state with a clear-filters CTA when filters match nothing", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        rows: [],
+        override: {
+          filterLabels: { status: (v) => `Status: ${v}` },
+          onClearFilters,
+        },
+      },
+      "f_status=Active"
+    );
+    expect(
+      screen.getByText("No results match your filters")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No data")).toBeNull();
+    // The CTA routes through chrome.clearFilters → the caller's handler.
+    const emptyState = screen.getByRole("status");
+    fireEvent.click(
+      within(emptyState).getByRole("button", { name: "Clear all" })
+    );
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it("noResults CTA falls back to clearing source extras without onClearFilters", () => {
+    renderHarness(
+      {
+        rows: [],
+        override: { filterLabels: { status: (v) => `Status: ${v}` } },
+      },
+      "f_status=Active"
+    );
+    const emptyState = screen.getByRole("status");
+    fireEvent.click(
+      within(emptyState).getByRole("button", { name: "Clear all" })
+    );
+    expect(adapter.getSearch()).not.toContain("f_status");
+  });
+
+  it("shows an indeterminate refresh bar and aria-busy while refreshing", () => {
+    const { container } = renderHarness({
+      isFetching: true,
+      override: { classNames: { root: "my-root" } },
+    });
+    // Rows stay on screen — the refresh is non-blocking.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(container.querySelector(".my-root")).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+  });
+
+  it("renders no refresh indicator when the source is idle", () => {
+    const { container } = renderHarness({
+      override: { classNames: { root: "my-root" } },
+    });
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(container.querySelector(".my-root")).not.toHaveAttribute(
+      "aria-busy"
+    );
+  });
+
+  it("appends rowClassName to matching desktop rows only", () => {
+    const { container } = renderHarness({
+      override: {
+        rowClassName: (row) => (row.id === "a" ? "row-overdue" : undefined),
+      },
+    });
+    const flagged = container.querySelectorAll("tbody tr.row-overdue");
+    expect(flagged.length).toBe(1);
+    expect(within(flagged[0] as HTMLElement).getByText("Alice")).toBeTruthy();
+  });
+
+  it("merges rowClassName with the card className on mobile", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        classNames: { card: "my-card" },
+        rowClassName: (row) => (row.id === "a" ? "row-overdue" : undefined),
+      },
+    });
+    // Both cards keep the static hook; only Alice's gets the row class.
+    expect(container.querySelectorAll(".my-card").length).toBe(2);
+    const flagged = container.querySelectorAll(".my-card.row-overdue");
+    expect(flagged.length).toBe(1);
+    expect(within(flagged[0] as HTMLElement).getByText("Alice")).toBeTruthy();
+  });
+
+  it("applies rowClassName alone on mobile cards without a card className", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: { rowClassName: () => "row-marked" },
+    });
+    expect(container.querySelectorAll(".row-marked").length).toBe(2);
   });
 
   it("renders loading skeletons", () => {

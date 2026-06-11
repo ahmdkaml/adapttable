@@ -77,6 +77,7 @@ export function MobileCards<TRow>({
   getRowId,
   prefetch,
   onRowClick,
+  rowClassName,
   tableLabel,
   compact = false,
 }: Readonly<{
@@ -88,6 +89,8 @@ export function MobileCards<TRow>({
   prefetch?: (row: TRow) => void;
   /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
   onRowClick?: (row: TRow) => void;
+  /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
+  rowClassName?: (row: TRow, index: number) => string | undefined;
   tableLabel?: string;
   /** Tighter card rhythm for the `"compact"` density. */
   compact?: boolean;
@@ -112,6 +115,7 @@ export function MobileCards<TRow>({
           <li key={id}>
             <Card
               size="small"
+              className={rowClassName?.(row, rowIndex)}
               {...rowClickProps(row, onRowClick)}
               onMouseEnter={prefetch ? () => prefetch(row) : undefined}
               title={

@@ -1,9 +1,23 @@
 import { act, renderHook } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryAdapter } from "./adapter";
-import { useColumnLayoutUrlState } from "./useColumnLayoutUrlState";
+import {
+  LAYOUT_URL_WRITE_DEBOUNCE_MS,
+  useColumnLayoutUrlState,
+} from "./useColumnLayoutUrlState";
+
+// URL persistence is debounced (resize drags commit per animation frame and
+// Safari rate-limits history.replaceState) — advance past it to observe URLs.
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+afterEach(() => vi.useRealTimers());
+
+function flushUrl() {
+  act(() => {
+    vi.advanceTimersByTime(LAYOUT_URL_WRITE_DEBOUNCE_MS + 10);
+  });
+}
 
 function renderWith(
   initial = "",
@@ -61,6 +75,7 @@ describe("useColumnLayoutUrlState", () => {
         widths: {},
       });
     });
+    flushUrl();
     expect(adapter.getSearch()).toBe("colPin=person%3Aleft");
     expect(result.current.layout.pinned).toEqual({ person: "left" });
   });
@@ -75,6 +90,7 @@ describe("useColumnLayoutUrlState", () => {
         widths: {},
       });
     });
+    flushUrl();
     expect(adapter.getSearch()).toContain("left.colHide=email");
   });
 
@@ -122,6 +138,7 @@ describe("useColumnLayoutUrlState", () => {
         widths: {},
       });
     });
+    flushUrl();
     expect(adapter.getSearch()).toBe("");
     expect(result.current.layout.hidden).toEqual(["email"]);
   });
@@ -136,7 +153,63 @@ describe("useColumnLayoutUrlState", () => {
         widths: {},
       });
     });
+    flushUrl();
     expect(adapter.getSearch()).toBe("");
     expect(result.current.layout.hidden).toEqual([]);
+  });
+});
+
+describe("debounced URL persistence", () => {
+  const NEXT = { hidden: ["email"], order: [], pinned: {}, widths: {} };
+
+  it("reads optimistically before the URL write lands", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => useColumnLayoutUrlState({ adapter }));
+    act(() => result.current.onLayoutChange(NEXT));
+    // Instant for the UI…
+    expect(result.current.layout.hidden).toEqual(["email"]);
+    // …but the URL write is still pending.
+    expect(adapter.getSearch()).toBe("");
+    flushUrl();
+    expect(adapter.getSearch()).toBe("colHide=email");
+  });
+
+  it("coalesces a burst of changes into one trailing write", () => {
+    const adapter = createMemoryAdapter("");
+    const writes: string[] = [];
+    const spied = {
+      ...adapter,
+      setSearch: (s: string) => {
+        writes.push(s);
+        adapter.setSearch(s);
+      },
+    };
+    const { result } = renderHook(() =>
+      useColumnLayoutUrlState({ adapter: spied })
+    );
+    act(() => {
+      // A resize drag: one commit per frame.
+      for (let px = 100; px < 160; px += 10) {
+        result.current.onLayoutChange({
+          hidden: [],
+          order: [],
+          pinned: {},
+          widths: { name: px },
+        });
+      }
+    });
+    flushUrl();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toContain("colW=name%3A150");
+  });
+
+  it("flushes a pending layout on unmount so the last frame is kept", () => {
+    const adapter = createMemoryAdapter("");
+    const { result, unmount } = renderHook(() =>
+      useColumnLayoutUrlState({ adapter })
+    );
+    act(() => result.current.onLayoutChange(NEXT));
+    unmount();
+    expect(adapter.getSearch()).toBe("colHide=email");
   });
 });

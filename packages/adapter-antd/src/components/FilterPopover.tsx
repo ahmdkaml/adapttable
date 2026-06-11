@@ -8,7 +8,7 @@ export interface FilterPopoverProps {
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
   /** The Filters trigger button — becomes the popover anchor. */
@@ -65,7 +65,7 @@ export function FilterPopover({
           size="small"
           type="link"
           disabled={activeFilterCount === 0}
-          onClick={() => onClearFilters?.()}
+          onClick={onClearFilters}
         >
           {labels.clearAll}
         </Button>

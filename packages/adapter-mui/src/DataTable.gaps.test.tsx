@@ -1,8 +1,9 @@
 /** Gap-fill: MUI select onChange handlers and chip delete. */
+import type * as AdaptTableCore from "@adapttable/core";
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
@@ -29,23 +30,16 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
-beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({
-      row,
-      index,
-      key: rowKey(row),
-    })),
-    paddingTop: 0,
-    paddingBottom: 0,
-  }));
+beforeEach(async () => {
+  const actual =
+    await vi.importActual<typeof AdaptTableCore>("@adapttable/core");
+  vi.mocked(useChromeBodyData).mockImplementation(actual.useChromeBodyData);
 });
 
 function mount(
@@ -156,18 +150,22 @@ describe("MUI gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 40,
-      paddingBottom: 40,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "b", name: "Bob" },
+            index: 1,
+            key: "b",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 40,
+        paddingBottom: 40,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
     mount({ virtualize: true, estimateRowSize: 40 }, "infinite");
     expect(screen.queryByText("Alice")).toBeNull();
@@ -175,18 +173,22 @@ describe("MUI gaps", () => {
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 132,
-      paddingBottom: 0,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "b", name: "Bob" },
+            index: 1,
+            key: "b",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 132,
+        paddingBottom: 0,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: false,
     });
     mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();

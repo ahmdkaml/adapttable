@@ -48,9 +48,11 @@ export {
 export type { BaseDataTableProps } from "./props";
 export {
   type BulkBarChromeProps,
+  type ChromeBodyData,
   type TableBody,
   type TableChrome,
   type ToolbarChromeProps,
+  useChromeBodyData,
   useChromeScrollReset,
   useTableChrome,
 } from "./useTableChrome";
@@ -188,6 +190,8 @@ export {
   type PinLeads,
   type PinnedCellStyle,
   pinnedCellStyle,
+  type PinOffset,
+  type PinSide,
   useColumnLayout,
   type UseColumnLayoutOptions,
   type UseColumnLayoutResult,

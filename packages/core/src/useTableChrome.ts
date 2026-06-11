@@ -1,16 +1,18 @@
 import type { ReactNode, RefObject } from "react";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
 import {
   useColumnLayout,
   type UseColumnLayoutResult,
 } from "./columns/useColumnLayout";
+import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import {
   type ActiveFilterChip,
   mergeFilterChips,
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
+import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
@@ -20,6 +22,11 @@ import {
   useDataTable,
   type UseDataTableResult,
 } from "./useDataTable/useDataTable";
+import {
+  type TableVirtualization,
+  useTableVirtualization,
+  warnVirtualizeInScrollBox,
+} from "./virtual/useTableVirtualization";
 
 /**
  * The shared prop surface every adapter's toolbar sub-component needs.
@@ -44,10 +51,16 @@ export interface ToolbarChromeProps<TRow> {
   hasFilters: boolean;
   /** Number shown on the filters badge. */
   activeFilterCount: number;
-  /** Open the filter panel. */
-  onOpenFilters: () => void;
+  /** Whether the filter container is open (drives `aria-expanded`). */
+  filtersOpen: boolean;
+  /** Toggle the filter container (popover and drawer alike). */
+  onToggleFilters: () => void;
   /** Whether to show the rows-per-page control (infinite mode). */
   showRowsPerPage: boolean;
+  /** Built column-menu node, when `enableColumnMenu` is set. */
+  columnMenu?: ReactNode;
+  /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
+  dir?: "ltr" | "rtl";
 }
 
 /**
@@ -87,6 +100,24 @@ export interface TableChrome<TRow> {
   isPaged: boolean;
   /** Which body region to render. */
   body: TableBody;
+  /**
+   * Why the body is empty: `"noResults"` when an active search/filter
+   * produced zero rows (offer a clear-filters CTA), `"noData"` when the
+   * source itself is empty. Only meaningful while `body === "empty"`.
+   */
+  emptyVariant: "noData" | "noResults";
+  /**
+   * A background refresh is in flight (`isFetching` without `isLoading`):
+   * rows on screen are potentially stale. Adapters show a subtle,
+   * non-blocking indicator (thin progress bar / `aria-busy`).
+   */
+  isRefreshing: boolean;
+  /**
+   * Clear-filters handler: the caller's `onClearFilters`, falling back to
+   * `source.clearExtras` — so chips, the drawer and the no-results CTA can
+   * always offer a working "clear".
+   */
+  clearFilters: () => void;
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -120,7 +151,10 @@ export function useTableChrome<TRow>(
     onRowsChange,
     bulkActions,
     selectionGetId,
+    selectedIds: selectedIdsProp,
+    onSelectionChange,
     filterLabels,
+    onClearFilters,
     extraChips,
     activeFilterCount: activeFilterCountProp,
     confirm: confirmProp,
@@ -153,12 +187,27 @@ export function useTableChrome<TRow>(
     mobileIdentityColumns,
     bulkActions,
     selectionGetId,
+    selectedIds: selectedIdsProp,
+    onSelectedIdsChange: onSelectionChange,
     filterLabels,
   });
 
   useEffect(() => {
     onRowsChange?.(table.rows);
   }, [onRowsChange, table.rows]);
+
+  // Selection observer (uncontrolled only): the Set identity only changes
+  // when the selection does, so this fires exactly once per user-visible
+  // change (including automatic resets). In the CONTROLLED mode the parent
+  // already receives change requests synchronously through useSelection's
+  // onChange — echoing them here would double-fire (and feed loops).
+  const controlledSelection = selectedIdsProp !== undefined;
+  const selectedIds = table.selection?.selectedIds;
+  useEffect(() => {
+    if (!controlledSelection && selectedIds) {
+      onSelectionChange?.([...selectedIds]);
+    }
+  }, [controlledSelection, onSelectionChange, selectedIds]);
 
   const mergedChips = useMemo<readonly ActiveFilterChip[]>(
     () => mergeFilterChips(table.filterChips, extraChips),
@@ -178,6 +227,21 @@ export function useTableChrome<TRow>(
   else if (isMobile) body = "mobile";
   else body = "desktop";
 
+  // Zero rows under an active search/filter is "nothing MATCHED", not
+  // "nothing exists" — the empty state should say so and offer a clear.
+  const emptyVariant =
+    activeFilterCount > 0 || source.search !== "" ? "noResults" : "noData";
+
+  // `isFetchingNextPage` is load-more, not a refresh of what's on screen.
+  const isRefreshing = Boolean(
+    source.isFetching && !source.isLoading && !source.isFetchingNextPage
+  );
+
+  const clearFilters = useCallback(() => {
+    if (onClearFilters) onClearFilters();
+    else source.clearExtras();
+  }, [onClearFilters, source]);
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -192,10 +256,73 @@ export function useTableChrome<TRow>(
     activeFilterCount,
     isPaged,
     body,
+    emptyVariant,
+    isRefreshing,
+    clearFilters,
     showFooter,
     columnLayout,
     allColumns: columns,
   };
+}
+
+/** Result of {@link useChromeBodyData}. */
+export interface ChromeBodyData<TRow> {
+  /** Row/card window virtualization state (disabled unless eligible). */
+  virtualization: TableVirtualization<TRow>;
+  /** Sentinel ref that auto-loads the next page in infinite mode. */
+  loadMoreRef: RefObject<HTMLDivElement>;
+  /** Whether the load-more affordance applies (infinite mode, no error). */
+  canLoadMore: boolean;
+}
+
+/**
+ * The shared data-flow wiring between {@link useTableChrome} and an
+ * adapter's body: window virtualization (eligible only for real rows in
+ * infinite mode) and the infinite-scroll sentinel. Extracted because four
+ * adapters repeated this block verbatim; antd opts out (it scrolls inside
+ * its own `<Table>` container).
+ *
+ * @typeParam TRow - The row type.
+ * @param chrome - The {@link useTableChrome} result.
+ * @param props - The adapter's {@link BaseDataTableProps}.
+ * @returns Virtualization state + the load-more sentinel.
+ */
+export function useChromeBodyData<TRow>(
+  chrome: TableChrome<TRow>,
+  props: BaseDataTableProps<TRow>
+): ChromeBodyData<TRow> {
+  const { source, rowKey, virtualize = false } = props;
+  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
+  // One guarded loader for both triggers (virtual end + sentinel).
+  const fetchNext = useCallback(() => {
+    if (source.hasNextPage && !source.isFetchingNextPage) {
+      source.fetchNextPage();
+    }
+  }, [source]);
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey,
+    enabled:
+      virtualize &&
+      !chrome.isPaged &&
+      !source.error &&
+      (chrome.body === "desktop" || chrome.body === "mobile"),
+    estimateSize: chrome.isMobile
+      ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+      : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
+    overscan: props.virtualOverscan,
+    scrollMargin: props.virtualScrollMargin,
+    onEndReached: fetchNext,
+  });
+  const canLoadMore = !chrome.isPaged && !source.error;
+  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
+    hasNextPage: Boolean(source.hasNextPage),
+    isFetchingNextPage: Boolean(source.isFetchingNextPage),
+    fetchNextPage: fetchNext,
+    itemCount: source.rows.length,
+    enabled: canLoadMore,
+  });
+  return { virtualization, loadMoreRef, canLoadMore };
 }
 
 /**

@@ -6,6 +6,7 @@ export const ar: Required<TableLabels> = {
   search: "بحث",
   searchPlaceholder: "ابحث…",
   noData: "لا توجد بيانات",
+  noResults: "لا توجد نتائج مطابقة لعوامل التصفية",
   loading: "جارٍ التحميل…",
   loadMore: "تحميل المزيد",
   filters: "عوامل التصفية",

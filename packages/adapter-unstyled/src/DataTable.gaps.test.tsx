@@ -1,14 +1,15 @@
 /**
  * Gap-fill: mobile selection + row actions, footer interactions, and the
- * bulk disabled-reason path.
+ * bulk disabled-reason path. Virtual-window rendering is driven through a
+ * mocked `useChromeBodyData` (the loader wiring itself lives in core).
  */
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -30,22 +31,24 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({
-      row,
-      index,
-      key: rowKey(row),
-    })),
-    paddingTop: 0,
-    paddingBottom: 0,
+  // Mirror the real hook's disabled state so non-virtual tests render the
+  // full row set with a working load-more gate.
+  vi.mocked(useChromeBodyData).mockImplementation((chrome, props) => ({
+    virtualization: {
+      enabled: false,
+      rows: [],
+      paddingTop: 0,
+      paddingBottom: 0,
+    },
+    loadMoreRef: { current: null },
+    canLoadMore: !chrome.isPaged && !props.source.error,
   }));
 });
 
@@ -238,18 +241,22 @@ describe("<DataTable> (unstyled) gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 40,
-      paddingBottom: 40,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "b", name: "Bob" },
+            index: 1,
+            key: "b",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 40,
+        paddingBottom: 40,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
     renderHarness({
       mode: "infinite",
@@ -260,18 +267,22 @@ describe("<DataTable> (unstyled) gaps", () => {
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 132,
-      paddingBottom: 0,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "b", name: "Bob" },
+            index: 1,
+            key: "b",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 132,
+        paddingBottom: 0,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
     renderHarness({
       isMobile: true,
@@ -279,58 +290,6 @@ describe("<DataTable> (unstyled) gaps", () => {
       override: { virtualize: true, estimateCardSize: 132 },
     });
     expect(screen.queryByText("Alice")).toBeNull();
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-  });
-
-  it("fetches the next page when virtualization reaches the end", () => {
-    // The DataTable wires its own onEndReached into useTableVirtualization;
-    // capture it from the mock and fire it to exercise that callback.
-    let onEndReached: (() => void) | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
-      onEndReached = opts.onEndReached;
-      return {
-        enabled: true,
-        rows: opts.rows.map((row, index) => ({
-          row,
-          index,
-          key: opts.rowKey(row),
-        })),
-        paddingTop: 0,
-        paddingBottom: 0,
-        measureElement: vi.fn(),
-      };
-    });
-    renderHarness(
-      { mode: "infinite", override: { virtualize: true } },
-      "limit=1"
-    );
-    expect(screen.queryByText("Bob")).toBeNull();
-    act(() => onEndReached?.());
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-  });
-
-  it("does not fetch again while a virtual page is already loading", () => {
-    // With no further pages, the guard in handleVirtualEndReached is a no-op:
-    // firing onEndReached must not throw and must not reveal new rows.
-    let onEndReached: (() => void) | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
-      onEndReached = opts.onEndReached;
-      return {
-        enabled: true,
-        rows: opts.rows.map((row, index) => ({
-          row,
-          index,
-          key: opts.rowKey(row),
-        })),
-        paddingTop: 0,
-        paddingBottom: 0,
-        measureElement: vi.fn(),
-      };
-    });
-    renderHarness({ mode: "infinite", override: { virtualize: true } });
-    // All rows already loaded → no next page → the guard short-circuits.
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-    act(() => onEndReached?.());
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 

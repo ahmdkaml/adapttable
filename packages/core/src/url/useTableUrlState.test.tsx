@@ -318,3 +318,29 @@ describe("useTableUrlState", () => {
     });
   });
 });
+
+describe("clearExtras", () => {
+  it("clears every extra filter and resets the page, keeping search/sort", () => {
+    const adapter = createMemoryAdapter(
+      "q=li&sortBy=name&sortDir=desc&page=3&f_team=core&f_status=active"
+    );
+    const { result } = renderHook(() => useTableUrlState({ adapter }));
+    act(() => result.current.clearExtras());
+    expect(result.current.extra).toEqual({});
+    expect(result.current.page).toBe(1);
+    expect(result.current.search).toBe("li");
+    expect(result.current.sortBy).toBe("name");
+  });
+
+  it("stamps cleared markers so defaulted extras stay cleared", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() =>
+      useTableUrlState({ adapter, defaults: { extra: { team: "core" } } })
+    );
+    expect(result.current.extra.team).toBe("core");
+    act(() => result.current.clearExtras());
+    // The default must NOT resurrect.
+    expect(result.current.extra.team).toBeUndefined();
+    expect(adapter.getSearch()).toContain("f_team=");
+  });
+});
