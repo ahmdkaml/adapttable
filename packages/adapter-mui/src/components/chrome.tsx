@@ -91,16 +91,10 @@ export interface MuiToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   filtersMode: "popover" | "drawer";
   /** Filter content (rendered inside the popover when in popover mode). */
   filters?: ReactNode;
-  /** Whether the filter container is open (popover mode). */
-  filtersOpen: boolean;
   /** Close the filter container (popover mode). */
   onCloseFilters: () => void;
   /** Clear all active filters. */
-  onClearFilters?: () => void;
-  /** Layout direction (flips popover/drawer side). */
-  dir?: Direction;
-  /** The Columns menu, rendered inline at the end of the toolbar row. */
-  columnMenu?: ReactNode;
+  onClearFilters: () => void;
 }
 
 /** Search field + sort select + filters button + rows-per-page. */
@@ -112,11 +106,11 @@ export function Toolbar<TRow>({
   customToolbar,
   hasFilters,
   activeFilterCount,
-  onOpenFilters,
   showRowsPerPage,
   filtersMode,
   filters,
   filtersOpen,
+  onToggleFilters,
   onCloseFilters,
   onClearFilters,
   dir,
@@ -138,7 +132,7 @@ export function Toolbar<TRow>({
         size="small"
         startIcon={<FiltersIcon />}
         aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
-        onClick={onOpenFilters}
+        onClick={onToggleFilters}
       >
         {labels.filters}
       </Button>
@@ -249,7 +243,7 @@ export function Chips({
   labels,
 }: Readonly<{
   chips: readonly ActiveFilterChip[];
-  onClearAll?: () => void;
+  onClearAll: () => void;
   labels: Required<TableLabels>;
 }>) {
   if (chips.length === 0) return null;
@@ -275,13 +269,11 @@ export function Chips({
           />
         </li>
       ))}
-      {onClearAll && (
-        <li>
-          <Button size="small" onClick={onClearAll}>
-            {labels.clearAll}
-          </Button>
-        </li>
-      )}
+      <li>
+        <Button size="small" onClick={onClearAll}>
+          {labels.clearAll}
+        </Button>
+      </li>
     </Stack>
   );
 }
@@ -483,7 +475,7 @@ export function FilterDrawer({
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
 }>) {
@@ -508,10 +500,7 @@ export function FilterDrawer({
           {filters}
         </Box>
         <Stack direction="row" justifyContent="space-between">
-          <Button
-            onClick={() => onClearFilters?.()}
-            disabled={activeFilterCount === 0}
-          >
+          <Button onClick={onClearFilters} disabled={activeFilterCount === 0}>
             {labels.clearAll}
           </Button>
           <Button variant="contained" onClick={onClose}>

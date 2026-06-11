@@ -58,6 +58,8 @@ export interface TableSource<TRow> {
   setSearch: (next: string) => void;
   setExtra: (key: string, value: FilterValue) => void;
   setExtras: (updates: ExtraFilters) => void;
+  /** Clear every extra filter (and reset the page) — search/sort stay. */
+  clearExtras: () => void;
   /** Clear search + sort + page + every extra filter in one commit. */
   clearAll: () => void;
 }

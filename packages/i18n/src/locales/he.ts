@@ -6,6 +6,7 @@ export const he: Required<TableLabels> = {
   search: "חיפוש",
   searchPlaceholder: "חיפוש…",
   noData: "אין נתונים",
+  noResults: "אין תוצאות התואמות למסננים",
   loading: "טוען…",
   loadMore: "טען עוד",
   filters: "מסננים",

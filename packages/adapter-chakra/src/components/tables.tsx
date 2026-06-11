@@ -57,6 +57,15 @@ interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   colorScheme?: string;
 }
 
+/** Join the static class hook with a conditional per-row class. */
+function joinClasses(
+  base: string | undefined,
+  extra: string | undefined
+): string | undefined {
+  if (base && extra) return `${base} ${extra}`;
+  return base ?? extra;
+}
+
 function chakraAlign(
   align: ColumnDef<unknown>["align"]
 ): "start" | "center" | "end" {
@@ -142,6 +151,7 @@ export function DesktopTable<TRow>({
   colorScheme,
   prefetch,
   onRowClick,
+  rowClassName,
   className,
   rowEntries,
   paddingTop = 0,
@@ -336,6 +346,7 @@ export function DesktopTable<TRow>({
                 {...rowClickProps(row, onRowClick)}
                 ref={measureElement}
                 data-index={index}
+                className={rowClassName?.(row, index)}
                 bg={selected ? "blackAlpha.100" : undefined}
                 _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
                 onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -407,6 +418,7 @@ export function MobileCards<TRow>({
   size,
   colorScheme,
   onRowClick,
+  rowClassName,
   className,
   rowEntries,
   paddingTop = 0,
@@ -432,7 +444,7 @@ export function MobileCards<TRow>({
             data-index={index}
             variant="outline"
             role="listitem"
-            className={className}
+            className={joinClasses(className, rowClassName?.(row, index))}
             {...rowClickProps(row, onRowClick)}
           >
             <CardBody p={compact ? 3 : undefined}>

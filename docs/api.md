@@ -12,7 +12,9 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 ### State
 
-- `useTableUrlState(options?): { page, limit, search, sortBy, sortDir, extra, setPage, setLimit, setSort, setSearch, setExtra, setExtras, clearAll }`
+- `useTableUrlState(options?): { page, limit, search, sortBy, sortDir, extra, setPage, setLimit, setSort, setSearch, setExtra, setExtras, clearExtras, clearAll }`
+  — `clearExtras` drops every filter and resets the page while search/sort
+  survive (it also backs the built-in clear-filters fallback).
 - `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` — URL-persisted
   column layout (hidden / order / pinned / widths), namespaced by `urlKey`.
 - `useColumnLayoutStorageState({ storageKey, storage?, defaultLayout? })` —
@@ -29,6 +31,7 @@ and JSDoc, so editor autocomplete is the canonical reference.
   `columnResizeHandleProps` (pointer + arrow-key resize, RTL-aware).
 - Pinning style helpers: `pinnedCellStyle`, `edgePinStyle`, `PIN_Z` — logical
   insets (`insetInlineStart/End`), so pins land on the correct edge in RTL.
+  Pin types: `PinSide` (`"left" | "right"`), `PinOffset`, `PinnedSide`.
 - Width helpers: `tableMinWidth`, `resolveColumnWidth`, `parsePxWidth`.
 - On every adapter `<DataTable>`: `enableColumnMenu`, `resizableColumns`,
   `columnLayout` / `onColumnLayoutChange` / `defaultColumnLayout`,
@@ -40,7 +43,10 @@ and JSDoc, so editor autocomplete is the canonical reference.
   prop-getters: `getTableProps`, `getHeaderRowProps`, `getHeaderCellProps`,
   `getSortButtonProps`, `getRowProps`, `getCellProps`, `getSearchInputProps`.
 - `useTableChrome<TRow>(props)` — shared adapter orchestration (layout,
-  confirm, chips, body region, footer).
+  confirm, chips, body region + `emptyVariant` (`"noData" | "noResults"`),
+  `isRefreshing` (background refetch), `clearFilters`, footer).
+- `useChromeBodyData(chrome, props)` — the body data-flow wiring shared by
+  adapters: window virtualization + the infinite-scroll sentinel.
 
 ### Selection, filters, actions
 
@@ -76,12 +82,25 @@ and JSDoc, so editor autocomplete is the canonical reference.
 
 - `onSelectionChange(selectedIds)` — observe the selection set (toggles,
   select-all, automatic resets when search/filters change the result set).
+- `selectedIds` — controlled selection: pass the ids and apply
+  `onSelectionChange` requests to your own state (same controlled /
+  uncontrolled split as `columnLayout`).
+- `rowClassName(row, index)` — conditional per-row class, applied to desktop
+  rows and mobile cards alike (e.g. highlight overdue rows).
 - `onRowClick` (every adapter `<DataTable>`) — row activation on click/Enter;
   interactive children (actions, checkboxes, links) keep their own behaviour.
   Headless consumers: `rowClickProps(row, onRowClick)`.
 - `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV
   export from the table's own column definitions (free; pair with the
   `toolbar` slot).
+
+### Empty & refresh states
+
+- Zero rows under an active search/filter renders the `noResults` label with
+  a working clear-filters button (your `onClearFilters`, or the built-in
+  `clearExtras` fallback); a truly empty source renders `noData`.
+- A background refetch (stale rows on screen) shows each kit's subtle,
+  non-blocking progress indicator and sets `aria-busy`.
 
 ### Development warnings
 

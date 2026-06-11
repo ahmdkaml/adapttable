@@ -183,6 +183,7 @@ describe("FilterDrawer RTL", () => {
         <FilterDrawer
           opened
           onClose={vi.fn()}
+          onClearFilters={vi.fn()}
           filters={<div>filter body</div>}
           activeFilterCount={0}
           labels={defaultLabels}

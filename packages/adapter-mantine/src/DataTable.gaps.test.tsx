@@ -5,8 +5,8 @@
  */
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
 import { MantineProvider } from "@mantine/core";
@@ -32,20 +32,24 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({
-      row,
-      index,
-      key: rowKey(row),
-    })),
-    paddingTop: 0,
-    paddingBottom: 0,
+  vi.mocked(useChromeBodyData).mockImplementation((chrome, props) => ({
+    virtualization: {
+      enabled: false,
+      rows: props.source.rows.map((row, index) => ({
+        row,
+        index,
+        key: props.rowKey(row),
+      })),
+      paddingTop: 0,
+      paddingBottom: 0,
+    },
+    loadMoreRef: { current: null },
+    canLoadMore: !chrome.isPaged && !props.source.error,
   }));
 });
 
@@ -223,18 +227,22 @@ describe("<DataTable> gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "b", name: "Bob" },
-          index: 1,
-          key: "b",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 48,
-      paddingBottom: 48,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "b", name: "Bob" },
+            index: 1,
+            key: "b",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 48,
+        paddingBottom: 48,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
 
     render(
@@ -255,18 +263,22 @@ describe("<DataTable> gaps", () => {
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        {
-          row: { id: "c", name: "Charlie" },
-          index: 2,
-          key: "c",
-        } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 264,
-      paddingBottom: 0,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          {
+            row: { id: "c", name: "Charlie" },
+            index: 2,
+            key: "c",
+          } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 264,
+        paddingBottom: 0,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
 
     render(

@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useSelection } from "./useSelection";
 
@@ -61,5 +61,58 @@ describe("useSelection", () => {
     const before = result.current.selectedIds;
     rerender({ k: "same" });
     expect(result.current.selectedIds).toBe(before);
+  });
+});
+
+describe("controlled selection", () => {
+  const rows = [{ id: "a" }, { id: "b" }];
+  const getId = (r: { id: string }) => r.id;
+
+  it("reads from the controlled value and routes changes to onChange", () => {
+    const onChange = vi.fn();
+    const { result } = renderHook(() =>
+      useSelection({ rows, getId, selected: ["a"], onChange })
+    );
+    expect(result.current.isSelected("a")).toBe(true);
+    expect(result.current.selectedCount).toBe(1);
+    act(() => result.current.toggle("b"));
+    // The hook does NOT mutate itself — it asks the parent.
+    expect(onChange).toHaveBeenCalledWith(["a", "b"]);
+    expect(result.current.isSelected("b")).toBe(false);
+    act(() => result.current.toggle("a"));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("toggleAll and clear go through onChange in controlled mode", () => {
+    const onChange = vi.fn();
+    const { result } = renderHook(() =>
+      useSelection({ rows, getId, selected: [], onChange })
+    );
+    act(() => result.current.toggleAll());
+    expect(onChange).toHaveBeenLastCalledWith(["a", "b"]);
+    act(() => result.current.clear());
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("a resetKey change requests a clear from the parent", () => {
+    const onChange = vi.fn();
+    const { rerender } = renderHook(
+      ({ resetKey }) =>
+        useSelection({ rows, getId, resetKey, selected: ["a"], onChange }),
+      { initialProps: { resetKey: "k1" } }
+    );
+    rerender({ resetKey: "k2" });
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("a resetKey change with an already-empty selection asks nothing", () => {
+    const onChange = vi.fn();
+    const { rerender } = renderHook(
+      ({ resetKey }) =>
+        useSelection({ rows, getId, resetKey, selected: [], onChange }),
+      { initialProps: { resetKey: "k1" } }
+    );
+    rerender({ resetKey: "k2" });
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

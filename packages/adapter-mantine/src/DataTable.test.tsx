@@ -80,6 +80,91 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Mantine)", () => {
+  it("empty + active search renders noResults with a working clear CTA", () => {
+    const onClearFilters = vi.fn();
+    renderHarness({ initialUrl: "q=zzz", override: { onClearFilters } });
+    expect(
+      screen.getByText("No results match your filters")
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it("a truly empty source renders noData without a clear button", () => {
+    renderHarness({ rows: [] });
+    expect(screen.getByText("No data")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Clear all" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the thin refresh bar during a background refetch only", () => {
+    const refreshingSource = {
+      rows: ROWS,
+      total: 2,
+      page: 1,
+      limit: 8,
+      search: "",
+      sortBy: undefined,
+      sortDir: undefined,
+      extra: {},
+      isLoading: false,
+      isFetching: true,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      error: null,
+      paginationMode: "paged" as const,
+      setPage: () => undefined,
+      setLimit: () => undefined,
+      setSort: () => undefined,
+      setSearch: () => undefined,
+      setExtra: () => undefined,
+      setExtras: () => undefined,
+      clearExtras: () => undefined,
+      clearAll: () => undefined,
+      fetchNextPage: () => undefined,
+      refetch: () => undefined,
+    };
+    const { container, rerender } = render(
+      <MantineProvider>
+        <DataTable<Row>
+          source={refreshingSource}
+          columns={columns}
+          rowKey={(r) => r.id}
+        />
+      </MantineProvider>
+    );
+    // Non-blocking: the rows stay on screen while the bar shows.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(container.querySelector('[aria-label="Loading…"]')).not.toBeNull();
+    rerender(
+      <MantineProvider>
+        <DataTable<Row>
+          source={{ ...refreshingSource, isFetching: false }}
+          columns={columns}
+          rowKey={(r) => r.id}
+        />
+      </MantineProvider>
+    );
+    expect(container.querySelector('[aria-label="Loading…"]')).toBeNull();
+  });
+
+  it("rowClassName lands on desktop rows and mobile cards", () => {
+    const rowClassName = (r: Row) => (r.id === "a" ? "row-a" : undefined);
+    const desktop = renderHarness({ override: { rowClassName } });
+    const aliceRow = screen.getByText("Alice").closest("tr")!;
+    expect(aliceRow.className).toContain("row-a");
+    expect(screen.getByText("Bob").closest("tr")!.className).not.toContain(
+      "row-a"
+    );
+    desktop.unmount();
+    const mobile = renderHarness({
+      isMobile: true,
+      override: { rowClassName },
+    });
+    expect(mobile.container.querySelector(".row-a")).not.toBeNull();
+  });
+
   it("drawer mode: the toolbar button opens the slide-in filter drawer", async () => {
     renderHarness({
       override: { filters: <div>drawer body</div>, filtersMode: "drawer" },
@@ -337,6 +422,7 @@ describe("<DataTable> (Mantine)", () => {
       setSearch: () => undefined,
       setExtra: () => undefined,
       setExtras: () => undefined,
+      clearExtras: () => undefined,
       clearAll: () => undefined,
     };
     const tree: ReactNode = (

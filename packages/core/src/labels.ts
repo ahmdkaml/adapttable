@@ -9,6 +9,7 @@ export const defaultLabels: Required<TableLabels> = {
   search: "Search",
   searchPlaceholder: "Search…",
   noData: "No data",
+  noResults: "No results match your filters",
   loading: "Loading…",
   loadMore: "Load more",
   filters: "Filters",

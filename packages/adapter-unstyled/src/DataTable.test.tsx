@@ -28,6 +28,7 @@ function Harness(props: {
   error?: Error | null;
   refetch?: () => void;
   isLoading?: boolean;
+  isFetching?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
 }) {
   const source = useFrontendData<Row>({
@@ -38,6 +39,7 @@ function Harness(props: {
     error: props.error ?? null,
     refetch: props.refetch,
     isLoading: props.isLoading,
+    isFetching: props.isFetching,
   });
   return (
     <DataTable
@@ -106,14 +108,91 @@ describe("<DataTable> (unstyled)", () => {
     ).toHaveAttribute("data-density", "compact");
   });
 
-  it("renders the empty state", () => {
+  it("renders the no-data empty state without a clear button", () => {
     renderHarness({ rows: [] });
     expect(screen.getByText("No data")).toBeInTheDocument();
+    // "noData" means nothing exists — a clear-filters CTA would be noise.
+    expect(
+      document.querySelector('[data-adapttable-part="empty-clear"]')
+    ).toBeNull();
+  });
+
+  it("renders the no-results empty state when a search matches nothing", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        rows: [],
+        override: {
+          onClearFilters,
+          classNames: { emptyClear: "my-clear" },
+        },
+      },
+      "q=zzz"
+    );
+    expect(
+      screen.getByText("No results match your filters")
+    ).toBeInTheDocument();
+    const clear = screen.getByRole("button", { name: "Clear all" });
+    expect(clear).toHaveAttribute("data-adapttable-part", "empty-clear");
+    expect(clear).toHaveClass("my-clear");
+    fireEvent.click(clear);
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
   });
 
   it("renders a custom empty state", () => {
     renderHarness({ rows: [], override: { emptyState: <div>nada</div> } });
     expect(screen.getByText("nada")).toBeInTheDocument();
+  });
+
+  it("surfaces a background refresh on the root and as a progressbar", () => {
+    const { container } = renderHarness({
+      isFetching: true,
+      override: { classNames: { refreshIndicator: "my-refresh" } },
+    });
+    const root = container.querySelector('[data-adapttable-part="root"]');
+    expect(root).toHaveAttribute("data-refreshing");
+    expect(root).toHaveAttribute("aria-busy", "true");
+    const bar = screen.getByRole("progressbar", { name: "Loading…" });
+    expect(bar).toHaveAttribute("data-adapttable-part", "refresh-indicator");
+    expect(bar).toHaveClass("my-refresh");
+    // The rows on screen stay visible — a refresh is non-blocking.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("shows no refresh indicator when the source is idle", () => {
+    const { container } = renderHarness();
+    const root = container.querySelector('[data-adapttable-part="root"]');
+    expect(root).not.toHaveAttribute("data-refreshing");
+    expect(root).not.toHaveAttribute("aria-busy");
+    expect(screen.queryByRole("progressbar")).toBeNull();
+  });
+
+  it("appends rowClassName output to desktop rows", () => {
+    const { container } = renderHarness({
+      override: {
+        rowClassName: (row) => (row.id === "a" ? "is-alice" : undefined),
+        classNames: { row: "base-row" },
+      },
+    });
+    const rows = container.querySelectorAll('[data-adapttable-part="row"]');
+    expect(rows[0]).toHaveClass("base-row");
+    expect(rows[0]).toHaveClass("is-alice");
+    expect(rows[1]).toHaveClass("base-row");
+    expect(rows[1]).not.toHaveClass("is-alice");
+  });
+
+  it("appends rowClassName output to mobile cards", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowClassName: (_row, index) => (index === 0 ? "flagged" : undefined),
+        classNames: { card: "base-card" },
+      },
+    });
+    const cards = container.querySelectorAll('[data-adapttable-part="card"]');
+    expect(cards[0]).toHaveClass("base-card");
+    expect(cards[0]).toHaveClass("flagged");
+    expect(cards[1]).not.toHaveClass("flagged");
   });
 
   it("renders the loading state", () => {

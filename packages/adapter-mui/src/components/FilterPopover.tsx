@@ -19,7 +19,7 @@ export interface FilterPopoverProps {
   anchorEl: HTMLElement | null;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
 }
@@ -80,7 +80,7 @@ export function FilterPopover({
               </Typography>
               <Button
                 size="small"
-                onClick={() => onClearFilters?.()}
+                onClick={onClearFilters}
                 disabled={activeFilterCount === 0}
               >
                 {labels.clearAll}

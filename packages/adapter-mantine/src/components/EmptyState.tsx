@@ -11,6 +11,8 @@ export interface EmptyStateProps {
   description?: string;
   /** Optional custom icon (defaults to an inbox glyph). */
   icon?: ReactNode;
+  /** Optional call-to-action (e.g. a clear-filters button). */
+  action?: ReactNode;
 }
 
 /** Centred "nothing to show" placeholder. */
@@ -18,6 +20,7 @@ export function EmptyState({
   title,
   description,
   icon,
+  action,
 }: Readonly<EmptyStateProps>) {
   return (
     <Stack
@@ -39,6 +42,7 @@ export function EmptyState({
           {description}
         </Text>
       )}
+      {action}
     </Stack>
   );
 }

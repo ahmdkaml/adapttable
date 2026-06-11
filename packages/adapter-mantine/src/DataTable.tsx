@@ -1,15 +1,11 @@
 import {
-  DEFAULT_CARD_SIZE_PX,
-  DEFAULT_ROW_SIZE_PX,
+  useChromeBodyData,
   useChromeScrollReset,
-  useInfiniteScroll,
   useTableChrome,
-  useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
-import { Box, Button, Group, Paper, Stack } from "@mantine/core";
+import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
 import { useDisclosure, useElementSize } from "@mantine/hooks";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
 import { ActiveFilterChips } from "./components/ActiveFilterChips";
@@ -53,7 +49,6 @@ function ColumnMenuSlot<TRow>({
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
-    rowKey,
     rowActions,
     searchPlaceholder,
     sortByOptions,
@@ -62,17 +57,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hideSearch,
     filters,
     filtersMode = "popover",
-    onClearFilters,
     bulkActions,
     slots,
     classNames,
     toolbar: customToolbar,
     skeletonRows,
-    virtualize = false,
-    estimateRowSize,
-    estimateCardSize,
-    virtualOverscan,
-    virtualScrollMargin,
     stickyTop = 0,
     animate = false,
     stickyHeader = false,
@@ -80,36 +69,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   } = props;
   const density = props.density ?? "comfortable";
 
-  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, isMobile, confirm, getRowId } = chrome;
+  const { virtualization, loadMoreRef, canLoadMore } = useChromeBodyData(
+    chrome,
+    props
+  );
   const [drawerOpened, drawer] = useDisclosure(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
 
-  const handleVirtualEndReached = useCallback(() => {
-    if (source.hasNextPage && !source.isFetchingNextPage) {
-      source.fetchNextPage();
-    }
-  }, [source]);
-
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey,
-    enabled:
-      virtualize &&
-      !chrome.isPaged &&
-      !source.error &&
-      (chrome.body === "desktop" || chrome.body === "mobile"),
-    estimateSize: isMobile
-      ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-      : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
-    overscan: virtualOverscan,
-    scrollMargin: virtualScrollMargin,
-    onEndReached: handleVirtualEndReached,
-  });
   useChromeScrollReset(rootRef, chrome, props);
 
   useMountStagger(
@@ -117,14 +88,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     [virtualization.rows.length, isMobile],
     { enabled: animate }
   );
-
-  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
-    hasNextPage: Boolean(source.hasNextPage),
-    isFetchingNextPage: Boolean(source.isFetchingNextPage),
-    fetchNextPage: () => source.fetchNextPage(),
-    itemCount: source.rows.length,
-    enabled: !chrome.isPaged && !source.error,
-  });
 
   let body: React.ReactNode;
   if (chrome.body === "skeleton") {
@@ -136,7 +99,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     );
   } else if (chrome.body === "empty") {
-    body = slots?.empty ?? <EmptyState title={table.labels.noData} />;
+    // "noResults" means an active search/filter matched nothing — say so and
+    // offer a working clear, instead of the misleading "no data".
+    body =
+      slots?.empty ??
+      (chrome.emptyVariant === "noResults" ? (
+        <EmptyState
+          title={table.labels.noResults}
+          action={
+            <Button variant="light" size="sm" onClick={chrome.clearFilters}>
+              {table.labels.clearAll}
+            </Button>
+          }
+        />
+      ) : (
+        <EmptyState title={table.labels.noData} />
+      ));
   } else if (chrome.body === "mobile") {
     body = (
       <MobileCards
@@ -146,6 +124,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         onRowClick={props.onRowClick}
+        rowClassName={props.rowClassName}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -164,6 +143,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         prefetch={prefetch}
         onRowClick={props.onRowClick}
+        rowClassName={props.rowClassName}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}
@@ -192,6 +172,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       radius="md"
       withBorder
       dir={dir}
+      aria-busy={chrome.isRefreshing || undefined}
       className={classNames?.root}
     >
       <Stack gap="xs">
@@ -214,7 +195,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               filtersOpen={drawerOpened}
               onToggleFilters={drawer.toggle}
               onCloseFilters={drawer.close}
-              onClearFilters={onClearFilters}
+              onClearFilters={chrome.clearFilters}
               dir={dir}
               columnMenu={
                 <ColumnMenuSlot
@@ -228,7 +209,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             />
             <ActiveFilterChips
               chips={chrome.mergedChips}
-              onClearAll={onClearFilters}
+              onClearAll={chrome.clearFilters}
               label={table.labels.filters}
               clearAllLabel={table.labels.clearAll}
             />
@@ -243,6 +224,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Stack>
         </Box>
 
+        {chrome.isRefreshing && (
+          <Progress
+            size="xs"
+            animated
+            value={100}
+            aria-label={table.labels.loading}
+          />
+        )}
+
         {source.error && (
           <ErrorState
             error={source.error}
@@ -256,7 +246,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
         {!source.error && body}
 
-        {!chrome.isPaged && !source.error && source.hasNextPage && (
+        {canLoadMore && source.hasNextPage && (
           <Group ref={loadMoreRef} justify="center" py="xs">
             <Button
               variant="default"
@@ -292,7 +282,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClose={drawer.close}
           filters={filters}
           activeFilterCount={chrome.activeFilterCount}
-          onClearFilters={onClearFilters}
+          onClearFilters={chrome.clearFilters}
           labels={table.labels}
           dir={dir}
         />

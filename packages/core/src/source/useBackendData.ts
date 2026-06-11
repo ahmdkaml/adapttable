@@ -187,6 +187,7 @@ export function useBackendData<
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,
+    clearExtras: state.clearExtras,
     clearAll: state.clearAll,
   };
 }

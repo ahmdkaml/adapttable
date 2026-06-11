@@ -55,6 +55,10 @@ export interface UseDataTableOptions<TRow> {
   bulkActions?: BulkAction[];
   /** Selection id extractor; defaults to `rowKey` when bulk actions exist. */
   selectionGetId?: (row: TRow) => string;
+  /** Controlled selection value (see {@link BaseDataTableProps.selectedIds}). */
+  selectedIds?: readonly string[];
+  /** Change handler for the controlled selection. */
+  onSelectedIdsChange?: (selectedIds: string[]) => void;
   /** Per-filter-key chip label resolvers (drives the chip strip). */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
 }
@@ -156,6 +160,8 @@ export function useDataTable<TRow>(
     searchDebounceMs = SEARCH_DEBOUNCE_MS,
     bulkActions,
     selectionGetId,
+    selectedIds,
+    onSelectedIdsChange,
     filterLabels = EMPTY_LABELS,
   } = options;
 
@@ -222,6 +228,8 @@ export function useDataTable<TRow>(
     rows: source.rows,
     getId,
     resetKey: selectionResetKey,
+    selected: selectedIds,
+    onChange: onSelectedIdsChange,
   });
   const selection = hasBulk ? selectionState : null;
 

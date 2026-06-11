@@ -1,12 +1,9 @@
 import {
   type ColumnDef,
-  type ConfirmHandler,
   resolveDisabledReason,
-  type RowAction,
   rowClickProps,
   runRowAction,
-  type UseDataTableResult,
-  type VirtualTableRow,
+  type SharedTableRenderProps,
 } from "@adapttable/core";
 import {
   ActionIcon,
@@ -22,22 +19,28 @@ import type { RefObject } from "react";
 
 import type { Density } from "../density";
 
-/** Props for {@link MobileCards}. */
-export interface MobileCardsProps<TRow> {
-  table: UseDataTableResult<TRow>;
-  rows: readonly TRow[];
-  rowActions?: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  getRowId: (row: TRow) => string;
+/**
+ * Props for {@link MobileCards}: the card-relevant slice of core's shared
+ * render contract (no header/pinning/resize concerns on mobile) plus the
+ * Mantine-specific extras.
+ */
+export interface MobileCardsProps<TRow> extends Pick<
+  SharedTableRenderProps<TRow>,
+  | "table"
+  | "rows"
+  | "rowActions"
+  | "confirm"
+  | "getRowId"
+  | "onRowClick"
+  | "rowClassName"
+  | "rowEntries"
+  | "paddingTop"
+  | "paddingBottom"
+  | "measureElement"
+> {
   bodyRef: RefObject<HTMLDivElement>;
   className?: string;
-  rowEntries?: readonly VirtualTableRow<TRow>[];
-  paddingTop?: number;
-  paddingBottom?: number;
-  measureElement?: (element: Element | null) => void;
   density?: Density;
-  /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
-  onRowClick?: (row: TRow) => void;
 }
 
 function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -62,6 +65,7 @@ export function MobileCards<TRow>({
   measureElement,
   density = "comfortable",
   onRowClick,
+  rowClassName,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -87,6 +91,7 @@ export function MobileCards<TRow>({
           <Card
             key={key}
             {...rowClickProps(row, onRowClick)}
+            className={rowClassName?.(row, index)}
             ref={measureElement}
             data-index={index}
             withBorder

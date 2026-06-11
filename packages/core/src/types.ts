@@ -180,6 +180,8 @@ export interface TableLabels {
   search?: string;
   searchPlaceholder?: string;
   noData?: string;
+  /** Empty state when an active search/filter matched nothing. */
+  noResults?: string;
   loading?: string;
   loadMore?: string;
   filters?: string;

@@ -1,8 +1,9 @@
-/** Coverage gap-fill: drawer close, footer limit, page label, virtual end, row select. */
+/** Coverage gap-fill: drawer close, footer limit, page label, virtual rows, row select. */
+import type * as AdaptTableCore from "@adapttable/core";
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
 } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -30,19 +31,16 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
-beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({ row, index, key: rowKey(row) })),
-    paddingTop: 0,
-    paddingBottom: 0,
-  }));
+beforeEach(async () => {
+  const actual =
+    await vi.importActual<typeof AdaptTableCore>("@adapttable/core");
+  vi.mocked(useChromeBodyData).mockImplementation(actual.useChromeBodyData);
 });
 
 function mount(
@@ -221,50 +219,6 @@ describe("MUI coverage gaps", () => {
     expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
-  it("fetches the next page when virtualization reports the end reached", () => {
-    let onEndReached: (() => void) | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
-      onEndReached = opts.onEndReached;
-      return {
-        enabled: false,
-        rows: opts.rows.map((row, index) => ({
-          row,
-          index,
-          key: opts.rowKey(row),
-        })),
-        paddingTop: 0,
-        paddingBottom: 0,
-      };
-    });
-    mount({ virtualize: true }, "infinite", "limit=1");
-    expect(screen.queryByText("Bob")).toBeNull();
-    act(() => onEndReached?.());
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-  });
-
-  it("ignores the virtual end-reached when there is no next page", () => {
-    let onEndReached: (() => void) | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
-      onEndReached = opts.onEndReached;
-      return {
-        enabled: false,
-        rows: opts.rows.map((row, index) => ({
-          row,
-          index,
-          key: opts.rowKey(row),
-        })),
-        paddingTop: 0,
-        paddingBottom: 0,
-      };
-    });
-    // No limit → all rows on one page → hasNextPage is false.
-    mount({ virtualize: true }, "infinite");
-    expect(screen.getByText("Carol")).toBeInTheDocument();
-    act(() => onEndReached?.());
-    // Still fine, no crash, all rows present.
-    expect(screen.getByText("Carol")).toBeInTheDocument();
-  });
-
   it("renders resize handles and pins columns in a scroll box", () => {
     mount({
       resizableColumns: true,
@@ -417,39 +371,19 @@ describe("MUI coverage gaps", () => {
     expect(document.querySelector(".MuiBackdrop-root")).toBeNull();
   });
 
-  it("virtualizes mobile cards in infinite mode (DataTable mobile-body branch)", () => {
-    // Real useTableVirtualization is mocked, but its `enabled` argument is
-    // evaluated by JS first: virtualize && !isPaged && !error && body==="mobile".
-    let captured: { enabled: unknown } | undefined;
-    vi.mocked(useTableVirtualization).mockImplementation((opts) => {
-      captured = { enabled: opts.enabled };
-      return {
-        enabled: false,
-        rows: opts.rows.map((row, index) => ({
-          row,
-          index,
-          key: opts.rowKey(row),
-        })),
-        paddingTop: 0,
-        paddingBottom: 0,
-      };
-    });
-    mount({ isMobile: true, virtualize: true }, "infinite");
-    // body is "mobile" and not paged → the (body === "mobile") sub-condition
-    // is reached and evaluates true.
-    expect(captured?.enabled).toBe(true);
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-  });
-
   it("virtualizes mobile cards with a trailing bottom-pad spacer", () => {
     // paddingBottom > 0 → the trailing `paddingBottom > 0 &&` spacer renders
     // (MobileCards true branch). paddingTop is 0 so only the bottom spacer.
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
-      paddingTop: 0,
-      paddingBottom: 80,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
+        paddingTop: 0,
+        paddingBottom: 80,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
     mount({ isMobile: true, virtualize: true }, "infinite");
     const list = screen.getByRole("list");

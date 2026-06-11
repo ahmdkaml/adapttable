@@ -28,6 +28,7 @@ function Harness(props: {
   error?: Error | null;
   refetch?: () => void;
   isLoading?: boolean;
+  isFetching?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
 }) {
   const source = useFrontendData<Row>({
@@ -38,6 +39,7 @@ function Harness(props: {
     error: props.error ?? null,
     refetch: props.refetch,
     isLoading: props.isLoading,
+    isFetching: props.isFetching,
   });
   return (
     <DataTable
@@ -976,5 +978,97 @@ describe("<DataTable> (Ant Design)", () => {
     } finally {
       globalThis.IntersectionObserver = original;
     }
+  });
+
+  it("shows the no-results empty state and clears filters from its CTA", () => {
+    renderHarness(
+      {
+        rows: [],
+        override: { filterLabels: { status: (v) => `Status: ${v}` } },
+      },
+      "f_status=Active"
+    );
+    // Zero rows under an active filter → "no results", not "no data".
+    const empty = screen.getByRole("status");
+    expect(
+      within(empty).getByText("No results match your filters")
+    ).toBeInTheDocument();
+    // Without a caller onClearFilters the CTA falls back to clearExtras:
+    // the filter (and its chip) disappears and the variant flips to noData.
+    fireEvent.click(within(empty).getByRole("button", { name: "Clear all" }));
+    expect(screen.queryByText("Status: Active")).toBeNull();
+    expect(screen.queryByText("No results match your filters")).toBeNull();
+    // (the description div, not the decorative SVG's <title>)
+    expect(empty.querySelector(".ant-empty-description")).toHaveTextContent(
+      "No data"
+    );
+  });
+
+  it("prefers the caller's onClearFilters in the no-results CTA", () => {
+    const onClearFilters = vi.fn();
+    renderHarness(
+      {
+        rows: [],
+        override: {
+          onClearFilters,
+          filterLabels: { status: (v) => `Status: ${v}` },
+        },
+      },
+      "f_status=Active"
+    );
+    const empty = screen.getByRole("status");
+    fireEvent.click(within(empty).getByRole("button", { name: "Clear all" }));
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the noData empty state plain, with no clear button", () => {
+    renderHarness({ rows: [] });
+    const empty = screen.getByRole("status");
+    expect(empty.querySelector(".ant-empty-description")).toHaveTextContent(
+      "No data"
+    );
+    expect(within(empty).queryByRole("button")).toBeNull();
+  });
+
+  it("shows a subtle non-blocking indicator while a refresh is in flight", () => {
+    const { container } = renderHarness({ isFetching: true });
+    // aria-busy on the wrapper + a small Spin in the toolbar area…
+    expect(container.firstElementChild).toHaveAttribute("aria-busy", "true");
+    expect(container.querySelector(".ant-spin")).toBeInTheDocument();
+    // …while the rows stay rendered with no blocking blur overlay on them
+    // (antd adds .ant-spin-blur when a wrapping Spin blocks its content).
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(container.querySelector(".ant-spin-blur")).toBeNull();
+  });
+
+  it("renders no refresh indicator when the source is idle", () => {
+    const { container } = renderHarness();
+    expect(container.firstElementChild).not.toHaveAttribute("aria-busy");
+    expect(container.querySelector(".ant-spin")).toBeNull();
+  });
+
+  it("applies rowClassName to desktop rows", () => {
+    const { container } = renderHarness({
+      override: {
+        rowClassName: (r) => (r.name === "Alice" ? "row-vip" : undefined),
+      },
+    });
+    const vip = container.querySelectorAll("tr.row-vip");
+    expect(vip).toHaveLength(1);
+    // Bob's row resolves undefined → no stray "undefined" class either.
+    expect(vip[0]).toHaveTextContent("Alice");
+    expect(container.querySelector("tr.undefined")).toBeNull();
+  });
+
+  it("applies rowClassName to the mobile card root", () => {
+    const { container } = renderHarness({
+      override: {
+        isMobile: true,
+        rowClassName: (r) => (r.name === "Alice" ? "card-vip" : undefined),
+      },
+    });
+    const vip = container.querySelectorAll(".ant-card.card-vip");
+    expect(vip).toHaveLength(1);
+    expect(vip[0]).toHaveTextContent("Alice");
   });
 });

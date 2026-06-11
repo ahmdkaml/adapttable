@@ -30,6 +30,7 @@ function Harness(props: {
   error?: Error | null;
   refetch?: () => void;
   isLoading?: boolean;
+  isFetching?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
 }) {
   const source = useFrontendData<Row>({
@@ -40,6 +41,7 @@ function Harness(props: {
     error: props.error ?? null,
     refetch: props.refetch,
     isLoading: props.isLoading,
+    isFetching: props.isFetching,
   });
   return (
     <DataTable
@@ -161,9 +163,68 @@ describe("<DataTable> (MUI)", () => {
     expect(screen.getByText("Riyadh")).toBeInTheDocument();
   });
 
-  it("renders the empty state", () => {
+  it("renders the no-data empty state without a clear-filters button", () => {
     renderHarness({ rows: [] });
     expect(screen.getByText("No data")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear all" })).toBeNull();
+  });
+
+  it("renders the no-results empty state with a clear-filters button", () => {
+    const onClearFilters = vi.fn();
+    // An active search that matches nothing → "noResults", not "noData".
+    renderHarness({ override: { onClearFilters } }, "q=zzz");
+    expect(
+      screen.getByText("No results match your filters")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No data")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a refresh strip and marks the region busy while refetching", () => {
+    const { container } = renderHarness({ isFetching: true });
+    // Background refresh (isFetching without isLoading): rows stay visible
+    // under MUI's idiomatic LinearProgress strip, and the region is aria-busy.
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(document.querySelector(".MuiLinearProgress-root")).not.toBeNull();
+    expect(container.querySelector(".MuiPaper-root")).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+  });
+
+  it("renders no refresh strip and no aria-busy when idle", () => {
+    const { container } = renderHarness();
+    expect(document.querySelector(".MuiLinearProgress-root")).toBeNull();
+    expect(container.querySelector(".MuiPaper-root")).not.toHaveAttribute(
+      "aria-busy"
+    );
+  });
+
+  it("applies rowClassName to desktop rows, skipping undefined", () => {
+    renderHarness({
+      override: {
+        rowClassName: (row) => (row.id === "a" ? "vip-row" : undefined),
+      },
+    });
+    const aliceRow = screen.getByText("Alice").closest("tr")!;
+    expect(aliceRow).toHaveClass("vip-row");
+    // MUI's own classes survive the merge.
+    expect(aliceRow).toHaveClass("MuiTableRow-root");
+    expect(screen.getByText("Bob").closest("tr")).not.toHaveClass("vip-row");
+  });
+
+  it("applies rowClassName to mobile card roots, skipping undefined", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        rowClassName: (_row, index) => (index === 1 ? "vip-card" : undefined),
+      },
+    });
+    const cards = screen.getAllByRole("listitem");
+    expect(cards[1]).toHaveClass("vip-card");
+    expect(cards[1]).toHaveClass("MuiCard-root");
+    expect(cards[0]).not.toHaveClass("vip-card");
   });
 
   it("renders loading skeletons", () => {

@@ -130,6 +130,7 @@ export function DesktopTable<TRow>({
   size,
   prefetch,
   onRowClick,
+  rowClassName,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -312,6 +313,7 @@ export function DesktopTable<TRow>({
               <TableRow
                 key={key}
                 {...rowClickProps(row, onRowClick)}
+                className={rowClassName?.(row, index)}
                 ref={measureElement}
                 data-index={index}
                 hover
@@ -393,6 +395,7 @@ export function MobileCards<TRow>({
   getRowId,
   size,
   onRowClick,
+  rowClassName,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -417,6 +420,7 @@ export function MobileCards<TRow>({
             data-index={index}
             variant="outlined"
             role="listitem"
+            className={rowClassName?.(row, index)}
             {...rowClickProps(row, onRowClick)}
           >
             <CardContent

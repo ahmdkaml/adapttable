@@ -8,8 +8,10 @@ export function columnMenuLabel<TRow>(column: ColumnDef<TRow>): string {
   return column.mobileLabel ?? column.key;
 }
 
+import type { PinSide } from "./useColumnLayout";
+
 /** Edge a column is pinned to, or `undefined` when unpinned. */
-export type PinnedSide = "left" | "right" | undefined;
+export type PinnedSide = PinSide | undefined;
 
 /** One row of the column-management menu, with its derived display state. */
 export interface ColumnMenuRow<TRow> {

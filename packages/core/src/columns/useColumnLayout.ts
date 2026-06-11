@@ -3,6 +3,9 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "../types";
 import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 
+/** Edge a column can be pinned to. */
+export type PinSide = "left" | "right";
+
 /**
  * User-driven column layout: which columns are hidden, their order, pinning,
  * and widths. Keyed by column `key`. Empty `order` means "declared order".
@@ -13,7 +16,7 @@ export interface ColumnLayoutState {
   /** Explicit column order by key; empty falls back to declared order. */
   order: readonly string[];
   /** Per-column edge pinning. */
-  pinned: Readonly<Record<string, "left" | "right">>;
+  pinned: Readonly<Record<string, PinSide>>;
   /** Per-column pixel widths. */
   widths: Readonly<Record<string, number>>;
 }
@@ -51,17 +54,21 @@ export interface UseColumnLayoutResult<TRow> {
   /** Toggle a single column's visibility. */
   toggleVisible: (key: string) => void;
   /** Pin a column to an edge, or unpin it with `undefined`. */
-  setPinned: (key: string, side: "left" | "right" | undefined) => void;
+  setPinned: (key: string, side: PinSide | undefined) => void;
   /** Move a column to a new index among the visible columns. */
   move: (key: string, toIndex: number) => void;
   /** Set (or clear, with `undefined`) a column's pixel width. */
   setWidth: (key: string, width: number | undefined) => void;
   /** Sticky inset (px) for a pinned column, by side. `undefined` if unpinned. */
-  pinOffset: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
+  pinOffset: (key: string) => PinOffset | undefined;
   /** Restore the empty layout (all visible, declared order). */
   reset: () => void;
+}
+
+/** A pinned column's side plus its sticky inset in px. */
+export interface PinOffset {
+  side: PinSide;
+  inset: number;
 }
 
 /**
@@ -101,9 +108,7 @@ export interface PinLeads {
 }
 
 /** Map a pin side to its logical inset property (start = "left" in LTR). */
-function insetProp(
-  side: "left" | "right"
-): "insetInlineStart" | "insetInlineEnd" {
+function insetProp(side: PinSide): "insetInlineStart" | "insetInlineEnd" {
   return side === "left" ? "insetInlineStart" : "insetInlineEnd";
 }
 
@@ -115,7 +120,7 @@ function insetProp(
  * `insetInlineEnd`), so the same style pins to the correct edge in RTL.
  */
 export function pinnedCellStyle(
-  offset: { side: "left" | "right"; inset: number } | undefined,
+  offset: PinOffset | undefined,
   zIndex = 1,
   leads?: PinLeads
 ): PinnedCellStyle | undefined {
@@ -136,7 +141,7 @@ export function pinnedCellStyle(
  * flow. Insets are logical, so the edge follows the writing direction.
  */
 export function edgePinStyle(
-  side: "left" | "right",
+  side: PinSide,
   active: boolean,
   zIndex: number = PIN_Z.body
 ): PinnedCellStyle | undefined {
@@ -222,7 +227,7 @@ export function useColumnLayout<TRow>({
   );
 
   const setPinned = useCallback(
-    (key: string, side: "left" | "right" | undefined) => {
+    (key: string, side: PinSide | undefined) => {
       const current = stateRef.current;
       const next = { ...current.pinned };
       if (side === undefined) delete next[key];

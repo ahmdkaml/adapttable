@@ -70,7 +70,11 @@ export interface DataTableClassNames {
   footer?: string;
   pageButton?: string;
   empty?: string;
+  /** The clear-filters button inside the "no results" empty state. */
+  emptyClear?: string;
   loading?: string;
+  /** The non-blocking background-refresh progress indicator. */
+  refreshIndicator?: string;
   error?: string;
   retryButton?: string;
 }

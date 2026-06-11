@@ -213,6 +213,7 @@ describe("FilterPopover", () => {
       <FilterPopover
         open={false}
         onClose={onClose}
+        onClearFilters={vi.fn()}
         filters={<div>f</div>}
         activeFilterCount={0}
         labels={defaultLabels}

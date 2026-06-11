@@ -134,8 +134,10 @@ export function useColumnLayoutUrlState(
     () => () => {
       if (flushTimer.current) {
         clearTimeout(flushTimer.current);
+        // Invariant: a live timer implies a pending layout — the timeout
+        // clears the timer BEFORE it clears `pending`.
         const { pending: last, persist: write } = latestRef.current;
-        if (last) write(last);
+        write(last!);
       }
     },
     []

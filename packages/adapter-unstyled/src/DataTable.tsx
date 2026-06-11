@@ -1,15 +1,12 @@
 import {
-  DEFAULT_CARD_SIZE_PX,
-  DEFAULT_ROW_SIZE_PX,
   pageSizeOptions,
+  type TableVirtualization,
+  useChromeBodyData,
   useChromeScrollReset,
-  useInfiniteScroll,
   useTableChrome,
-  useTableVirtualization,
-  warnVirtualizeInScrollBox,
 } from "@adapttable/core";
-import type { ReactElement } from "react";
-import { useCallback, useRef, useState } from "react";
+import type { MutableRefObject, ReactElement } from "react";
+import { useRef, useState } from "react";
 
 import {
   BulkBar,
@@ -32,22 +29,8 @@ interface DataTableBodyProps<TRow> {
   classNames: NonNullable<DataTableProps<TRow>["classNames"]>;
   confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
   getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
-  virtualization: ReturnType<typeof useTableVirtualization<TRow>>;
+  virtualization: TableVirtualization<TRow>;
   labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
-}
-
-function canVirtualizeBody(body: string): boolean {
-  return body === "desktop" || body === "mobile";
-}
-
-function virtualEstimateSize(
-  isMobile: boolean,
-  estimateRowSize: number | undefined,
-  estimateCardSize: number | undefined
-): number {
-  return isMobile
-    ? (estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-    : (estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
 }
 
 function DataTableBody<TRow>({
@@ -76,11 +59,24 @@ function DataTableBody<TRow>({
     );
   }
   if (chrome.body === "empty") {
+    // "noResults" means an active search/filter matched nothing — say so and
+    // offer a clear CTA; "noData" means the source itself is empty.
+    const noResults = chrome.emptyVariant === "noResults";
     return (
       <>
         {props.slots?.empty ?? props.emptyState ?? (
           <output data-adapttable-part="empty" className={classNames.empty}>
-            {labels.noData}
+            {noResults ? labels.noResults : labels.noData}
+            {noResults && (
+              <button
+                type="button"
+                data-adapttable-part="empty-clear"
+                className={classNames.emptyClear}
+                onClick={chrome.clearFilters}
+              >
+                {labels.clearAll}
+              </button>
+            )}
           </output>
         )}
       </>
@@ -97,6 +93,7 @@ function DataTableBody<TRow>({
       classNames={classNames}
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
+      rowClassName={props.rowClassName}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}
@@ -124,64 +121,32 @@ function DataTableBody<TRow>({
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     source,
-    rowKey,
     searchPlaceholder,
     sortByOptions,
     dir,
     hideSearch,
     filters,
     filtersMode = "popover",
-    onClearFilters,
     bulkActions,
     classNames = {},
     toolbar: customToolbar,
-    virtualize = false,
-    estimateRowSize,
-    estimateCardSize,
-    virtualOverscan,
-    virtualScrollMargin,
   } = props;
 
   const density = props.density ?? "comfortable";
 
-  warnVirtualizeInScrollBox(virtualize, props.maxHeight);
   const chrome = useTableChrome<TRow>(props);
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, props);
-  const handleVirtualEndReached = useCallback(() => {
-    if (source.hasNextPage && !source.isFetchingNextPage) {
-      source.fetchNextPage();
-    }
-  }, [source]);
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey,
-    enabled:
-      virtualize &&
-      !chrome.isPaged &&
-      !source.error &&
-      canVirtualizeBody(chrome.body),
-    estimateSize: virtualEstimateSize(
-      chrome.isMobile,
-      estimateRowSize,
-      estimateCardSize
-    ),
-    overscan: virtualOverscan,
-    scrollMargin: virtualScrollMargin,
-    onEndReached: handleVirtualEndReached,
-  });
-
-  const canLoadMore = !chrome.isPaged && !source.error;
-  const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
-    hasNextPage: Boolean(source.hasNextPage),
-    isFetchingNextPage: Boolean(source.isFetchingNextPage),
-    fetchNextPage: () => source.fetchNextPage(),
-    itemCount: source.rows.length,
-    enabled: canLoadMore,
-  });
+  const bodyData = useChromeBodyData(chrome, props);
+  const { virtualization, canLoadMore } = bodyData;
+  // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
+  // null>` through interface variance; the same object viewed through its
+  // structural shape attaches fine.
+  const loadMoreRef: MutableRefObject<HTMLDivElement | null> =
+    bodyData.loadMoreRef;
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -225,6 +190,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}
       data-density={density}
+      data-refreshing={chrome.isRefreshing || undefined}
+      // The root wraps the whole table region, so a background refresh marks
+      // it busy for assistive tech (the indicator below is decorative-ish).
+      aria-busy={chrome.isRefreshing || undefined}
       className={cx("adapttable", classNames.root)}
     >
       <div
@@ -290,7 +259,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               onClose={() => setFiltersOpen(false)}
               filters={filters}
               activeFilterCount={chrome.activeFilterCount}
-              onClearFilters={onClearFilters}
+              onClearFilters={chrome.clearFilters}
               labels={labels}
               dir={dir}
               classNames={classNames}
@@ -332,7 +301,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClose={() => setFiltersOpen(false)}
           filters={filters}
           activeFilterCount={chrome.activeFilterCount}
-          onClearFilters={onClearFilters}
+          onClearFilters={chrome.clearFilters}
           labels={labels}
           dir={dir}
           classNames={classNames}
@@ -341,7 +310,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
       <Chips
         chips={chrome.mergedChips}
-        onClearAll={onClearFilters}
+        onClearAll={chrome.clearFilters}
         labels={labels}
         classNames={classNames}
       />
@@ -353,6 +322,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           confirm={confirm}
           labels={labels}
           classNames={classNames}
+        />
+      )}
+
+      {chrome.isRefreshing && (
+        <div
+          role="progressbar"
+          aria-label={labels.loading}
+          data-adapttable-part="refresh-indicator"
+          className={classNames.refreshIndicator}
         />
       )}
 

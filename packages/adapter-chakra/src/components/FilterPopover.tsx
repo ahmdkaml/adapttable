@@ -19,7 +19,7 @@ export interface FilterPopoverProps {
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   colorScheme?: string;
   dir?: Direction;
@@ -71,7 +71,7 @@ export function FilterPopover({
                 size="xs"
                 variant="ghost"
                 colorScheme={colorScheme}
-                onClick={() => onClearFilters?.()}
+                onClick={onClearFilters}
                 isDisabled={activeFilterCount === 0}
               >
                 {labels.clearAll}

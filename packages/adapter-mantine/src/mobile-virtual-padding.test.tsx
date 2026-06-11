@@ -1,12 +1,12 @@
 /**
  * Covers MobileCards' trailing virtual-spacer branch (`paddingBottom > 0`).
- * We mock `useTableVirtualization` to return a non-zero `paddingBottom`, which
+ * We mock `useChromeBodyData` to return a non-zero `paddingBottom`, which
  * is only rendered in the virtualized mobile layout.
  */
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
 } from "@adapttable/core";
 import { MantineProvider } from "@mantine/core";
 import { render } from "@testing-library/react";
@@ -31,17 +31,25 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: true,
-    rows: rows.map((row, index) => ({ row, index, key: rowKey(row) })),
-    paddingTop: 0,
-    // Non-zero trailing padding renders the bottom spacer div.
-    paddingBottom: 40,
+  vi.mocked(useChromeBodyData).mockImplementation((_chrome, props) => ({
+    virtualization: {
+      enabled: true,
+      rows: props.source.rows.map((row, index) => ({
+        row,
+        index,
+        key: props.rowKey(row),
+      })),
+      paddingTop: 0,
+      // Non-zero trailing padding renders the bottom spacer div.
+      paddingBottom: 40,
+    },
+    loadMoreRef: { current: null },
+    canLoadMore: true,
   }));
 });
 

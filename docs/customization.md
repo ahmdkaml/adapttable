@@ -263,3 +263,29 @@ function People({ data }) {
 
 So the choice is yours: the built-in WAAPI stagger, your own GSAP/Framer
 timeline via `data-stagger`, or no animation at all.
+
+## Conditional row styling
+
+```tsx
+<DataTable
+  rowClassName={(row) => (row.status === "overdue" ? "row-overdue" : undefined)}
+/>
+```
+
+Applied to desktop rows and mobile cards alike, merged after the adapter's
+own row classes.
+
+## Controlled selection
+
+Selection is uncontrolled by default — observe it with `onSelectionChange`.
+To own it (preselect rows, sync to a store), pass `selectedIds` and apply the
+change requests:
+
+```tsx
+const [ids, setIds] = useState<string[]>(["42"]);
+<DataTable
+  bulkActions={actions}
+  selectedIds={ids}
+  onSelectionChange={setIds}
+/>;
+```

@@ -13,6 +13,7 @@
  * @typeParam TRow - The row type.
  */
 import type { ConfirmHandler } from "./actions/confirm";
+import type { PinOffset } from "./columns/useColumnLayout";
 import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
@@ -37,6 +38,8 @@ export interface SharedTableRenderProps<TRow> {
   prefetch?: (row: TRow) => void;
   /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
   onRowClick?: (row: TRow) => void;
+  /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
+  rowClassName?: (row: TRow, index: number) => string | undefined;
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];
   /** Spacer height above the virtual window. */
@@ -50,9 +53,7 @@ export interface SharedTableRenderProps<TRow> {
   /** Offset (px) applied to the sticky header top. */
   stickyTop?: number;
   /** Resolve a pinned column's side + inset (px), or `undefined` if unpinned. */
-  pinOffset?: (
-    key: string
-  ) => { side: "left" | "right"; inset: number } | undefined;
+  pinOffset?: (key: string) => PinOffset | undefined;
   /** Optional max height (px) that turns the table into a scroll box. */
   maxHeight?: number;
   /** Commit a new width (px) for a resizable column. */

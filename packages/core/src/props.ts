@@ -64,6 +64,11 @@ export interface BaseDataTableProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Called whenever the materialized source rows change. */
   onRowsChange?: (rows: readonly TRow[]) => void;
+  /**
+   * Conditional per-row class: `(row, index) => "overdue"` — appended to the
+   * adapter's own row classes on desktop rows and mobile cards alike.
+   */
+  rowClassName?: (row: TRow, index: number) => string | undefined;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
 
@@ -122,8 +127,17 @@ export interface BaseDataTableProps<TRow> {
   /** Selection id extractor; defaults to `rowKey`. */
   selectionGetId?: (row: TRow) => string;
   /**
-   * Observe the selection: fires with the selected ids whenever the set
-   * changes (toggles, select-all, automatic resets on search/filter change).
+   * Controlled selection. When provided, the table reads the selection from
+   * this value and reports every change request through `onSelectionChange`
+   * — the same controlled/uncontrolled split as `columnLayout`. Omit it for
+   * the internal (uncontrolled) selection.
+   */
+  selectedIds?: readonly string[];
+  /**
+   * Selection change channel. Uncontrolled: an observer that fires with the
+   * selected ids whenever the set changes (toggles, select-all, automatic
+   * resets on search/filter change). Controlled (`selectedIds` provided):
+   * the change-request handler — apply the ids to your state to accept.
    */
   onSelectionChange?: (selectedIds: string[]) => void;
 

@@ -9,8 +9,8 @@
  */
 import {
   createMemoryAdapter,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
   type VirtualTableRow,
 } from "@adapttable/core";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -35,18 +35,24 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    useChromeBodyData: vi.fn(),
   };
 });
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({ row, index, key: rowKey(row) })),
-    paddingTop: 0,
-    paddingBottom: 0,
+  // Mirror the real hook's disabled state so non-virtual tests render the
+  // full row set with a working load-more gate.
+  vi.mocked(useChromeBodyData).mockImplementation((chrome, props) => ({
+    virtualization: {
+      enabled: false,
+      rows: [],
+      paddingTop: 0,
+      paddingBottom: 0,
+    },
+    loadMoreRef: { current: null },
+    canLoadMore: !chrome.isPaged && !props.source.error,
   }));
 });
 
@@ -210,14 +216,18 @@ describe("<DataTable> (unstyled) branch coverage", () => {
   // tables.tsx:400 — mobile `paddingBottom > 0`, truthy side: a virtualized
   // mobile list with a trailing spacer.
   it("renders a trailing virtual spacer in mobile cards", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [
-        { row: ROWS[1]!, index: 1, key: "b" } satisfies VirtualTableRow<Row>,
-      ],
-      paddingTop: 0,
-      paddingBottom: 120,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [
+          { row: ROWS[1]!, index: 1, key: "b" } satisfies VirtualTableRow<Row>,
+        ],
+        paddingTop: 0,
+        paddingBottom: 120,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: { current: null },
+      canLoadMore: true,
     });
     const { container } = renderHarness({
       isMobile: true,

@@ -3,20 +3,16 @@
  * branches in DataTable.tsx, components/chrome.tsx and components/tables.tsx
  * that the existing suites only hit on one side.
  */
+import type * as CoreModule from "@adapttable/core";
 import {
   createMemoryAdapter,
   defaultLabels,
+  useChromeBodyData,
   useFrontendData,
-  useTableVirtualization,
 } from "@adapttable/core";
 import { ChakraProvider } from "@chakra-ui/react";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FilterDrawer, LoadingState } from "./components/chrome";
@@ -38,23 +34,20 @@ const columns: ColumnDef<Row>[] = [
 ];
 
 vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof CoreModule>();
   return {
-    ...(actual as object),
-    useTableVirtualization: vi.fn(),
+    ...actual,
+    useChromeBodyData: vi.fn(actual.useChromeBodyData),
   };
 });
+
+const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  // Default: pass-through (non-virtual) so the normal render path runs.
-  vi.mocked(useTableVirtualization).mockImplementation(({ rows, rowKey }) => ({
-    enabled: false,
-    rows: rows.map((row, index) => ({ row, index, key: rowKey(row) })),
-    paddingTop: 0,
-    paddingBottom: 0,
-  }));
+  // Default: delegate to the real hook so the normal render path runs.
+  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
 });
 
 function mount(
@@ -182,6 +175,7 @@ describe("chrome.tsx branches", () => {
           onClose={vi.fn()}
           filters={<div>ltr-body</div>}
           activeFilterCount={0}
+          onClearFilters={vi.fn()}
           labels={defaultLabels}
         />
       </ChakraProvider>
@@ -307,12 +301,16 @@ describe("tables.tsx branches", () => {
   });
 
   it("renders trailing padding in virtualized mobile cards (paddingBottom > 0 true branch)", () => {
-    vi.mocked(useTableVirtualization).mockReturnValue({
-      enabled: true,
-      rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
-      paddingTop: 0,
-      paddingBottom: 40,
-      measureElement: vi.fn(),
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: true,
+        rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
+        paddingTop: 0,
+        paddingBottom: 40,
+        measureElement: vi.fn(),
+      },
+      loadMoreRef: createRef<HTMLDivElement>(),
+      canLoadMore: true,
     });
     mount({ virtualize: true, estimateCardSize: 40 }, "", {
       mode: "infinite",
@@ -340,74 +338,22 @@ describe("DataTable.tsx branches", () => {
     expect(screen.queryByText("esc-body")).not.toBeInTheDocument();
   });
 
-  it("skips fetchNextPage from onEndReached while already fetching", () => {
-    let endReached: (() => void) | undefined;
-    const fetchSpy = vi.fn();
-    adapter = createMemoryAdapter("limit=1");
-
-    vi.mocked(useTableVirtualization).mockImplementation(
-      ({ rows, rowKey, onEndReached }) => {
-        endReached = onEndReached;
-        return {
-          enabled: true,
-          rows: rows.map((row, index) => ({ row, index, key: rowKey(row) })),
-          paddingTop: 0,
-          paddingBottom: 0,
-          measureElement: vi.fn(),
-        };
-      }
-    );
-
-    function Harness() {
-      const real = useFrontendData<Row>({
-        data: ROWS,
-        adapter,
-        columns,
-        paginationMode: "infinite",
-      });
-      // Force the "currently fetching" state so !isFetchingNextPage is false.
-      const source = {
-        ...real,
-        hasNextPage: true,
-        isFetchingNextPage: true,
-        fetchNextPage: fetchSpy,
-      };
-      return (
-        <DataTable
-          source={source}
-          columns={columns}
-          rowKey={(r) => r.id}
-          virtualize
-        />
-      );
-    }
-    render(
-      <ChakraProvider>
-        <Harness />
-      </ChakraProvider>
-    );
-
-    act(() => endReached?.());
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it("evaluates the virtualization enabled chain for mobile in infinite mode", () => {
-    const enabledArgs: boolean[] = [];
-    vi.mocked(useTableVirtualization).mockImplementation((args) => {
-      enabledArgs.push(Boolean(args.enabled));
-      const { rows, rowKey } = args;
-      const second = rows[1]!;
-      return {
-        enabled: true,
-        rows: [{ row: second, index: 1, key: rowKey(second) }],
+  it("hides the load-more affordance when the body data says it cannot load more", () => {
+    // canLoadMore=false (paged mode / error in core) must suppress the
+    // load-more sentinel + button even when the source reports a next page.
+    vi.mocked(useChromeBodyData).mockReturnValue({
+      virtualization: {
+        enabled: false,
+        rows: ROWS.map((row, index) => ({ row, index, key: row.id })),
         paddingTop: 0,
         paddingBottom: 0,
-        measureElement: vi.fn(),
-      };
+      },
+      loadMoreRef: createRef<HTMLDivElement>(),
+      canLoadMore: false,
     });
-    mount({ virtualize: true }, "", { mode: "infinite", isMobile: true });
-    // The enabled flag is true: virtualize && !paged && !error && body === "mobile".
-    expect(enabledArgs.some((e) => e === true)).toBe(true);
-    expect(screen.getByText("Bob")).toBeInTheDocument();
+    mount({}, "limit=1", { mode: "infinite" });
+    expect(
+      screen.queryByRole("button", { name: defaultLabels.loadMore })
+    ).toBeNull();
   });
 });

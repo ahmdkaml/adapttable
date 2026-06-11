@@ -15,6 +15,14 @@ export interface UseSelectionOptions<TRow> {
    * page / active-filter count — e.g. `` `${search}|${page}` ``.
    */
   resetKey?: unknown;
+  /**
+   * Controlled selection. When provided, the hook reads from this value and
+   * reports every change request through `onChange` instead of mutating its
+   * own state — the same controlled/uncontrolled split as `useColumnLayout`.
+   */
+  selected?: readonly string[];
+  /** Change handler; required for the controlled mode to update. */
+  onChange?: (selectedIds: string[]) => void;
 }
 
 /** Selection state + actions returned by {@link useSelection}. */
@@ -50,17 +58,41 @@ export function useSelection<TRow>({
   rows,
   getId,
   resetKey,
+  selected,
+  onChange,
 }: UseSelectionOptions<TRow>): SelectionState {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [internal, setInternal] = useState<Set<string>>(() => new Set());
+  const controlled = selected !== undefined;
+  const selectedIds = useMemo(
+    () => (selected === undefined ? internal : new Set(selected)),
+    [selected, internal]
+  );
 
-  // Clear on reset-key change, but not on first mount.
+  /** Route a change to the parent (controlled) or internal state. */
+  const commit = useCallback(
+    (compute: (prev: ReadonlySet<string>) => Set<string>) => {
+      if (controlled) {
+        onChange?.([...compute(selectedIds)]);
+      } else {
+        setInternal((prev) => compute(prev));
+      }
+    },
+    [controlled, onChange, selectedIds]
+  );
+
+  // Clear on reset-key change, but not on first mount. The effect reads the
+  // LATEST commit/selection through refs so only `resetKey` retriggers it.
+  const liveRef = useRef({ commit, size: selectedIds.size });
+  liveRef.current = { commit, size: selectedIds.size };
   const firstRef = useRef(true);
   useEffect(() => {
     if (firstRef.current) {
       firstRef.current = false;
       return;
     }
-    setSelectedIds((prev) => (prev.size === 0 ? prev : new Set()));
+    // Identity-preserving no-op when there is nothing to clear.
+    if (liveRef.current.size === 0) return;
+    liveRef.current.commit(() => new Set());
   }, [resetKey]);
 
   const visibleIds = useMemo(() => rows.map(getId), [rows, getId]);
@@ -82,17 +114,20 @@ export function useSelection<TRow>({
     [selectedIds]
   );
 
-  const toggle = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const toggle = useCallback(
+    (id: string) => {
+      commit((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [commit]
+  );
 
   const toggleAll = useCallback(() => {
-    setSelectedIds((prev) => {
+    commit((prev) => {
       const next = new Set(prev);
       const allSelected =
         visibleIds.length > 0 && visibleIds.every((id) => next.has(id));
@@ -102,9 +137,9 @@ export function useSelection<TRow>({
       }
       return next;
     });
-  }, [visibleIds]);
+  }, [commit, visibleIds]);
 
-  const clear = useCallback(() => setSelectedIds(new Set()), []);
+  const clear = useCallback(() => commit(() => new Set()), [commit]);
 
   return {
     selectedIds,

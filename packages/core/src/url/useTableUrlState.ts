@@ -79,6 +79,8 @@ export interface UseTableUrlStateResult {
   setExtra: (key: string, value: FilterValue) => void;
   /** Set several extra filters in one commit; resets to page 1. */
   setExtras: (updates: ExtraFilters) => void;
+  /** Clear every extra filter (and reset the page) — search/sort stay. */
+  clearExtras: () => void;
   /** Clear search, sort, page, and every extra filter in one commit. */
   clearAll: () => void;
 }
@@ -308,6 +310,15 @@ export function useTableUrlState(
     [commit, readEffectiveExtra, resetPage, writeExtraWithDefaults]
   );
 
+  const clearExtras = useCallback(
+    () =>
+      commit((p) => {
+        writeExtraWithDefaults(p, {});
+        resetPage(p);
+      }),
+    [commit, resetPage, writeExtraWithDefaults]
+  );
+
   const clearAll = useCallback(
     () =>
       commit((p) => {
@@ -342,6 +353,7 @@ export function useTableUrlState(
     setSearch,
     setExtra,
     setExtras,
+    clearExtras,
     clearAll,
   };
 }

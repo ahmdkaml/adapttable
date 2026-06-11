@@ -16,6 +16,7 @@ import {
   Input,
   Select,
   Space,
+  Spin,
   Tag,
 } from "antd";
 import type { ReactNode } from "react";
@@ -25,26 +26,17 @@ import { FiltersIcon, SearchIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
 
 /** Extra toolbar props for threading the filter container's open/close wiring. */
-export interface ToolbarProps<TRow> extends Omit<
-  ToolbarChromeProps<TRow>,
-  "onOpenFilters"
-> {
+export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Filter content (anchored popover or drawer). */
   filters?: ReactNode;
   /** Whether to anchor a popover or open the drawer. */
   filtersMode: "popover" | "drawer";
-  /** Whether the filter container is open. */
-  filtersOpen: boolean;
-  /** Toggle the filter container open/closed. */
-  onToggleFilters: () => void;
   /** Close the filter container. */
   onCloseFilters: () => void;
-  /** Clear every active filter. */
-  onClearFilters?: () => void;
-  /** Layout direction (RTL flips the popover anchor). */
-  dir?: Direction;
-  /** The Columns menu, rendered inline at the end of the toolbar row. */
-  columnMenu?: ReactNode;
+  /** Clear every active filter (always wired — falls back to `clearExtras`). */
+  onClearFilters: () => void;
+  /** Show the subtle background-refresh spinner in the toolbar. */
+  isRefreshing: boolean;
 }
 
 /** Search field + sort select + filters button + rows-per-page. */
@@ -62,6 +54,7 @@ export function Toolbar<TRow>({
   onToggleFilters,
   onCloseFilters,
   onClearFilters,
+  isRefreshing,
   dir,
   columnMenu,
   showRowsPerPage,
@@ -105,6 +98,7 @@ export function Toolbar<TRow>({
         />
       )}
       <Flex gap="small" wrap={false} align="center">
+        {isRefreshing && <Spin size="small" aria-label={labels.loading} />}
         {sortOptions && sortOptions.length > 0 && (
           <Select
             style={{ minWidth: 160 }}
@@ -163,7 +157,7 @@ export function Chips({
   labels,
 }: Readonly<{
   chips: readonly ActiveFilterChip[];
-  onClearAll?: () => void;
+  onClearAll: () => void;
   labels: Required<TableLabels>;
 }>) {
   if (chips.length === 0) return null;
@@ -182,13 +176,11 @@ export function Chips({
           </Tag>
         </li>
       ))}
-      {onClearAll && (
-        <li style={{ listStyle: "none" }}>
-          <Button size="small" type="link" onClick={onClearAll}>
-            {labels.clearAll}
-          </Button>
-        </li>
-      )}
+      <li style={{ listStyle: "none" }}>
+        <Button size="small" type="link" onClick={onClearAll}>
+          {labels.clearAll}
+        </Button>
+      </li>
     </Flex>
   );
 }
@@ -283,7 +275,7 @@ export function FilterDrawer({
   onClose: () => void;
   filters: ReactNode;
   activeFilterCount: number;
-  onClearFilters?: () => void;
+  onClearFilters: () => void;
   labels: Required<TableLabels>;
   dir?: Direction;
 }>) {
@@ -296,10 +288,7 @@ export function FilterDrawer({
       width={360}
       footer={
         <Flex justify="space-between">
-          <Button
-            disabled={activeFilterCount === 0}
-            onClick={() => onClearFilters?.()}
-          >
+          <Button disabled={activeFilterCount === 0} onClick={onClearFilters}>
             {labels.clearAll}
           </Button>
           <Button type="primary" onClick={onClose}>

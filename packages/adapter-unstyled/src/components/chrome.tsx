@@ -21,7 +21,8 @@ export function Chips({
   classNames,
 }: Readonly<{
   chips: readonly ActiveFilterChip[];
-  onClearAll?: () => void;
+  /** Clear-all handler — always defined (`chrome.clearFilters`). */
+  onClearAll: () => void;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
 }>) {
@@ -50,17 +51,15 @@ export function Chips({
           </button>
         </li>
       ))}
-      {onClearAll && (
-        <li>
-          <button
-            type="button"
-            onClick={onClearAll}
-            className={classNames.chipRemove}
-          >
-            {labels.clearAll}
-          </button>
-        </li>
-      )}
+      <li>
+        <button
+          type="button"
+          onClick={onClearAll}
+          className={classNames.chipRemove}
+        >
+          {labels.clearAll}
+        </button>
+      </li>
     </ul>
   );
 }
