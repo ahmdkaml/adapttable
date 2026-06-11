@@ -5,8 +5,17 @@ import {
   filterStateKeys,
   type FilterValue,
   type TableSource,
+  useFilterOptions,
 } from "@adapttable/core";
-import { Checkbox, Flex, Input, InputNumber, Space, Typography } from "antd";
+import {
+  Checkbox,
+  Flex,
+  Input,
+  InputNumber,
+  Space,
+  Spin,
+  Typography,
+} from "antd";
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -43,6 +52,11 @@ interface ControlProps<TRow> {
  * The kit-native widget for one definition. Every control renders inline
  * (no portal), reads `extra[stateKey]` and writes through `setExtra` —
  * empty text / empty list clears the key (and its URL param).
+ *
+ * Select/multiSelect choices resolve through `useFilterOptions`, never by
+ * mapping `def.options` directly — the source may be an async loader. While
+ * one is in flight the select shows a single disabled "…" option and the
+ * checkbox group a small antd spinner.
  */
 function FilterControl<TRow>({
   def,
@@ -50,6 +64,7 @@ function FilterControl<TRow>({
   setExtra,
 }: Readonly<ControlProps<TRow>>) {
   const label = filterLabel(def);
+  const { options, loading } = useFilterOptions(def);
   switch (def.type) {
     case "text":
       return (
@@ -73,17 +88,22 @@ function FilterControl<TRow>({
           onChange={(event) => setExtra(def.key, event.target.value)}
         >
           <option value="">All</option>
-          {(def.options ?? []).map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {loading ? (
+            <option disabled>…</option>
+          ) : (
+            options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))
+          )}
         </select>
       );
     case "multiSelect":
+      if (loading) return <Spin size="small" />;
       return (
         <Checkbox.Group
-          options={(def.options ?? []).map((option) => ({
+          options={options.map((option) => ({
             label: option.label,
             value: option.value,
           }))}

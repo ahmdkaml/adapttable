@@ -2,17 +2,23 @@ import {
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
+  type Direction,
   edgePinStyle,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
   pinnedColumnWidth,
+  type PinOffset,
+  type PinSide,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  type RowExpansionState,
   runRowAction,
+  type SelectionState,
   type SharedTableRenderProps,
+  type TableLabels,
   tableMinWidth,
   virtualColumnSpan,
 } from "@adapttable/core";
@@ -34,7 +40,15 @@ import {
   Tooltip,
   Tr,
 } from "@chakra-ui/react";
-import type { CSSProperties } from "react";
+import {
+  type CSSProperties,
+  memo,
+  type MutableRefObject,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 
 import { subtleText } from "../styles";
 
@@ -50,11 +64,19 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
   userSelect: "none",
 };
 
+/** Width (px) reserved for the leading expand-chevron column. */
+const EXPANSION_WIDTH = 32;
+
+/** Opaque background for sticky/pinned cells (Chakra body background). */
+const PIN_BG = "var(--chakra-colors-chakra-body-bg)";
+
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   /** Class hook for the table (desktop) / each card (mobile). */
   className?: string;
   size: "sm" | "md" | "lg";
   colorScheme?: string;
+  /** Text direction — flips the expand chevron for RTL. */
+  dir?: Direction;
 }
 
 /** Join the static class hook with a conditional per-row class. */
@@ -77,6 +99,95 @@ function chakraAlign(
 function sortGlyph(active: boolean, dir: "asc" | "desc" | undefined): string {
   if (!active) return " ↕";
   return dir === "asc" ? " ↑" : " ↓";
+}
+
+/**
+ * Pinned data-cell style with an opaque background. A raw `style` because
+ * Chakra would map numeric props onto its spacing scale and mangle the
+ * pixel insets.
+ */
+function pinCellStyle(
+  pin: PinOffset | undefined,
+  z: number,
+  leads: PinLeads
+): CSSProperties | undefined {
+  const style = pinnedCellStyle(pin, z, leads);
+  return style ? { ...style, background: PIN_BG } : undefined;
+}
+
+/**
+ * Sticky style for a non-data edge cell (expand chevron, selection,
+ * actions): flush to its side when a data column on that side is pinned.
+ * `shift` insets a left-edge cell past the leading expansion column so the
+ * chevron and the selection checkbox pin side by side.
+ */
+function edgeCellStyle(
+  side: PinSide,
+  active: boolean,
+  z: number,
+  shift = 0
+): CSSProperties | undefined {
+  const pin = edgePinStyle(side, active, z);
+  if (!pin) return undefined;
+  const style: CSSProperties = { ...pin, background: PIN_BG };
+  if (shift > 0) style.insetInlineStart = shift;
+  return style;
+}
+
+/**
+ * Inline expand chevron: points into the row (flipped for RTL) and rotates
+ * to point down while the detail panel is open.
+ */
+function ExpandChevron({
+  open,
+  dir,
+}: Readonly<{ open: boolean; dir?: Direction }>) {
+  let transform: string | undefined;
+  if (open) transform = "rotate(90deg)";
+  else if (dir === "rtl") transform = "rotate(180deg)";
+  return (
+    <svg
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      style={{ transform, transition: "transform 0.2s ease" }}
+    >
+      <path
+        d="m9 6 6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Chevron toggle for a row's detail panel. */
+function ExpandToggle({
+  open,
+  dir,
+  labels,
+  onToggle,
+}: Readonly<{
+  open: boolean;
+  dir?: Direction;
+  labels: Pick<Required<TableLabels>, "expandRow" | "collapseRow">;
+  onToggle: () => void;
+}>) {
+  return (
+    <IconButton
+      size="xs"
+      variant="ghost"
+      aria-expanded={open}
+      aria-label={open ? labels.collapseRow : labels.expandRow}
+      icon={<ExpandChevron open={open} dir={dir} />}
+      onClick={onToggle}
+    />
+  );
 }
 
 function RowActionButtons<TRow>({
@@ -140,6 +251,199 @@ function RowActionButtons<TRow>({
   );
 }
 
+/**
+ * Everything a memoized desktop row reads through ONE identity-stable ref:
+ * the latest callbacks and pin geometry. Routing them through the ref (read
+ * at event/render time) keeps a changed callback identity from re-rendering
+ * every row, without ever calling a stale closure.
+ */
+interface DesktopRowApi<TRow> {
+  selection: SelectionState | null;
+  expansion?: RowExpansionState;
+  rowActions?: RowAction<TRow>[];
+  confirm: ConfirmHandler;
+  onRowClick?: (row: TRow) => void;
+  prefetch?: (row: TRow) => void;
+  renderRowDetail?: (row: TRow) => ReactNode;
+  pinOffset?: (key: string) => PinOffset | undefined;
+  measureElement?: (element: Element | null) => void;
+  leads: PinLeads;
+  hasLeftPin: boolean;
+  hasRightPin: boolean;
+}
+
+/** The visual inputs of one desktop row — exactly what the memo compares. */
+interface DesktopRowProps<TRow> {
+  row: TRow;
+  id: string;
+  index: number;
+  selected: boolean;
+  expanded: boolean;
+  size: "sm" | "md" | "lg";
+  colorScheme?: string;
+  dir?: Direction;
+  columns: ColumnDef<TRow>[];
+  columnWidths?: Readonly<Record<string, number>>;
+  /** Serialized pin geometry — stands in for the `pinOffset` closure. */
+  pinSignature: string;
+  /** The `rowClassName(row, index)` output, compared as a plain string. */
+  className?: string;
+  labels: Required<TableLabels>;
+  hasSelection: boolean;
+  expandable: boolean;
+  showActions: boolean;
+  hasRowClick: boolean;
+  /** Spacer/detail colSpan (selection + data + actions + expansion). */
+  columnSpan: number;
+  /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
+  api: MutableRefObject<DesktopRowApi<TRow>>;
+  /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
+  measureRef: (element: HTMLTableRowElement | null) => void;
+}
+
+/**
+ * The props {@link desktopRowPropsEqual} compares. `api` and `measureRef`
+ * are deliberately absent: both are identity-stable by construction, and a
+ * row must never re-render because some callback's identity changed.
+ */
+const ROW_VISUAL_KEYS = [
+  "row",
+  "id",
+  "index",
+  "selected",
+  "expanded",
+  "size",
+  "colorScheme",
+  "dir",
+  "columns",
+  "columnWidths",
+  "pinSignature",
+  "className",
+  "labels",
+  "hasSelection",
+  "expandable",
+  "showActions",
+  "hasRowClick",
+  "columnSpan",
+] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
+
+/** Re-render a row only when one of its visual inputs changes. */
+function desktopRowPropsEqual<TRow>(
+  prev: Readonly<DesktopRowProps<TRow>>,
+  next: Readonly<DesktopRowProps<TRow>>
+): boolean {
+  return ROW_VISUAL_KEYS.every((key) => prev[key] === next[key]);
+}
+
+/** One desktop row (+ its detail panel row while expanded). */
+function DesktopRowBase<TRow>({
+  row,
+  id,
+  index,
+  selected,
+  expanded,
+  colorScheme,
+  dir,
+  columns,
+  className,
+  labels,
+  hasSelection,
+  expandable,
+  showActions,
+  hasRowClick,
+  columnSpan,
+  api,
+  measureRef,
+}: Readonly<DesktopRowProps<TRow>>) {
+  // Render-time geometry reads the latest ref values: whenever they change,
+  // a compared prop (pinSignature / hasSelection / …) changes with them.
+  const live = api.current;
+  const activateRow = (r: TRow): void => {
+    api.current.onRowClick?.(r);
+  };
+  return (
+    <>
+      <Tr
+        {...rowClickProps(row, hasRowClick ? activateRow : undefined)}
+        ref={measureRef}
+        data-index={index}
+        className={className}
+        bg={selected ? "blackAlpha.100" : undefined}
+        _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
+        onMouseEnter={() => api.current.prefetch?.(row)}
+      >
+        {expandable && (
+          <Td px={1} style={edgeCellStyle("left", live.hasLeftPin, PIN_Z.body)}>
+            <ExpandToggle
+              open={expanded}
+              dir={dir}
+              labels={labels}
+              onToggle={() => api.current.expansion?.toggle(id)}
+            />
+          </Td>
+        )}
+        {hasSelection && (
+          <Td
+            style={edgeCellStyle(
+              "left",
+              live.hasLeftPin,
+              PIN_Z.body,
+              expandable ? EXPANSION_WIDTH : 0
+            )}
+          >
+            <Checkbox
+              aria-label={labels.selectRow}
+              isChecked={selected}
+              onChange={() => api.current.selection?.toggle(id)}
+            />
+          </Td>
+        )}
+        {columns.map((column) => (
+          <Td
+            key={column.key}
+            textAlign={chakraAlign(column.align)}
+            style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
+          >
+            {column.Cell ? (
+              <column.Cell row={row} rowIndex={index} />
+            ) : (
+              column.accessor?.(row)
+            )}
+          </Td>
+        ))}
+        {showActions && (
+          <Td
+            textAlign="end"
+            style={edgeCellStyle("right", live.hasRightPin, PIN_Z.body)}
+          >
+            <RowActionButtons
+              row={row}
+              actions={live.rowActions!}
+              confirm={live.confirm}
+              cancelLabel={labels.cancel}
+              colorScheme={colorScheme}
+            />
+          </Td>
+        )}
+      </Tr>
+      {expandable && expanded && (
+        <Tr>
+          <Td colSpan={columnSpan}>{api.current.renderRowDetail?.(row)}</Td>
+        </Tr>
+      )}
+    </>
+  );
+}
+
+/**
+ * Materialize the memoized row for one TRow. React 18's `memo` typing drops
+ * a generic component's type parameter, so each `DesktopTable` instantiates
+ * the memo for its own row type (zero casts, full type safety).
+ */
+function createDesktopRow<TRow>() {
+  return memo(DesktopRowBase<TRow>, desktopRowPropsEqual<TRow>);
+}
+
 /** Desktop Chakra table. */
 export function DesktopTable<TRow>({
   table,
@@ -149,9 +453,12 @@ export function DesktopTable<TRow>({
   getRowId,
   size,
   colorScheme,
+  dir,
   prefetch,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   className,
   rowEntries,
   paddingTop = 0,
@@ -167,12 +474,11 @@ export function DesktopTable<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const showActions = (rowActions?.length ?? 0) > 0;
+  const expandable = expansion !== undefined;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const columnSpan = virtualColumnSpan(
-    columns.length,
-    Boolean(selection),
-    showActions
-  );
+  const columnSpan =
+    virtualColumnSpan(columns.length, Boolean(selection), showActions) +
+    (expandable ? 1 : 0);
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
   // sticky and let the header overlap the first row.
@@ -186,12 +492,13 @@ export function DesktopTable<TRow>({
         bg: "chakra-body-bg",
       }
     : {};
-  // The leading checkbox (48px) and trailing actions (120px) columns pin to the
-  // edge alongside the data columns, which therefore start past them.
+  // The leading expansion (32px) / checkbox (48px) and trailing actions
+  // (120px) columns pin to the edge alongside the data columns, which
+  // therefore start past them.
   const selectionWidth = 48;
   const actionsWidth = 120;
   const leads: PinLeads = {
-    left: selection ? selectionWidth : 0,
+    left: (expandable ? EXPANSION_WIDTH : 0) + (selection ? selectionWidth : 0),
     right: showActions ? actionsWidth : 0,
   };
   const hasLeftPin = table.columns.some(
@@ -200,30 +507,13 @@ export function DesktopTable<TRow>({
   const hasRightPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "right"
   );
-  const pinBg = "var(--chakra-colors-chakra-body-bg)";
-  // Pinned cells use a raw `style` (Chakra maps numeric props onto its spacing
-  // scale, which would mangle pixel insets) plus an opaque background.
-  const pinStyle = (key: string, z: number): CSSProperties | undefined => {
-    const pin = pinnedCellStyle(pinOffset?.(key), z, leads);
-    return pin ? { ...pin, background: pinBg } : undefined;
-  };
-  // Edge (selection / actions) cell sticks flush to its side when a data column
-  // on that side is pinned.
-  const edgeStyle = (
-    side: "left" | "right",
-    active: boolean,
-    z: number
-  ): CSSProperties | undefined => {
-    const pin = edgePinStyle(side, active, z);
-    return pin ? { ...pin, background: pinBg } : undefined;
-  };
   // Header-cell style merging pin + user width; the resize handle is absolute,
   // so add a positioning context when the cell is not already sticky/pinned.
   const headCellStyle = (
     column: ColumnDef<TRow>
   ): CSSProperties | undefined => {
     const key = column.key;
-    const pin = pinStyle(key, PIN_Z.headerPinned);
+    const pin = pinCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
     // A pinned column renders at the width its sticky inset assumed, so
     // stacked pins stay flush even with no declared width.
     const width = pin
@@ -243,8 +533,44 @@ export function DesktopTable<TRow>({
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+    extra:
+      (expandable ? EXPANSION_WIDTH : 0) +
+      (selection ? selectionWidth : 0) +
+      (showActions ? actionsWidth : 0),
   });
+
+  // The memoized row reads everything non-visual through this single ref,
+  // re-assigned every render so event handlers always see the latest values
+  // without their identity ever becoming a compared prop.
+  const rowApi: DesktopRowApi<TRow> = {
+    selection,
+    expansion,
+    rowActions,
+    confirm,
+    onRowClick,
+    prefetch,
+    renderRowDetail,
+    pinOffset,
+    measureElement,
+    leads,
+    hasLeftPin,
+    hasRightPin,
+  };
+  const api = useRef(rowApi);
+  api.current = rowApi;
+  const measureRef = useCallback((element: HTMLTableRowElement | null) => {
+    api.current.measureElement?.(element);
+  }, []);
+  // One memoized row component per table instance — see createDesktopRow.
+  const Row = useMemo(() => createDesktopRow<TRow>(), []);
+  // `pinOffset` is a fresh closure whenever the layout changes, so rows
+  // compare this serialized pin geometry instead of a function identity.
+  const pinSignature = columns
+    .map((column) => {
+      const pin = pinOffset?.(column.key);
+      return pin ? `${column.key}:${pin.side}:${pin.inset}` : "";
+    })
+    .join("|");
 
   return (
     <Box
@@ -261,10 +587,24 @@ export function DesktopTable<TRow>({
       >
         <Thead>
           <Tr>
+            {expandable && (
+              <Th
+                {...stickyTh}
+                aria-label={labels.expandRow}
+                width={`${EXPANSION_WIDTH}px`}
+                px={1}
+                style={edgeCellStyle("left", hasLeftPin, PIN_Z.headerPinned)}
+              />
+            )}
             {selection && (
               <Th
                 {...stickyTh}
-                style={edgeStyle("left", hasLeftPin, PIN_Z.headerPinned)}
+                style={edgeCellStyle(
+                  "left",
+                  hasLeftPin,
+                  PIN_Z.headerPinned,
+                  expandable ? EXPANSION_WIDTH : 0
+                )}
               >
                 <Checkbox
                   aria-label={labels.selectAll}
@@ -324,7 +664,7 @@ export function DesktopTable<TRow>({
               <Th
                 textAlign="end"
                 {...stickyTh}
-                style={edgeStyle("right", hasRightPin, PIN_Z.headerPinned)}
+                style={edgeCellStyle("right", hasRightPin, PIN_Z.headerPinned)}
               >
                 {labels.actions}
               </Th>
@@ -339,55 +679,30 @@ export function DesktopTable<TRow>({
           )}
           {entries.map(({ row, index, key }) => {
             const id = getRowId(row);
-            const selected = selection?.isSelected(id);
             return (
-              <Tr
+              <Row
                 key={key}
-                {...rowClickProps(row, onRowClick)}
-                ref={measureElement}
-                data-index={index}
+                row={row}
+                id={id}
+                index={index}
+                selected={selection?.isSelected(id) ?? false}
+                expanded={expansion?.isExpanded(id) ?? false}
+                size={size}
+                colorScheme={colorScheme}
+                dir={dir}
+                columns={columns}
+                columnWidths={columnWidths}
+                pinSignature={pinSignature}
                 className={rowClassName?.(row, index)}
-                bg={selected ? "blackAlpha.100" : undefined}
-                _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
-                onMouseEnter={prefetch ? () => prefetch(row) : undefined}
-              >
-                {selection && (
-                  <Td style={edgeStyle("left", hasLeftPin, PIN_Z.body)}>
-                    <Checkbox
-                      aria-label={labels.selectRow}
-                      isChecked={selection.isSelected(id)}
-                      onChange={() => selection.toggle(id)}
-                    />
-                  </Td>
-                )}
-                {columns.map((column) => (
-                  <Td
-                    key={column.key}
-                    textAlign={chakraAlign(column.align)}
-                    style={pinStyle(column.key, 1)}
-                  >
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
-                  </Td>
-                ))}
-                {showActions && (
-                  <Td
-                    textAlign="end"
-                    style={edgeStyle("right", hasRightPin, PIN_Z.body)}
-                  >
-                    <RowActionButtons
-                      row={row}
-                      actions={rowActions!}
-                      confirm={confirm}
-                      cancelLabel={labels.cancel}
-                      colorScheme={colorScheme}
-                    />
-                  </Td>
-                )}
-              </Tr>
+                labels={labels}
+                hasSelection={Boolean(selection)}
+                expandable={expandable}
+                showActions={showActions}
+                hasRowClick={Boolean(onRowClick)}
+                columnSpan={columnSpan}
+                api={api}
+                measureRef={measureRef}
+              />
             );
           })}
           {paddingBottom > 0 && (
@@ -417,8 +732,11 @@ export function MobileCards<TRow>({
   getRowId,
   size,
   colorScheme,
+  dir,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   className,
   rowEntries,
   paddingTop = 0,
@@ -437,6 +755,7 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
       {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
+        const expanded = expansion?.isExpanded(id) ?? false;
         return (
           <Card
             key={key}
@@ -456,6 +775,16 @@ export function MobileCards<TRow>({
                   mb={2}
                 />
               )}
+              {expansion && (
+                <Box mb={2}>
+                  <ExpandToggle
+                    open={expanded}
+                    dir={dir}
+                    labels={labels}
+                    onToggle={() => expansion.toggle(id)}
+                  />
+                </Box>
+              )}
               {columns.map((column) => (
                 <Box key={column.key} mb={compact ? 1 : 2}>
                   <Text fontSize="xs" {...subtleText} textTransform="uppercase">
@@ -470,6 +799,7 @@ export function MobileCards<TRow>({
                   </Text>
                 </Box>
               ))}
+              {expanded && <Box pt={1}>{renderRowDetail?.(row)}</Box>}
               {rowActions && rowActions.length > 0 && (
                 <RowActionButtons
                   row={row}

@@ -4,6 +4,7 @@ import {
   isDeclarativeFilters,
   pageSizeOptions,
   rowClickProps,
+  type RowExpansionState,
   type SelectionState,
   type TableLabels,
   tableMinWidth,
@@ -43,6 +44,7 @@ import {
   Toolbar,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ExpandToggle } from "./components/ExpandToggle";
 import { MobileCards } from "./components/MobileCards";
 import { SkeletonTable } from "./components/SkeletonTable";
 import type { DataTableProps } from "./types";
@@ -174,6 +176,36 @@ function buildRowSelection<TRow>(
         checked={selection.headerState === "all"}
         indeterminate={selection.headerState === "some"}
         onChange={() => selection.toggleAll()}
+      />
+    ),
+  };
+}
+
+/**
+ * Map the shared row-expansion contract onto antd's NATIVE `expandable` API:
+ * chrome's id-keyed state drives `expandedRowKeys` (so an open panel survives
+ * sorting and paging), the icon toggles back through chrome, and the detail
+ * panel renders via `expandedRowRender`. antd's built-in expand icon does
+ * carry `aria-expanded` and an `aria-label`, but the label comes from antd's
+ * ConfigProvider locale — a custom `expandIcon` keeps the configurable
+ * `labels.expandRow` / `labels.collapseRow` contract instead.
+ */
+function buildExpandable<TRow>(
+  renderRowDetail: ((row: TRow) => ReactNode) | undefined,
+  expansion: RowExpansionState | undefined,
+  getRowId: (row: TRow) => string,
+  labels: Required<TableLabels>
+): TableProps<TRow>["expandable"] {
+  if (!renderRowDetail || !expansion) return undefined;
+  return {
+    expandedRowKeys: [...expansion.expandedIds],
+    onExpand: (_open, row) => expansion.toggle(getRowId(row)),
+    expandedRowRender: (row) => renderRowDetail(row),
+    expandIcon: ({ expanded, record, onExpand }) => (
+      <ExpandToggle
+        expanded={expanded}
+        labels={labels}
+        onClick={(event) => onExpand(record, event)}
       />
     ),
   };
@@ -379,6 +411,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     labels,
     hasLeftPin
   );
+  const expandable = buildExpandable(
+    props.renderRowDetail,
+    c.expansion,
+    getRowId,
+    labels
+  );
   const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
@@ -426,6 +464,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowClassName={props.rowClassName}
         tableLabel={resolvedTableLabel}
         compact={(props.density ?? "comfortable") === "compact"}
+        expansion={c.expansion}
+        renderRowDetail={props.renderRowDetail}
       />
     );
   } else {
@@ -441,6 +481,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         sticky={sticky}
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
+        expandable={expandable}
         pagination={pagination}
         rowClassName={
           props.rowClassName ? buildRowClassName(props.rowClassName) : undefined

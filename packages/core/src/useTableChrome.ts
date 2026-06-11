@@ -17,12 +17,17 @@ import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
+import {
+  type RowExpansionState,
+  useRowExpansion,
+} from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
   type UseDataTableResult,
 } from "./useDataTable/useDataTable";
+import { devWarn } from "./utils/devWarn";
 import {
   type TableVirtualization,
   useTableVirtualization,
@@ -129,6 +134,8 @@ export interface TableChrome<TRow> {
    * always offer a working "clear".
    */
   clearFilters: () => void;
+  /** Row-expansion state — present only when `renderRowDetail` is set. */
+  expansion?: RowExpansionState;
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -260,6 +267,11 @@ export function useTableChrome<TRow>(
     else source.clearExtras();
   }, [onClearFilters, source]);
 
+  // Hooks run unconditionally; the state is simply unused (and unexposed)
+  // when the caller renders no row details.
+  const expansionState = useRowExpansion();
+  const expansion = props.renderRowDetail ? expansionState : undefined;
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -277,6 +289,7 @@ export function useTableChrome<TRow>(
     emptyVariant,
     isRefreshing,
     clearFilters,
+    expansion,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,
@@ -311,6 +324,11 @@ export function useChromeBodyData<TRow>(
 ): ChromeBodyData<TRow> {
   const { source, rowKey, virtualize = false } = props;
   warnVirtualizeInScrollBox(virtualize, props.maxHeight);
+  if (virtualize && props.renderRowDetail) {
+    devWarn(
+      "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
+    );
+  }
   // One guarded loader for both triggers (virtual end + sentinel).
   const fetchNext = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {

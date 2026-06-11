@@ -49,6 +49,8 @@ export interface DataTableClassNames {
   filterCheckboxGroup?: string;
   /** One checkbox option (`<label>` + checkbox) in a `multiSelect` field. */
   filterCheckbox?: string;
+  /** The placeholder shown while a field's async options load. */
+  filterOptionsLoading?: string;
   chips?: string;
   chip?: string;
   chipRemove?: string;
@@ -74,6 +76,18 @@ export interface DataTableClassNames {
   tbody?: string;
   row?: string;
   cell?: string;
+  /** The leading expand-chevron header cell (row expansion). */
+  expandHeader?: string;
+  /** The leading expand-chevron body cell on each row. */
+  expandCell?: string;
+  /** The expand/collapse chevron button (desktop rows and mobile cards). */
+  expandButton?: string;
+  /** The full-width detail `<tr>` rendered under an expanded row. */
+  detailRow?: string;
+  /** The single spanning `<td>` inside the detail row. */
+  detailCell?: string;
+  /** The detail section inside an expanded mobile card. */
+  cardDetail?: string;
   actionsCell?: string;
   actionButton?: string;
   selectionCell?: string;

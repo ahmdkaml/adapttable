@@ -16,6 +16,8 @@ import {
   tableMinWidth,
   tableRenderModel,
 } from "@adapttable/core";
+import type { ReactNode } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
 
 /** Sx for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_SX = {
@@ -56,6 +58,87 @@ function muiColor(color: string | undefined): "default" | "error" {
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   size: "small" | "medium";
+  /** Text direction — flips the collapsed expand chevron under RTL. */
+  dir?: "ltr" | "rtl";
+}
+
+/** Width (px) of the leading expand-chevron column (MUI's checkbox cell). */
+const EXPAND_WIDTH = 48;
+
+/**
+ * Identity-stable dispatcher for `selection.toggle` / `expansion.toggle`.
+ * `selection.toggle` is recreated whenever the selection changes, so handing
+ * it straight to a memoized row would either defeat the memo (if compared)
+ * or go stale (if not — in the controlled mode it computes from the captured
+ * set). This wrapper never changes identity and always dispatches to the
+ * CURRENT target, so skipped rows still toggle against fresh state.
+ */
+export function useStableToggle(
+  target: { toggle: (id: string) => void } | null | undefined
+): (id: string) => void {
+  // Latest-ref pattern (same as core's useFilterOptions): a render-time
+  // write so the callback reads whatever target the last render supplied.
+  const ref = useRef(target);
+  ref.current = target;
+  return useCallback((id: string) => ref.current?.toggle(id), []);
+}
+
+/** Inline chevron pointing at the reading end; rotates down when open. */
+function ExpandChevron({
+  expanded,
+  dir,
+}: Readonly<{ expanded: boolean; dir?: "ltr" | "rtl" }>) {
+  let transform: string | undefined;
+  if (expanded) transform = "rotate(90deg)";
+  else if (dir === "rtl") transform = "rotate(180deg)";
+  return (
+    <Box
+      component="span"
+      aria-hidden
+      sx={{ display: "inline-flex", transition: "transform 150ms", transform }}
+    >
+      <svg
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </Box>
+  );
+}
+
+/** The per-row expand/collapse chevron button (desktop cell + mobile card). */
+function ExpandToggle({
+  id,
+  expanded,
+  onToggle,
+  dir,
+  expandLabel,
+  collapseLabel,
+}: Readonly<{
+  id: string;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+  dir?: "ltr" | "rtl";
+  expandLabel: string;
+  collapseLabel: string;
+}>) {
+  return (
+    <IconButton
+      size="small"
+      aria-expanded={expanded}
+      aria-label={expanded ? collapseLabel : expandLabel}
+      onClick={() => onToggle(id)}
+    >
+      <ExpandChevron expanded={expanded} dir={dir} />
+    </IconButton>
+  );
 }
 
 /**
@@ -120,6 +203,192 @@ function RowActionButtons<TRow>({
   );
 }
 
+/**
+ * Per-render-stable sx for the memoized desktop row. Built once per
+ * `DesktopTable` render (memoized on the pin/width/column inputs), so the
+ * row comparator can treat one object identity as "the cell styling".
+ */
+interface DesktopRowSx {
+  /** Body-cell sx by column key (pin stickiness + logical text-align). */
+  cells: Readonly<Record<string, SxProps<Theme>>>;
+  /** Leading expand-chevron cell (edge-pinned alongside left data pins). */
+  expand?: SxProps<Theme>;
+  /** Leading selection cell (edge-pinned just past the expand column). */
+  selection?: SxProps<Theme>;
+  /** Trailing actions cell (edge-pinned, end-aligned). */
+  actions: SxProps<Theme>;
+}
+
+interface DesktopRowProps<TRow> {
+  /* Visual inputs — compared by the memo (see DESKTOP_ROW_COMPARED). */
+  row: TRow;
+  index: number;
+  selected: boolean;
+  expanded: boolean;
+  columns: ColumnDef<TRow>[];
+  sx: DesktopRowSx;
+  /** Full spacer span, INCLUDING the expand column when present. */
+  columnSpan: number;
+  size: "small" | "medium";
+  dir?: "ltr" | "rtl";
+  className?: string;
+  hasSelection: boolean;
+  hasExpansion: boolean;
+  showActions: boolean;
+  selectRowLabel: string;
+  cancelLabel: string;
+  expandLabel: string;
+  collapseLabel: string;
+  /* Stable wiring — excluded from the comparison (identity-stable, or at
+     least latest-dispatching via useStableToggle), so a skipped row never
+     holds a stale handler. */
+  id: string;
+  rowActions?: RowAction<TRow>[];
+  confirm: ConfirmHandler;
+  renderRowDetail?: (row: TRow) => ReactNode;
+  onToggleSelect: (id: string) => void;
+  onToggleExpand: (id: string) => void;
+  onRowClick?: (row: TRow) => void;
+  prefetch?: (row: TRow) => void;
+  measureElement?: (element: Element | null) => void;
+}
+
+/**
+ * The visual inputs a desktop row re-renders for. Deliberately NOT the
+ * per-render `table` object or the handler props: handlers are stable (or
+ * latest-dispatching wrappers), and everything that changes what the row
+ * LOOKS like is listed here — row identity, selection/expansion flags,
+ * density, column set, the precomputed sx map (pins + widths), the
+ * rowClassName output, and direction.
+ */
+const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
+  "row",
+  "index",
+  "selected",
+  "expanded",
+  "columns",
+  "sx",
+  "columnSpan",
+  "size",
+  "dir",
+  "className",
+  "hasSelection",
+  "hasExpansion",
+  "showActions",
+  "selectRowLabel",
+  "cancelLabel",
+  "expandLabel",
+  "collapseLabel",
+];
+
+function desktopRowPropsAreEqual(
+  prev: DesktopRowProps<unknown>,
+  next: DesktopRowProps<unknown>
+): boolean {
+  return DESKTOP_ROW_COMPARED.every((key) => prev[key] === next[key]);
+}
+
+function DesktopRowImpl<TRow>({
+  row,
+  index,
+  selected,
+  expanded,
+  columns,
+  sx,
+  columnSpan,
+  dir,
+  className,
+  hasSelection,
+  hasExpansion,
+  showActions,
+  selectRowLabel,
+  cancelLabel,
+  expandLabel,
+  collapseLabel,
+  id,
+  rowActions,
+  confirm,
+  renderRowDetail,
+  onToggleSelect,
+  onToggleExpand,
+  onRowClick,
+  prefetch,
+  measureElement,
+}: Readonly<DesktopRowProps<TRow>>) {
+  return (
+    <>
+      <TableRow
+        {...rowClickProps(row, onRowClick)}
+        className={className}
+        ref={measureElement}
+        data-index={index}
+        hover
+        selected={selected}
+        onMouseEnter={prefetch ? () => prefetch(row) : undefined}
+      >
+        {hasExpansion && (
+          <TableCell padding="checkbox" sx={sx.expand}>
+            <ExpandToggle
+              id={id}
+              expanded={expanded}
+              onToggle={onToggleExpand}
+              dir={dir}
+              expandLabel={expandLabel}
+              collapseLabel={collapseLabel}
+            />
+          </TableCell>
+        )}
+        {hasSelection && (
+          <TableCell padding="checkbox" sx={sx.selection}>
+            <Checkbox
+              slotProps={{ input: { "aria-label": selectRowLabel } }}
+              checked={selected}
+              onChange={() => onToggleSelect(id)}
+            />
+          </TableCell>
+        )}
+        {columns.map((column) => (
+          <TableCell key={column.key} sx={sx.cells[column.key]}>
+            {column.Cell ? (
+              <column.Cell row={row} rowIndex={index} />
+            ) : (
+              column.accessor?.(row)
+            )}
+          </TableCell>
+        ))}
+        {showActions && (
+          <TableCell sx={sx.actions}>
+            <RowActionButtons
+              row={row}
+              actions={rowActions!}
+              confirm={confirm}
+              cancelLabel={cancelLabel}
+            />
+          </TableCell>
+        )}
+      </TableRow>
+      {expanded && (
+        <TableRow>
+          {/* `expanded` is only ever true when a detail renderer exists
+              (DesktopTable derives it from `expansion && renderRowDetail`). */}
+          <TableCell colSpan={columnSpan}>{renderRowDetail!(row)}</TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
+
+/**
+ * Memoized desktop row: a search keystroke (or any chrome re-render) must
+ * not re-run every cell accessor, and toggling one row's checkbox must
+ * re-render only that row. The cast restores the generic signature `memo`
+ * erases.
+ */
+const DesktopRow = memo(
+  DesktopRowImpl,
+  desktopRowPropsAreEqual
+) as typeof DesktopRowImpl;
+
 /** Desktop MUI table. */
 export function DesktopTable<TRow>({
   table,
@@ -128,9 +397,12 @@ export function DesktopTable<TRow>({
   confirm,
   getRowId,
   size,
+  dir,
   prefetch,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -145,6 +417,15 @@ export function DesktopTable<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels, showActions, entries, columnSpan } =
     tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
+  // Expansion is active only when BOTH halves arrived (the chrome supplies
+  // `expansion` exactly when `renderRowDetail` is set).
+  const isExpanded =
+    expansion && renderRowDetail ? expansion.isExpanded : undefined;
+  const expandActive = isExpanded !== undefined;
+  // Spacer + detail rows span the expand column too.
+  const fullSpan = expandActive ? columnSpan + 1 : columnSpan;
+  const onToggleSelect = useStableToggle(selection);
+  const onToggleExpand = useStableToggle(expansion);
   // `position: sticky` on a `<thead>` does not pin against the document
   // scroller, so we stick the header *cells* instead. Pinned cells also stick
   // left/right (corner-sticky in the header) with an opaque background.
@@ -158,14 +439,17 @@ export function DesktopTable<TRow>({
         bgcolor: "background.paper",
       }
     : undefined;
-  // The leading checkbox (48px) and trailing actions (120px) columns pin to the
-  // edge alongside the data columns, which therefore start past them.
+  // The leading expand (48px) + checkbox (48px) and trailing actions (120px)
+  // columns pin to the edge alongside the data columns, which therefore
+  // start past them.
   const selectionWidth = 48;
   const actionsWidth = 120;
-  const leads: PinLeads = {
-    left: selection ? selectionWidth : 0,
-    right: showActions ? actionsWidth : 0,
-  };
+  const leadLeft =
+    (expandActive ? EXPAND_WIDTH : 0) + (selection ? selectionWidth : 0);
+  const leadRight = showActions ? actionsWidth : 0;
+  const leads: PinLeads = { left: leadLeft, right: leadRight };
+  // The selection cell itself sits past the expand column when both pin.
+  const selectionLead = expandActive ? EXPAND_WIDTH : 0;
   const hasLeftPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "left"
   );
@@ -196,20 +480,55 @@ export function DesktopTable<TRow>({
       ...(width != null && { width }),
     };
   };
-  const bodyPinSx = (key: string) => {
-    const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
-    return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
-  };
-  // The checkbox / actions cells pin to their edge when a data column on that
-  // side is pinned (corner-sticky in the header).
-  const edgeHeadSx = (side: "left" | "right", active: boolean) => {
+  // The expand / checkbox / actions cells pin to their edge when a data
+  // column on that side is pinned (corner-sticky in the header). `lead`
+  // shifts the selection cell past a pinned expand column.
+  const edgeHeadSx = (side: "left" | "right", active: boolean, lead = 0) => {
     const pin = edgePinStyle(side, active, PIN_Z.headerPinned);
-    return { ...headSx, ...(pin && { ...pin, bgcolor: "background.paper" }) };
+    return {
+      ...headSx,
+      ...(pin && { ...pin, bgcolor: "background.paper" }),
+      ...(pin && lead > 0 && { insetInlineStart: lead }),
+    };
   };
-  const edgeBodySx = (side: "left" | "right", active: boolean) => {
-    const pin = edgePinStyle(side, active, PIN_Z.body);
-    return pin ? { ...pin, bgcolor: "background.paper" } : undefined;
-  };
+  // One identity per pin/width layout: the memoized rows treat this object
+  // as "the cell styling", so it must only change when the layout does.
+  const rowSx = useMemo<DesktopRowSx>(() => {
+    const edge = (side: "left" | "right", active: boolean, lead = 0) => {
+      const pin = edgePinStyle(side, active, PIN_Z.body);
+      if (!pin) return undefined;
+      return {
+        ...pin,
+        ...(lead > 0 && { insetInlineStart: lead }),
+        bgcolor: "background.paper",
+      };
+    };
+    const cells: Record<string, SxProps<Theme>> = {};
+    for (const column of columns) {
+      const pin = pinnedCellStyle(pinOffset?.(column.key), PIN_Z.body, {
+        left: leadLeft,
+        right: leadRight,
+      });
+      cells[column.key] = {
+        ...(pin && { ...pin, bgcolor: "background.paper" }),
+        textAlign: muiAlign(column.align),
+      };
+    }
+    return {
+      cells,
+      expand: edge("left", hasLeftPin),
+      selection: edge("left", hasLeftPin, selectionLead),
+      actions: { ...edge("right", hasRightPin), textAlign: "end" },
+    };
+  }, [
+    columns,
+    pinOffset,
+    leadLeft,
+    leadRight,
+    hasLeftPin,
+    hasRightPin,
+    selectionLead,
+  ]);
 
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
   let boxSx: SxProps<Theme> | undefined;
@@ -222,7 +541,7 @@ export function DesktopTable<TRow>({
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+    extra: leadLeft + leadRight,
   });
 
   return (
@@ -234,8 +553,17 @@ export function DesktopTable<TRow>({
       >
         <TableHead>
           <TableRow>
+            {expandActive && (
+              <TableCell
+                padding="checkbox"
+                sx={edgeHeadSx("left", hasLeftPin)}
+              />
+            )}
             {selection && (
-              <TableCell padding="checkbox" sx={edgeHeadSx("left", hasLeftPin)}>
+              <TableCell
+                padding="checkbox"
+                sx={edgeHeadSx("left", hasLeftPin, selectionLead)}
+              >
                 <Checkbox
                   slotProps={{ input: { "aria-label": labels.selectAll } }}
                   checked={selection.headerState === "all"}
@@ -300,75 +628,47 @@ export function DesktopTable<TRow>({
         <TableBody>
           {paddingTop > 0 && (
             <TableRow aria-hidden>
-              <TableCell
-                colSpan={columnSpan}
-                sx={{ height: paddingTop, p: 0 }}
-              />
+              <TableCell colSpan={fullSpan} sx={{ height: paddingTop, p: 0 }} />
             </TableRow>
           )}
           {entries.map(({ row, index, key }) => {
             const id = getRowId(row);
-            const selected = selection?.isSelected(id) ?? false;
             return (
-              <TableRow
+              <DesktopRow
                 key={key}
-                {...rowClickProps(row, onRowClick)}
+                row={row}
+                index={index}
+                selected={selection?.isSelected(id) ?? false}
+                expanded={isExpanded ? isExpanded(id) : false}
+                columns={columns}
+                sx={rowSx}
+                columnSpan={fullSpan}
+                size={size}
+                dir={dir}
                 className={rowClassName?.(row, index)}
-                ref={measureElement}
-                data-index={index}
-                hover
-                selected={selected}
-                onMouseEnter={prefetch ? () => prefetch(row) : undefined}
-              >
-                {selection && (
-                  <TableCell
-                    padding="checkbox"
-                    sx={edgeBodySx("left", hasLeftPin)}
-                  >
-                    <Checkbox
-                      slotProps={{ input: { "aria-label": labels.selectRow } }}
-                      checked={selected}
-                      onChange={() => selection.toggle(id)}
-                    />
-                  </TableCell>
-                )}
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    sx={{
-                      ...bodyPinSx(column.key),
-                      textAlign: muiAlign(column.align),
-                    }}
-                  >
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
-                  </TableCell>
-                ))}
-                {showActions && (
-                  <TableCell
-                    sx={{
-                      ...edgeBodySx("right", hasRightPin),
-                      textAlign: "end",
-                    }}
-                  >
-                    <RowActionButtons
-                      row={row}
-                      actions={rowActions!}
-                      confirm={confirm}
-                      cancelLabel={labels.cancel}
-                    />
-                  </TableCell>
-                )}
-              </TableRow>
+                hasSelection={Boolean(selection)}
+                hasExpansion={expandActive}
+                showActions={showActions}
+                selectRowLabel={labels.selectRow}
+                cancelLabel={labels.cancel}
+                expandLabel={labels.expandRow}
+                collapseLabel={labels.collapseRow}
+                id={id}
+                rowActions={rowActions}
+                confirm={confirm}
+                renderRowDetail={renderRowDetail}
+                onToggleSelect={onToggleSelect}
+                onToggleExpand={onToggleExpand}
+                onRowClick={onRowClick}
+                prefetch={prefetch}
+                measureElement={measureElement}
+              />
             );
           })}
           {paddingBottom > 0 && (
             <TableRow aria-hidden>
               <TableCell
-                colSpan={columnSpan}
+                colSpan={fullSpan}
                 sx={{ height: paddingBottom, p: 0 }}
               />
             </TableRow>
@@ -394,8 +694,11 @@ export function MobileCards<TRow>({
   confirm,
   getRowId,
   size,
+  dir,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -404,6 +707,9 @@ export function MobileCards<TRow>({
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const compact = size === "small";
+  // Expansion is active only when BOTH halves arrived (the chrome supplies
+  // `expansion` exactly when `renderRowDetail` is set).
+  const expand = expansion && renderRowDetail ? expansion : undefined;
   return (
     <Stack
       spacing={compact ? 1 : 1.5}
@@ -435,6 +741,16 @@ export function MobileCards<TRow>({
                   onChange={() => selection.toggle(id)}
                 />
               )}
+              {expand && (
+                <ExpandToggle
+                  id={id}
+                  expanded={expand.isExpanded(id)}
+                  onToggle={expand.toggle}
+                  dir={dir}
+                  expandLabel={labels.expandRow}
+                  collapseLabel={labels.collapseRow}
+                />
+              )}
               {columns.map((column) => (
                 <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
                   <Typography
@@ -460,6 +776,11 @@ export function MobileCards<TRow>({
                   confirm={confirm}
                   cancelLabel={labels.cancel}
                 />
+              )}
+              {expand?.isExpanded(id) && (
+                // Inside the card — and therefore inside the measured
+                // element — so virtualization keeps accurate card heights.
+                <Box sx={{ mt: 1 }}>{renderRowDetail!(row)}</Box>
               )}
             </CardContent>
           </Card>

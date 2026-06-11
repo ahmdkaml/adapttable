@@ -140,6 +140,36 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
     expect(rowCheckbox.style.position).toBe("sticky");
     expect(rowCheckbox.style.insetInlineStart).toBe("0");
   });
+
+  it("pins the actions column alongside a right-pinned data column", () => {
+    mount({
+      rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      defaultColumnLayout: { pinned: { name: "right" } },
+    });
+    const actionsCell = screen
+      .getAllByRole("button", { name: "Edit" })[0]!
+      .closest("td")!;
+    expect(actionsCell.style.position).toBe("sticky");
+    expect(actionsCell.style.insetInlineEnd).toBe("0");
+  });
+
+  it("offsets the pinned checkbox past the chevron column with row details", () => {
+    mount({
+      bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+      renderRowDetail: (r) => <div>Detail for {r.name}</div>,
+      defaultColumnLayout: { pinned: { name: "left" } },
+    });
+    // The chevron column pins flush to the start edge…
+    const chevronCell = screen
+      .getAllByRole("button", { name: defaultLabels.expandRow })[0]!
+      .closest("td")!;
+    expect(chevronCell.style.position).toBe("sticky");
+    expect(chevronCell.style.insetInlineStart).toBe("0");
+    // …and the checkbox column starts past the chevron's width.
+    const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
+    expect(headerCheckbox.style.position).toBe("sticky");
+    expect(headerCheckbox.style.insetInlineStart).toBe("36px");
+  });
 });
 
 describe("MobileCards hidden + disabled actions", () => {

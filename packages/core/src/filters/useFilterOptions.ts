@@ -1,0 +1,68 @@
+import { useEffect, useRef, useState } from "react";
+
+import { devWarn } from "../utils/devWarn";
+import type { FilterDef, FilterOption } from "./filterDefs";
+
+/** Resolved choices for a select/multiSelect control. */
+export interface ResolvedFilterOptions {
+  /** The choices to render (empty while an async loader is in flight). */
+  options: readonly FilterOption[];
+  /** True while an async loader is fetching. */
+  loading: boolean;
+}
+
+const EMPTY: readonly FilterOption[] = [];
+
+/**
+ * Resolve a definition's option source for the auto-built form: arrays are
+ * used as-is, async loaders run once on mount (kit forms show their native
+ * loading affordance meanwhile), and a leftover `"auto"` — possible only on
+ * the server/source tiers, where there is no full dataset to derive from —
+ * resolves to no options with a development warning.
+ */
+export function useFilterOptions<TRow>(
+  def: Pick<FilterDef<TRow>, "key" | "options">
+): ResolvedFilterOptions {
+  const source = def.options;
+  const isLoader = typeof source === "function";
+  const [loaded, setLoaded] = useState<readonly FilterOption[] | null>(null);
+  const [loading, setLoading] = useState(isLoader);
+
+  // Read the loader through a ref: callers routinely write it INLINE, so a
+  // fresh identity every render must not restart the load (only a key
+  // change does). The latest function still wins when the effect runs.
+  const sourceRef = useRef(source);
+  sourceRef.current = source;
+
+  useEffect(() => {
+    const loader = sourceRef.current;
+    if (typeof loader !== "function") return;
+    let alive = true;
+    setLoading(true);
+    void loader().then(
+      (options) => {
+        if (!alive) return;
+        setLoaded(options);
+        setLoading(false);
+      },
+      () => {
+        if (!alive) return;
+        devWarn(`async options for filter "${def.key}" failed to load.`);
+        setLoaded(EMPTY);
+        setLoading(false);
+      }
+    );
+    return () => {
+      alive = false;
+    };
+  }, [isLoader, def.key]);
+
+  if (Array.isArray(source)) return { options: source, loading: false };
+  if (isLoader) return { options: loaded ?? EMPTY, loading };
+  if (source === "auto") {
+    devWarn(
+      `filter "${def.key}" uses options: "auto" on a tier with no full dataset — provide an options array or loader.`
+    );
+  }
+  return { options: EMPTY, loading: false };
+}

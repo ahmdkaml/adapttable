@@ -1,13 +1,15 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 interface IconProps {
   size?: number;
   className?: string;
+  style?: CSSProperties;
 }
 
 function Svg({
   size = 16,
   className,
+  style,
   children,
 }: IconProps & { children: ReactNode }) {
   return (
@@ -21,6 +23,7 @@ function Svg({
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      style={style}
       aria-hidden="true"
       focusable="false"
     >
@@ -48,6 +51,13 @@ export const ChevronUpIcon = (p: IconProps) => (
 export const ChevronDownIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="m6 9 6 6 6-6" />
+  </Svg>
+);
+
+/** Right chevron (collapsed row-detail toggle; rotates 90° when expanded). */
+export const ChevronRightIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9 6 6 6-6 6" />
   </Svg>
 );
 

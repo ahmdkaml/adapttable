@@ -7,6 +7,8 @@ export const it: Required<TableLabels> = {
   searchPlaceholder: "Cerca…",
   noData: "Nessun dato",
   noResults: "Nessun risultato corrisponde ai filtri",
+  expandRow: "Espandi riga",
+  collapseRow: "Comprimi riga",
   loading: "Caricamento…",
   loadMore: "Carica altro",
   filters: "Filtri",

@@ -1,7 +1,12 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { ExtraFilters, FilterDef, FilterValue } from "../index";
+import type {
+  ExtraFilters,
+  FilterDef,
+  FilterOption,
+  FilterValue,
+} from "../index";
 import { renderChakra } from "../test-utils";
 import { AutoFilterForm } from "./AutoFilterForm";
 
@@ -102,6 +107,61 @@ describe("<AutoFilterForm> (Chakra)", () => {
       target: { value: "2026-03-31" },
     });
     expect(setExtra).toHaveBeenCalledWith("hiredAtTo", "2026-03-31");
+  });
+
+  it("select: shows one disabled placeholder option while async options load", async () => {
+    let resolve!: (value: readonly FilterOption[]) => void;
+    renderForm([
+      {
+        key: "status",
+        type: "select",
+        options: () =>
+          new Promise<readonly FilterOption[]>((r) => {
+            resolve = r;
+          }),
+      },
+    ]);
+    const select = screen.getByLabelText("Status");
+    // While loading the select renders a single disabled "…" option — the
+    // static option list must never be mapped from the unresolved source.
+    const placeholder = within(select).getByRole("option");
+    expect(placeholder).toBeDisabled();
+    expect(placeholder).toHaveTextContent("…");
+    await act(async () => {
+      resolve(STATUS_OPTIONS);
+      await Promise.resolve();
+    });
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent)
+    ).toEqual(["All", "Active", "Inactive"]);
+  });
+
+  it("multiSelect: shows a spinner while async options load, then the checkboxes", async () => {
+    let resolve!: (value: readonly FilterOption[]) => void;
+    const defs: FilterDef[] = [
+      {
+        key: "tags",
+        type: "multiSelect",
+        options: () =>
+          new Promise<readonly FilterOption[]>((r) => {
+            resolve = r;
+          }),
+      },
+    ];
+    const { container } = renderChakra(
+      <AutoFilterForm defs={defs} source={{ extra: {}, setExtra: vi.fn() }} />
+    );
+    expect(container.querySelector(".chakra-spinner")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    await act(async () => {
+      resolve(TAG_OPTIONS);
+      await Promise.resolve();
+    });
+    expect(container.querySelector(".chakra-spinner")).toBeNull();
+    expect(screen.getByLabelText("Alpha")).toBeInTheDocument();
+    expect(screen.getByLabelText("Beta")).toBeInTheDocument();
   });
 
   it("numberRange: reads numbers from the URL state and writes the Min/Max keys", () => {

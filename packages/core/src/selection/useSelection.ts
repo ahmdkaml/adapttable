@@ -68,20 +68,28 @@ export function useSelection<TRow>({
     [selected, internal]
   );
 
+  // The mutators below close over `commit`; reading the live mode/state
+  // through this ref keeps their identities PERMANENTLY stable — memoized
+  // adapter rows can hold `toggle` forever without computing from a stale
+  // set in the controlled mode.
+  const modeRef = useRef({ controlled, onChange, selectedIds });
+  modeRef.current = { controlled, onChange, selectedIds };
+
   /** Route a change to the parent (controlled) or internal state. */
   const commit = useCallback(
     (compute: (prev: ReadonlySet<string>) => Set<string>) => {
-      if (controlled) {
-        onChange?.([...compute(selectedIds)]);
+      const live = modeRef.current;
+      if (live.controlled) {
+        live.onChange?.([...compute(live.selectedIds)]);
       } else {
         setInternal((prev) => compute(prev));
       }
     },
-    [controlled, onChange, selectedIds]
+    []
   );
 
   // Clear on reset-key change, but not on first mount. The effect reads the
-  // LATEST commit/selection through refs so only `resetKey` retriggers it.
+  // LATEST size through a ref so only `resetKey` retriggers it.
   const liveRef = useRef({ commit, size: selectedIds.size });
   liveRef.current = { commit, size: selectedIds.size };
   const firstRef = useRef(true);
@@ -141,14 +149,19 @@ export function useSelection<TRow>({
 
   const clear = useCallback(() => commit(() => new Set()), [commit]);
 
-  return {
-    selectedIds,
-    selectedCount: selectedIds.size,
-    headerState,
-    isSelected,
-    toggle,
-    toggleAll,
-    clear,
-    visibleIds,
-  };
+  // Stable identity: row-level React.memo in the adapters depends on the
+  // selection object only changing when the selection actually changes.
+  return useMemo(
+    () => ({
+      selectedIds,
+      selectedCount: selectedIds.size,
+      headerState,
+      isSelected,
+      toggle,
+      toggleAll,
+      clear,
+      visibleIds,
+    }),
+    [selectedIds, headerState, isSelected, toggle, toggleAll, clear, visibleIds]
+  );
 }

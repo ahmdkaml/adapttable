@@ -75,6 +75,12 @@ export interface BaseDataTableProps<TRow> {
    * adapter's own row classes on desktop rows and mobile cards alike.
    */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /**
+   * Row expansion: render a detail panel under a row. Its presence enables
+   * the leading expand chevron on desktop rows and the detail section on
+   * mobile cards; multiple rows may be open, keyed by row id.
+   */
+  renderRowDetail?: (row: TRow) => ReactNode;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
 

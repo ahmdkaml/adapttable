@@ -5,12 +5,12 @@
  */
 import { createMemoryAdapter } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { DataTable } from "./DataTable";
-import type { ColumnDef, FilterDef, TableQuery } from "./index";
+import type { ColumnDef, FilterDef, FilterOption, TableQuery } from "./index";
 import { renderMui } from "./test-utils";
 
 interface Person {
@@ -314,6 +314,60 @@ describe("declarative DataTable (MUI)", () => {
 });
 
 describe("<AutoFilterForm> (MUI)", () => {
+  it("async select options load lazily: disabled placeholder, then choices", async () => {
+    const load = vi.fn(() =>
+      Promise.resolve<readonly FilterOption[]>([
+        { value: "active", label: "Active" },
+      ])
+    );
+    const adapter = mountTable({
+      columns: [{ key: "firstName" }],
+      filters: [{ key: "status", type: "select", options: load }],
+    });
+    openFilters();
+    const select = screen.getByLabelText("Status");
+    // While the loader is in flight: the All reset plus one disabled "…" row.
+    expect(within(select).getByRole("option", { name: "…" })).toBeDisabled();
+    expect(
+      await within(select).findByRole("option", { name: "Active" })
+    ).toBeInTheDocument();
+    expect(within(select).queryByRole("option", { name: "…" })).toBeNull();
+    expect(load).toHaveBeenCalledTimes(1);
+    // The loaded choices write filter state like any static option list.
+    fireEvent.change(select, { target: { value: "active" } });
+    expect(param(adapter, "f_status")).toBe("active");
+  });
+
+  it("async multiSelect options show a spinner while loading, then checkboxes", async () => {
+    let resolveOptions!: (options: readonly FilterOption[]) => void;
+    mountTable({
+      columns: [{ key: "firstName" }],
+      filters: [
+        {
+          key: "department.name",
+          type: "multiSelect",
+          label: "Department",
+          options: () =>
+            new Promise<readonly FilterOption[]>((resolve) => {
+              resolveOptions = resolve;
+            }),
+        },
+      ],
+    });
+    openFilters();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+
+    await act(async () => {
+      resolveOptions([{ value: "Engineering", label: "Engineering" }]);
+      // Let the loader's .then handlers run before asserting.
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Engineering" }));
+    expect(screen.getByRole("checkbox", { name: "Engineering" })).toBeChecked();
+  });
+
   it("renders option-less select and multiSelect without choices", () => {
     const setExtra = vi.fn();
     renderMui(

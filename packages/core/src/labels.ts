@@ -10,6 +10,8 @@ export const defaultLabels: Required<TableLabels> = {
   searchPlaceholder: "Search…",
   noData: "No data",
   noResults: "No results match your filters",
+  expandRow: "Expand row",
+  collapseRow: "Collapse row",
   loading: "Loading…",
   loadMore: "Load more",
   filters: "Filters",

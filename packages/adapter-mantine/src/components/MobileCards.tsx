@@ -18,6 +18,7 @@ import {
 import type { RefObject } from "react";
 
 import type { Density } from "../density";
+import { ExpandToggle } from "./ExpandToggle";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared
@@ -33,6 +34,8 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "getRowId"
   | "onRowClick"
   | "rowClassName"
+  | "renderRowDetail"
+  | "expansion"
   | "rowEntries"
   | "paddingTop"
   | "paddingBottom"
@@ -66,6 +69,8 @@ export function MobileCards<TRow>({
   density = "comfortable",
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -108,6 +113,16 @@ export function MobileCards<TRow>({
                   onChange={() => selection.toggle(id)}
                 />
               )}
+              {expansion && (
+                <Group justify="flex-end">
+                  <ExpandToggle
+                    expanded={expansion.isExpanded(id)}
+                    expandLabel={labels.expandRow}
+                    collapseLabel={labels.collapseRow}
+                    onToggle={() => expansion.toggle(id)}
+                  />
+                </Group>
+              )}
               {columns.map((column) => (
                 <div key={column.key}>
                   <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
@@ -122,6 +137,9 @@ export function MobileCards<TRow>({
                   </Text>
                 </div>
               ))}
+              {expansion?.isExpanded(id) === true && (
+                <div>{renderRowDetail!(row)}</div>
+              )}
               {rowActions && rowActions.length > 0 && (
                 <Group gap={4} justify="flex-end" pt={4}>
                   {rowActions.map((action) => {

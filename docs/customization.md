@@ -289,3 +289,49 @@ const [ids, setIds] = useState<string[]>(["42"]);
   onSelectionChange={setIds}
 />;
 ```
+
+## Row detail panels
+
+```tsx
+<DataTable
+  data={orders}
+  columns={columns}
+  rowKey={(o) => o.id}
+  renderRowDetail={(order) => <OrderLines order={order} />}
+/>
+```
+
+A chevron appears on every row (and on mobile cards); several rows can be
+open at once, and expansion is keyed by row id so it survives sorting and
+page changes.
+
+## Filter options without typing them out
+
+```tsx
+columns={[
+  // distinct values from your data, sorted:
+  { key: "status", filter: { type: "multiSelect", options: "auto" } },
+]}
+filters={[
+  // or load them from your API when the form opens:
+  {
+    key: "companyId",
+    type: "select",
+    label: "Company",
+    options: async () => (await fetch("/api/companies")).json(),
+  },
+]}
+```
+
+## Keeping rows fast (memoization)
+
+Adapter rows are memoized: unrelated re-renders (search keystrokes, menu
+state) skip unchanged rows. Two things defeat it — both fixed by hoisting:
+
+- inline `columns` / `labels` / `rowActions` arrays re-mint identities every
+  render; declare them at module level (or `useMemo` them);
+- the headless `table` object and its prop-getters are per-render by design —
+  custom renderers should compare primitive inputs, not `table` identity.
+
+`selection.toggle`, `expansion.toggle` and the other core callbacks are
+identity-stable, so they are always safe to hold in memoized rows.

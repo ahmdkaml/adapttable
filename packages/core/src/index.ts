@@ -48,6 +48,7 @@ export {
 /* ── Declarative filters & data tiers ──────────────────────────────── */
 export { resolveColumns } from "./columns/resolveColumns";
 export {
+  AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,
   type ColumnFilter,
@@ -55,13 +56,19 @@ export {
   type FilterDef,
   filterLabel,
   type FilterOption,
+  type FilterOptionsSource,
   filterPredicate,
   type FilterRuntime,
   filterStateKeys,
   type FilterType,
+  materializeAutoOptions,
   RANGE_SUFFIXES,
   resolveFilterDefs,
 } from "./filters/filterDefs";
+export {
+  type ResolvedFilterOptions,
+  useFilterOptions,
+} from "./filters/useFilterOptions";
 export type { BaseDataTableProps } from "./props";
 export {
   type TableQuery,
@@ -297,6 +304,10 @@ export { stableKey } from "./utils/stableKey";
 
 /* ── Rows ──────────────────────────────────────────────────────────── */
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+export {
+  type RowExpansionState,
+  useRowExpansion,
+} from "./rows/useRowExpansion";
 
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";

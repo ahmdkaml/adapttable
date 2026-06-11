@@ -173,6 +173,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         getRowId={getRowId}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        expansion={chrome.expansion}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -192,6 +194,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         prefetch={prefetch}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        expansion={chrome.expansion}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}

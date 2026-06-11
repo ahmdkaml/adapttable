@@ -7,16 +7,24 @@ import {
   type PinLeads,
   pinnedCellStyle,
   pinnedColumnWidth,
+  type PinOffset,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
   runRowAction,
   type SharedTableRenderProps,
+  type TableLabels,
   tableMinWidth,
   tableRenderModel,
+  type UseDataTableResult,
 } from "@adapttable/core";
-import type { CSSProperties, MouseEvent } from "react";
+import type { CSSProperties, MouseEvent, ReactElement, ReactNode } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
+
+import { cx } from "../cx";
+import type { DataTableClassNames } from "../types";
+import { ChevronIcon } from "./icons";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -30,8 +38,10 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
   userSelect: "none",
 };
 
-import { cx } from "../cx";
-import type { DataTableClassNames } from "../types";
+// The leading checkbox (44px) and trailing actions (120px) columns pin to the
+// edge alongside the data columns, which therefore start past them.
+const SELECTION_WIDTH = 44;
+const ACTIONS_WIDTH = 120;
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   classNames: DataTableClassNames;
@@ -85,6 +95,259 @@ function RowActionButtons<TRow>({
   );
 }
 
+/**
+ * The expand/collapse chevron, shared by desktop rows and mobile cards. The
+ * `data-expanded` attribute is the styling hook for rotating the glyph
+ * (`rowClickProps`' interactive-child guard keeps the click off the row).
+ */
+function ExpandButton({
+  expanded,
+  labels,
+  classNames,
+  onToggle,
+}: Readonly<{
+  expanded: boolean;
+  labels: Required<TableLabels>;
+  classNames: DataTableClassNames;
+  onToggle: () => void;
+}>) {
+  return (
+    <button
+      type="button"
+      data-adapttable-part="expand-button"
+      data-expanded={expanded ? "" : undefined}
+      className={classNames.expandButton}
+      aria-expanded={expanded}
+      aria-label={expanded ? labels.collapseRow : labels.expandRow}
+      onClick={onToggle}
+    >
+      <ChevronIcon size={14} />
+    </button>
+  );
+}
+
+/**
+ * Props for the memoized desktop row. The comparator below checks ONLY the
+ * visual inputs (row data, selected/expanded state, column + width + class
+ * identities, the pin signature); everything else — `table`, the latest-ref
+ * callback wrappers, `confirm`, `pinOffset`, `measureElement` — is either
+ * stable or only consulted when one of the compared inputs re-renders the
+ * row, so a fresh identity there must not (and does not) defeat the memo.
+ */
+interface DesktopRowProps<TRow> {
+  row: TRow;
+  index: number;
+  /** Stable row id (selection + expansion key). */
+  id: string;
+  /** Headless model (prop-getters); a fresh object every render — uncompared. */
+  table: UseDataTableResult<TRow>;
+  columns: ColumnDef<TRow>[];
+  labels: Required<TableLabels>;
+  classNames: DataTableClassNames;
+  /** `undefined` = no selection column; otherwise the row's selected state. */
+  selected: boolean | undefined;
+  /** `undefined` = no expansion column; otherwise the row's expanded state. */
+  expanded: boolean | undefined;
+  showActions: boolean;
+  rowActions?: RowAction<TRow>[];
+  confirm: ConfirmHandler;
+  /** Spacer span over selection + data + actions (detail adds the expand col). */
+  columnSpan: number;
+  /**
+   * Comparator-only input: body cells inherit widths from the header's table
+   * layout, but a width change must still re-render pinned rows (insets).
+   */
+  columnWidths?: Readonly<Record<string, number>>;
+  pinOffset?: (key: string) => PinOffset | undefined;
+  /** Value-comparable digest of every column's pin side + inset. */
+  pinSignature: string;
+  hasLeftPin: boolean;
+  hasRightPin: boolean;
+  /** Pre-computed `rowClassName(row, index)` output (value-compared). */
+  rowClass: string | undefined;
+  clickable: boolean;
+  hasPrefetch: boolean;
+  /* Latest-ref wrappers from DesktopTable — identity-stable for the mount. */
+  onRowClick: (row: TRow) => void;
+  onPrefetch: (row: TRow) => void;
+  onToggleSelect: (id: string) => void;
+  onToggleExpand: (id: string) => void;
+  renderDetail: (row: TRow) => ReactNode;
+  measureElement?: (element: Element | null) => void;
+}
+
+/**
+ * `React.memo` comparator: re-render a row only when one of its VISUAL
+ * inputs changes. A search keystroke or another row's checkbox re-renders
+ * the table shell, but every unchanged row bails out here (accessors and
+ * Cell render-props are not re-invoked).
+ */
+function desktopRowPropsEqual<TRow>(
+  prev: Readonly<DesktopRowProps<TRow>>,
+  next: Readonly<DesktopRowProps<TRow>>
+): boolean {
+  return (
+    prev.row === next.row &&
+    prev.index === next.index &&
+    prev.id === next.id &&
+    prev.selected === next.selected &&
+    prev.expanded === next.expanded &&
+    prev.columns === next.columns &&
+    prev.labels === next.labels &&
+    prev.classNames === next.classNames &&
+    prev.showActions === next.showActions &&
+    prev.rowActions === next.rowActions &&
+    prev.columnSpan === next.columnSpan &&
+    prev.columnWidths === next.columnWidths &&
+    prev.pinSignature === next.pinSignature &&
+    prev.hasLeftPin === next.hasLeftPin &&
+    prev.hasRightPin === next.hasRightPin &&
+    prev.rowClass === next.rowClass &&
+    prev.clickable === next.clickable &&
+    prev.hasPrefetch === next.hasPrefetch
+  );
+}
+
+function DesktopRowBase<TRow>(
+  props: Readonly<DesktopRowProps<TRow>>
+): ReactElement {
+  const {
+    row,
+    index,
+    id,
+    table,
+    columns,
+    labels,
+    classNames,
+    selected,
+    expanded,
+    showActions,
+    rowActions,
+    confirm,
+    columnSpan,
+    pinOffset,
+    hasLeftPin,
+    hasRightPin,
+    rowClass,
+    clickable,
+    hasPrefetch,
+    onRowClick,
+    onPrefetch,
+    onToggleSelect,
+    onToggleExpand,
+    renderDetail,
+    measureElement,
+  } = props;
+  const expandable = expanded !== undefined;
+  const leads: PinLeads = {
+    left: selected !== undefined ? SELECTION_WIDTH : 0,
+    right: showActions ? ACTIONS_WIDTH : 0,
+  };
+  const bodyPinStyle = (key: string): CSSProperties | undefined =>
+    pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
+  const rowProps = { ...table.getRowProps(row, index) };
+  delete rowProps.key;
+  return (
+    <>
+      <tr
+        {...rowProps}
+        {...rowClickProps(row, clickable ? onRowClick : undefined)}
+        ref={measureElement}
+        data-adapttable-part="row"
+        data-selected={selected ? "" : undefined}
+        data-clickable={clickable ? "" : undefined}
+        className={cx(classNames.row, rowClass)}
+        onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}
+      >
+        {expandable && (
+          <td
+            data-adapttable-part="expand-cell"
+            className={classNames.expandCell}
+          >
+            <ExpandButton
+              expanded={expanded}
+              labels={labels}
+              classNames={classNames}
+              onToggle={() => onToggleExpand(id)}
+            />
+          </td>
+        )}
+        {selected !== undefined && (
+          <td
+            data-adapttable-part="selection-cell"
+            data-pinned={hasLeftPin ? "left" : undefined}
+            style={edgePinStyle("left", hasLeftPin, PIN_Z.body)}
+            className={cx(classNames.cell, classNames.selectionCell)}
+          >
+            <input
+              type="checkbox"
+              aria-label={labels.selectRow}
+              checked={selected}
+              onChange={() => onToggleSelect(id)}
+              className={classNames.checkbox}
+            />
+          </td>
+        )}
+        {columns.map((column) => {
+          const pinStyle = bodyPinStyle(column.key);
+          return (
+            <td
+              key={column.key}
+              {...table.getCellProps(column, pinStyle && { style: pinStyle })}
+              data-adapttable-part="cell"
+              data-pinned={pinOffset?.(column.key)?.side}
+              className={classNames.cell}
+            >
+              {column.Cell ? (
+                <column.Cell row={row} rowIndex={index} />
+              ) : (
+                column.accessor?.(row)
+              )}
+            </td>
+          );
+        })}
+        {showActions && (
+          <td
+            data-adapttable-part="actions-cell"
+            data-pinned={hasRightPin ? "right" : undefined}
+            style={edgePinStyle("right", hasRightPin, PIN_Z.body)}
+            className={cx(classNames.cell, classNames.actionsCell)}
+          >
+            <RowActionButtons
+              row={row}
+              actions={rowActions!}
+              confirm={confirm}
+              cancelLabel={labels.cancel}
+              classNames={classNames}
+            />
+          </td>
+        )}
+      </tr>
+      {expandable && expanded && (
+        <tr data-adapttable-part="detail-row" className={classNames.detailRow}>
+          <td
+            colSpan={columnSpan + 1}
+            data-adapttable-part="detail-cell"
+            className={classNames.detailCell}
+          >
+            {renderDetail(row)}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+/**
+ * One memoized row component per `DesktopTable` instantiation. A factory
+ * (called once through `useMemo`) instead of a module-level `memo(...)`
+ * because `React.memo` erases a generic component's type parameter — the
+ * factory keeps `TRow` without a type cast.
+ */
+function createDesktopRow<TRow>() {
+  return memo<DesktopRowProps<TRow>>(DesktopRowBase, desktopRowPropsEqual);
+}
+
 /** Desktop semantic `<table>` rendering. */
 export function DesktopTable<TRow>({
   table,
@@ -96,6 +359,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -110,6 +375,54 @@ export function DesktopTable<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels, showActions, entries, columnSpan } =
     tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
+  // Expansion is active only when BOTH halves arrive (the chrome only builds
+  // the state when `renderRowDetail` is set).
+  const expansionState = renderRowDetail ? expansion : undefined;
+  const expandable = expansionState !== undefined;
+  // The expand chevron adds a leading column, so full-width spacers span it.
+  const spacerSpan = expandable ? columnSpan + 1 : columnSpan;
+
+  // The memoized row compares visual inputs only; callbacks reach it through
+  // these identity-stable wrappers that always invoke the LATEST handler
+  // (selection.toggle and friends change identity with the selection, and a
+  // bailed-out row must never fire a stale closure — controlled selection
+  // would otherwise compute from an outdated set).
+  const live = useRef({
+    selection,
+    expansion: expansionState,
+    onRowClick,
+    prefetch,
+    renderRowDetail,
+  });
+  live.current = {
+    selection,
+    expansion: expansionState,
+    onRowClick,
+    prefetch,
+    renderRowDetail,
+  };
+  const onToggleSelect = useCallback(
+    (id: string) => live.current.selection?.toggle(id),
+    []
+  );
+  const onToggleExpand = useCallback(
+    (id: string) => live.current.expansion?.toggle(id),
+    []
+  );
+  const handleRowClick = useCallback(
+    (row: TRow) => live.current.onRowClick?.(row),
+    []
+  );
+  const handlePrefetch = useCallback(
+    (row: TRow) => live.current.prefetch?.(row),
+    []
+  );
+  const renderDetail = useCallback(
+    (row: TRow) => live.current.renderRowDetail?.(row),
+    []
+  );
+  const Row = useMemo(() => createDesktopRow<TRow>(), []);
+
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller). The adapter ships no colours, so consumers must give their
   // `headerCell` class an opaque background — the `data-sticky`/`data-pinned`
@@ -124,23 +437,26 @@ export function DesktopTable<TRow>({
       }
     : undefined;
   const stickyAttr = stickyHeader || undefined;
-  // The leading checkbox (44px) and trailing actions (120px) columns pin to the
-  // edge alongside the data columns, which therefore start past them.
-  const selectionWidth = 44;
-  const actionsWidth = 120;
   const leads: PinLeads = {
-    left: selection ? selectionWidth : 0,
-    right: showActions ? actionsWidth : 0,
+    left: selection ? SELECTION_WIDTH : 0,
+    right: showActions ? ACTIONS_WIDTH : 0,
   };
   const hasLeftPin = columns.some((c) => pinOffset?.(c.key)?.side === "left");
   const hasRightPin = columns.some((c) => pinOffset?.(c.key)?.side === "right");
+  // A value-comparable digest of the pin layout: while it is unchanged, a
+  // memoized row's previous pin styles are still correct, so `pinOffset`'s
+  // identity itself stays out of the row comparator.
+  const pinSignature = columns
+    .map((c) => {
+      const pin = pinOffset?.(c.key);
+      return pin ? `${c.key}:${pin.side}:${pin.inset}` : "";
+    })
+    .join("|");
   // Pinned header cells need both the sticky-top and sticky-left/right styles;
   // body cells only the side. Header pins sit above the sticky header so later
   // headers never paint over them on horizontal scroll.
   const headPinStyle = (key: string): CSSProperties | undefined =>
     pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
-  const bodyPinStyle = (key: string): CSSProperties | undefined =>
-    pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
   const headStyle = (column: ColumnDef<TRow>): CSSProperties | undefined => {
     const key = column.key;
     const pin = headPinStyle(key);
@@ -178,7 +494,8 @@ export function DesktopTable<TRow>({
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra: (selection ? selectionWidth : 0) + (showActions ? actionsWidth : 0),
+    extra:
+      (selection ? SELECTION_WIDTH : 0) + (showActions ? ACTIONS_WIDTH : 0),
   });
 
   const tableEl = (
@@ -194,6 +511,15 @@ export function DesktopTable<TRow>({
           data-adapttable-part="header-row"
           className={classNames.headerRow}
         >
+          {expandable && (
+            <th
+              aria-label={labels.expandRow}
+              data-adapttable-part="expand-header"
+              data-sticky={stickyAttr}
+              style={stickyStyle}
+              className={cx(classNames.headerCell, classNames.expandHeader)}
+            />
+          )}
           {selection && (
             <th
               data-adapttable-part="selection-header"
@@ -278,87 +604,52 @@ export function DesktopTable<TRow>({
         {paddingTop > 0 && (
           <tr>
             <td
-              colSpan={columnSpan}
+              colSpan={spacerSpan}
               style={{ height: paddingTop, padding: 0 }}
             />
           </tr>
         )}
         {entries.map(({ row, index, key }) => {
           const id = getRowId(row);
-          const rowProps = { ...table.getRowProps(row, index) };
-          delete rowProps.key;
           return (
-            <tr
+            <Row
               key={key}
-              {...rowProps}
-              {...rowClickProps(row, onRowClick)}
-              ref={measureElement}
-              data-adapttable-part="row"
-              data-selected={selection?.isSelected(id) ? "" : undefined}
-              data-clickable={onRowClick ? "" : undefined}
-              className={cx(classNames.row, rowClassName?.(row, index))}
-              onMouseEnter={prefetch ? () => prefetch(row) : undefined}
-            >
-              {selection && (
-                <td
-                  data-adapttable-part="selection-cell"
-                  data-pinned={hasLeftPin ? "left" : undefined}
-                  style={edgePinStyle("left", hasLeftPin, PIN_Z.body)}
-                  className={cx(classNames.cell, classNames.selectionCell)}
-                >
-                  <input
-                    type="checkbox"
-                    aria-label={labels.selectRow}
-                    checked={selection.isSelected(id)}
-                    onChange={() => selection.toggle(id)}
-                    className={classNames.checkbox}
-                  />
-                </td>
-              )}
-              {columns.map((column) => {
-                const pinStyle = bodyPinStyle(column.key);
-                return (
-                  <td
-                    key={column.key}
-                    {...table.getCellProps(
-                      column,
-                      pinStyle && { style: pinStyle }
-                    )}
-                    data-adapttable-part="cell"
-                    data-pinned={pinOffset?.(column.key)?.side}
-                    className={classNames.cell}
-                  >
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
-                  </td>
-                );
-              })}
-              {showActions && (
-                <td
-                  data-adapttable-part="actions-cell"
-                  data-pinned={hasRightPin ? "right" : undefined}
-                  style={edgePinStyle("right", hasRightPin, PIN_Z.body)}
-                  className={cx(classNames.cell, classNames.actionsCell)}
-                >
-                  <RowActionButtons
-                    row={row}
-                    actions={rowActions!}
-                    confirm={confirm}
-                    cancelLabel={labels.cancel}
-                    classNames={classNames}
-                  />
-                </td>
-              )}
-            </tr>
+              row={row}
+              index={index}
+              id={id}
+              table={table}
+              columns={columns}
+              labels={labels}
+              classNames={classNames}
+              selected={selection ? selection.isSelected(id) : undefined}
+              expanded={
+                expansionState ? expansionState.isExpanded(id) : undefined
+              }
+              showActions={showActions}
+              rowActions={rowActions}
+              confirm={confirm}
+              columnSpan={columnSpan}
+              columnWidths={columnWidths}
+              pinOffset={pinOffset}
+              pinSignature={pinSignature}
+              hasLeftPin={hasLeftPin}
+              hasRightPin={hasRightPin}
+              rowClass={rowClassName?.(row, index)}
+              clickable={Boolean(onRowClick)}
+              hasPrefetch={Boolean(prefetch)}
+              onRowClick={handleRowClick}
+              onPrefetch={handlePrefetch}
+              onToggleSelect={onToggleSelect}
+              onToggleExpand={onToggleExpand}
+              renderDetail={renderDetail}
+              measureElement={measureElement}
+            />
           );
         })}
         {paddingBottom > 0 && (
           <tr>
             <td
-              colSpan={columnSpan}
+              colSpan={spacerSpan}
               style={{ height: paddingBottom, padding: 0 }}
             />
           </tr>
@@ -397,6 +688,8 @@ export function MobileCards<TRow>({
   classNames,
   onRowClick,
   rowClassName,
+  renderRowDetail,
+  expansion,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -404,6 +697,7 @@ export function MobileCards<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const expansionState = renderRowDetail ? expansion : undefined;
   return (
     <ul
       {...table.getTableProps({ role: undefined })}
@@ -420,6 +714,7 @@ export function MobileCards<TRow>({
       )}
       {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
+        const expanded = expansionState?.isExpanded(id) ?? false;
         return (
           <li
             key={key}
@@ -438,6 +733,14 @@ export function MobileCards<TRow>({
                 checked={selection.isSelected(id)}
                 onChange={() => selection.toggle(id)}
                 className={classNames.checkbox}
+              />
+            )}
+            {expansionState && (
+              <ExpandButton
+                expanded={expanded}
+                labels={labels}
+                classNames={classNames}
+                onToggle={() => expansionState.toggle(id)}
               />
             )}
             {columns.map((column) => (
@@ -476,6 +779,16 @@ export function MobileCards<TRow>({
                   cancelLabel={labels.cancel}
                   classNames={classNames}
                 />
+              </div>
+            )}
+            {expanded && (
+              // Inside the measured card `<li>`, so the virtualizer's size
+              // measurement tracks the open detail panel.
+              <div
+                data-adapttable-part="card-detail"
+                className={classNames.cardDetail}
+              >
+                {renderRowDetail!(row)}
               </div>
             )}
           </li>

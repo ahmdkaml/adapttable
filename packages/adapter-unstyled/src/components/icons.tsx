@@ -43,3 +43,14 @@ export const FiltersIcon = (p: Readonly<IconProps>) => (
     <path d="M3 4h18l-7 8v6l-4 2v-8L3 4Z" />
   </Svg>
 );
+
+/**
+ * Right-pointing chevron (▸) for the expand-row button. The button carries a
+ * `data-expanded` attribute so consumers rotate the glyph with their own CSS
+ * (e.g. `[data-expanded] svg { transform: rotate(90deg) }`).
+ */
+export const ChevronIcon = (p: Readonly<IconProps>) => (
+  <Svg {...p}>
+    <path d="m9 6 6 6-6 6" />
+  </Svg>
+);

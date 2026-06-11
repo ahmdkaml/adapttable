@@ -5,6 +5,7 @@ import {
   type FilterValue,
   RANGE_SUFFIXES,
   type TableSource,
+  useFilterOptions,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -14,6 +15,7 @@ import {
   HStack,
   Input,
   Select,
+  Spinner,
   Stack,
 } from "@chakra-ui/react";
 import { useId } from "react";
@@ -58,6 +60,9 @@ function AutoFilterField<TRow>({
   const id = useId();
   const { extra, setExtra } = source;
   const label = filterLabel(def);
+  // Static arrays resolve instantly; async loaders run once and report
+  // `loading` so the select/checkbox controls can show a native affordance.
+  const { options, loading } = useFilterOptions(def);
   switch (def.type) {
     case "text":
       return (
@@ -84,12 +89,20 @@ function AutoFilterField<TRow>({
             value={scalar(extra[def.key])}
             onChange={(e) => setExtra(def.key, e.target.value)}
           >
-            <option value="">All</option>
-            {(def.options ?? []).map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {loading ? (
+              <option value="" disabled>
+                …
               </option>
-            ))}
+            ) : (
+              <>
+                <option value="">All</option>
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </>
+            )}
           </Select>
         </FormControl>
       );
@@ -104,18 +117,22 @@ function AutoFilterField<TRow>({
             value={list(extra[def.key])}
             onChange={(next) => setExtra(def.key, next.map(String))}
           >
-            <HStack spacing={3} flexWrap="wrap" rowGap={1}>
-              {(def.options ?? []).map((option, index) => (
-                <Checkbox
-                  key={option.value}
-                  id={`${id}-${index}`}
-                  size="sm"
-                  value={option.value}
-                >
-                  {option.label}
-                </Checkbox>
-              ))}
-            </HStack>
+            {loading ? (
+              <Spinner size="xs" />
+            ) : (
+              <HStack spacing={3} flexWrap="wrap" rowGap={1}>
+                {options.map((option, index) => (
+                  <Checkbox
+                    key={option.value}
+                    id={`${id}-${index}`}
+                    size="sm"
+                    value={option.value}
+                  >
+                    {option.label}
+                  </Checkbox>
+                ))}
+              </HStack>
+            )}
           </CheckboxGroup>
         </FormControl>
       );

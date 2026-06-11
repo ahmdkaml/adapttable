@@ -6,6 +6,7 @@ import {
   buildFilterRuntime,
   type FilterDef,
   type FilterRuntime,
+  materializeAutoOptions,
   resolveFilterDefs,
 } from "../filters/filterDefs";
 import type {
@@ -131,8 +132,15 @@ export function useTableData<TRow>(
   const declaredFilters = isDeclarativeFilters(filters) ? filters : undefined;
   const runtime = useMemo(
     () =>
-      buildFilterRuntime(resolveFilterDefs(columns, declaredFilters, locale)),
-    [columns, declaredFilters, locale]
+      buildFilterRuntime(
+        materializeAutoOptions(
+          resolveFilterDefs(columns, declaredFilters, locale),
+          // `"auto"` derives from the full frontend dataset; other tiers
+          // only ever see the current page (useFilterOptions dev-warns).
+          data ?? []
+        )
+      ),
+    [columns, declaredFilters, locale, data]
   );
 
   const mode = resolveTier(source, onQueryChange);

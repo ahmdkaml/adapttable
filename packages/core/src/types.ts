@@ -207,6 +207,10 @@ export interface TableLabels {
   noData?: string;
   /** Empty state when an active search/filter matched nothing. */
   noResults?: string;
+  /** Expand-row chevron label (suffixed with the row identity). */
+  expandRow?: string;
+  /** Collapse-row chevron label. */
+  collapseRow?: string;
   loading?: string;
   loadMore?: string;
   filters?: string;

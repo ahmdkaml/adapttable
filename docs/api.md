@@ -126,6 +126,25 @@ Three ways to feed the table, lowest ceremony first:
   export from the table's own column definitions (free; pair with the
   `toolbar` slot).
 
+### Row expansion
+
+- `renderRowDetail(row)` — its presence enables a leading expand chevron on
+  desktop rows and a detail section on mobile cards; multiple rows may be
+  open, keyed by row id (expansion survives sorting and paging). Headless:
+  `useRowExpansion()`. Not recommended with `virtualize` (detail panels are
+  unmeasured sibling rows — a dev warning says so).
+
+### Filter option sources
+
+`FilterDef.options` accepts three sources:
+
+- a static `FilterOption[]`;
+- `"auto"` — distinct values derived from the frontend dataset (sorted,
+  capped at `AUTO_OPTIONS_LIMIT`); other tiers dev-warn (no full dataset);
+- `() => Promise<FilterOption[]>` — resolved lazily when the form first
+  renders, with each kit's native loading affordance
+  (`useFilterOptions(def)` for custom forms).
+
 ### Empty & refresh states
 
 - Zero rows under an active search/filter renders the `noResults` label with

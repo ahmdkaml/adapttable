@@ -112,6 +112,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     resizeLabel: table.labels.resizeColumn,
     onRowClick: props.onRowClick,
     rowClassName: props.rowClassName,
+    renderRowDetail: props.renderRowDetail,
+    expansion: chrome.expansion,
+    dir: props.dir,
   };
   const bodyByRegion: Record<TableBodyRegion, ReactNode> = {
     skeleton: slots?.skeleton ?? (

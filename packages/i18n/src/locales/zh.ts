@@ -7,6 +7,8 @@ export const zh: Required<TableLabels> = {
   searchPlaceholder: "搜索…",
   noData: "暂无数据",
   noResults: "没有符合筛选条件的结果",
+  expandRow: "展开行",
+  collapseRow: "收起行",
   loading: "加载中…",
   loadMore: "加载更多",
   filters: "筛选",

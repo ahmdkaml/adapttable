@@ -156,8 +156,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         size={size}
+        dir={props.dir}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        expansion={c.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -173,9 +176,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         confirm={confirm}
         getRowId={getRowId}
         size={size}
+        dir={props.dir}
         prefetch={props.prefetch}
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
+        renderRowDetail={props.renderRowDetail}
+        expansion={c.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}

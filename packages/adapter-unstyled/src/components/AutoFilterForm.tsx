@@ -4,6 +4,7 @@ import {
   type FilterValue,
   RANGE_SUFFIXES,
   type TableSource,
+  useFilterOptions,
 } from "@adapttable/core";
 import type { ReactElement, ReactNode } from "react";
 
@@ -121,6 +122,9 @@ function SelectField<TRow>({
   source,
   classNames,
 }: Readonly<DefFieldProps<TRow>>) {
+  // `def.options` may be a static array, an async loader, or a leftover
+  // "auto" — never map it directly; the hook resolves all three shapes.
+  const { options, loading } = useFilterOptions(def);
   return (
     <label data-adapttable-part={FIELD_PART} className={classNames.filterField}>
       <span
@@ -135,12 +139,20 @@ function SelectField<TRow>({
         value={asText(source.extra[def.key])}
         onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
       >
-        <option value="">All</option>
-        {(def.options ?? []).map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
+        {loading ? (
+          <option value="" disabled>
+            …
           </option>
-        ))}
+        ) : (
+          <>
+            <option value="">All</option>
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </>
+        )}
       </select>
     </label>
   );
@@ -152,33 +164,44 @@ function MultiSelectField<TRow>({
   classNames,
 }: Readonly<DefFieldProps<TRow>>) {
   const selected = selectedValues(source.extra[def.key]);
+  // Same contract as SelectField: the hook resolves arrays / loaders / "auto".
+  const { options, loading } = useFilterOptions(def);
   return (
     <GroupField caption={filterLabel(def)} classNames={classNames}>
       <div
         data-adapttable-part="filter-checkbox-group"
         className={classNames.filterCheckboxGroup}
       >
-        {(def.options ?? []).map((option) => (
-          <label
-            key={option.value}
-            data-adapttable-part="filter-checkbox"
-            className={classNames.filterCheckbox}
+        {loading ? (
+          <span
+            data-adapttable-part="filter-options-loading"
+            className={classNames.filterOptionsLoading}
           >
-            <input
-              type="checkbox"
-              checked={selected.includes(option.value)}
-              onChange={(e) =>
-                source.setExtra(
-                  def.key,
-                  e.currentTarget.checked
-                    ? [...selected, option.value]
-                    : selected.filter((v) => v !== option.value)
-                )
-              }
-            />{" "}
-            {option.label}
-          </label>
-        ))}
+            …
+          </span>
+        ) : (
+          options.map((option) => (
+            <label
+              key={option.value}
+              data-adapttable-part="filter-checkbox"
+              className={classNames.filterCheckbox}
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(option.value)}
+                onChange={(e) =>
+                  source.setExtra(
+                    def.key,
+                    e.currentTarget.checked
+                      ? [...selected, option.value]
+                      : selected.filter((v) => v !== option.value)
+                  )
+                }
+              />{" "}
+              {option.label}
+            </label>
+          ))
+        )}
       </div>
     </GroupField>
   );

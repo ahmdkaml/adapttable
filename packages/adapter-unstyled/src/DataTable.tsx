@@ -26,7 +26,11 @@ import { FilterPopover } from "./components/FilterPopover";
 import { FiltersIcon, SearchIcon } from "./components/icons";
 import { DesktopTable, MobileCards } from "./components/tables";
 import { cx } from "./cx";
-import type { DataTableProps } from "./types";
+import type { DataTableClassNames, DataTableProps } from "./types";
+
+// A stable default: the memoized desktop rows compare `classNames` by
+// identity, so an inline `{}` default would defeat them on every render.
+const NO_CLASSNAMES: DataTableClassNames = {};
 
 /**
  * `DataTableProps` after tier resolution: the source is definite (whichever
@@ -112,6 +116,8 @@ function DataTableBody<TRow>({
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
       rowClassName={props.rowClassName}
+      renderRowDetail={props.renderRowDetail}
+      expansion={chrome.expansion}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}
@@ -150,7 +156,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hideSearch,
     filtersMode = "popover",
     bulkActions,
-    classNames = {},
+    classNames = NO_CLASSNAMES,
     toolbar: customToolbar,
   } = props;
 

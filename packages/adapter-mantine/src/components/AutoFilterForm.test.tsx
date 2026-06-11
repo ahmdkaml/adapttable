@@ -106,6 +106,55 @@ describe("<AutoFilterForm>", () => {
     expect(screen.getByLabelText("Low")).not.toBeChecked();
   });
 
+  it("select: an async loader shows a disabled placeholder, then the options", async () => {
+    const { source } = makeSource();
+    renderMantine(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "status",
+            type: "select",
+            options: () => Promise.resolve([{ value: "act", label: "Active" }]),
+          },
+        ]}
+        source={source}
+      />
+    );
+    // While the loader is in flight: a single disabled "…" option.
+    const placeholder = screen.getByRole("option", { name: "…" });
+    expect(placeholder).toBeDisabled();
+    expect(screen.queryByRole("option", { name: "All" })).toBeNull();
+    // Loaded: the clearing All entry plus the fetched options.
+    expect(await screen.findByRole("option", { name: "Active" })).toHaveValue(
+      "act"
+    );
+    expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
+    expect(screen.queryByRole("option", { name: "…" })).toBeNull();
+  });
+
+  it("multiSelect: an async loader shows a spinner, then the checkboxes", async () => {
+    const { source } = makeSource();
+    const { container } = renderMantine(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "tags",
+            type: "multiSelect",
+            options: () =>
+              Promise.resolve([{ value: "urgent", label: "Urgent" }]),
+          },
+        ]}
+        source={source}
+      />
+    );
+    // While the loader is in flight: a Loader instead of checkboxes.
+    expect(container.querySelector(".mantine-Loader-root")).not.toBeNull();
+    expect(screen.queryByLabelText("Urgent")).toBeNull();
+    // Loaded: the checkboxes replace the spinner.
+    expect(await screen.findByLabelText("Urgent")).not.toBeChecked();
+    expect(container.querySelector(".mantine-Loader-root")).toBeNull();
+  });
+
   it("dateRange: renders From/To date inputs and writes the paired keys", () => {
     const { source, setExtra } = makeSource({ hiredFrom: "2026-01-01" });
     renderMantine(

@@ -510,3 +510,61 @@ describe("useFilterTriggerToggle", () => {
     expect(setOpen).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("chrome row expansion", () => {
+  it("exposes expansion state only when renderRowDetail is set", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "paged",
+      });
+      return {
+        withDetail: useTableChrome<Row>({
+          source,
+          columns: cols,
+          rowKey: (r: Row) => r.id,
+          renderRowDetail: (r) => r.name,
+        }),
+        without: useTableChrome<Row>({
+          source,
+          columns: cols,
+          rowKey: (r: Row) => r.id,
+        }),
+      };
+    });
+    expect(result.current.without.expansion).toBeUndefined();
+    const expansion = result.current.withDetail.expansion!;
+    expect(expansion.isExpanded("a")).toBe(false);
+    act(() => expansion.toggle("a"));
+    expect(result.current.withDetail.expansion!.isExpanded("a")).toBe(true);
+  });
+
+  it("dev-warns when row details meet virtualization", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true,
+        renderRowDetail: (r: Row) => r.name,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData<Row>(chrome, props);
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("renderRowDetail with virtualize")
+    );
+    warn.mockRestore();
+  });
+});

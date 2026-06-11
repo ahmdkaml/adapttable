@@ -173,6 +173,16 @@ describe("<DataTable> (Mantine)", () => {
     expect(await screen.findByText("drawer body")).toBeInTheDocument();
   });
 
+  it("drawer mode: the Done button closes the drawer again", async () => {
+    renderHarness({
+      override: { filters: <div>drawer body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findByText("drawer body")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    await waitFor(() => expect(screen.queryByText("drawer body")).toBeNull());
+  });
+
   it("popover mode: Escape closes and clear-all fires the handler", async () => {
     const onClearFilters = vi.fn();
     renderHarness({

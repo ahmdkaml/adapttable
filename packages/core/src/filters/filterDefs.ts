@@ -30,6 +30,19 @@ export interface FilterOption {
   label: string;
 }
 
+/**
+ * Where a select/multiSelect gets its choices: a static array, `"auto"`
+ * (distinct values derived from the data — frontend tier; capped and
+ * sorted), or an async loader resolved lazily when the form first renders.
+ */
+export type FilterOptionsSource =
+  | readonly FilterOption[]
+  | "auto"
+  | (() => Promise<readonly FilterOption[]>);
+
+/** Most distinct values `"auto"` will derive before truncating. */
+export const AUTO_OPTIONS_LIMIT = 50;
+
 /** A full, standalone filter definition (the `filters` array form). */
 export interface FilterDef<TRow = unknown> {
   /**
@@ -42,8 +55,8 @@ export interface FilterDef<TRow = unknown> {
   type: FilterType;
   /** Widget + chip label. Defaults to a humanized `key` ("hiredAt" → "Hired At"). */
   label?: string;
-  /** Choices for `select` / `multiSelect`. */
-  options?: readonly FilterOption[];
+  /** Choices for `select` / `multiSelect` — see {@link FilterOptionsSource}. */
+  options?: FilterOptionsSource;
   /** Row-value extractor for the client-side predicate; defaults to `key` as a path. */
   getValue?: (row: TRow) => unknown;
   /** Placeholder for text-like inputs. */
@@ -216,8 +229,17 @@ export interface FilterRuntime<TRow> {
   filterFn: (row: TRow, extra: ExtraFilters) => boolean;
 }
 
-const optionLabel = (def: Pick<FilterDef, "options">, value: string): string =>
-  def.options?.find((o) => o.value === value)?.label ?? value;
+const optionLabel = (
+  def: Pick<FilterDef, "options">,
+  value: string
+): string => {
+  // Only materialized arrays can map values to labels; `"auto"` is
+  // materialized before the runtime builds, and async options label their
+  // chips with the raw value until loaded.
+  if (!Array.isArray(def.options)) return value;
+  const options: readonly FilterOption[] = def.options;
+  return options.find((o) => o.value === value)?.label ?? value;
+};
 
 /** Derive the full runtime (URL keys, chips, predicate) from definitions. */
 export function buildFilterRuntime<TRow>(
@@ -275,4 +297,33 @@ export function clearedFilterExtras<TRow>(
     for (const key of filterStateKeys(def)) out[key] = undefined;
   }
   return out;
+}
+
+/**
+ * Materialize `"auto"` option sources from the data: the distinct values of
+ * each such definition's row projection, sorted, capped at
+ * {@link AUTO_OPTIONS_LIMIT}. Static arrays and async loaders pass through
+ * untouched. Run BEFORE {@link buildFilterRuntime} so chips can label the
+ * derived values.
+ */
+export function materializeAutoOptions<TRow>(
+  defs: readonly FilterDef<TRow>[],
+  rows: readonly TRow[]
+): FilterDef<TRow>[] {
+  return defs.map((def) => {
+    if (def.options !== "auto") return def;
+    const seen = new Set<string>();
+    for (const row of rows) {
+      const text = valueText(
+        def.getValue ? def.getValue(row) : getPath(row, def.key)
+      );
+      if (text !== "") seen.add(text);
+      if (seen.size > AUTO_OPTIONS_LIMIT) break;
+    }
+    const options = [...seen]
+      .sort((a, b) => a.localeCompare(b))
+      .slice(0, AUTO_OPTIONS_LIMIT)
+      .map((value) => ({ value, label: value }));
+    return { ...def, options };
+  });
 }

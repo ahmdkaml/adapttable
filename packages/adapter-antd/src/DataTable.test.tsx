@@ -1071,6 +1071,170 @@ describe("<DataTable> (Ant Design)", () => {
     expect(vip).toHaveLength(1);
     expect(vip[0]).toHaveTextContent("Alice");
   });
+
+  it("renders no expand affordance without renderRowDetail", () => {
+    renderHarness();
+    expect(screen.queryByRole("button", { name: "Expand row" })).toBeNull();
+  });
+
+  it("expands and collapses a row detail via antd's native expandable", () => {
+    const onRowClick = vi.fn();
+    renderHarness({
+      override: {
+        onRowClick,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+      },
+    });
+    // Nothing expanded initially: no detail row in the DOM at all.
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+    const toggles = screen.getAllByRole("button", { name: "Expand row" });
+    expect(toggles).toHaveLength(2); // one per row
+    expect(toggles[0]).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggles[0]!);
+    // Controlled round-trip: the icon toggles chrome state, chrome state
+    // feeds antd's expandedRowKeys, antd renders the dedicated detail row.
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    expect(
+      document.querySelector(".ant-table-expanded-row")
+    ).toBeInTheDocument();
+    const collapse = screen.getByRole("button", { name: "Collapse row" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    // The expand icon is an interactive child — it never activates the row.
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    fireEvent.click(collapse);
+    // rc-table keeps a once-expanded detail row mounted but hidden.
+    expect(screen.getByText("detail-Alice").closest("tr")).not.toBeVisible();
+    expect(screen.getAllByRole("button", { name: "Expand row" })).toHaveLength(
+      2
+    );
+  });
+
+  it("keeps a row's detail open across sorting (id-keyed expandedRowKeys)", () => {
+    renderHarness({
+      override: { renderRowDetail: (r) => <div>detail-{r.name}</div> },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "Expand row" })[0]!);
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    // Sort descending: Bob now leads, but Alice's panel stays open because
+    // the expansion state is keyed by row id, not position.
+    const header = () => screen.getByRole("columnheader", { name: /name/i });
+    fireEvent.click(header());
+    fireEvent.click(header());
+    expect(adapter.getSearch()).toContain("sortDir=desc");
+    expect(screen.getByText("detail-Alice")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Collapse row" })
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("honors labels.expandRow/collapseRow on the expand icon", () => {
+    renderHarness({
+      override: {
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        labels: { expandRow: "Open details", collapseRow: "Close details" },
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Open details" })[0]!
+    );
+    expect(
+      screen.getByRole("button", { name: "Close details" })
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("expands and collapses a mobile card's detail section via the chevron", () => {
+    renderHarness({
+      override: {
+        isMobile: true,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+      },
+    });
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+    const toggle = screen.getAllByRole("button", { name: "Expand row" })[0]!;
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const detail = screen.getByText("detail-Alice");
+    // The detail section renders inside the card itself.
+    expect(
+      detail.closest('[data-adapttable-part="card-detail"]')
+    ).not.toBeNull();
+    expect(detail.closest(".ant-card")).not.toBeNull();
+    // The second card stays collapsed.
+    expect(screen.queryByText("detail-Bob")).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(screen.queryByText("detail-Alice")).toBeNull();
+  });
+
+  it("renders the mobile chevron beside row actions, without activating the row", () => {
+    const onRowClick = vi.fn();
+    renderHarness({
+      override: {
+        isMobile: true,
+        onRowClick,
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+      },
+    });
+    // The first card carries both the chevron and the action button.
+    const card = screen.getAllByRole("listitem")[0]!;
+    expect(
+      within(card).getByRole("button", { name: "Expand row" })
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Edit" })
+    ).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Expand row" }));
+    expect(screen.getByText("detail-Alice")).toBeInTheDocument();
+    // The chevron is an interactive child — it never activates the row…
+    expect(onRowClick).not.toHaveBeenCalled();
+    // …while a click on the card body still does.
+    fireEvent.click(screen.getByText("Alice"));
+    expect(onRowClick).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Alice" })
+    );
+  });
+
+  it("memoizes mobile cards: a search keystroke re-invokes no accessors for unchanged cards", () => {
+    const nameAccessor = vi.fn((r: Row) => r.name);
+    const cityAccessor = vi.fn((r: Row) => r.city);
+    renderHarness({
+      override: {
+        isMobile: true,
+        columns: [
+          { key: "name", header: "Name", accessor: nameAccessor },
+          { key: "city", header: "City", accessor: cityAccessor },
+        ],
+        bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+        renderRowDetail: (r) => <div>detail-{r.name}</div>,
+        rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
+        rowClassName: (r) => (r.name === "Alice" ? "card-vip" : undefined),
+        onRowClick: vi.fn(),
+        prefetch: vi.fn(),
+      },
+    });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(nameAccessor).toHaveBeenCalled();
+    nameAccessor.mockClear();
+    cityAccessor.mockClear();
+
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "a" },
+    });
+    // The toolbar re-rendered (controlled search input)…
+    expect(screen.getByLabelText("Search")).toHaveValue("a");
+    // …but every unchanged card bailed out: no accessor ran again.
+    expect(nameAccessor).not.toHaveBeenCalled();
+    expect(cityAccessor).not.toHaveBeenCalled();
+
+    // A real change (selecting a card) re-renders that card.
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+  });
 });
 
 /* ── Declarative columns, filters & data tiers ─────────────────────── */

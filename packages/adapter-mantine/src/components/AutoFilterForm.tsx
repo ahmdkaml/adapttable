@@ -4,11 +4,13 @@ import {
   type FilterValue,
   RANGE_SUFFIXES,
   type TableSource,
+  useFilterOptions,
 } from "@adapttable/core";
 import {
   Checkbox,
   Group,
   Input,
+  Loader,
   NativeSelect,
   Stack,
   TextInput,
@@ -74,53 +76,86 @@ function RangePair<TRow>({
   );
 }
 
+/**
+ * Single-choice control. Options resolve through {@link useFilterOptions}
+ * (static array, async loader, or none); while a loader is in flight the
+ * select shows one disabled placeholder option.
+ */
+function SelectControl<TRow>({
+  def,
+  source,
+}: Readonly<{ def: FilterDef<TRow>; source: TableSource<TRow> }>) {
+  const label = filterLabel(def);
+  const { options, loading } = useFilterOptions(def);
+  const data = loading
+    ? [{ value: "", label: "…", disabled: true }]
+    : [{ value: "", label: "All" }, ...options];
+  return (
+    <NativeSelect
+      size="sm"
+      label={label}
+      data={data}
+      value={asText(source.extra[def.key])}
+      onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
+    />
+  );
+}
+
+/**
+ * Multi-choice control. Options resolve through {@link useFilterOptions};
+ * while a loader is in flight the group shows a small spinner instead of
+ * checkboxes.
+ */
+function MultiSelectControl<TRow>({
+  def,
+  source,
+}: Readonly<{ def: FilterDef<TRow>; source: TableSource<TRow> }>) {
+  const label = filterLabel(def);
+  const { options, loading } = useFilterOptions(def);
+  return (
+    <Checkbox.Group
+      label={label}
+      value={asList(source.extra[def.key])}
+      onChange={(values) => source.setExtra(def.key, values)}
+    >
+      <Group gap="sm" mt={4}>
+        {loading ? (
+          <Loader size="xs" />
+        ) : (
+          options.map((option) => (
+            <Checkbox
+              key={option.value}
+              size="sm"
+              value={option.value}
+              label={option.label}
+            />
+          ))
+        )}
+      </Group>
+    </Checkbox.Group>
+  );
+}
+
 /** One labeled, kit-native control for a single filter definition. */
 function FilterControl<TRow>({
   def,
   source,
 }: Readonly<{ def: FilterDef<TRow>; source: TableSource<TRow> }>) {
-  const label = filterLabel(def);
-  const options = def.options ?? [];
   switch (def.type) {
     case "text":
       return (
         <TextInput
           size="sm"
-          label={label}
+          label={filterLabel(def)}
           placeholder={def.placeholder}
           value={asText(source.extra[def.key])}
           onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
         />
       );
     case "select":
-      return (
-        <NativeSelect
-          size="sm"
-          label={label}
-          data={[{ value: "", label: "All" }, ...options]}
-          value={asText(source.extra[def.key])}
-          onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
-        />
-      );
+      return <SelectControl def={def} source={source} />;
     case "multiSelect":
-      return (
-        <Checkbox.Group
-          label={label}
-          value={asList(source.extra[def.key])}
-          onChange={(values) => source.setExtra(def.key, values)}
-        >
-          <Group gap="sm" mt={4}>
-            {options.map((option) => (
-              <Checkbox
-                key={option.value}
-                size="sm"
-                value={option.value}
-                label={option.label}
-              />
-            ))}
-          </Group>
-        </Checkbox.Group>
-      );
+      return <MultiSelectControl def={def} source={source} />;
     case "dateRange":
       return (
         <RangePair

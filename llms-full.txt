@@ -849,6 +849,52 @@ const [ids, setIds] = useState<string[]>(["42"]);
 />;
 ```
 
+## Row detail panels
+
+```tsx
+<DataTable
+  data={orders}
+  columns={columns}
+  rowKey={(o) => o.id}
+  renderRowDetail={(order) => <OrderLines order={order} />}
+/>
+```
+
+A chevron appears on every row (and on mobile cards); several rows can be
+open at once, and expansion is keyed by row id so it survives sorting and
+page changes.
+
+## Filter options without typing them out
+
+```tsx
+columns={[
+  // distinct values from your data, sorted:
+  { key: "status", filter: { type: "multiSelect", options: "auto" } },
+]}
+filters={[
+  // or load them from your API when the form opens:
+  {
+    key: "companyId",
+    type: "select",
+    label: "Company",
+    options: async () => (await fetch("/api/companies")).json(),
+  },
+]}
+```
+
+## Keeping rows fast (memoization)
+
+Adapter rows are memoized: unrelated re-renders (search keystrokes, menu
+state) skip unchanged rows. Two things defeat it — both fixed by hoisting:
+
+- inline `columns` / `labels` / `rowActions` arrays re-mint identities every
+  render; declare them at module level (or `useMemo` them);
+- the headless `table` object and its prop-getters are per-render by design —
+  custom renderers should compare primitive inputs, not `table` identity.
+
+`selection.toggle`, `expansion.toggle` and the other core callbacks are
+identity-stable, so they are always safe to hold in memoized rows.
+
 ---
 
 # API reference
@@ -978,6 +1024,25 @@ Three ways to feed the table, lowest ceremony first:
 - `rowsToCsv(rows, columns, options?)` + `downloadCsv(filename, csv)` — CSV
   export from the table's own column definitions (free; pair with the
   `toolbar` slot).
+
+### Row expansion
+
+- `renderRowDetail(row)` — its presence enables a leading expand chevron on
+  desktop rows and a detail section on mobile cards; multiple rows may be
+  open, keyed by row id (expansion survives sorting and paging). Headless:
+  `useRowExpansion()`. Not recommended with `virtualize` (detail panels are
+  unmeasured sibling rows — a dev warning says so).
+
+### Filter option sources
+
+`FilterDef.options` accepts three sources:
+
+- a static `FilterOption[]`;
+- `"auto"` — distinct values derived from the frontend dataset (sorted,
+  capped at `AUTO_OPTIONS_LIMIT`); other tiers dev-warn (no full dataset);
+- `() => Promise<FilterOption[]>` — resolved lazily when the form first
+  renders, with each kit's native loading affordance
+  (`useFilterOptions(def)` for custom forms).
 
 ### Empty & refresh states
 

@@ -12,8 +12,11 @@
  *
  * @typeParam TRow - The row type.
  */
+import type { ReactNode } from "react";
+
 import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
+import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
@@ -40,6 +43,10 @@ export interface SharedTableRenderProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
+  renderRowDetail?: (row: TRow) => ReactNode;
+  /** Expansion state, present when `renderRowDetail` is set. */
+  expansion?: RowExpansionState;
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];
   /** Spacer height above the virtual window. */

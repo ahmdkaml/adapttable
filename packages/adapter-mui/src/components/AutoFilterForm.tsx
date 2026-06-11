@@ -5,9 +5,11 @@ import {
   type FilterValue,
   RANGE_SUFFIXES,
   type TableSource,
+  useFilterOptions,
 } from "@adapttable/core";
 import {
   Checkbox,
+  CircularProgress,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -58,6 +60,9 @@ function TextFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
 }
 
 function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
+  // The options source may be an array OR an async loader — never map it
+  // directly. The hook resolves both (and reports loader progress).
+  const { options, loading } = useFilterOptions(def);
   return (
     <TextField
       select
@@ -71,7 +76,12 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       }}
     >
       <option value="">All</option>
-      {(def.options ?? []).map((option) => (
+      {loading && (
+        <option value="" disabled>
+          …
+        </option>
+      )}
+      {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
@@ -81,6 +91,7 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
 }
 
 function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
+  const { options, loading } = useFilterOptions(def);
   const checked = selectedList(source.extra[def.key]);
   const toggle = (value: string, on: boolean) => {
     const next = on ? [...checked, value] : checked.filter((v) => v !== value);
@@ -90,19 +101,23 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
     <FormControl component="fieldset" variant="standard">
       <FormLabel component="legend">{filterLabel(def)}</FormLabel>
       <FormGroup row sx={{ columnGap: 1.5 }}>
-        {(def.options ?? []).map((option) => (
-          <FormControlLabel
-            key={option.value}
-            label={option.label}
-            control={
-              <Checkbox
-                size="small"
-                checked={checked.includes(option.value)}
-                onChange={(_, on) => toggle(option.value, on)}
-              />
-            }
-          />
-        ))}
+        {loading ? (
+          <CircularProgress size={16} />
+        ) : (
+          options.map((option) => (
+            <FormControlLabel
+              key={option.value}
+              label={option.label}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={checked.includes(option.value)}
+                  onChange={(_, on) => toggle(option.value, on)}
+                />
+              }
+            />
+          ))
+        )}
       </FormGroup>
     </FormControl>
   );
