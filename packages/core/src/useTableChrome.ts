@@ -384,7 +384,12 @@ export function useChromeBodyData<TRow>(
     getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
   });
-  const canLoadMore = !chrome.isPaged && !source.error;
+  // A virtual window INSIDE a maxHeight box extends itself at the box's
+  // scroll end — the box never grows, so a page-level sentinel below it
+  // would stay visible and fire forever (and a Load-more button appends
+  // rows the window doesn't show). Both yield to the box.
+  const boxVirtual = virtualization.enabled && inScrollBox;
+  const canLoadMore = !chrome.isPaged && !source.error && !boxVirtual;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),

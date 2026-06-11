@@ -100,7 +100,6 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState("mantine");
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
-  const [pageMode, setPageMode] = useState<PageMode>("paged");
   const [density, setDensity] = useState<Density>("comfortable");
   const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const token =
@@ -160,17 +159,6 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
-        <Control label="Paging">
-          <Segmented
-            label="pagination"
-            value={pageMode}
-            onChange={setPageMode}
-            options={[
-              { value: "paged", label: "Paged" },
-              { value: "infinite", label: "Infinite" },
-            ]}
-          />
-        </Control>
         <Control label="Filters">
           <Segmented
             label="filters container"
@@ -205,13 +193,12 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
         </div>
         <div
           className="demo-surface__body"
-          key={`${adapter}-${mode}-${locale}-${pageMode}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
+          key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
         >
           <Demo
             mode={mode}
             locale={locale}
             dark={dark}
-            pageMode={pageMode}
             density={density}
             filtersUi={filtersUi}
             urlKey="live"
