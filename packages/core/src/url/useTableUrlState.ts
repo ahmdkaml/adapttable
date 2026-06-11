@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LIMIT } from "../constants";
-import type { SortLevel } from "../sort/compare";
+import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
   FilterValue,
@@ -57,7 +57,7 @@ export interface UseTableUrlStateOptions {
 }
 
 /** State + setters returned by {@link useTableUrlState}. */
-export interface UseTableUrlStateResult {
+export interface UseTableUrlStateResult extends TableStateMutators {
   /** Current 1-based page. */
   page: number;
   /** Current page size. */
@@ -70,29 +70,6 @@ export interface UseTableUrlStateResult {
   sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   extra: ExtraFilters;
-  /** Set the page. Page `1` is the default and is dropped from the URL. */
-  setPage: (next: number) => void;
-  /** Set the page size; resets to page 1. */
-  setLimit: (next: number) => void;
-  /** Set or clear the sort; resets to page 1. */
-  setSort: (key: string | undefined, dir?: SortDirection) => void;
-  /** The multi-sort chain (empty unless `sort=` is present). */
-  sortLevels: readonly SortLevel[];
-  /**
-   * Cycle a column inside the multi-sort chain: absent → asc → desc →
-   * removed. Appends new keys at the end; resets to page 1.
-   */
-  toggleSortLevel: (key: string) => void;
-  /** Set or clear the search term; resets to page 1. */
-  setSearch: (next: string) => void;
-  /** Set a single extra filter; resets to page 1. */
-  setExtra: (key: string, value: FilterValue) => void;
-  /** Set several extra filters in one commit; resets to page 1. */
-  setExtras: (updates: ExtraFilters) => void;
-  /** Clear every extra filter (and reset the page) — search/sort stay. */
-  clearExtras: () => void;
-  /** Clear search, sort, page, and every extra filter in one commit. */
-  clearAll: () => void;
 }
 
 /** Mounted namespaces per adapter, for the duplicate-urlKey dev warning. */

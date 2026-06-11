@@ -156,6 +156,7 @@ export {
   useFrontendData,
   type UseFrontendDataOptions,
 } from "./source/useFrontendData";
+export type { TableStateMutators } from "./tableStateMutators";
 
 /* ── Filters / chips ───────────────────────────────────────────────── */
 export {
