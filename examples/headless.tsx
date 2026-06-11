@@ -16,8 +16,8 @@ const ROWS: Row[] = [
 ];
 
 const columns: ColumnDef<Row>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "team", header: "Team", accessor: (r) => r.team },
+  { key: "name", sortable: true },
+  { key: "team" },
 ];
 
 /**

@@ -1,10 +1,6 @@
 import "@mantine/core/styles.css";
 
-import {
-  type ColumnDef,
-  DataTable,
-  useFrontendData,
-} from "@adapttable/mantine";
+import { DataTable } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
 
 interface Person {
@@ -47,33 +43,33 @@ const PEOPLE: Person[] = [
   },
 ];
 
-const columns: ColumnDef<Person>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "email", header: "Email", accessor: (r) => r.email },
-  { key: "role", header: "Role", accessor: (r) => r.role, sortable: true },
-  { key: "team", header: "Team", accessor: (r) => r.team },
-  { key: "status", header: "Status", accessor: (r) => r.status },
-  {
-    key: "budget",
-    header: "Budget",
-    accessor: (r) => `$${r.budget.toLocaleString()}`,
-    sortable: true,
-  },
-];
-
 /**
  * Full column management: the built-in "Columns" menu (show/hide, drag- or
- * keyboard-reorder, pin), drag/keyboard column resizing, and an initial layout
- * that pins "Name" to the left. `maxHeight` turns on the scroll box so pinned
- * columns actually stick while the table scrolls sideways.
+ * keyboard-reorder with a live drop indicator, pin), drag/keyboard column
+ * resizing, and an initial layout that pins "Name" to the left. `maxHeight`
+ * turns on the scroll box so pinned columns actually stick while the table
+ * scrolls sideways. Columns are bare keys — an `accessor` only appears
+ * where a cell needs real formatting (money), with `sortValue` keeping the
+ * sort numeric.
  */
 export function MantineColumnsExample() {
-  const source = useFrontendData({ data: PEOPLE, columns });
   return (
     <MantineProvider>
       <DataTable
-        source={source}
-        columns={columns}
+        data={PEOPLE}
+        columns={[
+          { key: "name", sortable: true },
+          { key: "email" },
+          { key: "role", sortable: true },
+          { key: "team" },
+          { key: "status" },
+          {
+            key: "budget",
+            accessor: (r) => `$${r.budget.toLocaleString()}`,
+            sortValue: (r) => r.budget,
+            sortable: true,
+          },
+        ]}
         rowKey={(r) => r.id}
         enableColumnMenu
         resizableColumns

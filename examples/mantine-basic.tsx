@@ -1,10 +1,6 @@
 import "@mantine/core/styles.css";
 
-import {
-  type ColumnDef,
-  DataTable,
-  useFrontendData,
-} from "@adapttable/mantine";
+import { DataTable } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
 
 interface Person {
@@ -25,20 +21,21 @@ const PEOPLE: Person[] = [
   },
 ];
 
-const columns: ColumnDef<Person>[] = [
-  { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
-  { key: "email", header: "Email", accessor: (r) => r.email },
-  { key: "role", header: "Role", accessor: (r) => r.role, sortable: true },
-];
-
-/** Client-side data with sorting, search, pagination, and a row action. */
+/**
+ * The zero-ceremony table: pass `data` and declare columns by key — headers
+ * auto-derive ("name" → "Name"), cells read the key directly, and search,
+ * sorting, pagination and URL-synced state are all built in.
+ */
 export function MantineBasicExample() {
-  const source = useFrontendData({ data: PEOPLE, columns });
   return (
     <MantineProvider>
       <DataTable
-        source={source}
-        columns={columns}
+        data={PEOPLE}
+        columns={[
+          { key: "name", sortable: true },
+          { key: "email" },
+          { key: "role", sortable: true },
+        ]}
         rowKey={(r) => r.id}
         searchPlaceholder="Search people…"
         rowActions={[
