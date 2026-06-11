@@ -220,6 +220,7 @@ export function useTableChrome<TRow>(
     selectedIds: selectedIdsProp,
     onSelectedIdsChange: onSelectionChange,
     filterLabels,
+    multiSort: props.multiSort,
   });
 
   useEffect(() => {

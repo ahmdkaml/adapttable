@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  headerGroupRow,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
@@ -360,6 +361,7 @@ export function DesktopTable<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   rowEntries,
   paddingTop = 0,
@@ -498,6 +500,21 @@ export function DesktopTable<TRow>({
       (selection ? SELECTION_WIDTH : 0) + (showActions ? ACTIONS_WIDTH : 0),
   });
 
+  // The grouped header row (when any visible column declares a `group`) and
+  // the footer summary both align under the data columns, so the leading
+  // expand/selection and trailing actions columns get unlabeled pad cells.
+  const groups = headerGroupRow(columns);
+  const summary = summaryRow?.(rows);
+  const groupPad = (
+    <th data-adapttable-part="group-cell" className={classNames.groupCell} />
+  );
+  const summaryPad = (
+    <td
+      data-adapttable-part="summary-cell"
+      className={classNames.summaryCell}
+    />
+  );
+
   const tableEl = (
     <table
       {...table.getTableProps()}
@@ -506,6 +523,23 @@ export function DesktopTable<TRow>({
       style={minWidth > 0 ? { minWidth } : undefined}
     >
       <thead data-adapttable-part="thead" className={classNames.thead}>
+        {groups && (
+          <tr data-adapttable-part="group-row" className={classNames.groupRow}>
+            {expandable && groupPad}
+            {selection && groupPad}
+            {groups.map((group) => (
+              <th
+                key={group.key}
+                colSpan={group.span}
+                data-adapttable-part="group-cell"
+                className={classNames.groupCell}
+              >
+                {group.label}
+              </th>
+            ))}
+            {showActions && groupPad}
+          </tr>
+        )}
         <tr
           {...table.getHeaderRowProps()}
           data-adapttable-part="header-row"
@@ -550,6 +584,11 @@ export function DesktopTable<TRow>({
               localStyle && { style: localStyle }
             );
             const active = table.sortBy === column.key;
+            // Spread the core prop-getter as-is so React hands the click
+            // EVENT to core's onClick (shift-click chains a multi-sort
+            // level). Its `data-sort-index` doubles as the badge content.
+            const sortButtonProps = table.getSortButtonProps(column);
+            const sortIndex = sortButtonProps["data-sort-index"];
             return (
               <th
                 key={column.key}
@@ -562,11 +601,19 @@ export function DesktopTable<TRow>({
               >
                 {column.sortable ? (
                   <button
-                    {...table.getSortButtonProps(column)}
+                    {...sortButtonProps}
                     data-adapttable-part="sort-button"
                     className={classNames.sortButton}
                   >
                     {column.header}
+                    {typeof sortIndex === "number" && (
+                      <span
+                        data-adapttable-part="sort-index"
+                        className={classNames.sortIndex}
+                      >
+                        {sortIndex}
+                      </span>
+                    )}
                     <span aria-hidden> {sortGlyph(active, table.sortDir)}</span>
                   </button>
                 ) : (
@@ -655,6 +702,27 @@ export function DesktopTable<TRow>({
           </tr>
         )}
       </tbody>
+      {summary && (
+        <tfoot data-adapttable-part="summary" className={classNames.summary}>
+          <tr
+            data-adapttable-part="summary-row"
+            className={classNames.summaryRow}
+          >
+            {expandable && summaryPad}
+            {selection && summaryPad}
+            {columns.map((column) => (
+              <td
+                key={column.key}
+                data-adapttable-part="summary-cell"
+                className={classNames.summaryCell}
+              >
+                {summary[column.key]}
+              </td>
+            ))}
+            {showActions && summaryPad}
+          </tr>
+        </tfoot>
+      )}
     </table>
   );
 
@@ -689,6 +757,7 @@ export function MobileCards<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   rowEntries,
   paddingTop = 0,
@@ -698,6 +767,7 @@ export function MobileCards<TRow>({
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const expansionState = renderRowDetail ? expansion : undefined;
+  const summary = summaryRow?.(rows);
   return (
     <ul
       {...table.getTableProps({ role: undefined })}
@@ -800,6 +870,35 @@ export function MobileCards<TRow>({
           data-adapttable-part="virtual-spacer"
           style={{ height: paddingBottom }}
         />
+      )}
+      {summary && (
+        <li
+          data-adapttable-part="summary-card"
+          className={classNames.summaryCard}
+        >
+          {columns
+            .filter((column) => summary[column.key] !== undefined)
+            .map((column) => (
+              <div
+                key={column.key}
+                data-adapttable-part="card-row"
+                className={classNames.cardRow}
+              >
+                <span
+                  data-adapttable-part="card-label"
+                  className={classNames.cardLabel}
+                >
+                  {cardLabel(column)}
+                </span>
+                <span
+                  data-adapttable-part="card-value"
+                  className={classNames.cardValue}
+                >
+                  {summary[column.key]}
+                </span>
+              </div>
+            ))}
+        </li>
       )}
     </ul>
   );

@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  headerGroupRow,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
@@ -16,7 +17,7 @@ import {
   tableMinWidth,
   tableRenderModel,
 } from "@adapttable/core";
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 /** Sx for an absolutely-positioned column-resize handle. */
@@ -41,6 +42,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableRow,
   TableSortLabel,
@@ -402,6 +404,7 @@ export function DesktopTable<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   rowEntries,
   paddingTop = 0,
@@ -417,6 +420,11 @@ export function DesktopTable<TRow>({
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels, showActions, entries, columnSpan } =
     tableRenderModel({ table, rows, rowActions, getRowId, rowEntries });
+  // Presentational header groups: contiguous visible columns sharing a
+  // `group` merge into one spanning cell; `null` means no second header row.
+  const groupRow = headerGroupRow(columns);
+  // Footer summary cells for the CURRENT rows, keyed by column key.
+  const summaryCells = summaryRow?.(rows);
   // Expansion is active only when BOTH halves arrived (the chrome supplies
   // `expansion` exactly when `renderRowDetail` is set).
   const isExpanded =
@@ -552,6 +560,25 @@ export function DesktopTable<TRow>({
         sx={minWidth > 0 ? { minWidth } : undefined}
       >
         <TableHead>
+          {groupRow && (
+            // Decorative group row. It deliberately skips the sticky `headSx`
+            // treatment: sticking both header rows at the same `top` would
+            // overlap them, so only the sortable header row pins.
+            <TableRow>
+              {expandActive && <TableCell padding="checkbox" />}
+              {selection && <TableCell padding="checkbox" />}
+              {groupRow.map((cell) => (
+                <TableCell
+                  key={cell.key}
+                  colSpan={cell.span}
+                  sx={{ textAlign: "center", fontWeight: 600 }}
+                >
+                  {cell.label}
+                </TableCell>
+              ))}
+              {showActions && <TableCell />}
+            </TableRow>
+          )}
           <TableRow>
             {expandActive && (
               <TableCell
@@ -573,27 +600,46 @@ export function DesktopTable<TRow>({
               </TableCell>
             )}
             {columns.map((column) => {
-              const active = table.sortBy === column.key;
+              const headerCellProps = table.getHeaderCellProps(column);
               // Core reports aria-sort="none" for sortable-but-inactive
-              // columns so screen readers announce them as sortable.
-              const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
+              // columns so screen readers announce them as sortable — and it
+              // is chain-aware, covering every multi-sort level too.
+              const ariaSort = headerCellProps["aria-sort"] as
                 | "ascending"
                 | "descending"
                 | "none"
+                | undefined;
+              const active =
+                ariaSort === "ascending" || ariaSort === "descending";
+              // 1-based multi-sort chain position, when the column is in it.
+              const sortIndex = headerCellProps["data-sort-index"] as
+                | number
                 | undefined;
               return (
                 <TableCell
                   key={column.key}
                   aria-sort={ariaSort}
+                  data-sort-index={sortIndex}
                   sx={headCellSx(column)}
                 >
                   {column.sortable ? (
                     <TableSortLabel
                       active={active}
-                      direction={active ? table.sortDir : "asc"}
-                      onClick={() => table.toggleSort(column.key)}
+                      direction={ariaSort === "descending" ? "desc" : "asc"}
+                      // Core's handler, with the REAL click event passed
+                      // through: it reads `shiftKey` to chain the column when
+                      // `multiSort` is on, else single-sorts as before.
+                      onClick={
+                        table.getSortButtonProps(column)
+                          .onClick as MouseEventHandler
+                      }
                     >
                       {column.header}
+                      {sortIndex !== undefined && (
+                        <Box component="span" sx={{ fontSize: 10, ml: 0.5 }}>
+                          {sortIndex}
+                        </Box>
+                      )}
                     </TableSortLabel>
                   ) : (
                     column.header
@@ -674,6 +720,25 @@ export function DesktopTable<TRow>({
             </TableRow>
           )}
         </TableBody>
+        {summaryCells && (
+          <TableFooter>
+            <TableRow>
+              {expandActive && <TableCell padding="checkbox" />}
+              {selection && <TableCell padding="checkbox" />}
+              {columns.map((column) => (
+                // One cell per column keeps the summary aligned under its
+                // column; keys absent from the result render empty cells.
+                <TableCell
+                  key={column.key}
+                  sx={{ textAlign: muiAlign(column.align) }}
+                >
+                  {summaryCells[column.key]}
+                </TableCell>
+              ))}
+              {showActions && <TableCell />}
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
     </Box>
   );
@@ -698,6 +763,7 @@ export function MobileCards<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   rowEntries,
   paddingTop = 0,
@@ -710,6 +776,10 @@ export function MobileCards<TRow>({
   // Expansion is active only when BOTH halves arrived (the chrome supplies
   // `expansion` exactly when `renderRowDetail` is set).
   const expand = expansion && renderRowDetail ? expansion : undefined;
+  // The summary renders as a final card. Header groups and multi-sort are
+  // desktop-only concerns: cards have no column grid for a group to span and
+  // no clickable headers to shift-click.
+  const summaryCells = summaryRow?.(rows);
   return (
     <Stack
       spacing={compact ? 1 : 1.5}
@@ -786,6 +856,32 @@ export function MobileCards<TRow>({
           </Card>
         );
       })}
+      {summaryCells && (
+        <Card variant="outlined" role="listitem">
+          <CardContent
+            sx={compact ? { p: 1.25, "&:last-child": { pb: 1.25 } } : undefined}
+          >
+            {columns.map((column) => {
+              const value = summaryCells[column.key];
+              // Unlike the desktop footer, a card has no columns to keep
+              // aligned, so columns without a summary are simply skipped.
+              if (value === undefined) return null;
+              return (
+                <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    {mobileLabel(column)}
+                  </Typography>
+                  <Typography variant="body2">{value}</Typography>
+                </Box>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
       {paddingBottom > 0 && <Box aria-hidden sx={{ height: paddingBottom }} />}
     </Stack>
   );

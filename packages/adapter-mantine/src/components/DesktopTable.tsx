@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  headerGroupRow,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
@@ -17,6 +18,7 @@ import {
 } from "@adapttable/core";
 import {
   ActionIcon,
+  Badge,
   Button,
   Checkbox,
   Group,
@@ -99,8 +101,15 @@ function HeaderCell<TRow>({
       </Table.Th>
     );
   }
-  const active = table.sortBy === column.key;
+  // Core's onClick receives the click event as-is (no zero-arg wrapper), so
+  // shift-clicks reach the multi-sort branch inside `getSortButtonProps`.
   const buttonProps = table.getSortButtonProps(column);
+  // 1-based chain position from core (always > 0 when defined) — drives the
+  // multi-sort badge; the chain level also wins the icon's active/dir state,
+  // because chaining clears the single-sort `sortBy`.
+  const sortIndex = buttonProps["data-sort-index"];
+  const level = table.source.sortLevels.find((l) => l.key === column.key);
+  const active = level !== undefined || table.sortBy === column.key;
   return (
     <Table.Th {...cellProps} style={headerStyle}>
       <Group
@@ -119,7 +128,12 @@ function HeaderCell<TRow>({
         {...buttonProps}
       >
         <span>{column.header}</span>
-        <SortIcon active={active} dir={table.sortDir} />
+        <SortIcon active={active} dir={level?.dir ?? table.sortDir} />
+        {typeof sortIndex === "number" && (
+          <Badge component="span" size="xs" variant="light">
+            {sortIndex}
+          </Badge>
+        )}
       </Group>
       {resizeHandle}
     </Table.Th>
@@ -433,6 +447,7 @@ export function DesktopTable<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   getRowId,
   bodyRef,
@@ -466,6 +481,10 @@ export function DesktopTable<TRow>({
     (expandable ? 1 : 0) +
     (selection ? 1 : 0) +
     (showActions ? 1 : 0);
+  // Grouped header row over the VISIBLE columns (`null` → no extra row) and
+  // the per-column footer summary cells (`undefined` → no footer).
+  const groupCells = headerGroupRow(columns);
+  const summaryCells = summaryRow?.(rows);
   const hasPinned = table.columns.some((c) => pinOffset?.(c.key) != null);
   // Pinning needs horizontal scroll, and a `maxHeight` needs vertical scroll;
   // either makes the wrapper a scroll container (setting one overflow axis to
@@ -621,6 +640,27 @@ export function DesktopTable<TRow>({
         miw={Math.max(480, minWidth)}
       >
         <Table.Thead style={{ background: "var(--mantine-color-body)" }}>
+          {groupCells && (
+            <Table.Tr>
+              {expandable && <Table.Th />}
+              {selection && <Table.Th />}
+              {groupCells.map((cell) => (
+                <Table.Th
+                  key={cell.key}
+                  colSpan={cell.span}
+                  ta="center"
+                  fw={600}
+                  style={{
+                    borderBottom:
+                      "1px solid var(--mantine-color-default-border)",
+                  }}
+                >
+                  {cell.label}
+                </Table.Th>
+              ))}
+              {showActions && <Table.Th />}
+            </Table.Tr>
+          )}
           <Table.Tr {...table.getHeaderRowProps()}>
             {expandable && (
               <Table.Th
@@ -713,6 +753,25 @@ export function DesktopTable<TRow>({
             </Table.Tr>
           )}
         </Table.Tbody>
+        {summaryCells && (
+          <Table.Tfoot>
+            <Table.Tr>
+              {expandable && <Table.Td />}
+              {selection && <Table.Td />}
+              {columns.map((column) => (
+                <Table.Td
+                  key={column.key}
+                  {...table.getCellProps(column)}
+                  fw={600}
+                  c="dimmed"
+                >
+                  {summaryCells[column.key]}
+                </Table.Td>
+              ))}
+              {showActions && <Table.Td />}
+            </Table.Tr>
+          </Table.Tfoot>
+        )}
       </Table>
     </div>
   );

@@ -184,6 +184,8 @@ export function useBackendData<
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    sortLevels: state.sortLevels,
+    toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,

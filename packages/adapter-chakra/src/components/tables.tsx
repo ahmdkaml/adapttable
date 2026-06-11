@@ -4,6 +4,7 @@ import {
   type ConfirmHandler,
   type Direction,
   edgePinStyle,
+  headerGroupRow,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
@@ -35,6 +36,7 @@ import {
   Tbody,
   Td,
   Text,
+  Tfoot,
   Th,
   Thead,
   Tooltip,
@@ -96,9 +98,14 @@ function chakraAlign(
   return "start";
 }
 
-function sortGlyph(active: boolean, dir: "asc" | "desc" | undefined): string {
-  if (!active) return " ↕";
-  return dir === "asc" ? " ↑" : " ↓";
+/**
+ * Header sort indicator, derived from the cell's computed `aria-sort` so a
+ * multi-sort chain level shows its own direction, not the single-sort one.
+ */
+function sortGlyph(sort: unknown): string {
+  if (sort === "ascending") return " ↑";
+  if (sort === "descending") return " ↓";
+  return " ↕";
 }
 
 /**
@@ -458,6 +465,7 @@ export function DesktopTable<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   className,
   rowEntries,
@@ -479,6 +487,8 @@ export function DesktopTable<TRow>({
   const columnSpan =
     virtualColumnSpan(columns.length, Boolean(selection), showActions) +
     (expandable ? 1 : 0);
+  const groups = headerGroupRow(columns);
+  const summary = summaryRow?.(rows);
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
   // sticky and let the header overlap the first row.
@@ -586,6 +596,24 @@ export function DesktopTable<TRow>({
         aria-label={table.getTableProps()["aria-label"] as string}
       >
         <Thead>
+          {groups && (
+            <Tr>
+              {expandable && <Th px={1} />}
+              {selection && <Th />}
+              {groups.map((cell) => (
+                <Th
+                  key={cell.key}
+                  colSpan={cell.span}
+                  textAlign="center"
+                  fontWeight="semibold"
+                  textTransform="none"
+                >
+                  {cell.label}
+                </Th>
+              ))}
+              {showActions && <Th />}
+            </Tr>
+          )}
           <Tr>
             {expandable && (
               <Th
@@ -615,11 +643,20 @@ export function DesktopTable<TRow>({
               </Th>
             )}
             {columns.map((column) => {
-              const active = table.sortBy === column.key;
               const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
                 | "ascending"
                 | "descending"
                 | "none"
+                | undefined;
+              // Core's sort onClick receives the click EVENT: with `multiSort`
+              // a shift-click cycles the column through the sort chain while a
+              // plain click keeps single-sorting.
+              const sortButton = table.getSortButtonProps(column);
+              const sortClick = sortButton.onClick as (event: {
+                shiftKey: boolean;
+              }) => void;
+              const sortIndex = sortButton["data-sort-index"] as
+                | number
                 | undefined;
               return (
                 <Th
@@ -636,12 +673,28 @@ export function DesktopTable<TRow>({
                       type="button"
                       cursor="pointer"
                       aria-label={`${labels.sortBy}: ${columnName(column)}`}
-                      onClick={() => table.toggleSort(column.key)}
+                      onClick={sortClick}
                     >
                       {column.header}
                       <Text as="span" aria-hidden>
-                        {sortGlyph(active, table.sortDir)}
+                        {sortGlyph(ariaSort)}
                       </Text>
+                      {sortIndex !== undefined && (
+                        <Text
+                          as="span"
+                          aria-hidden
+                          data-sort-index={sortIndex}
+                          fontSize="0.7em"
+                          fontWeight="bold"
+                          borderRadius="full"
+                          px={1.5}
+                          ms={1}
+                          bg="blackAlpha.200"
+                          _dark={{ bg: "whiteAlpha.300" }}
+                        >
+                          {sortIndex}
+                        </Text>
+                      )}
                     </Box>
                   ) : (
                     column.header
@@ -711,6 +764,20 @@ export function DesktopTable<TRow>({
             </Tr>
           )}
         </Tbody>
+        {summary && (
+          <Tfoot>
+            <Tr>
+              {expandable && <Td px={1} />}
+              {selection && <Td />}
+              {columns.map((column) => (
+                <Td key={column.key} textAlign={chakraAlign(column.align)}>
+                  {summary[column.key]}
+                </Td>
+              ))}
+              {showActions && <Td />}
+            </Tr>
+          </Tfoot>
+        )}
       </Table>
     </Box>
   );
@@ -736,6 +803,7 @@ export function MobileCards<TRow>({
   onRowClick,
   rowClassName,
   renderRowDetail,
+  summaryRow,
   expansion,
   className,
   rowEntries,
@@ -746,6 +814,7 @@ export function MobileCards<TRow>({
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const compact = size === "sm";
+  const summary = summaryRow?.(rows);
   return (
     <Stack
       spacing={compact ? 2 : 3}
@@ -814,6 +883,28 @@ export function MobileCards<TRow>({
         );
       })}
       {paddingBottom > 0 && <Box aria-hidden h={`${paddingBottom}px`} />}
+      {summary && (
+        <Card variant="outline" role="listitem" className={className}>
+          <CardBody p={compact ? 3 : undefined}>
+            {columns.map((column) => {
+              const value = summary[column.key];
+              // Columns absent from the summary are skipped — a card has no
+              // grid to keep aligned, so empty entries are just noise.
+              if (value === undefined) return null;
+              return (
+                <Box key={column.key} mb={compact ? 1 : 2}>
+                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
+                    {mobileLabel(column)}
+                  </Text>
+                  <Text fontSize="sm" fontWeight="semibold">
+                    {value}
+                  </Text>
+                </Box>
+              );
+            })}
+          </CardBody>
+        </Card>
+      )}
     </Stack>
   );
 }

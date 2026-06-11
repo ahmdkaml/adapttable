@@ -895,6 +895,26 @@ state) skip unchanged rows. Two things defeat it — both fixed by hoisting:
 `selection.toggle`, `expansion.toggle` and the other core callbacks are
 identity-stable, so they are always safe to hold in memoized rows.
 
+## Totals under the table
+
+```tsx
+<DataTable
+  data={invoices}
+  columns={columns}
+  rowKey={(i) => i.id}
+  summaryRow={(rows) => ({
+    amount: <b>${"{"}rows.reduce((s, r) => s + r.amount, 0){"}"}</b>,
+  })}
+/>
+```
+
+## Saved views
+
+```tsx
+const views = useSavedViews({ storageKey: "people-views", urlKey: "people" });
+// views.save("Active EU"), views.apply("Active EU"), views.views, views.remove
+```
+
 ---
 
 # API reference
@@ -1043,6 +1063,23 @@ Three ways to feed the table, lowest ceremony first:
 - `() => Promise<FilterOption[]>` — resolved lazily when the form first
   renders, with each kit's native loading affordance
   (`useFilterOptions(def)` for custom forms).
+
+### Summary, groups & multi-sort
+
+- `summaryRow(rows)` — map the current page's rows to per-column footer
+  cells (`{ budget: <b>{total}</b> }`); renders in each kit's table footer
+  (and as a summary card on mobile).
+- `ColumnDef.group` — contiguous same-group columns render under one
+  spanning header cell; reordering them apart splits the group
+  (adjacency-based; headless: `headerGroupRow(columns)`).
+- `multiSort` — shift-click chains columns (asc → desc → removed), with a
+  1-based order badge (`data-sort-index`) and `sort=key:asc,key2:desc` in
+  the URL; plain clicks keep single-sorting. Frontend tier sorts the chain
+  with ties falling through; the server tier emits `query.sortLevels`.
+- `useSavedViews({ storageKey, adapter, urlKey })` — headless named views:
+  capture/apply/remove this table's URL params (search, sort, filters,
+  layout) without touching other tables; wire any menu in the `toolbar`
+  slot.
 
 ### Empty & refresh states
 

@@ -78,7 +78,13 @@ export interface DataTableClassNames {
   thead?: string;
   headerRow?: string;
   headerCell?: string;
+  /** The grouped-header `<tr>` rendered above the column headers. */
+  groupRow?: string;
+  /** One spanning `<th>` (or edge gap) inside the group row. */
+  groupCell?: string;
   sortButton?: string;
+  /** The 1-based multi-sort position badge inside a sorted header. */
+  sortIndex?: string;
   tbody?: string;
   row?: string;
   cell?: string;
@@ -105,6 +111,14 @@ export interface DataTableClassNames {
   cardRow?: string;
   cardLabel?: string;
   cardValue?: string;
+  /** The `<tfoot>` holding the summary row. */
+  summary?: string;
+  /** The summary `<tr>` inside the footer. */
+  summaryRow?: string;
+  /** One summary `<td>` (aligned under its column, or an edge pad). */
+  summaryCell?: string;
+  /** The trailing summary `<li>` in the mobile card list. */
+  summaryCard?: string;
   footer?: string;
   pageButton?: string;
   empty?: string;

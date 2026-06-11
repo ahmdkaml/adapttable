@@ -81,8 +81,20 @@ export interface BaseDataTableProps<TRow> {
    * mobile cards; multiple rows may be open, keyed by row id.
    */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /**
+   * Footer summary: map the CURRENT page's rows to per-column summary cells
+   * (`{ budget: <b>{total}</b> }`). Rendered as a table footer row aligned
+   * under its columns; keys absent from the result render empty cells.
+   */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
+  /**
+   * Opt into multi-column sorting: shift-click (or shift-Enter) on a header
+   * adds the column to the sort chain (asc → desc → removed); a plain click
+   * still single-sorts. Sorted headers expose `data-sort-index` for badges.
+   */
+  multiSort?: boolean;
 
   /* ── Column management ───────────────────────────────────────────── */
   /** Render the built-in "Columns" menu (show/hide, pin, reorder). */

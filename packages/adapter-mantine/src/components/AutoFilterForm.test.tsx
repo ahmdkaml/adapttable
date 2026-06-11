@@ -30,6 +30,8 @@ function makeSource(extra: ExtraFilters = {}) {
     setPage: () => undefined,
     setLimit: () => undefined,
     setSort: () => undefined,
+    sortLevels: [],
+    toggleSortLevel: () => undefined,
     setSearch: () => undefined,
     setExtra,
     setExtras: () => undefined,

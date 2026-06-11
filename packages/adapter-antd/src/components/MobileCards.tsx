@@ -65,6 +65,37 @@ function CardActions<TRow>({
   );
 }
 
+/**
+ * The mobile counterpart of the desktop footer summary: one trailing card
+ * listing label → summary value for every visible column the `summaryRow`
+ * result covers (absent keys render nothing — empty cells are table
+ * alignment noise, not card content).
+ */
+function SummaryCard<TRow>({
+  rows,
+  columns,
+  summaryRow,
+}: Readonly<{
+  rows: readonly TRow[];
+  columns: ColumnDef<TRow>[];
+  summaryRow: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+}>) {
+  const cells = summaryRow(rows);
+  return (
+    <Card size="small" data-adapttable-part="summary-card">
+      <Descriptions column={1} size="small" colon={false}>
+        {columns
+          .filter((column) => cells[column.key] !== undefined)
+          .map((column) => (
+            <Descriptions.Item key={column.key} label={cardLabel(column)}>
+              {cells[column.key]}
+            </Descriptions.Item>
+          ))}
+      </Descriptions>
+    </Card>
+  );
+}
+
 /** Per-card inputs for the memoized {@link CardItem}. */
 interface CardItemProps<TRow> {
   row: TRow;
@@ -217,6 +248,7 @@ export function MobileCards<TRow>({
   compact = false,
   expansion,
   renderRowDetail,
+  summaryRow,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -235,6 +267,8 @@ export function MobileCards<TRow>({
   expansion?: RowExpansionState;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
 }>) {
   const { labels, selection, columns } = table;
   return (
@@ -274,6 +308,11 @@ export function MobileCards<TRow>({
           </li>
         );
       })}
+      {summaryRow && (
+        <li>
+          <SummaryCard rows={rows} columns={columns} summaryRow={summaryRow} />
+        </li>
+      )}
     </ul>
   );
 }

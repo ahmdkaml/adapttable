@@ -145,6 +145,23 @@ Three ways to feed the table, lowest ceremony first:
   renders, with each kit's native loading affordance
   (`useFilterOptions(def)` for custom forms).
 
+### Summary, groups & multi-sort
+
+- `summaryRow(rows)` — map the current page's rows to per-column footer
+  cells (`{ budget: <b>{total}</b> }`); renders in each kit's table footer
+  (and as a summary card on mobile).
+- `ColumnDef.group` — contiguous same-group columns render under one
+  spanning header cell; reordering them apart splits the group
+  (adjacency-based; headless: `headerGroupRow(columns)`).
+- `multiSort` — shift-click chains columns (asc → desc → removed), with a
+  1-based order badge (`data-sort-index`) and `sort=key:asc,key2:desc` in
+  the URL; plain clicks keep single-sorting. Frontend tier sorts the chain
+  with ties falling through; the server tier emits `query.sortLevels`.
+- `useSavedViews({ storageKey, adapter, urlKey })` — headless named views:
+  capture/apply/remove this table's URL params (search, sort, filters,
+  layout) without touching other tables; wire any menu in the `toolbar`
+  slot.
+
 ### Empty & refresh states
 
 - Zero rows under an active search/filter renders the `noResults` label with

@@ -155,6 +155,7 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
       search: "",
       sortBy: undefined,
       sortDir: undefined,
+      sortLevels: [],
       filters: { status: "archived" },
     });
     expect(info.signal).toBeInstanceOf(AbortSignal);

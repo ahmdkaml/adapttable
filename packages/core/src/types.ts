@@ -73,6 +73,12 @@ export interface ColumnDef<TRow> {
    * key wins.
    */
   /**
+   * Presentational header group: contiguous columns sharing a `group`
+   * render under one spanning header cell. Reordering columns apart
+   * splits the group (adjacency-based, never lies about layout).
+   */
+  group?: string;
+  /**
    * Per-locale data paths for this column's VALUE. The active table
    * `locale` picks the path (exact tag first, then its primary subtag, then
    * `key`): `{ key: "nameEn", i18n: { ar: "nameAr" } }` for flat fields, or

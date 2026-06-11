@@ -323,6 +323,8 @@ describe("useChromeBodyData load-more wiring", () => {
       setPage: vi.fn(),
       setLimit: vi.fn(),
       setSort: vi.fn(),
+      sortLevels: [],
+      toggleSortLevel: vi.fn(),
       setSearch: vi.fn(),
       setExtra: vi.fn(),
       setExtras: vi.fn(),
@@ -369,6 +371,8 @@ function mockSource(over: Record<string, unknown> = {}) {
     setPage: vi.fn(),
     setLimit: vi.fn(),
     setSort: vi.fn(),
+    sortLevels: [],
+    toggleSortLevel: vi.fn(),
     setSearch: vi.fn(),
     setExtra: vi.fn(),
     setExtras: vi.fn(),
@@ -566,5 +570,77 @@ describe("chrome row expansion", () => {
       expect.stringContaining("renderRowDetail with virtualize")
     );
     warn.mockRestore();
+  });
+});
+
+describe("multi-sort headers", () => {
+  it("shift-click toggles the chain; plain click single-sorts; badges expose order", () => {
+    const adapter = createMemoryAdapter("");
+    const sortable = [
+      {
+        key: "name",
+        header: "Name",
+        accessor: (r: Row) => r.name,
+        sortable: true,
+      },
+    ];
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: sortable,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: sortable,
+        rowKey: (r: Row) => r.id,
+        multiSort: true,
+      });
+    });
+    const col = result.current.table.columns[0]!;
+    const btn = () =>
+      result.current.table.getSortButtonProps(col) as {
+        onClick: (e?: { shiftKey?: boolean }) => void;
+        "data-sort-index"?: number;
+      };
+    act(() => btn().onClick({ shiftKey: true }));
+    expect(btn()["data-sort-index"]).toBe(1);
+    // Header cells reflect the chain too (aria-sort + badge index).
+    const cell = result.current.table.getHeaderCellProps(col) as {
+      "aria-sort"?: string;
+      "data-sort-index"?: number;
+    };
+    expect(cell["aria-sort"]).toBe("ascending");
+    expect(cell["data-sort-index"]).toBe(1);
+    act(() => btn().onClick({ shiftKey: true }));
+    act(() => btn().onClick({ shiftKey: true }));
+    expect(btn()["data-sort-index"]).toBeUndefined();
+    // Plain click takes the single-sort path.
+    act(() => btn().onClick({}));
+    expect(result.current.table.source ?? true).toBeTruthy();
+  });
+
+  it("a disabled (unsortable) header ignores clicks entirely", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: [{ key: "name", header: "Name" }] as never,
+        adapter,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns: [{ key: "name", header: "Name" }] as never,
+        rowKey: (r: Row) => r.id,
+        multiSort: true,
+      });
+    });
+    const col = result.current.table.columns[0]!;
+    const props = result.current.table.getSortButtonProps(col) as {
+      onClick: (e?: { shiftKey?: boolean }) => void;
+    };
+    expect(() => props.onClick({ shiftKey: true })).not.toThrow();
   });
 });

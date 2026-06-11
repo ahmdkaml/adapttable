@@ -45,6 +45,8 @@ export interface SharedTableRenderProps<TRow> {
   rowClassName?: (row: TRow, index: number) => string | undefined;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
   /** Virtual row window (with absolute indices) when virtualization is on. */

@@ -112,6 +112,7 @@ export {
 } from "./constants";
 
 /* ── URL state ─────────────────────────────────────────────────────── */
+export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
 export {
   createHistoryAdapter,
   createMemoryAdapter,
@@ -123,6 +124,12 @@ export {
   type UseColumnLayoutUrlStateOptions,
   type UseColumnLayoutUrlStateResult,
 } from "./url/useColumnLayoutUrlState";
+export {
+  type SavedView,
+  useSavedViews,
+  type UseSavedViewsOptions,
+  type UseSavedViewsResult,
+} from "./url/useSavedViews";
 export {
   useTableUrlState,
   type UseTableUrlStateOptions,
@@ -185,7 +192,12 @@ export {
 } from "./selection/useSelection";
 
 /* ── Sorting ───────────────────────────────────────────────────────── */
-export { compareValues, sortRows } from "./sort/compare";
+export {
+  compareValues,
+  type SortLevel,
+  sortRows,
+  sortRowsMulti,
+} from "./sort/compare";
 export { nextSort, type SortState } from "./sort/cycleSort";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 

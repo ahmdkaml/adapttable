@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { SortLevel } from "../sort/compare";
 import type { ExtraFilters, SortDirection } from "../types";
 import {
   useTableUrlState,
@@ -20,6 +21,8 @@ export interface TableQuery {
   sortBy: string | undefined;
   /** Active sort direction, if any. */
   sortDir: SortDirection | undefined;
+  /** The multi-sort chain (empty unless multi-sort is in use). */
+  sortLevels: readonly SortLevel[];
   /** The active filter values. */
   filters: ExtraFilters;
 }
@@ -75,11 +78,19 @@ export function useServerData<TRow>(
     ...urlOptions
   } = options;
   const state = useTableUrlState(urlOptions);
-  const { page, limit, search, sortBy, sortDir, extra } = state;
+  const { page, limit, search, sortBy, sortDir, sortLevels, extra } = state;
 
   const query = useMemo<TableQuery>(
-    () => ({ page, limit, search, sortBy, sortDir, filters: extra }),
-    [page, limit, search, sortBy, sortDir, extra]
+    () => ({
+      page,
+      limit,
+      search,
+      sortBy,
+      sortDir,
+      sortLevels,
+      filters: extra,
+    }),
+    [page, limit, search, sortBy, sortDir, sortLevels, extra]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire
   // an identical query; `refetch` bumps the generation to force one.
@@ -119,6 +130,8 @@ export function useServerData<TRow>(
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    sortLevels: state.sortLevels,
+    toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,

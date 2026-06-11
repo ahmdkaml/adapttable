@@ -174,6 +174,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
         expansion={chrome.expansion}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
@@ -195,6 +196,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
         expansion={chrome.expansion}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}

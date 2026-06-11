@@ -25,6 +25,8 @@ function stubSource(extra: ExtraFilters) {
     search: "",
     sortBy: undefined,
     sortDir: undefined,
+    sortLevels: [],
+    toggleSortLevel: () => undefined,
     extra,
     setPage: () => undefined,
     setLimit: () => undefined,

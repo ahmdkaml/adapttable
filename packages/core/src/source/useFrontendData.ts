@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
-import { sortRows } from "../sort/compare";
+import { sortRows, sortRowsMulti } from "../sort/compare";
 import type {
   ColumnDef,
   ExtraFilters,
@@ -167,20 +167,34 @@ export function useFrontendData<TRow>(
       : bySearch;
   }, [data, searchIndex, search, filterFn, state.extra]);
 
+  const sortLevels = state.sortLevels;
   const sorted = useMemo(() => {
-    if (!sortBy || !sortDir) return filtered;
-    const column = columns?.find((c) => c.key === sortBy);
-    warnUnresolvableSort(sortBy, column, filtered, getSortValue);
     // Resolve a row's sort key: explicit `getSortValue`, else the column's
     // `sortValue`, else the accessor when it yields a sortable primitive — so
     // `sortable: true` works out of the box for plain string/number/boolean
     // cells while JSX accessors safely no-op.
-    const resolve = (row: TRow): SortableValue =>
+    const resolveFor = (key: string) => {
+      const column = columns?.find((c) => c.key === key);
+      return (row: TRow): SortableValue =>
+        getSortValue
+          ? getSortValue(row, key)
+          : (column?.sortValue?.(row) ?? toSortable(column?.accessor?.(row)));
+    };
+    // An active multi-sort chain supersedes the single sort.
+    if (sortLevels.length > 0) {
+      return sortRowsMulti(filtered, sortLevels, (row, key) =>
+        resolveFor(key)(row)
+      );
+    }
+    if (!sortBy || !sortDir) return filtered;
+    warnUnresolvableSort(
+      sortBy,
+      columns?.find((c) => c.key === sortBy),
+      filtered,
       getSortValue
-        ? getSortValue(row, sortBy)
-        : (column?.sortValue?.(row) ?? toSortable(column?.accessor?.(row)));
-    return sortRows(filtered, resolve, sortDir);
-  }, [filtered, sortBy, sortDir, getSortValue, columns]);
+    );
+    return sortRows(filtered, resolveFor(sortBy), sortDir);
+  }, [filtered, sortBy, sortDir, sortLevels, getSortValue, columns]);
 
   const total = sorted.length;
   const lastPage = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
@@ -221,6 +235,8 @@ export function useFrontendData<TRow>(
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    sortLevels: state.sortLevels,
+    toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,

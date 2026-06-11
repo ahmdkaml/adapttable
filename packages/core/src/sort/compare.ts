@@ -60,3 +60,43 @@ export function sortRows<TRow>(
     })
     .map((entry) => entry.row);
 }
+
+/** One level of a multi-column sort. */
+export interface SortLevel {
+  key: string;
+  dir: SortDirection;
+}
+
+/**
+ * Sort rows by a CHAIN of levels: ties at level N fall through to level
+ * N+1. Null-ish values sort last per level regardless of direction, same
+ * as {@link sortRows}.
+ */
+export function sortRowsMulti<TRow>(
+  rows: readonly TRow[],
+  levels: readonly SortLevel[],
+  getValue: (row: TRow, key: string) => SortableValue
+): TRow[] {
+  if (levels.length === 0) return [...rows];
+  return [...rows]
+    .map((row, index) => ({
+      row,
+      index,
+      values: levels.map((l) => getValue(row, l.key)),
+    }))
+    .sort((x, y) => {
+      for (const [i, level] of levels.entries()) {
+        const a = x.values[i]!;
+        const b = y.values[i]!;
+        if (a === b) continue;
+        // Null-ish sorts last regardless of direction — never negated.
+        if (sortsLast(a)) return 1;
+        if (sortsLast(b)) return -1;
+        const cmp = compareValues(a, b);
+        if (cmp !== 0) return level.dir === "asc" ? cmp : -cmp;
+      }
+      // Stable: preserve the original order for full ties.
+      return x.index - y.index;
+    })
+    .map((entry) => entry.row);
+}

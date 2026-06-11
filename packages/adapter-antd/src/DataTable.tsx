@@ -34,7 +34,7 @@ import {
   useState,
 } from "react";
 
-import { buildColumns } from "./columns";
+import { buildColumns, logicalAlign } from "./columns";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
   BulkBar,
@@ -255,6 +255,59 @@ function sentinelEnabled(
   return !isPaged && !error && !(virtualize && body === "desktop");
 }
 
+/**
+ * Map the shared `summaryRow` contract onto antd's NATIVE `summary` slot: one
+ * `Table.Summary.Row` whose cells line up under the data columns. antd
+ * injects its expand/selection columns at the START of the grid, so the row
+ * first pads with one empty cell per injected column, then renders a cell per
+ * visible column (keys absent from the result stay empty, logical alignment
+ * preserved for RTL), then pads for the trailing actions column.
+ */
+function buildSummary<TRow>(
+  summaryRow:
+    | ((rows: readonly TRow[]) => Partial<Record<string, ReactNode>>)
+    | undefined,
+  columns: readonly ColumnDef<TRow>[],
+  leadingCells: number,
+  hasActions: boolean
+): TableProps<TRow>["summary"] {
+  if (!summaryRow) return undefined;
+  return function SummaryCells(rows) {
+    const cells = summaryRow(rows);
+    return (
+      <Table.Summary.Row>
+        {Array.from({ length: leadingCells }, (_, i) => (
+          <Table.Summary.Cell key={`lead-${i}`} index={i} />
+        ))}
+        {columns.map((column, i) => (
+          <Table.Summary.Cell key={column.key} index={leadingCells + i}>
+            <div style={{ textAlign: logicalAlign(column.align) }}>
+              {cells[column.key]}
+            </div>
+          </Table.Summary.Cell>
+        ))}
+        {hasActions && (
+          <Table.Summary.Cell index={leadingCells + columns.length} />
+        )}
+      </Table.Summary.Row>
+    );
+  };
+}
+
+/** How many non-data columns antd injects ahead of ours (expand, selection). */
+function summaryLeadingCells(rowSelection: unknown, expandable: unknown) {
+  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0);
+}
+
+/** The shift-click chain toggler — only when `multiSort` is opted in. */
+function chainToggler<TRow>(
+  multiSort: boolean | undefined,
+  source: TableSource<TRow>
+): ((key: string) => void) | undefined {
+  if (!multiSort) return undefined;
+  return (key) => source.toggleSortLevel(key);
+}
+
 /** Build antd's pagination config (undefined in infinite mode → `false`). */
 function buildPagination<TRow>(
   isPaged: boolean,
@@ -392,6 +445,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
     columnWidths: c.columnLayout.state.widths,
     resizeLabel: labels.resizeColumn,
+    sortLevels: source.sortLevels,
+    // Shift-click multi-sort is opt-in; without it antd keeps full control
+    // of header clicks (single-sort via `onChange`).
+    onToggleSortLevel: chainToggler(props.multiSort, source),
   });
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
@@ -416,6 +473,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     c.expansion,
     getRowId,
     labels
+  );
+  // The summary row pads one leading cell per column antd injects (expand
+  // first, then selection) so its cells stay aligned under the data columns.
+  const summary = buildSummary(
+    props.summaryRow,
+    table.columns,
+    summaryLeadingCells(rowSelection, expandable),
+    Boolean(props.rowActions?.length)
   );
   const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
@@ -466,6 +531,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         compact={(props.density ?? "comfortable") === "compact"}
         expansion={c.expansion}
         renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
       />
     );
   } else {
@@ -482,6 +548,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onScroll={handleVirtualScroll}
         rowSelection={rowSelection}
         expandable={expandable}
+        summary={summary}
         pagination={pagination}
         rowClassName={
           props.rowClassName ? buildRowClassName(props.rowClassName) : undefined

@@ -113,6 +113,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onRowClick: props.onRowClick,
     rowClassName: props.rowClassName,
     renderRowDetail: props.renderRowDetail,
+    summaryRow: props.summaryRow,
     expansion: chrome.expansion,
     dir: props.dir,
   };

@@ -218,6 +218,7 @@ describe("<DataTable> declarative columns + filters (Mantine)", () => {
         search: "al",
         sortBy: undefined,
         sortDir: undefined,
+        sortLevels: [],
         filters: { status: "active" },
       },
       { signal: expect.any(AbortSignal) }

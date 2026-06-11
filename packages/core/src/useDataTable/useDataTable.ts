@@ -61,6 +61,8 @@ export interface UseDataTableOptions<TRow> {
   onSelectedIdsChange?: (selectedIds: string[]) => void;
   /** Per-filter-key chip label resolvers (drives the chip strip). */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
+  /** Enable shift-click multi-column sorting (see BaseDataTableProps). */
+  multiSort?: boolean;
 }
 
 /** Everything a headless consumer needs to render a table. */
@@ -122,6 +124,23 @@ function textAlign(
   return "start";
 }
 
+/** The chain level for a column, if multi-sort has one. */
+function chainLevel(
+  levels: readonly { key: string; dir: "asc" | "desc" }[],
+  key: string
+): { key: string; dir: "asc" | "desc" } | undefined {
+  return levels.find((l) => l.key === key);
+}
+
+/** 1-based chain position for the header badge, or undefined. */
+function sortIndexAttr(
+  levels: readonly { key: string; dir: "asc" | "desc" }[],
+  key: string
+): number | undefined {
+  const index = levels.findIndex((l) => l.key === key);
+  return index === -1 ? undefined : index + 1;
+}
+
 function ariaSort<TRow>(
   column: ColumnDef<TRow>,
   sortBy: string | undefined,
@@ -163,6 +182,7 @@ export function useDataTable<TRow>(
     selectedIds,
     onSelectedIdsChange,
     filterLabels = EMPTY_LABELS,
+    multiSort = false,
   } = options;
 
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
@@ -260,12 +280,17 @@ export function useDataTable<TRow>(
       mergeProps(
         {
           role: "columnheader",
-          "aria-sort": ariaSort(column, source.sortBy, source.sortDir),
+          "aria-sort": ariaSort(
+            column,
+            chainLevel(source.sortLevels, column.key)?.key ?? source.sortBy,
+            chainLevel(source.sortLevels, column.key)?.dir ?? source.sortDir
+          ),
+          "data-sort-index": sortIndexAttr(source.sortLevels, column.key),
           style: { textAlign: textAlign(column.align), width: column.width },
         },
         props
       ),
-    [source.sortBy, source.sortDir]
+    [source.sortBy, source.sortDir, source.sortLevels]
   );
 
   const getSortButtonProps = useCallback(
@@ -274,14 +299,22 @@ export function useDataTable<TRow>(
         {
           type: "button",
           disabled: !column.sortable,
-          onClick: () => column.sortable && toggleSort(column.key),
+          onClick: (event?: { shiftKey?: boolean }) => {
+            if (!column.sortable) return;
+            if (multiSort && event?.shiftKey) {
+              source.toggleSortLevel(column.key);
+              return;
+            }
+            toggleSort(column.key);
+          },
+          "data-sort-index": sortIndexAttr(source.sortLevels, column.key),
           "aria-label": `${labels.sortBy}: ${
             typeof column.header === "string" ? column.header : column.key
           }`,
         },
         props
       ),
-    [toggleSort, labels.sortBy]
+    [toggleSort, labels.sortBy, multiSort, source]
   );
 
   const getRowProps = useCallback(

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareValues, sortRows } from "./compare";
+import { compareValues, sortRows, sortRowsMulti } from "./compare";
 
 describe("compareValues", () => {
   it("returns 0 for equal values", () => {
@@ -102,5 +102,102 @@ describe("sortRows", () => {
     expect(
       sortRows(withNulls, (r) => r.n ?? null, "desc").map((r) => r.id)
     ).toEqual(["a", "c", "b", "d"]);
+  });
+});
+
+describe("sortRowsMulti", () => {
+  interface R {
+    team: string;
+    age: number | null;
+  }
+  const rows: R[] = [
+    { team: "b", age: 30 },
+    { team: "a", age: 25 },
+    { team: "a", age: 30 },
+    { team: "a", age: null },
+  ];
+  const getValue = (row: R, key: string) =>
+    key === "team" ? row.team : row.age;
+
+  it("ties at level one fall through to level two", () => {
+    const sorted = sortRowsMulti(
+      rows,
+      [
+        { key: "team", dir: "asc" },
+        { key: "age", dir: "desc" },
+      ],
+      getValue
+    );
+    expect(sorted.map((r) => `${r.team}:${String(r.age)}`)).toEqual([
+      "a:30",
+      "a:25",
+      "a:null",
+      "b:30",
+    ]);
+  });
+
+  it("null-ish sorts last even on descending levels", () => {
+    const sorted = sortRowsMulti(rows, [{ key: "age", dir: "desc" }], getValue);
+    expect(sorted.at(-1)!.age).toBeNull();
+  });
+
+  it("no levels returns the original order; full ties stay stable", () => {
+    expect(sortRowsMulti(rows, [], getValue)).toEqual(rows);
+    const tied = sortRowsMulti(
+      rows,
+      [{ key: "team", dir: "asc" }],
+      getValue
+    ).filter((r) => r.team === "a");
+    expect(tied.map((r) => r.age)).toEqual([25, 30, null]);
+  });
+
+  it("null-ish on either side sorts last; equal-compare falls to next level", () => {
+    const data: R[] = [
+      { team: "a", age: null },
+      { team: "a", age: 20 },
+    ];
+    // b-side null: first element null vs second number.
+    const byAge = sortRowsMulti(data, [{ key: "age", dir: "asc" }], getValue);
+    expect(byAge[0]!.age).toBe(20);
+    // compareValues returns 0 for equal non-null values → next level decides.
+    const tied: R[] = [
+      { team: "b", age: 20 },
+      { team: "a", age: 20 },
+    ];
+    const out = sortRowsMulti(
+      tied,
+      [
+        { key: "age", dir: "asc" },
+        { key: "team", dir: "asc" },
+      ],
+      getValue
+    );
+    expect(out.map((r) => r.team)).toEqual(["a", "b"]);
+  });
+
+  it("descending levels negate the comparison", () => {
+    const data: R[] = [
+      { team: "a", age: 10 },
+      { team: "b", age: 20 },
+    ];
+    const out = sortRowsMulti(data, [{ key: "team", dir: "desc" }], getValue);
+    expect(out.map((r) => r.team)).toEqual(["b", "a"]);
+  });
+
+  it("collation-equal but non-identical values fall through to the next level", () => {
+    // NFC vs NFD "ä": canonically equivalent → localeCompare 0, but !==.
+    const data = [
+      { team: "\u00e4", age: 2 },
+      { team: "a\u0308", age: 1 },
+    ] as unknown as R[];
+    const out = sortRowsMulti(
+      data,
+      [
+        { key: "team", dir: "asc" }, // "B" vs "b": localeCompare 0, !==
+        { key: "age", dir: "asc" },
+      ],
+      getValue
+    );
+    expect(out.map((r) => r.age)).toEqual([1, 2]);
   });
 });

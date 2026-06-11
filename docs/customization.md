@@ -335,3 +335,23 @@ state) skip unchanged rows. Two things defeat it — both fixed by hoisting:
 
 `selection.toggle`, `expansion.toggle` and the other core callbacks are
 identity-stable, so they are always safe to hold in memoized rows.
+
+## Totals under the table
+
+```tsx
+<DataTable
+  data={invoices}
+  columns={columns}
+  rowKey={(i) => i.id}
+  summaryRow={(rows) => ({
+    amount: <b>${"{"}rows.reduce((s, r) => s + r.amount, 0){"}"}</b>,
+  })}
+/>
+```
+
+## Saved views
+
+```tsx
+const views = useSavedViews({ storageKey: "people-views", urlKey: "people" });
+// views.save("Active EU"), views.apply("Active EU"), views.views, views.remove
+```

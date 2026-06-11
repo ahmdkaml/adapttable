@@ -1,3 +1,4 @@
+import type { SortLevel } from "../sort/compare";
 import type {
   ExtraFilters,
   FilterValue,
@@ -55,6 +56,10 @@ export interface TableSource<TRow> {
   setPage: (next: number) => void;
   setLimit: (next: number) => void;
   setSort: (key: string | undefined, dir?: SortDirection) => void;
+  /** The multi-sort chain (empty unless multi-sort is in use). */
+  sortLevels: readonly SortLevel[];
+  /** Cycle a column in the chain: absent → asc → desc → removed. */
+  toggleSortLevel: (key: string) => void;
   setSearch: (next: string) => void;
   setExtra: (key: string, value: FilterValue) => void;
   setExtras: (updates: ExtraFilters) => void;

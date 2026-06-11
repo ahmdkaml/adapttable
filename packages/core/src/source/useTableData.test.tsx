@@ -92,6 +92,8 @@ describe("useTableData — tier resolution", () => {
       setPage: vi.fn(),
       setLimit: vi.fn(),
       setSort: vi.fn(),
+      sortLevels: [],
+      toggleSortLevel: vi.fn(),
       setSearch: vi.fn(),
       setExtra: vi.fn(),
       setExtras: vi.fn(),

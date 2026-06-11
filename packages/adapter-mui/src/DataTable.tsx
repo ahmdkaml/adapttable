@@ -160,6 +160,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
         expansion={c.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
@@ -181,6 +182,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onRowClick={props.onRowClick}
         rowClassName={props.rowClassName}
         renderRowDetail={props.renderRowDetail}
+        summaryRow={props.summaryRow}
         expansion={c.expansion}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
