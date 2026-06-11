@@ -89,7 +89,7 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
   return (
     <FormControl component="fieldset" variant="standard">
       <FormLabel component="legend">{filterLabel(def)}</FormLabel>
-      <FormGroup>
+      <FormGroup row sx={{ columnGap: 1.5 }}>
         {(def.options ?? []).map((option) => (
           <FormControlLabel
             key={option.value}

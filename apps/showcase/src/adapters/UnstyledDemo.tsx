@@ -8,7 +8,7 @@ import { UnstyledLike } from "./UnstyledLike";
 // shadcn demo: an INDIGO accent, gray neutrals, softer radii. Same headless
 // adapter, completely different visual character.
 const TAILWIND: DataTableClassNames = {
-  root: "rounded-lg border border-gray-200 bg-white text-gray-900 overflow-hidden shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
+  root: "rounded-lg border border-gray-200 bg-white text-gray-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
   toolbar:
     "flex flex-wrap items-center gap-2 p-3 border-b border-gray-200 dark:border-zinc-700",
   searchField:
@@ -21,12 +21,12 @@ const TAILWIND: DataTableClassNames = {
   rowsPerPageSelect:
     "h-8 rounded-md border border-indigo-200 bg-white px-1.5 text-sm dark:border-indigo-900/60 dark:bg-zinc-900",
   filtersButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
   filtersBackdrop: "fixed inset-0 z-40 bg-gray-900/30 dark:bg-black/50",
   filtersPanel:
     "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersPopover:
-    "mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
+    "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersCount:
     "inline-grid h-5 min-w-5 place-items-center rounded-full bg-indigo-600 px-1 text-xs font-bold leading-none text-white",
   filtersHeader:
@@ -69,9 +69,9 @@ const TAILWIND: DataTableClassNames = {
   chip: "inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
   // ── Column popover ──────────────────────────────────────────────
   columnMenuButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 data-[active]:border-indigo-400 data-[active]:bg-indigo-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-[active]:bg-indigo-500/15",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 data-[active]:border-indigo-400 data-[active]:bg-indigo-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-[active]:bg-indigo-500/15",
   columnMenuPanel:
-    "min-w-[264px] rounded-lg border border-gray-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
+    "z-50 min-w-[264px] rounded-lg border border-gray-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
   columnMenuHeader: "px-1.5 pb-1.5 pt-1",
   columnMenuTitle:
     "text-[11px] font-semibold uppercase tracking-wider text-gray-400",

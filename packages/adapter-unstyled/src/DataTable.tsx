@@ -222,6 +222,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       data-active={filtersOpen || undefined}
       data-adapttable-part="filters-button"
       className={classNames.filtersButton}
+      style={{ flexShrink: 0, whiteSpace: "nowrap" }}
       onClick={() => setFiltersOpen((o) => !o)}
     >
       <span

@@ -98,7 +98,8 @@ describe("<DataTable> declarative columns + filters (Mantine)", () => {
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.getByText("Beta")).toBeInTheDocument();
 
-    const dropdown = await openFiltersPopover("Budget Min");
+    // The range shows ONE visible group label; inputs keep aria-labels.
+    const dropdown = await openFiltersPopover("Budget");
     // The form carries one control per definition: the column's select and
     // the standalone numberRange pair.
     expect(within(dropdown).getByLabelText("Budget Min")).toBeInTheDocument();

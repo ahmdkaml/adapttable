@@ -10,7 +10,7 @@ import { UnstyledLike } from "./UnstyledLike";
 // tailwind.css. The look is deliberately MONOCHROME with ring focus — the
 // shadcn signature — to contrast with the indigo "plain Tailwind" demo.
 const SHADCN: DataTableClassNames = {
-  root: "rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm",
+  root: "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
   toolbar: "flex flex-wrap items-center gap-2 p-3 border-b border-border",
   searchField:
     "flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1 focus-within:ring-offset-background",
@@ -21,12 +21,12 @@ const SHADCN: DataTableClassNames = {
   rowsPerPageSelect:
     "h-8 rounded-md border border-input bg-background px-1.5 text-sm text-foreground",
   filtersButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
   filtersPanel:
     "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
   filtersPopover:
-    "mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
+    "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
   filtersCount:
     "inline-grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-bold leading-none text-primary-foreground",
   filtersHeader:
@@ -69,9 +69,9 @@ const SHADCN: DataTableClassNames = {
   chip: "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground",
   // ── Column popover ──────────────────────────────────────────────
   columnMenuButton:
-    "inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent data-[active]:bg-accent",
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent data-[active]:bg-accent",
   columnMenuPanel:
-    "min-w-[264px] rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl",
+    "z-50 min-w-[264px] rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl",
   columnMenuHeader: "px-1.5 pb-1.5 pt-1",
   columnMenuTitle:
     "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",

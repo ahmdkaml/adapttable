@@ -104,7 +104,7 @@ function AutoFilterField<TRow>({
             value={list(extra[def.key])}
             onChange={(next) => setExtra(def.key, next.map(String))}
           >
-            <Stack spacing={1}>
+            <HStack spacing={3} flexWrap="wrap" rowGap={1}>
               {(def.options ?? []).map((option, index) => (
                 <Checkbox
                   key={option.value}
@@ -115,7 +115,7 @@ function AutoFilterField<TRow>({
                   {option.label}
                 </Checkbox>
               ))}
-            </Stack>
+            </HStack>
           </CheckboxGroup>
         </FormControl>
       );

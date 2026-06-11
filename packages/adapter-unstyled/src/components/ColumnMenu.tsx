@@ -162,6 +162,7 @@ export function ColumnMenu<TRow>({
         data-adapttable-part="column-menu-button"
         data-active={open || undefined}
         className={classNames.columnMenuButton}
+        style={{ flexShrink: 0, whiteSpace: "nowrap" }}
         onClick={() => setOpen((v) => !v)}
       >
         {labels.columns}
@@ -173,7 +174,7 @@ export function ColumnMenu<TRow>({
           className={classNames.columnMenuPanel}
           style={{
             position: "absolute",
-            zIndex: 40,
+            zIndex: 200,
             insetInlineEnd: 0,
             margin: 0,
             border: 0,

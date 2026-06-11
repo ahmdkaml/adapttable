@@ -200,20 +200,23 @@ function RangeField<TRow>({
   const caption = filterLabel(def);
   return (
     <GroupField caption={caption} classNames={classNames}>
-      <BagInput
-        source={source}
-        stateKey={def.key + suffixes.start}
-        type={inputType}
-        ariaLabel={`${caption} ${suffixes.start}`}
-        classNames={classNames}
-      />{" "}
-      <BagInput
-        source={source}
-        stateKey={def.key + suffixes.end}
-        type={inputType}
-        ariaLabel={`${caption} ${suffixes.end}`}
-        classNames={classNames}
-      />
+      {/* Structural layout only (like the toolbar): halves sit side by side. */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <BagInput
+          source={source}
+          stateKey={def.key + suffixes.start}
+          type={inputType}
+          ariaLabel={`${caption} ${suffixes.start}`}
+          classNames={classNames}
+        />
+        <BagInput
+          source={source}
+          stateKey={def.key + suffixes.end}
+          type={inputType}
+          ariaLabel={`${caption} ${suffixes.end}`}
+          classNames={classNames}
+        />
+      </div>
     </GroupField>
   );
 }

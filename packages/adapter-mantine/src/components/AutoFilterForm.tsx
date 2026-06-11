@@ -5,7 +5,14 @@ import {
   RANGE_SUFFIXES,
   type TableSource,
 } from "@adapttable/core";
-import { Checkbox, NativeSelect, Stack, TextInput } from "@mantine/core";
+import {
+  Checkbox,
+  Group,
+  Input,
+  NativeSelect,
+  Stack,
+  TextInput,
+} from "@mantine/core";
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -42,22 +49,27 @@ function RangePair<TRow>({
   const label = filterLabel(def);
   return (
     <Stack gap={4}>
-      <TextInput
-        type={inputType}
-        size="sm"
-        label={`${label} ${start}`}
-        value={asText(source.extra[def.key + start])}
-        onChange={(e) =>
-          source.setExtra(def.key + start, e.currentTarget.value)
-        }
-      />
-      <TextInput
-        type={inputType}
-        size="sm"
-        label={`${label} ${end}`}
-        value={asText(source.extra[def.key + end])}
-        onChange={(e) => source.setExtra(def.key + end, e.currentTarget.value)}
-      />
+      <Input.Label size="sm">{label}</Input.Label>
+      <Group gap="xs" grow wrap="nowrap">
+        <TextInput
+          type={inputType}
+          size="sm"
+          aria-label={`${label} ${start}`}
+          value={asText(source.extra[def.key + start])}
+          onChange={(e) =>
+            source.setExtra(def.key + start, e.currentTarget.value)
+          }
+        />
+        <TextInput
+          type={inputType}
+          size="sm"
+          aria-label={`${label} ${end}`}
+          value={asText(source.extra[def.key + end])}
+          onChange={(e) =>
+            source.setExtra(def.key + end, e.currentTarget.value)
+          }
+        />
+      </Group>
     </Stack>
   );
 }
@@ -97,7 +109,7 @@ function FilterControl<TRow>({
           value={asList(source.extra[def.key])}
           onChange={(values) => source.setExtra(def.key, values)}
         >
-          <Stack gap={6} mt={4}>
+          <Group gap="sm" mt={4}>
             {options.map((option) => (
               <Checkbox
                 key={option.value}
@@ -106,7 +118,7 @@ function FilterControl<TRow>({
                 label={option.label}
               />
             ))}
-          </Stack>
+          </Group>
         </Checkbox.Group>
       );
     case "dateRange":
