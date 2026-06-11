@@ -1,14 +1,13 @@
 import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
 import {
-  columnDropProps,
   columnMenuRows,
   columnReorderKeyProps,
-  columnRowDragProps,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
+  useColumnDragState,
 } from "@adapttable/core";
 import {
   Button,
@@ -50,6 +49,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
 }: Readonly<ColumnMenuProps<TRow>>) {
+  const drag = useColumnDragState();
   return (
     <Popover placement="bottom-end" isLazy>
       <PopoverTrigger>
@@ -71,53 +71,68 @@ export function ColumnMenu<TRow>({
             >
               {labels.columns}
             </Text>
-            {columnMenuRows(allColumns, layout).map((r) => (
-              <HStack
-                key={r.key}
-                spacing={1}
-                py={0.5}
-                cursor="grab"
-                {...columnRowDragProps(r.key)}
-                {...columnDropProps(r.index, layout.move)}
-              >
-                <IconButton
-                  size="xs"
-                  variant="ghost"
+            {columnMenuRows(allColumns, layout).map((r) => {
+              // Drop-position feedback: dim the source, line the landing edge.
+              const indicator = drag.rowAttrs(r.key, r.index);
+              const edge = indicator["data-drop"];
+              const edgeOffset = edge === "before" ? "2px" : "-2px";
+              return (
+                <HStack
+                  key={r.key}
+                  spacing={1}
+                  py={0.5}
                   cursor="grab"
-                  icon={<GripIcon />}
-                  {...columnReorderKeyProps(
-                    r.key,
-                    r.index,
-                    layout.move,
-                    `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
-                  )}
-                />
-                <IconButton
-                  size="xs"
-                  variant="ghost"
-                  aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
-                  aria-pressed={!r.hidden}
-                  icon={<EyeIcon off={r.hidden} />}
-                  onClick={() => layout.toggleVisible(r.key)}
-                />
-                <Text
-                  fontSize="sm"
-                  flex={1}
-                  color={r.hidden ? "gray.500" : undefined}
-                  textDecoration={r.hidden ? "line-through" : undefined}
+                  opacity={"data-dragging" in indicator ? 0.4 : undefined}
+                  boxShadow={
+                    edge
+                      ? `inset 0 ${edgeOffset} 0 0 var(--chakra-colors-blue-500)`
+                      : undefined
+                  }
+                  {...drag.rowDragProps(r.key, r.index)}
+                  {...drag.dropProps(r.index, layout.move)}
+                  {...indicator}
                 >
-                  {r.name}
-                </Text>
-                <IconButton
-                  size="xs"
-                  variant={r.pinned ? "solid" : "ghost"}
-                  colorScheme={r.pinned ? "teal" : "gray"}
-                  aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-                  icon={<PinIcon />}
-                  onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
-                />
-              </HStack>
-            ))}
+                  <IconButton
+                    size="xs"
+                    variant="ghost"
+                    cursor="grab"
+                    icon={<GripIcon />}
+                    {...columnReorderKeyProps(
+                      r.key,
+                      r.index,
+                      layout.move,
+                      `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+                    )}
+                  />
+                  <IconButton
+                    size="xs"
+                    variant="ghost"
+                    aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
+                    aria-pressed={!r.hidden}
+                    icon={<EyeIcon off={r.hidden} />}
+                    onClick={() => layout.toggleVisible(r.key)}
+                  />
+                  <Text
+                    fontSize="sm"
+                    flex={1}
+                    color={r.hidden ? "gray.500" : undefined}
+                    textDecoration={r.hidden ? "line-through" : undefined}
+                  >
+                    {r.name}
+                  </Text>
+                  <IconButton
+                    size="xs"
+                    variant={r.pinned ? "solid" : "ghost"}
+                    colorScheme={r.pinned ? "teal" : "gray"}
+                    aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+                    icon={<PinIcon />}
+                    onClick={() =>
+                      layout.setPinned(r.key, nextPinSide(r.pinned))
+                    }
+                  />
+                </HStack>
+              );
+            })}
             <Divider my={1} />
             <Button size="xs" variant="ghost" onClick={() => layout.reset()}>
               {labels.resetColumns}

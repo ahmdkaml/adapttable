@@ -1,3 +1,4 @@
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -5,6 +6,7 @@ import {
   columnDropProps,
   columnReorderKeyProps,
   columnRowDragProps,
+  useColumnDragState,
 } from "./columnReorder";
 
 /** A minimal in-memory DataTransfer stand-in for jsdom drag events. */
@@ -24,7 +26,12 @@ function fakeDataTransfer(initial: Record<string, string> = {}) {
 }
 
 function dragEvent(dataTransfer: unknown, extra: Record<string, unknown> = {}) {
-  return { preventDefault: vi.fn(), dataTransfer, ...extra };
+  return {
+    preventDefault: vi.fn(),
+    defaultPrevented: false,
+    dataTransfer,
+    ...extra,
+  };
 }
 
 describe("columnRowDragProps", () => {
@@ -174,5 +181,133 @@ describe("direction detection without a [dir] ancestor", () => {
     // jsdom computes direction "ltr" → ArrowLeft moves toward the start.
     expect(move).toHaveBeenLastCalledWith("a", 2);
     grip.remove();
+  });
+});
+
+describe("useColumnDragState", () => {
+  function startDrag(
+    state: ReturnType<typeof useColumnDragState>,
+    key: string,
+    index: number
+  ) {
+    const dt = fakeDataTransfer();
+    const props = state.rowDragProps(key, index);
+    act(() => {
+      props.onDragStart(
+        dragEvent(dt, {
+          // No interactive ancestor — the drag is allowed.
+          target: { closest: () => null },
+          defaultPrevented: false,
+        }) as never
+      );
+    });
+    return props;
+  }
+
+  it("is idle (no attributes) outside a drag", () => {
+    const { result } = renderHook(() => useColumnDragState());
+    expect(result.current.draggingKey).toBeNull();
+    expect(result.current.rowAttrs("a", 0)).toEqual({});
+  });
+
+  it("marks the dragged row and the hovered target with its edge", () => {
+    const move = vi.fn();
+    const { result } = renderHook(() => useColumnDragState());
+    startDrag(result.current, "b", 1);
+    expect(result.current.draggingKey).toBe("b");
+    expect(result.current.rowAttrs("b", 1)).toEqual({ "data-dragging": "" });
+
+    // Hover an EARLIER row → the column lands before it.
+    const over = dragEvent(
+      { types: [COLUMN_DND_MIME], dropEffect: "none" },
+      { defaultPrevented: false }
+    );
+    over.preventDefault = vi.fn(() => {
+      over.defaultPrevented = true;
+    });
+    act(() => result.current.dropProps(0, move).onDragOver(over as never));
+    expect(result.current.overIndex).toBe(0);
+    expect(result.current.rowAttrs("a", 0)).toEqual({ "data-drop": "before" });
+
+    // Hover a LATER row → lands after it.
+    const overLater = dragEvent(
+      { types: [COLUMN_DND_MIME], dropEffect: "none" },
+      { defaultPrevented: false }
+    );
+    overLater.preventDefault = vi.fn(() => {
+      overLater.defaultPrevented = true;
+    });
+    act(() => result.current.dropProps(2, move).onDragOver(overLater as never));
+    expect(result.current.rowAttrs("c", 2)).toEqual({ "data-drop": "after" });
+    // The source row itself never shows a drop edge.
+    expect(result.current.rowAttrs("b", 1)).toEqual({ "data-dragging": "" });
+    // Rows that are neither the source nor the hovered target stay bare.
+    expect(result.current.rowAttrs("a", 0)).toEqual({});
+  });
+
+  it("ignores hovers from non-column drags", () => {
+    const move = vi.fn();
+    const { result } = renderHook(() => useColumnDragState());
+    startDrag(result.current, "b", 1);
+    const foreign = dragEvent(
+      { types: ["text/plain"], dropEffect: "none" },
+      { defaultPrevented: false }
+    );
+    act(() => result.current.dropProps(0, move).onDragOver(foreign as never));
+    expect(result.current.overIndex).toBeNull();
+  });
+
+  it("hovering the source's own index shows no indicator", () => {
+    const move = vi.fn();
+    const { result } = renderHook(() => useColumnDragState());
+    startDrag(result.current, "b", 1);
+    const over = dragEvent(
+      { types: [COLUMN_DND_MIME], dropEffect: "none" },
+      { defaultPrevented: false }
+    );
+    over.preventDefault = vi.fn(() => {
+      over.defaultPrevented = true;
+    });
+    act(() => result.current.dropProps(1, move).onDragOver(over as never));
+    expect(result.current.rowAttrs("b", 1)).toEqual({ "data-dragging": "" });
+  });
+
+  it("drop moves the column and clears every indicator", () => {
+    const move = vi.fn();
+    const { result } = renderHook(() => useColumnDragState());
+    startDrag(result.current, "b", 1);
+    const dt = {
+      types: [COLUMN_DND_MIME],
+      getData: vi.fn(() => "b"),
+      dropEffect: "none",
+    };
+    act(() => result.current.dropProps(0, move).onDrop(dragEvent(dt) as never));
+    expect(move).toHaveBeenCalledWith("b", 0);
+    expect(result.current.draggingKey).toBeNull();
+    expect(result.current.overIndex).toBeNull();
+  });
+
+  it("a cancelled drag (Escape / drop outside) clears via onDragEnd", () => {
+    const { result } = renderHook(() => useColumnDragState());
+    const props = startDrag(result.current, "b", 1);
+    act(() => props.onDragEnd());
+    expect(result.current.draggingKey).toBeNull();
+  });
+
+  it("never tracks a drag the base handler cancelled (interactive control)", () => {
+    const { result } = renderHook(() => useColumnDragState());
+    const dt = fakeDataTransfer();
+    const props = result.current.rowDragProps("b", 1);
+    const evt = dragEvent(dt, {
+      target: {
+        closest: (sel: string) => (sel.includes("button") ? {} : null),
+      },
+      defaultPrevented: false,
+    });
+    evt.preventDefault = vi.fn(() => {
+      evt.defaultPrevented = true;
+    });
+    act(() => props.onDragStart(evt as never));
+    expect(result.current.draggingKey).toBeNull();
   });
 });

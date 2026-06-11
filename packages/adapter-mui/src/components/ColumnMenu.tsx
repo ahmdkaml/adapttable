@@ -1,14 +1,13 @@
 import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
 import {
-  columnDropProps,
   columnMenuRows,
   columnReorderKeyProps,
-  columnRowDragProps,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
+  useColumnDragState,
 } from "@adapttable/core";
 import {
   Box,
@@ -49,6 +48,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
 }: Readonly<ColumnMenuProps<TRow>>) {
+  const drag = useColumnDragState();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   return (
     <>
@@ -82,57 +82,73 @@ export function ColumnMenu<TRow>({
           >
             {labels.columns}
           </Typography>
-          {columnMenuRows(allColumns, layout).map((r) => (
-            <Stack
-              key={r.key}
-              direction="row"
-              alignItems="center"
-              spacing={0.5}
-              sx={{ px: 0.5, py: 0.25, cursor: "grab" }}
-              {...columnRowDragProps(r.key)}
-              {...columnDropProps(r.index, layout.move)}
-            >
-              <IconButton
-                size="small"
-                sx={{ cursor: "grab", color: "text.disabled" }}
-                {...columnReorderKeyProps(
-                  r.key,
-                  r.index,
-                  layout.move,
-                  `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
-                )}
-              >
-                <GripIcon />
-              </IconButton>
-              <IconButton
-                size="small"
-                aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
-                aria-pressed={!r.hidden}
-                color={r.hidden ? "default" : "primary"}
-                onClick={() => layout.toggleVisible(r.key)}
-              >
-                <EyeIcon off={r.hidden} />
-              </IconButton>
-              <Typography
-                variant="body2"
+          {columnMenuRows(allColumns, layout).map((r) => {
+            // Drop-position feedback: dim the source, line the landing edge.
+            const indicator = drag.rowAttrs(r.key, r.index);
+            const edge = indicator["data-drop"];
+            const edgeOffset = edge === "before" ? "2px" : "-2px";
+            return (
+              <Stack
+                key={r.key}
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
                 sx={{
-                  flex: 1,
-                  color: r.hidden ? "text.disabled" : "text.primary",
-                  textDecoration: r.hidden ? "line-through" : "none",
+                  px: 0.5,
+                  py: 0.25,
+                  cursor: "grab",
+                  opacity: "data-dragging" in indicator ? 0.4 : undefined,
+                  boxShadow: edge
+                    ? (theme) =>
+                        `inset 0 ${edgeOffset} 0 0 ${theme.palette.primary.main}`
+                    : undefined,
                 }}
+                {...drag.rowDragProps(r.key, r.index)}
+                {...drag.dropProps(r.index, layout.move)}
+                {...indicator}
               >
-                {r.name}
-              </Typography>
-              <IconButton
-                size="small"
-                color={r.pinned ? "primary" : "default"}
-                aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-                onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
-              >
-                <PinIcon />
-              </IconButton>
-            </Stack>
-          ))}
+                <IconButton
+                  size="small"
+                  sx={{ cursor: "grab", color: "text.disabled" }}
+                  {...columnReorderKeyProps(
+                    r.key,
+                    r.index,
+                    layout.move,
+                    `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+                  )}
+                >
+                  <GripIcon />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
+                  aria-pressed={!r.hidden}
+                  color={r.hidden ? "default" : "primary"}
+                  onClick={() => layout.toggleVisible(r.key)}
+                >
+                  <EyeIcon off={r.hidden} />
+                </IconButton>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    flex: 1,
+                    color: r.hidden ? "text.disabled" : "text.primary",
+                    textDecoration: r.hidden ? "line-through" : "none",
+                  }}
+                >
+                  {r.name}
+                </Typography>
+                <IconButton
+                  size="small"
+                  color={r.pinned ? "primary" : "default"}
+                  aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+                  onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
+                >
+                  <PinIcon />
+                </IconButton>
+              </Stack>
+            );
+          })}
           <Divider sx={{ my: 0.5 }} />
           <Button
             size="small"

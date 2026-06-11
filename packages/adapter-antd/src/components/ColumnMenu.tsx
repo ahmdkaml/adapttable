@@ -4,17 +4,16 @@ import type {
   UseColumnLayoutResult,
 } from "@adapttable/core";
 import {
-  columnDropProps,
   columnMenuRows,
   columnReorderKeyProps,
-  columnRowDragProps,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
+  useColumnDragState,
 } from "@adapttable/core";
-import { Button, Divider, Flex, Popover } from "antd";
+import { Button, Divider, Flex, Popover, theme } from "antd";
 import { useEffect, useState } from "react";
 
 export interface ColumnMenuLabels {
@@ -49,6 +48,8 @@ export function ColumnMenu<TRow>({
   labels,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
+  const drag = useColumnDragState();
+  const { token } = theme.useToken();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -80,53 +81,67 @@ export function ColumnMenu<TRow>({
       >
         {labels.columns}
       </div>
-      {columnMenuRows(allColumns, layout).map((r) => (
-        <Flex
-          key={r.key}
-          align="center"
-          gap={6}
-          style={{ padding: "2px 0", cursor: "grab" }}
-          {...columnRowDragProps(r.key)}
-          {...columnDropProps(r.index, layout.move)}
-        >
-          <span
-            style={{ display: "inline-flex", cursor: "grab", opacity: 0.55 }}
-            {...columnReorderKeyProps(
-              r.key,
-              r.index,
-              layout.move,
-              `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
-            )}
-          >
-            <GripIcon />
-          </span>
-          <Button
-            size="small"
-            type={r.hidden ? "text" : "link"}
-            aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
-            aria-pressed={!r.hidden}
-            icon={<EyeIcon off={r.hidden} />}
-            onClick={() => layout.toggleVisible(r.key)}
-          />
-          <span
+      {columnMenuRows(allColumns, layout).map((r) => {
+        // Drop-position feedback: dim the source, line the landing edge.
+        const indicator = drag.rowAttrs(r.key, r.index);
+        const edge = indicator["data-drop"];
+        const edgeOffset = edge === "before" ? "2px" : "-2px";
+        return (
+          <Flex
+            key={r.key}
+            align="center"
+            gap={6}
             style={{
-              flex: 1,
-              fontSize: 14,
-              opacity: r.hidden ? 0.5 : 1,
-              textDecoration: r.hidden ? "line-through" : "none",
+              padding: "2px 0",
+              cursor: "grab",
+              opacity: "data-dragging" in indicator ? 0.4 : undefined,
+              boxShadow: edge
+                ? `inset 0 ${edgeOffset} 0 0 ${token.colorPrimary}`
+                : undefined,
             }}
+            {...drag.rowDragProps(r.key, r.index)}
+            {...drag.dropProps(r.index, layout.move)}
+            {...indicator}
           >
-            {r.name}
-          </span>
-          <Button
-            size="small"
-            type={r.pinned ? "primary" : "text"}
-            aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-            icon={<PinIcon />}
-            onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
-          />
-        </Flex>
-      ))}
+            <span
+              style={{ display: "inline-flex", cursor: "grab", opacity: 0.55 }}
+              {...columnReorderKeyProps(
+                r.key,
+                r.index,
+                layout.move,
+                `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+              )}
+            >
+              <GripIcon />
+            </span>
+            <Button
+              size="small"
+              type={r.hidden ? "text" : "link"}
+              aria-label={`${r.hidden ? labels.showColumn : labels.hideColumn}: ${r.name}`}
+              aria-pressed={!r.hidden}
+              icon={<EyeIcon off={r.hidden} />}
+              onClick={() => layout.toggleVisible(r.key)}
+            />
+            <span
+              style={{
+                flex: 1,
+                fontSize: 14,
+                opacity: r.hidden ? 0.5 : 1,
+                textDecoration: r.hidden ? "line-through" : "none",
+              }}
+            >
+              {r.name}
+            </span>
+            <Button
+              size="small"
+              type={r.pinned ? "primary" : "text"}
+              aria-label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+              icon={<PinIcon />}
+              onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
+            />
+          </Flex>
+        );
+      })}
       <Divider style={{ margin: "8px 0" }} />
       <Button size="small" type="text" onClick={() => layout.reset()}>
         {labels.resetColumns}

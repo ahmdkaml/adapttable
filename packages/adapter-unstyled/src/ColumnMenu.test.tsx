@@ -122,8 +122,34 @@ describe("unstyled ColumnMenu", () => {
       .getByText("Charlie")
       .closest("[data-adapttable-part='column-menu-item']")!;
     fireEvent.dragOver(rowC, { dataTransfer: dt });
+    // Drop-position feedback while hovering: the source dims, the hovered
+    // target shows its landing edge (a → index 2 = lands AFTER Charlie).
+    expect(rowA).toHaveAttribute("data-dragging");
+    expect(rowC).toHaveAttribute("data-drop", "after");
     fireEvent.drop(rowC, { dataTransfer: dt });
     expect(layout.move).toHaveBeenCalledWith("a", 2);
+    // Indicators clear after the drop.
+    expect(rowA).not.toHaveAttribute("data-dragging");
+    expect(rowC).not.toHaveAttribute("data-drop");
+  });
+
+  it("hovering an earlier row marks the 'before' edge", () => {
+    const layout = fakeLayout();
+    open(layout);
+    const dt = fakeDataTransfer();
+    const rowC = screen
+      .getByText("Charlie")
+      .closest("[data-adapttable-part='column-menu-item']")!;
+    fireEvent.dragStart(rowC, { dataTransfer: dt });
+    const rowA = screen
+      .getByText("Alpha")
+      .closest("[data-adapttable-part='column-menu-item']")!;
+    fireEvent.dragOver(rowA, { dataTransfer: dt });
+    expect(rowA).toHaveAttribute("data-drop", "before");
+    // Cancelling the drag (drop outside / Escape) clears the indicators.
+    fireEvent.dragEnd(rowC, { dataTransfer: dt });
+    expect(rowA).not.toHaveAttribute("data-drop");
+    expect(rowC).not.toHaveAttribute("data-dragging");
   });
 
   it("keeps hidden columns in place — still draggable, eye toggles them back", () => {

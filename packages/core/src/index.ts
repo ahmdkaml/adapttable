@@ -191,12 +191,15 @@ export {
 } from "./columns/columnMenuModel";
 export {
   COLUMN_DND_MIME,
+  type ColumnDragRowAttrs,
+  type ColumnDragState,
   type ColumnDropProps,
   columnDropProps,
   type ColumnReorderKeyProps,
   columnReorderKeyProps,
   type ColumnRowDragProps,
   columnRowDragProps,
+  useColumnDragState,
 } from "./columns/columnReorder";
 export {
   COLUMN_RESIZE_STEP,

@@ -1,18 +1,18 @@
 import type {
   ColumnDef,
+  ColumnDragState,
   ColumnMenuRow,
   UseColumnLayoutResult,
 } from "@adapttable/core";
 import {
-  columnDropProps,
   columnMenuRows,
   columnReorderKeyProps,
-  columnRowDragProps,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
+  useColumnDragState,
 } from "@adapttable/core";
 import { useEffect, useRef, useState } from "react";
 
@@ -36,6 +36,7 @@ interface ColumnMenuRowProps<TRow> {
   layout: UseColumnLayoutResult<TRow>;
   labels: ColumnMenuLabels;
   classNames: DataTableClassNames;
+  drag: ColumnDragState;
 }
 
 function ColumnMenuRowItem<TRow>({
@@ -43,6 +44,7 @@ function ColumnMenuRowItem<TRow>({
   layout,
   labels,
   classNames,
+  drag,
 }: Readonly<ColumnMenuRowProps<TRow>>) {
   const { key, name, hidden, pinned, index } = row;
   return (
@@ -52,8 +54,9 @@ function ColumnMenuRowItem<TRow>({
       data-pinned={pinned}
       className={classNames.columnMenuItem}
       style={{ cursor: "grab" }}
-      {...columnRowDragProps(key)}
-      {...columnDropProps(index, layout.move)}
+      {...drag.rowDragProps(key, index)}
+      {...drag.dropProps(index, layout.move)}
+      {...drag.rowAttrs(key, index)}
     >
       <span
         data-adapttable-part="column-menu-grip"
@@ -119,6 +122,7 @@ export function ColumnMenu<TRow>({
   labels,
   classNames,
 }: Readonly<ColumnMenuProps<TRow>>) {
+  const drag = useColumnDragState();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -195,6 +199,7 @@ export function ColumnMenu<TRow>({
               layout={layout}
               labels={labels}
               classNames={classNames}
+              drag={drag}
             />
           ))}
           <button
