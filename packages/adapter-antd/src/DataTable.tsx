@@ -24,9 +24,12 @@ import {
   Checkbox,
   Empty,
   Flex,
+  Pagination,
+  Select,
   Space,
   Table,
   type TableProps,
+  Typography,
 } from "antd";
 import {
   type ReactNode,
@@ -110,8 +113,9 @@ function EmptyState({
 function sortChangeHandler<TRow>(
   source: TableSource<TRow>
 ): NonNullable<TableProps<TRow>["onChange"]> {
-  return (_pagination, _filters, sorter, extra) => {
-    if (extra.action !== "sort") return;
+  // Sorting is the only antd-internal feature left wired (pagination is the
+  // split footer, filtering is ours), so every onChange IS a sort event.
+  return (_pagination, _filters, sorter) => {
     // antd passes an array only under multi-column sort, which buildColumns
     // never enables — flat() folds both shapes without a dead branch.
     const next = [sorter].flat()[0];
@@ -339,27 +343,52 @@ function chainToggler<TRow>(
   return (key) => source.toggleSortLevel(key);
 }
 
-/** Build antd's pagination config (undefined in infinite mode → `false`). */
-function buildPagination<TRow>(
-  isPaged: boolean,
-  table: UseDataTableResult<TRow>,
-  source: TableSource<TRow>,
-  labels: Required<TableLabels>
-) {
-  if (!isPaged) return undefined;
-  return {
-    current: table.pagination.safePage,
-    pageSize: source.limit,
-    total: source.total,
-    showSizeChanger: true,
-    pageSizeOptions: pageSizeOptions(source.limit).map(String),
-    showTotal: (total: number, range: [number, number]) =>
-      labels.showing({ from: range[0], to: range[1], total }),
-    onChange: (page: number, pageSize: number) => {
-      if (pageSize === source.limit) source.setPage(page);
-      else source.setLimit(pageSize);
-    },
-  };
+/**
+ * The split footer every kit shares — rows-per-page + showing on the start
+ * side, the pager on the end side — built from antd's own Select and
+ * Pagination instead of the table-internal pagination (which crams
+ * everything, size changer included, onto one end).
+ */
+function PagedFooter<TRow>({
+  table,
+  source,
+  labels,
+}: Readonly<{
+  table: UseDataTableResult<TRow>;
+  source: TableSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const from = (table.pagination.safePage - 1) * source.limit + 1;
+  const to = Math.min(table.pagination.safePage * source.limit, source.total);
+  return (
+    <Flex justify="space-between" align="center" wrap gap={8}>
+      <Flex align="center" gap={8}>
+        <Typography.Text type="secondary">{labels.rowsPerPage}</Typography.Text>
+        <Select
+          size="small"
+          aria-label={labels.rowsPerPage}
+          value={source.limit}
+          onChange={(value: number) => source.setLimit(value)}
+          options={pageSizeOptions(source.limit).map((n) => ({
+            value: n,
+            label: n,
+          }))}
+        />
+        {source.total > 0 && (
+          <Typography.Text type="secondary">
+            {labels.showing({ from, to, total: source.total })}
+          </Typography.Text>
+        )}
+      </Flex>
+      <Pagination
+        current={table.pagination.safePage}
+        pageSize={source.limit}
+        total={source.total}
+        showSizeChanger={false}
+        onChange={(page: number) => source.setPage(page)}
+      />
+    </Flex>
+  );
 }
 
 /**
@@ -513,7 +542,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     summaryLeadingCells(rowSelection, expandable),
     Boolean(props.rowActions?.length)
   );
-  const pagination = buildPagination(c.isPaged, table, source, labels) ?? false;
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
     : undefined;
@@ -580,7 +608,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         rowSelection={rowSelection}
         expandable={expandable}
         summary={summary}
-        pagination={pagination}
+        pagination={false}
         rowClassName={
           props.rowClassName ? buildRowClassName(props.rowClassName) : undefined
         }
@@ -664,6 +692,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         {bodyRegion}
+        {c.isPaged && !source.error && c.body === "desktop" && (
+          <PagedFooter table={table} source={source} labels={labels} />
+        )}
         {!c.isPaged && !source.error && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center">
             <Button

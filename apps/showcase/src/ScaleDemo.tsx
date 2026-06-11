@@ -1,7 +1,8 @@
 import type { CellProps, ColumnDef } from "@adapttable/core";
 import { useFrontendData } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
-import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
+import { DataTable } from "@adapttable/mantine";
+import { MantineProvider } from "@mantine/core";
 import { useMemo } from "react";
 
 interface BigPerson {
@@ -102,7 +103,7 @@ function PersonCell({ row }: Readonly<CellProps<BigPerson>>) {
   return (
     <div>
       <div style={{ fontWeight: 600 }}>{row.name}</div>
-      <div style={{ fontSize: 12, color: "var(--color-muted-foreground)" }}>
+      <div style={{ fontSize: 12, color: "var(--mantine-color-dimmed)" }}>
         {row.email}
       </div>
     </div>
@@ -129,23 +130,8 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
   },
 ];
 
-const CLASS_NAMES: DataTableClassNames = {
-  root: "text-card-foreground",
-  toolbar: "flex flex-wrap items-center gap-2 p-3 border-b border-border",
-  search:
-    "h-9 w-72 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring",
-  table: "w-full border-collapse text-sm",
-  headerCell:
-    "border-b border-border bg-card px-3 py-2 text-start font-medium text-muted-foreground",
-  sortButton: "inline-flex items-center gap-1 font-medium",
-  row: "border-b border-border hover:bg-muted/50",
-  cell: "px-3 py-2",
-  footer:
-    "flex items-center justify-between gap-2 border-t border-border p-3 text-sm text-muted-foreground",
-};
-
-/** Real unstyled adapter, virtualized over 50,000 rows. */
-export function ScaleDemo() {
+/** The real Mantine adapter, element-virtualized over 50,000 rows. */
+export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
   const rows = useMemo(() => makeBigList(50000), []);
   const source = useFrontendData<BigPerson>({
     data: rows,
@@ -158,16 +144,17 @@ export function ScaleDemo() {
     defaults: { limit: 500 },
   });
   return (
-    <DataTable
-      source={source}
-      columns={COLUMNS}
-      rowKey={(r) => String(r.id)}
-      labels={getLabels("en")}
-      searchPlaceholder="Filter 50,000 rows…"
-      virtualize
-      estimateRowSize={48}
-      maxHeight={380}
-      classNames={CLASS_NAMES}
-    />
+    <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
+      <DataTable
+        source={source}
+        columns={COLUMNS}
+        rowKey={(r) => String(r.id)}
+        labels={getLabels("en")}
+        searchPlaceholder="Filter 50,000 rows…"
+        virtualize
+        estimateRowSize={48}
+        maxHeight={380}
+      />
+    </MantineProvider>
   );
 }

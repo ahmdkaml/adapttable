@@ -189,12 +189,16 @@ describe("<DataTable> (Ant Design)", () => {
     expect(adapter.getSearch()).toContain("page=2");
   });
 
-  it("changes the page size via the antd pager size changer", () => {
+  it("changes the page size via the footer rows-per-page select", () => {
     renderHarness();
-    // The paged footer's size changer is the only combobox in this layout.
-    fireEvent.mouseDown(screen.getByRole("combobox"));
-    fireEvent.click(screen.getByText("50 / page"));
+    // The split footer's labelled Select replaces antd's "N / page" changer.
+    fireEvent.mouseDown(
+      screen.getByRole("combobox", { name: "Rows per page" })
+    );
+    fireEvent.click(screen.getByTitle("50"));
     expect(adapter.getSearch()).toContain("limit=50");
+    // The showing text comes from the same labels the other kits use.
+    expect(screen.getByText(/Showing 1–/)).toBeInTheDocument();
   });
 
   it("changes rows-per-page and sort via the toolbar selects (infinite)", () => {

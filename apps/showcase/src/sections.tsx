@@ -42,7 +42,9 @@ export function Nav({
           <a href="#demo">Live demo</a>
           <a href="#columns">Columns</a>
           <a href="#scale">Scale</a>
+          <a href="#rtl">RTL</a>
           <a href="#custom">Customize</a>
+          <a href="#get-started">Get started</a>
         </nav>
         <div className="nav__right">
           <button
@@ -284,22 +286,24 @@ export function GetStarted() {
         </pre>
         <div className="getstarted__actions">
           <Install large />
-          <a
-            className="hero__link"
-            href={`${DOCS_URL}getting-started/`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read the docs →
-          </a>
-          <a
-            className="hero__link"
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Star it on GitHub →
-          </a>
+          <div className="getstarted__btns">
+            <a
+              className="gs-btn gs-btn--primary"
+              href={`${DOCS_URL}getting-started/`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the docs
+            </a>
+            <a
+              className="gs-btn gs-btn--ghost"
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <External size={15} /> Star it on GitHub
+            </a>
+          </div>
         </div>
       </div>
     </section>

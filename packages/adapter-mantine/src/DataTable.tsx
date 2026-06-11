@@ -290,7 +290,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                   />
                 </>
               }
-              showRowsPerPage={!chrome.isPaged}
+              showRowsPerPage={canLoadMore}
             />
             <ActiveFilterChips
               chips={chrome.mergedChips}

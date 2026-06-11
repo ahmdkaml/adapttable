@@ -234,7 +234,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           }
           hasFilters={Boolean(filtersNode)}
           activeFilterCount={c.activeFilterCount}
-          showRowsPerPage={!c.isPaged}
+          showRowsPerPage={canLoadMore}
           filtersMode={filtersMode}
           filters={filtersNode}
           filtersOpen={filtersOpen}

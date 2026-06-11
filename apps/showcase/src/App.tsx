@@ -247,7 +247,7 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ScaleSection() {
+function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="scale">
       <SectionHead
@@ -261,7 +261,7 @@ function ScaleSection() {
       </SectionHead>
       <div className="pad-surface">
         <div className="pad-surface__body">
-          <ScaleDemo />
+          <ScaleDemo dark={dark} />
         </div>
       </div>
     </section>
@@ -270,7 +270,7 @@ function ScaleSection() {
 
 function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
-    <section className="sec shell">
+    <section className="sec shell" id="rtl">
       <SectionHead kicker="i18n + RTL" title="Right-to-left, for real.">
         Switch to Arabic and the entire layout mirrors — toolbar, sort arrows,
         pinned columns, pagination. Not just translated strings: a genuinely
@@ -319,7 +319,7 @@ export function App() {
         <Hero dark={dark} />
         <LiveDemo dark={dark} />
         <ColumnsDemo dark={dark} />
-        <ScaleSection />
+        <ScaleSection dark={dark} />
         <RtlSection dark={dark} />
         <section className="sec shell" id="custom">
           <SectionHead

@@ -363,7 +363,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             classNames={classNames}
           />
         )}
-        {!chrome.isPaged && (
+        {canLoadMore && (
           <RowsPerPageSelect
             source={source}
             labels={labels}

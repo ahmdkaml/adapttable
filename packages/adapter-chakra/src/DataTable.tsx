@@ -66,6 +66,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         defs={runtime.defs}
         source={source}
         colorScheme={colorScheme}
+        dir={props.dir}
       />
     ) : undefined;
   // Column-level `filter` shorthands alone must still render the auto form —
@@ -203,7 +204,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               />
             ) : undefined
           }
-          showRowsPerPage={!chrome.isPaged}
+          showRowsPerPage={canLoadMore}
           colorScheme={colorScheme}
           dir={props.dir}
         />
@@ -255,6 +256,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}
+            dir={props.dir}
           />
         )}
       </Stack>

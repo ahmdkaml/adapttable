@@ -1,4 +1,5 @@
 import {
+  type Direction,
   type FilterDef,
   filterLabel,
   filterStateKeys,
@@ -20,6 +21,8 @@ import {
 } from "@chakra-ui/react";
 import { useId } from "react";
 
+import { selectIconRootProps } from "./chrome";
+
 /** The slice of the table source the auto-built form reads and writes. */
 export type FilterFormSource<TRow> = Pick<
   TableSource<TRow>,
@@ -28,6 +31,8 @@ export type FilterFormSource<TRow> = Pick<
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
+  /** Writing direction (flips the select chevron). */
+  dir?: Direction;
   /** The resolved filter definitions, in render order. */
   defs: readonly FilterDef<TRow>[];
   /** The resolved table source (filter bag + setter). */
@@ -52,10 +57,12 @@ function AutoFilterField<TRow>({
   def,
   source,
   colorScheme,
+  dir,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   colorScheme?: string;
+  dir?: Direction;
 }>) {
   const id = useId();
   const { extra, setExtra } = source;
@@ -86,6 +93,7 @@ function AutoFilterField<TRow>({
           </FormLabel>
           <Select
             size="sm"
+            rootProps={selectIconRootProps(dir)}
             value={scalar(extra[def.key])}
             onChange={(e) => setExtra(def.key, e.target.value)}
           >
@@ -182,6 +190,7 @@ export function AutoFilterForm<TRow>({
   defs,
   source,
   colorScheme,
+  dir,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
     <Stack spacing={3}>
@@ -191,6 +200,7 @@ export function AutoFilterForm<TRow>({
           def={def}
           source={source}
           colorScheme={colorScheme}
+          dir={dir}
         />
       ))}
     </Stack>

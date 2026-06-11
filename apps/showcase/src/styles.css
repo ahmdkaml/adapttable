@@ -741,3 +741,38 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.getstarted__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.gs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  transition:
+    transform 0.15s,
+    opacity 0.15s,
+    background 0.15s;
+}
+.gs-btn:hover {
+  transform: translateY(-1px);
+}
+.gs-btn--primary {
+  background: var(--ink);
+  color: var(--page-bg);
+}
+.gs-btn--primary:hover {
+  opacity: 0.9;
+}
+.gs-btn--ghost {
+  border: 1px solid var(--page-border);
+  background: var(--page-surface-2);
+  color: var(--ink);
+}

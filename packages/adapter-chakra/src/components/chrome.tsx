@@ -85,6 +85,24 @@ function SearchIcon() {
 }
 
 /** Props for {@link Toolbar}: the shared chrome surface + Chakra extras. */
+/**
+ * Chakra v2 pins the select chevron physically (`right: 0.5rem`) and only
+ * flips it with a global RTL theme an adapter must not assume — under
+ * `dir="rtl"` the icon lands on the value. Re-pin it to the writing
+ * direction resolved from the table's own `dir` (doubled `&&` so the rule
+ * outranks the theme part). Spread the result on the Select's `rootProps`.
+ */
+export function selectIconRootProps(dir: Direction | undefined) {
+  return {
+    sx: {
+      "&& .chakra-select__icon-wrapper":
+        dir === "rtl"
+          ? { right: "auto", left: "0.5rem" }
+          : { left: "auto", right: "0.5rem" },
+    },
+  };
+}
+
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Which filter container opens from the Filters button. */
   filtersMode: "popover" | "drawer";
@@ -183,6 +201,7 @@ export function Toolbar<TRow>({
           <Select
             size="sm"
             w="160px"
+            rootProps={selectIconRootProps(dir)}
             aria-label={labels.sortBy}
             placeholder={labels.sortBy}
             value={source.sortBy ?? ""}
@@ -224,6 +243,7 @@ export function Toolbar<TRow>({
           <Select
             size="sm"
             w="90px"
+            rootProps={selectIconRootProps(dir)}
             aria-label={labels.rowsPerPage}
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
@@ -366,6 +386,7 @@ export function Footer({
   setPage,
   setLimit,
   labels,
+  dir,
   className,
 }: Readonly<{
   pagination: PaginationInfo;
@@ -374,6 +395,8 @@ export function Footer({
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
+  /** Writing direction (flips the select chevron). */
+  dir?: Direction;
   /** Class hook for the footer row. */
   className?: string;
 }>) {
@@ -392,6 +415,7 @@ export function Footer({
         <Select
           size="xs"
           w="72px"
+          rootProps={selectIconRootProps(dir)}
           aria-label={labels.rowsPerPage}
           value={String(limit)}
           onChange={(e) => setLimit(Number(e.target.value))}
