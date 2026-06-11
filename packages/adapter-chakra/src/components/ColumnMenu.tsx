@@ -1,4 +1,4 @@
-import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
+import type { ColumnMenuChromeProps } from "@adapttable/core";
 import {
   columnMenuRows,
   columnReorderKeyProps,
@@ -22,23 +22,8 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-export interface ColumnMenuLabels {
-  columns: string;
-  pinLeft: string;
-  pinRight: string;
-  unpin: string;
-  moveLeft: string;
-  moveRight: string;
-  resetColumns: string;
-  showColumn: string;
-  hideColumn: string;
-}
-
-export interface ColumnMenuProps<TRow> {
-  allColumns: ColumnDef<TRow>[];
-  layout: UseColumnLayoutResult<TRow>;
-  labels: ColumnMenuLabels;
-}
+/** Props for the column menu — the shared core contract. */
+export type ColumnMenuProps<TRow> = ColumnMenuChromeProps<TRow>;
 
 /**
  * Chakra column-management popover: per-column drag grip (reorder), eye

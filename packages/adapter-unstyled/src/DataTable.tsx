@@ -1,6 +1,5 @@
 import {
   isDeclarativeFilters,
-  pageSizeOptions,
   type TableSource,
   type TableVirtualization,
   useChromeBodyData,
@@ -18,6 +17,7 @@ import {
   ErrorState,
   Footer,
   LoadingState,
+  RowsPerPageSelect,
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
 import { FilterPanel } from "./components/FilterPanel";
@@ -339,22 +339,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         {!chrome.isPaged && (
-          <label>
-            {labels.rowsPerPage}{" "}
-            <select
-              aria-label={labels.rowsPerPage}
-              data-adapttable-part="rows-per-page"
-              className={classNames.rowsPerPageSelect}
-              value={source.limit}
-              onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
-            >
-              {pageSizeOptions(source.limit).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
+          <RowsPerPageSelect
+            source={source}
+            labels={labels}
+            classNames={classNames}
+          />
         )}
       </div>
 
@@ -389,8 +378,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       )}
 
       {chrome.isRefreshing && (
-        <div
-          role="progressbar"
+        // Native indeterminate progress (no `value`) — implicit progressbar
+        // role with correct semantics on every device.
+        <progress
           aria-label={labels.loading}
           data-adapttable-part="refresh-indicator"
           className={classNames.refreshIndicator}

@@ -1,4 +1,4 @@
-import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
+import type { ColumnMenuChromeProps } from "@adapttable/core";
 import {
   columnMenuRows,
   columnReorderKeyProps,
@@ -11,22 +11,8 @@ import {
 } from "@adapttable/core";
 import { ActionIcon, Box, Button, Group, Menu, Text } from "@mantine/core";
 
-/** Props for {@link ColumnMenu}. */
-export interface ColumnMenuProps<TRow> {
-  allColumns: ColumnDef<TRow>[];
-  layout: UseColumnLayoutResult<TRow>;
-  labels: {
-    columns: string;
-    pinLeft: string;
-    pinRight: string;
-    unpin: string;
-    moveLeft: string;
-    moveRight: string;
-    resetColumns: string;
-    showColumn: string;
-    hideColumn: string;
-  };
-}
+/** Props for the column menu — the shared core contract. */
+export type ColumnMenuProps<TRow> = ColumnMenuChromeProps<TRow>;
 
 /**
  * Column-management popover: per-column drag grip (reorder), eye (show/hide),

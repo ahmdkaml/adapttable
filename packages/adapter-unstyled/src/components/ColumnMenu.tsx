@@ -1,6 +1,7 @@
 import type {
-  ColumnDef,
   ColumnDragState,
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
   ColumnMenuRow,
   UseColumnLayoutResult,
 } from "@adapttable/core";
@@ -18,18 +19,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
-
-export interface ColumnMenuLabels {
-  columns: string;
-  pinLeft: string;
-  pinRight: string;
-  unpin: string;
-  moveLeft: string;
-  moveRight: string;
-  resetColumns: string;
-  showColumn: string;
-  hideColumn: string;
-}
 
 interface ColumnMenuRowProps<TRow> {
   row: ColumnMenuRow<TRow>;
@@ -103,10 +92,7 @@ function ColumnMenuRowItem<TRow>({
   );
 }
 
-export interface ColumnMenuProps<TRow> {
-  allColumns: ColumnDef<TRow>[];
-  layout: UseColumnLayoutResult<TRow>;
-  labels: ColumnMenuLabels;
+export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   classNames: DataTableClassNames;
 }
 

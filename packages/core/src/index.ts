@@ -182,7 +182,9 @@ export { deriveSortByOptions } from "./sort/sortByOptions";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
+  type ColumnMenuChromeProps,
   columnMenuLabel,
+  type ColumnMenuLabels,
   type ColumnMenuRow,
   columnMenuRows,
   nextPinSide,

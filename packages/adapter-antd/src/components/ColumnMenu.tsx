@@ -1,8 +1,4 @@
-import type {
-  ColumnDef,
-  Direction,
-  UseColumnLayoutResult,
-} from "@adapttable/core";
+import type { ColumnMenuChromeProps, Direction } from "@adapttable/core";
 import {
   columnMenuRows,
   columnReorderKeyProps,
@@ -16,23 +12,7 @@ import {
 import { Button, Divider, Flex, Popover, theme } from "antd";
 import { useEffect, useState } from "react";
 
-export interface ColumnMenuLabels {
-  columns: string;
-  pinLeft: string;
-  pinRight: string;
-  unpin: string;
-  moveLeft: string;
-  moveRight: string;
-  resetColumns: string;
-  showColumn: string;
-  hideColumn: string;
-}
-
-export interface ColumnMenuProps<TRow> {
-  allColumns: ColumnDef<TRow>[];
-  layout: UseColumnLayoutResult<TRow>;
-  labels: ColumnMenuLabels;
-  /** Text direction — flips the popover to the start side under RTL. */
+export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   dir?: Direction;
 }
 

@@ -7,6 +7,7 @@ import {
   resolveDisabledReason,
   type SelectionState,
   type TableLabels,
+  type TableSource,
   useBulkActionRunner,
 } from "@adapttable/core";
 
@@ -115,6 +116,36 @@ export function BulkBar({
   );
 }
 
+/** The rows-per-page selector shared by the toolbar (infinite) and footer. */
+export function RowsPerPageSelect({
+  source,
+  labels,
+  classNames,
+}: Readonly<{
+  source: Pick<TableSource<unknown>, "limit" | "setLimit">;
+  labels: Required<TableLabels>;
+  classNames: DataTableClassNames;
+}>) {
+  return (
+    <label>
+      {labels.rowsPerPage}{" "}
+      <select
+        aria-label={labels.rowsPerPage}
+        data-adapttable-part="rows-per-page"
+        className={classNames.rowsPerPageSelect}
+        value={source.limit}
+        onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
+      >
+        {pageSizeOptions(source.limit).map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 /** Prev/next pager with a rows-per-page select. */
 export function Footer({
   pagination,
@@ -135,22 +166,11 @@ export function Footer({
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
     <div data-adapttable-part="footer" className={classNames.footer}>
-      <label>
-        {labels.rowsPerPage}{" "}
-        <select
-          aria-label={labels.rowsPerPage}
-          data-adapttable-part="rows-per-page"
-          className={classNames.rowsPerPageSelect}
-          value={source.limit}
-          onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
-        >
-          {pageSizeOptions(source.limit).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </label>
+      <RowsPerPageSelect
+        source={source}
+        labels={labels}
+        classNames={classNames}
+      />
       {source.total > 0 && (
         <span>
           {labels.showing({
