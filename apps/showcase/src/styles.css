@@ -422,7 +422,8 @@ a {
 .controls {
   display: flex;
   flex-wrap: wrap;
-  /* Five control groups must fit one row at the demo width. */
+  /* The control groups spread across the full row. */
+  justify-content: space-between;
   gap: 12px 10px;
   align-items: center;
   padding: 16px 18px;
