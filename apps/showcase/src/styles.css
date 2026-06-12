@@ -230,7 +230,8 @@ a {
   padding-top: clamp(18px, 3.2vh, 36px);
 }
 .sec:last-of-type {
-  padding-bottom: clamp(24px, 4.5vh, 56px);
+  /* Same breathing below the content as above it. */
+  padding-bottom: clamp(18px, 3.2vh, 36px);
 }
 .sec__head {
   max-width: 820px;
