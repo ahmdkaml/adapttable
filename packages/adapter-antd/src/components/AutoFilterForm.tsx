@@ -125,7 +125,7 @@ function RangeField({
       return (
         <InputNumber
           size="small"
-          style={{ width: "100%" }}
+          style={{ flex: "1 1 6rem", minWidth: "6rem", width: "auto" }}
           aria-label={`${label} ${suffix}`}
           placeholder={suffix}
           value={value === "" ? null : Number(value)}
@@ -135,6 +135,7 @@ function RangeField({
     }
     return (
       <Input
+        style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
         size="small"
         type="date"
         aria-label={`${label} ${suffix}`}
@@ -145,10 +146,13 @@ function RangeField({
     );
   };
   return (
-    <Flex vertical gap={8} style={{ position: "relative" }}>
+    // Operator and value(s) share a row when they fit and wrap when they
+    // don't (date inputs have a wide native minimum).
+    <Flex gap={8} wrap style={{ position: "relative" }}>
       <Select<RangeOp | undefined>
         size="small"
         allowClear
+        style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         aria-label={`${label} ${labels.operator}`}
         placeholder={labels.operator}
         value={op}
@@ -165,10 +169,10 @@ function RangeField({
         op !== "between" &&
         input(labels.value, single, (next) => apply(op, next, ""))}
       {op === "between" && (
-        <Flex gap={8}>
+        <>
           {input(labels.from, low, (next) => apply("between", next, high))}
           {input(labels.to, high, (next) => apply("between", low, next))}
-        </Flex>
+        </>
       )}
     </Flex>
   );

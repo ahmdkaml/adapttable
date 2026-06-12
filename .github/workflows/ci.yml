@@ -27,6 +27,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Turborepo's task cache, persisted across CI runs: tasks whose
+      # inputs (and dependencies' outputs) are unchanged restore instantly
+      # instead of re-linting/re-testing untouched packages. Changing core
+      # still re-verifies every adapter — the hash includes dependency
+      # outputs, so "new code breaks an old test" is always caught.
+      - name: Restore Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
       - name: Format check
         run: pnpm format:check
 

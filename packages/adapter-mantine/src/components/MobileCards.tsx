@@ -136,7 +136,9 @@ export function MobileCards<TRow>({
                   <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
                     {mobileLabel(column)}
                   </Text>
-                  <Text fz="sm">
+                  {/* Cells are arbitrary ReactNode (often block elements) —
+                      a <p> wrapper would be invalid HTML. */}
+                  <Text component="div" fz="sm">
                     {column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
                     ) : (
@@ -213,7 +215,7 @@ export function MobileCards<TRow>({
                   <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
                     {mobileLabel(column)}
                   </Text>
-                  <Text fz="sm" fw={600}>
+                  <Text component="div" fz="sm" fw={600}>
                     {summaryCells[column.key]}
                   </Text>
                 </div>

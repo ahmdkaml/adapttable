@@ -100,12 +100,18 @@ function RangeField<TRow>({
       <FormLabel fontSize="sm" mb={1}>
         {label}
       </FormLabel>
-      <Stack spacing={2}>
+      {/* Operator and value(s) share ONE row — it reads like a sentence:
+          "At least [5]". */}
+      <HStack spacing={2} align="flex-start" flexWrap="wrap" rowGap={2}>
         {/* Chakra renders `placeholder` as the empty first option, so the
             operator placeholder doubles as the "no comparison" clear choice. */}
         <Select
           size="sm"
-          rootProps={selectIconRootProps(dir)}
+          rootProps={{
+            ...selectIconRootProps(dir),
+            flex: "0 0 8.5rem",
+            w: "8.5rem",
+          }}
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
@@ -121,10 +127,12 @@ function RangeField<TRow>({
           ))}
         </Select>
         {op === "between" ? (
-          <HStack spacing={2}>
+          <>
             <Input
               id={`${id}-a`}
               size="sm"
+              flex="1 1 7rem"
+              minW="7rem"
               type={inputType}
               aria-label={labels.from}
               placeholder={labels.from}
@@ -134,18 +142,22 @@ function RangeField<TRow>({
             <Input
               id={`${id}-b`}
               size="sm"
+              flex="1 1 7rem"
+              minW="7rem"
               type={inputType}
               aria-label={labels.to}
               placeholder={labels.to}
               value={b}
               onChange={(e) => write(op, a, e.target.value)}
             />
-          </HStack>
+          </>
         ) : (
           op && (
             <Input
               id={`${id}-a`}
               size="sm"
+              flex="1 1 7rem"
+              minW="7rem"
               type={inputType}
               aria-label={labels.value}
               placeholder={labels.value}
@@ -154,7 +166,7 @@ function RangeField<TRow>({
             />
           )
         )}
-      </Stack>
+      </HStack>
     </FormControl>
   );
 }

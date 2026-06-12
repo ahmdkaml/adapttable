@@ -179,12 +179,12 @@ function RangeFilter<TRow>({
   ) => (
     <TextField
       size="small"
+      sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
       type={type === "dateRange" ? "date" : "number"}
       label={label}
       value={value}
       onChange={(e) => write(e.target.value)}
       slotProps={{ inputLabel: { shrink: true } }}
-      sx={{ flex: 1 }}
     />
   );
   let bounds: ReactNode = null;
@@ -203,7 +203,7 @@ function RangeFilter<TRow>({
       <FormLabel component="legend" sx={{ mb: 0.75 }}>
         {filterLabel(def)}
       </FormLabel>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
         <TextField
           select
           size="small"
@@ -214,7 +214,7 @@ function RangeFilter<TRow>({
             select: { native: true },
             inputLabel: { shrink: true },
           }}
-          sx={{ flex: 1 }}
+          sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
           <option value="" />
           {RANGE_OPS.map((candidate) => (

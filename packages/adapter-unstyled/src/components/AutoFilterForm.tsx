@@ -230,6 +230,7 @@ function RangeValueInput({
   return (
     <input
       type={type}
+      style={{ flex: "1 1 7rem", minWidth: "7rem" }}
       placeholder={label}
       aria-label={label}
       data-adapttable-part="filter-input"
@@ -278,9 +279,12 @@ function RangeField<TRow>({
   const opLabelKeys = RANGE_OP_LABEL_KEYS[inputType];
   return (
     <GroupField caption={filterLabel(def)} classNames={classNames}>
-      {/* Structural layout only (like the toolbar): parts sit side by side. */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* Structural layout only (like the toolbar): the operator keeps a
+          constant width; values fill the rest and wrap when they don't fit
+          (date inputs have a wide native minimum). */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <select
+          style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={labels.operator}
           data-adapttable-part="filter-operator"
           className={classNames.filterOperator}
