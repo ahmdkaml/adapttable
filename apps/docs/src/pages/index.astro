@@ -25,8 +25,8 @@ const FEATURES = [
   {
     viz: "filter",
     hue: "274",
-    title: "Declarative columns & filters",
-    body: "`{ key: \"team\", filter: \"multiSelect\" }` — one definition drives the widget, the URL params, the chips and the row predicate. Operator-first number and date filters: Equal, At least, At most, Between.",
+    title: "Columns & filters",
+    body: "One declaration drives the widget, the URL params, the chips and the row predicate. Operator-first number and date filters: Equal, At least, At most, Between.",
   },
   {
     viz: "tiers",
@@ -55,7 +55,7 @@ const FEATURES = [
   {
     viz: "columns",
     hue: "330",
-    title: "Column management & views",
+    title: "Column management",
     body: "Show, hide, reorder, pin and resize — the row-actions column included. Capture any state as a named saved view and restore it later, per table.",
   },
   {
@@ -102,12 +102,6 @@ const SPECTRUM = [
   },
 ];
 
-const ROWS = [
-  { i: "AL", name: "Ada Lovelace", role: "Engineer", s: "Planned", tone: "blue", date: "Mar 8, 2026", money: "$25,300", load: 56 },
-  { i: "AT", name: "Alan Turing", role: "Founder", s: "Blocked", tone: "red", date: "May 15, 2026", money: "$32,600", load: 67 },
-  { i: "GH", name: "Grace Hopper", role: "Designer", s: "Archived", tone: "gray", date: "Jul 22, 2026", money: "$39,900", load: 78 },
-  { i: "KJ", name: "Katherine Johnson", role: "Researcher", s: "Active", tone: "green", date: "Sep 3, 2026", money: "$47,200", load: 89 },
-];
 
 const JSON_LD = JSON.stringify({
   "@context": "https://schema.org",
@@ -359,61 +353,6 @@ const JSON_LD = JSON.stringify({
         </div>
       </section>
 
-      <!-- The product, not a metaphor: a static table mock in pure CSS,
-           skinned with the same tokens the live demo uses. -->
-      <figure class="mock shell reveal" aria-hidden="true">
-        <div class="mock__toolbar">
-          <span class="mock__search">⌕ Search people…</span>
-          <span class="mock__spacer"></span>
-          <span class="mock__btn">≔ Filters <b>2</b></span>
-          <span class="mock__btn">Columns</span>
-        </div>
-        <div class="mock__chips">
-          <span>Team: Core ✕</span><span>Budget ≥ 25,000 ✕</span>
-        </div>
-        <div class="mock__table">
-          <div class="mock__row mock__row--head">
-            <span>Person ↕</span><span>Status</span><span>Timeline ↕</span>
-            <span class="num">Budget ↕</span><span>Load</span>
-          </div>
-          {
-            ROWS.map((r) => (
-              <div class="mock__row">
-                <span class="cell-person">
-                  <i class={`avatar avatar--${r.tone}`}>{r.i}</i>
-                  <span>
-                    <b>{r.name}</b>
-                    <small>{r.role}</small>
-                  </span>
-                </span>
-                <span>
-                  <i class={`pill pill--${r.tone}`}>{r.s}</i>
-                </span>
-                <span class="cell-date">
-                  <b>{r.date}</b>
-                </span>
-                <span class="num">
-                  <b>{r.money}</b>
-                </span>
-                <span class="cell-load">
-                  <i class="bar">
-                    <i style={`width:${r.load}%`} />
-                  </i>
-                  <small>{r.load}%</small>
-                </span>
-              </div>
-            ))
-          }
-        </div>
-        <div class="mock__footer">
-          <span>Rows per page 8 · Showing 1–4 of 12</span>
-          <span class="mock__pager">‹ <b class="pg pg--on">1</b><b class="pg">2</b><b class="pg">3</b> ›</span>
-        </div>
-        <figcaption class="mock__url">
-          ?live.f_team=Core&amp;live.f_budgetMin=25000 · every bit of state in
-          a shareable URL
-        </figcaption>
-      </figure>
 
       <section class="sec shell" id="features" aria-labelledby="features-h">
         <div class="sec__head">
@@ -527,9 +466,23 @@ const JSON_LD = JSON.stringify({
             <span>Pro</span>
           </div>
         </div>
-        <a class="sec__more" href={`${SITE}/customization/`}
-          >Read the customization guide →</a
-        >
+        <a class="gs-btn gs-btn--ghost spectrum__more" href={`${SITE}/customization/`}>
+          Read the customization guide
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14"></path>
+            <path d="M13 6l6 6-6 6"></path>
+          </svg>
+        </a>
       </section>
 
       <section class="sec shell" id="get-started" aria-labelledby="gs-h">
@@ -782,8 +735,6 @@ const JSON_LD = JSON.stringify({
       0 1px 2px oklch(0.2 0.02 264 / 0.04),
       0 8px 28px oklch(0.2 0.02 264 / 0.06);
     --green: oklch(0.62 0.16 152);
-    --red: oklch(0.6 0.19 25);
-    --blue: oklch(0.58 0.17 255);
     --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * {
@@ -791,6 +742,7 @@ const JSON_LD = JSON.stringify({
   }
   html {
     scroll-behavior: smooth;
+    scroll-snap-type: y proximity;
   }
   body {
     margin: 0;
@@ -928,12 +880,16 @@ const JSON_LD = JSON.stringify({
 
   /* ── Hero: the demo's composition and spacing ───────────────────── */
   .hero {
-    padding-top: clamp(56px, 9vw, 104px);
-    padding-bottom: clamp(40px, 6vw, 72px);
+    min-height: calc(100vh - 62px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(24px, 4vh, 64px);
     text-align: center;
     position: relative;
     /* #overview lands at the very top, clearing the sticky nav. */
     scroll-margin-top: 80px;
+    scroll-snap-align: start;
   }
   .hero::before {
     content: "";
@@ -1152,217 +1108,20 @@ const JSON_LD = JSON.stringify({
     background: var(--c);
   }
 
-  /* ── The product mock, in the demo's skin ──────────────────────── */
-  .mock {
-    margin-top: 0;
-    margin-bottom: clamp(36px, 8vh, 104px);
-    border: 1px solid var(--page-border);
-    border-radius: 16px;
-    background: var(--page-surface);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-    font-size: 13.5px;
-    padding-inline: 0;
-  }
-  .mock__toolbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--page-border-soft);
-  }
-  .mock__search {
-    flex: 0 1 290px;
-    border: 1px solid var(--page-border);
-    border-radius: 9px;
-    padding: 9px 13px;
-    color: var(--ink-3);
-    background: var(--page-surface);
-  }
-  .mock__spacer {
-    flex: 1;
-  }
-  .mock__btn {
-    border: 1px solid var(--page-border);
-    border-radius: 9px;
-    padding: 8px 14px;
-    font-weight: 600;
-    color: var(--ink-2);
-    white-space: nowrap;
-    background: var(--page-surface);
-  }
-  .mock__btn b {
-    display: inline-grid;
-    place-items: center;
-    width: 19px;
-    height: 19px;
-    border-radius: 999px;
-    background: var(--brand);
-    color: #fff;
-    font-size: 11px;
-    margin-inline-start: 4px;
-  }
-  .mock__chips {
-    display: flex;
-    gap: 8px;
-    padding: 12px 18px 2px;
-    flex-wrap: wrap;
-  }
-  .mock__chips span {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--brand);
-    background: var(--brand-soft);
-    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
-    border-radius: 999px;
-    padding: 5px 12px;
-  }
-  .mock__table {
-    padding: 8px 6px 0;
-  }
-  .mock__row {
-    display: grid;
-    grid-template-columns: 2.1fr 1fr 1.2fr 0.95fr 1.05fr;
-    gap: 10px;
-    align-items: center;
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--page-border-soft);
-  }
-  .mock__row--head {
-    color: var(--ink-3);
-    font-size: 11.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 650;
-  }
-  .mock__row:last-child {
-    border-bottom: 0;
-  }
-  .num {
-    text-align: end;
-    font-variant-numeric: tabular-nums;
-  }
-  .cell-person {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    min-width: 0;
-  }
-  .cell-person span {
-    display: grid;
-    line-height: 1.3;
-    min-width: 0;
-  }
-  .cell-person b {
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .cell-person small,
-  .cell-load small {
-    color: var(--ink-3);
-    font-size: 11.5px;
-  }
-  .avatar {
-    flex: 0 0 32px;
-    height: 32px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    font-style: normal;
-    font-size: 11.5px;
-    font-weight: 800;
-  }
-  .avatar--blue { background: color-mix(in oklch, var(--blue) 14%, white); color: var(--blue); }
-  .avatar--red { background: color-mix(in oklch, var(--red) 13%, white); color: var(--red); }
-  .avatar--gray { background: var(--page-surface-2); color: var(--ink-2); }
-  .avatar--green { background: color-mix(in oklch, var(--green) 13%, white); color: var(--green); }
-  .pill {
-    font-style: normal;
-    font-size: 10.5px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 999px;
-  }
-  .pill--blue { background: color-mix(in oklch, var(--blue) 13%, white); color: var(--blue); }
-  .pill--red { background: color-mix(in oklch, var(--red) 12%, white); color: var(--red); }
-  .pill--gray { background: var(--page-surface-2); color: var(--ink-2); }
-  .pill--green { background: color-mix(in oklch, var(--green) 12%, white); color: var(--green); }
-  .cell-load {
-    display: grid;
-    gap: 5px;
-  }
-  .bar {
-    display: block;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--page-surface-2);
-    overflow: hidden;
-  }
-  .bar i {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--brand);
-  }
-  .mock__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 12px 18px;
-    border-top: 1px solid var(--page-border-soft);
-    color: var(--ink-3);
-    font-size: 12.5px;
-  }
-  .mock__pager {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .pg {
-    display: inline-grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    color: var(--ink-3);
-  }
-  .pg--on {
-    background: var(--brand);
-    color: #fff;
-  }
-  .mock__url {
-    margin: 0;
-    padding: 10px 18px 13px;
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--ink-3);
-    border-top: 1px dashed var(--page-border);
-    background: var(--page-surface-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   /* ── Section scaffolding: the demo's rhythm — its sections sit
      ~208px apart (104px padding + ~104px of trailing content space),
      so non-last sections carry the bottom half explicitly. ─────────── */
-  /* Vertical rhythm scales with the VIEWPORT HEIGHT, so every section
-     fits one screen on any display: tall screens keep the demo's airy
-     104px, short laptops compress toward the floor. */
+  /* Each section owns EXACTLY one viewport below the sticky nav:
+     full height, content vertically centered, gentle scroll snapping —
+     so a short section never shows its neighbor peeking in. */
   .sec {
-    padding-top: clamp(40px, 9vh, 104px);
-    padding-bottom: clamp(36px, 8vh, 104px);
-    /* Anchored sections clear the sticky nav. */
-    scroll-margin-top: 40px;
-  }
-  .sec:last-of-type {
-    padding-bottom: clamp(40px, 9vh, 104px);
+    min-height: calc(100vh - 62px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(24px, 4.5vh, 56px);
+    scroll-margin-top: 62px;
+    scroll-snap-align: start;
   }
   .sec__head {
     max-width: 680px;
@@ -1568,6 +1327,7 @@ const JSON_LD = JSON.stringify({
   }
   .viz-cols i {
     flex: 1;
+    min-width: 0;
     font-style: normal;
     font-size: 11px;
     font-weight: 650;
@@ -1578,6 +1338,8 @@ const JSON_LD = JSON.stringify({
     border-radius: 7px;
     padding: 7px 4px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .viz-cols i.pinned {
     color: var(--brand);
@@ -1592,7 +1354,9 @@ const JSON_LD = JSON.stringify({
   .viz-bulk {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
   }
   .viz-cb {
     width: 15px;
@@ -1778,7 +1542,8 @@ const JSON_LD = JSON.stringify({
   }
   .spectrum__track {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* minmax(0,1fr): the pre's min-content width must not blow the grid. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 14px;
   }
   .spcard {
@@ -1847,19 +1612,13 @@ const JSON_LD = JSON.stringify({
     border-radius: 2px;
     background: linear-gradient(to right, var(--page-border), var(--brand));
   }
-  .sec__more {
-    display: inline-block;
-    margin-top: 18px;
-    font-size: 14.5px;
-    font-weight: 600;
-    color: var(--brand);
-  }
-  .sec__more:hover {
-    text-decoration: underline;
+  .spectrum__more {
+    align-self: flex-start;
+    margin-top: 26px;
   }
   @media (max-width: 920px) {
     .spectrum__track {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (max-width: 560px) {
