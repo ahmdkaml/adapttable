@@ -1308,7 +1308,7 @@ npx @adapttable/cli init   # detects your UI kit and scaffolds a table
 ```
 
 Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
-[getting-started.md](./getting-started.md).
+[the Getting started guide](./getting-started.md).
 
 ## When might another library fit better?
 
