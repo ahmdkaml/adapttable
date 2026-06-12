@@ -145,10 +145,10 @@ export function Toolbar<TRow>({
     <Stack
       direction="row"
       spacing={1}
-      flexWrap="nowrap"
+      flexWrap="wrap"
+      useFlexGap
       alignItems="center"
       justifyContent="space-between"
-      useFlexGap
     >
       {!hideSearch && (
         <TextField
@@ -177,7 +177,7 @@ export function Toolbar<TRow>({
         direction="row"
         spacing={1}
         alignItems="center"
-        flexWrap="nowrap"
+        flexWrap="wrap"
         useFlexGap
       >
         {sortOptions && sortOptions.length > 0 && (
