@@ -11,13 +11,49 @@ export default defineConfig({
       description:
         "One headless React data-table engine, native adapters for Mantine, MUI, Chakra, Ant Design and Tailwind/shadcn.",
       head: [
-        // Social-share image for every page (link previews).
+        // Social-share image for every page. PNG, 1200x630: most link
+        // unfurlers (Slack, X, LinkedIn, WhatsApp) ignore SVG og images.
         {
           tag: "meta",
           attrs: {
             property: "og:image",
-            content: "https://orwa-mahmoud.github.io/adapttable/og.svg",
+            content: "https://orwa-mahmoud.github.io/adapttable/og.png",
           },
+        },
+        { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:image",
+            content: "https://orwa-mahmoud.github.io/adapttable/og.png",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "robots",
+            content: "index, follow, max-image-preview:large",
+          },
+        },
+        // Entity data for search engines and answer engines.
+        {
+          tag: "script",
+          attrs: { type: "application/ld+json" },
+          content: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "AdaptTable",
+            description:
+              "Headless, UI-agnostic React data table with native adapters for Mantine, MUI, Chakra UI, Ant Design and Tailwind/shadcn — URL-synced state, declarative filters, column management, virtualization, i18n and RTL.",
+            url: "https://orwa-mahmoud.github.io/adapttable/",
+            applicationCategory: "DeveloperApplication",
+            operatingSystem: "Any",
+            license: "https://opensource.org/license/mit",
+            programmingLanguage: "TypeScript",
+            codeRepository: "https://github.com/orwa-mahmoud/adapttable",
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          }),
         },
       ],
       social: [
