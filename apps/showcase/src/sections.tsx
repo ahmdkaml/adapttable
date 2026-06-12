@@ -2,7 +2,6 @@ import { type ReactNode, useState } from "react";
 
 import { cssVars } from "./cssVars";
 import {
-  Bolt,
   Check,
   Database,
   External,
@@ -11,14 +10,12 @@ import {
   Moon,
   Resize,
   Server,
-  Star,
   Sun,
 } from "./sectionIcons";
-import { ADAPTER_TOKENS } from "./themeTokens";
 
-function Wordmark() {
+function Wordmark({ href }: Readonly<{ href: string }>) {
   return (
-    <a className="wm" href="#top">
+    <a className="wm" href={href}>
       <svg
         className="wm__mark"
         viewBox="0 0 32 32"
@@ -105,21 +102,50 @@ function Wordmark() {
   );
 }
 
-export function Nav({
+export type DemoPage = "demo" | "scale" | "rtl" | "customize";
+
+/** The demo pages — each a static HTML entry, linked with plain anchors. */
+const PAGES: { key: DemoPage; label: string; path: string }[] = [
+  { key: "demo", label: "Live demo", path: "" },
+  { key: "scale", label: "Scale", path: "scale" },
+  { key: "rtl", label: "RTL", path: "rtl" },
+  { key: "customize", label: "Customize", path: "customize" },
+];
+
+/**
+ * App-style toolbar: the landing owns the marketing, so the demo's nav is
+ * page tabs + Docs/GitHub. `root` is the relative prefix back to the demo
+ * home ("." on the home page, ".." on subpages) — plain static links, no
+ * router.
+ */
+export function AppNav({
+  active,
+  root,
   dark,
   onToggleDark,
-}: Readonly<{ dark: boolean; onToggleDark: () => void }>) {
+}: Readonly<{
+  active: DemoPage;
+  root: string;
+  dark: boolean;
+  onToggleDark: () => void;
+}>) {
+  const href = (path: string) =>
+    path === "" ? `${root}/` : `${root}/${path}/`;
   return (
-    <header className="nav" id="top">
+    <header className="nav">
       <div className="nav__inner shell">
-        <Wordmark />
+        <Wordmark href={href("")} />
         <nav className="nav__links">
-          <a href="#demo">Live demo</a>
-          <a href="#columns">Columns</a>
-          <a href="#scale">Scale</a>
-          <a href="#rtl">RTL</a>
-          <a href="#custom">Customize</a>
-          <a href="#get-started">Get started</a>
+          {PAGES.map((p) => (
+            <a
+              key={p.key}
+              href={href(p.path)}
+              className={active === p.key ? "is-on" : undefined}
+              aria-current={active === p.key ? "page" : undefined}
+            >
+              {p.label}
+            </a>
+          ))}
         </nav>
         <div className="nav__right">
           <button
@@ -176,46 +202,6 @@ function Install({ large = false }: Readonly<{ large?: boolean }>) {
         </button>
       )}
     </div>
-  );
-}
-
-export function Hero({ dark }: Readonly<{ dark: boolean }>) {
-  return (
-    <section className="hero shell">
-      <div className="hero__badge">
-        <Bolt size={13} /> Headless engine · native UI-kit adapters
-      </div>
-      <h1 className="hero__h1">
-        One headless engine.
-        <br />
-        <span className="hero__accent">Every UI kit.</span>
-      </h1>
-      <p className="hero__sub">
-        Headless freedom, batteries included for <em>your</em> kit. The same
-        table features render natively in Mantine, MUI, Chakra, Ant Design,
-        shadcn/Tailwind — or your own custom UI. URL state, RTL, and a real
-        filter UX, out of the box.
-      </p>
-      <div className="hero__cta">
-        <Install />
-        <a className="hero__link" href="#demo">
-          Try the live demo ↓
-        </a>
-      </div>
-      <div className="hero__adapters">
-        <span className="hero__adapters-l">Renders natively in</span>
-        {ADAPTER_TOKENS.map((a) => (
-          <span
-            key={a.key}
-            className="hero__chip"
-            style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
-          >
-            <span className="hero__chip-dot" />
-            {a.label}
-          </span>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -341,66 +327,12 @@ const FOOT_LINKS = [
   { label: "GitHub", href: REPO_URL },
 ];
 
-/**
- * Install + first-table section: the showcase is the marketing surface, so
- * it must answer "how do I actually run this?" inline and hand off to the
- * docs site for everything deeper.
- */
-export function GetStarted() {
-  return (
-    <section className="sec shell" id="get-started">
-      <SectionHead kicker="Get started" title="Five lines to your first table.">
-        The CLI detects your UI kit and scaffolds a working table; the docs
-        cover every prop, the three data tiers, theming, i18n/RTL and the
-        TanStack comparison.
-      </SectionHead>
-      <div className="getstarted">
-        <pre className="spcard__code getstarted__code">
-          <code>{GETTING_STARTED_SNIPPET}</code>
-        </pre>
-        <div className="getstarted__actions">
-          <Install large />
-          <div className="getstarted__btns">
-            <a
-              className="gs-btn gs-btn--primary"
-              href={`${DOCS_URL}getting-started/`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Get started
-            </a>
-            <a
-              className="gs-btn gs-btn--ghost"
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Star size={15} /> Star it on GitHub
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const GETTING_STARTED_SNIPPET = `import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
-
-<DataTable
-  data={people}
-  columns={[
-    { key: "name" },
-    { key: "team", filter: "multiSelect" },
-    { key: "hiredAt", filter: "dateRange" },
-  ]}
-/>`;
-
-export function Footer() {
+export function Footer({ root }: Readonly<{ root: string }>) {
   return (
     <footer className="foot">
       <div className="foot__inner shell">
         <div className="foot__lead">
-          <Wordmark />
+          <Wordmark href={`${root}/`} />
           <p>Headless freedom, batteries included.</p>
         </div>
         <Install large />

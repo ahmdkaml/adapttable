@@ -24,11 +24,10 @@ import {
 import { ScaleDemo } from "./ScaleDemo";
 import { Columns, Layers, Pin, Resize } from "./sectionIcons";
 import {
+  AppNav,
+  type DemoPage,
   FeatureGrid,
   Footer,
-  GetStarted,
-  Hero,
-  Nav,
   SectionHead,
   Spectrum,
 } from "./sections";
@@ -96,7 +95,7 @@ function Control({
   );
 }
 
-function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
+export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState("mantine");
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
@@ -209,7 +208,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
+export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="columns">
       <SectionHead
@@ -247,28 +246,26 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
+export function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="scale">
       <SectionHead
         kicker="Virtualization"
         title="Scrolls 50,000 rows without flinching."
       >
-        This list really holds fifty thousand people, but the DOM only ever
-        contains the handful of rows inside the scroll box — scroll and watch
-        new rows materialize with zero lag. Type to filter: the whole set is
+        This page really holds fifty thousand people, but the DOM only ever
+        contains the handful of rows in view — the header stays pinned while the
+        rest streams past with zero lag. Type to filter: the whole set is
         searched and the window re-computes instantly.
       </SectionHead>
-      <div className="pad-surface">
-        <div className="pad-surface__body">
-          <ScaleDemo dark={dark} />
-        </div>
-      </div>
+      {/* No pad-surface here: its overflow clipping would break the
+          page-level sticky header, and this table owns the page. */}
+      <ScaleDemo dark={dark} />
     </section>
   );
 }
 
-function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
+export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="rtl">
       <SectionHead kicker="i18n + RTL" title="Right-to-left, for real.">
@@ -285,7 +282,45 @@ function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-export function App() {
+export function CustomizeSections() {
+  return (
+    <>
+      <section className="sec shell" id="custom">
+        <SectionHead
+          kicker="Customization spectrum"
+          title="Easy when you want. Headless when you need."
+        >
+          Start with props and grow all the way to prop-getters — at no point do
+          you hit a wall and have to eject.
+        </SectionHead>
+        <Spectrum />
+      </section>
+      <section className="sec shell">
+        <SectionHead
+          kicker="Everything else"
+          title="The rest of the batteries."
+        />
+        <FeatureGrid />
+      </section>
+    </>
+  );
+}
+
+/**
+ * Shared chrome for every demo page: theme state, the app nav (page tabs),
+ * footer, and the notice/confirm overlays the adapter demos dispatch to.
+ * `root` is the relative prefix back to the demo home ("." on the home
+ * page, ".." on subpages) so plain static links work from any depth.
+ */
+export function PageShell({
+  active,
+  root,
+  children,
+}: Readonly<{
+  active: DemoPage;
+  root: string;
+  children: (dark: boolean) => ReactNode;
+}>) {
   const [dark, setDark] = useState(false);
   const [notice, setNotice] = useState<DemoNotice | null>(null);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(
@@ -314,33 +349,14 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Nav dark={dark} onToggleDark={() => setDark((d) => !d)} />
-      <main>
-        <Hero dark={dark} />
-        <LiveDemo dark={dark} />
-        <ColumnsDemo dark={dark} />
-        <ScaleSection dark={dark} />
-        <RtlSection dark={dark} />
-        <section className="sec shell" id="custom">
-          <SectionHead
-            kicker="Customization spectrum"
-            title="Easy when you want. Headless when you need."
-          >
-            Start with props and grow all the way to prop-getters — at no point
-            do you hit a wall and have to eject.
-          </SectionHead>
-          <Spectrum />
-        </section>
-        <section className="sec shell">
-          <SectionHead
-            kicker="Everything else"
-            title="The rest of the batteries."
-          />
-          <FeatureGrid />
-        </section>
-      </main>
-      <GetStarted />
-      <Footer />
+      <AppNav
+        active={active}
+        root={root}
+        dark={dark}
+        onToggleDark={() => setDark((d) => !d)}
+      />
+      <main>{children(dark)}</main>
+      <Footer root={root} />
 
       {notice && (
         <div
