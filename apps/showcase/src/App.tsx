@@ -22,7 +22,7 @@ import {
   type PageMode,
 } from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
-import { Columns, Layers, Pin, Resize } from "./sectionIcons";
+import { Columns, Pin, Resize } from "./sectionIcons";
 import { AppNav, type DemoPage, Footer, SectionHead } from "./sections";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
@@ -173,13 +173,6 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
       </div>
 
       <div className="demo-surface" style={cssVars({ "--c": accent })}>
-        <div className="demo-surface__bar">
-          <span className="demo-surface__tag">{token.label} adapter</span>
-          <span className="demo-surface__url">
-            <Layers size={12} />
-            ?live.q=&live.sort=&live.page=1 · each table namespaced in the URL
-          </span>
-        </div>
         <div
           className="demo-surface__body"
           key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${dark ? "d" : "l"}`}

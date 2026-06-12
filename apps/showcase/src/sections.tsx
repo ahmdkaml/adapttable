@@ -97,8 +97,8 @@ export type DemoPage = "demo" | "columns" | "scale" | "rtl";
 const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
   { key: "columns", label: "Columns", path: "columns" },
-  { key: "scale", label: "Scale", path: "scale" },
   { key: "rtl", label: "RTL", path: "rtl" },
+  { key: "scale", label: "Scale", path: "scale" },
 ];
 
 /**

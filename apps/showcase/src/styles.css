@@ -57,6 +57,17 @@ a {
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 10px 34px oklch(0 0 0 / 0.4);
 }
 
+/* Sticky footer: short pages pin it to the viewport bottom, long pages
+   push it naturally. */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+#root > main {
+  flex: 1;
+}
+
 .shell {
   max-width: 1140px;
   margin: 0 auto;
@@ -375,29 +386,6 @@ a {
   box-shadow: var(--shadow-card);
   background: var(--page-surface);
 }
-.demo-surface__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--page-border);
-  background: var(--page-surface-2);
-}
-.demo-surface__tag {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--c, var(--brand));
-  text-transform: capitalize;
-}
-.demo-surface__url {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  color: var(--ink-3);
-}
 .demo-surface__body {
   padding: 14px;
 }
@@ -429,7 +417,7 @@ a {
 
 /* ---------- footer ---------- */
 .foot {
-  margin-top: clamp(40px, 6vw, 80px);
+  /* The section's symmetric bottom padding is the only spacer. */
   border-top: 1px solid var(--page-border);
   background: var(--page-surface-2);
 }
