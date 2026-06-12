@@ -764,18 +764,21 @@ const JSON_LD = JSON.stringify({
     </footer>
 
     <script>
-      // Mouse wheel paginates the deck: one gesture, one slide from the
-      // right. A small state machine instead of timers — pagination waits
-      // for the scroll to SETTLE (scrollend), accumulated deltas filter
-      // out jitter, and after a slide lands only a real pause re-arms the
-      // wheel, so inertia tails can't double-fire and nothing gets stuck.
+      // Mouse wheel paginates the deck: one flick, one slide — and a
+      // SUSTAINED scroll chains slide after slide, so the whole page can
+      // be traversed in one go. The listener lives on window so the
+      // pinned header/footer are scrollable territory too. Inertia tails
+      // are filtered by an accumulation threshold that is higher inside
+      // a continuous stream than after a pause, plus a rising-edge
+      // shortcut for a fresh flick mid-stream.
       const deck = document.querySelector<HTMLElement>("main.deck");
       const deckMode = window.matchMedia("(min-width: 920px)");
       if (deck) {
         let animating = false;
-        let coolUntilPause = false;
+        let inStream = false;
         let acc = 0;
         let lastT = 0;
+        let prevDelta = 0;
         let settleTimer = 0;
         const settle = () => {
           animating = false;
@@ -786,7 +789,7 @@ const JSON_LD = JSON.stringify({
           window.clearTimeout(settleTimer);
           settleTimer = window.setTimeout(settle, 150);
         });
-        deck.addEventListener(
+        window.addEventListener(
           "wheel",
           (e) => {
             if (!deckMode.matches) return;
@@ -805,13 +808,17 @@ const JSON_LD = JSON.stringify({
             e.preventDefault();
             const gap = e.timeStamp - lastT;
             lastT = e.timeStamp;
+            const delta = Math.abs(e.deltaY);
+            const rising = delta >= 80 && delta >= prevDelta * 1.5;
+            prevDelta = delta;
             if (gap > 200) {
-              coolUntilPause = false;
+              inStream = false;
               acc = 0;
             }
-            if (animating || coolUntilPause) return;
+            if (animating) return;
             acc += e.deltaY;
-            if (Math.abs(acc) < 40) return;
+            const threshold = inStream && !rising ? 240 : 40;
+            if (Math.abs(acc) < threshold) return;
             const w = deck.clientWidth;
             const current = Math.round(deck.scrollLeft / w);
             const idx = Math.max(
@@ -825,7 +832,7 @@ const JSON_LD = JSON.stringify({
             // Boundary: nothing to do and nothing armed — no gesture debt.
             if (idx === current) return;
             animating = true;
-            coolUntilPause = true;
+            inStream = true;
             deck.children[idx]?.scrollIntoView({
               behavior: "smooth",
               inline: "start",
