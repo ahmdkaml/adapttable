@@ -417,13 +417,18 @@ export function useChromeScrollReset<TRow>(
   props: BaseDataTableProps<TRow>
 ): void {
   const { source } = props;
+  // In infinite mode a page increment means "the window grew at the
+  // bottom" (the sentinel loaded more) — yanking the reader back to the
+  // table top would fight the scroll they are mid-way through. Only paged
+  // navigation is a real page change worth resetting for.
+  const pageDep = source.paginationMode === "paged" ? source.page : 0;
   useScrollToTableTop({
     ref,
     deps: [
       source.search,
       source.sortBy ?? "",
       source.sortDir ?? "",
-      source.page,
+      pageDep,
       chrome.activeFilterCount,
     ],
     enabled: props.scrollToTopOnChange,
