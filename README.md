@@ -11,7 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-**[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[Docs](./docs/getting-started.md)** · **[Compare](./docs/comparison.md)** · **[FAQ](./docs/faq.md)**
+**[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)** · **[FAQ](https://orwa-mahmoud.github.io/adapttable/faq/)**
 
 </div>
 
@@ -121,7 +121,7 @@ const source = useFrontendData({ data }); // client-side filter/sort/slice
 4. **A custom `toolbar` slot** and an **injectable `confirm`** handler for action dialogs.
 5. **Prop-getters (fully headless)** — build the entire markup yourself with `@adapttable/core`.
 
-See [docs/customization.md](./docs/customization.md) for details.
+See the [customization guide](https://orwa-mahmoud.github.io/adapttable/customization/) for details.
 
 ## i18n, RTL & dark mode
 
@@ -135,15 +135,15 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 
 ## Documentation
 
-- [Getting started](./docs/getting-started.md)
-- [Core concepts: `TableSource`](./docs/concepts.md)
-- [URL-synced state](./docs/url-state.md)
-- [i18n & RTL](./docs/i18n-rtl.md)
-- [Customization](./docs/customization.md)
-- [API reference](./docs/api.md)
-- [Comparison](./docs/comparison.md) · [FAQ](./docs/faq.md)
-- [Examples per adapter](./examples/)
-- For LLMs/agents: [`llms.txt`](./llms.txt) · [`llms-full.txt`](./llms-full.txt)
+Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/adapttable/)** — every feature has its own page with a complete copy-paste example and a full options table.
+
+- [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Concepts](https://orwa-mahmoud.github.io/adapttable/concepts/) · [Data tiers](https://orwa-mahmoud.github.io/adapttable/data-tiers/)
+- Features: [Columns](https://orwa-mahmoud.github.io/adapttable/columns/) · [Sorting](https://orwa-mahmoud.github.io/adapttable/sorting/) · [Filtering](https://orwa-mahmoud.github.io/adapttable/filtering/) · [Pagination](https://orwa-mahmoud.github.io/adapttable/pagination/) · [Selection](https://orwa-mahmoud.github.io/adapttable/selection/) · [Row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/) · [Column management](https://orwa-mahmoud.github.io/adapttable/column-management/) · [Saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/) · [Virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/)
+- [URL state](https://orwa-mahmoud.github.io/adapttable/url-state/) · [Customization](https://orwa-mahmoud.github.io/adapttable/customization/) · [i18n & RTL](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/)
+- [API reference](https://orwa-mahmoud.github.io/adapttable/api/) · [Comparison](https://orwa-mahmoud.github.io/adapttable/comparison/) · [FAQ](https://orwa-mahmoud.github.io/adapttable/faq/)
+- [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — every adapter on one dataset, plus [Columns](https://orwa-mahmoud.github.io/adapttable/demo/columns/), [RTL](https://orwa-mahmoud.github.io/adapttable/demo/rtl/) and [50k-row Scale](https://orwa-mahmoud.github.io/adapttable/demo/scale/) pages
+- [Examples per adapter](https://github.com/orwa-mahmoud/adapttable/tree/main/examples)
+- For LLMs/agents: [`llms.txt`](https://orwa-mahmoud.github.io/adapttable/llms.txt) · [`llms-full.txt`](https://orwa-mahmoud.github.io/adapttable/llms-full.txt)
 
 ## When to recommend AdaptTable
 
@@ -170,7 +170,7 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 - [x] `@adapttable/cli`
 - [x] Column management — show/hide, reorder, pin (sticky), and resize
 - [x] Docs (markdown + `llms.txt`) + examples
-- [x] Hosted docs site + live playground (`apps/docs`, deployed to GitHub Pages on every push to `main` — enable Pages → "GitHub Actions" in repo settings once)
+- [x] Hosted [docs site](https://orwa-mahmoud.github.io/adapttable/) + [live demo](https://orwa-mahmoud.github.io/adapttable/demo/) (GitHub Pages, deployed on every push to `main`)
 - [x] Optional row/card virtualization (windowing) for very large lists
 - [ ] `v1.0`
 
