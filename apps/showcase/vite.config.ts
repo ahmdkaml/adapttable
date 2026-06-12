@@ -10,9 +10,23 @@ import { defineConfig } from "vite";
 const pkg = (rel: string) =>
   fileURLToPath(new URL(`../../packages/${rel}/src/index.ts`, import.meta.url));
 
+const page = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
+
 export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss()],
+  // Multi-page app: each demo page is its own static HTML entry, linked
+  // with plain anchors — no client router, no GitHub Pages 404 tricks.
+  build: {
+    rollupOptions: {
+      input: {
+        main: page("./index.html"),
+        columns: page("./columns/index.html"),
+        scale: page("./scale/index.html"),
+        rtl: page("./rtl/index.html"),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@adapttable/core": pkg("core"),

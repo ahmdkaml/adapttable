@@ -17,7 +17,9 @@ export type Density = "comfortable" | "compact";
 export type FiltersUi = "popover" | "drawer";
 
 /** A small page size so both modes show real pagination over 30 rows. */
-const DEFAULTS = { limit: 8 };
+// Five rows by default: enough to show real data while keeping the
+// whole table (and often the footer) on one screen.
+const DEFAULTS = { limit: 5 };
 
 /**
  * The URL-persisted column controls every adapter demo spreads onto its

@@ -50,11 +50,14 @@ export function Chips({
           </button>
         </li>
       ))}
-      <li>
+      {/* Clear-all wears the same chip part as its siblings, so consumers
+          style it for free and no bare list marker leaks through. */}
+      <li data-adapttable-part="chip" className={classNames.chip}>
         <button
           type="button"
-          onClick={onClearAll}
+          data-adapttable-part="chip-remove"
           className={classNames.chipRemove}
+          onClick={onClearAll}
         >
           {labels.clearAll}
         </button>

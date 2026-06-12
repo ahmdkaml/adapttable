@@ -1,29 +1,89 @@
 import { type ReactNode, useState } from "react";
 
-import { cssVars } from "./cssVars";
-import {
-  Bolt,
-  Check,
-  Database,
-  External,
-  Globe,
-  Layers,
-  Moon,
-  Resize,
-  Server,
-  Star,
-  Sun,
-} from "./sectionIcons";
-import { ADAPTER_TOKENS } from "./themeTokens";
+import { Check, External, Moon, Sun } from "./sectionIcons";
 
-function Wordmark() {
+function Wordmark({ href }: Readonly<{ href: string }>) {
   return (
-    <a className="wm" href="#top">
-      <span className="wm__mark">
-        <span className="wm__bar" />
-        <span className="wm__bar" />
-        <span className="wm__bar" />
-      </span>
+    <a className="wm" href={href}>
+      <svg
+        className="wm__mark"
+        viewBox="0 0 32 32"
+        width="20"
+        height="20"
+        aria-hidden="true"
+      >
+        <rect
+          x="8.5"
+          y="1.5"
+          width="22"
+          height="22"
+          rx="5.5"
+          fill="var(--brand)"
+          opacity="0.25"
+        />
+        <rect
+          x="5"
+          y="5"
+          width="22"
+          height="22"
+          rx="5.5"
+          fill="var(--brand)"
+          opacity="0.5"
+        />
+        <rect
+          x="1.5"
+          y="8.5"
+          width="22"
+          height="22"
+          rx="5.5"
+          fill="var(--brand)"
+        />
+        <rect x="4.5" y="12.5" width="16" height="2.8" rx="1.2" fill="#fff" />
+        <rect
+          x="11.1"
+          y="12.5"
+          width="2.8"
+          height="14.5"
+          rx="1.2"
+          fill="#fff"
+        />
+        <rect
+          x="4.5"
+          y="18.8"
+          width="4.6"
+          height="2.2"
+          rx="1"
+          fill="#fff"
+          opacity="0.4"
+        />
+        <rect
+          x="4.5"
+          y="23"
+          width="4.6"
+          height="2.2"
+          rx="1"
+          fill="#fff"
+          opacity="0.4"
+        />
+        <rect
+          x="15.9"
+          y="18.8"
+          width="4.6"
+          height="2.2"
+          rx="1"
+          fill="#fff"
+          opacity="0.4"
+        />
+        <rect
+          x="15.9"
+          y="23"
+          width="4.6"
+          height="2.2"
+          rx="1"
+          fill="#fff"
+          opacity="0.4"
+        />
+      </svg>
       <span className="wm__txt">
         Adapt<strong>Table</strong>
       </span>
@@ -31,21 +91,50 @@ function Wordmark() {
   );
 }
 
-export function Nav({
+export type DemoPage = "demo" | "columns" | "scale" | "rtl";
+
+/** The demo pages — each a static HTML entry, linked with plain anchors. */
+const PAGES: { key: DemoPage; label: string; path: string }[] = [
+  { key: "demo", label: "Live demo", path: "" },
+  { key: "columns", label: "Columns", path: "columns" },
+  { key: "rtl", label: "RTL", path: "rtl" },
+  { key: "scale", label: "Scale", path: "scale" },
+];
+
+/**
+ * App-style toolbar: the landing owns the marketing, so the demo's nav is
+ * page tabs + Docs/GitHub. `root` is the relative prefix back to the demo
+ * home ("." on the home page, ".." on subpages) — plain static links, no
+ * router.
+ */
+export function AppNav({
+  active,
+  root,
   dark,
   onToggleDark,
-}: Readonly<{ dark: boolean; onToggleDark: () => void }>) {
+}: Readonly<{
+  active: DemoPage;
+  root: string;
+  dark: boolean;
+  onToggleDark: () => void;
+}>) {
+  const href = (path: string) =>
+    path === "" ? `${root}/` : `${root}/${path}/`;
   return (
-    <header className="nav" id="top">
+    <header className="nav">
       <div className="nav__inner shell">
-        <Wordmark />
+        <Wordmark href={href("")} />
         <nav className="nav__links">
-          <a href="#demo">Live demo</a>
-          <a href="#columns">Columns</a>
-          <a href="#scale">Scale</a>
-          <a href="#rtl">RTL</a>
-          <a href="#custom">Customize</a>
-          <a href="#get-started">Get started</a>
+          {PAGES.map((p) => (
+            <a
+              key={p.key}
+              href={href(p.path)}
+              className={active === p.key ? "is-on" : undefined}
+              aria-current={active === p.key ? "page" : undefined}
+            >
+              {p.label}
+            </a>
+          ))}
         </nav>
         <div className="nav__right">
           <button
@@ -57,11 +146,25 @@ export function Nav({
             {dark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
           <a
-            className="nav__ghost"
-            href={DOCS_URL}
+            className="nav__docs"
+            href={`${DOCS_URL}getting-started/`}
             target="_blank"
             rel="noreferrer"
           >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
             Docs
           </a>
           <a
@@ -105,235 +208,80 @@ function Install({ large = false }: Readonly<{ large?: boolean }>) {
   );
 }
 
-export function Hero({ dark }: Readonly<{ dark: boolean }>) {
-  return (
-    <section className="hero shell">
-      <div className="hero__badge">
-        <Bolt size={13} /> Headless engine · batteries-included adapters
-      </div>
-      <h1 className="hero__h1">
-        One headless engine.
-        <br />
-        <span className="hero__accent">Every UI kit.</span>
-      </h1>
-      <p className="hero__sub">
-        TanStack-style headless freedom — but batteries-included for{" "}
-        <em>your</em> kit. The same table features render natively in Mantine,
-        MUI, Chakra, Ant Design, or unstyled Tailwind. URL state, RTL, and a
-        real filter UX, out of the box.
-      </p>
-      <div className="hero__cta">
-        <Install />
-        <a className="hero__link" href="#demo">
-          Try the live demo ↓
-        </a>
-      </div>
-      <div className="hero__adapters">
-        <span className="hero__adapters-l">Renders natively in</span>
-        {ADAPTER_TOKENS.map((a) => (
-          <span
-            key={a.key}
-            className="hero__chip"
-            style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
-          >
-            <span className="hero__chip-dot" />
-            {a.label}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
+/** One small title + one helper line — the active nav tab already says
+ * which page this is, so no kicker. */
 export function SectionHead({
-  kicker,
   title,
   children,
-}: Readonly<{ kicker: string; title: string; children?: ReactNode }>) {
+}: Readonly<{ title: string; children?: ReactNode }>) {
   return (
     <div className="sec__head">
-      <span className="sec__kicker">{kicker}</span>
       <h2 className="sec__title">{title}</h2>
       {children ? <p className="sec__lead">{children}</p> : null}
     </div>
   );
 }
 
-const SPECTRUM = [
-  {
-    t: "Props",
-    d: "Pass data + columns. Sensible defaults do the rest.",
-    code: "<DataTable source={src}\n  columns={cols} />",
-  },
-  {
-    t: "Slots",
-    d: "Swap the empty, loading, and skeleton states.",
-    code: "slots={{ empty: <NoResults/>,\n  skeleton: <Shimmer/> }}",
-  },
-  {
-    t: "classNames + data-*",
-    d: "Style any part; target rows by state.",
-    code: "classNames={{ row: 'hover:bg…' }}\n// [data-selected] [data-pinned]",
-  },
-  {
-    t: "Custom toolbar",
-    d: "Inject your own toolbar + confirm dialog.",
-    code: "renderToolbar={(api) => …}\nconfirm={myConfirm}",
-  },
-  {
-    t: "Fully headless",
-    d: "Prop-getters. You own every element.",
-    code: "const { getRowProps,\n  getHeaderProps } = useTable()",
-  },
-];
-
-export function Spectrum() {
-  return (
-    <div className="spectrum">
-      <div className="spectrum__track">
-        {SPECTRUM.map((s, i) => (
-          <div key={s.t} className="spcard" style={cssVars({ "--i": i })}>
-            <div className="spcard__rank">0{i + 1}</div>
-            <h4>{s.t}</h4>
-            <p>{s.d}</p>
-            <pre className="spcard__code">
-              <code>{s.code}</code>
-            </pre>
-          </div>
-        ))}
-      </div>
-      <div className="spectrum__scale">
-        <span>Easy</span>
-        <span className="spectrum__line" />
-        <span>Pro</span>
-      </div>
-    </div>
-  );
-}
-
-const FEATURES = [
-  {
-    Ic: Globe,
-    t: "i18n + RTL",
-    d: "10 locales including Arabic & Hebrew. Layout mirrors, not just text.",
-  },
-  {
-    Ic: Database,
-    t: "Frontend or backend",
-    d: "One TableSource contract. Swap client- and server-side freely — the table never knows.",
-  },
-  {
-    Ic: Layers,
-    t: "URL-synced state",
-    d: "Search, sort, filter & page live in the URL. Every view is a shareable link.",
-  },
-  {
-    Ic: Check,
-    t: "Accessible",
-    d: "Roles, aria-sort, focus management and full keyboard nav — by default.",
-  },
-  {
-    Ic: Resize,
-    t: "Column management",
-    d: "Show/hide, reorder, pin left/right, drag- or keyboard-resize. Persist anywhere.",
-  },
-  {
-    Ic: Server,
-    t: "Selection + bulk",
-    d: "Row select, bulk actions, per-row actions with disabledReason and injectable confirm.",
-  },
-];
-
-export function FeatureGrid() {
-  return (
-    <div className="fgrid">
-      {FEATURES.map(({ Ic, t, d }) => (
-        <div key={t} className="fcard">
-          <span className="fcard__ic">
-            <Ic size={18} />
-          </span>
-          <h4>{t}</h4>
-          <p>{d}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
+/** Same link set as the landing's footer, with Landing in Demo's place. */
 const FOOT_LINKS = [
-  { label: "Docs", href: DOCS_URL },
-  { label: "Get started", href: DOCS_URL },
-  { label: "API", href: `${DOCS_URL}api/` },
-  { label: "Compare", href: `${DOCS_URL}comparison/` },
-  { label: "GitHub", href: REPO_URL },
+  {
+    label: "Landing",
+    href: DOCS_URL,
+    icon: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M9 21v-7h6v7"],
+  },
+  {
+    label: "Docs",
+    href: `${DOCS_URL}getting-started/`,
+    icon: [
+      "M4 19.5A2.5 2.5 0 0 1 6.5 17H20",
+      "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
+    ],
+  },
+  {
+    label: "npm",
+    href: "https://www.npmjs.com/org/adapttable",
+    icon: [
+      "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+      "M3.27 6.96L12 12.01l8.73-5.05",
+      "M12 22.08V12",
+    ],
+  },
+  {
+    label: "GitHub",
+    href: REPO_URL,
+    icon: [
+      "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.55 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22",
+    ],
+  },
 ];
 
-/**
- * Install + first-table section: the showcase is the marketing surface, so
- * it must answer "how do I actually run this?" inline and hand off to the
- * docs site for everything deeper.
- */
-export function GetStarted() {
-  return (
-    <section className="sec shell" id="get-started">
-      <SectionHead kicker="Get started" title="Five lines to your first table.">
-        The CLI detects your UI kit and scaffolds a working table; the docs
-        cover every prop, the three data tiers, theming, i18n/RTL and the
-        TanStack comparison.
-      </SectionHead>
-      <div className="getstarted">
-        <pre className="spcard__code getstarted__code">
-          <code>{GETTING_STARTED_SNIPPET}</code>
-        </pre>
-        <div className="getstarted__actions">
-          <Install large />
-          <div className="getstarted__btns">
-            <a
-              className="gs-btn gs-btn--primary"
-              href={DOCS_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read the docs
-            </a>
-            <a
-              className="gs-btn gs-btn--ghost"
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Star size={15} /> Star it on GitHub
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const GETTING_STARTED_SNIPPET = `import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
-
-<DataTable
-  data={people}
-  columns={[
-    { key: "name" },
-    { key: "team", filter: "multiSelect" },
-    { key: "hiredAt", filter: "dateRange" },
-  ]}
-/>`;
-
-export function Footer() {
+export function Footer({ root }: Readonly<{ root: string }>) {
   return (
     <footer className="foot">
       <div className="foot__inner shell">
         <div className="foot__lead">
-          <Wordmark />
+          <Wordmark href={`${root}/`} />
           <p>Headless freedom, batteries included.</p>
         </div>
         <Install large />
         <div className="foot__links">
           {FOOT_LINKS.map((l) => (
             <a key={l.label} href={l.href} target="_blank" rel="noreferrer">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {l.icon.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </svg>
               {l.label}
             </a>
           ))}

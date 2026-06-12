@@ -153,7 +153,10 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
         searchPlaceholder="Filter 50,000 rows…"
         virtualize
         estimateRowSize={48}
-        maxHeight={380}
+        // Page-scroll window mode with a pinned header: the page itself
+        // scrolls the 50k rows while the header sticks under the app nav.
+        stickyHeader
+        stickyTop={62}
       />
     </MantineProvider>
   );

@@ -72,6 +72,12 @@ const TAILWIND: DataTableClassNames = {
     "h-8 min-w-8 rounded-md border border-gray-300 px-2 hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800",
   chips: "flex flex-wrap gap-2 px-3 pb-2",
   chip: "inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
+  chipRemove:
+    "rounded px-1 text-indigo-500 transition-colors hover:text-indigo-800 dark:hover:text-indigo-200",
+  empty:
+    "flex flex-wrap items-center justify-center gap-3 px-4 py-10 text-sm text-zinc-500 dark:text-zinc-400",
+  emptyClear:
+    "rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800",
   // ── Column popover ──────────────────────────────────────────────
   columnMenuButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 data-[active]:border-indigo-400 data-[active]:bg-indigo-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-[active]:bg-indigo-500/15",

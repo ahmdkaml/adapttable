@@ -72,6 +72,12 @@ const SHADCN: DataTableClassNames = {
     "inline-grid h-8 min-w-8 place-items-center rounded-md border border-input bg-background px-2 text-foreground hover:bg-accent disabled:opacity-40",
   chips: "flex flex-wrap gap-2 px-3 pb-2",
   chip: "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground",
+  chipRemove:
+    "rounded px-1 text-muted-foreground transition-colors hover:text-foreground",
+  empty:
+    "flex flex-wrap items-center justify-center gap-3 px-4 py-10 text-sm text-muted-foreground",
+  emptyClear:
+    "rounded-md border border-input px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted",
   // ── Column popover ──────────────────────────────────────────────
   columnMenuButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent data-[active]:bg-accent",

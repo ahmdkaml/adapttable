@@ -56,7 +56,23 @@ export default defineConfig({
           }),
         },
       ],
+      customCss: ["./src/styles/custom.css"],
       social: [
+        {
+          icon: "external",
+          label: "Landing page",
+          href: "https://orwa-mahmoud.github.io/adapttable/",
+        },
+        {
+          icon: "rocket",
+          label: "Live demo",
+          href: "https://orwa-mahmoud.github.io/adapttable/demo/",
+        },
+        {
+          icon: "npm",
+          label: "npm",
+          href: "https://www.npmjs.com/org/adapttable",
+        },
         {
           icon: "github",
           label: "GitHub",
@@ -65,16 +81,43 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Live demo",
-          link: "/demo/",
-          attrs: { target: "_blank" },
+          label: "Start",
+          items: [
+            { label: "Getting started", slug: "getting-started" },
+            { label: "Concepts", slug: "concepts" },
+            { label: "Data tiers", slug: "data-tiers" },
+          ],
         },
-        // Getting started serves AT the root (sync-docs gives it slug "").
-        { label: "Getting started", link: "/" },
-        { label: "Customization", slug: "customization" },
-        { label: "URL state", slug: "url-state" },
-        { label: "API reference", slug: "api" },
-        { label: "Comparison", slug: "comparison" },
+        {
+          label: "Features",
+          items: [
+            { label: "Columns", slug: "columns" },
+            { label: "Sorting", slug: "sorting" },
+            { label: "Filtering", slug: "filtering" },
+            { label: "Pagination", slug: "pagination" },
+            { label: "Selection & bulk actions", slug: "selection" },
+            { label: "Row expansion", slug: "row-expansion" },
+            { label: "Column management", slug: "column-management" },
+            { label: "Saved views", slug: "saved-views" },
+            { label: "Virtualization", slug: "virtualization" },
+          ],
+        },
+        {
+          label: "Beyond the table",
+          items: [
+            { label: "URL state", slug: "url-state" },
+            { label: "Customization", slug: "customization" },
+            { label: "i18n & RTL", slug: "i18n-rtl" },
+          ],
+        },
+        {
+          label: "Reference",
+          items: [
+            { label: "API reference", slug: "api" },
+            { label: "FAQ", slug: "faq" },
+            { label: "Comparison", slug: "comparison" },
+          ],
+        },
       ],
     }),
   ],

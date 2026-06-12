@@ -110,6 +110,55 @@ describe("useChromeScrollReset", () => {
     });
     expect(result.current.table.rows).toHaveLength(2);
   });
+
+  const renderWithMode = (mode: "infinite" | "paged") => {
+    const adapter = createMemoryAdapter("");
+    const ref = { current: document.createElement("div") };
+    // The table sits above the sticky offset, so a reset WOULD scroll.
+    vi.spyOn(ref.current, "getBoundingClientRect").mockReturnValue({
+      top: -200,
+    } as DOMRect);
+    const scrollBy = vi
+      .spyOn(window, "scrollBy")
+      .mockImplementation(() => undefined);
+    const hook = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        adapter,
+        paginationMode: mode,
+        defaults: { limit: 1 },
+      });
+      const props = { source, columns: cols, rowKey: (r: Row) => r.id };
+      const chrome = useTableChrome<Row>(props);
+      useChromeScrollReset(ref, chrome, props);
+      return source;
+    });
+    return { hook, scrollBy };
+  };
+
+  it("does NOT scroll back up when the infinite window extends", async () => {
+    const { hook, scrollBy } = renderWithMode("infinite");
+    await act(async () => {
+      hook.result.current.setPage(2);
+      // flush the queueMicrotask the scroll reset uses
+      await Promise.resolve();
+    });
+    // The sentinel growing the window must never yank the reader to the top.
+    expect(hook.result.current.page).toBe(2);
+    expect(scrollBy).not.toHaveBeenCalled();
+    scrollBy.mockRestore();
+  });
+
+  it("scrolls back up on real paged navigation", async () => {
+    const { hook, scrollBy } = renderWithMode("paged");
+    await act(async () => {
+      hook.result.current.setPage(2);
+      await Promise.resolve();
+    });
+    expect(scrollBy).toHaveBeenCalled();
+    scrollBy.mockRestore();
+  });
 });
 
 describe("onSelectionChange", () => {

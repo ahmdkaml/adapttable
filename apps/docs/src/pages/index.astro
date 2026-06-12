@@ -1,0 +1,2191 @@
+---
+// Static landing at the site root, wearing the DEMO's chrome verbatim —
+// the same tokens, sticky nav, hero composition, section scaffolding,
+// get-started block and footer as /demo, so the funnel reads as one
+// product. Pre-rendered text + JSON-LD carry the SEO; the live demo
+// stays at /demo, the guide at /getting-started/.
+const SITE = "https://orwa-mahmoud.github.io/adapttable";
+const REPO = "https://github.com/orwa-mahmoud/adapttable";
+const TITLE =
+  "AdaptTable — Headless React Data Table for Mantine, MUI, Chakra, Ant Design & Tailwind";
+const DESCRIPTION =
+  "One headless React data-table engine with batteries-included adapters: declarative columns and filters, URL-synced state, server or client data, 50,000-row virtualization, column management, saved views, i18n and RTL — rendered natively by your design system.";
+
+// The demo hero's adapter chips, same labels and accent colors.
+const KITS = [
+  { label: "Mantine", c: "oklch(0.58 0.17 252)" },
+  { label: "MUI", c: "oklch(0.55 0.18 264)" },
+  { label: "Chakra", c: "oklch(0.6 0.1 188)" },
+  { label: "Ant Design", c: "oklch(0.56 0.2 262)" },
+  { label: "shadcn / Tailwind", c: "oklch(0.28 0.01 264)" },
+  { label: "Custom Tailwind", c: "oklch(0.55 0.2 277)" },
+];
+
+const FEATURES = [
+  {
+    viz: "filter",
+    hue: "274",
+    title: "Columns & filters",
+    body: "One declaration drives the widget, the URL params, the chips and the row predicate. Operator-first number and date filters: Equal, At least, At most, Between.",
+  },
+  {
+    viz: "tiers",
+    hue: "210",
+    title: "Three data tiers",
+    body: "Hand the table an array and it filters, sorts and pages in memory. Or own the fetch: one consolidated query event with an abort signal. Or bring a full custom TableSource.",
+  },
+  {
+    viz: "url",
+    hue: "152",
+    title: "URL-synced everything",
+    body: "Search, sort, filters, pagination, column layout and saved views live in shareable URLs — namespaced per table, SSR-safe, with a one-prop opt-out (urlSync={false}).",
+  },
+  {
+    viz: "rows",
+    hue: "60",
+    title: "50,000 rows, no flinching",
+    body: "Opt-in virtualization windows the DOM against the page or any max-height scroll box. The live demo scrolls fifty thousand rows with a handful of DOM nodes.",
+  },
+  {
+    viz: "i18n",
+    hue: "25",
+    title: "i18n & RTL, for real",
+    body: "Label presets for ten locales. Columns map per-locale data paths, so cells, sorting and filtering follow the language. Pinning and layout are logical — Arabic and Hebrew just work.",
+  },
+  {
+    viz: "columns",
+    hue: "330",
+    title: "Column management",
+    body: "Show, hide, reorder, pin and resize — the row-actions column included. Capture any state as a named saved view and restore it later, per table.",
+  },
+  {
+    viz: "bulk",
+    hue: "10",
+    title: "Selection & bulk actions",
+    body: "Select the page — or all matches across every page. Bulk actions run through an injectable confirm, and per-row actions explain themselves with disabledReason.",
+  },
+  {
+    viz: "a11y",
+    hue: "120",
+    title: "Accessible by default",
+    body: "Real table roles, aria-sort, focus management and full keyboard navigation — column reorder and resize included, straight from the keyboard.",
+  },
+];
+
+// The customization spectrum — moved here from the demo: it's a story,
+// not a live table, so it belongs on the marketing page.
+const SPECTRUM = [
+  {
+    t: "Props",
+    d: "Pass data + columns. Sensible defaults do the rest.",
+    code: "<DataTable source={src}\n  columns={cols} />",
+  },
+  {
+    t: "Slots",
+    d: "Swap the empty, loading, and skeleton states.",
+    code: "slots={{ empty: <NoResults/>,\n  skeleton: <Shimmer/> }}",
+  },
+  {
+    t: "classNames + data-*",
+    d: "Style any part; target rows by state.",
+    code: "classNames={{ row: 'hover:bg…' }}\n// [data-selected] [data-pinned]",
+  },
+  {
+    t: "Custom toolbar",
+    d: "Inject your own toolbar + confirm dialog.",
+    code: "renderToolbar={(api) => …}\nconfirm={myConfirm}",
+  },
+  {
+    t: "Fully headless",
+    d: "Prop-getters. You own every element.",
+    code: "const { getRowProps,\n  getHeaderProps } = useTable()",
+  },
+];
+
+
+const ROWS = [
+  { i: "AL", name: "Ada Lovelace", role: "Engineer", s: "Planned", tone: "blue", money: "$25,300", load: 56 },
+  { i: "AT", name: "Alan Turing", role: "Founder", s: "Blocked", tone: "red", money: "$32,600", load: 67 },
+  { i: "KJ", name: "Katherine Johnson", role: "Researcher", s: "Active", tone: "green", money: "$47,200", load: 89 },
+];
+
+const JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "AdaptTable",
+  description: DESCRIPTION,
+  url: `${SITE}/`,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  license: "https://opensource.org/license/mit",
+  programmingLanguage: "TypeScript",
+  codeRepository: REPO,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{TITLE}</title>
+    <meta name="description" content={DESCRIPTION} />
+    <link rel="canonical" href={`${SITE}/`} />
+    <link rel="icon" href="/adapttable/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href={`${SITE}/sitemap-index.xml`} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content={TITLE} />
+    <meta property="og:description" content={DESCRIPTION} />
+    <meta property="og:url" content={`${SITE}/`} />
+    <meta property="og:image" content={`${SITE}/og.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={`${SITE}/og.png`} />
+    <script type="application/ld+json" set:html={JSON_LD} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav">
+      <div class="nav__inner shell">
+        <a class="wm" href="#overview">
+          <svg
+            class="wm__mark"
+            width="20"
+            height="20"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
+            <rect
+              x="8.5"
+              y="1.5"
+              width="22"
+              height="22"
+              rx="5.5"
+              fill="#6c5ce7"
+              opacity="0.25"></rect>
+            <rect
+              x="5"
+              y="5"
+              width="22"
+              height="22"
+              rx="5.5"
+              fill="#6c5ce7"
+              opacity="0.5"></rect>
+            <rect x="1.5" y="8.5" width="22" height="22" rx="5.5" fill="#6c5ce7"
+            ></rect>
+            <rect x="4.5" y="12.5" width="16" height="2.8" rx="1.2" fill="#fff"
+            ></rect>
+            <rect x="11.1" y="12.5" width="2.8" height="14.5" rx="1.2" fill="#fff"
+            ></rect>
+            <rect
+              x="4.5"
+              y="18.8"
+              width="4.6"
+              height="2.2"
+              rx="1"
+              fill="#fff"
+              opacity="0.4"></rect>
+            <rect
+              x="4.5"
+              y="23"
+              width="4.6"
+              height="2.2"
+              rx="1"
+              fill="#fff"
+              opacity="0.4"></rect>
+            <rect
+              x="15.9"
+              y="18.8"
+              width="4.6"
+              height="2.2"
+              rx="1"
+              fill="#fff"
+              opacity="0.4"></rect>
+            <rect
+              x="15.9"
+              y="23"
+              width="4.6"
+              height="2.2"
+              rx="1"
+              fill="#fff"
+              opacity="0.4"></rect>
+          </svg>
+          <span class="wm__txt">Adapt<strong>Table</strong></span>
+        </a>
+        <nav class="nav__links" aria-label="Primary">
+          <a href="#overview">Overview</a>
+          <a href="#features">Features</a>
+          <a href="#customize">Customize</a>
+          <a href="#get-started">Get started</a>
+        </nav>
+        <div class="nav__right">
+          <a class="nav__docs" href={`${SITE}/getting-started/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              ></path>
+            </svg>
+            Docs
+          </a>
+          <a class="nav__cta" href={REPO}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 4h6v6"></path>
+              <path d="M20 4l-9 9"></path>
+              <path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+              ></path>
+            </svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="deck">
+      <section class="hero" id="overview">
+        <div class="shell">
+        <div class="hero__badge">
+          <span class="badge__bolt" aria-hidden="true">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path>
+            </svg>
+          </span>
+          Headless engine · native UI-kit adapters
+        </div>
+        <h1 class="hero__h1 reveal">
+          One headless engine.<br /><span class="hero__accent"
+            >Every UI kit.</span
+          >
+        </h1>
+        <p class="hero__sub reveal">
+          Headless freedom, batteries included for <em>your</em> kit. The
+          same table features render natively in Mantine, MUI, Chakra, Ant
+          Design, shadcn/Tailwind — or your own custom UI. URL state, RTL,
+          and a real filter UX, out of the box.
+        </p>
+        <div class="hero__cta reveal">
+          <div class="install">
+            <span class="install__prompt" aria-hidden="true">$</span>
+            <code>npx @adapttable/cli init</code>
+            <button
+              type="button"
+              class="install__copy"
+              aria-label="Copy install command"
+              data-copy="npx @adapttable/cli init"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12l5 5L20 7"></path>
+              </svg>
+            </button>
+          </div>
+          <a class="btn-demo" href={`${SITE}/demo/`}>
+            Try the live demo
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 4h6v6"></path>
+              <path d="M20 4l-9 9"></path>
+              <path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+              ></path>
+            </svg>
+          </a>
+        </div>
+        <div class="hero__adapters reveal">
+          <span class="hero__adapters-l">Renders natively in</span>
+          {
+            KITS.map((kit) => (
+              <span class="hero__chip" style={`--c:${kit.c}`}>
+                <span class="hero__chip-dot" />
+                {kit.label}
+              </span>
+            ))
+          }
+        </div>
+
+        <figure class="mock reveal" aria-hidden="true">
+          <div class="mock__toolbar">
+            <span class="mock__search">⌕ Search people…</span>
+            <span class="mock__spacer"></span>
+            <span class="mock__chip">Team: Core ✕</span>
+            <span class="mock__btn">≔ Filters <b>2</b></span>
+            <span class="mock__btn">Columns</span>
+          </div>
+          <div class="mock__table">
+            <div class="mock__row mock__row--head">
+              <span>Person ↕</span><span>Status</span>
+              <span class="num">Budget ↕</span><span>Load</span>
+            </div>
+            {
+              ROWS.map((r) => (
+                <div class="mock__row">
+                  <span class="cell-person">
+                    <i class={`avatar avatar--${r.tone}`}>{r.i}</i>
+                    <span>
+                      <b>{r.name}</b>
+                      <small>{r.role}</small>
+                    </span>
+                  </span>
+                  <span>
+                    <i class={`pill pill--${r.tone}`}>{r.s}</i>
+                  </span>
+                  <span class="num">
+                    <b>{r.money}</b>
+                  </span>
+                  <span class="cell-load">
+                    <i class="bar">
+                      <i style={`width:${r.load}%`} />
+                    </i>
+                    <small>{r.load}%</small>
+                  </span>
+                </div>
+              ))
+            }
+          </div>
+          <figcaption class="mock__url">
+            ?live.f_team=Core&amp;live.f_budgetMin=25000 · every bit of state
+            in a shareable URL
+          </figcaption>
+        </figure>
+        </div>
+      </section>
+
+
+      <section class="sec" id="features" aria-labelledby="features-h">
+        <div class="shell">
+        <div class="sec__head">
+          <span class="sec__kicker">The batteries</span>
+          <h2 class="sec__title" id="features-h">
+            Everything a data table owes you.
+          </h2>
+        </div>
+        <div class="grid">
+          {
+            FEATURES.map((f, n) => (
+              <article class="card" style={`--hue:${f.hue};--n:${n}`}>
+                <div class="viz" aria-hidden="true">
+                  {f.viz === "filter" && (
+                    <>
+                      <span class="viz-chip">Team: Core ✕</span>
+                      <span class="viz-chip">Budget ≥ 25k ✕</span>
+                      <span class="viz-chip viz-chip--ghost">+ Add filter</span>
+                    </>
+                  )}
+                  {f.viz === "tiers" && (
+                    <span class="viz-stack">
+                      <i>data={"{rows}"}</i>
+                      <i>onQueryChange(q)</i>
+                      <i>TableSource</i>
+                    </span>
+                  )}
+                  {f.viz === "url" && (
+                    <span class="viz-url">
+                      <i class="viz-dot" />
+                      ?q=ada&amp;f_team=Core&amp;sort=name
+                    </span>
+                  )}
+                  {f.viz === "rows" && (
+                    <span class="viz-rows">
+                      <i />
+                      <i />
+                      <i class="on" />
+                      <i class="on" />
+                      <i class="on" />
+                      <i />
+                      <b>8 of 50,000 in the DOM</b>
+                    </span>
+                  )}
+                  {f.viz === "i18n" && (
+                    <span class="viz-i18n">
+                      <i dir="ltr">Name ↑</i>
+                      <i dir="rtl">الاسم ↑</i>
+                    </span>
+                  )}
+                  {f.viz === "columns" && (
+                    <span class="viz-cols">
+                      <i>Person</i>
+                      <i class="pinned">Status 📌</i>
+                      <i>Budget</i>
+                      <i class="off">Email</i>
+                    </span>
+                  )}
+                  {f.viz === "bulk" && (
+                    <span class="viz-bulk">
+                      <i class="viz-cb on" />
+                      <i class="viz-cb on" />
+                      <i class="viz-cb" />
+                      <b>2 selected</b>
+                      <em>Delete</em>
+                    </span>
+                  )}
+                  {f.viz === "a11y" && (
+                    <span class="viz-a11y">
+                      <i class="viz-kbd">Tab</i>
+                      <i class="viz-focus">Name ↑</i>
+                      <code>aria-sort="ascending"</code>
+                    </span>
+                  )}
+                </div>
+                <h3>{f.title}</h3>
+                <p set:html={f.body.replace(/`([^`]+)`/g, "<code>$1</code>")} />
+              </article>
+            ))
+          }
+        </div>
+        </div>
+      </section>
+
+      <section class="sec" id="customize" aria-labelledby="customize-h">
+        <div class="shell">
+        <div class="sec__head sec__head--row">
+          <div>
+            <span class="sec__kicker">Customization spectrum</span>
+            <h2 class="sec__title" id="customize-h">
+              Easy when you want. Headless when you need.
+            </h2>
+            <p class="sec__lead">
+              Start with props and grow all the way to prop-getters — at no
+              point do you hit a wall and have to eject.
+            </p>
+          </div>
+          <a class="gs-btn gs-btn--ghost" href={`${SITE}/customization/`}>
+            Customization guide
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14"></path>
+              <path d="M13 6l6 6-6 6"></path>
+            </svg>
+          </a>
+        </div>
+        <div class="spectrum">
+          <div class="spectrum__track">
+            {
+              SPECTRUM.map((s, i) => (
+                <div class="spcard" style={`--i:${i}`}>
+                  <div class="spcard__rank">0{i + 1}</div>
+                  <h4>{s.t}</h4>
+                  <p>{s.d}</p>
+                  <pre class="spcard__code"><code>{s.code}</code></pre>
+                </div>
+              ))
+            }
+          </div>
+          <div class="spectrum__scale">
+            <span>Easy</span>
+            <span class="spectrum__line"></span>
+            <span>Pro</span>
+          </div>
+        </div>
+        </div>
+      </section>
+
+      <section class="sec" id="get-started" aria-labelledby="gs-h">
+        <div class="shell">
+        <div class="sec__head">
+          <span class="sec__kicker">Get started</span>
+          <h2 class="sec__title" id="gs-h">Five lines to your first table.</h2>
+          <p class="sec__lead">
+            The CLI detects your UI kit and scaffolds a working table; the
+            docs cover every prop, the three data tiers, theming, i18n/RTL
+            and the TanStack comparison.
+          </p>
+        </div>
+        <div class="getstarted">
+          <pre
+            class="getstarted__code"><code>{`import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+
+<DataTable
+  data={people}
+  columns={[
+    { key: "name" },
+    { key: "team", filter: "multiSelect" },
+    { key: "hiredAt", filter: "dateRange" },
+  ]}
+/>`}</code></pre>
+          <div class="getstarted__actions">
+            <div class="install install--lg">
+              <span class="install__prompt" aria-hidden="true">$</span>
+              <code>npx @adapttable/cli init</code>
+            </div>
+            <div class="getstarted__btns">
+              <a class="gs-btn gs-btn--primary" href={`${SITE}/getting-started/`}
+                >Get started</a
+              >
+              <a class="gs-btn gs-btn--ghost" href={REPO}>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"
+                  ></path>
+                </svg>
+                Star it on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="foot__inner shell">
+        <div class="foot__lead">
+          <a class="wm" href={`${SITE}/`}>
+            <svg
+              class="wm__mark"
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              aria-hidden="true"
+            >
+              <rect
+                x="8.5"
+                y="1.5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"
+                opacity="0.25"></rect>
+              <rect
+                x="5"
+                y="5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"
+                opacity="0.5"></rect>
+              <rect
+                x="1.5"
+                y="8.5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"></rect>
+              <rect x="4.5" y="12.5" width="16" height="2.8" rx="1.2" fill="#fff"
+              ></rect>
+              <rect
+                x="11.1"
+                y="12.5"
+                width="2.8"
+                height="14.5"
+                rx="1.2"
+                fill="#fff"></rect>
+              <rect
+                x="4.5"
+                y="18.8"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="4.5"
+                y="23"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="15.9"
+                y="18.8"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="15.9"
+                y="23"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+            </svg>
+            <span class="wm__txt">Adapt<strong>Table</strong></span>
+          </a>
+          <p>Headless freedom, batteries included.</p>
+        </div>
+        <div class="install install--lg">
+          <span class="install__prompt" aria-hidden="true">$</span>
+          <code>npx @adapttable/cli init</code>
+        </div>
+        <nav class="foot__links" aria-label="Footer">
+          <a href={`${SITE}/demo/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M10 8.5l5.5 3.5-5.5 3.5v-7z"></path>
+            </svg>
+            Demo
+          </a>
+          <a href={`${SITE}/getting-started/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              ></path>
+            </svg>
+            Docs
+          </a>
+          <a href="https://www.npmjs.com/org/adapttable">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              ></path>
+              <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
+              <path d="M12 22.08V12"></path>
+            </svg>
+            npm
+          </a>
+          <a href={REPO}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.55 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+              ></path>
+            </svg>
+            GitHub
+          </a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      // Mouse wheel paginates the deck: one flick, one slide — and a
+      // SUSTAINED scroll chains slide after slide, so the whole page can
+      // be traversed in one go. The listener lives on window so the
+      // pinned header/footer are scrollable territory too. Inertia tails
+      // are filtered by an accumulation threshold that is higher inside
+      // a continuous stream than after a pause, plus a rising-edge
+      // shortcut for a fresh flick mid-stream.
+      const deck = document.querySelector<HTMLElement>("main.deck");
+      const deckMode = window.matchMedia("(min-width: 920px)");
+      if (deck) {
+        let animating = false;
+        let inStream = false;
+        let acc = 0;
+        let lastT = 0;
+        let prevDelta = 0;
+        let settleTimer = 0;
+        const settle = () => {
+          animating = false;
+          acc = 0;
+        };
+        deck.addEventListener("scrollend", settle);
+        deck.addEventListener("scroll", () => {
+          window.clearTimeout(settleTimer);
+          settleTimer = window.setTimeout(settle, 150);
+        });
+        window.addEventListener(
+          "wheel",
+          (e) => {
+            if (!deckMode.matches) return;
+            const slide = (e.target as HTMLElement).closest(
+              "main.deck > section"
+            );
+            if (slide) {
+              const canDown =
+                slide.scrollTop + slide.clientHeight < slide.scrollHeight - 1;
+              const canUp = slide.scrollTop > 0;
+              if ((e.deltaY > 0 && canDown) || (e.deltaY < 0 && canUp)) {
+                return;
+              }
+            }
+            if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+            e.preventDefault();
+            const gap = e.timeStamp - lastT;
+            lastT = e.timeStamp;
+            const delta = Math.abs(e.deltaY);
+            const rising = delta >= 80 && delta >= prevDelta * 1.5;
+            prevDelta = delta;
+            if (gap > 200) {
+              inStream = false;
+              acc = 0;
+            }
+            if (animating) return;
+            acc += e.deltaY;
+            const threshold = inStream && !rising ? 240 : 40;
+            if (Math.abs(acc) < threshold) return;
+            const w = deck.clientWidth;
+            const current = Math.round(deck.scrollLeft / w);
+            const idx = Math.max(
+              0,
+              Math.min(
+                current + (acc > 0 ? 1 : -1),
+                deck.children.length - 1
+              )
+            );
+            acc = 0;
+            // Boundary: nothing to do and nothing armed — no gesture debt.
+            if (idx === current) return;
+            animating = true;
+            inStream = true;
+            deck.children[idx]?.scrollIntoView({
+              behavior: "smooth",
+              inline: "start",
+              block: "nearest",
+            });
+            // Safety: never stay locked if scrollend doesn't fire.
+            window.setTimeout(settle, 1200);
+          },
+          { passive: false }
+        );
+      }
+
+      // The nav tab of the slide on screen is marked active — instantly
+      // on click, and tracked while sliding (works for the horizontal
+      // deck and the mobile vertical flow alike).
+      const navLinks = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>(".nav__links a")
+      );
+      const setActive = (id: string) => {
+        for (const link of navLinks) {
+          const on = link.getAttribute("href") === `#${id}`;
+          link.classList.toggle("is-on", on);
+          if (on) {
+            link.setAttribute("aria-current", "true");
+          } else {
+            link.removeAttribute("aria-current");
+          }
+        }
+      };
+      for (const link of navLinks) {
+        link.addEventListener("click", () => {
+          setActive((link.getAttribute("href") ?? "#").slice(1));
+        });
+      }
+      const watcher = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) setActive(entry.target.id);
+          }
+        },
+        { threshold: 0.35 }
+      );
+      for (const section of document.querySelectorAll("main.deck > section")) {
+        watcher.observe(section);
+      }
+
+      // The demo's copy-to-clipboard affordance on the install pill.
+      document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach(
+        (btn) => {
+          btn.addEventListener("click", () => {
+            void navigator.clipboard?.writeText(btn.dataset.copy ?? "");
+            btn.classList.add("ok");
+            window.setTimeout(() => btn.classList.remove("ok"), 1200);
+          });
+        }
+      );
+    </script>
+  </body>
+</html>
+
+<style>
+  /* The demo's exact token set (light theme), so /demo and the landing
+     read as one product. */
+  :root {
+    --page-bg: oklch(0.985 0.004 264);
+    --page-surface: oklch(1 0 0);
+    --page-surface-2: oklch(0.975 0.004 264);
+    --page-border: oklch(0.91 0.005 264);
+    --page-border-soft: oklch(0.945 0.004 264);
+    --ink: oklch(0.22 0.014 264);
+    --ink-2: oklch(0.46 0.012 264);
+    --ink-3: oklch(0.62 0.01 264);
+    --brand: oklch(0.55 0.19 274);
+    --brand-soft: oklch(0.95 0.04 274);
+    --shadow-card:
+      0 1px 2px oklch(0.2 0.02 264 / 0.04),
+      0 8px 28px oklch(0.2 0.02 264 / 0.06);
+    --green: oklch(0.62 0.16 152);
+    --red: oklch(0.6 0.19 25);
+    --blue: oklch(0.58 0.17 255);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    /* The brand face, same as the demo's: Schibsted Grotesk. */
+    font-family: "Schibsted Grotesk", system-ui, sans-serif;
+    /* The demo's effective body line-height (Chakra's 1.5). */
+    line-height: 1.5;
+    background: var(--page-bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Deck layout (desktop only): header and footer always on screen,
+     the slides live in the strip between them. Mobile keeps the
+     natural vertical page. */
+  @media (min-width: 920px) {
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 26%, transparent);
+  }
+  .shell {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-inline: 28px;
+    width: 100%;
+  }
+  .skip {
+    position: absolute;
+    left: -999px;
+  }
+  .skip:focus {
+    left: 16px;
+    top: 12px;
+    background: var(--brand);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    z-index: 50;
+  }
+
+  /* ── Nav: the demo's, sticky with the same blur ─────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in oklch, var(--page-bg) 82%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 62px;
+  }
+  .nav__links {
+    display: flex;
+    gap: 22px;
+    margin-inline-start: 14px;
+  }
+  .nav__links a {
+    color: var(--ink-2);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav__links a:hover {
+    color: var(--ink);
+  }
+  .nav__links a.is-on {
+    color: var(--brand);
+    font-weight: 650;
+  }
+  .nav__right {
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav__docs {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 9px;
+    border: 1px solid var(--page-border);
+    background: var(--page-surface);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      transform 0.15s,
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .nav__docs:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--brand) 35%, var(--page-border));
+    box-shadow: 0 4px 14px color-mix(in oklch, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+  .nav__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 9px;
+    background: var(--ink);
+    color: var(--page-bg);
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      transform 0.15s,
+      opacity 0.15s;
+  }
+  .nav__cta:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  .wm {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .wm__mark {
+    display: block;
+    flex: none;
+  }
+  .wm__txt {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .wm__txt strong {
+    font-weight: 700;
+  }
+
+  /* ── Hero: the demo's composition and spacing ───────────────────── */
+  .hero {
+    text-align: center;
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 520px;
+    z-index: -1;
+    background: radial-gradient(
+      60% 60% at 50% 0%,
+      color-mix(in oklch, var(--brand) 11%, transparent),
+      transparent 70%
+    );
+    pointer-events: none;
+    animation: breathe 10s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.78; }
+    50% { opacity: 1; }
+  }
+  .hero__badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: clamp(10px, 2vh, 22px);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--brand);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    /* Shimmer: a light band sweeps the pill on each broadcast beat. */
+    background:
+      linear-gradient(
+          115deg,
+          transparent 30%,
+          color-mix(in oklch, white 65%, transparent) 46%,
+          transparent 62%
+        )
+        no-repeat,
+      var(--brand-soft);
+    background-size: 250% 100%, auto;
+    /* Entrance rise once, then the shimmer beat forever. */
+    animation:
+      rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      shimmer 5s ease-in-out 0.8s infinite;
+  }
+  /* Broadcast ring: a radio wave leaves the pill on the same beat. */
+  .hero__badge::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 38%, transparent);
+    animation: wave 5s ease-out infinite;
+  }
+  .badge__bolt {
+    display: inline-flex;
+    animation: bolt 5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 55%, 100% { background-position: 215% 0, 0 0; }
+    25% { background-position: -45% 0, 0 0; }
+  }
+  @keyframes wave {
+    0%, 18% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 38%, transparent); }
+    52% { box-shadow: 0 0 0 14px color-mix(in oklch, var(--brand) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 0%, transparent); }
+  }
+  @keyframes bolt {
+    0%, 14%, 30%, 100% { transform: none; filter: none; }
+    20% { transform: scale(1.25) rotate(-6deg); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--brand) 60%, transparent)); }
+  }
+  .hero__h1 {
+    margin: 0;
+    font-size: clamp(30px, 6vh, 56px);
+    line-height: 1.04;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .hero__accent {
+    color: var(--brand);
+  }
+  .hero__sub {
+    margin: clamp(10px, 1.8vh, 18px) auto 0;
+    max-width: 740px;
+    font-size: clamp(14.5px, 1.9vh, 17px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .hero__sub em {
+    font-style: italic;
+    color: var(--ink);
+  }
+  .hero__cta {
+    margin-top: clamp(12px, 2.4vh, 24px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .hero__link {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .hero__link:hover {
+    color: var(--brand);
+  }
+  .install {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    padding: 0 16px;
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 11px;
+    box-shadow: var(--shadow-card);
+    font-family: var(--mono);
+  }
+  .install:has(.install__copy) {
+    padding-inline-end: 8px;
+  }
+  .install__prompt {
+    color: var(--brand);
+    font-weight: 700;
+  }
+  .install code {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .install__copy {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: var(--page-surface-2);
+    color: var(--ink-3);
+    transition: all 0.15s;
+  }
+  .install__copy:hover {
+    color: var(--ink);
+  }
+  .install__copy.ok {
+    color: var(--green);
+  }
+  .install--lg {
+    height: 50px;
+  }
+  .btn-demo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    border-radius: 11px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px color-mix(in oklch, var(--brand) 28%, transparent);
+    /* A gentle idle bob — the one action that opens the product. */
+    animation: bob 2.6s ease-in-out 1.6s infinite;
+    transition:
+      transform 0.15s,
+      opacity 0.15s;
+  }
+  .btn-demo:hover {
+    animation: none;
+    transform: translateY(-2px);
+    opacity: 0.93;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .hero__adapters {
+    margin-top: clamp(12px, 2.6vh, 28px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .hero__adapters-l {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+    margin-inline-end: 4px;
+  }
+  .hero__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--page-border);
+    background: var(--page-surface);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .hero__chip-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+
+  /* ── The product mock, slim enough to share the hero slide ──────── */
+  .mock {
+    margin: clamp(14px, 2.8vh, 30px) auto 0;
+    max-width: 860px;
+    width: 100%;
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    background: var(--page-surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    font-size: 12.5px;
+    text-align: start;
+  }
+  .mock__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__search {
+    flex: 0 1 220px;
+    border: 1px solid var(--page-border);
+    border-radius: 8px;
+    padding: 6px 11px;
+    color: var(--ink-3);
+    background: var(--page-surface);
+  }
+  .mock__spacer {
+    flex: 1;
+  }
+  .mock__chip {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .mock__btn {
+    border: 1px solid var(--page-border);
+    border-radius: 8px;
+    padding: 5px 11px;
+    font-weight: 600;
+    color: var(--ink-2);
+    white-space: nowrap;
+    background: var(--page-surface);
+  }
+  .mock__btn b {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 10px;
+    margin-inline-start: 3px;
+  }
+  .mock__table {
+    padding: 4px 4px 0;
+  }
+  .mock__row {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr 0.9fr 1.05fr;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__row--head {
+    color: var(--ink-3);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 650;
+  }
+  .mock__row:last-child {
+    border-bottom: 0;
+  }
+  .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+  .cell-person {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+  .cell-person span {
+    display: grid;
+    line-height: 1.25;
+    min-width: 0;
+    text-align: start;
+  }
+  .cell-person b {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cell-person small,
+  .cell-load small {
+    color: var(--ink-3);
+    font-size: 10.5px;
+  }
+  .avatar {
+    flex: 0 0 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .avatar--blue { background: color-mix(in oklch, var(--blue) 14%, white); color: var(--blue); }
+  .avatar--red { background: color-mix(in oklch, var(--red) 13%, white); color: var(--red); }
+  .avatar--green { background: color-mix(in oklch, var(--green) 13%, white); color: var(--green); }
+  .pill {
+    font-style: normal;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .pill--blue { background: color-mix(in oklch, var(--blue) 13%, white); color: var(--blue); }
+  .pill--red { background: color-mix(in oklch, var(--red) 12%, white); color: var(--red); }
+  .pill--green { background: color-mix(in oklch, var(--green) 12%, white); color: var(--green); }
+  .cell-load {
+    display: grid;
+    gap: 3px;
+  }
+  .bar {
+    display: block;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--page-surface-2);
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand);
+  }
+  .mock__url {
+    margin: 0;
+    padding: 7px 14px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+    border-top: 1px dashed var(--page-border);
+    background: var(--page-surface-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Short strips: the url caption yields first, then the chips row. */
+  @media (max-height: 960px) {
+    .mock__url {
+      display: none;
+    }
+  }
+  @media (max-height: 760px) {
+    .hero__adapters {
+      display: none;
+    }
+  }
+
+  /* ── Section scaffolding: the demo's rhythm — its sections sit
+     ~208px apart (104px padding + ~104px of trailing content space),
+     so non-last sections carry the bottom half explicitly. ─────────── */
+  /* The deck: slides arrive from the RIGHT, PowerPoint-style. A
+     horizontal scroll-snap strip between the always-visible header and
+     footer; a small script paginates the mouse wheel. */
+  /* Mobile/base: sections stack vertically with normal rhythm. */
+  .deck > section {
+    padding-block: clamp(44px, 7vh, 80px);
+  }
+  .deck > section > .shell {
+    width: 100%;
+  }
+  @media (min-width: 920px) {
+    main.deck {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+    main.deck::-webkit-scrollbar {
+      display: none;
+    }
+    .deck > section {
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      /* safe: falls back to start instead of clipping the top on overflow */
+      justify-content: safe center;
+      padding-block: clamp(12px, 2.6vh, 40px);
+    }
+  }
+  .sec__head {
+    max-width: 680px;
+    margin-bottom: clamp(16px, 3.4vh, 34px);
+  }
+  .sec__head--row {
+    max-width: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .sec__head--row > div {
+    max-width: 680px;
+  }
+  .sec__head--row .gs-btn {
+    flex: none;
+    margin-top: 6px;
+  }
+  .sec__kicker {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 14px;
+  }
+  .sec__title {
+    margin: 0;
+    font-size: clamp(28px, 3.8vw, 42px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .sec__lead {
+    margin: 18px 0 0;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  /* ── Feature cards (landing's own, in the demo's spirit) ────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  /* Two rows of four on desktop, so the section reads in one screen. */
+  @media (min-width: 1080px) {
+    .grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .card {
+    --tint: oklch(0.55 0.16 var(--hue));
+    position: relative;
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    background: var(--page-surface);
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  /* Hairline accent in the card's own hue. */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--tint),
+      color-mix(in oklch, var(--tint) 10%, transparent)
+    );
+    opacity: 0.85;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklch, var(--tint) 42%, var(--page-border));
+    box-shadow:
+      var(--shadow-card),
+      0 16px 40px color-mix(in oklch, var(--tint) 14%, transparent);
+  }
+  /* Micro-vignettes: each card opens with the FEATURE itself. */
+  .viz {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    min-height: 60px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
+    transition: border-color 0.2s ease;
+  }
+  .card:hover .viz {
+    border-color: color-mix(in oklch, var(--tint) 30%, var(--page-border-soft));
+  }
+  .viz-chip {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .viz-chip--ghost {
+    color: var(--ink-3);
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--page-border);
+  }
+  .viz-stack {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+  .viz-stack i {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 10.5px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 9px;
+    width: fit-content;
+  }
+  .viz-stack i:nth-child(2) {
+    margin-inline-start: 14px;
+  }
+  .viz-stack i:nth-child(3) {
+    margin-inline-start: 28px;
+  }
+  .viz-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 999px;
+    padding: 7px 13px;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .viz-dot {
+    flex: 0 0 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .viz-rows {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+  .viz-rows i {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--page-border-soft);
+  }
+  .viz-rows i.on {
+    background: color-mix(in oklch, var(--brand) 38%, var(--page-border-soft));
+  }
+  .viz-rows b {
+    position: absolute;
+    inset-inline-end: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .viz-i18n {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .viz-i18n i {
+    flex: 1;
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 7px;
+    padding: 7px 11px;
+  }
+  .viz-cols {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+  }
+  .viz-cols i {
+    flex: 1;
+    min-width: 0;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--ink-2);
+    text-align: center;
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 7px;
+    padding: 7px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .viz-cols i.pinned {
+    color: var(--brand);
+    border-color: color-mix(in oklch, var(--brand) 35%, var(--page-border));
+    box-shadow: 0 4px 12px color-mix(in oklch, var(--brand) 16%, transparent);
+    transform: translateY(-3px);
+  }
+  .viz-cols i.off {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+  .viz-bulk {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+  }
+  .viz-cb {
+    width: 15px;
+    height: 15px;
+    border-radius: 4.5px;
+    border: 1.5px solid var(--page-border);
+    background: var(--page-surface);
+  }
+  .viz-cb.on {
+    border-color: var(--brand);
+    background: var(--brand);
+    position: relative;
+  }
+  .viz-cb.on::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .viz-bulk b {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-inline-start: 4px;
+    white-space: nowrap;
+  }
+  .viz-bulk em {
+    font-style: normal;
+    font-size: 11.5px;
+    font-weight: 650;
+    color: oklch(0.55 0.19 25);
+    background: color-mix(in oklch, oklch(0.6 0.19 25) 10%, white);
+    border: 1px solid color-mix(in oklch, oklch(0.6 0.19 25) 28%, transparent);
+    border-radius: 999px;
+    padding: 4px 11px;
+  }
+  .viz-a11y {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .viz-kbd {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-bottom-width: 2.5px;
+    border-radius: 6px;
+    padding: 3px 7px;
+  }
+  .viz-focus {
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ink);
+    background: var(--page-surface);
+    border-radius: 7px;
+    padding: 6px 11px;
+    outline: 2px solid var(--brand);
+    outline-offset: 1.5px;
+  }
+  .viz-a11y code {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Cards rise into place as you scroll to them (no JS — browsers
+     without scroll-driven animations simply show them in place). */
+  @supports (animation-timeline: view()) {
+    .card {
+      animation: cardRise both ease-out;
+      animation-timeline: view(inline);
+      animation-range: entry 0% entry 38%;
+      animation-delay: calc(var(--n) * 40ms);
+    }
+    @keyframes cardRise {
+      from {
+        opacity: 0.1;
+        transform: translateY(26px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
+  .card h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  .card p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .card code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    color: var(--brand);
+    background: var(--brand-soft);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+
+  /* Short screens: tighten the cards so both rows stay in view. */
+  @media (max-height: 920px) {
+    .card {
+      padding: 13px 15px;
+    }
+    .grid {
+      gap: 12px;
+    }
+    .viz {
+      min-height: 50px;
+      padding: 9px;
+      margin-bottom: 9px;
+    }
+    .card h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .card p {
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .sec__title {
+      font-size: clamp(26px, 3.2vw, 36px);
+    }
+    .sec__lead {
+      margin-top: 12px;
+      font-size: 15.5px;
+    }
+  }
+  /* Very short screens (small laptops): one more notch. */
+  @media (max-height: 800px) {
+    .card {
+      padding: 10px 13px;
+    }
+    .viz {
+      min-height: 42px;
+      padding: 7px;
+      margin-bottom: 7px;
+    }
+    .card h3 {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    .card p {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .sec__title {
+      font-size: clamp(24px, 3vw, 32px);
+    }
+  }
+
+  /* ── Customization spectrum (moved from the demo) ───────────────── */
+  .spectrum {
+    position: relative;
+  }
+  .spectrum__track {
+    display: grid;
+    /* minmax(0,1fr): the pre's min-content width must not blow the grid. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .spcard {
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--brand) calc(var(--i) * 1.6%), transparent),
+      transparent 40%
+    );
+  }
+  .spcard__rank {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .spcard h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .spcard p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    flex: 1;
+  }
+  .spcard__code {
+    margin: 4px 0 0;
+    padding: 10px;
+    border-radius: 9px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
+    overflow: auto;
+  }
+  .spcard__code code {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    white-space: pre;
+  }
+  .spectrum__scale {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .spectrum__line {
+    flex: 1;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--page-border), var(--brand));
+  }
+  @media (max-width: 920px) {
+    .spectrum__track {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .spectrum__track {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Get started: the demo's block, verbatim ────────────────────── */
+  .getstarted {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: center;
+  }
+  .getstarted__code {
+    margin: 0;
+    padding: 22px 26px;
+    border-radius: 9px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
+    overflow-x: auto;
+    /* The demo's pre strut: 13.5px × 1.65 ≈ 22.3px line boxes — this,
+       not the 11px glyphs, is what spaces the code lines. */
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  .getstarted__code code {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    white-space: pre;
+  }
+  .getstarted__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .getstarted__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .gs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    transition:
+      transform 0.15s,
+      opacity 0.15s,
+      background 0.15s;
+  }
+  .gs-btn:hover {
+    transform: translateY(-1px);
+  }
+  .gs-btn--primary {
+    background: var(--ink);
+    color: var(--page-bg);
+  }
+  .gs-btn--primary:hover {
+    opacity: 0.9;
+  }
+  .gs-btn--ghost {
+    border: 1px solid var(--page-border);
+    background: var(--page-surface-2);
+    color: var(--ink);
+  }
+
+  /* ── Footer: the demo's ─────────────────────────────────────────── */
+  .foot {
+    border-top: 1px solid var(--page-border);
+    background: var(--page-surface-2);
+  }
+  .foot__inner {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding-top: clamp(14px, 3.8vh, 40px);
+    padding-bottom: clamp(14px, 3.8vh, 40px);
+    flex-wrap: wrap;
+  }
+  .foot__lead {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .foot__lead p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .foot__links {
+    margin-inline-start: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .foot__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+    transition: color 0.15s;
+  }
+  .foot__links a svg {
+    opacity: 0.75;
+    transition: opacity 0.15s;
+  }
+  .foot__links a:hover {
+    color: var(--brand);
+  }
+  .foot__links a:hover svg {
+    opacity: 1;
+  }
+
+  /* ── Motion: ambient only — entrance rise, breathing glow, the
+     badge broadcast, scroll-rise cards. ──────────────────────────── */
+  .reveal {
+    animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .reveal:nth-child(2) { animation-delay: 0.06s; }
+  .reveal:nth-child(3) { animation-delay: 0.12s; }
+  .reveal:nth-child(4) { animation-delay: 0.18s; }
+  .reveal:nth-child(5) { animation-delay: 0.24s; }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ── Responsive: the demo's breakpoints ─────────────────────────── */
+  @media (max-width: 920px) {
+    .nav__links {
+      display: none;
+    }
+  }
+  @media (max-width: 860px) {
+    .getstarted {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .hero::before,
+    .hero__badge,
+    .hero__badge::after,
+    .badge__bolt,
+    .btn-demo,
+    .card {
+      animation: none;
+    }
+    .nav__cta,
+    .gs-btn,
+    .btn-demo,
+    .card {
+      transition: none;
+    }
+  }
+</style>

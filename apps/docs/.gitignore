@@ -2,3 +2,5 @@ dist/
 .astro/
 # generated from ../../docs by sync-docs.mjs
 src/content/docs/
+public/llms.txt
+public/llms-full.txt

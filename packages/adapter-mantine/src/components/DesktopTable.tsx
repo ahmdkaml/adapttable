@@ -666,6 +666,14 @@ export function DesktopTable<TRow>({
         verticalSpacing={verticalSpacing}
         horizontalSpacing={horizontalSpacing}
         miw={Math.max(480, minWidth)}
+        // Chromium cannot stick a <th> inside a border-collapsed table, so
+        // the sticky header opts into separate borders — visually identical
+        // here because row separators are cell border-bottoms either way.
+        style={
+          stickyHeader
+            ? { borderCollapse: "separate", borderSpacing: 0 }
+            : undefined
+        }
       >
         <Table.Thead style={{ background: "var(--mantine-color-body)" }}>
           {groupCells && (

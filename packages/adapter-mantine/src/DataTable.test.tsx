@@ -630,6 +630,11 @@ describe("<DataTable> (Mantine)", () => {
     expect(th).toHaveStyle({ position: "sticky" });
     // the table must not sit inside a horizontal-overflow scroll container
     expect(th!.closest("[style*='overflow']")).toBeNull();
+    // Chromium cannot stick a th inside a border-collapsed table, so the
+    // sticky header must switch the table to separate borders.
+    expect(th!.closest("table")).toHaveStyle({
+      borderCollapse: "separate",
+    });
   });
 
   // With no `maxHeight` and nothing pinned, the wrapper turns into a

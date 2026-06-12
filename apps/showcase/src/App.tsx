@@ -22,16 +22,8 @@ import {
   type PageMode,
 } from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
-import { Columns, Layers, Pin, Resize } from "./sectionIcons";
-import {
-  FeatureGrid,
-  Footer,
-  GetStarted,
-  Hero,
-  Nav,
-  SectionHead,
-  Spectrum,
-} from "./sections";
+import { Columns, Pin, Resize } from "./sectionIcons";
+import { AppNav, type DemoPage, Footer, SectionHead } from "./sections";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
 const queryClient = new QueryClient();
@@ -96,7 +88,7 @@ function Control({
   );
 }
 
-function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
+export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState("mantine");
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
@@ -109,10 +101,7 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
 
   return (
     <section className="sec shell" id="demo">
-      <SectionHead
-        kicker="The live demo"
-        title="Same features. Any kit. Watch it switch."
-      >
+      <SectionHead title="Same features. Any kit. Watch it switch.">
         One dataset, one feature set — re-rendered by each real adapter. Flip
         the data source and the locale; nothing about the table changes but its
         skin.
@@ -184,13 +173,6 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
       </div>
 
       <div className="demo-surface" style={cssVars({ "--c": accent })}>
-        <div className="demo-surface__bar">
-          <span className="demo-surface__tag">{token.label} adapter</span>
-          <span className="demo-surface__url">
-            <Layers size={12} />
-            ?live.q=&live.sort=&live.page=1 · each table namespaced in the URL
-          </span>
-        </div>
         <div
           className="demo-surface__body"
           key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
@@ -209,13 +191,10 @@ function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
+export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="columns">
-      <SectionHead
-        kicker="Column management"
-        title="Wide tables, fully handled."
-      >
+      <SectionHead title="Wide tables, fully handled.">
         Show/hide, drag-reorder, pin left or right, and resize by drag or
         keyboard — open the Columns menu, grab a header edge, or tap the pin to
         cycle left → right → unpinned. Persist the layout to localStorage, the
@@ -247,31 +226,26 @@ function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
+export function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="scale">
-      <SectionHead
-        kicker="Virtualization"
-        title="Scrolls 50,000 rows without flinching."
-      >
-        This list really holds fifty thousand people, but the DOM only ever
-        contains the handful of rows inside the scroll box — scroll and watch
-        new rows materialize with zero lag. Type to filter: the whole set is
+      <SectionHead title="Scrolls 50,000 rows without flinching.">
+        This page really holds fifty thousand people, but the DOM only ever
+        contains the handful of rows in view — the header stays pinned while the
+        rest streams past with zero lag. Type to filter: the whole set is
         searched and the window re-computes instantly.
       </SectionHead>
-      <div className="pad-surface">
-        <div className="pad-surface__body">
-          <ScaleDemo dark={dark} />
-        </div>
-      </div>
+      {/* No pad-surface here: its overflow clipping would break the
+          page-level sticky header, and this table owns the page. */}
+      <ScaleDemo dark={dark} />
     </section>
   );
 }
 
-function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
+export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="rtl">
-      <SectionHead kicker="i18n + RTL" title="Right-to-left, for real.">
+      <SectionHead title="Right-to-left, for real.">
         Switch to Arabic and the entire layout mirrors — toolbar, sort arrows,
         pinned columns, pagination. Not just translated strings: a genuinely
         flipped axis.
@@ -285,8 +259,43 @@ function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   );
 }
 
-export function App() {
-  const [dark, setDark] = useState(false);
+/**
+ * Shared chrome for every demo page: theme state, the app nav (page tabs),
+ * footer, and the notice/confirm overlays the adapter demos dispatch to.
+ * `root` is the relative prefix back to the demo home ("." on the home
+ * page, ".." on subpages) so plain static links work from any depth.
+ */
+const THEME_KEY = "adapttable-demo-theme";
+
+const readStoredTheme = (): boolean => {
+  try {
+    return window.localStorage.getItem(THEME_KEY) === "dark";
+  } catch {
+    return false;
+  }
+};
+
+const storeTheme = (dark: boolean): void => {
+  try {
+    window.localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+  } catch {
+    // Storage can be unavailable (private mode) — the theme simply
+    // won't persist across pages then.
+  }
+};
+
+export function PageShell({
+  active,
+  root,
+  children,
+}: Readonly<{
+  active: DemoPage;
+  root: string;
+  children: (dark: boolean) => ReactNode;
+}>) {
+  // Each demo page is its own static app, so the theme must live in
+  // storage to survive page-to-page navigation.
+  const [dark, setDark] = useState(readStoredTheme);
   const [notice, setNotice] = useState<DemoNotice | null>(null);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(
     null
@@ -294,6 +303,7 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    storeTheme(dark);
   }, [dark]);
 
   useEffect(() => {
@@ -314,33 +324,14 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Nav dark={dark} onToggleDark={() => setDark((d) => !d)} />
-      <main>
-        <Hero dark={dark} />
-        <LiveDemo dark={dark} />
-        <ColumnsDemo dark={dark} />
-        <ScaleSection dark={dark} />
-        <RtlSection dark={dark} />
-        <section className="sec shell" id="custom">
-          <SectionHead
-            kicker="Customization spectrum"
-            title="Easy when you want. Headless when you need."
-          >
-            Start with props and grow all the way to prop-getters — at no point
-            do you hit a wall and have to eject.
-          </SectionHead>
-          <Spectrum />
-        </section>
-        <section className="sec shell">
-          <SectionHead
-            kicker="Everything else"
-            title="The rest of the batteries."
-          />
-          <FeatureGrid />
-        </section>
-      </main>
-      <GetStarted />
-      <Footer />
+      <AppNav
+        active={active}
+        root={root}
+        dark={dark}
+        onToggleDark={() => setDark((d) => !d)}
+      />
+      <main>{children(dark)}</main>
+      <Footer root={root} />
 
       {notice && (
         <div
