@@ -794,10 +794,16 @@ const JSON_LD = JSON.stringify({
             if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
             e.preventDefault();
             if (locked || sameGesture) return;
-            locked = true;
             const w = deck.clientWidth;
-            const next = Math.round(deck.scrollLeft / w) + (e.deltaY > 0 ? 1 : -1);
-            const idx = Math.max(0, Math.min(next, deck.children.length - 1));
+            const current = Math.round(deck.scrollLeft / w);
+            const idx = Math.max(
+              0,
+              Math.min(current + (e.deltaY > 0 ? 1 : -1), deck.children.length - 1)
+            );
+            // At the first/last slide there is nothing to do — and no lock,
+            // so boundary scrolls never build up a debt of dead gestures.
+            if (idx === current) return;
+            locked = true;
             deck.children[idx]?.scrollIntoView({
               behavior: "smooth",
               inline: "start",
