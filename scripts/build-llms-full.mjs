@@ -3,10 +3,12 @@
  * Regenerate `llms-full.txt` by concatenating the markdown docs, so the
  * LLM-facing "all docs in one file" can never drift from `docs/`.
  *
- * Run via `pnpm llms` after editing anything under `docs/`.
+ * Runs automatically inside the docs build (apps/docs/sync-docs.mjs) and
+ * standalone via `node scripts/build-llms-full.mjs`.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const HEADER = `# AdaptTable — full documentation
 
@@ -36,13 +38,29 @@ const DOCS = [
   "comparison.md",
 ];
 
-const root = process.cwd();
-const sections = DOCS.map((name) =>
-  readFileSync(join(root, "docs", name), "utf8").trim()
-);
+/** Rebuild `<repoRoot>/llms-full.txt` from `<repoRoot>/docs`. */
+export function buildLlmsFull(repoRoot) {
+  const docsDir = join(repoRoot, "docs");
+  const listed = new Set(DOCS);
+  const unlisted = readdirSync(docsDir).filter(
+    (file) => file.endsWith(".md") && !listed.has(file)
+  );
+  if (unlisted.length > 0) {
+    console.warn(
+      `build-llms-full: docs missing from the DOCS reading order — add them: ${unlisted.join(", ")}`
+    );
+  }
+  const sections = DOCS.map((name) =>
+    readFileSync(join(docsDir, name), "utf8").trim()
+  );
+  writeFileSync(
+    join(repoRoot, "llms-full.txt"),
+    `${HEADER}\n---\n\n${sections.join("\n\n---\n\n")}\n`
+  );
+  return DOCS.length;
+}
 
-writeFileSync(
-  join(root, "llms-full.txt"),
-  `${HEADER}\n---\n\n${sections.join("\n\n---\n\n")}\n`
-);
-console.log(`llms-full.txt rebuilt from ${DOCS.length} docs.`);
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const count = buildLlmsFull(process.cwd());
+  console.log(`llms-full.txt rebuilt from ${count} docs.`);
+}

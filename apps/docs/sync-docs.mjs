@@ -13,7 +13,10 @@ import {
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { buildLlmsFull } from "../../scripts/build-llms-full.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(here, "../..");
 const source = join(here, "../../docs");
 const target = join(here, "src/content/docs");
 
@@ -61,9 +64,22 @@ for (const file of readdirSync(source)) {
 // LLM-search surface (llmstxt.org): /llms.txt is the index, /llms-full.txt
 // the whole documentation in one file. Tools like Perplexity/ChatGPT
 // search fetch these from the site root, so they ship with every deploy.
-// Both are verbatim copies of the repo-root files — the single source.
+// llms-full.txt is regenerated from docs/ right here so it can never go
+// stale; llms.txt is the hand-written root index, copied verbatim.
 const pub = join(here, "public");
 mkdirSync(pub, { recursive: true });
-copyFileSync(join(here, "../../llms-full.txt"), join(pub, "llms-full.txt"));
-copyFileSync(join(here, "../../llms.txt"), join(pub, "llms.txt"));
+buildLlmsFull(repoRoot);
+copyFileSync(join(repoRoot, "llms-full.txt"), join(pub, "llms-full.txt"));
+const llmsIndex = readFileSync(join(repoRoot, "llms.txt"), "utf8");
+const unlinked = readdirSync(source).filter(
+  (file) =>
+    file.endsWith(".md") &&
+    !llmsIndex.includes(`/adapttable/${file.replace(/\.md$/, "")}/`)
+);
+if (unlinked.length > 0) {
+  console.warn(
+    `sync-docs: llms.txt has no link for: ${unlinked.join(", ")} — add them to the root llms.txt Docs list`
+  );
+}
+copyFileSync(join(repoRoot, "llms.txt"), join(pub, "llms.txt"));
 console.log("docs synced into Starlight");
