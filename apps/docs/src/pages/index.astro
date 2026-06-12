@@ -686,6 +686,23 @@ const JSON_LD = JSON.stringify({
           <code>npx @adapttable/cli init</code>
         </div>
         <nav class="foot__links" aria-label="Footer">
+          <a href={`${SITE}/demo/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M10 8.5l5.5 3.5-5.5 3.5v-7z"></path>
+            </svg>
+            Demo
+          </a>
           <a href={`${SITE}/getting-started/`}>
             <svg
               width="14"
@@ -703,23 +720,6 @@ const JSON_LD = JSON.stringify({
               ></path>
             </svg>
             Docs
-          </a>
-          <a href={`${SITE}/demo/`}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M10 8.5l5.5 3.5-5.5 3.5v-7z"></path>
-            </svg>
-            Demo
           </a>
           <a href="https://www.npmjs.com/org/adapttable">
             <svg
@@ -2098,9 +2098,9 @@ const JSON_LD = JSON.stringify({
   .foot__inner {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding-top: 12px;
-    padding-bottom: 12px;
+    gap: 28px;
+    padding-top: clamp(12px, 2.4vh, 26px);
+    padding-bottom: clamp(12px, 2.4vh, 26px);
     flex-wrap: wrap;
   }
   .foot__lead {
@@ -2108,16 +2108,14 @@ const JSON_LD = JSON.stringify({
     flex-direction: column;
     gap: 8px;
   }
-  /* The pill floats centered in the space between lead and links. */
-  .foot__inner .install {
-    margin-inline: auto;
-  }
+
   .foot__lead p {
     margin: 0;
     font-size: 13.5px;
     color: var(--ink-2);
   }
   .foot__links {
+    margin-inline-start: auto;
     display: flex;
     flex-wrap: wrap;
     gap: 18px;
