@@ -23,14 +23,7 @@ import {
 } from "./Demo";
 import { ScaleDemo } from "./ScaleDemo";
 import { Columns, Layers, Pin, Resize } from "./sectionIcons";
-import {
-  AppNav,
-  type DemoPage,
-  FeatureGrid,
-  Footer,
-  SectionHead,
-  Spectrum,
-} from "./sections";
+import { AppNav, type DemoPage, Footer, SectionHead } from "./sections";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
 const queryClient = new QueryClient();
@@ -279,30 +272,6 @@ export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
         </div>
       </div>
     </section>
-  );
-}
-
-export function CustomizeSections() {
-  return (
-    <>
-      <section className="sec shell" id="custom">
-        <SectionHead
-          kicker="Customization spectrum"
-          title="Easy when you want. Headless when you need."
-        >
-          Start with props and grow all the way to prop-getters — at no point do
-          you hit a wall and have to eject.
-        </SectionHead>
-        <Spectrum />
-      </section>
-      <section className="sec shell">
-        <SectionHead
-          kicker="Everything else"
-          title="The rest of the batteries."
-        />
-        <FeatureGrid />
-      </section>
-    </>
   );
 }
 

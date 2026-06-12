@@ -1,17 +1,6 @@
 import { type ReactNode, useState } from "react";
 
-import { cssVars } from "./cssVars";
-import {
-  Check,
-  Database,
-  External,
-  Globe,
-  Layers,
-  Moon,
-  Resize,
-  Server,
-  Sun,
-} from "./sectionIcons";
+import { Check, External, Moon, Sun } from "./sectionIcons";
 
 function Wordmark({ href }: Readonly<{ href: string }>) {
   return (
@@ -102,14 +91,13 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
   );
 }
 
-export type DemoPage = "demo" | "scale" | "rtl" | "customize";
+export type DemoPage = "demo" | "scale" | "rtl";
 
 /** The demo pages — each a static HTML entry, linked with plain anchors. */
 const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
   { key: "scale", label: "Scale", path: "scale" },
   { key: "rtl", label: "RTL", path: "rtl" },
-  { key: "customize", label: "Customize", path: "customize" },
 ];
 
 /**
@@ -215,107 +203,6 @@ export function SectionHead({
       <span className="sec__kicker">{kicker}</span>
       <h2 className="sec__title">{title}</h2>
       {children ? <p className="sec__lead">{children}</p> : null}
-    </div>
-  );
-}
-
-const SPECTRUM = [
-  {
-    t: "Props",
-    d: "Pass data + columns. Sensible defaults do the rest.",
-    code: "<DataTable source={src}\n  columns={cols} />",
-  },
-  {
-    t: "Slots",
-    d: "Swap the empty, loading, and skeleton states.",
-    code: "slots={{ empty: <NoResults/>,\n  skeleton: <Shimmer/> }}",
-  },
-  {
-    t: "classNames + data-*",
-    d: "Style any part; target rows by state.",
-    code: "classNames={{ row: 'hover:bg…' }}\n// [data-selected] [data-pinned]",
-  },
-  {
-    t: "Custom toolbar",
-    d: "Inject your own toolbar + confirm dialog.",
-    code: "renderToolbar={(api) => …}\nconfirm={myConfirm}",
-  },
-  {
-    t: "Fully headless",
-    d: "Prop-getters. You own every element.",
-    code: "const { getRowProps,\n  getHeaderProps } = useTable()",
-  },
-];
-
-export function Spectrum() {
-  return (
-    <div className="spectrum">
-      <div className="spectrum__track">
-        {SPECTRUM.map((s, i) => (
-          <div key={s.t} className="spcard" style={cssVars({ "--i": i })}>
-            <div className="spcard__rank">0{i + 1}</div>
-            <h4>{s.t}</h4>
-            <p>{s.d}</p>
-            <pre className="spcard__code">
-              <code>{s.code}</code>
-            </pre>
-          </div>
-        ))}
-      </div>
-      <div className="spectrum__scale">
-        <span>Easy</span>
-        <span className="spectrum__line" />
-        <span>Pro</span>
-      </div>
-    </div>
-  );
-}
-
-const FEATURES = [
-  {
-    Ic: Globe,
-    t: "i18n + RTL",
-    d: "10 locales including Arabic & Hebrew. Layout mirrors, not just text.",
-  },
-  {
-    Ic: Database,
-    t: "Frontend or backend",
-    d: "One TableSource contract. Swap client- and server-side freely — the table never knows.",
-  },
-  {
-    Ic: Layers,
-    t: "URL-synced state",
-    d: "Search, sort, filter & page live in the URL. Every view is a shareable link.",
-  },
-  {
-    Ic: Check,
-    t: "Accessible",
-    d: "Roles, aria-sort, focus management and full keyboard nav — by default.",
-  },
-  {
-    Ic: Resize,
-    t: "Column management",
-    d: "Show/hide, reorder, pin left/right, drag- or keyboard-resize. Persist anywhere.",
-  },
-  {
-    Ic: Server,
-    t: "Selection + bulk",
-    d: "Row select, bulk actions, per-row actions with disabledReason and injectable confirm.",
-  },
-];
-
-export function FeatureGrid() {
-  return (
-    <div className="fgrid">
-      {FEATURES.map(({ Ic, t, d }) => (
-        <div key={t} className="fcard">
-          <span className="fcard__ic">
-            <Ic size={18} />
-          </span>
-          <h4>{t}</h4>
-          <p>{d}</p>
-        </div>
-      ))}
     </div>
   );
 }

@@ -23,7 +23,6 @@ export default defineConfig({
         main: page("./index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),
-        customize: page("./customize/index.html"),
       },
     },
   },

@@ -58,6 +58,48 @@ const FEATURES = [
     title: "Column management & views",
     body: "Show, hide, reorder, pin and resize — the row-actions column included. Capture any state as a named saved view and restore it later, per table.",
   },
+  {
+    viz: "bulk",
+    hue: "10",
+    title: "Selection & bulk actions",
+    body: "Select the page — or all matches across every page. Bulk actions run through an injectable confirm, and per-row actions explain themselves with disabledReason.",
+  },
+  {
+    viz: "a11y",
+    hue: "120",
+    title: "Accessible by default",
+    body: "Real table roles, aria-sort, focus management and full keyboard navigation — column reorder and resize included, straight from the keyboard.",
+  },
+];
+
+// The customization spectrum — moved here from the demo: it's a story,
+// not a live table, so it belongs on the marketing page.
+const SPECTRUM = [
+  {
+    t: "Props",
+    d: "Pass data + columns. Sensible defaults do the rest.",
+    code: "<DataTable source={src}\n  columns={cols} />",
+  },
+  {
+    t: "Slots",
+    d: "Swap the empty, loading, and skeleton states.",
+    code: "slots={{ empty: <NoResults/>,\n  skeleton: <Shimmer/> }}",
+  },
+  {
+    t: "classNames + data-*",
+    d: "Style any part; target rows by state.",
+    code: "classNames={{ row: 'hover:bg…' }}\n// [data-selected] [data-pinned]",
+  },
+  {
+    t: "Custom toolbar",
+    d: "Inject your own toolbar + confirm dialog.",
+    code: "renderToolbar={(api) => …}\nconfirm={myConfirm}",
+  },
+  {
+    t: "Fully headless",
+    d: "Prop-getters. You own every element.",
+    code: "const { getRowProps,\n  getHeaderProps } = useTable()",
+  },
 ];
 
 const ROWS = [
@@ -184,6 +226,7 @@ const JSON_LD = JSON.stringify({
         <nav class="nav__links" aria-label="Primary">
           <a href="#overview">Overview</a>
           <a href="#features">Features</a>
+          <a href="#customize">Customize</a>
           <a href="#get-started">Get started</a>
         </nav>
         <div class="nav__right">
@@ -374,7 +417,7 @@ const JSON_LD = JSON.stringify({
 
       <section class="sec shell" id="features" aria-labelledby="features-h">
         <div class="sec__head">
-          <span class="sec__kicker">Why AdaptTable</span>
+          <span class="sec__kicker">The batteries</span>
           <h2 class="sec__title" id="features-h">
             Everything a data table owes you.
           </h2>
@@ -429,12 +472,60 @@ const JSON_LD = JSON.stringify({
                       <i class="off">Email</i>
                     </span>
                   )}
+                  {f.viz === "bulk" && (
+                    <span class="viz-bulk">
+                      <i class="viz-cb on" />
+                      <i class="viz-cb on" />
+                      <i class="viz-cb" />
+                      <b>2 selected</b>
+                      <em>Delete</em>
+                    </span>
+                  )}
+                  {f.viz === "a11y" && (
+                    <span class="viz-a11y">
+                      <i class="viz-kbd">Tab</i>
+                      <i class="viz-focus">Name ↑</i>
+                      <code>aria-sort="ascending"</code>
+                    </span>
+                  )}
                 </div>
                 <h3>{f.title}</h3>
                 <p set:html={f.body.replace(/`([^`]+)`/g, "<code>$1</code>")} />
               </article>
             ))
           }
+        </div>
+      </section>
+
+      <section class="sec shell" id="customize" aria-labelledby="customize-h">
+        <div class="sec__head">
+          <span class="sec__kicker">Customization spectrum</span>
+          <h2 class="sec__title" id="customize-h">
+            Easy when you want. Headless when you need.
+          </h2>
+          <p class="sec__lead">
+            Start with props and grow all the way to prop-getters — at no
+            point do you hit a wall and have to eject.
+          </p>
+        </div>
+        <div class="spectrum">
+          <div class="spectrum__track">
+            {
+              SPECTRUM.map((s, i) => (
+                <div class="spcard" style={`--i:${i}`}>
+                  <div class="spcard__rank">0{i + 1}</div>
+                  <h4>{s.t}</h4>
+                  <p>{s.d}</p>
+                  <pre class="spcard__code"><code>{s.code}</code></pre>
+                </div>
+              ))
+            }
+          </div>
+          <div class="spectrum__scale">
+            <span>Easy</span>
+            <span class="spectrum__line"></span>
+            <span>Pro</span>
+          </div>
         </div>
       </section>
 
@@ -1486,6 +1577,97 @@ const JSON_LD = JSON.stringify({
     opacity: 0.45;
     text-decoration: line-through;
   }
+  .viz-bulk {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .viz-cb {
+    width: 15px;
+    height: 15px;
+    border-radius: 4.5px;
+    border: 1.5px solid var(--page-border);
+    background: var(--page-surface);
+  }
+  .viz-cb.on {
+    border-color: var(--brand);
+    background: var(--brand);
+    position: relative;
+  }
+  .viz-cb.on::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .viz-bulk b {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-inline-start: 4px;
+    white-space: nowrap;
+  }
+  .viz-bulk em {
+    font-style: normal;
+    font-size: 11.5px;
+    font-weight: 650;
+    color: oklch(0.55 0.19 25);
+    background: color-mix(in oklch, oklch(0.6 0.19 25) 10%, white);
+    border: 1px solid color-mix(in oklch, oklch(0.6 0.19 25) 28%, transparent);
+    border-radius: 999px;
+    padding: 4px 11px;
+  }
+  .viz-a11y {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .viz-kbd {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-bottom-width: 2.5px;
+    border-radius: 6px;
+    padding: 3px 7px;
+  }
+  .viz-focus {
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ink);
+    background: var(--page-surface);
+    border-radius: 7px;
+    padding: 6px 11px;
+    outline: 2px solid var(--brand);
+    outline-offset: 1.5px;
+  }
+  .viz-a11y code {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   /* Cards rise into place as you scroll to them (no JS — browsers
      without scroll-driven animations simply show them in place). */
   @supports (animation-timeline: view()) {
@@ -1524,6 +1706,92 @@ const JSON_LD = JSON.stringify({
     background: var(--brand-soft);
     padding: 1px 6px;
     border-radius: 6px;
+  }
+
+  /* ── Customization spectrum (moved from the demo) ───────────────── */
+  .spectrum {
+    position: relative;
+  }
+  .spectrum__track {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  .spcard {
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--brand) calc(var(--i) * 1.6%), transparent),
+      transparent 40%
+    );
+  }
+  .spcard__rank {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .spcard h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .spcard p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    flex: 1;
+  }
+  .spcard__code {
+    margin: 4px 0 0;
+    padding: 10px;
+    border-radius: 9px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
+    overflow: auto;
+  }
+  .spcard__code code {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    white-space: pre;
+  }
+  .spectrum__scale {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .spectrum__line {
+    flex: 1;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--page-border), var(--brand));
+  }
+  @media (max-width: 920px) {
+    .spectrum__track {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .spectrum__track {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* ── Get started: the demo's block, verbatim ────────────────────── */
