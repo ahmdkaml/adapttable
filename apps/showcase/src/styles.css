@@ -144,29 +144,11 @@ a {
 .wm {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 .wm__mark {
-  display: inline-flex;
-  gap: 2.5px;
-  align-items: flex-end;
-  height: 18px;
-}
-.wm__bar {
-  width: 4px;
-  border-radius: 2px;
-  background: var(--brand);
-}
-.wm__mark .wm__bar:nth-child(1) {
-  height: 10px;
-  opacity: 0.55;
-}
-.wm__mark .wm__bar:nth-child(2) {
-  height: 18px;
-}
-.wm__mark .wm__bar:nth-child(3) {
-  height: 13px;
-  opacity: 0.78;
+  display: block;
+  flex: none;
 }
 .wm__txt {
   font-size: 18px;

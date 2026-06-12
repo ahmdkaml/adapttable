@@ -19,11 +19,34 @@ import { ADAPTER_TOKENS } from "./themeTokens";
 function Wordmark() {
   return (
     <a className="wm" href="#top">
-      <span className="wm__mark">
-        <span className="wm__bar" />
-        <span className="wm__bar" />
-        <span className="wm__bar" />
-      </span>
+      <svg
+        className="wm__mark"
+        viewBox="0 0 32 32"
+        width="20"
+        height="20"
+        aria-hidden="true"
+      >
+        <rect width="32" height="32" rx="7" fill="var(--brand)" />
+        <rect x="7" y="8" width="18" height="3.2" rx="1.2" fill="#fff" />
+        <rect
+          x="7"
+          y="14.4"
+          width="18"
+          height="3.2"
+          rx="1.2"
+          fill="#fff"
+          opacity="0.85"
+        />
+        <rect
+          x="7"
+          y="20.8"
+          width="18"
+          height="3.2"
+          rx="1.2"
+          fill="#fff"
+          opacity="0.7"
+        />
+      </svg>
       <span className="wm__txt">
         Adapt<strong>Table</strong>
       </span>
