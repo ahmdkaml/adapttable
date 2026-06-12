@@ -208,14 +208,14 @@ function Install({ large = false }: Readonly<{ large?: boolean }>) {
   );
 }
 
+/** One small title + one helper line — the active nav tab already says
+ * which page this is, so no kicker. */
 export function SectionHead({
-  kicker,
   title,
   children,
-}: Readonly<{ kicker: string; title: string; children?: ReactNode }>) {
+}: Readonly<{ title: string; children?: ReactNode }>) {
   return (
     <div className="sec__head">
-      <span className="sec__kicker">{kicker}</span>
       <h2 className="sec__title">{title}</h2>
       {children ? <p className="sec__lead">{children}</p> : null}
     </div>

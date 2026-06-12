@@ -101,10 +101,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
 
   return (
     <section className="sec shell" id="demo">
-      <SectionHead
-        kicker="The live demo"
-        title="Same features. Any kit. Watch it switch."
-      >
+      <SectionHead title="Same features. Any kit. Watch it switch.">
         One dataset, one feature set — re-rendered by each real adapter. Flip
         the data source and the locale; nothing about the table changes but its
         skin.
@@ -204,10 +201,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
 export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="columns">
-      <SectionHead
-        kicker="Column management"
-        title="Wide tables, fully handled."
-      >
+      <SectionHead title="Wide tables, fully handled.">
         Show/hide, drag-reorder, pin left or right, and resize by drag or
         keyboard — open the Columns menu, grab a header edge, or tap the pin to
         cycle left → right → unpinned. Persist the layout to localStorage, the
@@ -242,10 +236,7 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
 export function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="scale">
-      <SectionHead
-        kicker="Virtualization"
-        title="Scrolls 50,000 rows without flinching."
-      >
+      <SectionHead title="Scrolls 50,000 rows without flinching.">
         This page really holds fifty thousand people, but the DOM only ever
         contains the handful of rows in view — the header stays pinned while the
         rest streams past with zero lag. Type to filter: the whole set is
@@ -261,7 +252,7 @@ export function ScaleSection({ dark }: Readonly<{ dark: boolean }>) {
 export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="rtl">
-      <SectionHead kicker="i18n + RTL" title="Right-to-left, for real.">
+      <SectionHead title="Right-to-left, for real.">
         Switch to Arabic and the entire layout mirrors — toolbar, sort arrows,
         pinned columns, pagination. Not just translated strings: a genuinely
         flipped axis.
