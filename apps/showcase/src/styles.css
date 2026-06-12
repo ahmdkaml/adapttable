@@ -118,13 +118,28 @@ a {
 .nav__icon:hover {
   color: var(--ink);
 }
-.nav__ghost {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink-2);
-}
-.nav__ghost:hover {
+.nav__docs {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 15px;
+  border-radius: 9px;
+  border: 1px solid var(--page-border);
+  background: var(--page-surface);
   color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    transform 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.nav__docs:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--brand) 35%, var(--page-border));
+  box-shadow: 0 4px 14px color-mix(in oklch, var(--brand) 14%, transparent);
+  color: var(--brand);
 }
 .nav__cta {
   display: inline-flex;
@@ -449,12 +464,23 @@ a {
   gap: 18px;
 }
 .foot__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--ink-2);
+  transition: color 0.15s;
+}
+.foot__links a svg {
+  opacity: 0.75;
+  transition: opacity 0.15s;
 }
 .foot__links a:hover {
   color: var(--brand);
+}
+.foot__links a:hover svg {
+  opacity: 1;
 }
 
 /* ---------- responsive ---------- */

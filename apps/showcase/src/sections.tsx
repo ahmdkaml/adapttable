@@ -145,11 +145,25 @@ export function AppNav({
             {dark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
           <a
-            className="nav__ghost"
+            className="nav__docs"
             href={`${DOCS_URL}getting-started/`}
             target="_blank"
             rel="noreferrer"
           >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
             Docs
           </a>
           <a
@@ -207,11 +221,37 @@ export function SectionHead({
   );
 }
 
+/** Same link set as the landing's footer, with Landing in Demo's place. */
 const FOOT_LINKS = [
-  { label: "Docs", href: `${DOCS_URL}getting-started/` },
-  { label: "API", href: `${DOCS_URL}api/` },
-  { label: "Compare", href: `${DOCS_URL}comparison/` },
-  { label: "GitHub", href: REPO_URL },
+  {
+    label: "Landing",
+    href: DOCS_URL,
+    icon: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M9 21v-7h6v7"],
+  },
+  {
+    label: "Docs",
+    href: `${DOCS_URL}getting-started/`,
+    icon: [
+      "M4 19.5A2.5 2.5 0 0 1 6.5 17H20",
+      "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
+    ],
+  },
+  {
+    label: "npm",
+    href: "https://www.npmjs.com/org/adapttable",
+    icon: [
+      "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+      "M3.27 6.96L12 12.01l8.73-5.05",
+      "M12 22.08V12",
+    ],
+  },
+  {
+    label: "GitHub",
+    href: REPO_URL,
+    icon: [
+      "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.55 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22",
+    ],
+  },
 ];
 
 export function Footer({ root }: Readonly<{ root: string }>) {
@@ -226,6 +266,21 @@ export function Footer({ root }: Readonly<{ root: string }>) {
         <div className="foot__links">
           {FOOT_LINKS.map((l) => (
             <a key={l.label} href={l.href} target="_blank" rel="noreferrer">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {l.icon.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </svg>
               {l.label}
             </a>
           ))}

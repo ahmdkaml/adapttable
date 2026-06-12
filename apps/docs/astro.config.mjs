@@ -58,17 +58,22 @@ export default defineConfig({
       ],
       social: [
         {
+          icon: "rocket",
+          label: "Live demo",
+          href: "https://orwa-mahmoud.github.io/adapttable/demo/",
+        },
+        {
+          icon: "npm",
+          label: "npm",
+          href: "https://www.npmjs.com/org/adapttable",
+        },
+        {
           icon: "github",
           label: "GitHub",
           href: "https://github.com/orwa-mahmoud/adapttable",
         },
       ],
       sidebar: [
-        {
-          label: "Live demo",
-          link: "/demo/",
-          attrs: { target: "_blank" },
-        },
         {
           label: "Start",
           items: [
