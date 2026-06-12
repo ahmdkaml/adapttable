@@ -74,7 +74,6 @@ export function Toolbar<TRow>({
   return (
     <Group
       gap="sm"
-      wrap="nowrap"
       justify="space-between"
       align="center"
       className={className}
@@ -87,7 +86,7 @@ export function Toolbar<TRow>({
           style={{ flex: 1, minWidth: 160, maxWidth: 360 }}
         />
       )}
-      <Group gap="xs" wrap="nowrap" align="center">
+      <Group gap="xs" align="center">
         {sortOptions && sortOptions.length > 0 && (
           <Select
             aria-label={labels.sortBy}

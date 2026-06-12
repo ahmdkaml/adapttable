@@ -86,7 +86,7 @@ export function Toolbar<TRow>({
   );
 
   return (
-    <Flex gap="small" wrap={false} align="center" justify="space-between">
+    <Flex gap="small" wrap align="center" justify="space-between">
       {!hideSearch && (
         <Input
           type="search"
@@ -103,7 +103,7 @@ export function Toolbar<TRow>({
           }
         />
       )}
-      <Flex gap="small" wrap={false} align="center">
+      <Flex gap="small" wrap align="center">
         {isRefreshing && <Spin size="small" aria-label={labels.loading} />}
         {sortOptions && sortOptions.length > 0 && (
           <Select

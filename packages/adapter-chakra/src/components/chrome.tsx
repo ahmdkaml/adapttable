@@ -173,7 +173,8 @@ export function Toolbar<TRow>({
   return (
     <HStack
       spacing={2}
-      flexWrap="nowrap"
+      flexWrap="wrap"
+      rowGap={2}
       justify="space-between"
       align="center"
       className={className}
@@ -196,7 +197,7 @@ export function Toolbar<TRow>({
           />
         </InputGroup>
       )}
-      <HStack spacing={2} flexWrap="nowrap" align="center">
+      <HStack spacing={2} flexWrap="wrap" rowGap={2} align="center">
         {sortOptions && sortOptions.length > 0 && (
           <Select
             size="sm"

@@ -288,7 +288,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <div
         data-adapttable-part="toolbar"
         className={classNames.toolbar}
-        style={{ display: "flex", flexWrap: "nowrap", alignItems: "center" }}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          rowGap: 8,
+        }}
       >
         {!hideSearch && (
           <span
