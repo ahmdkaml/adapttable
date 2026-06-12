@@ -192,8 +192,9 @@ export function Hero({ dark }: Readonly<{ dark: boolean }>) {
       </h1>
       <p className="hero__sub">
         Headless freedom, batteries included for <em>your</em> kit. The same
-        table features render natively in Mantine, MUI, Chakra, Ant Design, or
-        unstyled Tailwind. URL state, RTL, and a real filter UX, out of the box.
+        table features render natively in Mantine, MUI, Chakra, Ant Design,
+        shadcn/Tailwind — or your own custom UI. URL state, RTL, and a real
+        filter UX, out of the box.
       </p>
       <div className="hero__cta">
         <Install />
