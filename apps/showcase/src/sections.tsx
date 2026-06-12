@@ -58,7 +58,7 @@ export function Nav({
           </button>
           <a
             className="nav__ghost"
-            href={DOCS_URL}
+            href={`${DOCS_URL}getting-started/`}
             target="_blank"
             rel="noreferrer"
           >
@@ -261,8 +261,7 @@ export function FeatureGrid() {
 }
 
 const FOOT_LINKS = [
-  { label: "Docs", href: DOCS_URL },
-  { label: "Get started", href: `${DOCS_URL}getting-started/` },
+  { label: "Docs", href: `${DOCS_URL}getting-started/` },
   { label: "API", href: `${DOCS_URL}api/` },
   { label: "Compare", href: `${DOCS_URL}comparison/` },
   { label: "GitHub", href: REPO_URL },
@@ -294,7 +293,7 @@ export function GetStarted() {
               target="_blank"
               rel="noreferrer"
             >
-              Read the docs
+              Get started
             </a>
             <a
               className="gs-btn gs-btn--ghost"

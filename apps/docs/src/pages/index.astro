@@ -1,40 +1,67 @@
 ---
-// Static landing at the site root: full SEO weight (pre-rendered text,
-// JSON-LD, og tags) with the showcase's visual language. The live demo
-// stays at /demo; the guide at /getting-started/.
+// Static landing at the site root, in the SHOWCASE's own design system —
+// the same oklch tokens, type, badge, install pill and chip language as
+// /demo, so the funnel reads as one product. Pre-rendered text + JSON-LD
+// carry the SEO; the live demo stays at /demo, the guide at
+// /getting-started/.
 const SITE = "https://orwa-mahmoud.github.io/adapttable";
 const TITLE =
   "AdaptTable — Headless React Data Table for Mantine, MUI, Chakra, Ant Design & Tailwind";
 const DESCRIPTION =
   "One headless React data-table engine with batteries-included adapters: declarative columns and filters, URL-synced state, server or client data, 50,000-row virtualization, column management, saved views, i18n and RTL — rendered natively by your design system.";
 
-const KITS = ["Mantine", "MUI", "Chakra UI", "Ant Design", "Tailwind / shadcn"];
+const KITS = [
+  { label: "Mantine", c: "#4c6ef5" },
+  { label: "MUI", c: "#007fff" },
+  { label: "Chakra UI", c: "#319795" },
+  { label: "Ant Design", c: "#1677ff" },
+  { label: "shadcn / Tailwind", c: "#18181b" },
+];
 
 const FEATURES = [
   {
+    viz: "filter",
+    hue: "274",
     title: "Declarative columns & filters",
     body: "`{ key: \"team\", filter: \"multiSelect\" }` — one definition drives the widget, the URL params, the chips and the row predicate. Operator-first number and date filters: Equal, At least, At most, Between.",
   },
   {
+    viz: "tiers",
+    hue: "210",
     title: "Three data tiers",
     body: "Hand the table an array and it filters, sorts and pages in memory. Or own the fetch: one consolidated query event with an abort signal. Or bring a full custom TableSource.",
   },
   {
+    viz: "url",
+    hue: "152",
     title: "URL-synced everything",
     body: "Search, sort, filters, pagination, column layout and saved views live in shareable URLs — namespaced per table, SSR-safe, with a one-prop opt-out (urlSync={false}).",
   },
   {
+    viz: "rows",
+    hue: "60",
     title: "50,000 rows, no flinching",
     body: "Opt-in virtualization windows the DOM against the page or any max-height scroll box. The live demo scrolls fifty thousand rows with a handful of DOM nodes.",
   },
   {
+    viz: "i18n",
+    hue: "25",
     title: "i18n & RTL, for real",
     body: "Label presets for ten locales. Columns map per-locale data paths, so cells, sorting and filtering follow the language. Pinning and layout are logical — Arabic and Hebrew just work.",
   },
   {
+    viz: "columns",
+    hue: "330",
     title: "Column management & views",
     body: "Show, hide, reorder, pin and resize — the row-actions column included. Capture any state as a named saved view and restore it later, per table.",
   },
+];
+
+const ROWS = [
+  { i: "AL", name: "Ada Lovelace", role: "Engineer", s: "Planned", tone: "blue", date: "Mar 8, 2026", money: "$25,300", load: 56 },
+  { i: "AT", name: "Alan Turing", role: "Founder", s: "Blocked", tone: "red", date: "May 15, 2026", money: "$32,600", load: 67 },
+  { i: "GH", name: "Grace Hopper", role: "Designer", s: "Archived", tone: "gray", date: "Jul 22, 2026", money: "$39,900", load: 78 },
+  { i: "KJ", name: "Katherine Johnson", role: "Researcher", s: "Active", tone: "green", date: "Sep 3, 2026", money: "$47,200", load: 89 },
 ];
 
 const JSON_LD = JSON.stringify({
@@ -78,64 +105,187 @@ const JSON_LD = JSON.stringify({
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="nav">
-      <a class="brand" href={`${SITE}/`}>
-        <span class="brand__mark" aria-hidden="true"></span>
-        Adapt<b>Table</b>
-      </a>
-      <nav aria-label="Primary">
-        <a href={`${SITE}/demo/`}>Live demo</a>
-        <a href={`${SITE}/getting-started/`}>Docs</a>
-        <a href={`${SITE}/api/`}>API</a>
-        <a href={`${SITE}/comparison/`}>Compare</a>
-        <a class="nav__gh" href="https://github.com/orwa-mahmoud/adapttable"
-          >GitHub</a
-        >
-      </nav>
+      <div class="shell nav__inner">
+        <a class="brand" href={`${SITE}/`}>
+          <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="7" fill="#6c5ce7"></rect>
+            <path
+              d="M9 11h14M9 16h14M9 21h8"
+              stroke="#fff"
+              stroke-width="2.6"
+              stroke-linecap="round"></path>
+          </svg>
+          Adapt<b>Table</b>
+        </a>
+        <nav aria-label="Primary">
+          <a href={`${SITE}/demo/`}>Live demo</a>
+          <a href={`${SITE}/getting-started/`}>Docs</a>
+          <a href={`${SITE}/api/`}>API</a>
+          <a href={`${SITE}/comparison/`}>Compare</a>
+          <a class="nav__cta" href="https://github.com/orwa-mahmoud/adapttable"
+            >GitHub</a
+          >
+        </nav>
+      </div>
     </header>
 
     <main id="main">
-      <section class="hero">
-        <p class="hero__kicker reveal">
+      <section class="hero shell">
+        <p class="badge">
+          <span class="badge__bolt" aria-hidden="true">⚡</span>
           Headless engine · batteries-included adapters · MIT
         </p>
         <h1 class="reveal">
-          The headless React data table<br />
-          <em>for any UI kit.</em>
+          The headless React <span class="nowrap">data table</span><br /><em
+            >for any UI kit.</em
+          >
         </h1>
         <p class="hero__sub reveal">
-          One declarative API — columns, filters, three data tiers — rendered
-          natively by Mantine, MUI, Chakra UI, Ant Design, or your own
-          Tailwind classes. URL-synced state, real filter UX, virtualization,
-          i18n and RTL, out of the box.
+          TanStack-style headless freedom — but batteries-included for
+          <i>your</i> kit. One declarative API renders natively in Mantine,
+          MUI, Chakra UI, Ant Design, or your own Tailwind classes. URL-synced
+          state, a real filter UX, virtualization, i18n and RTL, out of the
+          box.
         </p>
         <div class="hero__cta reveal">
-          <a class="btn btn--primary" href={`${SITE}/demo/`}>Try the live demo</a>
-          <a class="btn btn--ghost" href={`${SITE}/getting-started/`}
-            >Get started</a
-          >
+          <a class="btn-primary" href={`${SITE}/demo/`}>Try the live demo</a>
           <code class="install"
             ><span aria-hidden="true">$</span> npx @adapttable/cli init</code
+          >
+          <a class="hero__link" href={`${SITE}/getting-started/`}
+            >Get started →</a
           >
         </div>
         <p class="hero__kits reveal">
           <span>Renders natively in</span>
-          {KITS.map((kit) => <i class="chip">{kit}</i>)}
+          {
+            KITS.map((kit) => (
+              <i class="chip">
+                <b style={`background:${kit.c}`} />
+                {kit.label}
+              </i>
+            ))
+          }
         </p>
       </section>
 
-      <section class="features" aria-labelledby="features-h">
+      <!-- The product, not a metaphor: a static table mock in pure CSS,
+           skinned with the same tokens the live demo uses. -->
+      <figure class="mock shell reveal" aria-hidden="true">
+        <div class="mock__toolbar">
+          <span class="mock__search">⌕ Search people…</span>
+          <span class="mock__spacer"></span>
+          <span class="mock__btn">≔ Filters <b>2</b></span>
+          <span class="mock__btn">Columns</span>
+        </div>
+        <div class="mock__chips">
+          <span>Team: Core ✕</span><span>Budget ≥ 25,000 ✕</span>
+        </div>
+        <div class="mock__table">
+          <div class="mock__row mock__row--head">
+            <span>Person ↕</span><span>Status</span><span>Timeline ↕</span>
+            <span class="num">Budget ↕</span><span>Load</span>
+          </div>
+          {
+            ROWS.map((r) => (
+              <div class="mock__row">
+                <span class="cell-person">
+                  <i class={`avatar avatar--${r.tone}`}>{r.i}</i>
+                  <span>
+                    <b>{r.name}</b>
+                    <small>{r.role}</small>
+                  </span>
+                </span>
+                <span>
+                  <i class={`pill pill--${r.tone}`}>{r.s}</i>
+                </span>
+                <span class="cell-date">
+                  <b>{r.date}</b>
+                </span>
+                <span class="num">
+                  <b>{r.money}</b>
+                </span>
+                <span class="cell-load">
+                  <i class="bar">
+                    <i style={`width:${r.load}%`} />
+                  </i>
+                  <small>{r.load}%</small>
+                </span>
+              </div>
+            ))
+          }
+        </div>
+        <div class="mock__footer">
+          <span>Rows per page 8 · Showing 1–4 of 12</span>
+          <span class="mock__pager">‹ <b class="pg pg--on">1</b><b class="pg">2</b><b class="pg">3</b> ›</span>
+        </div>
+        <figcaption class="mock__url">
+          ?live.f_team=Core&amp;live.f_budgetMin=25000 · every bit of state in
+          a shareable URL
+        </figcaption>
+      </figure>
+
+      <section class="sec shell" aria-labelledby="features-h">
+        <p class="kicker">Why AdaptTable</p>
         <h2 id="features-h">Everything a data table owes you</h2>
         <div class="grid">
           {
-            FEATURES.map((f) => (
-              <article class="card">
+            FEATURES.map((f, n) => (
+              <article class="card" style={`--hue:${f.hue};--n:${n}`}>
+                <div class="viz" aria-hidden="true">
+                  {f.viz === "filter" && (
+                    <>
+                      <span class="viz-chip">Team: Core ✕</span>
+                      <span class="viz-chip">Budget ≥ 25k ✕</span>
+                      <span class="viz-chip viz-chip--ghost">+ Add filter</span>
+                    </>
+                  )}
+                  {f.viz === "tiers" && (
+                    <span class="viz-stack">
+                      <i>data={"{rows}"}</i>
+                      <i>onQueryChange(q)</i>
+                      <i>TableSource</i>
+                    </span>
+                  )}
+                  {f.viz === "url" && (
+                    <span class="viz-url">
+                      <i class="viz-dot" />
+                      ?q=ada&amp;f_team=Core&amp;sort=name
+                    </span>
+                  )}
+                  {f.viz === "rows" && (
+                    <span class="viz-rows">
+                      <i />
+                      <i />
+                      <i class="on" />
+                      <i class="on" />
+                      <i class="on" />
+                      <i />
+                      <b>8 of 50,000 in the DOM</b>
+                    </span>
+                  )}
+                  {f.viz === "i18n" && (
+                    <span class="viz-i18n">
+                      <i dir="ltr">Name ↑</i>
+                      <i dir="rtl">الاسم ↑</i>
+                    </span>
+                  )}
+                  {f.viz === "columns" && (
+                    <span class="viz-cols">
+                      <i>Person</i>
+                      <i class="pinned">Status 📌</i>
+                      <i>Budget</i>
+                      <i class="off">Email</i>
+                    </span>
+                  )}
+                </div>
                 <h3>{f.title}</h3>
                 <p set:html={f.body.replace(/`([^`]+)`/g, "<code>$1</code>")} />
               </article>
@@ -144,9 +294,23 @@ const JSON_LD = JSON.stringify({
         </div>
       </section>
 
-      <section class="snippet" aria-labelledby="snippet-h">
-        <h2 id="snippet-h">Five lines to your first table</h2>
-        <pre><code>{`import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+      <section class="sec shell snippet" aria-labelledby="snippet-h">
+        <div class="snippet__copy">
+          <h2 id="snippet-h">Five lines to your first table</h2>
+          <p>
+            Bare keys become columns with humanized headers. A
+            <code>filter</code> shorthand becomes the kit-native widget, the
+            URL params, the chips and the predicate — nothing else to wire.
+          </p>
+          <p>
+            Read the <a href={`${SITE}/getting-started/`}>Getting started guide</a>
+            or the <a href={`${SITE}/comparison/`}
+              >comparison with TanStack Table</a
+            >.
+          </p>
+        </div>
+        <pre><code>{`import { DataTable } from "@adapttable/mantine";
+// or mui, chakra, antd, unstyled
 
 <DataTable
   data={people}
@@ -156,68 +320,62 @@ const JSON_LD = JSON.stringify({
     { key: "hiredAt", filter: "dateRange" },
   ]}
 />`}</code></pre>
-        <p>
-          Bare keys become columns with humanized headers. A
-          <code>filter</code> shorthand becomes the kit-native widget, the URL
-          params, the chips and the predicate. Read the
-          <a href={`${SITE}/getting-started/`}>Getting started guide</a> or the
-          <a href={`${SITE}/comparison/`}>comparison with TanStack Table</a>.
-        </p>
       </section>
     </main>
 
     <footer class="foot">
-      <span>MIT · TypeScript · React 18+</span>
-      <nav aria-label="Footer">
-        <a href={`${SITE}/getting-started/`}>Getting started</a>
-        <a href={`${SITE}/customization/`}>Customization</a>
-        <a href={`${SITE}/url-state/`}>URL state</a>
-        <a href={`${SITE}/faq/`}>FAQ</a>
-        <a href="https://www.npmjs.com/org/adapttable">npm</a>
-        <a href="https://github.com/orwa-mahmoud/adapttable">GitHub</a>
-      </nav>
+      <div class="shell foot__inner">
+        <span>MIT · TypeScript · React 18+</span>
+        <nav aria-label="Footer">
+          <a href={`${SITE}/getting-started/`}>Getting started</a>
+          <a href={`${SITE}/customization/`}>Customization</a>
+          <a href={`${SITE}/url-state/`}>URL state</a>
+          <a href={`${SITE}/faq/`}>FAQ</a>
+          <a href="https://www.npmjs.com/org/adapttable">npm</a>
+          <a href="https://github.com/orwa-mahmoud/adapttable">GitHub</a>
+        </nav>
+      </div>
     </footer>
   </body>
 </html>
 
 <style>
+  /* The showcase's exact token set (light theme), so /demo and the
+     landing read as one product. */
   :root {
-    --bg: #0d0f17;
-    --bg-2: #131625;
-    --ink: #eceef6;
-    --muted: #9aa0b5;
-    --line: #262b3f;
-    --accent: #8a7bff;
-    --accent-deep: #6c5ce7;
-    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --page-bg: oklch(0.985 0.004 264);
+    --page-surface: oklch(1 0 0);
+    --page-surface-2: oklch(0.975 0.004 264);
+    --page-border: oklch(0.91 0.005 264);
+    --page-border-soft: oklch(0.945 0.004 264);
+    --ink: oklch(0.22 0.014 264);
+    --ink-2: oklch(0.46 0.012 264);
+    --ink-3: oklch(0.62 0.01 264);
+    --brand: oklch(0.55 0.19 274);
+    --brand-soft: oklch(0.95 0.04 274);
+    --shadow-card:
+      0 1px 2px oklch(0.2 0.02 264 / 0.04),
+      0 8px 28px oklch(0.2 0.02 264 / 0.06);
+    --green: oklch(0.62 0.16 152);
+    --red: oklch(0.6 0.19 25);
+    --blue: oklch(0.58 0.17 255);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * {
     box-sizing: border-box;
   }
-  html {
-    color-scheme: dark;
-  }
   body {
     margin: 0;
-    background:
-      radial-gradient(900px 480px at 75% -10%, rgba(108, 92, 231, 0.22), transparent 64%),
-      radial-gradient(700px 420px at -10% 30%, rgba(108, 92, 231, 0.1), transparent 60%),
-      var(--bg);
+    font-family: "Schibsted Grotesk", system-ui, sans-serif;
+    background: var(--page-bg);
     color: var(--ink);
-    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
     line-height: 1.6;
   }
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 72px 72px;
-    opacity: 0.14;
-    mask-image: radial-gradient(720px 480px at 60% 0%, black, transparent 75%);
+  .shell {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-inline: clamp(18px, 4vw, 28px);
   }
   .skip {
     position: absolute;
@@ -226,258 +384,727 @@ const JSON_LD = JSON.stringify({
   .skip:focus {
     left: 16px;
     top: 12px;
-    background: var(--accent-deep);
-    color: white;
+    background: var(--brand);
+    color: #fff;
     padding: 8px 14px;
     border-radius: 8px;
     z-index: 10;
   }
 
   .nav {
+    border-bottom: 1px solid var(--page-border-soft);
+    background: color-mix(in oklch, var(--page-bg) 86%, white);
+  }
+  .nav__inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 22px clamp(20px, 6vw, 72px);
-    position: relative;
+    height: 64px;
   }
   .brand {
-    font-size: 21px;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
   }
   .brand b {
-    color: var(--accent);
-    font-weight: 700;
-  }
-  .brand__mark {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-    box-shadow: 0 0 18px rgba(138, 123, 255, 0.55);
+    font-weight: 800;
   }
   .nav nav {
     display: flex;
     align-items: center;
-    gap: clamp(12px, 2.5vw, 26px);
+    gap: clamp(12px, 2.4vw, 26px);
     flex-wrap: wrap;
   }
   .nav a {
-    color: var(--muted);
+    color: var(--ink-2);
     text-decoration: none;
-    font-size: 15px;
+    font-size: 14.5px;
+    font-weight: 550;
   }
   .nav a:hover {
     color: var(--ink);
   }
-  .nav__gh {
-    border: 1px solid var(--line);
-    padding: 7px 14px;
+  .nav__cta {
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 15px;
     border-radius: 9px;
-    color: var(--ink) !important;
-  }
-  .nav__gh:hover {
-    border-color: var(--accent);
+    background: var(--ink);
+    color: var(--page-bg) !important;
+    font-weight: 600;
   }
 
+  /* ── Hero (the showcase's composition) ─────────────────────────── */
   .hero {
-    padding: clamp(48px, 9vw, 110px) clamp(20px, 6vw, 72px) 30px;
-    max-width: 1060px;
     position: relative;
+    padding-top: clamp(48px, 8vw, 96px);
+    text-align: center;
   }
   .hero::before {
     content: "";
     position: absolute;
-    left: clamp(20px, 6vw, 72px);
-    top: clamp(56px, 10vw, 124px);
-    bottom: 110px;
-    width: 3px;
-    border-radius: 3px;
-    background: linear-gradient(var(--accent), transparent);
+    inset: -64px 0 auto;
+    height: 420px;
+    background: radial-gradient(
+      60% 60% at 50% 0%,
+      color-mix(in oklch, var(--brand) 11%, transparent),
+      transparent 70%
+    );
+    pointer-events: none;
   }
-  .hero > * {
-    padding-left: clamp(22px, 3vw, 38px);
+  .badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 26px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--brand);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    /* Shimmer: a light band sweeps the pill on each broadcast beat. */
+    background:
+      linear-gradient(
+          115deg,
+          transparent 30%,
+          color-mix(in oklch, white 65%, transparent) 46%,
+          transparent 62%
+        )
+        no-repeat,
+      var(--brand-soft);
+    background-size: 250% 100%, auto;
+    /* Entrance rise once, then the shimmer beat forever. */
+    animation:
+      rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      shimmer 5s ease-in-out 0.8s infinite;
   }
-  .hero__kicker {
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 18px;
+  /* Broadcast ring: a radio wave leaves the pill on the same beat. */
+  .badge::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 38%, transparent);
+    animation: wave 5s ease-out infinite;
+  }
+  .badge__bolt {
+    animation: bolt 5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 55%, 100% { background-position: 215% 0, 0 0; }
+    25% { background-position: -45% 0, 0 0; }
+  }
+  @keyframes wave {
+    0%, 18% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 38%, transparent); }
+    52% { box-shadow: 0 0 0 14px color-mix(in oklch, var(--brand) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 0%, transparent); }
+  }
+  @keyframes bolt {
+    0%, 14%, 30%, 100% { transform: none; filter: none; }
+    20% { transform: scale(1.25) rotate(-6deg); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--brand) 60%, transparent)); }
   }
   h1 {
-    font-size: clamp(40px, 6.4vw, 78px);
+    margin: 0;
+    font-size: clamp(40px, 6.6vw, 76px);
     line-height: 1.02;
-    letter-spacing: -0.03em;
-    font-weight: 750;
-    margin: 0 0 22px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
   }
   h1 em {
     font-style: normal;
-    color: var(--accent);
+    color: var(--brand);
+  }
+  .nowrap {
+    white-space: nowrap;
   }
   .hero__sub {
-    font-size: clamp(16px, 1.6vw, 19px);
-    color: var(--muted);
-    max-width: 62ch;
-    margin: 0 0 30px;
-    font-weight: 300;
+    margin: 24px auto 0;
+    max-width: 640px;
+    font-size: clamp(16px, 1.7vw, 19px);
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .hero__sub i {
+    color: var(--ink);
   }
   .hero__cta {
+    margin-top: 34px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    justify-content: center;
+    gap: 18px;
     flex-wrap: wrap;
-    margin-bottom: 34px;
   }
-  .btn {
+  .btn-primary {
     display: inline-flex;
     align-items: center;
     height: 46px;
     padding: 0 22px;
     border-radius: 11px;
-    font-weight: 600;
-    font-size: 15.5px;
+    background: var(--ink);
+    color: var(--page-bg);
+    font-weight: 700;
+    font-size: 15px;
     text-decoration: none;
-    transition: transform 0.16s ease, box-shadow 0.16s ease;
+    transition: transform 0.15s ease, opacity 0.15s ease;
   }
-  .btn--primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-    color: #fff;
-    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.38);
-  }
-  .btn--ghost {
-    border: 1px solid var(--line);
-    color: var(--ink);
-    background: rgba(19, 22, 37, 0.65);
-  }
-  .btn:hover {
-    transform: translateY(-2px);
-  }
-  .btn--primary:hover {
-    box-shadow: 0 12px 34px rgba(108, 92, 231, 0.5);
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    opacity: 0.92;
   }
   .install {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    padding: 0 16px;
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 11px;
+    box-shadow: var(--shadow-card);
     font-family: var(--mono);
     font-size: 14px;
-    color: var(--ink);
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 11px;
-    padding: 12px 18px;
   }
   .install span {
-    color: var(--accent);
-    margin-inline-end: 8px;
+    color: var(--brand);
+    font-weight: 700;
+  }
+  .hero__link {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  .hero__link:hover {
+    color: var(--brand);
   }
   .hero__kits {
+    margin: 48px 0 0;
     display: flex;
     align-items: center;
-    gap: 9px;
+    justify-content: center;
+    gap: 12px;
     flex-wrap: wrap;
-    margin: 0;
   }
   .hero__kits span {
-    font-family: var(--mono);
     font-size: 12px;
-    letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: var(--muted);
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
     margin-inline-end: 4px;
   }
   .chip {
-    font-style: normal;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 7px 15px;
-    border: 1px solid var(--line);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
     border-radius: 999px;
-    background: rgba(19, 22, 37, 0.7);
+    border: 1px solid var(--page-border);
+    background: var(--page-surface);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-style: normal;
+  }
+  .chip b {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
   }
 
-  .features,
-  .snippet {
-    padding: clamp(40px, 6vw, 72px) clamp(20px, 6vw, 72px);
-    max-width: 1180px;
+  /* ── The product mock, in the demo's skin ──────────────────────── */
+  .mock {
+    margin-top: 44px;
+    margin-bottom: 8px;
+    border: 1px solid var(--page-border);
+    border-radius: 16px;
+    background: var(--page-surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    font-size: 13.5px;
+    padding-inline: 0;
+  }
+  .mock__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__search {
+    flex: 0 1 290px;
+    border: 1px solid var(--page-border);
+    border-radius: 9px;
+    padding: 9px 13px;
+    color: var(--ink-3);
+    background: var(--page-surface);
+  }
+  .mock__spacer {
+    flex: 1;
+  }
+  .mock__btn {
+    border: 1px solid var(--page-border);
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-weight: 600;
+    color: var(--ink-2);
+    white-space: nowrap;
+    background: var(--page-surface);
+  }
+  .mock__btn b {
+    display: inline-grid;
+    place-items: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 999px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 11px;
+    margin-inline-start: 4px;
+  }
+  .mock__chips {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px 2px;
+    flex-wrap: wrap;
+  }
+  .mock__chips span {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+  .mock__table {
+    padding: 8px 6px 0;
+  }
+  .mock__row {
+    display: grid;
+    grid-template-columns: 2.1fr 1fr 1.2fr 0.95fr 1.05fr;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__row--head {
+    color: var(--ink-3);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 650;
+  }
+  .mock__row:last-child {
+    border-bottom: 0;
+  }
+  .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+  .cell-person {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+  .cell-person span {
+    display: grid;
+    line-height: 1.3;
+    min-width: 0;
+  }
+  .cell-person b {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cell-person small,
+  .cell-load small {
+    color: var(--ink-3);
+    font-size: 11.5px;
+  }
+  .avatar {
+    flex: 0 0 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-style: normal;
+    font-size: 11.5px;
+    font-weight: 800;
+  }
+  .avatar--blue { background: color-mix(in oklch, var(--blue) 14%, white); color: var(--blue); }
+  .avatar--red { background: color-mix(in oklch, var(--red) 13%, white); color: var(--red); }
+  .avatar--gray { background: var(--page-surface-2); color: var(--ink-2); }
+  .avatar--green { background: color-mix(in oklch, var(--green) 13%, white); color: var(--green); }
+  .pill {
+    font-style: normal;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .pill--blue { background: color-mix(in oklch, var(--blue) 13%, white); color: var(--blue); }
+  .pill--red { background: color-mix(in oklch, var(--red) 12%, white); color: var(--red); }
+  .pill--gray { background: var(--page-surface-2); color: var(--ink-2); }
+  .pill--green { background: color-mix(in oklch, var(--green) 12%, white); color: var(--green); }
+  .cell-load {
+    display: grid;
+    gap: 5px;
+  }
+  .bar {
+    display: block;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--page-surface-2);
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand);
+  }
+  .mock__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    border-top: 1px solid var(--page-border-soft);
+    color: var(--ink-3);
+    font-size: 12.5px;
+  }
+  .mock__pager {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mock__url {
+    margin: 0;
+    padding: 10px 18px 13px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    border-top: 1px dashed var(--page-border);
+    background: var(--page-surface-2);
+  }
+
+  /* ── Sections ─────────────────────────────────────────────────── */
+  .sec {
+    padding-top: clamp(56px, 8vw, 104px);
   }
   h2 {
     font-size: clamp(26px, 3.4vw, 40px);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     font-weight: 700;
-    margin: 0 0 28px;
+    margin: 0 0 26px;
+    text-align: center;
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 16px;
   }
+  .kicker {
+    margin: 0 0 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
   .card {
-    border: 1px solid var(--line);
-    border-radius: 16px;
+    --tint: oklch(0.55 0.16 var(--hue));
+    position: relative;
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
     padding: 22px 24px;
-    background: linear-gradient(180deg, rgba(19, 22, 37, 0.85), rgba(13, 15, 23, 0.6));
-    transition: transform 0.18s ease, border-color 0.18s ease;
+    background: var(--page-surface);
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  /* Hairline accent in the card's own hue. */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--tint),
+      color-mix(in oklch, var(--tint) 10%, transparent)
+    );
+    opacity: 0.85;
   }
   .card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklch, var(--tint) 42%, var(--page-border));
+    box-shadow:
+      var(--shadow-card),
+      0 16px 40px color-mix(in oklch, var(--tint) 14%, transparent);
+  }
+  /* Micro-vignettes: each card opens with the FEATURE itself, drawn
+     from the same UI primitives as the hero mock. */
+  .viz {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    min-height: 64px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
+    transition: border-color 0.2s ease;
+  }
+  .card:hover .viz {
+    border-color: color-mix(in oklch, var(--tint) 30%, var(--page-border-soft));
+  }
+  .viz-chip {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .viz-chip--ghost {
+    color: var(--ink-3);
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--page-border);
+  }
+  .viz-stack {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+  .viz-stack i {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 10.5px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 9px;
+    width: fit-content;
+  }
+  .viz-stack i:nth-child(2) {
+    margin-inline-start: 14px;
+  }
+  .viz-stack i:nth-child(3) {
+    margin-inline-start: 28px;
+  }
+  .viz-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 999px;
+    padding: 7px 13px;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .viz-dot {
+    flex: 0 0 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .viz-rows {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+  .viz-rows i {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--page-border-soft);
+  }
+  .viz-rows i.on {
+    background: color-mix(in oklch, var(--brand) 38%, var(--page-border-soft));
+  }
+  .viz-rows b {
+    position: absolute;
+    inset-inline-end: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .viz-i18n {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .viz-i18n i {
+    flex: 1;
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ink-2);
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 7px;
+    padding: 7px 11px;
+  }
+  .viz-cols {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+  }
+  .viz-cols i {
+    flex: 1;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--ink-2);
+    text-align: center;
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 7px;
+    padding: 7px 4px;
+    white-space: nowrap;
+  }
+  .viz-cols i.pinned {
+    color: var(--brand);
+    border-color: color-mix(in oklch, var(--brand) 35%, var(--page-border));
+    box-shadow: 0 4px 12px color-mix(in oklch, var(--brand) 16%, transparent);
     transform: translateY(-3px);
-    border-color: rgba(138, 123, 255, 0.55);
+  }
+  .viz-cols i.off {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+  /* Cards rise into place as you scroll to them (no JS — browsers
+     without scroll-driven animations simply show them in place). */
+  @supports (animation-timeline: view()) {
+    .card {
+      animation: cardRise both ease-out;
+      animation-timeline: view();
+      animation-range: entry 0% entry 38%;
+      animation-delay: calc(var(--n) * 40ms);
+    }
+    @keyframes cardRise {
+      from {
+        opacity: 0.1;
+        transform: translateY(26px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
   }
   .card h3 {
     margin: 0 0 8px;
-    font-size: 18px;
+    font-size: 17px;
     letter-spacing: -0.01em;
   }
   .card p {
     margin: 0;
-    color: var(--muted);
-    font-size: 15px;
-    font-weight: 300;
+    color: var(--ink-2);
+    font-size: 14.5px;
   }
   .card code,
-  .snippet p code {
+  .snippet code {
     font-family: var(--mono);
     font-size: 0.86em;
-    color: var(--accent);
-    background: rgba(108, 92, 231, 0.12);
+    color: var(--brand);
+    background: var(--brand-soft);
     padding: 1px 6px;
     border-radius: 6px;
   }
 
+  .snippet {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(20px, 4vw, 44px);
+    align-items: center;
+    padding-bottom: clamp(56px, 8vw, 96px);
+  }
+  .snippet h2 {
+    text-align: start;
+  }
+  .snippet__copy p {
+    color: var(--ink-2);
+    max-width: 48ch;
+  }
+  .snippet__copy a {
+    color: var(--brand);
+  }
   .snippet pre {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: var(--bg-2);
-    padding: 24px 28px;
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    background: var(--ink);
+    color: oklch(0.95 0.005 264);
+    padding: 24px 26px;
     overflow-x: auto;
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 13.5px;
     line-height: 1.7;
-    margin: 0 0 18px;
+    margin: 0;
+    box-shadow: var(--shadow-card);
   }
-  .snippet p {
-    color: var(--muted);
-    max-width: 70ch;
+  .snippet pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
   }
-  .snippet a {
-    color: var(--accent);
+  @media (max-width: 880px) {
+    .snippet {
+      grid-template-columns: 1fr;
+    }
   }
 
   .foot {
+    border-top: 1px solid var(--page-border-soft);
+  }
+  .foot__inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
-    padding: 28px clamp(20px, 6vw, 72px) 44px;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
+    padding-block: 26px 40px;
+    color: var(--ink-3);
     font-size: 14px;
   }
   .foot nav {
@@ -486,28 +1113,53 @@ const JSON_LD = JSON.stringify({
     flex-wrap: wrap;
   }
   .foot a {
-    color: var(--muted);
+    color: var(--ink-2);
     text-decoration: none;
   }
   .foot a:hover {
     color: var(--ink);
   }
 
+  /* ── Motion policy: ambient only. The table mock is a still —
+     content NEVER mutates. Entrance fade-up, a slow breathing hero
+     glow, hover lifts. Everything off under prefers-reduced-motion. */
+  .hero::before {
+    animation: breathe 10s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.78; }
+    50% { opacity: 1; }
+  }
+  .mock__url {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pg {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    color: var(--ink-3);
+  }
+  .pg--on {
+    background: var(--brand);
+    color: #fff;
+  }
+  .mock__pager {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .reveal {
-    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
-  .reveal:nth-child(2) {
-    animation-delay: 0.07s;
-  }
-  .reveal:nth-child(3) {
-    animation-delay: 0.14s;
-  }
-  .reveal:nth-child(4) {
-    animation-delay: 0.21s;
-  }
-  .reveal:nth-child(5) {
-    animation-delay: 0.28s;
-  }
+  .reveal:nth-child(2) { animation-delay: 0.06s; }
+  .reveal:nth-child(3) { animation-delay: 0.12s; }
+  .reveal:nth-child(4) { animation-delay: 0.18s; }
+  .reveal:nth-child(5) { animation-delay: 0.24s; }
   @keyframes rise {
     from {
       opacity: 0;
@@ -519,12 +1171,18 @@ const JSON_LD = JSON.stringify({
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal {
+    .reveal,
+    .hero::before,
+    .badge,
+    .badge::after,
+    .badge__bolt,
+    .card {
       animation: none;
     }
-    .btn,
+    .btn-primary,
     .card {
       transition: none;
     }
+  }
   }
 </style>
