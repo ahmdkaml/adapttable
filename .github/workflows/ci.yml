@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Manual recovery when GitHub drops a push event.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

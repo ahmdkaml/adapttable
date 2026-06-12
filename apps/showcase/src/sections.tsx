@@ -222,12 +222,15 @@ export function SectionHead({
   );
 }
 
-/** Same link set as the landing's footer, with Landing in Demo's place. */
+/** Same link set as the landing's footer, with Landing in Demo's place.
+ * Landing is the same product site, so it navigates in place; the truly
+ * external destinations open in a new tab. */
 const FOOT_LINKS = [
   {
     label: "Landing",
     href: DOCS_URL,
     icon: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M9 21v-7h6v7"],
+    newTab: false,
   },
   {
     label: "Docs",
@@ -266,7 +269,12 @@ export function Footer({ root }: Readonly<{ root: string }>) {
         <Install large />
         <div className="foot__links">
           {FOOT_LINKS.map((l) => (
-            <a key={l.label} href={l.href} target="_blank" rel="noreferrer">
+            <a
+              key={l.label}
+              href={l.href}
+              target={l.newTab === false ? undefined : "_blank"}
+              rel={l.newTab === false ? undefined : "noreferrer"}
+            >
               <svg
                 width="14"
                 height="14"
