@@ -11,7 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-**[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)** · **[FAQ](https://orwa-mahmoud.github.io/adapttable/faq/)**
+**[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[📦 npm](https://www.npmjs.com/org/adapttable)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)**
 
 </div>
 
