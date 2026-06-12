@@ -17,6 +17,7 @@
 - [ ] `@adapttable/mantine`
 - [ ] `@adapttable/mui`
 - [ ] `@adapttable/chakra`
+- [ ] `@adapttable/antd`
 - [ ] `@adapttable/unstyled`
 - [ ] `@adapttable/i18n`
 - [ ] `@adapttable/cli`
