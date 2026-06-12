@@ -91,11 +91,12 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
   );
 }
 
-export type DemoPage = "demo" | "scale" | "rtl";
+export type DemoPage = "demo" | "columns" | "scale" | "rtl";
 
 /** The demo pages — each a static HTML entry, linked with plain anchors. */
 const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
+  { key: "columns", label: "Columns", path: "columns" },
   { key: "scale", label: "Scale", path: "scale" },
   { key: "rtl", label: "RTL", path: "rtl" },
 ];

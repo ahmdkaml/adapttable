@@ -21,6 +21,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: page("./index.html"),
+        columns: page("./columns/index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),
       },
