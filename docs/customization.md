@@ -1,357 +1,247 @@
 # Customization
 
-AdaptTable is designed as a spectrum: a beginner ships in five lines, a
-power user controls every node. From least to most effort — all opt-in:
+A spectrum, all opt-in: restyle parts with `classNames`, replace parts with
+`slots`, tune the chrome with props, or theme through your kit's provider.
 
-## 1. Props
+## `classNames` — per-part styling
 
-`columns`, `source`, `searchPlaceholder`, `sortByOptions`, `rowActions`,
-`bulkActions`, `filters`, `dir`, `virtualize`, `mobileIdentityColumns`,
-`stickyTop`, and more.
-
-## 2. Slots
-
-Replace sub-parts with your own components (where the adapter supports it):
+Restyle without replacing. Mantine and Chakra expose five wrapper hooks
+(`root`, `toolbar`, `table`, `card`, `footer`); the **unstyled** adapter
+exposes a hook for every rendered node:
 
 ```tsx
+import { DataTable } from "@adapttable/unstyled";
+
 <DataTable
-  /* … */
-  slots={{ empty: <MyEmptyState />, skeleton: <MySkeleton /> }}
-/>
-```
-
-## 3. `classNames`
-
-Restyle without replacing. The **unstyled** adapter exposes a `className`
-hook for every part plus stable `data-adapttable-part` and `data-*` state
-attributes:
-
-```tsx
-<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
   classNames={{
     table: "w-full text-sm",
     row: "border-b hover:bg-zinc-50 data-[selected]:bg-blue-50",
     cell: "px-3 py-2",
-    filtersBackdrop: "fixed inset-0 bg-black/40",
-    filtersPanel: "fixed inset-y-0 end-0 w-96 bg-white shadow-xl",
+    filtersPopover: "rounded-lg border bg-white shadow-xl",
     filtersDone: "rounded-md bg-zinc-900 text-white px-3 py-2",
   }}
-/>
+/>;
 ```
 
-## 4. Filter panels
+Every unstyled node also carries a stable `data-adapttable-part` attribute —
+the kebab-case of the `classNames` key (`searchField` →
+`data-adapttable-part="search-field"`) — plus `data-*` state attributes, so
+plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
-Filter panels are live by default: your filter controls call
-`source.setExtra(...)` as the user changes them, and the drawer action simply
-accepts the current state and closes the panel. If you prefer staged filters,
-keep draft state in your filter component and commit it with `setExtras`.
+### Toolbar & search
 
-## 5. Row & bulk actions
+| Part                | Element                                                                 |
+| ------------------- | ----------------------------------------------------------------------- |
+| `root`              | The outer wrapper around the whole table.                               |
+| `toolbar`           | The toolbar row (search, filters, columns, views, your `toolbar`).      |
+| `searchField`       | The search field wrapper (input + leading icon).                        |
+| `search`            | The search `<input>`.                                                   |
+| `searchIcon`        | The leading magnifying-glass icon.                                      |
+| `sortSelect`        | The mobile sort-by `<select>`.                                          |
+| `rowsPerPageSelect` | Rows-per-page `<select>` (toolbar in infinite mode, footer when paged). |
 
-```tsx
-const rowActions = [
-  {
-    key: "edit",
-    label: "Edit",
-    icon: <EditIcon />,
-    onClick: (row) => edit(row),
-  },
-  {
-    key: "delete",
-    label: "Delete",
-    color: "red",
-    confirm: {
-      title: "Delete?",
-      message: (r) => `Delete ${r.name}?`,
-      confirmLabel: "Delete",
-      danger: true,
-    },
-    onClick: (row) => remove(row),
-  },
-];
+### Filters
 
-const bulkActions = [
-  {
-    key: "archive",
-    label: "Archive",
-    disabledReason: (ids) => (ids.length > 100 ? "Too many" : undefined),
-    onClick: (ids) => archive(ids),
-  },
-];
-```
+| Part                                              | Element                                                                                |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `filtersButton`                                   | The Filters trigger button.                                                            |
+| `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
+| `filtersCount`                                    | The active-filter count badge.                                                         |
+| `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
+| `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
+| `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
+| `filtersPanel`                                    | The drawer panel.                                                                      |
+| `filtersHeader` / `filtersTitle` / `filtersClose` | Panel header, its title, and the close button.                                         |
+| `filtersBody` / `filtersFooter`                   | The panel content area and its action row.                                             |
+| `filtersClear` / `filtersDone`                    | The clear-all and done/apply buttons.                                                  |
+| `filterField` / `filterLabel`                     | One auto-built field's wrapper and its caption.                                        |
+| `filterInput` / `filterSelect` / `filterOperator` | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
+| `filterCheckboxGroup` / `filterCheckbox`          | A `multiSelect` checkbox list and one option.                                          |
+| `filterOptionsLoading`                            | The placeholder shown while async options load.                                        |
 
-Confirmation is injectable via the `confirm` prop (defaults to
-`window.confirm`); pass your own dialog handler for a styled experience.
+### Chips
 
-Row actions can use `disabledReason(row)` when an action should be disabled
-and explain why. Bulk actions have the same pattern for selected ids.
+| Part         | Element                       |
+| ------------ | ----------------------------- |
+| `chips`      | The active-filter chip strip. |
+| `chip`       | One removable chip.           |
+| `chipRemove` | A chip's remove button.       |
 
-## 6. Virtualization and sticky polish
+### Column menu & resize
 
-Virtualization is opt-in:
+| Part                                                    | Element                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| `columnMenu` / `columnMenuButton` / `columnMenuPanel`   | The menu wrapper, trigger, and dropdown panel.              |
+| `columnMenuHeader` / `columnMenuTitle`                  | The panel header and its title.                             |
+| `columnMenuItem` / `columnMenuGrip` / `columnMenuLabel` | One column row, its drag grip, and its label.               |
+| `columnMenuVisibility` / `columnMenuPin`                | The show/hide toggle and the pin control.                   |
+| `columnMenuSeparator` / `columnMenuReset`               | The separator above the actions entry and the reset button. |
+| `resizeHandle`                                          | A header's drag/keyboard resize handle.                     |
+
+### Saved views
+
+| Part                         | Element                                        |
+| ---------------------------- | ---------------------------------------------- |
+| `viewsButton` / `viewsPanel` | The menu trigger and dropdown panel.           |
+| `viewsItem` / `viewsDelete`  | One view's apply button and its delete button. |
+| `viewsInput` / `viewsSave`   | The view-name input and the save button.       |
+
+### Selection & bulk actions
+
+| Part                                                    | Element                                                 |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| `bulkBar` / `bulkButton`                                | The selection toolbar and one bulk-action button.       |
+| `selectAllBanner` / `selectAllText` / `selectAllButton` | The cross-page banner, its status text, and its action. |
+| `selectionCell` / `checkbox`                            | A row's selection cell and the checkbox itself.         |
+
+### Table
+
+| Part                           | Element                                              |
+| ------------------------------ | ---------------------------------------------------- |
+| `table` / `thead` / `tbody`    | The `<table>` and its sections.                      |
+| `headerRow` / `headerCell`     | The header `<tr>` and one `<th>`.                    |
+| `groupRow` / `groupCell`       | The grouped-header row and one spanning cell.        |
+| `sortButton` / `sortIndex`     | A sortable header's button and its multi-sort badge. |
+| `row` / `cell`                 | One body `<tr>` and one `<td>`.                      |
+| `actionsCell` / `actionButton` | The trailing actions cell and one action button.     |
+
+### Row expansion
+
+| Part                          | Element                                               |
+| ----------------------------- | ----------------------------------------------------- |
+| `expandHeader` / `expandCell` | The leading chevron header cell and body cell.        |
+| `expandButton`                | The expand/collapse chevron (rows and cards).         |
+| `detailRow` / `detailCell`    | The full-width detail `<tr>` and its spanning `<td>`. |
+| `cardDetail`                  | The detail section inside an expanded mobile card.    |
+
+### Mobile cards & summary
+
+| Part                                     | Element                                            |
+| ---------------------------------------- | -------------------------------------------------- |
+| `cards` / `card`                         | The card list and one card.                        |
+| `cardRow` / `cardLabel` / `cardValue`    | One label/value line inside a card.                |
+| `summary` / `summaryRow` / `summaryCell` | The `<tfoot>`, its `<tr>`, and one summary `<td>`. |
+| `summaryCard`                            | The trailing summary card in the mobile list.      |
+
+### Footer, pagination & states
+
+| Part                           | Element                                                 |
+| ------------------------------ | ------------------------------------------------------- |
+| `footer` / `pageButton`        | The footer bar and the prev/next/numbered page buttons. |
+| `loadMore` / `loadMoreButton`  | The infinite-mode sentinel area and its button.         |
+| `empty` / `emptyClear`         | The empty state and its clear-filters button.           |
+| `loading` / `refreshIndicator` | The first-load skeleton and the background-refresh bar. |
+| `error` / `retryButton`        | The error state and its retry button.                   |
+
+A few purely structural nodes (`scroll-box`, `virtual-spacer`, the skeleton
+internals) expose only the `data-adapttable-part` attribute.
+
+## Slots
+
+Replace whole sub-components on any adapter:
 
 ```tsx
 <DataTable
-  virtualize
-  estimateRowSize={56}
-  estimateCardSize={140}
-  virtualOverscan={8}
-/>
-```
-
-Mantine also supports sticky offset and scroll restoration knobs:
-
-```tsx
-<DataTable stickyTop={56} scrollToTopOnChange scrollTopGap={8} />
-```
-
-Consumers rendering their own markup can use the headless
-`useTableVirtualization` and `useScrollToTableTop` hooks directly.
-
-## 7. Column management
-
-Let users show/hide, reorder, pin, and resize columns. All opt-in, all driven
-from `@adapttable/core`, so every adapter gets them by passing a prop.
-
-```tsx
-<DataTable
-  source={source}
+  data={data}
   columns={columns}
   rowKey={(r) => r.id}
-  enableColumnMenu // "Columns" menu: show/hide, drag- or keyboard-reorder, pin
-  resizableColumns // drag or arrow-key resize handles on every header
-  maxHeight={420} // scroll box so pinned columns stick while scrolling
-  defaultColumnLayout={{ pinned: { name: "left" }, widths: { name: 220 } }}
+  slots={{ empty: <MyEmptyState />, skeleton: <MySkeleton /> }}
 />
 ```
 
-- **Show/hide, reorder, pin** live in the built-in menu (`enableColumnMenu`).
-  Reorder by dragging a row or with the arrow keys on its grip. The pin
-  control cycles **none → left → right → none**; pinning is logical
-  (inline start/end), so a "left" pin sticks to the correct edge in RTL too.
-- **Resize** (`resizableColumns`) adds a handle to each header — drag it, or
-  focus it and press ←/→. It is direction-aware, so it widens the right way in
-  RTL.
-- **Pinning needs a horizontal scroll context** to visibly stick: set
-  `maxHeight` (a scroll box that also scrolls sideways) or let the table exceed
-  its container width.
-- Start from a preset with `defaultColumnLayout` (uncontrolled), or drive it
-  yourself with `columnLayout` + `onColumnLayoutChange` (controlled). The layout
-  shape is `{ hidden, order, pinned, widths }`.
+`skeleton` replaces the first-load skeleton; `empty` replaces the
+empty-state. The error state is built-in (retry button included) — translate it
+via the `errorTitle` / `errorMessage` / `retry` labels. The unstyled adapter
+also accepts the equivalent top-level `emptyState` / `loadingState` props
+(the `slots` entry wins when both are set).
 
-See [examples/mantine-columns.tsx](../examples/mantine-columns.tsx) for a full
-example.
-
-## 8. Prop-getters (fully headless)
-
-Build the entire markup yourself with `@adapttable/core`:
+## Density
 
 ```tsx
-const t = useDataTable({ source, columns, rowKey });
-
-<table {...t.getTableProps()}>
-  <thead>
-    <tr {...t.getHeaderRowProps()}>
-      {t.columns.map((c) => (
-        <th key={c.key} {...t.getHeaderCellProps(c)}>
-          {c.sortable ? (
-            <button {...t.getSortButtonProps(c)}>{c.header}</button>
-          ) : (
-            c.header
-          )}
-        </th>
-      ))}
-    </tr>
-  </thead>
-  <tbody>
-    {t.rows.map((row, i) => (
-      <tr {...t.getRowProps(row, i)}>
-        {t.columns.map((c) => (
-          <td key={c.key} {...t.getCellProps(c)}>
-            {c.accessor?.(row)}
-          </td>
-        ))}
-      </tr>
-    ))}
-  </tbody>
-</table>;
-```
-
-Prop-getters merge your overrides: event handlers compose, `className`
-strings concatenate, and `style` objects merge.
-
-## Clickable rows
-
-```tsx
-<DataTable onRowClick={(row) => navigate(`/people/${row.id}`)} … />
-```
-
-Rows get the pointer cursor and Enter-key activation; clicks on row actions,
-the selection checkbox, or links inside cells never trigger it.
-
-## CSV export
-
-```tsx
-import { downloadCsv, rowsToCsv } from "@adapttable/core";
-
 <DataTable
-  toolbar={
-    <Button onClick={() => downloadCsv("people.csv", rowsToCsv(rows, columns))}>
-      Export CSV
-    </Button>
-  }
-  …
-/>;
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  density="compact"
+/>
 ```
 
-Cells resolve via `accessor` (when primitive) → `sortValue`, so JSX cells
-export their underlying value. Pass `getValue` for full control.
+`"comfortable"` (default) is the roomy layout; `"compact"` tightens row
+height and padding. Each adapter maps it to its kit's table size — MUI
+`"comfortable"` → `medium` / `"compact"` → `small`, antd → `middle` /
+`small` — and MUI, Chakra, and antd offer an explicit `size` prop that
+overrides the mapping (e.g. antd `size="large"`).
 
-## Persisting column layout
-
-- Shareable links: `useColumnLayoutUrlState({ urlKey })`.
-- User preference: `useColumnLayoutStorageState({ storageKey })` —
-  localStorage-backed, SSR-safe, cleared when the layout returns to the
-  default.
+## Sticky header, offset & scroll box
 
 ```tsx
-const { layout, onLayoutChange } = useColumnLayoutStorageState({
-  storageKey: "people-columns",
-});
-<DataTable columnLayout={layout} onColumnLayoutChange={onLayoutChange} … />;
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  stickyHeader // keep the desktop header pinned while the page scrolls
+  stickyTop={56} // offset under your app header (also offsets the toolbar)
+  maxHeight={420} // fixed-height scroll box instead of page scroll
+/>
 ```
 
-## Animations
+`maxHeight` turns the table into a scroll box that also scrolls sideways —
+the header and pinned columns stick within it, which is what makes column
+pinning visibly stick. `scrollToTopOnChange` (default `true`) scrolls back
+to the table when search/filter/page changes, with `scrollTopGap` (default
+`8`) of breathing room below sticky chrome.
 
-Adapters can animate row/card entrance on mount. It is **opt-in**, honours
-`prefers-reduced-motion`, and is dependency-free by default (no GSAP
-required) — enable it with `animate` where supported (Mantine):
+## Theming per kit
+
+The core is style-free: wrap your app in the kit's provider and AdaptTable
+renders with that kit's real components, following its theme and dark mode
+(`prefers-color-scheme`) automatically. Kit-specific knobs:
+
+- **Mantine** — `animate` enables a dependency-free row/card entrance
+  stagger (honours reduced motion). Rolling your own? Every animatable
+  row/card carries a `data-stagger` attribute — leave `animate` off and
+  target those elements with GSAP/Framer Motion.
+- **MUI** — `size` (`"small" | "medium"`) overrides the density mapping;
+  `className` lands on the root `<Paper>`.
+- **Chakra** — `colorScheme` colors primary accents (buttons, badges);
+  `size` (`"sm" | "md" | "lg"`, default `"md"`).
+- **Ant Design** — `size` (`"small" | "middle" | "large"`), `bordered` for
+  cell borders, `virtualHeight` / `virtualWidth` for the virtualized scroll
+  area, `className` on the wrapper.
+- **Unstyled** — no provider needed; theme entirely through `classNames`,
+  the `data-adapttable-part` hooks above, and your own CSS variables /
+  `data-theme`.
+
+## Custom cells
+
+Pass a `Cell` component (receives `{ row, rowIndex }`; define it at module
+level so its identity is stable) or a lighter `accessor`:
 
 ```tsx
-<DataTable source={source} columns={columns} rowKey={(r) => r.id} animate />
-```
+import type { CellProps } from "@adapttable/core";
 
-### Bring your own animation (GSAP, Framer Motion, anything)
-
-Every animatable row/card is tagged with a `data-stagger` attribute, so you
-can drive the entrance with whatever library you prefer. Leave the built-in
-off (`animate` defaults to `false`) and target the elements yourself:
-
-```tsx
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { DataTable, useFrontendData } from "@adapttable/mantine";
-
-function People({ data }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const source = useFrontendData({ data, columns });
-
-  useEffect(() => {
-    const items = ref.current?.querySelectorAll("[data-stagger]");
-    if (items?.length) {
-      gsap.from(items, { opacity: 0, y: 8, duration: 0.32, stagger: 0.04 });
-    }
-  }, [source.rows]);
-
+function StatusCell({ row }: CellProps<Person>) {
   return (
-    <div ref={ref}>
-      <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
-    </div>
+    <Badge color={row.status === "active" ? "green" : "gray"}>
+      {row.status}
+    </Badge>
   );
 }
-```
 
-So the choice is yours: the built-in WAAPI stagger, your own GSAP/Framer
-timeline via `data-stagger`, or no animation at all.
-
-## Conditional row styling
-
-```tsx
-<DataTable
-  rowClassName={(row) => (row.status === "overdue" ? "row-overdue" : undefined)}
-/>
-```
-
-Applied to desktop rows and mobile cards alike, merged after the adapter's
-own row classes.
-
-## Controlled selection
-
-Selection is uncontrolled by default — observe it with `onSelectionChange`.
-To own it (preselect rows, sync to a store), pass `selectedIds` and apply the
-change requests:
-
-```tsx
-const [ids, setIds] = useState<string[]>(["42"]);
-<DataTable
-  bulkActions={actions}
-  selectedIds={ids}
-  onSelectionChange={setIds}
-/>;
-```
-
-## Row detail panels
-
-```tsx
-<DataTable
-  data={orders}
-  columns={columns}
-  rowKey={(o) => o.id}
-  renderRowDetail={(order) => <OrderLines order={order} />}
-/>
-```
-
-A chevron appears on every row (and on mobile cards); several rows can be
-open at once, and expansion is keyed by row id so it survives sorting and
-page changes.
-
-## Filter options without typing them out
-
-```tsx
-columns={[
-  // distinct values from your data, sorted:
-  { key: "status", filter: { type: "multiSelect", options: "auto" } },
-]}
-filters={[
-  // or load them from your API when the form opens:
+const columns = [
+  { key: "name", sortable: true },
+  { key: "status", Cell: StatusCell },
   {
-    key: "companyId",
-    type: "select",
-    label: "Company",
-    options: async () => (await fetch("/api/companies")).json(),
+    key: "salary",
+    accessor: (r: Person) => formatMoney(r.salary),
+    align: "end",
   },
-]}
+];
 ```
 
-## Keeping rows fast (memoization)
-
-Adapter rows are memoized: unrelated re-renders (search keystrokes, menu
-state) skip unchanged rows. Two things defeat it — both fixed by hoisting:
-
-- inline `columns` / `labels` / `rowActions` arrays re-mint identities every
-  render; declare them at module level (or `useMemo` them);
-- the headless `table` object and its prop-getters are per-render by design —
-  custom renderers should compare primitive inputs, not `table` identity.
-
-`selection.toggle`, `expansion.toggle` and the other core callbacks are
-identity-stable, so they are always safe to hold in memoized rows.
-
-## Totals under the table
-
-```tsx
-<DataTable
-  data={invoices}
-  columns={columns}
-  rowKey={(i) => i.id}
-  summaryRow={(rows) => ({
-    amount: <b>${"{"}rows.reduce((s, r) => s + r.amount, 0){"}"}</b>,
-  })}
-/>
-```
-
-## Saved views
-
-```tsx
-const views = useSavedViews({ storageKey: "people-views", urlKey: "people" });
-// views.save("Active EU"), views.apply("Active EU"), views.views, views.remove
-```
+See the [Columns guide](./columns.md) and the
+[ColumnDef table](./api.md#columndef) for the full column surface
+(`sortValue`, `i18n`, `group`, `hideOnMobile`, …).

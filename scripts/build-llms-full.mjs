@@ -18,12 +18,22 @@ const HEADER = `# AdaptTable — full documentation
 const DOCS = [
   "getting-started.md",
   "concepts.md",
+  "data-tiers.md",
+  "columns.md",
+  "sorting.md",
+  "filtering.md",
+  "pagination.md",
+  "selection.md",
+  "row-expansion.md",
+  "column-management.md",
+  "saved-views.md",
+  "virtualization.md",
   "url-state.md",
-  "i18n-rtl.md",
   "customization.md",
+  "i18n-rtl.md",
   "api.md",
-  "comparison.md",
   "faq.md",
+  "comparison.md",
 ];
 
 const root = process.cwd();

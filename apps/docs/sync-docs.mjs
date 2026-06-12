@@ -19,6 +19,16 @@ const target = join(here, "src/content/docs");
 
 const TITLES = {
   "getting-started.md": "Getting started",
+  "columns.md": "Columns",
+  "sorting.md": "Sorting",
+  "filtering.md": "Filtering",
+  "pagination.md": "Pagination",
+  "selection.md": "Selection & bulk actions",
+  "row-expansion.md": "Row expansion",
+  "column-management.md": "Column management",
+  "saved-views.md": "Saved views",
+  "virtualization.md": "Virtualization",
+  "data-tiers.md": "Data tiers",
   "customization.md": "Customization",
   "url-state.md": "URL state",
   "api.md": "API reference",
@@ -29,12 +39,19 @@ mkdirSync(target, { recursive: true });
 for (const file of readdirSync(source)) {
   if (!file.endsWith(".md")) continue;
   const raw = readFileSync(join(source, file), "utf8");
-  // Drop the H1 (Starlight renders the frontmatter title) and de-link
-  // repo-relative paths that have no meaning on the site.
+  // Drop the H1 (Starlight renders the frontmatter title) and rewrite
+  // repo-relative links into their site equivalents: doc-to-doc .md links
+  // become page routes (anchors preserved), repo files point at GitHub.
   const body = raw
     .replace(/^# .*\n/, "")
-    // Getting started lives at the site root now.
-    .replace(/\(\.\/getting-started\.md\)/g, "(/adapttable/getting-started/)");
+    .replace(
+      /\((?:\.\/)?([a-z0-9-]+)\.md(#[a-z0-9-]+)?\)/g,
+      "(/adapttable/$1/$2)"
+    )
+    .replace(
+      /\(\.\.\/([^)]+)\)/g,
+      "(https://github.com/orwa-mahmoud/adapttable/blob/main/$1)"
+    );
   const title = TITLES[file] ?? file.replace(/\.md$/, "");
   writeFileSync(
     join(target, file),
@@ -44,33 +61,9 @@ for (const file of readdirSync(source)) {
 // LLM-search surface (llmstxt.org): /llms.txt is the index, /llms-full.txt
 // the whole documentation in one file. Tools like Perplexity/ChatGPT
 // search fetch these from the site root, so they ship with every deploy.
+// Both are verbatim copies of the repo-root files — the single source.
 const pub = join(here, "public");
 mkdirSync(pub, { recursive: true });
 copyFileSync(join(here, "../../llms-full.txt"), join(pub, "llms-full.txt"));
-const SITE = "https://orwa-mahmoud.github.io/adapttable";
-const LLMS_INDEX = `# AdaptTable
-
-> Headless, UI-agnostic React data table: one declarative API (columns,
-> filters, three data tiers) rendered natively by Mantine, MUI, Chakra UI,
-> Ant Design, or your own Tailwind classes. URL-synced state, operator
-> filters, column management, saved views, virtualization (50k rows), full
-> i18n + RTL (10 locales), dark mode. MIT.
-
-## Docs
-
-- [Overview](${SITE}/): what AdaptTable is, in one page
-- [Getting started](${SITE}/getting-started/): install (npx @adapttable/cli init), providers, first table
-- [Concepts](${SITE}/concepts/): TableSource, data tiers, virtualization
-- [Customization](${SITE}/customization/): slots, classNames, theming per kit
-- [URL state](${SITE}/url-state/): adapters, urlKey namespacing, urlSync opt-out
-- [API reference](${SITE}/api/): every prop and headless hook
-- [FAQ](${SITE}/faq/)
-- [Comparison](${SITE}/comparison/): vs TanStack Table and kit-native tables
-- [Full docs in one file](${SITE}/llms-full.txt)
-
-## Demo
-
-- [Live demo](${SITE}/demo/): all five adapters on one dataset
-`;
-writeFileSync(join(pub, "llms.txt"), LLMS_INDEX);
+copyFileSync(join(here, "../../llms.txt"), join(pub, "llms.txt"));
 console.log("docs synced into Starlight");

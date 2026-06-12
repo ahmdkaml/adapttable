@@ -1,47 +1,64 @@
 # URL-synced state
 
-AdaptTable keeps search, sort, page, page-size, and arbitrary filter values
-in the URL query string. Reloading the page, sharing the link, or pressing
-the back button all land the user on the exact same slice of data.
+AdaptTable keeps the table's state in the URL query string: search (`q`),
+pagination (`page`, `limit`), sorting (`sortBy`/`sortDir`, or `sort` for a
+multi-sort chain), and every filter value (`f_<key>`). Column layout
+(`colHide`, `colPin`, `colOrder`, `colW`) joins in when you wire
+`useColumnLayoutUrlState`, and saved views capture all of it under a name.
+Reloading, sharing the link, or pressing back lands on the exact same slice.
 
-- `?q=` — search
-- `?page=`, `?limit=` — pagination
-- `?sortBy=`, `?sortDir=` — sorting
-- `?f_<key>=` — extra filters (arrays are comma-separated, numbers parsed)
+Two conventions keep URLs clean: default values are omitted, and changing
+search, sort, or a filter resets the page to 1.
 
-Defaults are omitted from the URL to keep it clean, and changing any filter
-resets the page to 1.
+## Multiple tables on one URL: `urlKey`
 
-`defaults.extra` provides default extra-filter values when the URL has no
-matching `f_<key>` entry. A shared URL value wins over the default for that key.
-When the user explicitly clears a defaulted value (removing the chip,
-clearing the search, clear-all), the hook records the clearing as an
-empty-valued param (`f_status=`, `q=`) so the default does not instantly
-resurrect — a missing param means "default applies", an empty one means
-"explicitly cleared".
-
-## Multiple tables on one page: `urlKey`
-
-Two tables sharing one URL would clobber each other's params. Give each one
-a namespace and every param is prefixed (`left.q`, `left.page`,
-`left.f_status`, `right.q`, …):
+Two tables on one page would clobber each other's params. Give each a
+namespace and every param is prefixed (`people.q`, `orders.f_totalMin`, …):
 
 ```tsx
-const left = useFrontendData({ data, columns, urlKey: "left" });
-const right = useBackendData({ usePaginatedQuery, urlKey: "right" });
+import { DataTable } from "@adapttable/mantine";
+
+type Person = { id: string; name: string; status: string };
+type Order = { id: string; ref: string; total: number };
+
+export function Dashboard({
+  people,
+  orders,
+}: {
+  people: Person[];
+  orders: Order[];
+}) {
+  return (
+    <>
+      <DataTable
+        data={people}
+        columns={[
+          { key: "name", sortable: true },
+          { key: "status", filter: { type: "select", options: "auto" } },
+        ]}
+        rowKey={(r) => r.id}
+        urlKey="people"
+      />
+      <DataTable
+        data={orders}
+        columns={[{ key: "ref" }, { key: "total", filter: "numberRange" }]}
+        rowKey={(o) => o.id}
+        urlKey="orders"
+      />
+    </>
+  );
+}
+// → ?people.q=avery&people.page=2&orders.f_totalMin=100
 ```
 
-The same `urlKey` option exists on `useTableUrlState` and
-`useColumnLayoutUrlState` for headless consumers.
+The same `urlKey` option exists on `useFrontendData`, `useBackendData`,
+`useTableUrlState`, `useColumnLayoutUrlState`, and `useSavedViews` for
+headless consumers. Omitting distinct `urlKey`s on shared-URL tables logs a
+development warning.
 
-> **Note:** array filter values are stored as comma-separated entries. Each
-> entry is encoded before joining, so ids, enum values, and even labels that
-> contain commas round-trip safely.
+## URL adapters
 
-## Injectable URL adapter
-
-The URL layer is decoupled from any router via a tiny `UrlStateAdapter`.
-Core ships two implementations and lets you supply your own:
+The URL layer is decoupled from any router via a tiny `UrlStateAdapter`:
 
 ```ts
 interface UrlStateAdapter {
@@ -51,20 +68,13 @@ interface UrlStateAdapter {
 }
 ```
 
-- **`createHistoryAdapter()`** — browser History API (the default).
-- **`createMemoryAdapter()`** — in-memory; used for SSR, tests, and when URL
-  sync is disabled (the table still gets fully working local state).
+- **`createHistoryAdapter()`** — browser History API; the default (one
+  shared instance per window via `getHistoryAdapter()`).
+- **`createMemoryAdapter(initial?)`** — in-memory; used for SSR, tests, and
+  when URL sync is disabled (the table still gets fully working local state).
 
-## Turning URL sync off
-
-One prop: `urlSync={false}` on any `<DataTable>`. Search, sort, filters and
-pagination keep working exactly the same — the state just lives in memory,
-the address bar never changes, and any `urlAdapter` is ignored. (Column
-layout was already opt-in: it only reaches the URL if you wire
-`useColumnLayoutUrlState` yourself.)
-
-Integrate with an existing router by implementing the same three methods.
-Copy-paste recipes:
+Pass a custom adapter as `urlAdapter` on any `<DataTable>` (the headless
+hooks call the option `adapter`). Router recipes:
 
 ### react-router
 
@@ -116,23 +126,61 @@ export function useNextAdapter(): UrlStateAdapter {
 }
 ```
 
-Pass the adapter to the source hook: `useFrontendData({ data, columns,
-adapter: useNextAdapter() })`. With an explicit adapter the table also
-hydrates correctly under SSR — the server snapshot reads the adapter, which
-knows the request URL.
-
-## Disabling URL sync
-
-```ts
-const state = useTableUrlState({ enabled: false });
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  urlAdapter={useNextAdapter()}
+/>
 ```
 
-State is kept in a component-local store instead of the URL — handy inside
-modals or drawers where you don't want to pollute the address bar.
+## Turning URL sync off
 
-## Using it directly
+One prop: `urlSync={false}`. Search, sort, filters and pagination keep
+working identically — state just lives in memory, the address bar never
+changes, and any `urlAdapter` is ignored.
 
-```ts
-const { page, search, sortBy, setSearch, setSort, setExtra, clearAll } =
-  useTableUrlState({ adapter, defaults, numberExtraKeys, arrayExtraKeys });
+```tsx
+<DataTable data={data} columns={columns} rowKey={(r) => r.id} urlSync={false} />
 ```
+
+Headless equivalent: `useTableUrlState({ enabled: false })` — handy inside
+modals or drawers where the address bar shouldn't change.
+
+## Param reference
+
+| Param                       | Example                     | Meaning                                                                                     |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+| `q`                         | `q=avery`                   | Committed search term.                                                                      |
+| `page`                      | `page=3`                    | 1-based page; omitted at 1.                                                                 |
+| `limit`                     | `limit=50`                  | Page size, clamped to 1–500; omitted at the default (25).                                   |
+| `sortBy` + `sortDir`        | `sortBy=name&sortDir=desc`  | Single-column sort (`sortDir` falls back to `asc`).                                         |
+| `sort`                      | `sort=name:asc,age:desc`    | Multi-sort chain; supersedes `sortBy`/`sortDir` while present.                              |
+| `f_<key>`                   | `f_status=active`           | One filter value; `multiSelect` arrays are comma-separated with each entry percent-encoded. |
+| `f_<key>From` / `f_<key>To` | `f_hiredAtFrom=2026-01-01`  | `dateRange` bounds (inclusive; the end bound keeps that whole day).                         |
+| `f_<key>Min` / `f_<key>Max` | `f_salaryMin=50000`         | `numberRange` bounds (inclusive; parsed as numbers).                                        |
+| `colHide`                   | `colHide=email,phone`       | Hidden columns (keys percent-encoded).                                                      |
+| `colPin`                    | `colPin=name:left`          | Pinned columns and their side.                                                              |
+| `colOrder`                  | `colOrder=name,role,salary` | Explicit column order.                                                                      |
+| `colW`                      | `colW=name:220`             | Per-column pixel widths.                                                                    |
+
+With a `urlKey` every param is prefixed: `people.q`, `people.f_status`,
+`people.colHide`, ….
+
+### Defaults vs. explicit clears
+
+`defaults` (search, sort, `extra` filter values) apply only while the URL is
+silent about a key. When the user explicitly clears a defaulted value, the
+hook records it as an empty-valued param (`q=`, `f_status=`) so the default
+does not instantly resurrect — a missing param means "default applies", an
+empty one means "explicitly cleared".
+
+## SSR
+
+The default History-API adapter hydrates from an empty query string (the
+server has no `window`; the real URL applies right after hydration). To
+server-render the exact requested slice, pass an explicit router adapter —
+it knows the request URL, and the hooks trust an explicit adapter to be
+hydration-consistent. `getHistoryAdapter()` itself returns a memory adapter
+when there is no `window`, so nothing crashes under SSR either way.
