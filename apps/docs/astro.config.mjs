@@ -10,6 +10,16 @@ export default defineConfig({
       title: "AdaptTable",
       description:
         "One headless React data-table engine, native adapters for Mantine, MUI, Chakra, Ant Design and Tailwind/shadcn.",
+      head: [
+        // Social-share image for every page (link previews).
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image",
+            content: "https://orwa-mahmoud.github.io/adapttable/og.svg",
+          },
+        },
+      ],
       social: [
         {
           icon: "github",
