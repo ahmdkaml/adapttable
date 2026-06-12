@@ -8,7 +8,8 @@
 
 ## Docs
 
-- [Getting started](https://orwa-mahmoud.github.io/adapttable/): install (npx @adapttable/cli init), providers, first table
+- [Overview](https://orwa-mahmoud.github.io/adapttable/): what AdaptTable is, in one page
+- [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/): install (npx @adapttable/cli init), providers, first table
 - [Concepts](https://orwa-mahmoud.github.io/adapttable/concepts/): TableSource, data tiers, virtualization
 - [Customization](https://orwa-mahmoud.github.io/adapttable/customization/): slots, classNames, theming per kit
 - [URL state](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out

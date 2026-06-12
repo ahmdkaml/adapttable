@@ -1,0 +1,530 @@
+---
+// Static landing at the site root: full SEO weight (pre-rendered text,
+// JSON-LD, og tags) with the showcase's visual language. The live demo
+// stays at /demo; the guide at /getting-started/.
+const SITE = "https://orwa-mahmoud.github.io/adapttable";
+const TITLE =
+  "AdaptTable — Headless React Data Table for Mantine, MUI, Chakra, Ant Design & Tailwind";
+const DESCRIPTION =
+  "One headless React data-table engine with batteries-included adapters: declarative columns and filters, URL-synced state, server or client data, 50,000-row virtualization, column management, saved views, i18n and RTL — rendered natively by your design system.";
+
+const KITS = ["Mantine", "MUI", "Chakra UI", "Ant Design", "Tailwind / shadcn"];
+
+const FEATURES = [
+  {
+    title: "Declarative columns & filters",
+    body: "`{ key: \"team\", filter: \"multiSelect\" }` — one definition drives the widget, the URL params, the chips and the row predicate. Operator-first number and date filters: Equal, At least, At most, Between.",
+  },
+  {
+    title: "Three data tiers",
+    body: "Hand the table an array and it filters, sorts and pages in memory. Or own the fetch: one consolidated query event with an abort signal. Or bring a full custom TableSource.",
+  },
+  {
+    title: "URL-synced everything",
+    body: "Search, sort, filters, pagination, column layout and saved views live in shareable URLs — namespaced per table, SSR-safe, with a one-prop opt-out (urlSync={false}).",
+  },
+  {
+    title: "50,000 rows, no flinching",
+    body: "Opt-in virtualization windows the DOM against the page or any max-height scroll box. The live demo scrolls fifty thousand rows with a handful of DOM nodes.",
+  },
+  {
+    title: "i18n & RTL, for real",
+    body: "Label presets for ten locales. Columns map per-locale data paths, so cells, sorting and filtering follow the language. Pinning and layout are logical — Arabic and Hebrew just work.",
+  },
+  {
+    title: "Column management & views",
+    body: "Show, hide, reorder, pin and resize — the row-actions column included. Capture any state as a named saved view and restore it later, per table.",
+  },
+];
+
+const JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "AdaptTable",
+  description: DESCRIPTION,
+  url: `${SITE}/`,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  license: "https://opensource.org/license/mit",
+  programmingLanguage: "TypeScript",
+  codeRepository: "https://github.com/orwa-mahmoud/adapttable",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{TITLE}</title>
+    <meta name="description" content={DESCRIPTION} />
+    <link rel="canonical" href={`${SITE}/`} />
+    <link rel="icon" href={`${SITE}/favicon.svg`} type="image/svg+xml" />
+    <link rel="sitemap" href={`${SITE}/sitemap-index.xml`} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content={TITLE} />
+    <meta property="og:description" content={DESCRIPTION} />
+    <meta property="og:url" content={`${SITE}/`} />
+    <meta property="og:image" content={`${SITE}/og.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={`${SITE}/og.png`} />
+    <script type="application/ld+json" set:html={JSON_LD} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav">
+      <a class="brand" href={`${SITE}/`}>
+        <span class="brand__mark" aria-hidden="true"></span>
+        Adapt<b>Table</b>
+      </a>
+      <nav aria-label="Primary">
+        <a href={`${SITE}/demo/`}>Live demo</a>
+        <a href={`${SITE}/getting-started/`}>Docs</a>
+        <a href={`${SITE}/api/`}>API</a>
+        <a href={`${SITE}/comparison/`}>Compare</a>
+        <a class="nav__gh" href="https://github.com/orwa-mahmoud/adapttable"
+          >GitHub</a
+        >
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <p class="hero__kicker reveal">
+          Headless engine · batteries-included adapters · MIT
+        </p>
+        <h1 class="reveal">
+          The headless React data table<br />
+          <em>for any UI kit.</em>
+        </h1>
+        <p class="hero__sub reveal">
+          One declarative API — columns, filters, three data tiers — rendered
+          natively by Mantine, MUI, Chakra UI, Ant Design, or your own
+          Tailwind classes. URL-synced state, real filter UX, virtualization,
+          i18n and RTL, out of the box.
+        </p>
+        <div class="hero__cta reveal">
+          <a class="btn btn--primary" href={`${SITE}/demo/`}>Try the live demo</a>
+          <a class="btn btn--ghost" href={`${SITE}/getting-started/`}
+            >Get started</a
+          >
+          <code class="install"
+            ><span aria-hidden="true">$</span> npx @adapttable/cli init</code
+          >
+        </div>
+        <p class="hero__kits reveal">
+          <span>Renders natively in</span>
+          {KITS.map((kit) => <i class="chip">{kit}</i>)}
+        </p>
+      </section>
+
+      <section class="features" aria-labelledby="features-h">
+        <h2 id="features-h">Everything a data table owes you</h2>
+        <div class="grid">
+          {
+            FEATURES.map((f) => (
+              <article class="card">
+                <h3>{f.title}</h3>
+                <p set:html={f.body.replace(/`([^`]+)`/g, "<code>$1</code>")} />
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="snippet" aria-labelledby="snippet-h">
+        <h2 id="snippet-h">Five lines to your first table</h2>
+        <pre><code>{`import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+
+<DataTable
+  data={people}
+  columns={[
+    { key: "name" },
+    { key: "team", filter: "multiSelect" },
+    { key: "hiredAt", filter: "dateRange" },
+  ]}
+/>`}</code></pre>
+        <p>
+          Bare keys become columns with humanized headers. A
+          <code>filter</code> shorthand becomes the kit-native widget, the URL
+          params, the chips and the predicate. Read the
+          <a href={`${SITE}/getting-started/`}>Getting started guide</a> or the
+          <a href={`${SITE}/comparison/`}>comparison with TanStack Table</a>.
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>MIT · TypeScript · React 18+</span>
+      <nav aria-label="Footer">
+        <a href={`${SITE}/getting-started/`}>Getting started</a>
+        <a href={`${SITE}/customization/`}>Customization</a>
+        <a href={`${SITE}/url-state/`}>URL state</a>
+        <a href={`${SITE}/faq/`}>FAQ</a>
+        <a href="https://www.npmjs.com/org/adapttable">npm</a>
+        <a href="https://github.com/orwa-mahmoud/adapttable">GitHub</a>
+      </nav>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #0d0f17;
+    --bg-2: #131625;
+    --ink: #eceef6;
+    --muted: #9aa0b5;
+    --line: #262b3f;
+    --accent: #8a7bff;
+    --accent-deep: #6c5ce7;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 480px at 75% -10%, rgba(108, 92, 231, 0.22), transparent 64%),
+      radial-gradient(700px 420px at -10% 30%, rgba(108, 92, 231, 0.1), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 72px 72px;
+    opacity: 0.14;
+    mask-image: radial-gradient(720px 480px at 60% 0%, black, transparent 75%);
+  }
+  .skip {
+    position: absolute;
+    left: -999px;
+  }
+  .skip:focus {
+    left: 16px;
+    top: 12px;
+    background: var(--accent-deep);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    z-index: 10;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px clamp(20px, 6vw, 72px);
+    position: relative;
+  }
+  .brand {
+    font-size: 21px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand b {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .brand__mark {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    box-shadow: 0 0 18px rgba(138, 123, 255, 0.55);
+  }
+  .nav nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 2.5vw, 26px);
+    flex-wrap: wrap;
+  }
+  .nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 15px;
+  }
+  .nav a:hover {
+    color: var(--ink);
+  }
+  .nav__gh {
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 9px;
+    color: var(--ink) !important;
+  }
+  .nav__gh:hover {
+    border-color: var(--accent);
+  }
+
+  .hero {
+    padding: clamp(48px, 9vw, 110px) clamp(20px, 6vw, 72px) 30px;
+    max-width: 1060px;
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    left: clamp(20px, 6vw, 72px);
+    top: clamp(56px, 10vw, 124px);
+    bottom: 110px;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(var(--accent), transparent);
+  }
+  .hero > * {
+    padding-left: clamp(22px, 3vw, 38px);
+  }
+  .hero__kicker {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-size: clamp(40px, 6.4vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 750;
+    margin: 0 0 22px;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero__sub {
+    font-size: clamp(16px, 1.6vw, 19px);
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0 0 30px;
+    font-weight: 300;
+  }
+  .hero__cta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 34px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    height: 46px;
+    padding: 0 22px;
+    border-radius: 11px;
+    font-weight: 600;
+    font-size: 15.5px;
+    text-decoration: none;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .btn--primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff;
+    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.38);
+  }
+  .btn--ghost {
+    border: 1px solid var(--line);
+    color: var(--ink);
+    background: rgba(19, 22, 37, 0.65);
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+  .btn--primary:hover {
+    box-shadow: 0 12px 34px rgba(108, 92, 231, 0.5);
+  }
+  .install {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 12px 18px;
+  }
+  .install span {
+    color: var(--accent);
+    margin-inline-end: 8px;
+  }
+  .hero__kits {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin: 0;
+  }
+  .hero__kits span {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-inline-end: 4px;
+  }
+  .chip {
+    font-style: normal;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 7px 15px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(19, 22, 37, 0.7);
+  }
+
+  .features,
+  .snippet {
+    padding: clamp(40px, 6vw, 72px) clamp(20px, 6vw, 72px);
+    max-width: 1180px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin: 0 0 28px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 24px;
+    background: linear-gradient(180deg, rgba(19, 22, 37, 0.85), rgba(13, 15, 23, 0.6));
+    transition: transform 0.18s ease, border-color 0.18s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(138, 123, 255, 0.55);
+  }
+  .card h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 300;
+  }
+  .card code,
+  .snippet p code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    color: var(--accent);
+    background: rgba(108, 92, 231, 0.12);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+
+  .snippet pre {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--bg-2);
+    padding: 24px 28px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0 0 18px;
+  }
+  .snippet p {
+    color: var(--muted);
+    max-width: 70ch;
+  }
+  .snippet a {
+    color: var(--accent);
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 28px clamp(20px, 6vw, 72px) 44px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .foot nav {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .foot a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .foot a:hover {
+    color: var(--ink);
+  }
+
+  .reveal {
+    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .reveal:nth-child(2) {
+    animation-delay: 0.07s;
+  }
+  .reveal:nth-child(3) {
+    animation-delay: 0.14s;
+  }
+  .reveal:nth-child(4) {
+    animation-delay: 0.21s;
+  }
+  .reveal:nth-child(5) {
+    animation-delay: 0.28s;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      animation: none;
+    }
+    .btn,
+    .card {
+      transition: none;
+    }
+  }
+</style>

@@ -69,8 +69,7 @@ export default defineConfig({
           link: "/demo/",
           attrs: { target: "_blank" },
         },
-        // Getting started serves AT the root (sync-docs gives it slug "").
-        { label: "Getting started", link: "/" },
+        { label: "Getting started", slug: "getting-started" },
         { label: "Customization", slug: "customization" },
         { label: "URL state", slug: "url-state" },
         { label: "API reference", slug: "api" },

@@ -262,7 +262,7 @@ export function FeatureGrid() {
 
 const FOOT_LINKS = [
   { label: "Docs", href: DOCS_URL },
-  { label: "Get started", href: DOCS_URL },
+  { label: "Get started", href: `${DOCS_URL}getting-started/` },
   { label: "API", href: `${DOCS_URL}api/` },
   { label: "Compare", href: `${DOCS_URL}comparison/` },
   { label: "GitHub", href: REPO_URL },
@@ -290,7 +290,7 @@ export function GetStarted() {
           <div className="getstarted__btns">
             <a
               className="gs-btn gs-btn--primary"
-              href={DOCS_URL}
+              href={`${DOCS_URL}getting-started/`}
               target="_blank"
               rel="noreferrer"
             >

@@ -18,9 +18,7 @@ const source = join(here, "../../docs");
 const target = join(here, "src/content/docs");
 
 const TITLES = {
-  // The root page carries the value proposition for search engines; the
-  // sidebar still labels it "Getting started" (astro.config).
-  "getting-started.md": "AdaptTable — Headless React Data Table",
+  "getting-started.md": "Getting started",
   "customization.md": "Customization",
   "url-state.md": "URL state",
   "api.md": "API reference",
@@ -36,13 +34,10 @@ for (const file of readdirSync(source)) {
   const body = raw
     .replace(/^# .*\n/, "")
     // Getting started lives at the site root now.
-    .replace(/\(\.\/getting-started\.md\)/g, "(/adapttable/)");
+    .replace(/\(\.\/getting-started\.md\)/g, "(/adapttable/getting-started/)");
   const title = TITLES[file] ?? file.replace(/\.md$/, "");
-  // Getting started IS the site root — its content serves at "/" directly
-  // (no landing page, no redirect): index.md is how Starlight roots a page.
-  const outName = file === "getting-started.md" ? "index.md" : file;
   writeFileSync(
-    join(target, outName),
+    join(target, file),
     `---\ntitle: ${JSON.stringify(title)}\n---\n\n${body}`
   );
 }
@@ -63,7 +58,8 @@ const LLMS_INDEX = `# AdaptTable
 
 ## Docs
 
-- [Getting started](${SITE}/): install (npx @adapttable/cli init), providers, first table
+- [Overview](${SITE}/): what AdaptTable is, in one page
+- [Getting started](${SITE}/getting-started/): install (npx @adapttable/cli init), providers, first table
 - [Concepts](${SITE}/concepts/): TableSource, data tiers, virtualization
 - [Customization](${SITE}/customization/): slots, classNames, theming per kit
 - [URL state](${SITE}/url-state/): adapters, urlKey namespacing, urlSync opt-out
