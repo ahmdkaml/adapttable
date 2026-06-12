@@ -281,6 +281,25 @@ export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
  * `root` is the relative prefix back to the demo home ("." on the home
  * page, ".." on subpages) so plain static links work from any depth.
  */
+const THEME_KEY = "adapttable-demo-theme";
+
+const readStoredTheme = (): boolean => {
+  try {
+    return window.localStorage.getItem(THEME_KEY) === "dark";
+  } catch {
+    return false;
+  }
+};
+
+const storeTheme = (dark: boolean): void => {
+  try {
+    window.localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+  } catch {
+    // Storage can be unavailable (private mode) — the theme simply
+    // won't persist across pages then.
+  }
+};
+
 export function PageShell({
   active,
   root,
@@ -290,7 +309,9 @@ export function PageShell({
   root: string;
   children: (dark: boolean) => ReactNode;
 }>) {
-  const [dark, setDark] = useState(false);
+  // Each demo page is its own static app, so the theme must live in
+  // storage to survive page-to-page navigation.
+  const [dark, setDark] = useState(readStoredTheme);
   const [notice, setNotice] = useState<DemoNotice | null>(null);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(
     null
@@ -298,6 +319,7 @@ export function PageShell({
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    storeTheme(dark);
   }, [dark]);
 
   useEffect(() => {

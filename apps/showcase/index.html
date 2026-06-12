@@ -15,6 +15,14 @@
       rel="stylesheet"
     />
     <title>AdaptTable — one headless engine, every UI kit</title>
+    <script>
+      // Apply the stored theme before paint so page-to-page navigation
+      // doesn't flash light.
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
