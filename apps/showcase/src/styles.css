@@ -223,16 +223,18 @@ a {
   height: 50px;
 }
 
-/* ---------- section scaffolding ---------- */
+/* ---------- section scaffolding ----------
+   App-like density: the demo is the product, so the head introduces
+   without pushing the table below the fold. */
 .sec {
-  padding-top: clamp(56px, 8vw, 104px);
+  padding-top: clamp(18px, 3.2vh, 36px);
 }
 .sec:last-of-type {
-  padding-bottom: clamp(56px, 8vw, 104px);
+  padding-bottom: clamp(24px, 4.5vh, 56px);
 }
 .sec__head {
-  max-width: 680px;
-  margin-bottom: 34px;
+  max-width: 760px;
+  margin-bottom: 18px;
 }
 .sec__kicker {
   display: inline-block;
@@ -241,20 +243,20 @@ a {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--brand);
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 }
 .sec__title {
   margin: 0;
-  font-size: clamp(28px, 3.8vw, 42px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
   font-weight: 700;
   color: var(--ink);
 }
 .sec__lead {
-  margin: 18px 0 0;
-  font-size: 17px;
-  line-height: 1.6;
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
   color: var(--ink-2);
   text-wrap: pretty;
 }
