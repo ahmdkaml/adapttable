@@ -1,0 +1,28 @@
+/* Hover/focus tooltips for the header icon links: surface the built-in
+   sr-only label as a small bubble under the icon, so each glyph explains
+   itself (Landing page / Live demo / npm / GitHub). */
+.social-icons a.sl-flex {
+  position: relative;
+}
+.social-icons a.sl-flex:hover > .sr-only,
+.social-icons a.sl-flex:focus-visible > .sr-only {
+  position: absolute;
+  inset-block-start: calc(100% + 10px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  height: auto;
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  clip: auto;
+  clip-path: none;
+  overflow: visible;
+  white-space: nowrap;
+  font-size: var(--sl-text-xs);
+  font-weight: 500;
+  color: var(--sl-color-black);
+  background: var(--sl-color-white);
+  border-radius: 0.4rem;
+  box-shadow: var(--sl-shadow-md);
+  z-index: 10;
+}

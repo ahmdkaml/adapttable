@@ -56,7 +56,13 @@ export default defineConfig({
           }),
         },
       ],
+      customCss: ["./src/styles/custom.css"],
       social: [
+        {
+          icon: "external",
+          label: "Landing page",
+          href: "https://orwa-mahmoud.github.io/adapttable/",
+        },
         {
           icon: "rocket",
           label: "Live demo",
