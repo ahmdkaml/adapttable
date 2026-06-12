@@ -527,6 +527,9 @@ const JSON_LD = JSON.stringify({
             <span>Pro</span>
           </div>
         </div>
+        <a class="sec__more" href={`${SITE}/customization/`}
+          >Read the customization guide →</a
+        >
       </section>
 
       <section class="sec shell" id="get-started" aria-labelledby="gs-h">
@@ -1152,7 +1155,7 @@ const JSON_LD = JSON.stringify({
   /* ── The product mock, in the demo's skin ──────────────────────── */
   .mock {
     margin-top: 0;
-    margin-bottom: clamp(48px, 7vw, 104px);
+    margin-bottom: clamp(36px, 8vh, 104px);
     border: 1px solid var(--page-border);
     border-radius: 16px;
     background: var(--page-surface);
@@ -1349,18 +1352,21 @@ const JSON_LD = JSON.stringify({
   /* ── Section scaffolding: the demo's rhythm — its sections sit
      ~208px apart (104px padding + ~104px of trailing content space),
      so non-last sections carry the bottom half explicitly. ─────────── */
+  /* Vertical rhythm scales with the VIEWPORT HEIGHT, so every section
+     fits one screen on any display: tall screens keep the demo's airy
+     104px, short laptops compress toward the floor. */
   .sec {
-    padding-top: clamp(56px, 8vw, 104px);
-    padding-bottom: clamp(48px, 7vw, 104px);
+    padding-top: clamp(40px, 9vh, 104px);
+    padding-bottom: clamp(36px, 8vh, 104px);
     /* Anchored sections clear the sticky nav. */
     scroll-margin-top: 40px;
   }
   .sec:last-of-type {
-    padding-bottom: clamp(56px, 8vw, 104px);
+    padding-bottom: clamp(40px, 9vh, 104px);
   }
   .sec__head {
     max-width: 680px;
-    margin-bottom: 34px;
+    margin-bottom: clamp(16px, 3.4vh, 34px);
   }
   .sec__kicker {
     display: inline-block;
@@ -1390,15 +1396,21 @@ const JSON_LD = JSON.stringify({
   /* ── Feature cards (landing's own, in the demo's spirit) ────────── */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  /* Two rows of four on desktop, so the section reads in one screen. */
+  @media (min-width: 1080px) {
+    .grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
   .card {
     --tint: oklch(0.55 0.16 var(--hue));
     position: relative;
     border: 1px solid var(--page-border);
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 18px 20px;
     background: var(--page-surface);
     box-shadow: var(--shadow-card);
     transition:
@@ -1434,8 +1446,8 @@ const JSON_LD = JSON.stringify({
     align-items: center;
     gap: 7px;
     flex-wrap: wrap;
-    min-height: 64px;
-    margin-bottom: 14px;
+    min-height: 60px;
+    margin-bottom: 12px;
     padding: 12px;
     border-radius: 10px;
     background: var(--page-surface-2);
@@ -1689,15 +1701,15 @@ const JSON_LD = JSON.stringify({
     }
   }
   .card h3 {
-    margin: 0 0 8px;
-    font-size: 17px;
+    margin: 0 0 6px;
+    font-size: 16px;
     letter-spacing: -0.01em;
   }
   .card p {
     margin: 0;
     color: var(--ink-2);
-    font-size: 14.5px;
-    line-height: 1.6;
+    font-size: 13.5px;
+    line-height: 1.55;
   }
   .card code {
     font-family: var(--mono);
@@ -1706,6 +1718,58 @@ const JSON_LD = JSON.stringify({
     background: var(--brand-soft);
     padding: 1px 6px;
     border-radius: 6px;
+  }
+
+  /* Short screens: tighten the cards so both rows stay in view. */
+  @media (max-height: 920px) {
+    .card {
+      padding: 13px 15px;
+    }
+    .grid {
+      gap: 12px;
+    }
+    .viz {
+      min-height: 50px;
+      padding: 9px;
+      margin-bottom: 9px;
+    }
+    .card h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .card p {
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .sec__title {
+      font-size: clamp(26px, 3.2vw, 36px);
+    }
+    .sec__lead {
+      margin-top: 12px;
+      font-size: 15.5px;
+    }
+  }
+  /* Very short screens (small laptops): one more notch. */
+  @media (max-height: 800px) {
+    .card {
+      padding: 10px 13px;
+    }
+    .viz {
+      min-height: 42px;
+      padding: 7px;
+      margin-bottom: 7px;
+    }
+    .card h3 {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    .card p {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .sec__title {
+      font-size: clamp(24px, 3vw, 32px);
+    }
   }
 
   /* ── Customization spectrum (moved from the demo) ───────────────── */
@@ -1782,6 +1846,16 @@ const JSON_LD = JSON.stringify({
     height: 2px;
     border-radius: 2px;
     background: linear-gradient(to right, var(--page-border), var(--brand));
+  }
+  .sec__more {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--brand);
+  }
+  .sec__more:hover {
+    text-decoration: underline;
   }
   @media (max-width: 920px) {
     .spectrum__track {
