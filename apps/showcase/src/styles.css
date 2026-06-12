@@ -7,7 +7,9 @@
 html {
   scroll-behavior: smooth;
 }
-body {
+/* `html body` so the brand font outranks Chakra's runtime body reset —
+   without it the whole chrome silently falls back to the system font. */
+html body {
   margin: 0;
   font-family: "Schibsted Grotesk", system-ui, sans-serif;
   background: var(--page-bg);

@@ -1,21 +1,24 @@
 ---
-// Static landing at the site root, in the SHOWCASE's own design system —
-// the same oklch tokens, type, badge, install pill and chip language as
-// /demo, so the funnel reads as one product. Pre-rendered text + JSON-LD
-// carry the SEO; the live demo stays at /demo, the guide at
-// /getting-started/.
+// Static landing at the site root, wearing the DEMO's chrome verbatim —
+// the same tokens, sticky nav, hero composition, section scaffolding,
+// get-started block and footer as /demo, so the funnel reads as one
+// product. Pre-rendered text + JSON-LD carry the SEO; the live demo
+// stays at /demo, the guide at /getting-started/.
 const SITE = "https://orwa-mahmoud.github.io/adapttable";
+const REPO = "https://github.com/orwa-mahmoud/adapttable";
 const TITLE =
   "AdaptTable — Headless React Data Table for Mantine, MUI, Chakra, Ant Design & Tailwind";
 const DESCRIPTION =
   "One headless React data-table engine with batteries-included adapters: declarative columns and filters, URL-synced state, server or client data, 50,000-row virtualization, column management, saved views, i18n and RTL — rendered natively by your design system.";
 
+// The demo hero's adapter chips, same labels and accent colors.
 const KITS = [
-  { label: "Mantine", c: "#4c6ef5" },
-  { label: "MUI", c: "#007fff" },
-  { label: "Chakra UI", c: "#319795" },
-  { label: "Ant Design", c: "#1677ff" },
-  { label: "shadcn / Tailwind", c: "#18181b" },
+  { label: "Mantine", c: "oklch(0.58 0.17 252)" },
+  { label: "MUI", c: "oklch(0.55 0.18 264)" },
+  { label: "Chakra", c: "oklch(0.6 0.1 188)" },
+  { label: "Ant Design", c: "oklch(0.56 0.2 262)" },
+  { label: "shadcn / Tailwind", c: "oklch(0.28 0.01 264)" },
+  { label: "Custom Tailwind", c: "oklch(0.55 0.2 277)" },
 ];
 
 const FEATURES = [
@@ -74,7 +77,7 @@ const JSON_LD = JSON.stringify({
   operatingSystem: "Any",
   license: "https://opensource.org/license/mit",
   programmingLanguage: "TypeScript",
-  codeRepository: "https://github.com/orwa-mahmoud/adapttable",
+  codeRepository: REPO,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 });
 ---
@@ -105,16 +108,22 @@ const JSON_LD = JSON.stringify({
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="nav">
-      <div class="shell nav__inner">
-        <a class="brand" href={`${SITE}/`}>
-          <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
+      <div class="nav__inner shell">
+        <a class="wm" href="#overview">
+          <svg
+            class="wm__mark"
+            width="20"
+            height="20"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
             <rect
               x="8.5"
               y="1.5"
@@ -170,58 +179,141 @@ const JSON_LD = JSON.stringify({
               fill="#fff"
               opacity="0.4"></rect>
           </svg>
-          <span>Adapt<b>Table</b></span>
+          <span class="wm__txt">Adapt<strong>Table</strong></span>
         </a>
-        <nav aria-label="Primary">
-          <a href={`${SITE}/demo/`}>Live demo</a>
-          <a href={`${SITE}/getting-started/`}>Docs</a>
-          <a href={`${SITE}/api/`}>API</a>
-          <a href={`${SITE}/comparison/`}>Compare</a>
-          <a class="nav__cta" href="https://github.com/orwa-mahmoud/adapttable"
-            >GitHub</a
-          >
+        <nav class="nav__links" aria-label="Primary">
+          <a href="#overview">Overview</a>
+          <a href="#features">Features</a>
+          <a href="#get-started">Get started</a>
         </nav>
+        <div class="nav__right">
+          <a class="nav__docs" href={`${SITE}/getting-started/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              ></path>
+            </svg>
+            Docs
+          </a>
+          <a class="nav__cta" href={REPO}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 4h6v6"></path>
+              <path d="M20 4l-9 9"></path>
+              <path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+              ></path>
+            </svg>
+            GitHub
+          </a>
+        </div>
       </div>
     </header>
 
     <main id="main">
-      <section class="hero shell">
-        <p class="badge">
-          <span class="badge__bolt" aria-hidden="true">⚡</span>
-          Headless engine · batteries-included adapters · MIT
-        </p>
-        <h1 class="reveal">
-          The headless React <span class="nowrap">data table</span><br /><em
-            >for any UI kit.</em
+      <section class="hero shell" id="overview">
+        <div class="hero__badge">
+          <span class="badge__bolt" aria-hidden="true">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path>
+            </svg>
+          </span>
+          Headless engine · native UI-kit adapters
+        </div>
+        <h1 class="hero__h1 reveal">
+          One headless engine.<br /><span class="hero__accent"
+            >Every UI kit.</span
           >
         </h1>
         <p class="hero__sub reveal">
-          TanStack-style headless freedom — but batteries-included for
-          <i>your</i> kit. One declarative API renders natively in Mantine,
-          MUI, Chakra UI, Ant Design, or your own Tailwind classes. URL-synced
-          state, a real filter UX, virtualization, i18n and RTL, out of the
-          box.
+          Headless freedom, batteries included for <em>your</em> kit. The
+          same table features render natively in Mantine, MUI, Chakra, Ant
+          Design, or unstyled Tailwind. URL state, RTL, and a real filter UX,
+          out of the box.
         </p>
         <div class="hero__cta reveal">
-          <a class="btn-primary" href={`${SITE}/demo/`}>Try the live demo</a>
-          <code class="install"
-            ><span aria-hidden="true">$</span> npx @adapttable/cli init</code
-          >
-          <a class="hero__link" href={`${SITE}/getting-started/`}
-            >Get started →</a
-          >
+          <div class="install">
+            <span class="install__prompt" aria-hidden="true">$</span>
+            <code>npx @adapttable/cli init</code>
+            <button
+              type="button"
+              class="install__copy"
+              aria-label="Copy install command"
+              data-copy="npx @adapttable/cli init"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12l5 5L20 7"></path>
+              </svg>
+            </button>
+          </div>
+          <a class="btn-demo" href={`${SITE}/demo/`}>
+            Try the live demo
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 4h6v6"></path>
+              <path d="M20 4l-9 9"></path>
+              <path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+              ></path>
+            </svg>
+          </a>
         </div>
-        <p class="hero__kits reveal">
-          <span>Renders natively in</span>
+        <div class="hero__adapters reveal">
+          <span class="hero__adapters-l">Renders natively in</span>
           {
             KITS.map((kit) => (
-              <i class="chip">
-                <b style={`background:${kit.c}`} />
+              <span class="hero__chip" style={`--c:${kit.c}`}>
+                <span class="hero__chip-dot" />
                 {kit.label}
-              </i>
+              </span>
             ))
           }
-        </p>
+        </div>
       </section>
 
       <!-- The product, not a metaphor: a static table mock in pure CSS,
@@ -280,9 +372,13 @@ const JSON_LD = JSON.stringify({
         </figcaption>
       </figure>
 
-      <section class="sec shell" aria-labelledby="features-h">
-        <p class="kicker">Why AdaptTable</p>
-        <h2 id="features-h">Everything a data table owes you</h2>
+      <section class="sec shell" id="features" aria-labelledby="features-h">
+        <div class="sec__head">
+          <span class="sec__kicker">Why AdaptTable</span>
+          <h2 class="sec__title" id="features-h">
+            Everything a data table owes you.
+          </h2>
+        </div>
         <div class="grid">
           {
             FEATURES.map((f, n) => (
@@ -342,23 +438,19 @@ const JSON_LD = JSON.stringify({
         </div>
       </section>
 
-      <section class="sec shell snippet" aria-labelledby="snippet-h">
-        <div class="snippet__copy">
-          <h2 id="snippet-h">Five lines to your first table</h2>
-          <p>
-            Bare keys become columns with humanized headers. A
-            <code>filter</code> shorthand becomes the kit-native widget, the
-            URL params, the chips and the predicate — nothing else to wire.
-          </p>
-          <p>
-            Read the <a href={`${SITE}/getting-started/`}>Getting started guide</a>
-            or the <a href={`${SITE}/comparison/`}
-              >comparison with TanStack Table</a
-            >.
+      <section class="sec shell" id="get-started" aria-labelledby="gs-h">
+        <div class="sec__head">
+          <span class="sec__kicker">Get started</span>
+          <h2 class="sec__title" id="gs-h">Five lines to your first table.</h2>
+          <p class="sec__lead">
+            The CLI detects your UI kit and scaffolds a working table; the
+            docs cover every prop, the three data tiers, theming, i18n/RTL
+            and the TanStack comparison.
           </p>
         </div>
-        <pre><code>{`import { DataTable } from "@adapttable/mantine";
-// or mui, chakra, antd, unstyled
+        <div class="getstarted">
+          <pre
+            class="getstarted__code"><code>{`import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
 
 <DataTable
   data={people}
@@ -368,28 +460,219 @@ const JSON_LD = JSON.stringify({
     { key: "hiredAt", filter: "dateRange" },
   ]}
 />`}</code></pre>
+          <div class="getstarted__actions">
+            <div class="install install--lg">
+              <span class="install__prompt" aria-hidden="true">$</span>
+              <code>npx @adapttable/cli init</code>
+            </div>
+            <div class="getstarted__btns">
+              <a class="gs-btn gs-btn--primary" href={`${SITE}/getting-started/`}
+                >Get started</a
+              >
+              <a class="gs-btn gs-btn--ghost" href={REPO}>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"
+                  ></path>
+                </svg>
+                Star it on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
     <footer class="foot">
-      <div class="shell foot__inner">
-        <span>MIT · TypeScript · React 18+</span>
-        <nav aria-label="Footer">
-          <a href={`${SITE}/getting-started/`}>Getting started</a>
-          <a href={`${SITE}/customization/`}>Customization</a>
-          <a href={`${SITE}/url-state/`}>URL state</a>
-          <a href={`${SITE}/faq/`}>FAQ</a>
-          <a href="https://www.npmjs.com/org/adapttable">npm</a>
-          <a href="https://github.com/orwa-mahmoud/adapttable">GitHub</a>
+      <div class="foot__inner shell">
+        <div class="foot__lead">
+          <a class="wm" href={`${SITE}/`}>
+            <svg
+              class="wm__mark"
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              aria-hidden="true"
+            >
+              <rect
+                x="8.5"
+                y="1.5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"
+                opacity="0.25"></rect>
+              <rect
+                x="5"
+                y="5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"
+                opacity="0.5"></rect>
+              <rect
+                x="1.5"
+                y="8.5"
+                width="22"
+                height="22"
+                rx="5.5"
+                fill="#6c5ce7"></rect>
+              <rect x="4.5" y="12.5" width="16" height="2.8" rx="1.2" fill="#fff"
+              ></rect>
+              <rect
+                x="11.1"
+                y="12.5"
+                width="2.8"
+                height="14.5"
+                rx="1.2"
+                fill="#fff"></rect>
+              <rect
+                x="4.5"
+                y="18.8"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="4.5"
+                y="23"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="15.9"
+                y="18.8"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+              <rect
+                x="15.9"
+                y="23"
+                width="4.6"
+                height="2.2"
+                rx="1"
+                fill="#fff"
+                opacity="0.4"></rect>
+            </svg>
+            <span class="wm__txt">Adapt<strong>Table</strong></span>
+          </a>
+          <p>Headless freedom, batteries included.</p>
+        </div>
+        <div class="install install--lg">
+          <span class="install__prompt" aria-hidden="true">$</span>
+          <code>npx @adapttable/cli init</code>
+        </div>
+        <nav class="foot__links" aria-label="Footer">
+          <a href={`${SITE}/getting-started/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              ></path>
+            </svg>
+            Docs
+          </a>
+          <a href={`${SITE}/demo/`}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M10 8.5l5.5 3.5-5.5 3.5v-7z"></path>
+            </svg>
+            Demo
+          </a>
+          <a href="https://www.npmjs.com/org/adapttable">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              ></path>
+              <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
+              <path d="M12 22.08V12"></path>
+            </svg>
+            npm
+          </a>
+          <a href={REPO}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.55 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+              ></path>
+            </svg>
+            GitHub
+          </a>
         </nav>
       </div>
     </footer>
+
+    <script>
+      // The demo's copy-to-clipboard affordance on the install pill.
+      document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach(
+        (btn) => {
+          btn.addEventListener("click", () => {
+            void navigator.clipboard?.writeText(btn.dataset.copy ?? "");
+            btn.classList.add("ok");
+            window.setTimeout(() => btn.classList.remove("ok"), 1200);
+          });
+        }
+      );
+    </script>
   </body>
 </html>
 
 <style>
-  /* The showcase's exact token set (light theme), so /demo and the
-     landing read as one product. */
+  /* The demo's exact token set (light theme), so /demo and the landing
+     read as one product. */
   :root {
     --page-bg: oklch(0.985 0.004 264);
     --page-surface: oklch(1 0 0);
@@ -412,18 +695,32 @@ const JSON_LD = JSON.stringify({
   * {
     box-sizing: border-box;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     margin: 0;
+    /* The brand face, same as the demo's: Schibsted Grotesk. */
     font-family: "Schibsted Grotesk", system-ui, sans-serif;
+    /* The demo's effective body line-height (Chakra's 1.5). */
+    line-height: 1.5;
     background: var(--page-bg);
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
-    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 26%, transparent);
   }
   .shell {
     max-width: 1140px;
     margin: 0 auto;
-    padding-inline: clamp(18px, 4vw, 28px);
+    padding-inline: 28px;
+    width: 100%;
   }
   .skip {
     position: absolute;
@@ -436,83 +733,138 @@ const JSON_LD = JSON.stringify({
     color: #fff;
     padding: 8px 14px;
     border-radius: 8px;
-    z-index: 10;
+    z-index: 50;
   }
 
+  /* ── Nav: the demo's, sticky with the same blur ─────────────────── */
   .nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in oklch, var(--page-bg) 82%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px);
     border-bottom: 1px solid var(--page-border-soft);
-    background: color-mix(in oklch, var(--page-bg) 86%, white);
   }
   .nav__inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    height: 64px;
+    gap: 28px;
+    height: 62px;
   }
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 19px;
-    letter-spacing: -0.02em;
+  .nav__links {
+    display: flex;
+    gap: 22px;
+    margin-inline-start: 14px;
+  }
+  .nav__links a {
+    color: var(--ink-2);
+    font-size: 14px;
     font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav__links a:hover {
     color: var(--ink);
-    text-decoration: none;
   }
-  .brand b {
-    font-weight: 800;
-  }
-  .nav nav {
+  .nav__right {
+    margin-inline-start: auto;
     display: flex;
     align-items: center;
-    gap: clamp(12px, 2.4vw, 26px);
-    flex-wrap: wrap;
+    gap: 12px;
   }
-  .nav a {
-    color: var(--ink-2);
-    text-decoration: none;
-    font-size: 14.5px;
-    font-weight: 550;
-  }
-  .nav a:hover {
-    color: var(--ink);
-  }
-  .nav__cta {
-    height: 36px;
+  .nav__docs {
     display: inline-flex;
     align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 9px;
+    border: 1px solid var(--page-border);
+    background: var(--page-surface);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      transform 0.15s,
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .nav__docs:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--brand) 35%, var(--page-border));
+    box-shadow: 0 4px 14px color-mix(in oklch, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+  .nav__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
     padding: 0 15px;
     border-radius: 9px;
     background: var(--ink);
-    color: var(--page-bg) !important;
+    color: var(--page-bg);
+    font-size: 14px;
     font-weight: 600;
+    transition:
+      transform 0.15s,
+      opacity 0.15s;
+  }
+  .nav__cta:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  .wm {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .wm__mark {
+    display: block;
+    flex: none;
+  }
+  .wm__txt {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .wm__txt strong {
+    font-weight: 700;
   }
 
-  /* ── Hero (the showcase's composition) ─────────────────────────── */
+  /* ── Hero: the demo's composition and spacing ───────────────────── */
   .hero {
-    position: relative;
-    padding-top: clamp(48px, 8vw, 96px);
+    padding-top: clamp(56px, 9vw, 104px);
+    padding-bottom: clamp(40px, 6vw, 72px);
     text-align: center;
+    position: relative;
+    /* #overview lands at the very top, clearing the sticky nav. */
+    scroll-margin-top: 80px;
   }
   .hero::before {
     content: "";
     position: absolute;
-    inset: -64px 0 auto;
-    height: 420px;
+    inset: 0 0 auto 0;
+    height: 520px;
+    z-index: -1;
     background: radial-gradient(
       60% 60% at 50% 0%,
       color-mix(in oklch, var(--brand) 11%, transparent),
       transparent 70%
     );
     pointer-events: none;
+    animation: breathe 10s ease-in-out infinite;
   }
-  .badge {
+  @keyframes breathe {
+    0%, 100% { opacity: 0.78; }
+    50% { opacity: 1; }
+  }
+  .hero__badge {
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 26px;
+    margin-bottom: 26px;
     padding: 6px 14px;
     border-radius: 999px;
     font-size: 12.5px;
@@ -536,7 +888,7 @@ const JSON_LD = JSON.stringify({
       shimmer 5s ease-in-out 0.8s infinite;
   }
   /* Broadcast ring: a radio wave leaves the pill on the same beat. */
-  .badge::after {
+  .hero__badge::after {
     content: "";
     position: absolute;
     inset: -1px;
@@ -546,6 +898,7 @@ const JSON_LD = JSON.stringify({
     animation: wave 5s ease-out infinite;
   }
   .badge__bolt {
+    display: inline-flex;
     animation: bolt 5s ease-in-out infinite;
   }
   @keyframes shimmer {
@@ -561,28 +914,27 @@ const JSON_LD = JSON.stringify({
     0%, 14%, 30%, 100% { transform: none; filter: none; }
     20% { transform: scale(1.25) rotate(-6deg); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--brand) 60%, transparent)); }
   }
-  h1 {
+  .hero__h1 {
     margin: 0;
     font-size: clamp(40px, 6.6vw, 76px);
     line-height: 1.02;
     font-weight: 700;
     letter-spacing: -0.035em;
+    color: var(--ink);
   }
-  h1 em {
-    font-style: normal;
+  .hero__accent {
     color: var(--brand);
-  }
-  .nowrap {
-    white-space: nowrap;
   }
   .hero__sub {
     margin: 24px auto 0;
-    max-width: 640px;
+    max-width: 620px;
     font-size: clamp(16px, 1.7vw, 19px);
+    line-height: 1.6;
     color: var(--ink-2);
     text-wrap: pretty;
   }
-  .hero__sub i {
+  .hero__sub em {
+    font-style: italic;
     color: var(--ink);
   }
   .hero__cta {
@@ -590,25 +942,16 @@ const JSON_LD = JSON.stringify({
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 18px;
+    gap: 20px;
     flex-wrap: wrap;
   }
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    height: 46px;
-    padding: 0 22px;
-    border-radius: 11px;
-    background: var(--ink);
-    color: var(--page-bg);
-    font-weight: 700;
-    font-size: 15px;
-    text-decoration: none;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+  .hero__link {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--ink-2);
   }
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    opacity: 0.92;
+  .hero__link:hover {
+    color: var(--brand);
   }
   .install {
     display: inline-flex;
@@ -621,37 +964,82 @@ const JSON_LD = JSON.stringify({
     border-radius: 11px;
     box-shadow: var(--shadow-card);
     font-family: var(--mono);
-    font-size: 14px;
   }
-  .install span {
+  .install:has(.install__copy) {
+    padding-inline-end: 8px;
+  }
+  .install__prompt {
     color: var(--brand);
     font-weight: 700;
   }
-  .hero__link {
+  .install code {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .install__copy {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: var(--page-surface-2);
+    color: var(--ink-3);
+    transition: all 0.15s;
+  }
+  .install__copy:hover {
+    color: var(--ink);
+  }
+  .install__copy.ok {
+    color: var(--green);
+  }
+  .install--lg {
+    height: 50px;
+  }
+  .btn-demo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    border-radius: 11px;
+    background: var(--brand);
+    color: #fff;
     font-size: 14.5px;
     font-weight: 600;
-    color: var(--ink-2);
-    text-decoration: none;
+    box-shadow: 0 8px 24px color-mix(in oklch, var(--brand) 28%, transparent);
+    /* A gentle idle bob — the one action that opens the product. */
+    animation: bob 2.6s ease-in-out 1.6s infinite;
+    transition:
+      transform 0.15s,
+      opacity 0.15s;
   }
-  .hero__link:hover {
-    color: var(--brand);
+  .btn-demo:hover {
+    animation: none;
+    transform: translateY(-2px);
+    opacity: 0.93;
   }
-  .hero__kits {
-    margin: 48px 0 0;
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .hero__adapters {
+    margin-top: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
   }
-  .hero__kits span {
+  .hero__adapters-l {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink-3);
     margin-inline-end: 4px;
   }
-  .chip {
+  .hero__chip {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -661,18 +1049,19 @@ const JSON_LD = JSON.stringify({
     background: var(--page-surface);
     font-size: 13.5px;
     font-weight: 600;
-    font-style: normal;
+    color: var(--ink);
   }
-  .chip b {
+  .hero__chip-dot {
     width: 9px;
     height: 9px;
     border-radius: 50%;
+    background: var(--c);
   }
 
   /* ── The product mock, in the demo's skin ──────────────────────── */
   .mock {
-    margin-top: 44px;
-    margin-bottom: 8px;
+    margin-top: 0;
+    margin-bottom: clamp(48px, 7vw, 104px);
     border: 1px solid var(--page-border);
     border-radius: 16px;
     background: var(--page-surface);
@@ -841,6 +1230,18 @@ const JSON_LD = JSON.stringify({
     align-items: center;
     gap: 4px;
   }
+  .pg {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    color: var(--ink-3);
+  }
+  .pg--on {
+    background: var(--brand);
+    color: #fff;
+  }
   .mock__url {
     margin: 0;
     padding: 10px 18px 13px;
@@ -849,32 +1250,57 @@ const JSON_LD = JSON.stringify({
     color: var(--ink-3);
     border-top: 1px dashed var(--page-border);
     background: var(--page-surface-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* ── Sections ─────────────────────────────────────────────────── */
+  /* ── Section scaffolding: the demo's rhythm — its sections sit
+     ~208px apart (104px padding + ~104px of trailing content space),
+     so non-last sections carry the bottom half explicitly. ─────────── */
   .sec {
     padding-top: clamp(56px, 8vw, 104px);
+    padding-bottom: clamp(48px, 7vw, 104px);
+    /* Anchored sections clear the sticky nav. */
+    scroll-margin-top: 40px;
   }
-  h2 {
-    font-size: clamp(26px, 3.4vw, 40px);
-    letter-spacing: -0.025em;
+  .sec:last-of-type {
+    padding-bottom: clamp(56px, 8vw, 104px);
+  }
+  .sec__head {
+    max-width: 680px;
+    margin-bottom: 34px;
+  }
+  .sec__kicker {
+    display: inline-block;
+    font-size: 12px;
     font-weight: 700;
-    margin: 0 0 26px;
-    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 14px;
   }
+  .sec__title {
+    margin: 0;
+    font-size: clamp(28px, 3.8vw, 42px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .sec__lead {
+    margin: 18px 0 0;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  /* ── Feature cards (landing's own, in the demo's spirit) ────────── */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 16px;
-  }
-  .kicker {
-    margin: 0 0 10px;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--brand);
   }
   .card {
     --tint: oklch(0.55 0.16 var(--hue));
@@ -911,8 +1337,7 @@ const JSON_LD = JSON.stringify({
       var(--shadow-card),
       0 16px 40px color-mix(in oklch, var(--tint) 14%, transparent);
   }
-  /* Micro-vignettes: each card opens with the FEATURE itself, drawn
-     from the same UI primitives as the hero mock. */
+  /* Micro-vignettes: each card opens with the FEATURE itself. */
   .viz {
     display: flex;
     align-items: center;
@@ -1090,9 +1515,9 @@ const JSON_LD = JSON.stringify({
     margin: 0;
     color: var(--ink-2);
     font-size: 14.5px;
+    line-height: 1.6;
   }
-  .card code,
-  .snippet code {
+  .card code {
     font-family: var(--mono);
     font-size: 0.86em;
     color: var(--brand);
@@ -1101,106 +1526,129 @@ const JSON_LD = JSON.stringify({
     border-radius: 6px;
   }
 
-  .snippet {
+  /* ── Get started: the demo's block, verbatim ────────────────────── */
+  .getstarted {
     display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    gap: clamp(20px, 4vw, 44px);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 28px;
     align-items: center;
-    padding-bottom: clamp(56px, 8vw, 96px);
   }
-  .snippet h2 {
-    text-align: start;
-  }
-  .snippet__copy p {
-    color: var(--ink-2);
-    max-width: 48ch;
-  }
-  .snippet__copy a {
-    color: var(--brand);
-  }
-  .snippet pre {
-    border: 1px solid var(--page-border);
-    border-radius: 14px;
-    background: var(--ink);
-    color: oklch(0.95 0.005 264);
-    padding: 24px 26px;
+  .getstarted__code {
+    margin: 0;
+    padding: 22px 26px;
+    border-radius: 9px;
+    background: var(--page-surface-2);
+    border: 1px solid var(--page-border-soft);
     overflow-x: auto;
+    /* The demo's pre strut: 13.5px × 1.65 ≈ 22.3px line boxes — this,
+       not the 11px glyphs, is what spaces the code lines. */
     font-family: var(--mono);
     font-size: 13.5px;
-    line-height: 1.7;
-    margin: 0;
-    box-shadow: var(--shadow-card);
+    line-height: 1.65;
   }
-  .snippet pre code {
-    background: none;
-    padding: 0;
-    color: inherit;
+  .getstarted__code code {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    white-space: pre;
   }
-  @media (max-width: 880px) {
-    .snippet {
-      grid-template-columns: 1fr;
-    }
+  .getstarted__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .getstarted__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .gs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    transition:
+      transform 0.15s,
+      opacity 0.15s,
+      background 0.15s;
+  }
+  .gs-btn:hover {
+    transform: translateY(-1px);
+  }
+  .gs-btn--primary {
+    background: var(--ink);
+    color: var(--page-bg);
+  }
+  .gs-btn--primary:hover {
+    opacity: 0.9;
+  }
+  .gs-btn--ghost {
+    border: 1px solid var(--page-border);
+    background: var(--page-surface-2);
+    color: var(--ink);
   }
 
+  /* ── Footer: the demo's ─────────────────────────────────────────── */
   .foot {
-    border-top: 1px solid var(--page-border-soft);
+    margin-top: clamp(40px, 6vw, 80px);
+    border-top: 1px solid var(--page-border);
+    background: var(--page-surface-2);
   }
   .foot__inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    gap: 28px;
+    padding-top: 40px;
+    padding-bottom: 40px;
     flex-wrap: wrap;
-    padding-block: 26px 40px;
-    color: var(--ink-3);
-    font-size: 14px;
   }
-  .foot nav {
+  .foot__lead {
     display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
   }
-  .foot a {
+  /* The pill floats centered in the space between lead and links. */
+  .foot__inner .install {
+    margin-inline: auto;
+  }
+  .foot__lead p {
+    margin: 0;
+    font-size: 13.5px;
     color: var(--ink-2);
-    text-decoration: none;
   }
-  .foot a:hover {
-    color: var(--ink);
+  .foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
   }
-
-  /* ── Motion policy: ambient only. The table mock is a still —
-     content NEVER mutates. Entrance fade-up, a slow breathing hero
-     glow, hover lifts. Everything off under prefers-reduced-motion. */
-  .hero::before {
-    animation: breathe 10s ease-in-out infinite;
-  }
-  @keyframes breathe {
-    0%, 100% { opacity: 0.78; }
-    50% { opacity: 1; }
-  }
-  .mock__url {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pg {
-    display: inline-grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    color: var(--ink-3);
-  }
-  .pg--on {
-    background: var(--brand);
-    color: #fff;
-  }
-  .mock__pager {
+  .foot__links a {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+    transition: color 0.15s;
+  }
+  .foot__links a svg {
+    opacity: 0.75;
+    transition: opacity 0.15s;
+  }
+  .foot__links a:hover {
+    color: var(--brand);
+  }
+  .foot__links a:hover svg {
+    opacity: 1;
   }
 
+  /* ── Motion: ambient only — entrance rise, breathing glow, the
+     badge broadcast, scroll-rise cards. ──────────────────────────── */
   .reveal {
     animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
@@ -1218,19 +1666,33 @@ const JSON_LD = JSON.stringify({
       transform: none;
     }
   }
+
+  /* ── Responsive: the demo's breakpoints ─────────────────────────── */
+  @media (max-width: 920px) {
+    .nav__links {
+      display: none;
+    }
+  }
+  @media (max-width: 860px) {
+    .getstarted {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .reveal,
     .hero::before,
-    .badge,
-    .badge::after,
+    .hero__badge,
+    .hero__badge::after,
     .badge__bolt,
+    .btn-demo,
     .card {
       animation: none;
     }
-    .btn-primary,
+    .nav__cta,
+    .gs-btn,
+    .btn-demo,
     .card {
       transition: none;
     }
-  }
   }
 </style>

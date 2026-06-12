@@ -183,7 +183,7 @@ export function Hero({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="hero shell">
       <div className="hero__badge">
-        <Bolt size={13} /> Headless engine · batteries-included adapters
+        <Bolt size={13} /> Headless engine · native UI-kit adapters
       </div>
       <h1 className="hero__h1">
         One headless engine.
@@ -191,10 +191,9 @@ export function Hero({ dark }: Readonly<{ dark: boolean }>) {
         <span className="hero__accent">Every UI kit.</span>
       </h1>
       <p className="hero__sub">
-        TanStack-style headless freedom — but batteries-included for{" "}
-        <em>your</em> kit. The same table features render natively in Mantine,
-        MUI, Chakra, Ant Design, or unstyled Tailwind. URL state, RTL, and a
-        real filter UX, out of the box.
+        Headless freedom, batteries included for <em>your</em> kit. The same
+        table features render natively in Mantine, MUI, Chakra, Ant Design, or
+        unstyled Tailwind. URL state, RTL, and a real filter UX, out of the box.
       </p>
       <div className="hero__cta">
         <Install />
