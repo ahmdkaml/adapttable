@@ -103,6 +103,12 @@ const SPECTRUM = [
 ];
 
 
+const ROWS = [
+  { i: "AL", name: "Ada Lovelace", role: "Engineer", s: "Planned", tone: "blue", money: "$25,300", load: 56 },
+  { i: "AT", name: "Alan Turing", role: "Founder", s: "Blocked", tone: "red", money: "$32,600", load: 67 },
+  { i: "KJ", name: "Katherine Johnson", role: "Researcher", s: "Active", tone: "green", money: "$47,200", load: 89 },
+];
+
 const JSON_LD = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -265,8 +271,9 @@ const JSON_LD = JSON.stringify({
       </div>
     </header>
 
-    <main id="main">
-      <section class="hero shell" id="overview">
+    <main id="main" class="deck">
+      <section class="hero" id="overview">
+        <div class="shell">
         <div class="hero__badge">
           <span class="badge__bolt" aria-hidden="true">
             <svg
@@ -351,10 +358,57 @@ const JSON_LD = JSON.stringify({
             ))
           }
         </div>
+
+        <figure class="mock reveal" aria-hidden="true">
+          <div class="mock__toolbar">
+            <span class="mock__search">⌕ Search people…</span>
+            <span class="mock__spacer"></span>
+            <span class="mock__chip">Team: Core ✕</span>
+            <span class="mock__btn">≔ Filters <b>2</b></span>
+            <span class="mock__btn">Columns</span>
+          </div>
+          <div class="mock__table">
+            <div class="mock__row mock__row--head">
+              <span>Person ↕</span><span>Status</span>
+              <span class="num">Budget ↕</span><span>Load</span>
+            </div>
+            {
+              ROWS.map((r) => (
+                <div class="mock__row">
+                  <span class="cell-person">
+                    <i class={`avatar avatar--${r.tone}`}>{r.i}</i>
+                    <span>
+                      <b>{r.name}</b>
+                      <small>{r.role}</small>
+                    </span>
+                  </span>
+                  <span>
+                    <i class={`pill pill--${r.tone}`}>{r.s}</i>
+                  </span>
+                  <span class="num">
+                    <b>{r.money}</b>
+                  </span>
+                  <span class="cell-load">
+                    <i class="bar">
+                      <i style={`width:${r.load}%`} />
+                    </i>
+                    <small>{r.load}%</small>
+                  </span>
+                </div>
+              ))
+            }
+          </div>
+          <figcaption class="mock__url">
+            ?live.f_team=Core&amp;live.f_budgetMin=25000 · every bit of state
+            in a shareable URL
+          </figcaption>
+        </figure>
+        </div>
       </section>
 
 
-      <section class="sec shell" id="features" aria-labelledby="features-h">
+      <section class="sec" id="features" aria-labelledby="features-h">
+        <div class="shell">
         <div class="sec__head">
           <span class="sec__kicker">The batteries</span>
           <h2 class="sec__title" id="features-h">
@@ -434,18 +488,39 @@ const JSON_LD = JSON.stringify({
             ))
           }
         </div>
+        </div>
       </section>
 
-      <section class="sec shell" id="customize" aria-labelledby="customize-h">
-        <div class="sec__head">
-          <span class="sec__kicker">Customization spectrum</span>
-          <h2 class="sec__title" id="customize-h">
-            Easy when you want. Headless when you need.
-          </h2>
-          <p class="sec__lead">
-            Start with props and grow all the way to prop-getters — at no
-            point do you hit a wall and have to eject.
-          </p>
+      <section class="sec" id="customize" aria-labelledby="customize-h">
+        <div class="shell">
+        <div class="sec__head sec__head--row">
+          <div>
+            <span class="sec__kicker">Customization spectrum</span>
+            <h2 class="sec__title" id="customize-h">
+              Easy when you want. Headless when you need.
+            </h2>
+            <p class="sec__lead">
+              Start with props and grow all the way to prop-getters — at no
+              point do you hit a wall and have to eject.
+            </p>
+          </div>
+          <a class="gs-btn gs-btn--ghost" href={`${SITE}/customization/`}>
+            Customization guide
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14"></path>
+              <path d="M13 6l6 6-6 6"></path>
+            </svg>
+          </a>
         </div>
         <div class="spectrum">
           <div class="spectrum__track">
@@ -466,26 +541,11 @@ const JSON_LD = JSON.stringify({
             <span>Pro</span>
           </div>
         </div>
-        <a class="gs-btn gs-btn--ghost spectrum__more" href={`${SITE}/customization/`}>
-          Read the customization guide
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14"></path>
-            <path d="M13 6l6 6-6 6"></path>
-          </svg>
-        </a>
+        </div>
       </section>
 
-      <section class="sec shell" id="get-started" aria-labelledby="gs-h">
+      <section class="sec" id="get-started" aria-labelledby="gs-h">
+        <div class="shell">
         <div class="sec__head">
           <span class="sec__kicker">Get started</span>
           <h2 class="sec__title" id="gs-h">Five lines to your first table.</h2>
@@ -536,6 +596,7 @@ const JSON_LD = JSON.stringify({
               </a>
             </div>
           </div>
+        </div>
         </div>
       </section>
     </main>
@@ -703,6 +764,47 @@ const JSON_LD = JSON.stringify({
     </footer>
 
     <script>
+      // Mouse wheel paginates the deck: one gesture, one slide from the
+      // right. Slides taller than the strip still scroll vertically first.
+      const deck = document.querySelector<HTMLElement>("main.deck");
+      const deckMode = window.matchMedia("(min-width: 920px)");
+      if (deck) {
+        let locked = false;
+        deck.addEventListener(
+          "wheel",
+          (e) => {
+            if (!deckMode.matches) return;
+            const slide = (e.target as HTMLElement).closest(
+              "main.deck > section"
+            );
+            if (slide) {
+              const canDown =
+                slide.scrollTop + slide.clientHeight < slide.scrollHeight - 1;
+              const canUp = slide.scrollTop > 0;
+              if ((e.deltaY > 0 && canDown) || (e.deltaY < 0 && canUp)) {
+                return;
+              }
+            }
+            if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+            e.preventDefault();
+            if (locked) return;
+            locked = true;
+            const w = deck.clientWidth;
+            const next = Math.round(deck.scrollLeft / w) + (e.deltaY > 0 ? 1 : -1);
+            const idx = Math.max(0, Math.min(next, deck.children.length - 1));
+            deck.children[idx]?.scrollIntoView({
+              behavior: "smooth",
+              inline: "start",
+              block: "nearest",
+            });
+            window.setTimeout(() => {
+              locked = false;
+            }, 650);
+          },
+          { passive: false }
+        );
+      }
+
       // The demo's copy-to-clipboard affordance on the install pill.
       document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach(
         (btn) => {
@@ -735,6 +837,8 @@ const JSON_LD = JSON.stringify({
       0 1px 2px oklch(0.2 0.02 264 / 0.04),
       0 8px 28px oklch(0.2 0.02 264 / 0.06);
     --green: oklch(0.62 0.16 152);
+    --red: oklch(0.6 0.19 25);
+    --blue: oklch(0.58 0.17 255);
     --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * {
@@ -742,7 +846,6 @@ const JSON_LD = JSON.stringify({
   }
   html {
     scroll-behavior: smooth;
-    scroll-snap-type: y proximity;
   }
   body {
     margin: 0;
@@ -754,6 +857,17 @@ const JSON_LD = JSON.stringify({
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+  /* Deck layout (desktop only): header and footer always on screen,
+     the slides live in the strip between them. Mobile keeps the
+     natural vertical page. */
+  @media (min-width: 920px) {
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
   }
   a {
     color: inherit;
@@ -880,16 +994,8 @@ const JSON_LD = JSON.stringify({
 
   /* ── Hero: the demo's composition and spacing ───────────────────── */
   .hero {
-    min-height: calc(100vh - 62px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: clamp(24px, 4vh, 64px);
     text-align: center;
     position: relative;
-    /* #overview lands at the very top, clearing the sticky nav. */
-    scroll-margin-top: 80px;
-    scroll-snap-align: start;
   }
   .hero::before {
     content: "";
@@ -914,7 +1020,7 @@ const JSON_LD = JSON.stringify({
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 26px;
+    margin-bottom: clamp(10px, 2vh, 22px);
     padding: 6px 14px;
     border-radius: 999px;
     font-size: 12.5px;
@@ -966,8 +1072,8 @@ const JSON_LD = JSON.stringify({
   }
   .hero__h1 {
     margin: 0;
-    font-size: clamp(40px, 6.6vw, 76px);
-    line-height: 1.02;
+    font-size: clamp(30px, 6vh, 56px);
+    line-height: 1.04;
     font-weight: 700;
     letter-spacing: -0.035em;
     color: var(--ink);
@@ -976,10 +1082,10 @@ const JSON_LD = JSON.stringify({
     color: var(--brand);
   }
   .hero__sub {
-    margin: 24px auto 0;
-    max-width: 620px;
-    font-size: clamp(16px, 1.7vw, 19px);
-    line-height: 1.6;
+    margin: clamp(10px, 1.8vh, 18px) auto 0;
+    max-width: 740px;
+    font-size: clamp(14.5px, 1.9vh, 17px);
+    line-height: 1.55;
     color: var(--ink-2);
     text-wrap: pretty;
   }
@@ -988,7 +1094,7 @@ const JSON_LD = JSON.stringify({
     color: var(--ink);
   }
   .hero__cta {
-    margin-top: 34px;
+    margin-top: clamp(12px, 2.4vh, 24px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1075,7 +1181,7 @@ const JSON_LD = JSON.stringify({
     50% { transform: translateY(-5px); }
   }
   .hero__adapters {
-    margin-top: 52px;
+    margin-top: clamp(12px, 2.6vh, 28px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1108,24 +1214,239 @@ const JSON_LD = JSON.stringify({
     background: var(--c);
   }
 
+  /* ── The product mock, slim enough to share the hero slide ──────── */
+  .mock {
+    margin: clamp(14px, 2.8vh, 30px) auto 0;
+    max-width: 860px;
+    width: 100%;
+    border: 1px solid var(--page-border);
+    border-radius: 14px;
+    background: var(--page-surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    font-size: 12.5px;
+    text-align: start;
+  }
+  .mock__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__search {
+    flex: 0 1 220px;
+    border: 1px solid var(--page-border);
+    border-radius: 8px;
+    padding: 6px 11px;
+    color: var(--ink-3);
+    background: var(--page-surface);
+  }
+  .mock__spacer {
+    flex: 1;
+  }
+  .mock__chip {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .mock__btn {
+    border: 1px solid var(--page-border);
+    border-radius: 8px;
+    padding: 5px 11px;
+    font-weight: 600;
+    color: var(--ink-2);
+    white-space: nowrap;
+    background: var(--page-surface);
+  }
+  .mock__btn b {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 10px;
+    margin-inline-start: 3px;
+  }
+  .mock__table {
+    padding: 4px 4px 0;
+  }
+  .mock__row {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr 0.9fr 1.05fr;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--page-border-soft);
+  }
+  .mock__row--head {
+    color: var(--ink-3);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 650;
+  }
+  .mock__row:last-child {
+    border-bottom: 0;
+  }
+  .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+  .cell-person {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+  .cell-person span {
+    display: grid;
+    line-height: 1.25;
+    min-width: 0;
+    text-align: start;
+  }
+  .cell-person b {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cell-person small,
+  .cell-load small {
+    color: var(--ink-3);
+    font-size: 10.5px;
+  }
+  .avatar {
+    flex: 0 0 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .avatar--blue { background: color-mix(in oklch, var(--blue) 14%, white); color: var(--blue); }
+  .avatar--red { background: color-mix(in oklch, var(--red) 13%, white); color: var(--red); }
+  .avatar--green { background: color-mix(in oklch, var(--green) 13%, white); color: var(--green); }
+  .pill {
+    font-style: normal;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .pill--blue { background: color-mix(in oklch, var(--blue) 13%, white); color: var(--blue); }
+  .pill--red { background: color-mix(in oklch, var(--red) 12%, white); color: var(--red); }
+  .pill--green { background: color-mix(in oklch, var(--green) 12%, white); color: var(--green); }
+  .cell-load {
+    display: grid;
+    gap: 3px;
+  }
+  .bar {
+    display: block;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--page-surface-2);
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand);
+  }
+  .mock__url {
+    margin: 0;
+    padding: 7px 14px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+    border-top: 1px dashed var(--page-border);
+    background: var(--page-surface-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Short strips: the url caption yields first, then the chips row. */
+  @media (max-height: 960px) {
+    .mock__url {
+      display: none;
+    }
+  }
+  @media (max-height: 760px) {
+    .hero__adapters {
+      display: none;
+    }
+  }
+
   /* ── Section scaffolding: the demo's rhythm — its sections sit
      ~208px apart (104px padding + ~104px of trailing content space),
      so non-last sections carry the bottom half explicitly. ─────────── */
-  /* Each section owns EXACTLY one viewport below the sticky nav:
-     full height, content vertically centered, gentle scroll snapping —
-     so a short section never shows its neighbor peeking in. */
-  .sec {
-    min-height: calc(100vh - 62px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: clamp(24px, 4.5vh, 56px);
-    scroll-margin-top: 62px;
-    scroll-snap-align: start;
+  /* The deck: slides arrive from the RIGHT, PowerPoint-style. A
+     horizontal scroll-snap strip between the always-visible header and
+     footer; a small script paginates the mouse wheel. */
+  /* Mobile/base: sections stack vertically with normal rhythm. */
+  .deck > section {
+    padding-block: clamp(44px, 7vh, 80px);
+  }
+  .deck > section > .shell {
+    width: 100%;
+  }
+  @media (min-width: 920px) {
+    main.deck {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+    main.deck::-webkit-scrollbar {
+      display: none;
+    }
+    .deck > section {
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      /* safe: falls back to start instead of clipping the top on overflow */
+      justify-content: safe center;
+      padding-block: clamp(12px, 2.6vh, 40px);
+    }
   }
   .sec__head {
     max-width: 680px;
     margin-bottom: clamp(16px, 3.4vh, 34px);
+  }
+  .sec__head--row {
+    max-width: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .sec__head--row > div {
+    max-width: 680px;
+  }
+  .sec__head--row .gs-btn {
+    flex: none;
+    margin-top: 6px;
   }
   .sec__kicker {
     display: inline-block;
@@ -1449,7 +1770,7 @@ const JSON_LD = JSON.stringify({
   @supports (animation-timeline: view()) {
     .card {
       animation: cardRise both ease-out;
-      animation-timeline: view();
+      animation-timeline: view(inline);
       animation-range: entry 0% entry 38%;
       animation-delay: calc(var(--n) * 40ms);
     }
@@ -1612,10 +1933,6 @@ const JSON_LD = JSON.stringify({
     border-radius: 2px;
     background: linear-gradient(to right, var(--page-border), var(--brand));
   }
-  .spectrum__more {
-    align-self: flex-start;
-    margin-top: 26px;
-  }
   @media (max-width: 920px) {
     .spectrum__track {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1697,16 +2014,15 @@ const JSON_LD = JSON.stringify({
 
   /* ── Footer: the demo's ─────────────────────────────────────────── */
   .foot {
-    margin-top: clamp(40px, 6vw, 80px);
     border-top: 1px solid var(--page-border);
     background: var(--page-surface-2);
   }
   .foot__inner {
     display: flex;
     align-items: center;
-    gap: 28px;
-    padding-top: 40px;
-    padding-bottom: 40px;
+    gap: 24px;
+    padding-top: 12px;
+    padding-bottom: 12px;
     flex-wrap: wrap;
   }
   .foot__lead {
