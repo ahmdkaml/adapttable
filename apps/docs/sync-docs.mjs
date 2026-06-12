@@ -25,10 +25,16 @@ for (const file of readdirSync(source)) {
   const raw = readFileSync(join(source, file), "utf8");
   // Drop the H1 (Starlight renders the frontmatter title) and de-link
   // repo-relative paths that have no meaning on the site.
-  const body = raw.replace(/^# .*\n/, "");
+  const body = raw
+    .replace(/^# .*\n/, "")
+    // Getting started lives at the site root now.
+    .replace(/\(\.\/getting-started\.md\)/g, "(/adapttable/)");
   const title = TITLES[file] ?? file.replace(/\.md$/, "");
+  // Getting started IS the site root — its content serves at "/" directly
+  // (no landing page, no redirect): index.md is how Starlight roots a page.
+  const outName = file === "getting-started.md" ? "index.md" : file;
   writeFileSync(
-    join(target, file),
+    join(target, outName),
     `---\ntitle: ${JSON.stringify(title)}\n---\n\n${body}`
   );
 }
