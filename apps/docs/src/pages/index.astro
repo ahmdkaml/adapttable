@@ -765,21 +765,31 @@ const JSON_LD = JSON.stringify({
 
     <script>
       // Mouse wheel paginates the deck: one gesture, one slide from the
-      // right. Slides taller than the strip still scroll vertically first.
+      // right. A small state machine instead of timers — pagination waits
+      // for the scroll to SETTLE (scrollend), accumulated deltas filter
+      // out jitter, and after a slide lands only a real pause re-arms the
+      // wheel, so inertia tails can't double-fire and nothing gets stuck.
       const deck = document.querySelector<HTMLElement>("main.deck");
       const deckMode = window.matchMedia("(min-width: 920px)");
       if (deck) {
-        let locked = false;
-        // Trackpad inertia keeps emitting wheel events long after the
-        // gesture — only a PAUSE (>180ms) starts a new gesture, so one
-        // swipe moves exactly one slide.
-        let lastWheel = 0;
+        let animating = false;
+        let coolUntilPause = false;
+        let acc = 0;
+        let lastT = 0;
+        let settleTimer = 0;
+        const settle = () => {
+          animating = false;
+          acc = 0;
+        };
+        deck.addEventListener("scrollend", settle);
+        deck.addEventListener("scroll", () => {
+          window.clearTimeout(settleTimer);
+          settleTimer = window.setTimeout(settle, 150);
+        });
         deck.addEventListener(
           "wheel",
           (e) => {
             if (!deckMode.matches) return;
-            const sameGesture = e.timeStamp - lastWheel < 180;
-            lastWheel = e.timeStamp;
             const slide = (e.target as HTMLElement).closest(
               "main.deck > section"
             );
@@ -793,28 +803,73 @@ const JSON_LD = JSON.stringify({
             }
             if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
             e.preventDefault();
-            if (locked || sameGesture) return;
+            const gap = e.timeStamp - lastT;
+            lastT = e.timeStamp;
+            if (gap > 200) {
+              coolUntilPause = false;
+              acc = 0;
+            }
+            if (animating || coolUntilPause) return;
+            acc += e.deltaY;
+            if (Math.abs(acc) < 40) return;
             const w = deck.clientWidth;
             const current = Math.round(deck.scrollLeft / w);
             const idx = Math.max(
               0,
-              Math.min(current + (e.deltaY > 0 ? 1 : -1), deck.children.length - 1)
+              Math.min(
+                current + (acc > 0 ? 1 : -1),
+                deck.children.length - 1
+              )
             );
-            // At the first/last slide there is nothing to do — and no lock,
-            // so boundary scrolls never build up a debt of dead gestures.
+            acc = 0;
+            // Boundary: nothing to do and nothing armed — no gesture debt.
             if (idx === current) return;
-            locked = true;
+            animating = true;
+            coolUntilPause = true;
             deck.children[idx]?.scrollIntoView({
               behavior: "smooth",
               inline: "start",
               block: "nearest",
             });
-            window.setTimeout(() => {
-              locked = false;
-            }, 650);
+            // Safety: never stay locked if scrollend doesn't fire.
+            window.setTimeout(settle, 1200);
           },
           { passive: false }
         );
+      }
+
+      // The nav tab of the slide on screen is marked active — instantly
+      // on click, and tracked while sliding (works for the horizontal
+      // deck and the mobile vertical flow alike).
+      const navLinks = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>(".nav__links a")
+      );
+      const setActive = (id: string) => {
+        for (const link of navLinks) {
+          const on = link.getAttribute("href") === `#${id}`;
+          link.classList.toggle("is-on", on);
+          if (on) {
+            link.setAttribute("aria-current", "true");
+          } else {
+            link.removeAttribute("aria-current");
+          }
+        }
+      };
+      for (const link of navLinks) {
+        link.addEventListener("click", () => {
+          setActive((link.getAttribute("href") ?? "#").slice(1));
+        });
+      }
+      const watcher = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) setActive(entry.target.id);
+          }
+        },
+        { threshold: 0.35 }
+      );
+      for (const section of document.querySelectorAll("main.deck > section")) {
+        watcher.observe(section);
       }
 
       // The demo's copy-to-clipboard affordance on the install pill.
@@ -936,6 +991,10 @@ const JSON_LD = JSON.stringify({
   }
   .nav__links a:hover {
     color: var(--ink);
+  }
+  .nav__links a.is-on {
+    color: var(--brand);
+    font-weight: 650;
   }
   .nav__right {
     margin-inline-start: auto;
