@@ -357,7 +357,11 @@ describe("MUI coverage gaps", () => {
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(screen.getByText("filter body")).toBeInTheDocument();
     // dir="rtl" anchors the Drawer on the left (chrome.tsx FilterDrawer).
-    expect(document.querySelector(".MuiDrawer-paperAnchorLeft")).not.toBeNull();
+    // MUI 9 dropped the paperAnchorLeft class, expressing the anchor purely
+    // through emotion CSS — assert the resulting left:0 pin instead.
+    const paper = document.querySelector<HTMLElement>(".MuiDrawer-paper");
+    expect(paper).not.toBeNull();
+    expect(getComputedStyle(paper!).left).toBe("0px");
   });
 
   it("anchors the RTL filter popover (bottom-start) with no backdrop", () => {

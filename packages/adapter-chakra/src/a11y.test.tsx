@@ -1,5 +1,5 @@
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
@@ -42,7 +42,7 @@ function renderTable(
     );
   }
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );

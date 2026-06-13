@@ -9,7 +9,7 @@ import {
   useColumnLayoutStorageState,
   useFrontendData,
 } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -69,7 +69,7 @@ function Harness({ storage }: Readonly<{ storage: LayoutStorage }>) {
 function mount(storage: LayoutStorage) {
   adapter = createMemoryAdapter("");
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness storage={storage} />
     </ChakraProvider>
   );

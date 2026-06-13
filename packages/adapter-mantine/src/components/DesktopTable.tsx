@@ -57,7 +57,7 @@ export interface DesktopTableProps<TRow> extends Omit<
   SharedTableRenderProps<TRow>,
   "stickyTop"
 > {
-  bodyRef: RefObject<HTMLTableSectionElement>;
+  bodyRef: RefObject<HTMLTableSectionElement | null>;
   className?: string;
   /** Resolved sticky-header top inset (page `stickyTop` + toolbar height). */
   stickyHeaderOffset?: number;
@@ -94,7 +94,7 @@ function HeaderCell<TRow>({
 }>) {
   const cellProps = table.getHeaderCellProps(column);
   const headerStyle = {
-    ...(cellProps.style as CSSProperties | undefined),
+    ...cellProps.style,
     ...stickyStyle,
   };
   if (!column.sortable) {

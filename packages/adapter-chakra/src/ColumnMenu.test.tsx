@@ -1,8 +1,9 @@
 import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ColumnMenu } from "./components/ColumnMenu";
+import { renderChakra } from "./test-utils";
 
 interface Row {
   id: string;
@@ -47,7 +48,9 @@ const byLabel = (name: string) =>
 describe("chakra ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    renderChakra(
+      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -87,7 +90,9 @@ describe("chakra ColumnMenu", () => {
 
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    renderChakra(
+      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -113,7 +118,7 @@ describe("chakra ColumnMenu", () => {
 
   it("lists the actions column with an eye toggle and a one-click end pin", async () => {
     const layout = fakeLayout();
-    render(
+    renderChakra(
       <ColumnMenu
         allColumns={cols}
         layout={layout}
@@ -145,7 +150,7 @@ describe("chakra ColumnMenu", () => {
       pinned: { ...layout.state.pinned, actions: "right" },
     };
     layout.isHidden = (key) => key === "actions";
-    render(
+    renderChakra(
       <ColumnMenu
         allColumns={cols}
         layout={layout}

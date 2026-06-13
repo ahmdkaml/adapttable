@@ -12,14 +12,11 @@ import {
 } from "@adapttable/core";
 import {
   Button,
-  Divider,
   HStack,
   IconButton,
   Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
   Portal,
+  Separator,
   Text,
 } from "@chakra-ui/react";
 
@@ -56,9 +53,10 @@ function VisibilityToggle({
       variant="ghost"
       aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
       aria-pressed={!hidden}
-      icon={<EyeIcon off={hidden} />}
       onClick={onToggle}
-    />
+    >
+      <EyeIcon off={hidden} />
+    </IconButton>
   );
 }
 
@@ -89,11 +87,12 @@ function PinToggle({
     <IconButton
       size="xs"
       variant={pinned ? "solid" : "ghost"}
-      colorScheme={pinned ? "teal" : "gray"}
+      colorPalette={pinned ? "teal" : "gray"}
       aria-label={label}
-      icon={<PinIcon />}
       onClick={onClick}
-    />
+    >
+      <PinIcon />
+    </IconButton>
   );
 }
 
@@ -112,107 +111,110 @@ export function ColumnMenu<TRow>({
   const actionsHidden = layout.isHidden(ACTIONS_COLUMN_KEY);
   const actionsPinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
   return (
-    <Popover placement="bottom-end" isLazy>
-      <PopoverTrigger>
+    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+      <Popover.Trigger asChild>
         <Button size="sm" variant="outline">
           {labels.columns}
         </Button>
-      </PopoverTrigger>
+      </Popover.Trigger>
       <Portal>
-        <PopoverContent minW="260px" w="auto">
-          <PopoverBody px={2} py={2}>
-            <Text
-              fontSize="xs"
-              fontWeight="600"
-              textTransform="uppercase"
-              letterSpacing="0.06em"
-              color="gray.500"
-              px={1}
-              pb={1}
-            >
-              {labels.columns}
-            </Text>
-            {columnMenuRows(allColumns, layout).map((r) => {
-              // Drop-position feedback: dim the source, line the landing edge.
-              const indicator = drag.rowAttrs(r.key, r.index);
-              const edge = indicator["data-drop"];
-              const edgeOffset = edge === "before" ? "2px" : "-2px";
-              return (
-                <HStack
-                  key={r.key}
-                  spacing={1}
-                  py={0.5}
-                  cursor="grab"
-                  opacity={"data-dragging" in indicator ? 0.4 : undefined}
-                  boxShadow={
-                    edge
-                      ? `inset 0 ${edgeOffset} 0 0 var(--chakra-colors-blue-500)`
-                      : undefined
-                  }
-                  {...drag.rowDragProps(r.key, r.index)}
-                  {...drag.dropProps(r.index, layout.move)}
-                  {...indicator}
-                >
-                  <IconButton
-                    size="xs"
-                    variant="ghost"
+        <Popover.Positioner>
+          <Popover.Content minW="260px" w="auto">
+            <Popover.Body px={2} py={2}>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+                color="gray.500"
+                px={1}
+                pb={1}
+              >
+                {labels.columns}
+              </Text>
+              {columnMenuRows(allColumns, layout).map((r) => {
+                // Drop-position feedback: dim the source, line the landing edge.
+                const indicator = drag.rowAttrs(r.key, r.index);
+                const edge = indicator["data-drop"];
+                const edgeOffset = edge === "before" ? "2px" : "-2px";
+                return (
+                  <HStack
+                    key={r.key}
+                    gap={1}
+                    py={0.5}
                     cursor="grab"
-                    icon={<GripIcon />}
-                    {...columnReorderKeyProps(
-                      r.key,
-                      r.index,
-                      layout.move,
-                      `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
-                    )}
-                  />
-                  <VisibilityToggle
-                    hidden={r.hidden}
-                    name={r.name}
-                    labels={labels}
-                    onToggle={() => layout.toggleVisible(r.key)}
-                  />
-                  <RowName hidden={r.hidden} name={r.name} />
-                  <PinToggle
-                    pinned={Boolean(r.pinned)}
-                    label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-                    onClick={() =>
-                      layout.setPinned(r.key, nextPinSide(r.pinned))
+                    opacity={"data-dragging" in indicator ? 0.4 : undefined}
+                    boxShadow={
+                      edge
+                        ? `inset 0 ${edgeOffset} 0 0 var(--chakra-colors-blue-500)`
+                        : undefined
                     }
-                  />
-                </HStack>
-              );
-            })}
-            {hasRowActions && (
-              <>
-                <Divider my={1} />
-                <HStack spacing={1} py={0.5}>
-                  <VisibilityToggle
-                    hidden={actionsHidden}
-                    name={labels.actions}
-                    labels={labels}
-                    onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
-                  />
-                  <RowName hidden={actionsHidden} name={labels.actions} />
-                  <PinToggle
-                    pinned={actionsPinned}
-                    label={`${actionsPinned ? labels.unpin : labels.pinRight}: ${labels.actions}`}
-                    onClick={() =>
-                      layout.setPinned(
-                        ACTIONS_COLUMN_KEY,
-                        actionsPinned ? undefined : "right"
-                      )
-                    }
-                  />
-                </HStack>
-              </>
-            )}
-            <Divider my={1} />
-            <Button size="xs" variant="ghost" onClick={() => layout.reset()}>
-              {labels.resetColumns}
-            </Button>
-          </PopoverBody>
-        </PopoverContent>
+                    {...drag.rowDragProps(r.key, r.index)}
+                    {...drag.dropProps(r.index, layout.move)}
+                    {...indicator}
+                  >
+                    <IconButton
+                      size="xs"
+                      variant="ghost"
+                      cursor="grab"
+                      {...columnReorderKeyProps(
+                        r.key,
+                        r.index,
+                        layout.move,
+                        `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+                      )}
+                    >
+                      <GripIcon />
+                    </IconButton>
+                    <VisibilityToggle
+                      hidden={r.hidden}
+                      name={r.name}
+                      labels={labels}
+                      onToggle={() => layout.toggleVisible(r.key)}
+                    />
+                    <RowName hidden={r.hidden} name={r.name} />
+                    <PinToggle
+                      pinned={Boolean(r.pinned)}
+                      label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
+                      onClick={() =>
+                        layout.setPinned(r.key, nextPinSide(r.pinned))
+                      }
+                    />
+                  </HStack>
+                );
+              })}
+              {hasRowActions && (
+                <>
+                  <Separator my={1} />
+                  <HStack gap={1} py={0.5}>
+                    <VisibilityToggle
+                      hidden={actionsHidden}
+                      name={labels.actions}
+                      labels={labels}
+                      onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+                    />
+                    <RowName hidden={actionsHidden} name={labels.actions} />
+                    <PinToggle
+                      pinned={actionsPinned}
+                      label={`${actionsPinned ? labels.unpin : labels.pinRight}: ${labels.actions}`}
+                      onClick={() =>
+                        layout.setPinned(
+                          ACTIONS_COLUMN_KEY,
+                          actionsPinned ? undefined : "right"
+                        )
+                      }
+                    />
+                  </HStack>
+                </>
+              )}
+              <Separator my={1} />
+              <Button size="xs" variant="ghost" onClick={() => layout.reset()}>
+                {labels.resetColumns}
+              </Button>
+            </Popover.Body>
+          </Popover.Content>
+        </Popover.Positioner>
       </Portal>
-    </Popover>
+    </Popover.Root>
   );
 }

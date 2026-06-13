@@ -1,5 +1,5 @@
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import {
   act,
   fireEvent,
@@ -63,7 +63,7 @@ function Harness(props: {
 function renderHarness(props: Parameters<typeof Harness>[0] = {}, url = "") {
   adapter = createMemoryAdapter(url);
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness {...props} />
     </ChakraProvider>
   );

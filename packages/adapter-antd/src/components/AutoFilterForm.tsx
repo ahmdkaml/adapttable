@@ -278,11 +278,11 @@ export function AutoFilterForm<TRow>({
   labels,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
-    <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+    <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
       {defs.map((def) => (
         <Space
           key={def.key}
-          direction="vertical"
+          orientation="vertical"
           size={4}
           style={{ width: "100%" }}
         >

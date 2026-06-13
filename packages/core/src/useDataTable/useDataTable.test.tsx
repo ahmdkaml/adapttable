@@ -214,12 +214,12 @@ describe("useDataTable", () => {
     it("getSortButtonProps fires toggleSort and disables non-sortable", () => {
       const { result, adapter } = mount();
       const props = result.current.getSortButtonProps(cols[0]!);
-      act(() => (props.onClick as () => void)());
+      act(() => props.onClick());
       expect(adapter.getSearch()).toContain("sortBy=name");
 
       const disabled = result.current.getSortButtonProps(cols[1]!);
       expect(disabled.disabled).toBe(true);
-      act(() => (disabled.onClick as () => void)());
+      act(() => disabled.onClick());
       expect(adapter.getSearch()).not.toContain("sortBy=city");
     });
 
@@ -235,7 +235,7 @@ describe("useDataTable", () => {
     it("getCellProps applies logical (RTL-aware) alignment", () => {
       const { result } = mount();
       const props = result.current.getCellProps(cols[1]!);
-      expect((props.style as { textAlign: string }).textAlign).toBe("end");
+      expect(props.style?.textAlign).toBe("end");
     });
 
     it("getSearchInputProps wires value + onChange", () => {
@@ -243,7 +243,7 @@ describe("useDataTable", () => {
       const props = result.current.getSearchInputProps();
       expect(props.type).toBe("search");
       act(() =>
-        (props.onChange as (e: { currentTarget: { value: string } }) => void)({
+        props.onChange({
           currentTarget: { value: "z" },
         })
       );

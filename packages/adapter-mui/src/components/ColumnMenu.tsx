@@ -115,9 +115,8 @@ function ActionsRow<TRow>({
       <Divider sx={{ my: 0.5 }} />
       <Stack
         direction="row"
-        alignItems="center"
         spacing={0.5}
-        sx={{ px: 0.5, py: 0.25 }}
+        sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
       >
         {/* Spacer where data rows show the drag grip — actions never move. */}
         <Box aria-hidden sx={{ width: 24 }} />
@@ -195,9 +194,9 @@ export function ColumnMenu<TRow>({
               <Stack
                 key={r.key}
                 direction="row"
-                alignItems="center"
                 spacing={0.5}
                 sx={{
+                  alignItems: "center",
                   px: 0.5,
                   py: 0.25,
                   cursor: "grab",

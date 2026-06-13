@@ -235,7 +235,7 @@ describe("Toolbar clearing the sort-by select", () => {
     expect(adapter.getSearch()).toContain("sortBy=name");
     // The clearable Select renders an (aria-hidden) clear button once a value
     // is selected; clicking it fires onChange(null) → setSort(undefined, ...).
-    const input = screen.getByRole("textbox", { name: defaultLabels.sortBy });
+    const input = screen.getByRole("combobox", { name: defaultLabels.sortBy });
     const wrapper = input.closest(".mantine-Input-wrapper");
     const clearBtn = wrapper?.querySelector<HTMLElement>("button");
     expect(clearBtn).not.toBeNull();

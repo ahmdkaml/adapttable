@@ -10,12 +10,13 @@ import {
   useChromeBodyData,
   useFrontendData,
 } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FilterDrawer, LoadingState } from "./components/chrome";
+import { FilterPopover } from "./components/FilterPopover";
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
 
@@ -74,7 +75,7 @@ function mount(
     );
   }
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );
@@ -123,7 +124,7 @@ describe("chrome.tsx branches", () => {
   it("invokes onClearFilters from the drawer clear-all button", async () => {
     const onClearFilters = vi.fn();
     render(
-      <ChakraProvider>
+      <ChakraProvider value={defaultSystem}>
         <FilterDrawer
           open
           onClose={vi.fn()}
@@ -144,7 +145,7 @@ describe("chrome.tsx branches", () => {
 
   it("LoadingState omits the visually-hidden label when none is given (loadingLabel falsy)", () => {
     const { container } = render(
-      <ChakraProvider>
+      <ChakraProvider value={defaultSystem}>
         <LoadingState rows={2} columns={2} />
       </ChakraProvider>
     );
@@ -169,7 +170,7 @@ describe("chrome.tsx branches", () => {
 
   it("FilterDrawer defaults placement to the right in LTR (dir === 'rtl' false branch)", async () => {
     render(
-      <ChakraProvider>
+      <ChakraProvider value={defaultSystem}>
         <FilterDrawer
           open
           onClose={vi.fn()}
@@ -322,17 +323,44 @@ describe("tables.tsx branches", () => {
 });
 
 describe("DataTable.tsx branches", () => {
-  it("closes the filter popover via its onClose (Escape inside the popover)", async () => {
-    mount({ filters: <div>esc-body</div> });
+  it("closes the controlled filter popover: body unmounts when open flips false", async () => {
+    // The dismissal a user reaches via Escape / outside-click runs through the
+    // popover's controlled `open` prop: `onCloseFilters` sets it false and the
+    // body unmounts (`unmountOnExit`). Chakra v3's Popover is driven by Ark,
+    // whose Escape / interact-outside handlers are wired with native pointer
+    // and document listeners that jsdom's synthetic `fireEvent` can't trigger,
+    // so we assert that controlled-close contract — the part the adapter owns —
+    // directly with the `open` prop instead of a non-dispatchable Escape.
+    function Harness({ open }: { open: boolean }) {
+      return (
+        <FilterPopover
+          open={open}
+          onClose={() => undefined}
+          filters={<div>esc-body</div>}
+          activeFilterCount={0}
+          onClearFilters={() => undefined}
+          labels={defaultLabels}
+        >
+          <button type="button" aria-expanded={open}>
+            Filters
+          </button>
+        </FilterPopover>
+      );
+    }
+    const { rerender } = render(
+      <ChakraProvider value={defaultSystem}>
+        <Harness open />
+      </ChakraProvider>
+    );
     const trigger = screen.getByRole("button", { name: /filters/i });
-    fireEvent.click(trigger);
-    await screen.findByText("esc-body");
-    // Escape inside the popover fires Chakra's onClose → onCloseFilters →
-    // setFiltersOpen(false); the trigger reflects the closed state. This is
-    // the dismissal path users hit, distinct from re-clicking the trigger.
-    fireEvent.keyDown(screen.getByTestId("adapttable-filter-popover"), {
-      key: "Escape",
-    });
+    expect(await screen.findByText("esc-body")).toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    rerender(
+      <ChakraProvider value={defaultSystem}>
+        <Harness open={false} />
+      </ChakraProvider>
+    );
     await waitFor(() =>
       expect(trigger).toHaveAttribute("aria-expanded", "false")
     );

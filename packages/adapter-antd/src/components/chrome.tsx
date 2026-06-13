@@ -94,13 +94,9 @@ export function Toolbar<TRow>({
           prefix={<SearchIcon size={14} />}
           style={{ flex: 1, minWidth: 160, maxWidth: 360 }}
           aria-label={labels.search}
-          value={searchProps.value as string}
-          placeholder={searchProps.placeholder as string}
-          onChange={
-            searchProps.onChange as (e: {
-              currentTarget: { value: string };
-            }) => void
-          }
+          value={searchProps.value}
+          placeholder={searchProps.placeholder}
+          onChange={searchProps.onChange}
         />
       )}
       <Flex gap="small" wrap align="center">
@@ -256,7 +252,7 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
     <Alert
       type="info"
       banner
-      message={message}
+      title={message}
       action={
         <Space size="small" wrap>
           <Button
@@ -301,7 +297,7 @@ export function ErrorState({
     <Alert
       type="error"
       showIcon
-      message={labels.errorTitle}
+      title={labels.errorTitle}
       description={error.message}
       action={
         onRetry ? (
@@ -338,7 +334,7 @@ export function FilterDrawer({
       onClose={onClose}
       title={labels.filters}
       placement={dir === "rtl" ? "left" : "right"}
-      width={360}
+      size={360}
       footer={
         <Flex justify="space-between">
           <Button disabled={activeFilterCount === 0} onClick={onClearFilters}>

@@ -57,7 +57,7 @@ const ANTD_CELLS: DemoCells = {
     </Avatar>
   ),
   Status: ({ status, label }: StatusCellProps) => (
-    <Tag color={ANTD_TAG_COLOR[statusTone(status)]} bordered={false}>
+    <Tag color={ANTD_TAG_COLOR[statusTone(status)]} variant="filled">
       {label}
     </Tag>
   ),

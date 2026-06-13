@@ -1,6 +1,6 @@
 /** Coverage-fill: column management, resize, footer limit, drawer close. */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import {
   fireEvent,
   render,
@@ -54,7 +54,7 @@ function Harness(props: {
 function renderHarness(props: Parameters<typeof Harness>[0] = {}, url = "") {
   adapter = createMemoryAdapter(url);
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness {...props} />
     </ChakraProvider>
   );

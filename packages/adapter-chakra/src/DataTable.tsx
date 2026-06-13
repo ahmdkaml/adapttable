@@ -144,12 +144,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     empty:
       slots?.empty ??
       (chrome.emptyVariant === "noResults" ? (
-        <Stack role="status" align="center" py={10} spacing={3}>
+        <Stack role="status" align="center" py={10} gap={3}>
           <Text {...subtleText}>{labels.noResults}</Text>
           <Button
             size="sm"
             variant="outline"
-            colorScheme={colorScheme}
+            colorPalette={colorScheme}
             onClick={chrome.clearFilters}
           >
             {labels.clearAll}
@@ -180,7 +180,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       borderRadius="md"
       p={3}
     >
-      <Stack spacing={3}>
+      <Stack gap={3}>
         <Toolbar
           className={props.classNames?.toolbar}
           table={table}
@@ -225,7 +225,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
         {chrome.isRefreshing && (
-          <Progress size="xs" isIndeterminate aria-label={labels.loading} />
+          <Progress.Root size="xs" value={null} aria-label={labels.loading}>
+            <Progress.Track>
+              <Progress.Range />
+            </Progress.Track>
+          </Progress.Root>
         )}
         <Chips
           chips={chrome.mergedChips}
@@ -256,7 +260,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             <Button
               size="sm"
               variant="outline"
-              isLoading={source.isFetchingNextPage}
+              loading={source.isFetchingNextPage}
               onClick={() => source.fetchNextPage()}
             >
               {labels.loadMore}
@@ -272,7 +276,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}
-            dir={props.dir}
           />
         )}
       </Stack>

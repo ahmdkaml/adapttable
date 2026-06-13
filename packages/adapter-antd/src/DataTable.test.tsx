@@ -1,6 +1,7 @@
 import {
   type ColumnLayoutState,
   createMemoryAdapter,
+  type TableSource,
   useFrontendData,
 } from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -41,6 +42,7 @@ function Harness(props: {
   isLoading?: boolean;
   isFetching?: boolean;
   override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  onSource?: (s: TableSource<Row>) => void;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
@@ -52,6 +54,7 @@ function Harness(props: {
     isLoading: props.isLoading,
     isFetching: props.isFetching,
   });
+  props.onSource?.(source);
   return (
     <DataTable
       source={source}
@@ -116,20 +119,20 @@ describe("<DataTable> (Ant Design)", () => {
   it("maps density='compact' to the small antd table", () => {
     const { container } = renderHarness({ override: { density: "compact" } });
     expect(container.querySelector(".ant-table-small")).toBeInTheDocument();
-    expect(container.querySelector(".ant-table-middle")).toBeNull();
+    expect(container.querySelector(".ant-table-medium")).toBeNull();
   });
 
   it("maps density='comfortable' to the middle antd table", () => {
     const { container } = renderHarness({
       override: { density: "comfortable" },
     });
-    expect(container.querySelector(".ant-table-middle")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-medium")).toBeInTheDocument();
     expect(container.querySelector(".ant-table-small")).toBeNull();
   });
 
   it("defaults to the middle antd table when no density is given", () => {
     const { container } = renderHarness();
-    expect(container.querySelector(".ant-table-middle")).toBeInTheDocument();
+    expect(container.querySelector(".ant-table-medium")).toBeInTheDocument();
     expect(container.querySelector(".ant-table-small")).toBeNull();
   });
 
@@ -141,7 +144,7 @@ describe("<DataTable> (Ant Design)", () => {
       },
     });
     expect(container.querySelector(".ant-table-small")).toBeInTheDocument();
-    expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+    expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
   });
 
   it("lets an explicit size prop override density", () => {
@@ -152,7 +155,7 @@ describe("<DataTable> (Ant Design)", () => {
     // small (from density) nor the middle class should be present.
     expect(container.querySelector(".ant-table")).toBeInTheDocument();
     expect(container.querySelector(".ant-table-small")).toBeNull();
-    expect(container.querySelector(".ant-table-middle")).toBeNull();
+    expect(container.querySelector(".ant-table-medium")).toBeNull();
   });
 
   it("surfaces an error and retries", () => {
@@ -710,24 +713,37 @@ describe("<DataTable> (Ant Design)", () => {
   });
 
   it("pages in the next slice when the virtual scroll nears its end", () => {
+    // antd v6's virtual list collapses to a single rendered row under
+    // jsdom (zero layout height), so the loaded slice can't be asserted
+    // from the DOM — capture the source and assert the loaded row count
+    // grows, which is the actual paging contract.
+    let source: TableSource<Row> | undefined;
     const { container } = renderHarness(
-      { mode: "infinite", override: { virtualize: true } },
+      {
+        mode: "infinite",
+        override: { virtualize: true },
+        onSource: (s) => (source = s),
+      },
       "limit=1"
     );
-    expect(screen.queryByText("Bob")).toBeNull();
+    expect(source!.rows).toHaveLength(1);
     const scroller = container.querySelector<HTMLElement>(
       ".ant-table-tbody-virtual-holder"
     );
     expect(scroller).not.toBeNull();
     // Simulate scrolling to the bottom of antd's internal virtual holder.
+    // scrollTop is a getter because rc-virtual-list (v6) resets the holder's
+    // native scrollTop to 0 during its own scroll handling — a plain value
+    // prop would be clobbered before our handler reads it.
     Object.defineProperty(scroller!, "scrollHeight", { value: 1000 });
     Object.defineProperty(scroller!, "clientHeight", { value: 400 });
     Object.defineProperty(scroller!, "scrollTop", {
-      value: 600,
-      writable: true,
+      get: () => 600,
+      set: () => undefined,
+      configurable: true,
     });
     act(() => fireEvent.scroll(scroller!));
-    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(source!.rows.length).toBeGreaterThan(1);
   });
 
   it("keeps the Load more sentinel armed on mobile even with virtualize set", () => {
@@ -869,7 +885,7 @@ describe("<DataTable> (Ant Design)", () => {
     const selectionCell = container.querySelector(
       "th.ant-table-selection-column"
     );
-    expect(selectionCell).toHaveClass("ant-table-cell-fix-left");
+    expect(selectionCell).toHaveClass("ant-table-cell-fix-start");
   });
 
   it("keeps the filter popover open on a mousedown over its own trigger", () => {
@@ -1037,7 +1053,7 @@ describe("<DataTable> (Ant Design)", () => {
     expect(pinLeft).not.toBeNull();
     fireEvent.click(pinLeft!);
     // antd renders a sticky/fixed cell once a column is pinned (x: max-content).
-    expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+    expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
   });
 
   it("pins the actions column right with one click and zero data pins", () => {
@@ -1048,7 +1064,7 @@ describe("<DataTable> (Ant Design)", () => {
       },
     });
     // Nothing is fixed before the click.
-    expect(container.querySelector(".ant-table-cell-fix-right")).toBeNull();
+    expect(container.querySelector(".ant-table-cell-fix-end")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     const pin = document.querySelector<HTMLElement>(
       '[aria-label="Pin right: Actions"]'
@@ -1058,10 +1074,10 @@ describe("<DataTable> (Ant Design)", () => {
     // The injected column itself carries antd's fixed-right sticky cell, and
     // it is the ONLY fixed column — no data pins involved.
     const fixedHeaders = container.querySelectorAll(
-      "th.ant-table-cell-fix-right"
+      "th.ant-table-cell-fix-end"
     );
     expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
-    expect(container.querySelector(".ant-table-cell-fix-left")).toBeNull();
+    expect(container.querySelector(".ant-table-cell-fix-start")).toBeNull();
   });
 
   it("drags the actions column along when a data column pins right", () => {
@@ -1074,7 +1090,7 @@ describe("<DataTable> (Ant Design)", () => {
     // antd needs the right-fixed run contiguous through the trailing edge,
     // so the unpinned actions column rides along with the pinned data column.
     const fixedHeaders = container.querySelectorAll(
-      "th.ant-table-cell-fix-right"
+      "th.ant-table-cell-fix-end"
     );
     expect([...fixedHeaders].map((th) => th.textContent)).toEqual([
       "City",
@@ -1145,7 +1161,7 @@ describe("<DataTable> (Ant Design)", () => {
       },
     });
     const fixedHeaders = container.querySelectorAll(
-      "th.ant-table-cell-fix-right"
+      "th.ant-table-cell-fix-end"
     );
     expect([...fixedHeaders].map((th) => th.textContent)).toEqual(["Actions"]);
     // …and the menu reflects it with the one-click unpin.
@@ -1269,8 +1285,13 @@ describe("<DataTable> (Ant Design)", () => {
 
   it("renders no refresh indicator when the source is idle", () => {
     const { container } = renderHarness();
-    expect(container.firstElementChild).not.toHaveAttribute("aria-busy");
-    expect(container.querySelector(".ant-spin")).toBeNull();
+    // antd v6 always renders the Spin wrapper; idle means it is not busy
+    // and not actively spinning (no overlay).
+    expect(container.firstElementChild).not.toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+    expect(container.querySelector(".ant-spin-spinning")).toBeNull();
   });
 
   it("applies rowClassName to desktop rows", () => {

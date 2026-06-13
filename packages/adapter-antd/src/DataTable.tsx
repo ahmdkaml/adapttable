@@ -129,7 +129,8 @@ function sortChangeHandler<TRow>(
     // antd passes an array only under multi-column sort, which buildColumns
     // never enables — flat() folds both shapes without a dead branch.
     const next = [sorter].flat()[0];
-    const key = next?.columnKey as string | undefined;
+    const key =
+      typeof next?.columnKey === "string" ? next.columnKey : undefined;
     if (!key || !next?.order) {
       source.setSort(undefined);
       return;
@@ -503,7 +504,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
-  const resolvedTableLabel = table.getTableProps()["aria-label"] as string;
+  const resolvedTableLabel = table.getTableProps()["aria-label"];
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
   // internal scroll (`handleVirtualScroll`) drives paging instead. Disable
@@ -666,7 +667,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={className}
       aria-busy={c.isRefreshing || undefined}
     >
-      <Space direction="vertical" size="small" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <Toolbar
           table={table}
           hideSearch={props.hideSearch}

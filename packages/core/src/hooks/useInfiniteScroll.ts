@@ -46,7 +46,7 @@ export interface UseInfiniteScrollOptions {
  */
 export function useInfiniteScroll<
   TElement extends HTMLElement = HTMLDivElement,
->(options: UseInfiniteScrollOptions): RefObject<TElement> {
+>(options: UseInfiniteScrollOptions): RefObject<TElement | null> {
   const {
     hasNextPage,
     isFetchingNextPage,

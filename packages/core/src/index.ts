@@ -304,6 +304,10 @@ export {
 
 /* ── Orchestrator ──────────────────────────────────────────────────── */
 export {
+  type CellElementProps,
+  type SearchInputElementProps,
+  type SortButtonElementProps,
+  type TableElementProps,
   useDataTable,
   type UseDataTableOptions,
   type UseDataTableResult,

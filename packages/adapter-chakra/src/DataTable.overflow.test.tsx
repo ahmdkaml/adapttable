@@ -6,7 +6,7 @@
  * otherwise wide tables bleed past the card border.
  */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { act, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -93,7 +93,7 @@ function renderTable(stickyTop?: number): HTMLElement {
     );
   }
   const { container } = render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );
