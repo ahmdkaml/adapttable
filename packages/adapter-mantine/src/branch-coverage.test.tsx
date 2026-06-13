@@ -133,12 +133,12 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
     const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
     expect(headerCheckbox.style.position).toBe("sticky");
     // Logical inset: sticks to the inline START, the correct edge in RTL too.
-    expect(headerCheckbox.style.insetInlineStart).toBe("0");
+    expect(headerCheckbox.style.insetInlineStart).toBe("0px");
     const rowCheckbox = screen
       .getAllByLabelText("Select row")[0]!
       .closest("td")!;
     expect(rowCheckbox.style.position).toBe("sticky");
-    expect(rowCheckbox.style.insetInlineStart).toBe("0");
+    expect(rowCheckbox.style.insetInlineStart).toBe("0px");
   });
 
   it("pins the actions column alongside a right-pinned data column", () => {
@@ -150,7 +150,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
       .getAllByRole("button", { name: "Edit" })[0]!
       .closest("td")!;
     expect(actionsCell.style.position).toBe("sticky");
-    expect(actionsCell.style.insetInlineEnd).toBe("0");
+    expect(actionsCell.style.insetInlineEnd).toBe("0px");
   });
 
   it("offsets the pinned checkbox past the chevron column with row details", () => {
@@ -164,7 +164,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
       .getAllByRole("button", { name: defaultLabels.expandRow })[0]!
       .closest("td")!;
     expect(chevronCell.style.position).toBe("sticky");
-    expect(chevronCell.style.insetInlineStart).toBe("0");
+    expect(chevronCell.style.insetInlineStart).toBe("0px");
     // …and the checkbox column starts past the chevron's width.
     const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
     expect(headerCheckbox.style.position).toBe("sticky");

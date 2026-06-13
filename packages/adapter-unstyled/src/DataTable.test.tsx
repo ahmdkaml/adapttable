@@ -593,13 +593,13 @@ describe("<DataTable> (unstyled)", () => {
     expect(selHeader).toHaveAttribute("data-pinned", "left");
     // Logical inset: sticks to the inline START, the correct edge in RTL too.
     expect(selHeader).toHaveStyle({ position: "sticky" });
-    expect((selHeader as HTMLElement).style.insetInlineStart).toBe("0");
+    expect((selHeader as HTMLElement).style.insetInlineStart).toBe("0px");
     const selCell = container.querySelector(
       '[data-adapttable-part="selection-cell"]'
     );
     expect(selCell).toHaveAttribute("data-pinned", "left");
     expect(selCell).toHaveStyle({ position: "sticky" });
-    expect((selCell as HTMLElement).style.insetInlineStart).toBe("0");
+    expect((selCell as HTMLElement).style.insetInlineStart).toBe("0px");
   });
 
   it("leaves the selection column unpinned when nothing is pinned", () => {
@@ -638,13 +638,13 @@ describe("<DataTable> (unstyled)", () => {
     expect(header).toHaveAttribute("data-pinned", "right");
     expect(header).toHaveStyle({ position: "sticky" });
     // Logical inset: sticks to the inline END, the correct edge in RTL too.
-    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0px");
     const cell = container.querySelector(
       '[data-adapttable-part="actions-cell"]'
     );
     expect(cell).toHaveAttribute("data-pinned", "right");
     expect(cell).toHaveStyle({ position: "sticky" });
-    expect((cell as HTMLElement).style.insetInlineEnd).toBe("0");
+    expect((cell as HTMLElement).style.insetInlineEnd).toBe("0px");
     // The layout state names the reserved "actions" key like any column.
     expect(onColumnLayoutChange).toHaveBeenCalledWith(
       expect.objectContaining({ pinned: { actions: "right" } })
@@ -719,7 +719,7 @@ describe("<DataTable> (unstyled)", () => {
       '[data-adapttable-part="actions-header"]'
     );
     expect(header).toHaveAttribute("data-pinned", "right");
-    expect((header as HTMLElement).style.insetInlineEnd).toBe("0");
+    expect((header as HTMLElement).style.insetInlineEnd).toBe("0px");
   });
 
   it("strips hidden row actions from mobile cards too", () => {

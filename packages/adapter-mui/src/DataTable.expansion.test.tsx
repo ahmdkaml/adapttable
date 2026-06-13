@@ -169,7 +169,7 @@ describe("row expansion (MUI)", () => {
     // Collapsed LTR chevron carries no rotation.
     expect(
       getComputedStyle(btn.firstElementChild as HTMLElement).transform
-    ).toBe("");
+    ).toBe("none");
 
     fireEvent.click(btn);
     expect(within(card).getByText("detail Alice")).toBeInTheDocument();

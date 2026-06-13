@@ -104,10 +104,10 @@ describe("<DataTable> (Chakra) actions column management", () => {
     // ONE click sticks the header and every body cell to the inline end —
     // no data column is pinned right (or at all).
     expect(actionsHeader().style.position).toBe("sticky");
-    expect(actionsHeader().style.insetInlineEnd).toBe("0");
+    expect(actionsHeader().style.insetInlineEnd).toBe("0px");
     for (const cell of actionCells()) {
       expect(cell.style.position).toBe("sticky");
-      expect(cell.style.insetInlineEnd).toBe("0");
+      expect(cell.style.insetInlineEnd).toBe("0px");
       // Opaque background so scrolled data can't bleed through the pin.
       expect(cell.style.background).not.toBe("");
     }
@@ -118,7 +118,7 @@ describe("<DataTable> (Chakra) actions column management", () => {
     view.unmount();
     mount(storage);
     expect(actionsHeader().style.position).toBe("sticky");
-    expect(actionsHeader().style.insetInlineEnd).toBe("0");
+    expect(actionsHeader().style.insetInlineEnd).toBe("0px");
   });
 
   it("hides and re-shows the actions column from the Columns menu, persisting it", async () => {

@@ -24,39 +24,42 @@ if (typeof globalThis.matchMedia !== "function") {
 // presence and behaviour, not pixel placement.
 const noop = (): undefined => undefined;
 
-if (typeof globalThis.ResizeObserver === "undefined") {
-  globalThis.ResizeObserver = class {
-    observe(): void {
-      noop();
-    }
-    unobserve(): void {
-      noop();
-    }
-    disconnect(): void {
-      noop();
-    }
-  };
-}
+globalThis.ResizeObserver ??= class {
+  observe(): void {
+    noop();
+  }
+  unobserve(): void {
+    noop();
+  }
+  disconnect(): void {
+    noop();
+  }
+};
 
-if (typeof globalThis.IntersectionObserver === "undefined") {
-  globalThis.IntersectionObserver = class {
-    readonly root = null;
-    readonly rootMargin = "";
-    readonly thresholds = [];
-    observe(): void {
-      noop();
-    }
-    unobserve(): void {
-      noop();
-    }
-    disconnect(): void {
-      noop();
-    }
-    takeRecords(): [] {
-      return [];
-    }
-  };
-}
+globalThis.IntersectionObserver ??= class implements IntersectionObserver {
+  readonly root: Document | Element | null = null;
+  readonly rootMargin: string = "";
+  readonly scrollMargin: string = "";
+  readonly thresholds: readonly number[] = [];
+  constructor(
+    _callback: IntersectionObserverCallback,
+    _options?: IntersectionObserverInit
+  ) {
+    noop();
+  }
+  observe(): void {
+    noop();
+  }
+  unobserve(): void {
+    noop();
+  }
+  disconnect(): void {
+    noop();
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+};
 
 if (typeof Element.prototype.scrollTo !== "function") {
   Element.prototype.scrollTo = noop;

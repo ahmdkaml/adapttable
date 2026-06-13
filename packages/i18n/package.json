@@ -46,8 +46,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",

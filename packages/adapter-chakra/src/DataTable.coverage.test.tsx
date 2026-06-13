@@ -161,6 +161,21 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
     expect(screen.queryByText("filter body")).toBeNull();
   });
 
+  it("closes the filter drawer on Escape (Ark dismiss → onClose)", async () => {
+    renderHarness({
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    const body = await screen.findByText("filter body", undefined, {
+      timeout: 5000,
+    });
+    // Escape runs the drawer's `onOpenChange({ open: false })` → `onClose`
+    // (distinct from the Cancel button, which calls `onClose` directly).
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await waitForElementToBeRemoved(body);
+    expect(screen.queryByText("filter body")).toBeNull();
+  });
+
   it("clear-all falls back to clearing source extras when no handler is given", async () => {
     renderHarness(
       {

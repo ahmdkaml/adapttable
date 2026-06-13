@@ -4,7 +4,14 @@ import {
   type TableSource,
   useFrontendData,
 } from "@adapttable/core";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { ConfigProvider } from "antd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -383,7 +390,7 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("filter body")).toBeInTheDocument();
   });
 
-  it("closes the filter popover on an outside click with no scrim", () => {
+  it("closes the filter popover on an outside click with no scrim", async () => {
     renderHarness({ override: { filters: <div>filter body</div> } });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(screen.getByText("filter body")).toBeInTheDocument();
@@ -392,20 +399,29 @@ describe("<DataTable> (Ant Design)", () => {
     // A mousedown anywhere outside the popover hides it (antd toggles the
     // `ant-popover-hidden` class rather than unmounting the content).
     fireEvent.mouseDown(document.body);
-    expect(document.querySelector(".ant-popover")).toHaveClass(
-      "ant-popover-hidden"
+    // The popover closes (its logical state flips); jsdom does not run antd's
+    // leave animation to the `ant-popover-hidden` class, so assert the state
+    // via the trigger's `aria-expanded` instead.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /filters/i })).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      )
     );
   });
 
-  it("closes the filter popover when Escape is pressed", () => {
+  it("closes the filter popover when Escape is pressed", async () => {
     renderHarness({ override: { filters: <div>filter body</div> } });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(document.querySelector(".ant-popover")).not.toHaveClass(
       "ant-popover-hidden"
     );
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(document.querySelector(".ant-popover")).toHaveClass(
-      "ant-popover-hidden"
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /filters/i })).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      )
     );
   });
 
@@ -419,7 +435,7 @@ describe("<DataTable> (Ant Design)", () => {
     );
   });
 
-  it("toggles the filter popover closed on a second Filters click", () => {
+  it("toggles the filter popover closed on a second Filters click", async () => {
     renderHarness({ override: { filters: <div>filter body</div> } });
     const button = screen.getByRole("button", { name: /filters/i });
     fireEvent.click(button);
@@ -427,8 +443,8 @@ describe("<DataTable> (Ant Design)", () => {
       "ant-popover-hidden"
     );
     fireEvent.click(button);
-    expect(document.querySelector(".ant-popover")).toHaveClass(
-      "ant-popover-hidden"
+    await waitFor(() =>
+      expect(button).toHaveAttribute("aria-expanded", "false")
     );
   });
 

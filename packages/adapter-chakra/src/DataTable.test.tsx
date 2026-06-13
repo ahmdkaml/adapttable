@@ -354,6 +354,21 @@ describe("<DataTable> (Chakra)", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("closes the filter popover on Escape (Ark dismiss → onCloseFilters)", async () => {
+    renderHarness({ override: { filters: <div>filter body</div> } });
+    const trigger = screen.getByRole("button", { name: /filters/i });
+    fireEvent.click(trigger);
+    await screen.findByText("filter body");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // Ark wires Escape to the document; the dismiss runs the popover's
+    // `onOpenChange({ open: false })` → `onClose` → the adapter's
+    // `onCloseFilters`, which flips the controlled `filtersOpen` state.
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await waitFor(() =>
+      expect(trigger).toHaveAttribute("aria-expanded", "false")
+    );
+  });
+
   it("removes a chip", () => {
     renderHarness(
       { override: { filterLabels: { status: (v) => `Status: ${v}` } } },
