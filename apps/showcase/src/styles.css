@@ -382,7 +382,12 @@ a {
 .demo-surface {
   border: 1px solid var(--page-border);
   border-radius: 0 0 14px 14px;
-  overflow: hidden;
+  /* No `overflow: hidden`: the unstyled adapter's filter popover is an
+     anchored (non-portaled) absolute card, so a clipping ancestor would cut
+     it off; clipping would also trap the page-level sticky header. The
+     `.demo-surface__body` padding already insets the table from the rounded
+     corners, so nothing needs clipping here. */
+  overflow: visible;
   box-shadow: var(--shadow-card);
   background: var(--page-surface);
 }
