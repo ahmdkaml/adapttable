@@ -15,10 +15,16 @@ export const sharedConfig = defineConfig({
     css: true,
     clearMocks: true,
     restoreMocks: true,
-    // Headroom for cold CI runners: the first test in a heavy suite pays the
-    // kit's first-render warm-up (antd's exceeded the 5s default on a 2-core
-    // runner). This widens the per-test budget only — assertions unchanged.
-    testTimeout: 15000,
+    // On the 2-core CI runner `turbo` already runs every package's suite in
+    // parallel; letting each vitest ALSO fan its files across worker threads
+    // oversubscribed the cores ~20×, and antd 6's cold cssinjs render (paid
+    // once, by the first test of the suite) blew past the per-test timeout
+    // under that thrash. Run files serially on CI so the aggregate thread
+    // count stays near the core count — locally we keep full parallelism.
+    fileParallelism: !process.env.CI,
+    // Generous per-test budget for that same cold first render on a loaded CI
+    // runner. This only widens the time limit — assertions are unchanged.
+    testTimeout: 30000,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
