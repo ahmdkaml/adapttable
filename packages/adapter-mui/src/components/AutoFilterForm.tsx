@@ -203,7 +203,7 @@ function RangeFilter<TRow>({
       <FormLabel component="legend" sx={{ mb: 0.75 }}>
         {filterLabel(def)}
       </FormLabel>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         <TextField
           select
           size="small"

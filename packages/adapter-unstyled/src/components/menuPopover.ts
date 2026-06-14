@@ -21,9 +21,9 @@ export interface MenuPopoverState {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   /** Attach to the wrapper — pointer-downs inside it do not close the panel. */
-  rootRef: RefObject<HTMLDivElement>;
+  rootRef: RefObject<HTMLDivElement | null>;
   /** Attach to the trigger — Escape hands keyboard focus back to it. */
-  triggerRef: RefObject<HTMLButtonElement>;
+  triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
 /**

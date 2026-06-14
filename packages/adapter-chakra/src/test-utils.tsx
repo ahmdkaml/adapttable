@@ -1,8 +1,8 @@
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { render, type RenderResult } from "@testing-library/react";
 import type { ReactElement } from "react";
 
-/** Render a component tree wrapped in a default `ChakraProvider`. */
+/** Render a component tree wrapped in a default v3 `ChakraProvider`. */
 export function renderChakra(ui: ReactElement): RenderResult {
-  return render(<ChakraProvider>{ui}</ChakraProvider>);
+  return render(<ChakraProvider value={defaultSystem}>{ui}</ChakraProvider>);
 }

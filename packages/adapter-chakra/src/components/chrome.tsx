@@ -11,29 +11,18 @@ import {
 } from "@adapttable/core";
 import {
   Alert,
-  AlertIcon,
   Badge,
-  Box,
   Button,
+  CloseButton,
   Drawer,
-  DrawerBody,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerOverlay,
   HStack,
   Input,
   InputGroup,
-  InputLeftElement,
-  Select,
+  Portal,
   Skeleton,
   Stack,
   Tag,
-  TagCloseButton,
-  TagLabel,
   Text,
-  Tooltip,
   VisuallyHidden,
   Wrap,
   WrapItem,
@@ -42,6 +31,7 @@ import { isValidElement, type ReactNode } from "react";
 
 import { subtleText } from "../styles";
 import { FilterPopover } from "./FilterPopover";
+import { NativeSelect, Tooltip } from "./primitives";
 
 /** Three-line funnel/filter glyph for the Filters button. */
 function FiltersIcon() {
@@ -85,24 +75,6 @@ function SearchIcon() {
 }
 
 /** Props for {@link Toolbar}: the shared chrome surface + Chakra extras. */
-/**
- * Chakra v2 pins the select chevron physically (`right: 0.5rem`) and only
- * flips it with a global RTL theme an adapter must not assume — under
- * `dir="rtl"` the icon lands on the value. Re-pin it to the writing
- * direction resolved from the table's own `dir` (doubled `&&` so the rule
- * outranks the theme part). Spread the result on the Select's `rootProps`.
- */
-export function selectIconRootProps(dir: Direction | undefined) {
-  return {
-    sx: {
-      "&& .chakra-select__icon-wrapper":
-        dir === "rtl"
-          ? { right: "auto", left: "0.5rem" }
-          : { left: "auto", right: "0.5rem" },
-    },
-  };
-}
-
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Which filter container opens from the Filters button. */
   filtersMode: "popover" | "drawer";
@@ -154,16 +126,16 @@ export function Toolbar<TRow>({
     <Button
       size="sm"
       variant="outline"
-      colorScheme={colorScheme}
-      leftIcon={<FiltersIcon />}
+      colorPalette={colorScheme}
       aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
       data-active={filtersOpen || undefined}
       onPointerDown={onFiltersTriggerPointerDown}
       onClick={onToggleFilters}
     >
+      <FiltersIcon />
       {labels.filters}
       {activeFilterCount > 0 && (
-        <Badge ml={2} colorScheme={colorScheme} borderRadius="full">
+        <Badge ml={2} colorPalette={colorScheme} borderRadius="full">
           {activeFilterCount}
         </Badge>
       )}
@@ -172,7 +144,7 @@ export function Toolbar<TRow>({
 
   return (
     <HStack
-      spacing={2}
+      gap={2}
       flexWrap="wrap"
       rowGap={2}
       justify="space-between"
@@ -180,29 +152,27 @@ export function Toolbar<TRow>({
       className={className}
     >
       {!hideSearch && (
-        <InputGroup size="sm" maxW="360px" flex="1" minW="160px">
-          <InputLeftElement pointerEvents="none" {...subtleText}>
-            <SearchIcon />
-          </InputLeftElement>
+        <InputGroup
+          maxW="360px"
+          flex="1"
+          minW="160px"
+          startElement={<SearchIcon />}
+        >
           <Input
+            size="sm"
             aria-label={labels.search}
             type="search"
-            value={searchProps.value as string}
-            placeholder={searchProps.placeholder as string}
-            onChange={
-              searchProps.onChange as (e: {
-                currentTarget: { value: string };
-              }) => void
-            }
+            value={searchProps.value}
+            placeholder={searchProps.placeholder}
+            onChange={searchProps.onChange}
           />
         </InputGroup>
       )}
-      <HStack spacing={2} flexWrap="wrap" rowGap={2} align="center">
+      <HStack gap={2} flexWrap="wrap" rowGap={2} align="center">
         {sortOptions && sortOptions.length > 0 && (
-          <Select
+          <NativeSelect
             size="sm"
             w="160px"
-            rootProps={selectIconRootProps(dir)}
             aria-label={labels.sortBy}
             placeholder={labels.sortBy}
             value={source.sortBy ?? ""}
@@ -218,7 +188,7 @@ export function Toolbar<TRow>({
                 {o.label}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
         )}
         {customToolbar}
         {hasFilters &&
@@ -241,10 +211,9 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {showRowsPerPage && (
-          <Select
+          <NativeSelect
             size="sm"
             w="90px"
-            rootProps={selectIconRootProps(dir)}
             aria-label={labels.rowsPerPage}
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
@@ -254,7 +223,7 @@ export function Toolbar<TRow>({
                 {n}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
         )}
       </HStack>
     </HStack>
@@ -276,17 +245,17 @@ export function Chips({
     <Wrap aria-label={labels.filters} as="ul" listStyleType="none">
       {chips.map((chip) => (
         <WrapItem key={chip.key} as="li">
-          <Tag size="md" borderRadius="full">
-            <TagLabel>{chip.label}</TagLabel>
-            <TagCloseButton
+          <Tag.Root size="md" borderRadius="full">
+            <Tag.Label>{chip.label}</Tag.Label>
+            <Tag.CloseTrigger
               aria-label={`${labels.clearAll}: ${chip.label}`}
               onClick={chip.onRemove}
             />
-          </Tag>
+          </Tag.Root>
         </WrapItem>
       ))}
       <WrapItem as="li">
-        <Button size="xs" variant="link" onClick={onClearAll}>
+        <Button size="xs" variant="plain" onClick={onClearAll}>
           {labels.clearAll}
         </Button>
       </WrapItem>
@@ -332,15 +301,15 @@ export function BulkBar({
         onClick: selection.selectAllMatching,
       };
   return (
-    <HStack spacing={2} justify="space-between" flexWrap="wrap">
+    <HStack gap={2} justify="space-between" flexWrap="wrap">
       {expandable ? (
-        <HStack spacing={2} flexWrap="wrap">
+        <HStack gap={2} flexWrap="wrap">
           <Text fontSize="sm">{banner.text}</Text>
           <Button
             size="xs"
-            variant="link"
-            colorScheme={colorScheme}
-            isDisabled={pending !== null}
+            variant="plain"
+            colorPalette={colorScheme}
+            disabled={pending !== null}
             onClick={banner.onClick}
           >
             {banner.action}
@@ -349,26 +318,26 @@ export function BulkBar({
       ) : (
         <Text fontSize="sm">{labels.selectedCount(selectedCount)}</Text>
       )}
-      <HStack spacing={2} flexWrap="wrap">
+      <HStack gap={2} flexWrap="wrap">
         <Button
           size="xs"
           variant="ghost"
           onClick={clear}
-          isDisabled={pending !== null}
+          disabled={pending !== null}
         >
           {labels.clearAll}
         </Button>
         {bulkActions.map((action) => {
           const reason = resolveDisabledReason(action.disabledReason?.(ids));
           return (
-            <Tooltip key={action.key} label={reason ?? ""} isDisabled={!reason}>
+            <Tooltip key={action.key} label={reason ?? ""} disabled={!reason}>
               <Button
                 size="xs"
-                colorScheme={action.color ?? colorScheme}
-                leftIcon={isValidElement(action.icon) ? action.icon : undefined}
-                isDisabled={reason !== undefined || pending !== null}
+                colorPalette={action.color ?? colorScheme}
+                disabled={reason !== undefined || pending !== null}
                 onClick={() => run(action, ids, scope)}
               >
+                {isValidElement(action.icon) ? action.icon : null}
                 {action.label}
               </Button>
             </Tooltip>
@@ -387,7 +356,6 @@ export function Footer({
   setPage,
   setLimit,
   labels,
-  dir,
   className,
 }: Readonly<{
   pagination: PaginationInfo;
@@ -396,27 +364,24 @@ export function Footer({
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
-  /** Writing direction (flips the select chevron). */
-  dir?: Direction;
   /** Class hook for the footer row. */
   className?: string;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
     <HStack
-      spacing={3}
+      gap={3}
       justify="space-between"
       flexWrap="wrap"
       className={className}
     >
-      <HStack spacing={2}>
+      <HStack gap={2}>
         <Text fontSize="xs" {...subtleText}>
           {labels.rowsPerPage}
         </Text>
-        <Select
+        <NativeSelect
           size="xs"
           w="72px"
-          rootProps={selectIconRootProps(dir)}
           aria-label={labels.rowsPerPage}
           value={String(limit)}
           onChange={(e) => setLimit(Number(e.target.value))}
@@ -426,21 +391,21 @@ export function Footer({
               {n}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
         {total > 0 && (
           <Text fontSize="xs" {...subtleText}>
             {labels.showing({ from: fromIndex, to: toIndex, total })}
           </Text>
         )}
       </HStack>
-      <HStack spacing={2}>
+      <HStack gap={2}>
         <Text fontSize="xs" {...subtleText}>
           {labels.pageOf({ page: safePage, total: totalPages })}
         </Text>
         <Button
           size="xs"
           aria-label={labels.previousPage}
-          isDisabled={safePage <= 1}
+          disabled={safePage <= 1}
           onClick={() => setPage(safePage - 1)}
         >
           ‹
@@ -448,7 +413,7 @@ export function Footer({
         <Button
           size="xs"
           aria-label={labels.nextPage}
-          isDisabled={safePage >= totalPages}
+          disabled={safePage >= totalPages}
           onClick={() => setPage(safePage + 1)}
         >
           ›
@@ -469,18 +434,18 @@ export function ErrorState({
   onRetry?: () => void;
 }>) {
   return (
-    <Alert status="error" borderRadius="md">
-      <AlertIcon />
-      <Box flex="1">
-        <Text fontWeight="bold">{labels.errorTitle}</Text>
-        <Text fontSize="sm">{error.message}</Text>
-      </Box>
+    <Alert.Root status="error" borderRadius="md">
+      <Alert.Indicator />
+      <Alert.Content flex="1">
+        <Alert.Title fontWeight="bold">{labels.errorTitle}</Alert.Title>
+        <Alert.Description fontSize="sm">{error.message}</Alert.Description>
+      </Alert.Content>
       {onRetry && (
         <Button size="sm" onClick={onRetry}>
           {labels.retry}
         </Button>
       )}
-    </Alert>
+    </Alert.Root>
   );
 }
 
@@ -498,7 +463,7 @@ export function LoadingState({
       data-testid="adapttable-loading"
     >
       {Array.from({ length: rows }, (_, r) => (
-        <HStack key={r} spacing={4}>
+        <HStack key={r} gap={4}>
           {Array.from({ length: Math.max(columns, 1) }, (_, c) => (
             <Skeleton key={c} height="14px" width={c === 0 ? "30%" : "20%"} />
           ))}
@@ -530,32 +495,40 @@ export function FilterDrawer({
   dir?: Direction;
 }>) {
   return (
-    <Drawer
-      isOpen={open}
-      onClose={onClose}
-      placement={dir === "rtl" ? "left" : "right"}
+    <Drawer.Root
+      open={open}
+      onOpenChange={(e) => {
+        if (!e.open) onClose();
+      }}
+      placement={dir === "rtl" ? "start" : "end"}
       size="sm"
     >
-      <DrawerOverlay />
-      <DrawerContent>
-        <DrawerCloseButton aria-label={labels.cancel} />
-        <DrawerHeader>{labels.filters}</DrawerHeader>
-        <DrawerBody>
-          <Stack spacing={4}>{filters}</Stack>
-        </DrawerBody>
-        <DrawerFooter justifyContent="space-between">
-          <Button
-            variant="ghost"
-            onClick={onClearFilters}
-            isDisabled={activeFilterCount === 0}
-          >
-            {labels.clearAll}
-          </Button>
-          <Button colorScheme={colorScheme} onClick={onClose}>
-            {labels.applyFilters}
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      <Portal>
+        <Drawer.Backdrop />
+        <Drawer.Positioner>
+          <Drawer.Content>
+            <Drawer.CloseTrigger asChild>
+              <CloseButton aria-label={labels.cancel} />
+            </Drawer.CloseTrigger>
+            <Drawer.Header>{labels.filters}</Drawer.Header>
+            <Drawer.Body>
+              <Stack gap={4}>{filters}</Stack>
+            </Drawer.Body>
+            <Drawer.Footer justifyContent="space-between">
+              <Button
+                variant="ghost"
+                onClick={onClearFilters}
+                disabled={activeFilterCount === 0}
+              >
+                {labels.clearAll}
+              </Button>
+              <Button colorPalette={colorScheme} onClick={onClose}>
+                {labels.applyFilters}
+              </Button>
+            </Drawer.Footer>
+          </Drawer.Content>
+        </Drawer.Positioner>
+      </Portal>
+    </Drawer.Root>
   );
 }

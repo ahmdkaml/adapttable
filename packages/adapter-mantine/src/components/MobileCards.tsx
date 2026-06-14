@@ -42,7 +42,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "paddingBottom"
   | "measureElement"
 > {
-  bodyRef: RefObject<HTMLDivElement>;
+  bodyRef: RefObject<HTMLDivElement | null>;
   className?: string;
   density?: Density;
 }

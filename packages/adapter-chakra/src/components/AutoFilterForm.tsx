@@ -16,18 +16,36 @@ import {
 } from "@adapttable/core";
 import {
   Checkbox,
-  CheckboxGroup,
-  FormControl,
-  FormLabel,
   HStack,
   Input,
-  Select,
   Spinner,
   Stack,
+  Text,
 } from "@chakra-ui/react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 
-import { selectIconRootProps } from "./chrome";
+import { FormField, NativeSelect } from "./primitives";
+
+/**
+ * A labelled GROUP wrapper for multi-control fields (the multiSelect checkbox
+ * group). Unlike {@link FormField} it does NOT use Ark's `Field.Root`, whose
+ * single-control labelling would hijack the first checkbox's id and name. The
+ * label carries an `id` so the group references it via `aria-labelledby`.
+ */
+function GroupField({
+  label,
+  id,
+  children,
+}: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
+  return (
+    <Stack gap={1}>
+      <Text id={id} as="span" fontSize="sm">
+        {label}
+      </Text>
+      {children}
+    </Stack>
+  );
+}
 
 /** The slice of the table source the auto-built form reads and writes. */
 export type FilterFormSource<TRow> = Pick<
@@ -71,12 +89,10 @@ function RangeField<TRow>({
   def,
   source,
   labels,
-  dir,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
-  dir?: Direction;
 }>) {
   const id = useId();
   const { extra, setExtras } = source;
@@ -96,22 +112,16 @@ function RangeField<TRow>({
   const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
     setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
   return (
-    <FormControl>
-      <FormLabel fontSize="sm" mb={1}>
-        {label}
-      </FormLabel>
+    <FormField label={label}>
       {/* Operator and value(s) share ONE row — it reads like a sentence:
           "At least [5]". */}
-      <HStack spacing={2} align="flex-start" flexWrap="wrap" rowGap={2}>
+      <HStack gap={2} align="flex-start" flexWrap="wrap" rowGap={2}>
         {/* Chakra renders `placeholder` as the empty first option, so the
             operator placeholder doubles as the "no comparison" clear choice. */}
-        <Select
+        <NativeSelect
           size="sm"
-          rootProps={{
-            ...selectIconRootProps(dir),
-            flex: "0 0 8.5rem",
-            w: "8.5rem",
-          }}
+          flex="0 0 8.5rem"
+          w="8.5rem"
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
@@ -125,7 +135,7 @@ function RangeField<TRow>({
               {labels[opLabels[o]]}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
         {op === "between" ? (
           <>
             <Input
@@ -167,7 +177,7 @@ function RangeField<TRow>({
           )
         )}
       </HStack>
-    </FormControl>
+    </FormField>
   );
 }
 
@@ -177,13 +187,11 @@ function AutoFilterField<TRow>({
   source,
   labels,
   colorScheme,
-  dir,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   colorScheme?: string;
-  dir?: Direction;
 }>) {
   const id = useId();
   const { extra, setExtra } = source;
@@ -194,27 +202,20 @@ function AutoFilterField<TRow>({
   switch (def.type) {
     case "text":
       return (
-        <FormControl>
-          <FormLabel fontSize="sm" mb={1}>
-            {label}
-          </FormLabel>
+        <FormField label={label}>
           <Input
             size="sm"
             value={scalar(extra[def.key])}
             placeholder={def.placeholder}
             onChange={(e) => setExtra(def.key, e.target.value)}
           />
-        </FormControl>
+        </FormField>
       );
     case "select":
       return (
-        <FormControl>
-          <FormLabel fontSize="sm" mb={1}>
-            {label}
-          </FormLabel>
-          <Select
+        <FormField label={label}>
+          <NativeSelect
             size="sm"
-            rootProps={selectIconRootProps(dir)}
             value={scalar(extra[def.key])}
             onChange={(e) => setExtra(def.key, e.target.value)}
           >
@@ -232,42 +233,60 @@ function AutoFilterField<TRow>({
                 ))}
               </>
             )}
-          </Select>
-        </FormControl>
+          </NativeSelect>
+        </FormField>
       );
-    case "multiSelect":
+    case "multiSelect": {
+      // A multiSelect is a GROUP of checkboxes, not a single labellable
+      // control, so it uses a plain group label (an Ark `Field.Root` would
+      // hijack the labelling onto the first checkbox). Each box self-labels
+      // through its own `Checkbox.Label`, derives its checked state from the
+      // current list, and toggles itself in/out via the input's `onChange`
+      // (the reliable single-source toggle in jsdom and the browser alike).
+      const selected = list(extra[def.key]);
+      const toggle = (value: string) =>
+        setExtra(
+          def.key,
+          selected.includes(value)
+            ? selected.filter((v) => v !== value)
+            : [...selected, value]
+        );
       return (
-        <FormControl>
-          <FormLabel fontSize="sm" mb={1}>
-            {label}
-          </FormLabel>
-          <CheckboxGroup
-            colorScheme={colorScheme}
-            value={list(extra[def.key])}
-            onChange={(next) => setExtra(def.key, next.map(String))}
-          >
-            {loading ? (
-              <Spinner size="xs" />
-            ) : (
-              <HStack spacing={3} flexWrap="wrap" rowGap={1}>
-                {options.map((option, index) => (
-                  <Checkbox
-                    key={option.value}
-                    id={`${id}-${index}`}
-                    size="sm"
-                    value={option.value}
-                  >
-                    {option.label}
-                  </Checkbox>
-                ))}
-              </HStack>
-            )}
-          </CheckboxGroup>
-        </FormControl>
+        <GroupField label={label} id={id}>
+          {loading ? (
+            <Spinner size="xs" />
+          ) : (
+            <HStack
+              gap={3}
+              flexWrap="wrap"
+              rowGap={1}
+              role="group"
+              aria-labelledby={id}
+            >
+              {options.map((option, index) => (
+                <Checkbox.Root
+                  key={option.value}
+                  id={`${id}-${index}`}
+                  size="sm"
+                  colorPalette={colorScheme}
+                  value={option.value}
+                  checked={selected.includes(option.value)}
+                >
+                  {/* `onClick` (not `onChange`): Ark sets `checked`
+                      imperatively, desyncing React's change tracker. */}
+                  <Checkbox.HiddenInput onClick={() => toggle(option.value)} />
+                  <Checkbox.Control />
+                  <Checkbox.Label>{option.label}</Checkbox.Label>
+                </Checkbox.Root>
+              ))}
+            </HStack>
+          )}
+        </GroupField>
       );
+    }
     case "dateRange":
     case "numberRange":
-      return <RangeField def={def} source={source} labels={labels} dir={dir} />;
+      return <RangeField def={def} source={source} labels={labels} />;
   }
 }
 
@@ -283,12 +302,11 @@ export function AutoFilterForm<TRow>({
   defs,
   source,
   colorScheme,
-  dir,
   labels,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
-    <Stack spacing={3}>
+    <Stack gap={3}>
       {defs.map((def) => (
         <AutoFilterField
           key={def.key}
@@ -296,7 +314,6 @@ export function AutoFilterForm<TRow>({
           source={source}
           labels={resolved}
           colorScheme={colorScheme}
-          dir={dir}
         />
       ))}
     </Stack>

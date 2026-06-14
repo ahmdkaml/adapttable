@@ -80,7 +80,7 @@ export function FilterPopover({
       trigger={[]}
       placement={dir === "rtl" ? "bottomLeft" : "bottomRight"}
       content={content}
-      styles={{ body: { padding: 12 } }}
+      styles={{ content: { padding: 12 } }}
     >
       <span ref={anchorRef}>{children}</span>
     </Popover>

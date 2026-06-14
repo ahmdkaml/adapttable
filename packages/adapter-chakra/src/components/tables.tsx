@@ -28,32 +28,25 @@ import {
   Box,
   Button,
   Card,
-  CardBody,
-  Checkbox,
+  chakra,
   HStack,
   IconButton,
   Stack,
   Table,
-  Tbody,
-  Td,
   Text,
-  Tfoot,
-  Th,
-  Thead,
-  Tooltip,
-  Tr,
 } from "@chakra-ui/react";
 import {
   type CSSProperties,
   memo,
-  type MutableRefObject,
   type ReactNode,
+  type RefObject,
   useCallback,
   useMemo,
   useRef,
 } from "react";
 
 import { subtleText } from "../styles";
+import { Checkbox, Tooltip } from "./primitives";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -197,9 +190,10 @@ function ExpandToggle({
       variant="ghost"
       aria-expanded={open}
       aria-label={open ? labels.collapseRow : labels.expandRow}
-      icon={<ExpandChevron open={open} dir={dir} />}
       onClick={onToggle}
-    />
+    >
+      <ExpandChevron open={open} dir={dir} />
+    </IconButton>
   );
 }
 
@@ -217,7 +211,7 @@ function RowActionButtons<TRow>({
   colorScheme?: string;
 }>) {
   return (
-    <HStack spacing={1} justify="flex-end">
+    <HStack gap={1} justify="flex-end">
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
         const reason = resolveDisabledReason(action.disabledReason?.(row));
@@ -233,26 +227,27 @@ function RowActionButtons<TRow>({
             };
         // Icon-only actions use IconButton (with a tooltip for the name);
         // text actions use a real Button so the label actually renders
-        // (IconButton ignores children).
+        // (IconButton renders only the icon child).
         return action.icon ? (
           <Tooltip key={action.key} label={reason ?? action.label}>
             <IconButton
               size="sm"
               variant="ghost"
-              colorScheme={action.color ?? colorScheme}
-              isDisabled={disabled}
+              colorPalette={action.color ?? colorScheme}
+              disabled={disabled}
               aria-label={action.label}
-              icon={action.icon as React.ReactElement}
               onClick={handleClick}
-            />
+            >
+              {action.icon}
+            </IconButton>
           </Tooltip>
         ) : (
           <Tooltip key={action.key} label={reason ?? action.label}>
             <Button
               size="sm"
               variant="ghost"
-              colorScheme={action.color ?? colorScheme}
-              isDisabled={disabled}
+              colorPalette={action.color ?? colorScheme}
+              disabled={disabled}
               onClick={handleClick}
             >
               {action.label}
@@ -310,7 +305,7 @@ interface DesktopRowProps<TRow> {
   /** Spacer/detail colSpan (selection + data + actions + expansion). */
   columnSpan: number;
   /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
-  api: MutableRefObject<DesktopRowApi<TRow>>;
+  api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
   measureRef: (element: HTMLTableRowElement | null) => void;
 }
@@ -377,7 +372,7 @@ function DesktopRowBase<TRow>({
   };
   return (
     <>
-      <Tr
+      <Table.Row
         {...rowClickProps(row, hasRowClick ? activateRow : undefined)}
         ref={measureRef}
         data-index={index}
@@ -387,17 +382,20 @@ function DesktopRowBase<TRow>({
         onMouseEnter={() => api.current.prefetch?.(row)}
       >
         {expandable && (
-          <Td px={1} style={edgeCellStyle("left", live.hasLeftPin, PIN_Z.body)}>
+          <Table.Cell
+            px={1}
+            style={edgeCellStyle("left", live.hasLeftPin, PIN_Z.body)}
+          >
             <ExpandToggle
               open={expanded}
               dir={dir}
               labels={labels}
               onToggle={() => api.current.expansion?.toggle(id)}
             />
-          </Td>
+          </Table.Cell>
         )}
         {hasSelection && (
-          <Td
+          <Table.Cell
             style={edgeCellStyle(
               "left",
               live.hasLeftPin,
@@ -407,13 +405,13 @@ function DesktopRowBase<TRow>({
           >
             <Checkbox
               aria-label={labels.selectRow}
-              isChecked={selected}
-              onChange={() => api.current.selection?.toggle(id)}
+              checked={selected}
+              onToggle={() => api.current.selection?.toggle(id)}
             />
-          </Td>
+          </Table.Cell>
         )}
         {columns.map((column) => (
-          <Td
+          <Table.Cell
             key={column.key}
             textAlign={chakraAlign(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
@@ -423,10 +421,10 @@ function DesktopRowBase<TRow>({
             ) : (
               column.accessor?.(row)
             )}
-          </Td>
+          </Table.Cell>
         ))}
         {showActions && (
-          <Td
+          <Table.Cell
             textAlign="end"
             style={edgeCellStyle("right", live.actionsStick, PIN_Z.body)}
           >
@@ -437,13 +435,15 @@ function DesktopRowBase<TRow>({
               cancelLabel={labels.cancel}
               colorScheme={colorScheme}
             />
-          </Td>
+          </Table.Cell>
         )}
-      </Tr>
+      </Table.Row>
       {expandable && expanded && (
-        <Tr>
-          <Td colSpan={columnSpan}>{api.current.renderRowDetail?.(row)}</Td>
-        </Tr>
+        <Table.Row>
+          <Table.Cell colSpan={columnSpan}>
+            {api.current.renderRowDetail?.(row)}
+          </Table.Cell>
+        </Table.Row>
       )}
     </>
   );
@@ -630,20 +630,20 @@ export function DesktopTable<TRow>({
       }
       overflowY={maxHeight == null ? undefined : "auto"}
     >
-      <Table
+      <Table.Root
         size={size}
         data-size={size}
         className={className}
         minW={minWidth > 0 ? `${minWidth}px` : undefined}
-        aria-label={table.getTableProps()["aria-label"] as string}
+        aria-label={table.getTableProps()["aria-label"]}
       >
-        <Thead>
+        <Table.Header>
           {groups && (
-            <Tr>
-              {expandable && <Th px={1} />}
-              {selection && <Th />}
+            <Table.Row>
+              {expandable && <Table.ColumnHeader px={1} />}
+              {selection && <Table.ColumnHeader />}
               {groups.map((cell) => (
-                <Th
+                <Table.ColumnHeader
                   key={cell.key}
                   colSpan={cell.span}
                   textAlign="center"
@@ -651,14 +651,14 @@ export function DesktopTable<TRow>({
                   textTransform="none"
                 >
                   {cell.label}
-                </Th>
+                </Table.ColumnHeader>
               ))}
-              {showActions && <Th />}
-            </Tr>
+              {showActions && <Table.ColumnHeader />}
+            </Table.Row>
           )}
-          <Tr>
+          <Table.Row>
             {expandable && (
-              <Th
+              <Table.ColumnHeader
                 {...stickyTh}
                 aria-label={labels.expandRow}
                 width={`${EXPANSION_WIDTH}px`}
@@ -667,7 +667,7 @@ export function DesktopTable<TRow>({
               />
             )}
             {selection && (
-              <Th
+              <Table.ColumnHeader
                 {...stickyTh}
                 style={edgeCellStyle(
                   "left",
@@ -678,11 +678,11 @@ export function DesktopTable<TRow>({
               >
                 <Checkbox
                   aria-label={labels.selectAll}
-                  isChecked={selection.headerState === "all"}
-                  isIndeterminate={selection.headerState === "some"}
-                  onChange={selection.toggleAll}
+                  checked={selection.headerState === "all"}
+                  indeterminate={selection.headerState === "some"}
+                  onToggle={selection.toggleAll}
                 />
-              </Th>
+              </Table.ColumnHeader>
             )}
             {columns.map((column) => {
               const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
@@ -694,14 +694,10 @@ export function DesktopTable<TRow>({
               // a shift-click cycles the column through the sort chain while a
               // plain click keeps single-sorting.
               const sortButton = table.getSortButtonProps(column);
-              const sortClick = sortButton.onClick as (event: {
-                shiftKey: boolean;
-              }) => void;
-              const sortIndex = sortButton["data-sort-index"] as
-                | number
-                | undefined;
+              const sortClick = sortButton.onClick;
+              const sortIndex = sortButton["data-sort-index"];
               return (
-                <Th
+                <Table.ColumnHeader
                   key={column.key}
                   textAlign={chakraAlign(column.align)}
                   width={column.width}
@@ -710,8 +706,7 @@ export function DesktopTable<TRow>({
                   style={headCellStyle(column)}
                 >
                   {column.sortable ? (
-                    <Box
-                      as="button"
+                    <chakra.button
                       type="button"
                       cursor="pointer"
                       aria-label={`${labels.sortBy}: ${columnName(column)}`}
@@ -737,7 +732,7 @@ export function DesktopTable<TRow>({
                           {sortIndex}
                         </Text>
                       )}
-                    </Box>
+                    </chakra.button>
                   ) : (
                     column.header
                   )}
@@ -752,25 +747,25 @@ export function DesktopTable<TRow>({
                       )}
                     />
                   )}
-                </Th>
+                </Table.ColumnHeader>
               );
             })}
             {showActions && (
-              <Th
+              <Table.ColumnHeader
                 textAlign="end"
                 {...stickyTh}
                 style={edgeCellStyle("right", actionsStick, PIN_Z.headerPinned)}
               >
                 {labels.actions}
-              </Th>
+              </Table.ColumnHeader>
             )}
-          </Tr>
-        </Thead>
-        <Tbody>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {paddingTop > 0 && (
-            <Tr aria-hidden>
-              <Td colSpan={columnSpan} h={`${paddingTop}px`} p={0} />
-            </Tr>
+            <Table.Row aria-hidden>
+              <Table.Cell colSpan={columnSpan} h={`${paddingTop}px`} p={0} />
+            </Table.Row>
           )}
           {entries.map(({ row, index, key }) => {
             const id = getRowId(row);
@@ -801,26 +796,29 @@ export function DesktopTable<TRow>({
             );
           })}
           {paddingBottom > 0 && (
-            <Tr aria-hidden>
-              <Td colSpan={columnSpan} h={`${paddingBottom}px`} p={0} />
-            </Tr>
+            <Table.Row aria-hidden>
+              <Table.Cell colSpan={columnSpan} h={`${paddingBottom}px`} p={0} />
+            </Table.Row>
           )}
-        </Tbody>
+        </Table.Body>
         {summary && (
-          <Tfoot>
-            <Tr>
-              {expandable && <Td px={1} />}
-              {selection && <Td />}
+          <Table.Footer>
+            <Table.Row>
+              {expandable && <Table.Cell px={1} />}
+              {selection && <Table.Cell />}
               {columns.map((column) => (
-                <Td key={column.key} textAlign={chakraAlign(column.align)}>
+                <Table.Cell
+                  key={column.key}
+                  textAlign={chakraAlign(column.align)}
+                >
                   {summary[column.key]}
-                </Td>
+                </Table.Cell>
               ))}
-              {showActions && <Td />}
-            </Tr>
-          </Tfoot>
+              {showActions && <Table.Cell />}
+            </Table.Row>
+          </Table.Footer>
         )}
-      </Table>
+      </Table.Root>
     </Box>
   );
 }
@@ -859,16 +857,16 @@ export function MobileCards<TRow>({
   const summary = summaryRow?.(rows);
   return (
     <Stack
-      spacing={compact ? 2 : 3}
+      gap={compact ? 2 : 3}
       role="list"
-      aria-label={table.getTableProps()["aria-label"] as string}
+      aria-label={table.getTableProps()["aria-label"]}
     >
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
       {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
         const expanded = expansion?.isExpanded(id) ?? false;
         return (
-          <Card
+          <Card.Root
             key={key}
             ref={measureElement}
             data-index={index}
@@ -877,12 +875,12 @@ export function MobileCards<TRow>({
             className={joinClasses(className, rowClassName?.(row, index))}
             {...rowClickProps(row, onRowClick)}
           >
-            <CardBody p={compact ? 3 : undefined}>
+            <Card.Body p={compact ? 3 : undefined}>
               {selection && (
                 <Checkbox
                   aria-label={labels.selectRow}
-                  isChecked={selection.isSelected(id)}
-                  onChange={() => selection.toggle(id)}
+                  checked={selection.isSelected(id)}
+                  onToggle={() => selection.toggle(id)}
                   mb={2}
                 />
               )}
@@ -922,14 +920,14 @@ export function MobileCards<TRow>({
                   colorScheme={colorScheme}
                 />
               )}
-            </CardBody>
-          </Card>
+            </Card.Body>
+          </Card.Root>
         );
       })}
       {paddingBottom > 0 && <Box aria-hidden h={`${paddingBottom}px`} />}
       {summary && (
-        <Card variant="outline" role="listitem" className={className}>
-          <CardBody p={compact ? 3 : undefined}>
+        <Card.Root variant="outline" role="listitem" className={className}>
+          <Card.Body p={compact ? 3 : undefined}>
             {columns.map((column) => {
               const value = summary[column.key];
               // Columns absent from the summary are skipped — a card has no
@@ -946,8 +944,8 @@ export function MobileCards<TRow>({
                 </Box>
               );
             })}
-          </CardBody>
-        </Card>
+          </Card.Body>
+        </Card.Root>
       )}
     </Stack>
   );

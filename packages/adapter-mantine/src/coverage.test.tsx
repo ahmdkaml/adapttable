@@ -216,7 +216,7 @@ describe("PaginationFooter onChange handlers", () => {
     expect(document.querySelector(".mantine-Pagination-dots")).not.toBeNull();
 
     // The combobox input carries the aria-label; open it and pick a new size.
-    const sizeSelect = screen.getByRole("textbox", {
+    const sizeSelect = screen.getByRole("combobox", {
       name: defaultLabels.rowsPerPage,
     });
     fireEvent.click(sizeSelect);
@@ -238,7 +238,7 @@ describe("Toolbar onChange + placeholder branches", () => {
     const adapter = mount({
       sortByOptions: [{ value: "name", label: "Name" }],
     });
-    const select = screen.getByRole("textbox", { name: "Sort by" });
+    const select = screen.getByRole("combobox", { name: "Sort by" });
     fireEvent.click(select);
     const option = screen
       .getAllByText("Name")

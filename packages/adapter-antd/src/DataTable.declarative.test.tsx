@@ -222,7 +222,7 @@ describe("header groups (antd native grouped columns)", () => {
     expect(
       screen.getByRole("columnheader", { name: "Geo" })
     ).toBeInTheDocument();
-    expect(container.querySelector(".ant-table-cell-fix-left")).not.toBeNull();
+    expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
   });
 
   it("splits a group when its columns are no longer adjacent", () => {

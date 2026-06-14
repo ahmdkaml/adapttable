@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 
 import { visibleColumns } from "../columns/visibleColumns";
@@ -107,13 +108,57 @@ export interface UseDataTableResult<TRow> {
   source: TableSource<TRow>;
 
   /* ── Prop-getters (merge caller overrides) ───────────────────────── */
-  getTableProps: (props?: Props) => Props;
+  getTableProps: (props?: Props) => TableElementProps;
   getHeaderRowProps: (props?: Props) => Props;
-  getHeaderCellProps: (column: ColumnDef<TRow>, props?: Props) => Props;
-  getSortButtonProps: (column: ColumnDef<TRow>, props?: Props) => Props;
+  getHeaderCellProps: (
+    column: ColumnDef<TRow>,
+    props?: Props
+  ) => CellElementProps;
+  getSortButtonProps: (
+    column: ColumnDef<TRow>,
+    props?: Props
+  ) => SortButtonElementProps;
   getRowProps: (row: TRow, index: number, props?: Props) => Props;
-  getCellProps: (column: ColumnDef<TRow>, props?: Props) => Props;
-  getSearchInputProps: (props?: Props) => Props;
+  getCellProps: (column: ColumnDef<TRow>, props?: Props) => CellElementProps;
+  getSearchInputProps: (props?: Props) => SearchInputElementProps;
+}
+
+/* Precise prop-getter return shapes. Each extends `Props` (keeping the
+   index signature so caller overrides still merge and `mergeProps` stays
+   compatible) while typing the known keys — so adapters read them without
+   casts. */
+
+/** Props from {@link UseDataTableResult.getTableProps}. */
+export interface TableElementProps extends Props {
+  role: string;
+  dir?: Direction;
+  "aria-label": string;
+}
+
+/** Props from {@link UseDataTableResult.getSortButtonProps}. */
+export interface SortButtonElementProps extends Props {
+  type: "button";
+  disabled: boolean;
+  onClick: (event?: { shiftKey?: boolean }) => void;
+  "data-sort-index"?: number;
+  "aria-label": string;
+}
+
+/** Props from {@link UseDataTableResult.getCellProps} / `getHeaderCellProps`. */
+export interface CellElementProps extends Props {
+  role: string;
+  style?: CSSProperties;
+  "data-sort-index"?: number;
+}
+
+/** Props from {@link UseDataTableResult.getSearchInputProps}. */
+export interface SearchInputElementProps extends Props {
+  type: string;
+  role: string;
+  value: string;
+  placeholder: string;
+  "aria-label": string;
+  onChange: (event: { currentTarget: { value: string } }) => void;
 }
 
 function textAlign(
@@ -295,7 +340,7 @@ export function useDataTable<TRow>(
 
   const getSortButtonProps = useCallback(
     (column: ColumnDef<TRow>, props?: Props) =>
-      mergeProps(
+      mergeProps<SortButtonElementProps>(
         {
           type: "button",
           disabled: !column.sortable,

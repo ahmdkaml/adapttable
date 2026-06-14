@@ -9,7 +9,7 @@ import {
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
-import type { MutableRefObject, ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -232,8 +232,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
   // null>` through interface variance; the same object viewed through its
   // structural shape attaches fine.
-  const loadMoreRef: MutableRefObject<HTMLDivElement | null> =
-    bodyData.loadMoreRef;
+  const loadMoreRef: RefObject<HTMLDivElement | null> = bodyData.loadMoreRef;
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );

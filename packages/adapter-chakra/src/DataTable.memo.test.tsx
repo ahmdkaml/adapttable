@@ -4,7 +4,7 @@
  * changes — a search keystroke, a hover, or another row's selection.
  */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -49,7 +49,7 @@ function mount(override: Partial<Parameters<typeof DataTable<Row>>[0]> = {}) {
     );
   }
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );

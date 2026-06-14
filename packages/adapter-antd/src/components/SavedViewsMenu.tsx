@@ -99,7 +99,7 @@ export function SavedViewsMenu({
       onOpenChange={setOpen}
       placement={dir === "rtl" ? "bottomLeft" : "bottomRight"}
       content={content}
-      styles={{ body: { padding: 0 } }}
+      styles={{ content: { padding: 0 } }}
     >
       <Button aria-expanded={open} aria-haspopup="true">
         {labels.savedViews}

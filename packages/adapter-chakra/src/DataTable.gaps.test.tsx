@@ -6,7 +6,7 @@ import {
   useFrontendData,
   type VirtualTableRow,
 } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -82,7 +82,7 @@ function mount(
     );
   }
   render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );

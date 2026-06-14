@@ -187,7 +187,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else if (c.body === "empty") {
     body = slots?.empty ?? (
-      <Stack role="status" spacing={1.5} alignItems="center" sx={{ py: 6 }}>
+      <Stack role="status" spacing={1.5} sx={{ py: 6, alignItems: "center" }}>
         <Typography color="text.secondary" align="center">
           {c.emptyVariant === "noResults" ? labels.noResults : labels.noData}
         </Typography>
@@ -311,7 +311,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           body
         )}
         {canLoadMore && source.hasNextPage && (
-          <Box ref={loadMoreRef} display="flex" justifyContent="center" py={1}>
+          <Box
+            ref={loadMoreRef}
+            sx={{ display: "flex", justifyContent: "center", py: 1 }}
+          >
             <Button
               variant="outlined"
               size="small"

@@ -46,8 +46,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
@@ -58,22 +58,22 @@
     "@adapttable/core": "workspace:*"
   },
   "peerDependencies": {
-    "@chakra-ui/react": "^2.8.0",
+    "@chakra-ui/react": "^3.0.0",
     "@emotion/react": "^11.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@chakra-ui/react": "^2.10.4",
+    "@chakra-ui/react": "^3.36.0",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
-    "axe-core": "^4.12.0",
-    "framer-motion": "^11.15.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@emotion/styled": "^11.14.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "axe-core": "^4.12.1",
+    "framer-motion": "^12.40.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "vitest-axe": "^0.1.0"
   },
   "publishConfig": {

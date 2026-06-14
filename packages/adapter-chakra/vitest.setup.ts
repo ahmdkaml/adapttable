@@ -17,3 +17,50 @@ if (typeof globalThis.matchMedia !== "function") {
     dispatchEvent: () => false,
   });
 }
+
+// Chakra v3 overlays (Popover / Drawer) position via Ark's zag + floating-ui,
+// which observe element size to keep the floating card anchored. jsdom ships
+// neither observer, so polyfill them with inert stubs — the tests assert DOM
+// presence and behaviour, not pixel placement.
+const noop = (): undefined => undefined;
+
+globalThis.ResizeObserver ??= class {
+  observe(): void {
+    noop();
+  }
+  unobserve(): void {
+    noop();
+  }
+  disconnect(): void {
+    noop();
+  }
+};
+
+globalThis.IntersectionObserver ??= class implements IntersectionObserver {
+  readonly root: Document | Element | null = null;
+  readonly rootMargin: string = "";
+  readonly scrollMargin: string = "";
+  readonly thresholds: readonly number[] = [];
+  constructor(
+    _callback: IntersectionObserverCallback,
+    _options?: IntersectionObserverInit
+  ) {
+    noop();
+  }
+  observe(): void {
+    noop();
+  }
+  unobserve(): void {
+    noop();
+  }
+  disconnect(): void {
+    noop();
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+};
+
+if (typeof Element.prototype.scrollTo !== "function") {
+  Element.prototype.scrollTo = noop;
+}

@@ -4,7 +4,7 @@
  * RTL chevron flipping, and the interplay with row activation and pinning.
  */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -51,7 +51,7 @@ function mount(
     );
   }
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness />
     </ChakraProvider>
   );
@@ -114,7 +114,7 @@ describe("<DataTable> (Chakra) row expansion — desktop", () => {
       name: "Expand row",
     })[0]!;
     // Closed LTR: the chevron points into the row untransformed.
-    expect(getComputedStyle(svgOf(ltrToggle)).transform).toBe("");
+    expect(getComputedStyle(svgOf(ltrToggle)).transform).toBe("none");
     fireEvent.click(ltrToggle);
     const openToggle = screen.getByRole("button", { name: "Collapse row" });
     expect(getComputedStyle(svgOf(openToggle)).transform).toBe("rotate(90deg)");
@@ -155,7 +155,7 @@ describe("<DataTable> (Chakra) row expansion — desktop", () => {
       name: "Expand row",
     });
     expect(chevronTh.style.position).toBe("sticky");
-    expect(chevronTh.style.insetInlineStart).toBe("0");
+    expect(chevronTh.style.insetInlineStart).toBe("0px");
     const selectTh = screen.getByLabelText("Select all").closest("th")!;
     expect(selectTh.style.position).toBe("sticky");
     expect(selectTh.style.insetInlineStart).toBe("32px");

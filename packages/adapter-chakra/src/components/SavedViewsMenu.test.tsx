@@ -34,7 +34,9 @@ function memoryStorage(): LayoutStorage & { dump: () => string | null } {
   };
 }
 
-function mount(initialSearch = "t.q=alice&other=1") {
+// v3's Popover (Ark) mounts its content one render after the trigger opens,
+// so the menu fields appear asynchronously — await them before querying.
+async function mount(initialSearch = "t.q=alice&other=1") {
   const adapter = createMemoryAdapter(initialSearch);
   const storage = memoryStorage();
   renderChakra(
@@ -44,6 +46,7 @@ function mount(initialSearch = "t.q=alice&other=1") {
     />
   );
   fireEvent.click(screen.getByRole("button", { name: "Saved views" }));
+  await screen.findByPlaceholderText("View name");
   return { adapter, storage };
 }
 
@@ -57,8 +60,8 @@ function saveAs(name: string) {
 }
 
 describe("<SavedViewsMenu> (Chakra)", () => {
-  it("disables save while the name is empty and clears it after saving", () => {
-    const { storage } = mount();
+  it("disables save while the name is empty and clears it after saving", async () => {
+    const { storage } = await mount();
     expect(saveButton()).toBeDisabled();
     // Whitespace-only names stay disabled — a view needs a real name.
     fireEvent.change(nameInput(), { target: { value: "   " } });
@@ -76,8 +79,8 @@ describe("<SavedViewsMenu> (Chakra)", () => {
     expect(storage.dump()).toContain("t.q=alice");
   });
 
-  it("applies a saved view: restores this table's params, leaves others", () => {
-    const { adapter } = mount();
+  it("applies a saved view: restores this table's params, leaves others", async () => {
+    const { adapter } = await mount();
     saveAs("Mine");
     // The table's state moves on (and an unrelated param changes too).
     act(() => adapter.setSearch("t.q=bob&t.page=2&other=2"));
@@ -88,8 +91,8 @@ describe("<SavedViewsMenu> (Chakra)", () => {
     expect(adapter.getSearch()).toBe("other=2&t.q=alice");
   });
 
-  it("deletes a view from its trailing icon button", () => {
-    const { storage } = mount();
+  it("deletes a view from its trailing icon button", async () => {
+    const { storage } = await mount();
     saveAs("First");
     saveAs("Second");
 

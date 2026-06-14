@@ -1,6 +1,6 @@
 /** Coverage-fill: column management, resize, footer limit, drawer close. */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import {
   fireEvent,
   render,
@@ -54,7 +54,7 @@ function Harness(props: {
 function renderHarness(props: Parameters<typeof Harness>[0] = {}, url = "") {
   adapter = createMemoryAdapter(url);
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <Harness {...props} />
     </ChakraProvider>
   );
@@ -157,6 +157,21 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
     });
     // The drawer close button invokes onClose → setFiltersOpen(false).
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitForElementToBeRemoved(body);
+    expect(screen.queryByText("filter body")).toBeNull();
+  });
+
+  it("closes the filter drawer on Escape (Ark dismiss → onClose)", async () => {
+    renderHarness({
+      override: { filters: <div>filter body</div>, filtersMode: "drawer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    const body = await screen.findByText("filter body", undefined, {
+      timeout: 5000,
+    });
+    // Escape runs the drawer's `onOpenChange({ open: false })` → `onClose`
+    // (distinct from the Cancel button, which calls `onClose` directly).
+    fireEvent.keyDown(document.body, { key: "Escape" });
     await waitForElementToBeRemoved(body);
     expect(screen.queryByText("filter body")).toBeNull();
   });

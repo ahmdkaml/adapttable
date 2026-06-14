@@ -821,12 +821,12 @@ describe("actions column in the column layout", () => {
     // Header and body cells both turn sticky at the inline end…
     const th = screen.getByText("Actions").closest("th")!;
     expect(th.style.position).toBe("sticky");
-    expect(th.style.insetInlineEnd).toBe("0");
+    expect(th.style.insetInlineEnd).toBe("0px");
     const td = screen
       .getAllByRole("button", { name: "Edit" })[0]!
       .closest("td")!;
     expect(td.style.position).toBe("sticky");
-    expect(td.style.insetInlineEnd).toBe("0");
+    expect(td.style.insetInlineEnd).toBe("0px");
     // …while every data column stays in normal flow.
     expect(screen.getByText("Name").closest("th")!.style.position).not.toBe(
       "sticky"
@@ -864,7 +864,7 @@ describe("actions column in the column layout", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
     const cityTh = screen.getByText("City").closest("th")!;
     expect(cityTh.style.position).toBe("sticky");
-    expect(cityTh.style.insetInlineEnd).toBe("0");
+    expect(cityTh.style.insetInlineEnd).toBe("0px");
   });
 
   it("manages the actions column from the Columns menu", async () => {
@@ -879,7 +879,7 @@ describe("actions column in the column layout", () => {
     fireEvent.click(menuToggle("Pin right: Actions"));
     const th = within(table()).getByText("Actions").closest("th")!;
     expect(th.style.position).toBe("sticky");
-    expect(th.style.insetInlineEnd).toBe("0");
+    expect(th.style.insetInlineEnd).toBe("0px");
 
     // The eye hides the whole column; the menu keeps the row to re-show it.
     fireEvent.click(menuToggle("Hide column: Actions"));
@@ -934,6 +934,6 @@ describe("actions column in the column layout", () => {
       .getByText("Actions")
       .closest("th")!;
     expect(th.style.position).toBe("sticky");
-    expect(th.style.insetInlineEnd).toBe("0");
+    expect(th.style.insetInlineEnd).toBe("0px");
   });
 });

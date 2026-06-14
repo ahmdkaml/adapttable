@@ -72,10 +72,9 @@ export function FilterPopover({
           <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
             <Stack
               direction="row"
-              justifyContent="space-between"
-              alignItems="center"
+              sx={{ justifyContent: "space-between", alignItems: "center" }}
             >
-              <Typography variant="subtitle1" fontWeight={600}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 {labels.filters}
               </Typography>
               <Button

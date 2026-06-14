@@ -1,5 +1,5 @@
 import { type ColumnDef, DataTable } from "@adapttable/chakra";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
 interface Invoice {
   id: string;
@@ -29,7 +29,7 @@ const columns: ColumnDef<Invoice>[] = [
 /** Selection + bulk actions with a confirmation dialog. */
 export function ChakraSelectionExample() {
   return (
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <DataTable
         data={INVOICES}
         columns={columns}

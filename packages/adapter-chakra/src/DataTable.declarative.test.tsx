@@ -1,5 +1,5 @@
 import { createMemoryAdapter, type TableQuery } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -51,7 +51,7 @@ const COLUMNS: ColumnDef<Person>[] = [
 
 function renderTable(override: Partial<DataTableProps<Person>> = {}) {
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <DataTable<Person>
         data={PEOPLE}
         columns={COLUMNS}
@@ -65,19 +65,20 @@ function renderTable(override: Partial<DataTableProps<Person>> = {}) {
 }
 
 describe("<DataTable> declarative tiers (Chakra)", () => {
-  it("column filter shorthands alone (no filters prop) render the auto form", () => {
+  it("column filter shorthands alone (no filters prop) render the auto form", async () => {
     renderTable({ filters: undefined });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
-    expect(screen.getByLabelText("Status")).toBeInTheDocument();
+    // v3's Popover mounts its content a tick after opening — await the form.
+    expect(await screen.findByLabelText("Status")).toBeInTheDocument();
   });
 
-  it("zero-ceremony e2e: a column select filter narrows rows, chips appear, clear-all restores", () => {
+  it("zero-ceremony e2e: a column select filter narrows rows, chips appear, clear-all restores", async () => {
     renderTable();
     expect(screen.getByText("Bob")).toBeInTheDocument();
 
     // Open the filter popover and pick a status from the auto-built form.
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
-    fireEvent.change(screen.getByLabelText("Status"), {
+    fireEvent.change(await screen.findByLabelText("Status"), {
       target: { value: "active" },
     });
 
@@ -95,11 +96,11 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
     expect(screen.queryByText("Status: Active")).toBeNull();
   });
 
-  it("zero-ceremony e2e: the operator-first numberRange filters rows through the URL number keys", () => {
+  it("zero-ceremony e2e: the operator-first numberRange filters rows through the URL number keys", async () => {
     renderTable();
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     // Operator first: pick the comparison, then fill the single value.
-    fireEvent.change(screen.getByLabelText("Age"), {
+    fireEvent.change(await screen.findByLabelText("Age"), {
       target: { value: "gte" },
     });
     fireEvent.change(screen.getByLabelText("Value"), {
@@ -111,13 +112,13 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
     expect(screen.getByText("Age ≥ 40")).toBeInTheDocument();
   });
 
-  it("restores Equal from a URL where both range keys carry the same value", () => {
+  it("restores Equal from a URL where both range keys carry the same value", async () => {
     renderTable({
       urlAdapter: createMemoryAdapter("f_budgetMin=5&f_budgetMax=5"),
       filters: [{ key: "budget", type: "numberRange" }],
     });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
-    expect(screen.getByLabelText("Budget")).toHaveValue("eq");
+    expect(await screen.findByLabelText("Budget")).toHaveValue("eq");
     expect(screen.getByLabelText("Value")).toHaveValue(5);
     expect(screen.queryByLabelText("From")).toBeNull();
     expect(screen.queryByLabelText("To")).toBeNull();

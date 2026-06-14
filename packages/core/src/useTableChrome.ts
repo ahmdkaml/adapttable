@@ -322,7 +322,7 @@ export interface ChromeBodyData<TRow> {
   /** Row/card window virtualization state (disabled unless eligible). */
   virtualization: TableVirtualization<TRow>;
   /** Sentinel ref that auto-loads the next page in infinite mode. */
-  loadMoreRef: RefObject<HTMLDivElement>;
+  loadMoreRef: RefObject<HTMLDivElement | null>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
   canLoadMore: boolean;
   /**

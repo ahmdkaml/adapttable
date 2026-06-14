@@ -1,5 +1,5 @@
 import { createMemoryAdapter } from "@adapttable/core";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -45,7 +45,7 @@ const EDGES: Partial<DataTableProps<Person>> = {
 
 function renderTable(override: Partial<DataTableProps<Person>> = {}) {
   return render(
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <DataTable<Person>
         data={PEOPLE}
         columns={COLUMNS}

@@ -83,9 +83,9 @@ describe("<AutoFilterForm> (Chakra)", () => {
       [{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }],
       { tags: "a" }
     );
-    expect(screen.getByLabelText("Alpha")).toBeChecked();
-    expect(screen.getByLabelText("Beta")).not.toBeChecked();
-    fireEvent.click(screen.getByLabelText("Beta"));
+    expect(screen.getByRole("checkbox", { name: "Alpha" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Beta" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Beta" }));
     expect(setExtra).toHaveBeenCalledWith("tags", ["a", "b"]);
   });
 
@@ -94,7 +94,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
       [{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }],
       { tags: ["a"] }
     );
-    fireEvent.click(screen.getByLabelText("Alpha"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
     expect(setExtra).toHaveBeenCalledWith("tags", []);
   });
 
@@ -102,8 +102,8 @@ describe("<AutoFilterForm> (Chakra)", () => {
     renderForm([{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }], {
       tags: "",
     });
-    expect(screen.getByLabelText("Alpha")).not.toBeChecked();
-    expect(screen.getByLabelText("Beta")).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Alpha" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Beta" })).not.toBeChecked();
   });
 
   it("dateRange: a lower-bound state mounts as On or after; typing writes only the From key", () => {
@@ -309,7 +309,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
       await Promise.resolve();
     });
     expect(container.querySelector(".chakra-spinner")).toBeNull();
-    expect(screen.getByLabelText("Alpha")).toBeInTheDocument();
-    expect(screen.getByLabelText("Beta")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Beta" })).toBeInTheDocument();
   });
 });

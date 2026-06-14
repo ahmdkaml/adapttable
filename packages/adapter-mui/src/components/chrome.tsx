@@ -145,16 +145,18 @@ export function Toolbar<TRow>({
     <Stack
       direction="row"
       spacing={1}
-      flexWrap="wrap"
       useFlexGap
-      alignItems="center"
-      justifyContent="space-between"
+      sx={{
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
     >
       {!hideSearch && (
         <TextField
           size="small"
           value={searchProps.value}
-          placeholder={searchProps.placeholder as string}
+          placeholder={searchProps.placeholder}
           slotProps={{
             htmlInput: { "aria-label": labels.search, type: "search" },
             input: {
@@ -165,20 +167,15 @@ export function Toolbar<TRow>({
               ),
             },
           }}
-          onChange={
-            searchProps.onChange as (e: {
-              currentTarget: { value: string };
-            }) => void
-          }
+          onChange={searchProps.onChange}
           sx={{ flex: 1, minWidth: 160, maxWidth: 360 }}
         />
       )}
       <Stack
         direction="row"
         spacing={1}
-        alignItems="center"
-        flexWrap="wrap"
         useFlexGap
+        sx={{ alignItems: "center", flexWrap: "wrap" }}
       >
         {sortOptions && sortOptions.length > 0 && (
           <TextField
@@ -253,11 +250,10 @@ export function Chips({
     <Stack
       direction="row"
       spacing={0.5}
-      flexWrap="wrap"
       useFlexGap
       component="ul"
-      sx={{ listStyle: "none", p: 0, m: 0 }}
       aria-label={labels.filters}
+      sx={{ listStyle: "none", p: 0, m: 0, flexWrap: "wrap" }}
     >
       {chips.map((chip) => (
         <li key={chip.key}>
@@ -311,17 +307,18 @@ export function BulkBar({
     <Stack
       direction="row"
       spacing={1}
-      alignItems="center"
-      justifyContent="space-between"
-      flexWrap="wrap"
       useFlexGap
+      sx={{
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+      }}
     >
       <Stack
         direction="row"
         spacing={1}
-        alignItems="center"
-        flexWrap="wrap"
         useFlexGap
+        sx={{ alignItems: "center", flexWrap: "wrap" }}
       >
         <Typography variant="body2">
           {labels.selectedCount(selectedCount)}
@@ -357,7 +354,7 @@ export function BulkBar({
             </>
           ))}
       </Stack>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         <Button
           size="small"
           variant="text"
@@ -416,12 +413,19 @@ export function Footer({
     <Stack
       direction="row"
       spacing={2}
-      alignItems="center"
-      justifyContent="space-between"
-      flexWrap="wrap"
       useFlexGap
+      sx={{
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+      }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="center" useFlexGap>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        useFlexGap
+        sx={{ alignItems: "center" }}
+      >
         <TextField
           select
           size="small"
@@ -557,7 +561,7 @@ export function FilterDrawer({
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
           {filters}
         </Box>
-        <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" sx={{ justifyContent: "space-between" }}>
           <Button onClick={onClearFilters} disabled={activeFilterCount === 0}>
             {labels.clearAll}
           </Button>

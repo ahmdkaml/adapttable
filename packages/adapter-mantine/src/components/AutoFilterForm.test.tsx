@@ -55,9 +55,9 @@ const renderForm = (
 ) =>
   renderMantine(<AutoFilterForm defs={defs} source={source} labels={labels} />);
 
-/** Open a range widget's operator select (a Mantine combobox textbox). */
+/** Open a range widget's operator select (a Mantine 9 combobox). */
 const openOperatorSelect = (name: string) => {
-  const trigger = screen.getByRole("textbox", { name });
+  const trigger = screen.getByRole("combobox", { name });
   fireEvent.click(trigger);
   return trigger;
 };
@@ -230,7 +230,7 @@ describe("<AutoFilterForm>", () => {
     const { source, setExtras } = makeSource({ budgetMax: 700 });
     renderForm([BUDGET_DEF], source);
     expect(
-      screen.getByRole("textbox", { name: "Budget Operator" })
+      screen.getByRole("combobox", { name: "Budget Operator" })
     ).toHaveValue("At most");
     const value = screen.getByRole("textbox", { name: "Budget Value" });
     expect(value).toHaveValue("700");
@@ -248,7 +248,7 @@ describe("<AutoFilterForm>", () => {
     });
     renderForm([BUDGET_DEF], source);
     expect(
-      screen.getByRole("textbox", { name: "Budget Operator" })
+      screen.getByRole("combobox", { name: "Budget Operator" })
     ).toHaveValue("Between");
     const from = screen.getByRole("textbox", { name: "Budget From" });
     const to = screen.getByRole("textbox", { name: "Budget To" });
@@ -284,7 +284,7 @@ describe("<AutoFilterForm>", () => {
     const { source, setExtras } = makeSource({ budgetMin: 5, budgetMax: 5 });
     renderForm([BUDGET_DEF], source);
     expect(
-      screen.getByRole("textbox", { name: "Budget Operator" })
+      screen.getByRole("combobox", { name: "Budget Operator" })
     ).toHaveValue("Equal");
     expect(screen.getByRole("textbox", { name: "Budget Value" })).toHaveValue(
       "5"
@@ -300,7 +300,7 @@ describe("<AutoFilterForm>", () => {
   it("numberRange: emptying the value clears the pair but keeps the operator", () => {
     const { source, setExtras } = makeSource({ budgetMin: 100 });
     renderForm([BUDGET_DEF], source);
-    const operator = screen.getByRole("textbox", { name: "Budget Operator" });
+    const operator = screen.getByRole("combobox", { name: "Budget Operator" });
     expect(operator).toHaveValue("At least");
     fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
       target: { value: "" },
@@ -345,9 +345,9 @@ describe("<AutoFilterForm>", () => {
       hiredTo: "2026-02-01",
     });
     renderForm([HIRED_DEF], source);
-    expect(screen.getByRole("textbox", { name: "Hired Operator" })).toHaveValue(
-      "Between"
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Hired Operator" })
+    ).toHaveValue("Between");
     const from = screen.getByLabelText("Hired From");
     const to = screen.getByLabelText("Hired To");
     expect(from).toHaveAttribute("type", "date");

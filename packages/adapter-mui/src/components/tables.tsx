@@ -18,7 +18,7 @@ import {
   tableRenderModel,
   useHorizontalOverflow,
 } from "@adapttable/core";
-import type { MouseEventHandler, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 /** Sx for an absolutely-positioned column-resize handle. */
@@ -175,7 +175,7 @@ function RowActionButtons<TRow>({
   cancelLabel: string;
 }>) {
   return (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+    <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
       {actions.map((action) => {
         if (action.isHidden?.(row)) return null;
         const reason = resolveDisabledReason(action.disabledReason?.(row));
@@ -592,7 +592,7 @@ export function DesktopTable<TRow>({
     >
       <Table
         size={size}
-        aria-label={table.getTableProps()["aria-label"] as string}
+        aria-label={table.getTableProps()["aria-label"]}
         sx={minWidth > 0 ? { minWidth } : undefined}
       >
         <TableHead>
@@ -648,9 +648,7 @@ export function DesktopTable<TRow>({
               const active =
                 ariaSort === "ascending" || ariaSort === "descending";
               // 1-based multi-sort chain position, when the column is in it.
-              const sortIndex = headerCellProps["data-sort-index"] as
-                | number
-                | undefined;
+              const sortIndex = headerCellProps["data-sort-index"];
               return (
                 <TableCell
                   key={column.key}
@@ -665,10 +663,7 @@ export function DesktopTable<TRow>({
                       // Core's handler, with the REAL click event passed
                       // through: it reads `shiftKey` to chain the column when
                       // `multiSort` is on, else single-sorts as before.
-                      onClick={
-                        table.getSortButtonProps(column)
-                          .onClick as MouseEventHandler
-                      }
+                      onClick={table.getSortButtonProps(column).onClick}
                     >
                       {column.header}
                       {sortIndex !== undefined && (
@@ -823,7 +818,7 @@ export function MobileCards<TRow>({
     <Stack
       spacing={compact ? 1 : 1.5}
       role="list"
-      aria-label={table.getTableProps()["aria-label"] as string}
+      aria-label={table.getTableProps()["aria-label"]}
     >
       {paddingTop > 0 && <Box aria-hidden sx={{ height: paddingTop }} />}
       {entries.map(({ row, index, key }) => {
@@ -865,7 +860,7 @@ export function MobileCards<TRow>({
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    display="block"
+                    sx={{ display: "block" }}
                   >
                     {mobileLabel(column)}
                   </Typography>
@@ -912,7 +907,7 @@ export function MobileCards<TRow>({
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    display="block"
+                    sx={{ display: "block" }}
                   >
                     {mobileLabel(column)}
                   </Typography>

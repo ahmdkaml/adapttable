@@ -5,15 +5,12 @@ import {
 } from "@adapttable/core";
 import {
   Button,
-  Divider,
   HStack,
   IconButton,
   Input,
   Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
   Portal,
+  Separator,
   Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -69,69 +66,72 @@ export function SavedViewsMenu({
     setName("");
   };
   return (
-    <Popover placement="bottom-end" isLazy>
-      <PopoverTrigger>
+    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+      <Popover.Trigger asChild>
         <Button size="sm" variant="outline">
           {labels.savedViews}
         </Button>
-      </PopoverTrigger>
+      </Popover.Trigger>
       <Portal>
-        <PopoverContent minW="240px" w="auto">
-          <PopoverBody px={2} py={2}>
-            <Text
-              fontSize="xs"
-              fontWeight="600"
-              textTransform="uppercase"
-              letterSpacing="0.06em"
-              color="gray.500"
-              px={1}
-              pb={1}
-            >
-              {labels.savedViews}
-            </Text>
-            {views.map((view) => (
-              <HStack key={view.name} spacing={1} py={0.5}>
+        <Popover.Positioner>
+          <Popover.Content minW="240px" w="auto">
+            <Popover.Body px={2} py={2}>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+                color="gray.500"
+                px={1}
+                pb={1}
+              >
+                {labels.savedViews}
+              </Text>
+              {views.map((view) => (
+                <HStack key={view.name} gap={1} py={0.5}>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    fontWeight="normal"
+                    flex={1}
+                    justifyContent="flex-start"
+                    onClick={() => apply(view.name)}
+                  >
+                    {view.name}
+                  </Button>
+                  <IconButton
+                    size="xs"
+                    variant="ghost"
+                    aria-label={`${labels.deleteView}: ${view.name}`}
+                    onClick={() => remove(view.name)}
+                  >
+                    <CrossIcon />
+                  </IconButton>
+                </HStack>
+              ))}
+              <Separator my={1} />
+              <HStack gap={1}>
+                <Input
+                  size="xs"
+                  aria-label={labels.viewName}
+                  placeholder={labels.viewName}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
                 <Button
                   size="xs"
-                  variant="ghost"
-                  fontWeight="normal"
-                  flex={1}
-                  justifyContent="flex-start"
-                  onClick={() => apply(view.name)}
+                  flexShrink={0}
+                  colorPalette={colorScheme}
+                  disabled={trimmed === ""}
+                  onClick={saveCurrent}
                 >
-                  {view.name}
+                  {labels.saveView}
                 </Button>
-                <IconButton
-                  size="xs"
-                  variant="ghost"
-                  aria-label={`${labels.deleteView}: ${view.name}`}
-                  icon={<CrossIcon />}
-                  onClick={() => remove(view.name)}
-                />
               </HStack>
-            ))}
-            <Divider my={1} />
-            <HStack spacing={1}>
-              <Input
-                size="xs"
-                aria-label={labels.viewName}
-                placeholder={labels.viewName}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Button
-                size="xs"
-                flexShrink={0}
-                colorScheme={colorScheme}
-                isDisabled={trimmed === ""}
-                onClick={saveCurrent}
-              >
-                {labels.saveView}
-              </Button>
-            </HStack>
-          </PopoverBody>
-        </PopoverContent>
+            </Popover.Body>
+          </Popover.Content>
+        </Popover.Positioner>
       </Portal>
-    </Popover>
+    </Popover.Root>
   );
 }

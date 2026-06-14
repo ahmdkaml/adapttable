@@ -64,8 +64,8 @@ export function SavedViewsMenu({
             <Stack
               key={view.name}
               direction="row"
-              alignItems="center"
               spacing={0.5}
+              sx={{ alignItems: "center" }}
             >
               <Button
                 size="small"
@@ -88,7 +88,7 @@ export function SavedViewsMenu({
             </Stack>
           ))}
           <Divider sx={{ my: 0.5 }} />
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
             <TextField
               size="small"
               value={name}
