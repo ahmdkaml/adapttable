@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/showcase",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "Public marketing showcase for AdaptTable — built on the real adapter packages (consumed like an end user), deployed to GitHub Pages.",
   "type": "module",
