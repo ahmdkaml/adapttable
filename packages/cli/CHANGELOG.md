@@ -1,5 +1,11 @@
 # @adapttable/cli
 
+## 0.1.1
+
+### Patch Changes
+
+- dd60cf0: docs: each package readme now links the docs site, live demo, and getting-started guide (top links + a Documentation section deep-linking each feature), the `homepage` field points at the docs site, and the root readme gains npm badges. Tailwind/shadcn is reframed as the unstyled adapter path rather than a batteries-included styled adapter.
+
 ## 0.1.0
 
 ### Minor Changes
