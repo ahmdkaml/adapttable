@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/chakra",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Chakra UI adapter for AdaptTable — a batteries-included Chakra data table with sorting, filtering, URL state, selection, RTL, and dark mode.",
   "keywords": [
     "react",
