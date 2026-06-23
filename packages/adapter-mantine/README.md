@@ -1,5 +1,7 @@
 # @adapttable/mantine
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 The **Mantine adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included React data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, dark mode, and optional entrance

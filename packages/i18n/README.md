@@ -1,5 +1,7 @@
 # @adapttable/i18n
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 Locale presets and **RTL** helpers for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).
 The core stays i18n-agnostic; this optional package gives you ready label
 sets for **10 languages** — English, Arabic, German, Spanish, French,

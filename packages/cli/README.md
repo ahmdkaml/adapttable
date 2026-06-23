@@ -1,5 +1,7 @@
 # @adapttable/cli
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 The scaffolding CLI for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).
 One command detects your UI kit, picks your package manager, writes a
 starter table, and tells you exactly what to install.

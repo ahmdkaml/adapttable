@@ -1,5 +1,7 @@
 # @adapttable/chakra
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 The **Chakra UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included Chakra data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, and dark mode. Built on the headless

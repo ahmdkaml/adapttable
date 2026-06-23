@@ -1,5 +1,7 @@
 # @adapttable/unstyled
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 The **headless, unstyled** adapter for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).
 Renders semantic HTML with `data-adapttable-part` + `data-*` state hooks
 and per-part `className` overrides — style it with **Tailwind**, **shadcn/ui**,

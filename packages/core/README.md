@@ -1,5 +1,7 @@
 # @adapttable/core
 
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+
 The **headless engine** behind [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a UI-agnostic React data table. Zero UI-kit imports: state, hooks,
 prop-getters, and a unified client/server `TableSource` contract.
