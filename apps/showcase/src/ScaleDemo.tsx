@@ -130,9 +130,18 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
   },
 ];
 
-/** The real Mantine adapter, element-virtualized over 50,000 rows. */
+/** Total rows to virtualize — defaults to 50,000, overridable with `?rows=N`
+ *  so the demo doubles as the documented perf benchmark target. */
+function totalRows(): number {
+  if (typeof window === "undefined") return 50000;
+  const n = Number(new URLSearchParams(window.location.search).get("rows"));
+  return Number.isInteger(n) && n > 0 ? n : 50000;
+}
+
+/** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const rows = useMemo(() => makeBigList(50000), []);
+  const total = totalRows();
+  const rows = useMemo(() => makeBigList(total), [total]);
   const source = useFrontendData<BigPerson>({
     data: rows,
     columns: COLUMNS,
@@ -150,7 +159,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
         columns={COLUMNS}
         rowKey={(r) => String(r.id)}
         labels={getLabels("en")}
-        searchPlaceholder="Filter 50,000 rows…"
+        searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
         virtualize
         estimateRowSize={48}
         // Page-scroll window mode with a pinned header: the page itself

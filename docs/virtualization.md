@@ -68,6 +68,32 @@ export function Readings() {
 | `virtualOverscan`     | `number`  | `8`     | Extra rows/cards rendered before and after the visible window.    |
 | `virtualScrollMargin` | `number`  | `0`     | Window-mode scroll offset, usually sticky chrome height.          |
 
+## Benchmark
+
+The engine renders a **constant** number of DOM rows no matter how large the
+dataset is, so render cost and scroll smoothness are bounded by the viewport —
+not the row count. Measured on the showcase scale demo (`/scale/?rows=N`,
+Mantine adapter, infinite mode, 1280×900 viewport, headless Chromium):
+
+|    Rows | Time to first rows | DOM `<tr>` rendered | …while scrolling | JS heap |
+| ------: | -----------------: | ------------------: | ---------------: | ------: |
+|   1,000 |             ~0.9 s |                  24 |               33 |   65 MB |
+|  10,000 |             ~0.8 s |                  24 |               33 |   69 MB |
+|  50,000 |             ~0.8 s |                  24 |               33 |   78 MB |
+| 100,000 |             ~0.9 s |                  24 |               34 |   93 MB |
+
+The table keeps **~24 rows in the DOM** (about a viewport's worth, plus
+overscan) and **~33 while scrolling at any depth** — identical at 1k and 100k.
+Time-to-first-rows is flat (dominated by app boot and generating the data
+array, not the table). The only thing that grows with the dataset is the heap,
+and that is the app's own data array — a non-virtualized table would instead
+mount 100,000 `<tr>`s and block the main thread.
+
+These numbers come from one dev laptop; absolute timings vary by hardware, but
+the **shape — constant DOM, flat mount — does not**. Reproduce with
+[`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
+against a running showcase.
+
 ## Notes
 
 - Virtualization is optional — leave it off for small lists or paged tables.
