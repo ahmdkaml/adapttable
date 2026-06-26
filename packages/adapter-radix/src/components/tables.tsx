@@ -67,6 +67,25 @@ const EXPANSION_WIDTH = 32;
 /** Opaque background for sticky/pinned cells (the panel surface). */
 const PIN_BG = "var(--color-background)";
 
+/**
+ * Make column pinning work inside Radix's `Table.Root`. Two Radix defaults
+ * fight `position: sticky`:
+ *
+ *  1. the `surface` variant sets `overflow: hidden` on the inner `<table>`,
+ *     turning the table into its own (non-scrolling) sticky scroll-context;
+ *  2. `Table.Root` wraps the table in its OWN horizontal ScrollArea — so the
+ *     scroll container is Radix's viewport, not our wrapper.
+ *
+ * So the table must be the element that overflows that viewport: we restore
+ * `overflow: visible` on the table AND move the fixed-column `min-width` onto
+ * it (via the `--adapttable-min-width` custom property the wrapper sets). The
+ * pinned/edge cells then stick against Radix's scrolling viewport. The
+ * two-class descendant selector outranks Radix's single-class rule, so no
+ * `!important` is needed.
+ */
+const STICKY_FIX_CLASS = "adapttable-radix-scroll";
+const STICKY_FIX_CSS = `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}`;
+
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   /** Class hook for the table (desktop) / each card (mobile). */
   className?: string;
@@ -623,7 +642,16 @@ export function DesktopTable<TRow>({
       ref={(node: HTMLDivElement | null) => {
         overflowRef(node);
         virtualScrollRef?.(node);
+        // Feed STICKY_FIX_CSS the fixed-column min-width as a custom property
+        // (React's CSSProperties type rejects `--*` keys, so set it directly):
+        // it lands on the inner <table>, which then overflows Radix's own
+        // ScrollArea viewport so the pinned/edge sticky cells stick against it.
+        node?.style.setProperty(
+          "--adapttable-min-width",
+          minWidth > 0 ? `${minWidth}px` : "0"
+        );
       }}
+      className={STICKY_FIX_CLASS}
       style={{
         maxHeight: maxHeight == null ? undefined : `${maxHeight}px`,
         overflowX:
@@ -631,12 +659,14 @@ export function DesktopTable<TRow>({
         overflowY: maxHeight == null ? undefined : "auto",
       }}
     >
+      {/* See STICKY_FIX_CSS: restore the table's `overflow: visible` and push
+          its min-width onto the inner <table> so pinning sticks. */}
+      <style>{STICKY_FIX_CSS}</style>
       <Table.Root
         size={size}
         variant="surface"
         data-size={size}
         className={className}
-        style={{ minWidth: minWidth > 0 ? `${minWidth}px` : undefined }}
         aria-label={table.getTableProps()["aria-label"]}
       >
         <Table.Header>

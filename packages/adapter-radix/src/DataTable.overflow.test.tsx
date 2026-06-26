@@ -156,3 +156,55 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
     expect(getComputedStyle(wrapper).overflowX).toBe("auto");
   });
 });
+
+describe("column-pin sticky fix (Radix ScrollArea workaround)", () => {
+  it("restores the inner table's overflow and pushes the fixed-column min-width onto it", () => {
+    installResizeObserver();
+    const adapter = createMemoryAdapter("");
+    // Fixed-width columns give the table a real min-width to overflow with.
+    const wideCols: ColumnDef<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name, width: "300px" },
+      { key: "city", header: "City", accessor: (r) => r.city, width: "300px" },
+    ];
+    function Harness() {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        adapter,
+        columns: wideCols,
+        paginationMode: "paged",
+      });
+      return (
+        <DataTable
+          source={source}
+          columns={wideCols}
+          rowKey={(r) => r.id}
+          defaultColumnLayout={{ pinned: { name: "start" } }}
+        />
+      );
+    }
+    const { container } = render(
+      <Theme>
+        <Harness />
+      </Theme>
+    );
+    const wrapper = container
+      .querySelector("table")!
+      .closest(".rt-TableRoot")!.parentElement!;
+    // The wrapper scopes the override and ships the rule that beats Radix's
+    // `surface` overflow:hidden and gives the inner <table> its min-width.
+    expect(wrapper.classList.contains("adapttable-radix-scroll")).toBe(true);
+    const rule = wrapper.querySelector("style")!.textContent ?? "";
+    expect(rule).toContain(".rt-TableRootTable{overflow:visible");
+    expect(rule).toContain("min-width:var(--adapttable-min-width");
+    // The fixed-column min-width is fed in as the custom property the rule
+    // reads, so the table (not Radix's ScrollArea viewport) is what overflows —
+    // which is what lets the pinned/edge sticky cells stick.
+    expect(wrapper.style.getPropertyValue("--adapttable-min-width")).toMatch(
+      /^\d+px$/
+    );
+    // Radix's Table.Root must NOT carry an inline min-width that would keep the
+    // viewport (and not the table) as the thing that overflows.
+    const root = wrapper.querySelector<HTMLElement>(".rt-TableRoot")!;
+    expect(root.style.minWidth).toBe("");
+  });
+});
