@@ -18,6 +18,7 @@
     "@adapttable/i18n": "workspace:*",
     "@adapttable/mantine": "workspace:*",
     "@adapttable/mui": "workspace:*",
+    "@adapttable/shadcn": "workspace:*",
     "@adapttable/unstyled": "workspace:*",
     "@chakra-ui/react": "^3.36.0",
     "@emotion/react": "^11.14.0",
