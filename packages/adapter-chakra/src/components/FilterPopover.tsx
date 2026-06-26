@@ -52,6 +52,7 @@ export function FilterPopover({
         <Popover.Positioner>
           <Popover.Content
             data-testid="adapttable-filter-popover"
+            aria-label={labels.filters}
             w="340px"
             maxW="90vw"
             dir={dir}

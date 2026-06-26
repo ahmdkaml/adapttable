@@ -45,6 +45,7 @@ export function FilterPopover({
       <Popover.Trigger>{children}</Popover.Trigger>
       <Popover.Content
         data-testid="adapttable-filter-popover"
+        aria-label={labels.filters}
         align={dir === "rtl" ? "start" : "end"}
         side="bottom"
         width="340px"
