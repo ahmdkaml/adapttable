@@ -1,5 +1,13 @@
 # @adapttable/mui
 
+## 0.2.2
+
+### Patch Changes
+
+- 0fe5eca: Ship the **React Compiler**. The published packages are now built with `babel-plugin-react-compiler` (target 18, **production build only** — not the test build), so components and hooks are auto-memoized for fewer wasted re-renders. Tests still run against un-compiled source, so coverage is unaffected; the compiled output adds `react-compiler-runtime` as a small runtime dependency.
+- Updated dependencies [0fe5eca]
+  - @adapttable/core@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
