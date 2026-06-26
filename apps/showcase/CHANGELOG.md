@@ -1,5 +1,20 @@
 # @adapttable/showcase
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [0fe5eca]
+- Updated dependencies [c90b4ae]
+  - @adapttable/core@0.2.2
+  - @adapttable/mantine@0.2.2
+  - @adapttable/mui@0.2.2
+  - @adapttable/chakra@0.2.2
+  - @adapttable/antd@0.2.2
+  - @adapttable/unstyled@0.2.2
+  - @adapttable/shadcn@0.1.0
+  - @adapttable/i18n@0.1.4
+
 ## 0.0.4
 
 ### Patch Changes
