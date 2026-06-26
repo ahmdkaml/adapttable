@@ -136,7 +136,7 @@ function ColumnMenuRowItem<TRow>({
           key,
           index,
           layout.move,
-          `${labels.moveLeft} / ${labels.moveRight}: ${name}`
+          `${labels.moveStart} / ${labels.moveEnd}: ${name}`
         )}
       >
         <GripIcon />
@@ -183,7 +183,7 @@ function ActionsMenuRowItem<TRow>({
       data-adapttable-part="column-menu-item"
       data-actions=""
       data-hidden={hidden || undefined}
-      data-pinned={pinned ? "right" : undefined}
+      data-pinned={pinned ? "end" : undefined}
       className={classNames.columnMenuItem}
     >
       <VisibilityToggle
@@ -196,10 +196,10 @@ function ActionsMenuRowItem<TRow>({
       <RowName hidden={hidden} name={name} classNames={classNames} />
       <PinToggle
         active={pinned}
-        actionLabel={`${pinned ? labels.unpin : labels.pinRight}: ${name}`}
+        actionLabel={`${pinned ? labels.unpin : labels.pinEnd}: ${name}`}
         classNames={classNames}
         onClick={() =>
-          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "right")
+          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
         }
       />
     </div>

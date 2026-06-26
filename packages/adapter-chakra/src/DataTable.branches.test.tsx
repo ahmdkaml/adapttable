@@ -154,9 +154,9 @@ describe("chrome.tsx branches", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("opens the filter drawer in RTL drawer mode (placement 'left' arm)", async () => {
+  it("opens the filter drawer in RTL drawer mode (placement 'start' arm)", async () => {
     // filtersMode="drawer" + dir="rtl" mounts the FilterDrawer with
-    // placement="left" — the RTL arm of the placement ternary. Opening it
+    // placement="start" — the RTL arm of the placement ternary. Opening it
     // proves the drawer still works end-to-end with that placement.
     mount({
       filters: <div>drawer-rtl-body</div>,
@@ -245,7 +245,7 @@ describe("tables.tsx branches", () => {
       columnLayout: {
         hidden: [],
         order: [],
-        pinned: { name: "left" },
+        pinned: { name: "start" },
         widths: {},
       },
     });

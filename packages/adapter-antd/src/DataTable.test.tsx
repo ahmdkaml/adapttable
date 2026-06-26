@@ -147,7 +147,7 @@ describe("<DataTable> (Ant Design)", () => {
     const { container } = renderHarness({
       override: {
         density: "compact",
-        defaultColumnLayout: { pinned: { name: "left" } },
+        defaultColumnLayout: { pinned: { name: "start" } },
       },
     });
     expect(container.querySelector(".ant-table-small")).toBeInTheDocument();
@@ -893,7 +893,7 @@ describe("<DataTable> (Ant Design)", () => {
     const { container } = renderHarness({
       override: {
         bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
-        defaultColumnLayout: { pinned: { name: "left" } },
+        defaultColumnLayout: { pinned: { name: "start" } },
       },
     });
     // The checkbox column must ride along with the left-fixed data column,
@@ -1063,11 +1063,11 @@ describe("<DataTable> (Ant Design)", () => {
     expect(container.querySelector(".ant-table-content")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     // Pin the Name column to the left edge via the menu.
-    const pinLeft = document.querySelector<HTMLElement>(
-      '[aria-label="Pin left: Name"]'
+    const pinStart = document.querySelector<HTMLElement>(
+      '[aria-label="Pin to start: Name"]'
     );
-    expect(pinLeft).not.toBeNull();
-    fireEvent.click(pinLeft!);
+    expect(pinStart).not.toBeNull();
+    fireEvent.click(pinStart!);
     // antd renders a sticky/fixed cell once a column is pinned (x: max-content).
     expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
   });
@@ -1083,7 +1083,7 @@ describe("<DataTable> (Ant Design)", () => {
     expect(container.querySelector(".ant-table-cell-fix-end")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     const pin = document.querySelector<HTMLElement>(
-      '[aria-label="Pin right: Actions"]'
+      '[aria-label="Pin to end: Actions"]'
     );
     expect(pin).not.toBeNull();
     fireEvent.click(pin!);
@@ -1100,7 +1100,7 @@ describe("<DataTable> (Ant Design)", () => {
     const { container } = renderHarness({
       override: {
         rowActions: [{ key: "edit", label: "Edit", onClick: vi.fn() }],
-        defaultColumnLayout: { pinned: { city: "right" } },
+        defaultColumnLayout: { pinned: { city: "end" } },
       },
     });
     // antd needs the right-fixed run contiguous through the trailing edge,
@@ -1162,11 +1162,11 @@ describe("<DataTable> (Ant Design)", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     fireEvent.click(
-      document.querySelector<HTMLElement>('[aria-label="Pin right: Actions"]')!
+      document.querySelector<HTMLElement>('[aria-label="Pin to end: Actions"]')!
     );
     // The layout change reports the reserved "actions" key like any column.
     const captured = layouts[layouts.length - 1];
-    expect(captured?.pinned).toEqual({ actions: "right" });
+    expect(captured?.pinned).toEqual({ actions: "end" });
     first.unmount();
     // Remount from the captured snapshot: the pin is live with zero clicks…
     const { container } = renderHarness({

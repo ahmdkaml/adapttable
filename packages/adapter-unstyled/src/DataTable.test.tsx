@@ -608,20 +608,20 @@ describe("<DataTable> (unstyled)", () => {
       override: {
         bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
         stickyHeader: true,
-        defaultColumnLayout: { pinned: { name: "left" } },
+        defaultColumnLayout: { pinned: { name: "start" } },
       },
     });
     const selHeader = container.querySelector(
       '[data-adapttable-part="selection-header"]'
     );
-    expect(selHeader).toHaveAttribute("data-pinned", "left");
+    expect(selHeader).toHaveAttribute("data-pinned", "start");
     // Logical inset: sticks to the inline START, the correct edge in RTL too.
     expect(selHeader).toHaveStyle({ position: "sticky" });
     expect((selHeader as HTMLElement).style.insetInlineStart).toBe("0px");
     const selCell = container.querySelector(
       '[data-adapttable-part="selection-cell"]'
     );
-    expect(selCell).toHaveAttribute("data-pinned", "left");
+    expect(selCell).toHaveAttribute("data-pinned", "start");
     expect(selCell).toHaveStyle({ position: "sticky" });
     expect((selCell as HTMLElement).style.insetInlineStart).toBe("0px");
   });
@@ -649,7 +649,9 @@ describe("<DataTable> (unstyled)", () => {
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
-    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to end: Actions" })
+    );
     // No data column is pinned — the actions column sticks on its own.
     expect(
       container.querySelector(
@@ -659,19 +661,19 @@ describe("<DataTable> (unstyled)", () => {
     const header = container.querySelector(
       '[data-adapttable-part="actions-header"]'
     );
-    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveAttribute("data-pinned", "end");
     expect(header).toHaveStyle({ position: "sticky" });
     // Logical inset: sticks to the inline END, the correct edge in RTL too.
     expect((header as HTMLElement).style.insetInlineEnd).toBe("0px");
     const cell = container.querySelector(
       '[data-adapttable-part="actions-cell"]'
     );
-    expect(cell).toHaveAttribute("data-pinned", "right");
+    expect(cell).toHaveAttribute("data-pinned", "end");
     expect(cell).toHaveStyle({ position: "sticky" });
     expect((cell as HTMLElement).style.insetInlineEnd).toBe("0px");
     // The layout state names the reserved "actions" key like any column.
     expect(onColumnLayoutChange).toHaveBeenCalledWith(
-      expect.objectContaining({ pinned: { actions: "right" } })
+      expect.objectContaining({ pinned: { actions: "end" } })
     );
     // ONE more click unpins it again.
     fireEvent.click(screen.getByRole("button", { name: "Unpin: Actions" }));
@@ -714,14 +716,16 @@ describe("<DataTable> (unstyled)", () => {
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
-    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to end: Actions" })
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "Hide column: Actions" })
     );
     // The captured layout carries the reserved "actions" key in both maps.
     const saved = onColumnLayoutChange.mock.calls.at(-1)![0];
     expect(saved.hidden).toContain("actions");
-    expect(saved.pinned).toEqual({ actions: "right" });
+    expect(saved.pinned).toEqual({ actions: "end" });
     first.unmount();
     // A fresh table restored from that layout starts with actions hidden…
     const { container } = renderHarness({
@@ -742,7 +746,7 @@ describe("<DataTable> (unstyled)", () => {
     const header = container.querySelector(
       '[data-adapttable-part="actions-header"]'
     );
-    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveAttribute("data-pinned", "end");
     expect((header as HTMLElement).style.insetInlineEnd).toBe("0px");
   });
 

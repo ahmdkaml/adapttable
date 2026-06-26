@@ -103,7 +103,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     ? undefined
     : props.rowActions;
   const actionsPinned =
-    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
 
   const tableProps = {
     table,
@@ -217,6 +217,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}
+                dir={props.dir}
               />
             ) : undefined
           }

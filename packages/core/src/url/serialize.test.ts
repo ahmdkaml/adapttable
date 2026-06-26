@@ -160,12 +160,12 @@ describe("readColumnLayout", () => {
 
   it("reads hidden, pinned, order, and widths", () => {
     const params = ps(
-      "colHide=email,team&colPin=person:left,budget:right&colOrder=person,status&colW=person:240,budget:130"
+      "colHide=email,team&colPin=person:start,budget:end&colOrder=person,status&colW=person:240,budget:130"
     );
     expect(readColumnLayout(params)).toEqual({
       hidden: ["email", "team"],
       order: ["person", "status"],
-      pinned: { person: "left", budget: "right" },
+      pinned: { person: "start", budget: "end" },
       widths: { person: 240, budget: 130 },
     });
   });
@@ -177,11 +177,11 @@ describe("readColumnLayout", () => {
   });
 
   it("ignores malformed pin sides and non-positive widths", () => {
-    const params = ps("colPin=a:up,b:left&colW=a:0,b:120,c:nope");
+    const params = ps("colPin=a:up,b:start&colW=a:0,b:120,c:nope");
     expect(readColumnLayout(params)).toEqual({
       hidden: [],
       order: [],
-      pinned: { b: "left" },
+      pinned: { b: "start" },
       widths: { b: 120 },
     });
   });
@@ -193,11 +193,11 @@ describe("readColumnLayout", () => {
     writeColumnLayout(params, {
       hidden: ["x,y"],
       order: [],
-      pinned: { "a:b": "left" },
+      pinned: { "a:b": "start" },
       widths: {},
     });
     const layout = readColumnLayout(new URLSearchParams(params.toString()))!;
-    expect(layout.pinned).toEqual({ "a:b": "left" });
+    expect(layout.pinned).toEqual({ "a:b": "start" });
     expect(layout.hidden).toEqual(["x,y"]);
   });
 });
@@ -213,7 +213,7 @@ describe("writeColumnLayout", () => {
     const layout: ColumnLayoutState = {
       hidden: ["email"],
       order: ["person", "status"],
-      pinned: { person: "left" },
+      pinned: { person: "start" },
       widths: { person: 240 },
     };
     const params = ps("");
@@ -226,15 +226,15 @@ describe("writeColumnLayout", () => {
   });
 
   it("clears a previously-set field when it becomes empty", () => {
-    const params = ps("colHide=email&colPin=person:left");
+    const params = ps("colHide=email&colPin=person:start");
     writeColumnLayout(params, {
       hidden: [],
       order: [],
-      pinned: { person: "left" },
+      pinned: { person: "start" },
       widths: {},
     });
     expect(params.get("colHide")).toBeNull();
-    expect(params.get("colPin")).toBe("person:left");
+    expect(params.get("colPin")).toBe("person:start");
   });
 
   it("rounds widths to whole pixels", () => {

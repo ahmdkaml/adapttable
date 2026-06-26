@@ -78,7 +78,7 @@ function resolveActionsColumn<TRow>(
       : undefined;
   const actionsPinned =
     rowActions !== undefined &&
-    layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+    layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return { hasRowActions, rowActions, actionsPinned };
 }
 

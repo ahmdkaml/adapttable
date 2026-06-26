@@ -16,7 +16,7 @@ const cols: ColumnDef<Row>[] = [
 
 function fakeLayout(): UseColumnLayoutResult<Row> {
   return {
-    state: { hidden: [], order: [], pinned: { a: "left" }, widths: {} },
+    state: { hidden: [], order: [], pinned: { a: "start" }, widths: {} },
     visibleColumns: cols,
     isHidden: () => false,
     setHidden: vi.fn(),
@@ -31,11 +31,11 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
 
 const labels = {
   columns: "Columns",
-  pinLeft: "Pin left",
-  pinRight: "Pin right",
+  pinStart: "Pin to start",
+  pinEnd: "Pin to end",
   unpin: "Unpin",
-  moveLeft: "Move left",
-  moveRight: "Move right",
+  moveStart: "Move to start",
+  moveEnd: "Move to end",
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
@@ -100,14 +100,14 @@ describe("chakra ColumnMenu", () => {
     fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
-    fireEvent.click(byLabel("Pin right: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
-    fireEvent.click(byLabel("Pin left: Bravo"));
-    expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
+    // pin toggle: a is pinned to start → next click unpins; b is unpinned → pins to start
+    fireEvent.click(byLabel("Unpin: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    fireEvent.click(byLabel("Pin to start: Bravo"));
+    expect(layout.setPinned).toHaveBeenCalledWith("b", "start");
 
     // reorder via grip keyboard
-    fireEvent.keyDown(byLabel("Move left / Move right: Alpha"), {
+    fireEvent.keyDown(byLabel("Move to start / Move to end: Alpha"), {
       key: "ArrowRight",
     });
     expect(layout.move).toHaveBeenCalledWith("a", 1);
@@ -139,15 +139,15 @@ describe("chakra ColumnMenu", () => {
     expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
 
     // Unpinned → ONE click pins straight to the inline end (never left).
-    fireEvent.click(byLabel("Pin right: Actions"));
-    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+    fireEvent.click(byLabel("Pin to end: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "end");
   });
 
   it("unpins end-pinned actions in one click and marks them hidden", async () => {
     const layout = fakeLayout();
     layout.state = {
       ...layout.state,
-      pinned: { ...layout.state.pinned, actions: "right" },
+      pinned: { ...layout.state.pinned, actions: "end" },
     };
     layout.isHidden = (key) => key === "actions";
     renderChakra(

@@ -298,12 +298,12 @@ export interface TableLabels {
   /** Label for the column-management menu trigger. */
   columns?: string;
   /** Pin-column menu actions. */
-  pinLeft?: string;
-  pinRight?: string;
+  pinStart?: string;
+  pinEnd?: string;
   unpin?: string;
   /** Reorder-column menu actions. */
-  moveLeft?: string;
-  moveRight?: string;
+  moveStart?: string;
+  moveEnd?: string;
   /** Reset the column layout to defaults. */
   resetColumns?: string;
   /** Accessible label for a column-resize handle. */

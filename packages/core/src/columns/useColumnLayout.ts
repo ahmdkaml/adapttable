@@ -3,8 +3,9 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "../types";
 import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 
-/** Edge a column can be pinned to. */
-export type PinSide = "left" | "right";
+/** Edge a column can be pinned to — logical, so it follows the writing
+ *  direction (`"start"` is the right edge under `dir="rtl"`). */
+export type PinSide = "start" | "end";
 
 /**
  * User-driven column layout: which columns are hidden, their order, pinning,
@@ -74,7 +75,7 @@ export interface PinOffset {
 /**
  * Minimal sticky-positioning style for a pinned cell, from a pin offset.
  * Uses logical inset properties so pinning follows the writing direction:
- * a `"left"`-pinned column sticks to the inline START (the right edge under
+ * a `"start"`-pinned column sticks to the inline START (the right edge under
  * `dir="rtl"`), matching antd's native `fixed` behaviour.
  */
 export interface PinnedCellStyle {
@@ -99,17 +100,17 @@ export const PIN_Z = {
 
 /**
  * Extra inset (px) the leading selection column / trailing actions column add
- * in front of the pinned data columns, so a left-pinned column sits just after
- * a pinned checkbox and a right-pinned column just before pinned actions.
+ * in front of the pinned data columns, so a start-pinned column sits just after
+ * a pinned checkbox and an end-pinned column just before pinned actions.
  */
 export interface PinLeads {
-  left?: number;
-  right?: number;
+  start?: number;
+  end?: number;
 }
 
-/** Map a pin side to its logical inset property (start = "left" in LTR). */
+/** Map a pin side to its logical inset property. */
 function insetProp(side: PinSide): "insetInlineStart" | "insetInlineEnd" {
-  return side === "left" ? "insetInlineStart" : "insetInlineEnd";
+  return side === "start" ? "insetInlineStart" : "insetInlineEnd";
 }
 
 /**
@@ -125,7 +126,7 @@ export function pinnedCellStyle(
   leads?: PinLeads
 ): PinnedCellStyle | undefined {
   if (!offset) return undefined;
-  const lead = (offset.side === "left" ? leads?.left : leads?.right) ?? 0;
+  const lead = leads?.[offset.side] ?? 0;
   return {
     position: "sticky",
     [insetProp(offset.side)]: offset.inset + lead,
@@ -286,15 +287,15 @@ export function useColumnLayout<TRow>({
       // have no px value here, so fall back to a sane default instead.
       return parsePxWidth(column.width) ?? FALLBACK_PIN_WIDTH;
     };
-    const insets = new Map<string, { side: "left" | "right"; inset: number }>();
-    for (const side of ["left", "right"] as const) {
+    const insets = new Map<string, { side: PinSide; inset: number }>();
+    for (const side of ["start", "end"] as const) {
       // Only VISIBLE pinned columns have a rendered cell to stick — a hidden
       // pinned key stays out of the map and reads back as unpinned.
       const samePinned = visibleColumns.filter(
         (c) => state.pinned[c.key] === side
       );
-      // Left: sum widths before each column; right: sum widths after it.
-      const ordered = side === "left" ? samePinned : [...samePinned].reverse();
+      // Start: sum widths before each column; end: sum widths after it.
+      const ordered = side === "start" ? samePinned : [...samePinned].reverse();
       let inset = 0;
       for (const column of ordered) {
         insets.set(column.key, { side, inset });

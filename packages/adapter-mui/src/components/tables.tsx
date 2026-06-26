@@ -479,22 +479,22 @@ export function DesktopTable<TRow>({
   // start past them.
   const selectionWidth = 48;
   const actionsWidth = 120;
-  const leadLeft =
+  const leadStart =
     (expandActive ? EXPAND_WIDTH : 0) + (selection ? selectionWidth : 0);
-  const leadRight = showActions ? actionsWidth : 0;
-  const leads: PinLeads = { left: leadLeft, right: leadRight };
+  const leadEnd = showActions ? actionsWidth : 0;
+  const leads: PinLeads = { start: leadStart, end: leadEnd };
   // The selection cell itself sits past the expand column when both pin.
   const selectionLead = expandActive ? EXPAND_WIDTH : 0;
-  const hasLeftPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "left"
+  const hasStartPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "start"
   );
-  const hasRightPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "right"
+  const hasEndPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "end"
   );
   // The actions cells stick to the inline end when a data column is pinned
   // right (so it never scrolls under them) OR when the actions column itself
   // is pinned from the Columns menu — one click, no data pin required.
-  const stickActions = hasRightPin || actionsPinned;
+  const stickActions = hasEndPin || actionsPinned;
   // Built with conditional spreads so no key is ever `undefined` — that keeps
   // the object assignable to MUI's strict `sx` index signature with no cast.
   const headCellSx = (column: ColumnDef<TRow>) => {
@@ -522,7 +522,7 @@ export function DesktopTable<TRow>({
   // The expand / checkbox / actions cells pin to their edge when a data
   // column on that side is pinned (corner-sticky in the header). `lead`
   // shifts the selection cell past a pinned expand column.
-  const edgeHeadSx = (side: "left" | "right", active: boolean, lead = 0) => {
+  const edgeHeadSx = (side: "start" | "end", active: boolean, lead = 0) => {
     const pin = edgePinStyle(side, active, PIN_Z.headerPinned);
     return {
       ...headSx,
@@ -533,7 +533,7 @@ export function DesktopTable<TRow>({
   // One identity per pin/width layout: the memoized rows treat this object
   // as "the cell styling", so it must only change when the layout does.
   const rowSx = useMemo<DesktopRowSx>(() => {
-    const edge = (side: "left" | "right", active: boolean, lead = 0) => {
+    const edge = (side: "start" | "end", active: boolean, lead = 0) => {
       const pin = edgePinStyle(side, active, PIN_Z.body);
       if (!pin) return undefined;
       return {
@@ -545,8 +545,8 @@ export function DesktopTable<TRow>({
     const cells: Record<string, SxProps<Theme>> = {};
     for (const column of columns) {
       const pin = pinnedCellStyle(pinOffset?.(column.key), PIN_Z.body, {
-        left: leadLeft,
-        right: leadRight,
+        start: leadStart,
+        end: leadEnd,
       });
       cells[column.key] = {
         ...(pin && { ...pin, bgcolor: "background.paper" }),
@@ -555,16 +555,16 @@ export function DesktopTable<TRow>({
     }
     return {
       cells,
-      expand: edge("left", hasLeftPin),
-      selection: edge("left", hasLeftPin, selectionLead),
-      actions: { ...edge("right", stickActions), textAlign: "end" },
+      expand: edge("start", hasStartPin),
+      selection: edge("start", hasStartPin, selectionLead),
+      actions: { ...edge("end", stickActions), textAlign: "end" },
     };
   }, [
     columns,
     pinOffset,
-    leadLeft,
-    leadRight,
-    hasLeftPin,
+    leadStart,
+    leadEnd,
+    hasStartPin,
     stickActions,
     selectionLead,
   ]);
@@ -579,7 +579,7 @@ export function DesktopTable<TRow>({
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra: leadLeft + leadRight,
+    extra: leadStart + leadEnd,
   });
 
   return (
@@ -619,13 +619,13 @@ export function DesktopTable<TRow>({
             {expandActive && (
               <TableCell
                 padding="checkbox"
-                sx={edgeHeadSx("left", hasLeftPin)}
+                sx={edgeHeadSx("start", hasStartPin)}
               />
             )}
             {selection && (
               <TableCell
                 padding="checkbox"
-                sx={edgeHeadSx("left", hasLeftPin, selectionLead)}
+                sx={edgeHeadSx("start", hasStartPin, selectionLead)}
               >
                 <Checkbox
                   slotProps={{ input: { "aria-label": labels.selectAll } }}
@@ -695,7 +695,7 @@ export function DesktopTable<TRow>({
             })}
             {showActions && (
               <TableCell
-                sx={{ ...edgeHeadSx("right", stickActions), textAlign: "end" }}
+                sx={{ ...edgeHeadSx("end", stickActions), textAlign: "end" }}
               >
                 {labels.actions}
               </TableCell>

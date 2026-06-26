@@ -4,6 +4,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   headerGroupRow,
+  type PinSide,
   resolveDisabledReason,
   type RowAction,
   runRowAction,
@@ -15,6 +16,18 @@ import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type { CSSProperties, HTMLAttributes, MouseEvent } from "react";
 
 import { isDangerColor } from "./colors";
+
+/**
+ * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
+ * `fixed: "left"/"right"` under RTL itself (via `ConfigProvider` direction), so
+ * `"start"` → `"left"` and `"end"` → `"right"` lands on the correct edge in
+ * both writing directions.
+ */
+function antdFixed(side: PinSide | undefined): "left" | "right" | undefined {
+  if (side === "start") return "left";
+  if (side === "end") return "right";
+  return undefined;
+}
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -133,12 +146,16 @@ function headerCellProps<TRow>(
   sortDir: SortDirection | undefined,
   sortIndex: number | undefined,
   hasResizeHandle: boolean,
+  isPinned: boolean,
   onToggleSortLevel: ((key: string) => void) | undefined
 ): HeaderCellProps {
   const style: CSSProperties = { textAlign: logicalAlign(column.align) };
-  // The resize handle is absolute, so the header cell needs a positioning
-  // context for it.
-  if (hasResizeHandle) style.position = "relative";
+  // The absolute resize handle needs a positioning context — but only set
+  // `position: relative` when the column is NOT pinned. A pinned column gets
+  // `position: sticky` from antd's native fixed-column styling (itself a
+  // positioning context); forcing `relative` here would override that sticky,
+  // so a left-pinned column would scroll away instead of sticking.
+  if (hasResizeHandle && !isPinned) style.position = "relative";
   if (!column.sortable) return { style };
   const props: HeaderCellProps = {
     style,
@@ -187,8 +204,9 @@ export interface BuildColumnsOptions<TRow> {
   sortDir: SortDirection | undefined;
   confirm: ConfirmHandler;
   labels: Required<TableLabels>;
-  /** Per-column edge pinning, mapped to antd's native `fixed`. */
-  pinned?: Readonly<Record<string, "left" | "right">>;
+  /** Per-column edge pinning (logical start/end), mapped to antd's native
+   *  physical `fixed` via {@link antdFixed}. */
+  pinned?: Readonly<Record<string, PinSide>>;
   /** Layout width mutator; enables a resize handle when provided. */
   setWidth?: (key: string, width: number) => void;
   /** Per-column pixel widths from the layout state. */
@@ -233,8 +251,12 @@ export function buildColumns<TRow>({
     const sortIndex = chainIndex(sortLevels, column.key);
     return {
       key: column.key,
+      // A real element (not a Fragment): antd v6 attaches a `ref` to the
+      // column title to measure it, which logs "ref on React.Fragment" in dev.
+      // The wrapper takes the ref; the absolute resize handle still anchors to
+      // the (positioned) header cell, so the layout is unchanged.
       title: (
-        <>
+        <span>
           {column.header}
           <SortIndexBadge index={sortIndex} />
           {setWidth && (
@@ -247,10 +269,10 @@ export function buildColumns<TRow>({
               style={RESIZE_HANDLE_STYLE}
             />
           )}
-        </>
+        </span>
       ),
       width: columnWidths?.[column.key] ?? column.width,
-      fixed: pinned?.[column.key],
+      fixed: antdFixed(pinned?.[column.key]),
       sorter: column.sortable ? true : undefined,
       sortOrder: column.sortable
         ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
@@ -264,6 +286,7 @@ export function buildColumns<TRow>({
           effectiveSortDir,
           sortIndex,
           Boolean(setWidth),
+          pinned?.[column.key] != null,
           onToggleSortLevel
         ),
       render: (_value: unknown, row: TRow, index: number) =>
@@ -279,12 +302,12 @@ export function buildColumns<TRow>({
   if (rowActions && rowActions.length > 0) {
     // The actions column rides antd's `fixed: "right"` when the user pins it
     // from the Columns menu (its reserved layout key, one click, no data pins
-    // required) — OR'd with any right-pinned data column, which drags it
+    // required) — OR'd with any end-pinned data column, which drags it
     // along so antd's right-fixed run stays contiguous through the trailing
     // edge.
     const actionsFixed =
-      pinned?.[ACTIONS_COLUMN_KEY] === "right" ||
-      columns.some((column) => pinned?.[column.key] === "right");
+      pinned?.[ACTIONS_COLUMN_KEY] === "end" ||
+      columns.some((column) => pinned?.[column.key] === "end");
     cols.push({
       key: "__actions__",
       title: labels.actions,

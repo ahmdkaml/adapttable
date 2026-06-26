@@ -815,7 +815,7 @@ describe("actions column in the column layout", () => {
     renderHarness({
       override: {
         rowActions: EDIT_ACTION,
-        defaultColumnLayout: { pinned: { actions: "right" } },
+        defaultColumnLayout: { pinned: { actions: "end" } },
       },
     });
     // Header and body cells both turn sticky at the inline end…
@@ -842,7 +842,7 @@ describe("actions column in the column layout", () => {
     const visible = renderHarness({
       override: {
         rowActions: EDIT_ACTION,
-        defaultColumnLayout: { pinned: { city: "right" } },
+        defaultColumnLayout: { pinned: { city: "end" } },
       },
     });
     expect(screen.getByText("City").closest("th")!.style.insetInlineEnd).toBe(
@@ -856,7 +856,7 @@ describe("actions column in the column layout", () => {
         rowActions: EDIT_ACTION,
         defaultColumnLayout: {
           hidden: ["actions"],
-          pinned: { city: "right" },
+          pinned: { city: "end" },
         },
       },
     });
@@ -876,7 +876,7 @@ describe("actions column in the column layout", () => {
     const table = () => screen.getByRole("table");
 
     // ONE click pins: the actions th turns sticky with no data column pinned.
-    fireEvent.click(menuToggle("Pin right: Actions"));
+    fireEvent.click(menuToggle("Pin to end: Actions"));
     const th = within(table()).getByText("Actions").closest("th")!;
     expect(th.style.position).toBe("sticky");
     expect(th.style.insetInlineEnd).toBe("0px");
@@ -915,12 +915,12 @@ describe("actions column in the column layout", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
-    fireEvent.click(menuToggle("Pin right: Actions"));
+    fireEvent.click(menuToggle("Pin to end: Actions"));
     // The hook debounces the URL write — flush it, then the layout has
     // serialized the reserved "actions" key like any column key.
     act(() => vi.advanceTimersByTime(200));
     expect(decodeURIComponent(adapter.getSearch())).toContain(
-      "colPin=actions:right"
+      "colPin=actions:end"
     );
     first.unmount();
 

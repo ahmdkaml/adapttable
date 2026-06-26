@@ -184,7 +184,7 @@ describe("<DataTable> (unstyled) branch coverage", () => {
 
   it("wraps in a sideways-scrolling box when a column is pinned", () => {
     const { container } = renderHarness({
-      override: { defaultColumnLayout: { pinned: { name: "left" } } },
+      override: { defaultColumnLayout: { pinned: { name: "start" } } },
     });
     const box = container.querySelector('[data-adapttable-part="scroll-box"]');
     expect(box).toBeInTheDocument();
@@ -379,18 +379,18 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     const { container } = renderHarness({
       override: {
         rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
-        defaultColumnLayout: { pinned: { name: "right" } },
+        defaultColumnLayout: { pinned: { name: "end" } },
       },
     });
     const header = container.querySelector(
       '[data-adapttable-part="actions-header"]'
     );
-    expect(header).toHaveAttribute("data-pinned", "right");
+    expect(header).toHaveAttribute("data-pinned", "end");
     expect(header).toHaveStyle({ position: "sticky" });
     const cell = container.querySelector(
       '[data-adapttable-part="actions-cell"]'
     );
-    expect(cell).toHaveAttribute("data-pinned", "right");
+    expect(cell).toHaveAttribute("data-pinned", "end");
     expect(cell).toHaveStyle({ position: "sticky" });
   });
 

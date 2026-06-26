@@ -50,11 +50,11 @@ export const ar: Required<TableLabels> = {
   columns: "الأعمدة",
   // Pinning and reorder are logical (start/end follows اتجاه الكتابة), so the
   // copy is direction-neutral instead of a literal يسار/يمين.
-  pinLeft: "تثبيت في البداية",
-  pinRight: "تثبيت في النهاية",
+  pinStart: "تثبيت في البداية",
+  pinEnd: "تثبيت في النهاية",
   unpin: "إلغاء التثبيت",
-  moveLeft: "نقل نحو البداية",
-  moveRight: "نقل نحو النهاية",
+  moveStart: "نقل نحو البداية",
+  moveEnd: "نقل نحو النهاية",
   resetColumns: "إعادة تعيين الأعمدة",
   resizeColumn: "تغيير حجم العمود",
   showColumn: "إظهار العمود",

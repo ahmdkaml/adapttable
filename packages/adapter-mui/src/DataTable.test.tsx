@@ -103,7 +103,7 @@ describe("<DataTable> (MUI)", () => {
           { key: "city", header: "City", accessor: (r) => r.city },
         ],
         defaultColumnLayout: {
-          pinned: { name: "left", city: "right" },
+          pinned: { name: "start", city: "end" },
         },
       },
     });
@@ -124,7 +124,7 @@ describe("<DataTable> (MUI)", () => {
   it("pinning without maxHeight still gets a horizontal scroll box", () => {
     const { container } = renderHarness({
       override: {
-        defaultColumnLayout: { pinned: { name: "left" } },
+        defaultColumnLayout: { pinned: { name: "start" } },
       },
     });
     const table = container.querySelector("table")!;
@@ -677,7 +677,7 @@ describe("actions column management (MUI)", () => {
     // In normal flow before the pin: nothing anywhere is pinned.
     expect(getComputedStyle(actionsHeader()!).position).not.toBe("sticky");
     await openMenu();
-    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
+    fireEvent.click(screen.getByLabelText("Pin to end: Actions"));
     await closeMenu();
     // One click → the header and every body actions cell stick to the inline
     // end on their own; no data column is pinned right.
@@ -723,8 +723,8 @@ describe("actions column management (MUI)", () => {
       },
     });
     await openMenu();
-    fireEvent.click(screen.getByLabelText("Pin right: Actions"));
-    expect(persisted?.pinned).toEqual({ actions: "right" });
+    fireEvent.click(screen.getByLabelText("Pin to end: Actions"));
+    expect(persisted?.pinned).toEqual({ actions: "end" });
     first.unmount();
     // Phase 2: a fresh mount restores the pin from the captured state alone.
     renderHarness({

@@ -106,7 +106,7 @@ describe("<DataTable> (Chakra) coverage-fill", () => {
         columnLayout: {
           hidden: [],
           order: [],
-          pinned: { name: "left" },
+          pinned: { name: "start" },
           widths: {},
         },
       },

@@ -50,11 +50,11 @@ export const he: Required<TableLabels> = {
   columns: "עמודות",
   // Pinning and reorder are logical (start/end follows כיוון הכתיבה), so
   // the copy is direction-neutral instead of a literal שמאל/ימין.
-  pinLeft: "הצמד להתחלה",
-  pinRight: "הצמד לסוף",
+  pinStart: "הצמד להתחלה",
+  pinEnd: "הצמד לסוף",
   unpin: "בטל הצמדה",
-  moveLeft: "הזז לכיוון ההתחלה",
-  moveRight: "הזז לכיוון הסוף",
+  moveStart: "הזז לכיוון ההתחלה",
+  moveEnd: "הזז לכיוון הסוף",
   resetColumns: "אפס עמודות",
   resizeColumn: "שנה גודל עמודה",
   showColumn: "הצג עמודה",

@@ -152,7 +152,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     ? undefined
     : rowActions;
   const actionsPinned =
-    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
     useChromeBodyData(chrome, chromeProps);
   const [drawerOpened, setDrawerOpened] = useState(false);

@@ -104,7 +104,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
   it("renders a sticky pinned cell inside a maxHeight scroll box", () => {
     mount({
       maxHeight: 400,
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     // A pinned body cell receives `position: sticky`.
     const cell = screen.getByText("Alice").closest("td")!;
@@ -118,7 +118,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
   it("sticks the header to the box top (0) when pinned + stickyHeader", () => {
     mount({
       stickyHeader: true,
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     const th = screen.getByText("Name").closest("th")!;
     expect(th.style.position).toBe("sticky");
@@ -128,7 +128,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
   it("pins the selection column alongside a left-pinned data column", () => {
     mount({
       bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     const headerCheckbox = screen.getByLabelText("Select all").closest("th")!;
     expect(headerCheckbox.style.position).toBe("sticky");
@@ -144,7 +144,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
   it("pins the actions column alongside a right-pinned data column", () => {
     mount({
       rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
-      defaultColumnLayout: { pinned: { name: "right" } },
+      defaultColumnLayout: { pinned: { name: "end" } },
     });
     const actionsCell = screen
       .getAllByRole("button", { name: "Edit" })[0]!
@@ -157,7 +157,7 @@ describe("DesktopTable pinned column + fixed-height scroll box", () => {
     mount({
       bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
       renderRowDetail: (r) => <div>Detail for {r.name}</div>,
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     // The chevron column pins flush to the start edge…
     const chevronCell = screen

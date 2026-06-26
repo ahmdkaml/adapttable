@@ -187,7 +187,7 @@ describe("row expansion (MUI)", () => {
       renderRowDetail: detailFor,
       bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
       maxHeight: 300,
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     const headCells = document.querySelectorAll("thead th");
     expect(getComputedStyle(headCells[0] as HTMLElement).position).toBe(

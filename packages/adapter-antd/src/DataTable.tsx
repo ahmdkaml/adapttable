@@ -540,7 +540,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   });
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
-  const hasLeftPin = pinnedSides.includes("left");
+  const hasStartPin = pinnedSides.includes("start");
   const minWidth = antdMinWidth(
     table.columns,
     c.columnLayout.state.widths,
@@ -554,7 +554,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     selection,
     getRowId,
     labels,
-    hasLeftPin
+    hasStartPin
   );
   const expandable = buildExpandable(
     c.detail?.render,

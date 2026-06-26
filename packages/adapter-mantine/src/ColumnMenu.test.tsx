@@ -17,7 +17,7 @@ const cols: ColumnDef<Row>[] = [
 
 function fakeLayout(): UseColumnLayoutResult<Row> {
   return {
-    state: { hidden: [], order: [], pinned: { a: "left" }, widths: {} },
+    state: { hidden: [], order: [], pinned: { a: "start" }, widths: {} },
     visibleColumns: cols,
     isHidden: () => false,
     setHidden: vi.fn(),
@@ -33,11 +33,11 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
 const labels = {
   columns: "Columns",
   actions: "Actions",
-  pinLeft: "Pin left",
-  pinRight: "Pin right",
+  pinStart: "Pin to start",
+  pinEnd: "Pin to end",
   unpin: "Unpin",
-  moveLeft: "Move left",
-  moveRight: "Move right",
+  moveStart: "Move to start",
+  moveEnd: "Move to end",
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
@@ -109,14 +109,14 @@ describe("mantine ColumnMenu", () => {
     fireEvent.click(byLabel("Hide column: Bravo"));
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
 
-    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
-    fireEvent.click(byLabel("Pin right: Alpha"));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
-    fireEvent.click(byLabel("Pin left: Bravo"));
-    expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
+    // pin toggle: a is pinned to start → next click unpins; b is unpinned → pins to start
+    fireEvent.click(byLabel("Unpin: Alpha"));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    fireEvent.click(byLabel("Pin to start: Bravo"));
+    expect(layout.setPinned).toHaveBeenCalledWith("b", "start");
 
     // reorder via grip keyboard
-    fireEvent.keyDown(byLabel("Move left / Move right: Alpha"), {
+    fireEvent.keyDown(byLabel("Move to start / Move to end: Alpha"), {
       key: "ArrowRight",
     });
     expect(layout.move).toHaveBeenCalledWith("a", 1);
@@ -152,12 +152,14 @@ describe("mantine ColumnMenu", () => {
 
     // …and a pin toggle that pins to the inline end in ONE click — no
     // left-pin stop in the cycle.
-    fireEvent.click(byLabel("Pin right: Actions"));
-    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+    fireEvent.click(byLabel("Pin to end: Actions"));
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "end");
 
     // No drag grip and no draggable row: the actions column always trails.
     expect(
-      document.querySelector('[aria-label="Move left / Move right: Actions"]')
+      document.querySelector(
+        '[aria-label="Move to start / Move to end: Actions"]'
+      )
     ).toBeNull();
     expect(screen.getByText("Actions").closest("[draggable]")).toBeNull();
   });
@@ -168,7 +170,7 @@ describe("mantine ColumnMenu", () => {
     layout.state = {
       hidden: ["actions"],
       order: [],
-      pinned: { actions: "right" },
+      pinned: { actions: "end" },
       widths: {},
     };
     layout.isHidden = (key) => key === "actions";

@@ -217,7 +217,7 @@ describe("header groups (antd native grouped columns)", () => {
     ];
     const { container } = renderHarness({
       columns: pinnable,
-      override: { defaultColumnLayout: { pinned: { name: "left" } } },
+      override: { defaultColumnLayout: { pinned: { name: "start" } } },
     });
     expect(
       screen.getByRole("columnheader", { name: "Geo" })
