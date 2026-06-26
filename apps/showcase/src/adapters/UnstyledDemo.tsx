@@ -67,9 +67,12 @@ const TAILWIND: DataTableClassNames = {
   actionButton:
     "h-8 w-8 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
   footer:
-    "flex items-center justify-between gap-2 border-t border-gray-200 p-3 text-sm text-gray-600 dark:border-zinc-700 dark:text-zinc-400",
+    "flex flex-wrap items-center gap-2 border-t border-gray-200 p-3 text-sm text-gray-600 dark:border-zinc-700 dark:text-zinc-400",
+  pager: "ms-auto flex flex-wrap items-center gap-1",
   pageButton:
-    "h-8 min-w-8 rounded-md border border-gray-300 px-2 hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800",
+    "inline-grid h-8 min-w-8 place-items-center rounded-md border border-gray-300 px-2 hover:bg-gray-50 disabled:opacity-50 aria-[current=page]:border-indigo-600 aria-[current=page]:bg-indigo-600 aria-[current=page]:text-white dark:border-zinc-600 dark:hover:bg-zinc-800",
+  pageEllipsis:
+    "grid h-8 place-items-center px-1 text-gray-400 dark:text-zinc-500",
   chips: "flex flex-wrap gap-2 px-3 pb-2",
   chip: "inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
   chipRemove:

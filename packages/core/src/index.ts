@@ -278,6 +278,8 @@ export {
 export {
   computePagination,
   type PaginationInfo,
+  type PaginationItem,
+  paginationItems,
 } from "./pagination/paginationMath";
 
 /* ── Hooks ─────────────────────────────────────────────────────────── */

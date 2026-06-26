@@ -415,6 +415,30 @@ describe("<DataTable> (unstyled)", () => {
     expect(adapter.getSearch()).toContain("page=2");
   });
 
+  it("renders numbered page buttons, flags the current one, and groups them in the pager", () => {
+    const { container } = renderHarness({}, "limit=1");
+    const pager = container.querySelector('[data-adapttable-part="pager"]')!;
+    // Prev/next live in the trailing pager group, not as loose footer children
+    // a `justify-between` footer would strand at opposite edges.
+    expect(
+      pager.querySelector('[data-adapttable-part="page-prev"]')
+    ).not.toBeNull();
+    expect(
+      pager.querySelector('[data-adapttable-part="page-next"]')
+    ).not.toBeNull();
+    // One numbered button per page (2 rows at limit=1 → pages 1 and 2), with the
+    // current page marked for assistive tech.
+    const numbers = pager.querySelectorAll<HTMLButtonElement>(
+      '[data-adapttable-part="page-number"]'
+    );
+    expect(numbers).toHaveLength(2);
+    expect(numbers[0]).toHaveAttribute("aria-current", "page");
+    expect(numbers[1]).not.toHaveAttribute("aria-current");
+    // Clicking a page number jumps straight to it.
+    fireEvent.click(numbers[1]!);
+    expect(adapter.getSearch()).toContain("page=2");
+  });
+
   it("runs a bulk action after confirm", async () => {
     const onClick = vi.fn();
     const confirm = vi.fn((r: { onConfirm: () => void }) => r.onConfirm());

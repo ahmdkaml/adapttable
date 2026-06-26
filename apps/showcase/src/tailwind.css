@@ -16,6 +16,13 @@
    (specificity 0,1,0) wins over those element/universal resets. */
 @import "tailwindcss/utilities.css";
 
+/* The shadcn adapter ships its class preset in a sibling workspace package, so
+   it sits outside this app's auto-detected content roots. Scan it explicitly so
+   its utilities — including the `aria-[current=page]` active-page variant —
+   compile. (Real consumers add `@adapttable/shadcn` to their Tailwind sources
+   for the same reason.) */
+@source "../../../packages/adapter-shadcn/src/**/*.{ts,tsx}";
+
 /* Bind `dark:` to the site's theme toggle (data-theme), not the OS media
    query, so the demos flip with the navbar switch like everything else. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

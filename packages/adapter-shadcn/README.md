@@ -17,6 +17,13 @@ pnpm add @adapttable/shadcn @adapttable/core react react-dom
 > Requires shadcn/ui set up in your app (its CSS variables + Tailwind config) —
 > this adapter only references shadcn's design tokens (`bg-card`,
 > `text-muted-foreground`, `border-border`, `bg-primary`, …).
+>
+> The preset ships utility classes in this package, so let Tailwind scan it or
+> they won't compile. In Tailwind v4, add it as a source in your CSS:
+>
+> ```css
+> @source "../node_modules/@adapttable/shadcn/dist/**/*.js";
+> ```
 
 ## Quickstart
 
