@@ -130,27 +130,35 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
   },
 ];
 
-/** Total rows to virtualize — defaults to 50,000, overridable with `?rows=N`
- *  so the demo doubles as the documented perf benchmark target. */
-function totalRows(): number {
-  if (typeof window === "undefined") return 50000;
-  const n = Number(new URLSearchParams(window.location.search).get("rows"));
-  return Number.isInteger(n) && n > 0 ? n : 50000;
+/** Scale-demo knobs from the URL — `?rows=N` (default 50,000), `?virtualize=0`
+ *  to turn windowing OFF, and `?all=1` to load the whole list up front. The
+ *  three drive the documented virtualized-vs-not A/B benchmark target. */
+function scaleParams(): { total: number; virtual: boolean; all: boolean } {
+  if (typeof window === "undefined")
+    return { total: 50000, virtual: true, all: false };
+  const p = new URLSearchParams(window.location.search);
+  const n = Number(p.get("rows"));
+  return {
+    total: Number.isInteger(n) && n > 0 ? n : 50000,
+    virtual: p.get("virtualize") !== "0",
+    all: p.get("all") === "1",
+  };
 }
 
 /** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const total = totalRows();
+  const { total, virtual, all } = scaleParams();
   const rows = useMemo(() => makeBigList(total), [total]);
   const source = useFrontendData<BigPerson>({
     data: rows,
     columns: COLUMNS,
     urlKey: "scale",
-    // Virtualization needs a continuous list, not pages: infinite mode
-    // keeps ONE growing window that the virtualizer extends automatically
-    // whenever the scroller nears the end (no Load-more button needed).
+    // Virtualization needs a continuous list, not pages: infinite mode keeps
+    // ONE growing window that the virtualizer extends automatically whenever
+    // the scroller nears the end (no Load-more button needed). `?all=1` loads
+    // the whole list up front so the non-virtualized A/B arm renders every row.
     paginationMode: "infinite",
-    defaults: { limit: 500 },
+    defaults: { limit: all ? total : 500 },
   });
   return (
     <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
@@ -160,7 +168,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
         rowKey={(r) => String(r.id)}
         labels={getLabels("en")}
         searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
-        virtualize
+        virtualize={virtual}
         estimateRowSize={48}
         // Page-scroll window mode with a pinned header: the page itself
         // scrolls the 50k rows while the header sticks under the app nav.

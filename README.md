@@ -32,6 +32,8 @@ not ship the broken horizontal-scroll tables users hate on phones.
 Filters are adapter-native too: each ready UI kit renders its own drawer and
 controls, while the core keeps URL state, chips, and backend params aligned.
 
+**Built to scale.** Flip on `virtualize` and a **10,000-row table mounts just 24 DOM rows** — **417× fewer than a plain table, and ~half the memory** — holding constant whether the list is 1,000 or 100,000. [See the measured benchmark →](https://orwa-mahmoud.github.io/adapttable/virtualization/#benchmark)
+
 ```tsx
 // Batteries-included — 5 lines to a fully styled, sortable, filterable, paginated table.
 import {
