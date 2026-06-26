@@ -6,7 +6,9 @@
 
 **Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
-![AdaptTable — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind, from one headless engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core.gif)
+[![AdaptTable — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind, from one headless engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
+
+▶ **[Watch the 25-second tour](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)** — sort, filter, paginate, and select, across every UI kit.
 
 [![CI](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml/badge.svg)](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
