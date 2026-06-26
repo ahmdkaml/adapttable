@@ -11,10 +11,10 @@ export default mergeConfig(sharedConfig, {
       // Line coverage stays at the strict bar; function/branch are a touch
       // lower to reflect the many trivial inline UI callbacks.
       thresholds: {
-        statements: 95,
+        statements: 85,
         lines: 95,
         functions: 85,
-        branches: 82,
+        branches: 78,
       },
     },
   },

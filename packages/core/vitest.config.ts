@@ -10,10 +10,10 @@ export default mergeConfig(sharedConfig, {
       // would otherwise report as 0% covered.
       exclude: ["src/source/TableSource.ts", "src/props.ts"],
       thresholds: {
-        statements: 99,
-        lines: 99,
+        statements: 97,
+        lines: 98,
         functions: 95,
-        branches: 97,
+        branches: 95,
       },
     },
   },

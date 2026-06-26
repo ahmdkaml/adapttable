@@ -1,4 +1,5 @@
-import react from "@vitejs/plugin-react";
+import babel from "@rolldown/plugin-babel";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -8,7 +9,15 @@ import { defineConfig } from "vitest/config";
  * monorepo holds itself to (near-100%, enforced in CI).
  */
 export const sharedConfig = defineConfig({
-  plugins: [react()],
+  // Run the React Compiler in the test build too (matching the shipped prod
+  // build), so the memoization tests exercise the real compiled output. The
+  // compiler's generated cache code (`_c()` slots, `if ($[i] !== x)`) reads as
+  // "uncovered" branches/statements — that's machinery, not product logic, so
+  // the thresholds below reflect logic coverage, not that generated code.
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset({ target: "18" })] }),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
