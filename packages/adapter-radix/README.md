@@ -1,34 +1,24 @@
-# @adapttable/mantine
+# @adapttable/radix
 
-![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.gif)
+![@adapttable/radix — a Radix Themes data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-radix.gif)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
-The **Mantine adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
-a batteries-included React data table with sorting, filtering, URL-synced
-state, selection + bulk actions, RTL, dark mode, and optional entrance
-animation. Built on the headless `@adapttable/core` engine.
+The **Radix Themes adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
+a batteries-included Radix data table with sorting, filtering, URL-synced
+state, selection + bulk actions, RTL, and dark mode. Built on the headless
+`@adapttable/core` engine. (Targets `@radix-ui/themes` **v3**.)
 
 ```bash
-pnpm add @adapttable/mantine @adapttable/core @mantine/core @mantine/hooks react react-dom
+pnpm add @adapttable/radix @adapttable/core @radix-ui/themes react react-dom
 ```
 
 ## Quickstart
 
 ```tsx
-import "@mantine/core/styles.css";
-import { MantineProvider } from "@mantine/core";
-import {
-  DataTable,
-  useFrontendData,
-  type ColumnDef,
-} from "@adapttable/mantine";
-
-interface Person {
-  id: string;
-  name: string;
-  city: string;
-}
+import { Theme } from "@radix-ui/themes";
+import "@radix-ui/themes/styles.css";
+import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/radix";
 
 const columns: ColumnDef<Person>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
@@ -38,30 +28,23 @@ const columns: ColumnDef<Person>[] = [
 export function People({ data }: { data: Person[] }) {
   const source = useFrontendData({ data, columns });
   return (
-    <MantineProvider>
+    <Theme accentColor="iris">
       <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
-    </MantineProvider>
+    </Theme>
   );
 }
 ```
 
-Swap `useFrontendData` for `useBackendData` to drive the same table from a
-server-paginated `useInfiniteQuery` — nothing else changes.
+Appearance follows the surrounding `<Theme>` — light/dark, accent, and radius;
+pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
+`useBackendData` to drive the same table from a server-paginated query.
 
 ## Features
 
-- **Client or server data** through one `TableSource` contract.
-- **URL-synced** search / sort / filters / page (shareable links).
-- **Sorting** with accessible header controls.
-- **Filter drawer + removable chips** (`filters` + `filterLabels`).
-- **Selection + bulk actions** with confirm dialogs (`bulkActions`).
-- **Row actions** with optional confirm.
-- **Auto desktop table ↔ mobile cards** by viewport (or force `isMobile`).
-- **RTL** via the `dir` prop; **dark mode** via Mantine's color scheme.
-- **Optional entrance animation** (`animate`) — dependency-free, honors
-  `prefers-reduced-motion`.
-- **Customisation**: `slots`, `classNames`, custom `toolbar`, injectable
-  `confirm`, and full headless escape hatch via `@adapttable/core`.
+Sortable headers, `Checkbox` selection + bulk actions with confirm, `Badge`
+filter chips, `Popover` / `Dialog` filters, numbered pagination,
+`Skeleton`/empty/error states, auto desktop table ↔ mobile cards, RTL (`dir`),
+`slots`, `size`, `accentColor`, and an injectable `confirm`.
 
 ## Documentation
 

@@ -1,5 +1,7 @@
 # Virtualization
 
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-scale.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+
 Long lists can opt into row/card windowing with one prop: `virtualize`. Fifty
 thousand rows render as a handful of DOM nodes, on the page or inside a
 fixed-height box.

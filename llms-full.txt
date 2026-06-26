@@ -7,6 +7,8 @@
 
 # Getting started
 
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+
 AdaptTable is a headless, UI-agnostic React data table. Pick the adapter for
 your design system and you get a styled, sortable, filterable, paginated
 table with URL-synced state, selection + bulk actions, RTL, and dark mode.
@@ -26,21 +28,33 @@ kit's own packages (peer dependencies — skip what you already have).
 
 ```bash
 # Mantine
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 
 # Material UI
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
 # Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 
 # Ant Design
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/antd antd
 
 # shadcn/ui — one import, pre-wired with the shadcn class preset
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/shadcn
 
 # Tailwind / unstyled — bring your own classes
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 
@@ -1281,6 +1295,8 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 # Column management
 
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-pinning.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+
 Let users show/hide, reorder, pin, and resize columns — one prop per capability, with the resulting layout persistable to the URL or localStorage. Every adapter shares the same engine from `@adapttable/core`.
 
 ## Example
@@ -1527,6 +1543,8 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 ---
 
 # Virtualization
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-scale.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 
 Long lists can opt into row/card windowing with one prop: `virtualize`. Fifty
 thousand rows render as a handful of DOM nodes, on the page or inside a
@@ -2054,6 +2072,8 @@ See the [Columns guide](./columns.md) and the
 ---
 
 # i18n & RTL
+
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 
 AdaptTable is **i18n-agnostic at its core** — it never imports an i18n
 library. Strings come in through a `labels` prop, so you can use your own

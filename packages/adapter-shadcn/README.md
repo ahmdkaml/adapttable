@@ -1,6 +1,6 @@
 # @adapttable/shadcn
 
-![@adapttable/shadcn — a shadcn/ui data table built on AdaptTable](https://raw.githubusercontent.com/orwa-mahmoud/adapttable/main/assets/hero-shadcn.png)
+![@adapttable/shadcn — a shadcn/ui data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-shadcn.gif)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 

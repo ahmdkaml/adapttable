@@ -1,5 +1,7 @@
 # i18n & RTL
 
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+
 AdaptTable is **i18n-agnostic at its core** — it never imports an i18n
 library. Strings come in through a `labels` prop, so you can use your own
 stack (i18next, react-intl, …) or the ready presets in `@adapttable/i18n`.
