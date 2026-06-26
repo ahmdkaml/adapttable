@@ -172,10 +172,10 @@ export function readColumnLayout(
     return undefined;
   }
 
-  const pinned: Record<string, "left" | "right"> = {};
+  const pinned: Record<string, "start" | "end"> = {};
   for (const pair of splitRaw(pinRaw)) {
     const [encKey, side] = pair.split(":");
-    if (encKey && (side === "left" || side === "right")) {
+    if (encKey && (side === "start" || side === "end")) {
       pinned[safeDecode(encKey)] = side;
     }
   }

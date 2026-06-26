@@ -63,8 +63,13 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 /** Width (px) reserved for the leading expand-chevron column. */
 const EXPANSION_WIDTH = 32;
 
-/** Opaque background for sticky/pinned cells (Chakra body background). */
-const PIN_BG = "var(--chakra-colors-chakra-body-bg)";
+/**
+ * Opaque background for sticky/pinned cells — the Chakra v3 body-background
+ * token (`--chakra-colors-bg`). The old v2 `chakra-body-bg` token does not
+ * exist in v3, so it resolved to transparent and scrolled columns bled through
+ * the pinned ones.
+ */
+const PIN_BG = "var(--chakra-colors-bg)";
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   /** Class hook for the table (desktop) / each card (mobile). */
@@ -276,7 +281,7 @@ interface DesktopRowApi<TRow> {
   pinOffset?: (key: string) => PinOffset | undefined;
   measureElement?: (element: Element | null) => void;
   leads: PinLeads;
-  hasLeftPin: boolean;
+  hasStartPin: boolean;
   /** Actions cells stick: a data column is right-pinned OR actions are end-pinned. */
   actionsStick: boolean;
 }
@@ -384,7 +389,7 @@ function DesktopRowBase<TRow>({
         {expandable && (
           <Table.Cell
             px={1}
-            style={edgeCellStyle("left", live.hasLeftPin, PIN_Z.body)}
+            style={edgeCellStyle("start", live.hasStartPin, PIN_Z.body)}
           >
             <ExpandToggle
               open={expanded}
@@ -397,8 +402,8 @@ function DesktopRowBase<TRow>({
         {hasSelection && (
           <Table.Cell
             style={edgeCellStyle(
-              "left",
-              live.hasLeftPin,
+              "start",
+              live.hasStartPin,
               PIN_Z.body,
               expandable ? EXPANSION_WIDTH : 0
             )}
@@ -426,7 +431,7 @@ function DesktopRowBase<TRow>({
         {showActions && (
           <Table.Cell
             textAlign="end"
-            style={edgeCellStyle("right", live.actionsStick, PIN_Z.body)}
+            style={edgeCellStyle("end", live.actionsStick, PIN_Z.body)}
           >
             <RowActionButtons
               row={row}
@@ -529,7 +534,7 @@ export function DesktopTable<TRow>({
         position: "sticky" as const,
         top: inScrollBox ? "0px" : `${stickyTop}px`,
         zIndex: PIN_Z.header,
-        bg: "chakra-body-bg",
+        bg: "bg",
       }
     : {};
   // The leading expansion (32px) / checkbox (48px) and trailing actions
@@ -538,19 +543,20 @@ export function DesktopTable<TRow>({
   const selectionWidth = 48;
   const actionsWidth = 120;
   const leads: PinLeads = {
-    left: (expandable ? EXPANSION_WIDTH : 0) + (selection ? selectionWidth : 0),
-    right: showActions ? actionsWidth : 0,
+    start:
+      (expandable ? EXPANSION_WIDTH : 0) + (selection ? selectionWidth : 0),
+    end: showActions ? actionsWidth : 0,
   };
-  const hasLeftPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "left"
+  const hasStartPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "start"
   );
-  const hasRightPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "right"
+  const hasEndPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "end"
   );
   // The actions cells stick flush to the inline end when a data column is
   // pinned right (so it can't slide beneath them) OR when the actions column
   // itself is end-pinned from the Columns menu — independently, in one click.
-  const actionsStick = hasRightPin || actionsPinned;
+  const actionsStick = hasEndPin || actionsPinned;
   // Header-cell style merging pin + user width; the resize handle is absolute,
   // so add a positioning context when the cell is not already sticky/pinned.
   const headCellStyle = (
@@ -596,7 +602,7 @@ export function DesktopTable<TRow>({
     pinOffset,
     measureElement,
     leads,
-    hasLeftPin,
+    hasStartPin,
     actionsStick,
   };
   const api = useRef(rowApi);
@@ -611,7 +617,7 @@ export function DesktopTable<TRow>({
   // The actions edge is part of the geometry: end-pinning the actions column
   // must re-render the memoized rows so their actions cells turn sticky.
   const pinSignature = [
-    actionsStick ? "actions:right" : "",
+    actionsStick ? "actions:end" : "",
     ...columns.map((column) => {
       const pin = pinOffset?.(column.key);
       return pin ? `${column.key}:${pin.side}:${pin.inset}` : "";
@@ -663,15 +669,15 @@ export function DesktopTable<TRow>({
                 aria-label={labels.expandRow}
                 width={`${EXPANSION_WIDTH}px`}
                 px={1}
-                style={edgeCellStyle("left", hasLeftPin, PIN_Z.headerPinned)}
+                style={edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)}
               />
             )}
             {selection && (
               <Table.ColumnHeader
                 {...stickyTh}
                 style={edgeCellStyle(
-                  "left",
-                  hasLeftPin,
+                  "start",
+                  hasStartPin,
                   PIN_Z.headerPinned,
                   expandable ? EXPANSION_WIDTH : 0
                 )}
@@ -754,7 +760,7 @@ export function DesktopTable<TRow>({
               <Table.ColumnHeader
                 textAlign="end"
                 {...stickyTh}
-                style={edgeCellStyle("right", actionsStick, PIN_Z.headerPinned)}
+                style={edgeCellStyle("end", actionsStick, PIN_Z.headerPinned)}
               >
                 {labels.actions}
               </Table.ColumnHeader>

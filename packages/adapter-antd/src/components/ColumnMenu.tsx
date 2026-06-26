@@ -101,7 +101,7 @@ function ActionsRow<TRow>({
   labels,
 }: Readonly<{ layout: UseColumnLayoutResult<TRow>; labels: MenuLabels }>) {
   const hidden = layout.isHidden(ACTIONS_COLUMN_KEY);
-  const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+  const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return (
     <>
       <Divider style={{ margin: "6px 0" }} />
@@ -121,9 +121,9 @@ function ActionsRow<TRow>({
         <RowName name={labels.actions} hidden={hidden} />
         <PinToggle
           pinned={pinned}
-          actionLabel={`${pinned ? labels.unpin : labels.pinRight}: ${labels.actions}`}
+          actionLabel={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
           onPin={() =>
-            layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "right")
+            layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
           }
         />
       </Flex>
@@ -207,7 +207,7 @@ export function ColumnMenu<TRow>({
                 r.key,
                 r.index,
                 layout.move,
-                `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+                `${labels.moveStart} / ${labels.moveEnd}: ${r.name}`
               )}
             >
               <GripIcon />

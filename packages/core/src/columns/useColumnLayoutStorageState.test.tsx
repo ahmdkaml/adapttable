@@ -25,7 +25,7 @@ function fakeStorage(initial: Record<string, string> = {}) {
 const LAYOUT: ColumnLayoutState = {
   hidden: ["email"],
   order: [],
-  pinned: { name: "left" },
+  pinned: { name: "start" },
   widths: { name: 220 },
 };
 

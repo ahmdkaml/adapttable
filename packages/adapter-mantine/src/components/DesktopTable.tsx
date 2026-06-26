@@ -322,7 +322,7 @@ function leadingPinStyle(
   background?: string
 ): CSSProperties | undefined {
   if (!active) return undefined;
-  const style = pinnedCellStyle({ side: "left", inset }, zIndex);
+  const style = pinnedCellStyle({ side: "start", inset }, zIndex);
   return background ? { ...style, background } : style;
 }
 
@@ -334,14 +334,14 @@ function leadingPinStyle(
 function pinLayoutSignature<TRow>(
   columns: readonly ColumnDef<TRow>[],
   pinOffset: SharedTableRenderProps<TRow>["pinOffset"],
-  hasLeftPin: boolean,
+  hasStartPin: boolean,
   actionsEdgePinned: boolean
 ): string {
   const perColumn = columns.map((column) => {
     const pin = pinOffset?.(column.key);
     return pin ? `${column.key}:${pin.side}${pin.inset}` : column.key;
   });
-  return `${perColumn.join("|")}|${String(hasLeftPin)}|${String(actionsEdgePinned)}`;
+  return `${perColumn.join("|")}|${String(hasStartPin)}|${String(actionsEdgePinned)}`;
 }
 
 /**
@@ -491,13 +491,13 @@ export function DesktopTable<TRow>({
   // the per-column footer summary cells (`undefined` → no footer).
   const groupCells = headerGroupRow(columns);
   const summaryCells = summaryRow?.(rows);
-  const hasRightPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "right"
+  const hasEndPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "end"
   );
   // The actions column sticks to the inline end either because a data column
   // is pinned right (it must stay outermost past it) or because the user
   // pinned the actions column itself — one click, no data column involved.
-  const actionsEdgePinned = showActions && (hasRightPin || actionsPinned);
+  const actionsEdgePinned = showActions && (hasEndPin || actionsPinned);
   const hasPinned =
     table.columns.some((c) => pinOffset?.(c.key) != null) || actionsEdgePinned;
   // Pinning needs horizontal scroll, and a `maxHeight` needs vertical scroll;
@@ -537,11 +537,11 @@ export function DesktopTable<TRow>({
   const actionsWidth = 120;
   const expansionLead = expandable ? expansionWidth : 0;
   const leads: PinLeads = {
-    left: expansionLead + (selection ? selectionWidth : 0),
-    right: showActions ? actionsWidth : 0,
+    start: expansionLead + (selection ? selectionWidth : 0),
+    end: showActions ? actionsWidth : 0,
   };
-  const hasLeftPin = table.columns.some(
-    (c) => pinOffset?.(c.key)?.side === "left"
+  const hasStartPin = table.columns.some(
+    (c) => pinOffset?.(c.key)?.side === "start"
   );
 
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
@@ -568,31 +568,31 @@ export function DesktopTable<TRow>({
   // inset starts past the chevron's width.
   const expansionHeaderStyle: CSSProperties = {
     ...headerCellStyle,
-    ...leadingPinStyle(hasLeftPin, 0, PIN_Z.headerPinned),
+    ...leadingPinStyle(hasStartPin, 0, PIN_Z.headerPinned),
   };
   const selectionHeaderStyle: CSSProperties = {
     ...headerCellStyle,
-    ...leadingPinStyle(hasLeftPin, expansionLead, PIN_Z.headerPinned),
+    ...leadingPinStyle(hasStartPin, expansionLead, PIN_Z.headerPinned),
   };
   const actionsHeaderStyle: CSSProperties = {
     ...headerCellStyle,
-    ...edgePinStyle("right", actionsEdgePinned, PIN_Z.headerPinned),
+    ...edgePinStyle("end", actionsEdgePinned, PIN_Z.headerPinned),
   };
   const edgeBodyStyle = (
-    side: "left" | "right",
+    side: "start" | "end",
     active: boolean
   ): CSSProperties | undefined => {
     const pin = edgePinStyle(side, active, PIN_Z.body);
     return pin ? { ...pin, background: pinBg } : undefined;
   };
-  const expansionCellStyle = leadingPinStyle(hasLeftPin, 0, PIN_Z.body, pinBg);
+  const expansionCellStyle = leadingPinStyle(hasStartPin, 0, PIN_Z.body, pinBg);
   const selectionCellStyle = leadingPinStyle(
-    hasLeftPin,
+    hasStartPin,
     expansionLead,
     PIN_Z.body,
     pinBg
   );
-  const actionsCellStyle = edgeBodyStyle("right", actionsEdgePinned);
+  const actionsCellStyle = edgeBodyStyle("end", actionsEdgePinned);
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
   const resizeHandleFor = (column: ColumnDef<TRow>): ReactNode =>
@@ -640,7 +640,7 @@ export function DesktopTable<TRow>({
   const pinSignature = pinLayoutSignature(
     columns,
     pinOffset,
-    hasLeftPin,
+    hasStartPin,
     actionsEdgePinned
   );
   const wrapperStyle: CSSProperties =

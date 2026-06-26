@@ -91,11 +91,14 @@ describe("useColumnLayout", () => {
         defaultLayout: { widths: { a: 100, b: 120 } },
       })
     );
-    act(() => result.current.setPinned("a", "left"));
-    act(() => result.current.setPinned("b", "left"));
+    act(() => result.current.setPinned("a", "start"));
+    act(() => result.current.setPinned("b", "start"));
     // 'a' is first left-pinned → inset 0; 'b' follows → inset = width(a) = 100.
-    expect(result.current.pinOffset("a")).toEqual({ side: "left", inset: 0 });
-    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 100 });
+    expect(result.current.pinOffset("a")).toEqual({ side: "start", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({
+      side: "start",
+      inset: 100,
+    });
     expect(result.current.pinOffset("c")).toBeUndefined();
     act(() => result.current.setPinned("a", undefined));
     expect(result.current.pinOffset("a")).toBeUndefined();
@@ -106,14 +109,14 @@ describe("useColumnLayout", () => {
       useColumnLayout({
         columns,
         defaultLayout: {
-          pinned: { b: "right", c: "right" },
+          pinned: { b: "end", c: "end" },
           widths: { c: 80 },
         },
       })
     );
     // 'b' is before 'c' (both right-pinned) → inset = width(c) = 80.
-    expect(result.current.pinOffset("b")).toEqual({ side: "right", inset: 80 });
-    expect(result.current.pinOffset("c")).toEqual({ side: "right", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({ side: "end", inset: 80 });
+    expect(result.current.pinOffset("c")).toEqual({ side: "end", inset: 0 });
   });
 
   it("resolves declared string widths (parseInt) and the 150 fallback", () => {
@@ -129,13 +132,19 @@ describe("useColumnLayout", () => {
       useColumnLayout({
         columns: widthCols,
         defaultLayout: {
-          pinned: { a: "left", b: "left", c: "left" },
+          pinned: { a: "start", b: "start", c: "start" },
         },
       })
     );
-    expect(result.current.pinOffset("a")).toEqual({ side: "left", inset: 0 });
-    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 120 });
-    expect(result.current.pinOffset("c")).toEqual({ side: "left", inset: 270 });
+    expect(result.current.pinOffset("a")).toEqual({ side: "start", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({
+      side: "start",
+      inset: 120,
+    });
+    expect(result.current.pinOffset("c")).toEqual({
+      side: "start",
+      inset: 270,
+    });
   });
 
   it("falls back to 150 for an unparseable declared string width", () => {
@@ -146,23 +155,26 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns: widthCols,
-        defaultLayout: { pinned: { a: "left", b: "left" } },
+        defaultLayout: { pinned: { a: "start", b: "start" } },
       })
     );
     // "auto" parses to NaN → fallback 150, so 'b' is inset by 150.
-    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 150 });
+    expect(result.current.pinOffset("b")).toEqual({
+      side: "start",
+      inset: 150,
+    });
   });
 
   it("builds a sticky style from a pin offset (or undefined when unpinned)", () => {
-    // Logical insets: a "left" pin sticks to the inline START, so the same
+    // Logical insets: a "start" pin sticks to the inline START, so the same
     // style lands on the correct edge (physical right) under dir="rtl".
     expect(pinnedCellStyle(undefined)).toBeUndefined();
-    expect(pinnedCellStyle({ side: "left", inset: 0 })).toEqual({
+    expect(pinnedCellStyle({ side: "start", inset: 0 })).toEqual({
       position: "sticky",
       insetInlineStart: 0,
       zIndex: 1,
     });
-    expect(pinnedCellStyle({ side: "right", inset: 80 }, 3)).toEqual({
+    expect(pinnedCellStyle({ side: "end", inset: 80 }, 3)).toEqual({
       position: "sticky",
       insetInlineEnd: 80,
       zIndex: 3,
@@ -170,27 +182,27 @@ describe("useColumnLayout", () => {
   });
 
   it("offsets a pinned cell past a leading/trailing edge column via leads", () => {
-    // Left pin shifts right by the selection-column lead; the right lead is
-    // ignored for a left pin (and vice-versa).
+    // Start pin shifts inward by the selection-column lead; the end lead is
+    // ignored for a start pin (and vice-versa).
     expect(
-      pinnedCellStyle({ side: "left", inset: 30 }, PIN_Z.body, {
-        left: 40,
-        right: 120,
+      pinnedCellStyle({ side: "start", inset: 30 }, PIN_Z.body, {
+        start: 40,
+        end: 120,
       })
     ).toEqual({ position: "sticky", insetInlineStart: 70, zIndex: PIN_Z.body });
     expect(
-      pinnedCellStyle({ side: "right", inset: 10 }, PIN_Z.body, { left: 40 })
+      pinnedCellStyle({ side: "end", inset: 10 }, PIN_Z.body, { start: 40 })
     ).toEqual({ position: "sticky", insetInlineEnd: 10, zIndex: PIN_Z.body });
   });
 
   it("builds an edge-pin style only when that side is active", () => {
-    expect(edgePinStyle("left", false)).toBeUndefined();
-    expect(edgePinStyle("left", true)).toEqual({
+    expect(edgePinStyle("start", false)).toBeUndefined();
+    expect(edgePinStyle("start", true)).toEqual({
       position: "sticky",
       insetInlineStart: 0,
       zIndex: PIN_Z.body,
     });
-    expect(edgePinStyle("right", true, PIN_Z.headerPinned)).toEqual({
+    expect(edgePinStyle("end", true, PIN_Z.headerPinned)).toEqual({
       position: "sticky",
       insetInlineEnd: 0,
       zIndex: PIN_Z.headerPinned,
@@ -203,7 +215,7 @@ describe("useColumnLayout", () => {
         columns,
         defaultLayout: {
           hidden: ["a"],
-          pinned: { a: "left", b: "left" },
+          pinned: { a: "start", b: "start" },
           widths: { a: 100, b: 90 },
         },
       })
@@ -211,7 +223,7 @@ describe("useColumnLayout", () => {
     // 'a' is pinned but hidden → no rendered cell to stick.
     expect(result.current.pinOffset("a")).toBeUndefined();
     // 'b' is the only VISIBLE left-pinned column → inset 0, not width(a).
-    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 0 });
+    expect(result.current.pinOffset("b")).toEqual({ side: "start", inset: 0 });
   });
 
   it("sets and clears a column width", () => {
@@ -265,12 +277,12 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns: widthCols,
-        defaultLayout: { pinned: { a: "left", b: "left" } },
+        defaultLayout: { pinned: { a: "start", b: "start" } },
       })
     );
     // No state width for 'a', but its declared numeric width (90) is used, so
     // 'b' is inset by 90.
-    expect(result.current.pinOffset("b")).toEqual({ side: "left", inset: 90 });
+    expect(result.current.pinOffset("b")).toEqual({ side: "start", inset: 90 });
   });
 });
 
@@ -279,10 +291,10 @@ describe("batched mutations", () => {
     const { result } = renderHook(() => useColumnLayout({ columns }));
     act(() => {
       // Both run before any re-render — the second must see the first.
-      result.current.setPinned("a", "left");
+      result.current.setPinned("a", "start");
       result.current.setWidth("a", 200);
     });
-    expect(result.current.state.pinned).toEqual({ a: "left" });
+    expect(result.current.state.pinned).toEqual({ a: "start" });
     expect(result.current.state.widths).toEqual({ a: 200 });
   });
 });

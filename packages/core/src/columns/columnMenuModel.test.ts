@@ -17,7 +17,7 @@ const cols: ColumnDef<Row>[] = [
 
 function layout(
   hidden: string[],
-  pinned: Record<string, "left" | "right"> = {}
+  pinned: Record<string, "start" | "end"> = {}
 ): UseColumnLayoutResult<Row> {
   const visible = cols.filter((c) => !hidden.includes(c.key));
   return {
@@ -44,9 +44,9 @@ describe("columnMenuLabel", () => {
 
 describe("columnMenuRows", () => {
   it("keeps every column in declared order — hiding does not reorder", () => {
-    const rows = columnMenuRows(cols, layout(["b"], { a: "left" }));
+    const rows = columnMenuRows(cols, layout(["b"], { a: "start" }));
     expect(rows.map((r) => r.key)).toEqual(["a", "b", "c", "d"]);
-    expect(rows[0]!.pinned).toBe("left");
+    expect(rows[0]!.pinned).toBe("start");
     expect(rows[0]!.index).toBe(0);
     // Bravo is hidden but stays in position 1 with a stable reorder index.
     const bravo = rows[1]!;
@@ -65,18 +65,16 @@ describe("columnMenuRows", () => {
   });
 });
 
-describe("pin cycle helpers", () => {
-  const labels = { pinLeft: "Pin left", pinRight: "Pin right", unpin: "Unpin" };
+describe("pin toggle helpers", () => {
+  const labels = { pinStart: "Pin to start", unpin: "Unpin" };
 
-  it("cycles none → left → right → none", () => {
-    expect(nextPinSide(undefined)).toBe("left");
-    expect(nextPinSide("left")).toBe("right");
-    expect(nextPinSide("right")).toBeUndefined();
+  it("toggles a data column none ↔ start (never end)", () => {
+    expect(nextPinSide(undefined)).toBe("start");
+    expect(nextPinSide("start")).toBeUndefined();
   });
 
   it("labels the NEXT action so the accessible name matches behaviour", () => {
-    expect(pinActionLabel(undefined, labels)).toBe("Pin left");
-    expect(pinActionLabel("left", labels)).toBe("Pin right");
-    expect(pinActionLabel("right", labels)).toBe("Unpin");
+    expect(pinActionLabel(undefined, labels)).toBe("Pin to start");
+    expect(pinActionLabel("start", labels)).toBe("Unpin");
   });
 });

@@ -75,7 +75,7 @@ export function MantineColumnsExample() {
         resizableColumns
         maxHeight={420}
         defaultColumnLayout={{
-          pinned: { name: "left" },
+          pinned: { name: "start" },
           widths: { name: 220 },
         }}
       />

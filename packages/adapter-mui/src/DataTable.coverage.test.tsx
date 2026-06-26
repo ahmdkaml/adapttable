@@ -223,7 +223,7 @@ describe("MUI coverage gaps", () => {
     mount({
       resizableColumns: true,
       maxHeight: 400,
-      defaultColumnLayout: { pinned: { name: "left" } },
+      defaultColumnLayout: { pinned: { name: "start" } },
     });
     const handle = document.querySelector<HTMLElement>(
       '[aria-label^="Resize column"]'

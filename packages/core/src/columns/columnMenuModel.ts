@@ -24,23 +24,28 @@ export interface ColumnMenuRow<TRow> {
   index: number;
 }
 
-/** The next side in the pin cycle: none → left → right → none. */
+/**
+ * Toggle a DATA column's start pin: none ↔ start (`"start"` = the logical
+ * inline-start edge, which is the right edge under `dir="rtl"`). Data columns
+ * never pin to the END edge — that is reserved for the trailing actions column,
+ * which has its own end-pin toggle. Pinning a leading data column to the
+ * trailing edge has no value: it just sticky-travels across the row and
+ * collides with the actions column.
+ */
 export function nextPinSide(current: PinnedSide): PinnedSide {
-  if (current === undefined) return "left";
-  return current === "left" ? "right" : undefined;
+  return current === undefined ? "start" : undefined;
 }
 
 /**
- * The label for the action that advances the pin cycle — what clicking the
- * pin control will DO next, so the accessible name always matches the
- * behaviour ("Pin left" → "Pin right" → "Unpin").
+ * The label for a data column's pin toggle — "Pin to start" when unpinned,
+ * "Unpin" when pinned — so the accessible name always matches what the click
+ * will do. (The actions column uses its own "Pin to end" / "Unpin" label.)
  */
 export function pinActionLabel(
   current: PinnedSide,
-  labels: { pinLeft: string; pinRight: string; unpin: string }
+  labels: { pinStart: string; unpin: string }
 ): string {
-  if (current === undefined) return labels.pinLeft;
-  return current === "left" ? labels.pinRight : labels.unpin;
+  return current === undefined ? labels.pinStart : labels.unpin;
 }
 
 /**
@@ -53,7 +58,7 @@ export function pinActionLabel(
  * Reserved layout key for the injected row-actions column. It is not a
  * `ColumnDef`, but the layout state treats keys opaquely, so the actions
  * column hides (`hidden: ["actions"]`) and end-pins
- * (`pinned: { actions: "right" }`) like any data column — adapters list it
+ * (`pinned: { actions: "end" }`) like any data column — adapters list it
  * in the Columns menu with a visibility toggle and an end-pin toggle (no
  * reorder/resize; it always trails).
  */
@@ -82,11 +87,11 @@ export function columnMenuRows<TRow>(
  */
 export interface ColumnMenuLabels {
   columns: string;
-  pinLeft: string;
-  pinRight: string;
+  pinStart: string;
+  pinEnd: string;
   unpin: string;
-  moveLeft: string;
-  moveRight: string;
+  moveStart: string;
+  moveEnd: string;
   resetColumns: string;
   showColumn: string;
   hideColumn: string;

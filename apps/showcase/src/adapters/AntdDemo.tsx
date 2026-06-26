@@ -107,7 +107,7 @@ export function AntdDemo({
           // The wide showcase pins BOTH edges by default: person at the
           // start, the actions column at the end (it pins like any column).
           wide
-            ? { pinned: { person: "left", actions: "right" } }
+            ? { pinned: { person: "start", actions: "end" } }
             : LIVE_DEFAULT_LAYOUT
         }
         render={(source, columns) => (

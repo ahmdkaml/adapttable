@@ -4,6 +4,7 @@ import {
   type Direction,
   pageSizeOptions,
   type PaginationInfo,
+  paginationItems,
   resolveDisabledReason,
   type TableLabels,
   type ToolbarChromeProps,
@@ -398,20 +399,39 @@ export function Footer({
           </Text>
         )}
       </HStack>
-      <HStack gap={2}>
+      <HStack gap={1}>
         <Text fontSize="xs" {...subtleText}>
           {labels.pageOf({ page: safePage, total: totalPages })}
         </Text>
         <Button
           size="xs"
+          variant="outline"
           aria-label={labels.previousPage}
           disabled={safePage <= 1}
           onClick={() => setPage(safePage - 1)}
         >
           ‹
         </Button>
+        {paginationItems(safePage, totalPages).map((item, i) =>
+          item === "ellipsis" ? (
+            <Text key={`ellipsis-${i}`} fontSize="xs" px={1} {...subtleText}>
+              …
+            </Text>
+          ) : (
+            <Button
+              key={item}
+              size="xs"
+              variant={item === safePage ? "solid" : "outline"}
+              aria-current={item === safePage ? "page" : undefined}
+              onClick={() => setPage(item)}
+            >
+              {item}
+            </Button>
+          )
+        )}
         <Button
           size="xs"
+          variant="outline"
           aria-label={labels.nextPage}
           disabled={safePage >= totalPages}
           onClick={() => setPage(safePage + 1)}

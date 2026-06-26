@@ -32,3 +32,60 @@ export function computePagination(input: {
   const toIndex = Math.min(safePage * limit, total);
   return { totalPages, safePage, fromIndex, toIndex };
 }
+
+/** One slot in a numbered pager: a page number, or a gap where pages were elided. */
+export type PaginationItem = number | "ellipsis";
+
+function range(start: number, end: number): number[] {
+  const out: number[] = [];
+  for (let n = start; n <= end; n += 1) out.push(n);
+  return out;
+}
+
+/**
+ * Build the page-number sequence for a numbered pager — the first and last
+ * (boundary) pages, the current page with `siblings` neighbours on each side,
+ * and an `"ellipsis"` marker wherever a run of pages is elided. Mirrors the
+ * `boundaries: 1` / `siblings: 1` defaults of the kit `<Pagination>` widgets so
+ * every adapter — including the hand-rendered unstyled and Chakra pagers — lays
+ * pages out identically.
+ *
+ * @param page - The current (1-based) page.
+ * @param totalPages - Total page count (coerced to ≥ 1).
+ * @param siblings - Pages to show on each side of the current page.
+ * @returns Ordered page numbers interleaved with `"ellipsis"` gaps.
+ */
+export function paginationItems(
+  page: number,
+  totalPages: number,
+  siblings = 1
+): PaginationItem[] {
+  const total = Number.isFinite(totalPages)
+    ? Math.max(1, Math.floor(totalPages))
+    : 1;
+  const current = Math.min(Math.max(Math.floor(page) || 1, 1), total);
+  const boundaries = 1;
+
+  // With first/last boundaries, the current page + its siblings, and two
+  // ellipses, this many slots fit without eliding anything — so just list all.
+  const maxSlots = boundaries * 2 + siblings * 2 + 3;
+  if (total <= maxSlots) return range(1, total);
+
+  const left = Math.max(
+    Math.min(current - siblings, total - boundaries - siblings * 2 - 1),
+    boundaries + 2
+  );
+  const right = Math.min(
+    Math.max(current + siblings, boundaries + siblings * 2 + 2),
+    total - boundaries - 1
+  );
+
+  return [
+    ...range(1, boundaries),
+    // Collapse a single skipped page to that page rather than an ellipsis.
+    left > boundaries + 2 ? "ellipsis" : boundaries + 1,
+    ...range(left, right),
+    right < total - boundaries - 1 ? "ellipsis" : total - boundaries,
+    ...range(total - boundaries + 1, total),
+  ];
+}

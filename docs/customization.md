@@ -133,13 +133,14 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Footer, pagination & states
 
-| Part                           | Element                                                 |
-| ------------------------------ | ------------------------------------------------------- |
-| `footer` / `pageButton`        | The footer bar and the prev/next/numbered page buttons. |
-| `loadMore` / `loadMoreButton`  | The infinite-mode sentinel area and its button.         |
-| `empty` / `emptyClear`         | The empty state and its clear-filters button.           |
-| `loading` / `refreshIndicator` | The first-load skeleton and the background-refresh bar. |
-| `error` / `retryButton`        | The error state and its retry button.                   |
+| Part                           | Element                                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `footer` / `pager`             | The footer bar and the trailing pager group (page-of label + numbered pages).                                           |
+| `pageButton` / `pageEllipsis`  | Every pager button (prev/next + each numbered page; the current carries `aria-current="page"`) and the "…" elision gap. |
+| `loadMore` / `loadMoreButton`  | The infinite-mode sentinel area and its button.                                                                         |
+| `empty` / `emptyClear`         | The empty state and its clear-filters button.                                                                           |
+| `loading` / `refreshIndicator` | The first-load skeleton and the background-refresh bar.                                                                 |
+| `error` / `retryButton`        | The error state and its retry button.                                                                                   |
 
 A few purely structural nodes (`scroll-box`, `virtual-spacer`, the skeleton
 internals) expose only the `data-adapttable-part` attribute.

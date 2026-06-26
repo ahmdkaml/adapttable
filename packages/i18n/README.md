@@ -1,5 +1,7 @@
 # @adapttable/i18n
 
+![AdaptTable i18n — switch to Arabic and the whole table mirrors RTL](https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.gif)
+
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
 Locale presets and **RTL** helpers for [AdaptTable](https://github.com/orwa-mahmoud/adapttable).

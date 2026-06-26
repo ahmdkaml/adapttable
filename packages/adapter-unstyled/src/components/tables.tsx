@@ -186,8 +186,8 @@ interface DesktopRowProps<TRow> {
   pinOffset?: (key: string) => PinOffset | undefined;
   /** Value-comparable digest of every column's pin side + inset. */
   pinSignature: string;
-  hasLeftPin: boolean;
-  hasRightPin: boolean;
+  hasStartPin: boolean;
+  hasEndPin: boolean;
   /** Whether the actions column is user-pinned (sticks without a data pin). */
   actionsPinned: boolean;
   /** Pre-computed `rowClassName(row, index)` output (value-compared). */
@@ -227,8 +227,8 @@ function desktopRowPropsEqual<TRow>(
     prev.columnSpan === next.columnSpan &&
     prev.columnWidths === next.columnWidths &&
     prev.pinSignature === next.pinSignature &&
-    prev.hasLeftPin === next.hasLeftPin &&
-    prev.hasRightPin === next.hasRightPin &&
+    prev.hasStartPin === next.hasStartPin &&
+    prev.hasEndPin === next.hasEndPin &&
     prev.actionsPinned === next.actionsPinned &&
     prev.rowClass === next.rowClass &&
     prev.clickable === next.clickable &&
@@ -254,8 +254,8 @@ function DesktopRowBase<TRow>(
     confirm,
     columnSpan,
     pinOffset,
-    hasLeftPin,
-    hasRightPin,
+    hasStartPin,
+    hasEndPin,
     actionsPinned,
     rowClass,
     clickable,
@@ -269,8 +269,8 @@ function DesktopRowBase<TRow>(
   } = props;
   const expandable = expanded !== undefined;
   const leads: PinLeads = {
-    left: selected === undefined ? 0 : SELECTION_WIDTH,
-    right: showActions ? ACTIONS_WIDTH : 0,
+    start: selected === undefined ? 0 : SELECTION_WIDTH,
+    end: showActions ? ACTIONS_WIDTH : 0,
   };
   const bodyPinStyle = (key: string): CSSProperties | undefined =>
     pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
@@ -304,8 +304,8 @@ function DesktopRowBase<TRow>(
         {selected !== undefined && (
           <td
             data-adapttable-part="selection-cell"
-            data-pinned={hasLeftPin ? "left" : undefined}
-            style={edgePinStyle("left", hasLeftPin, PIN_Z.body)}
+            data-pinned={hasStartPin ? "start" : undefined}
+            style={edgePinStyle("start", hasStartPin, PIN_Z.body)}
             className={cx(classNames.cell, classNames.selectionCell)}
           >
             <input
@@ -338,12 +338,8 @@ function DesktopRowBase<TRow>(
         {showActions && (
           <td
             data-adapttable-part="actions-cell"
-            data-pinned={hasRightPin || actionsPinned ? "right" : undefined}
-            style={edgePinStyle(
-              "right",
-              hasRightPin || actionsPinned,
-              PIN_Z.body
-            )}
+            data-pinned={hasEndPin || actionsPinned ? "end" : undefined}
+            style={edgePinStyle("end", hasEndPin || actionsPinned, PIN_Z.body)}
             className={cx(classNames.cell, classNames.actionsCell)}
           >
             <RowActionButtons
@@ -497,11 +493,11 @@ export function DesktopTable<TRow>({
     : undefined;
   const stickyAttr = stickyHeader || undefined;
   const leads: PinLeads = {
-    left: selection ? SELECTION_WIDTH : 0,
-    right: showActions ? ACTIONS_WIDTH : 0,
+    start: selection ? SELECTION_WIDTH : 0,
+    end: showActions ? ACTIONS_WIDTH : 0,
   };
-  const hasLeftPin = columns.some((c) => pinOffset?.(c.key)?.side === "left");
-  const hasRightPin = columns.some((c) => pinOffset?.(c.key)?.side === "right");
+  const hasStartPin = columns.some((c) => pinOffset?.(c.key)?.side === "start");
+  const hasEndPin = columns.some((c) => pinOffset?.(c.key)?.side === "end");
   // A value-comparable digest of the pin layout: while it is unchanged, a
   // memoized row's previous pin styles are still correct, so `pinOffset`'s
   // identity itself stays out of the row comparator.
@@ -540,7 +536,7 @@ export function DesktopTable<TRow>({
   // The checkbox / actions edge cells pin to their side when a data column
   // there is pinned (corner-sticky in the header).
   const edgeHeadStyle = (
-    side: "left" | "right",
+    side: "start" | "end",
     active: boolean
   ): CSSProperties | undefined => {
     const edge = edgePinStyle(side, active, PIN_Z.headerPinned);
@@ -615,8 +611,8 @@ export function DesktopTable<TRow>({
             <th
               data-adapttable-part="selection-header"
               data-sticky={stickyAttr}
-              data-pinned={hasLeftPin ? "left" : undefined}
-              style={edgeHeadStyle("left", hasLeftPin)}
+              data-pinned={hasStartPin ? "start" : undefined}
+              style={edgeHeadStyle("start", hasStartPin)}
               className={cx(classNames.headerCell, classNames.selectionCell)}
             >
               <input
@@ -695,8 +691,8 @@ export function DesktopTable<TRow>({
             <th
               data-adapttable-part="actions-header"
               data-sticky={stickyAttr}
-              data-pinned={hasRightPin || stickActions ? "right" : undefined}
-              style={edgeHeadStyle("right", hasRightPin || stickActions)}
+              data-pinned={hasEndPin || stickActions ? "end" : undefined}
+              style={edgeHeadStyle("end", hasEndPin || stickActions)}
               className={cx(classNames.headerCell, classNames.actionsCell)}
             >
               {labels.actions}
@@ -736,8 +732,8 @@ export function DesktopTable<TRow>({
               columnWidths={columnWidths}
               pinOffset={pinOffset}
               pinSignature={pinSignature}
-              hasLeftPin={hasLeftPin}
-              hasRightPin={hasRightPin}
+              hasStartPin={hasStartPin}
+              hasEndPin={hasEndPin}
               actionsPinned={stickActions}
               rowClass={rowClassName?.(row, index)}
               clickable={Boolean(onRowClick)}

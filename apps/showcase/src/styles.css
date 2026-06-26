@@ -267,17 +267,17 @@ a {
 /* ---------- adapter switcher ---------- */
 .adapterbar {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
 }
 .adtab {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   text-align: start;
   cursor: pointer;
-  padding: 13px 14px;
+  padding: 12px 12px;
   border-radius: 12px;
   border: 1px solid var(--page-border);
   background: var(--page-surface);

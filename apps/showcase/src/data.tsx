@@ -401,7 +401,7 @@ export function makeColumns(
  * A deliberately WIDE column set (8 fixed-px columns, ~1440px total) for the
  * column-management showcase — wide enough to scroll sideways so a pinned
  * column visibly sticks. `person` is the natural pin target; pair it with
- * `defaultColumnLayout={{ pinned: { person: "left" } }}`.
+ * `defaultColumnLayout={{ pinned: { person: "start" } }}`.
  */
 export function makeWideColumns(
   locale: Locale,

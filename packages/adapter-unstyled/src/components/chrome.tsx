@@ -3,6 +3,7 @@ import {
   type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
+  paginationItems,
   resolveDisabledReason,
   type TableLabels,
   type TableSource,
@@ -211,27 +212,52 @@ export function Footer({
           })}
         </span>
       )}
-      <span>{labels.pageOf({ page: safePage, total: totalPages })}</span>
-      <button
-        type="button"
-        aria-label={labels.previousPage}
-        data-adapttable-part="page-prev"
-        className={classNames.pageButton}
-        disabled={safePage <= 1}
-        onClick={() => source.setPage(safePage - 1)}
-      >
-        ‹
-      </button>
-      <button
-        type="button"
-        aria-label={labels.nextPage}
-        data-adapttable-part="page-next"
-        className={classNames.pageButton}
-        disabled={safePage >= totalPages}
-        onClick={() => source.setPage(safePage + 1)}
-      >
-        ›
-      </button>
+      <div data-adapttable-part="pager" className={classNames.pager}>
+        <span>{labels.pageOf({ page: safePage, total: totalPages })}</span>
+        <button
+          type="button"
+          aria-label={labels.previousPage}
+          data-adapttable-part="page-prev"
+          className={classNames.pageButton}
+          disabled={safePage <= 1}
+          onClick={() => source.setPage(safePage - 1)}
+        >
+          ‹
+        </button>
+        {paginationItems(safePage, totalPages).map((item, i) =>
+          item === "ellipsis" ? (
+            <span
+              key={`ellipsis-${i}`}
+              data-adapttable-part="page-ellipsis"
+              aria-hidden="true"
+              className={classNames.pageEllipsis}
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={item}
+              type="button"
+              data-adapttable-part="page-number"
+              aria-current={item === safePage ? "page" : undefined}
+              className={classNames.pageButton}
+              onClick={() => source.setPage(item)}
+            >
+              {item}
+            </button>
+          )
+        )}
+        <button
+          type="button"
+          aria-label={labels.nextPage}
+          data-adapttable-part="page-next"
+          className={classNames.pageButton}
+          disabled={safePage >= totalPages}
+          onClick={() => source.setPage(safePage + 1)}
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }

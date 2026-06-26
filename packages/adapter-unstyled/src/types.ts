@@ -136,8 +136,14 @@ export interface DataTableClassNames {
   summaryCell?: string;
   /** The trailing summary `<li>` in the mobile card list. */
   summaryCard?: string;
+  /** The paged footer row (rows-per-page + showing on one side, pager on the other). */
   footer?: string;
+  /** The pager group on the footer's trailing edge: page-of label + numbered pages. */
+  pager?: string;
+  /** Every pager button: prev/next arrows and each numbered page (the current page carries `aria-current="page"`). */
   pageButton?: string;
+  /** The "…" gap standing in for elided page numbers. */
+  pageEllipsis?: string;
   empty?: string;
   /** The clear-filters button inside the "no results" empty state. */
   emptyClear?: string;

@@ -6,6 +6,7 @@ import { AntdDemo } from "./adapters/AntdDemo";
 import { ChakraDemo } from "./adapters/ChakraDemo";
 import { MantineDemo } from "./adapters/MantineDemo";
 import { MuiDemo } from "./adapters/MuiDemo";
+import { RadixDemo } from "./adapters/RadixDemo";
 import { ShadcnDemo } from "./adapters/ShadcnDemo";
 import { UnstyledDemo } from "./adapters/UnstyledDemo";
 import { cssVars } from "./cssVars";
@@ -45,6 +46,7 @@ const ADAPTERS: Record<string, DemoComponent> = {
   mui: MuiDemo,
   chakra: ChakraDemo,
   antd: AntdDemo,
+  radix: RadixDemo,
   shadcn: ShadcnDemo,
   tailwind: UnstyledDemo,
 };
@@ -195,15 +197,15 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="columns">
       <SectionHead title="Wide tables, fully handled.">
-        Show/hide, drag-reorder, pin left or right, and resize by drag or
+        Show/hide, drag-reorder, pin to the start, and resize by drag or
         keyboard — open the Columns menu, grab a header edge, or tap the pin to
-        cycle left → right → unpinned. Persist the layout to localStorage, the
-        URL, or your server.
+        stick a column to the start, then tap again to unpin. Persist the layout
+        to localStorage, the URL, or your server.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
           <span className="hint">
-            <Pin size={12} /> Pin a column left or right
+            <Pin size={12} /> Pin a column to the start
           </span>
           <span className="hint">
             <Resize size={12} /> drag a column edge to resize

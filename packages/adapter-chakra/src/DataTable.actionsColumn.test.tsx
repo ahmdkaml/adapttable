@@ -99,10 +99,10 @@ describe("<DataTable> (Chakra) actions column management", () => {
     expect(actionsHeader().style.position).not.toBe("sticky");
 
     await openColumnsMenu();
-    fireEvent.click(byLabel("Pin right: Actions"));
+    fireEvent.click(byLabel("Pin to end: Actions"));
 
     // ONE click sticks the header and every body cell to the inline end —
-    // no data column is pinned right (or at all).
+    // no data column is pinned to the end (or at all).
     expect(actionsHeader().style.position).toBe("sticky");
     expect(actionsHeader().style.insetInlineEnd).toBe("0px");
     for (const cell of actionCells()) {
@@ -112,7 +112,7 @@ describe("<DataTable> (Chakra) actions column management", () => {
       expect(cell.style.background).not.toBe("");
     }
     // The layout state round-trips the reserved "actions" key into storage…
-    expect(storage.getItem("actions-layout")).toContain('"actions":"right"');
+    expect(storage.getItem("actions-layout")).toContain('"actions":"end"');
 
     // …and a fresh mount restores the end-pinned actions column.
     view.unmount();
@@ -148,15 +148,23 @@ describe("<DataTable> (Chakra) actions column management", () => {
     );
   });
 
-  it("still sticks the actions cells when a data column is pinned right", async () => {
-    const storage = memoryStorage();
-    mount(storage);
-    await openColumnsMenu();
-    // Cycle City to a right pin (left → right) WITHOUT touching the actions
-    // pin: the actions edge must stick so the pinned data column can't slide
-    // beneath it.
-    fireEvent.click(byLabel("Pin left: City"));
-    fireEvent.click(byLabel("Pin right: City"));
+  it("still sticks the actions cells when a data column is pinned to the end", () => {
+    // A data column end-pinned via the layout (the menu only toggles the START
+    // pin; the end edge is set programmatically). The actions edge must stick
+    // so the pinned data column can't slide beneath it.
+    adapter = createMemoryAdapter("");
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <DataTable
+          data={ROWS}
+          columns={columns}
+          rowKey={(r) => r.id}
+          rowActions={rowActions}
+          enableColumnMenu
+          defaultColumnLayout={{ pinned: { city: "end" } }}
+        />
+      </ChakraProvider>
+    );
     expect(actionsHeader().style.position).toBe("sticky");
     for (const cell of actionCells()) {
       expect(cell.style.position).toBe("sticky");

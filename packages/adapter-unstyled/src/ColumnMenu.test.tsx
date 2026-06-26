@@ -18,7 +18,7 @@ function fakeLayout(
   overrides: Partial<UseColumnLayoutResult<Row>> = {}
 ): UseColumnLayoutResult<Row> {
   return {
-    state: { hidden: [], order: [], pinned: { a: "left" }, widths: {} },
+    state: { hidden: [], order: [], pinned: { a: "start" }, widths: {} },
     visibleColumns: cols,
     isHidden: () => false,
     setHidden: vi.fn(),
@@ -34,11 +34,11 @@ function fakeLayout(
 
 const labels = {
   columns: "Columns",
-  pinLeft: "Pin left",
-  pinRight: "Pin right",
+  pinStart: "Pin to start",
+  pinEnd: "Pin to end",
   unpin: "Unpin",
-  moveLeft: "Move left",
-  moveRight: "Move right",
+  moveStart: "Move to start",
+  moveEnd: "Move to end",
   resetColumns: "Reset columns",
   showColumn: "Show column",
   hideColumn: "Hide column",
@@ -86,23 +86,25 @@ describe("unstyled ColumnMenu", () => {
   it("pins and unpins via the pin control", () => {
     const layout = fakeLayout();
     open(layout);
-    // pin cycle: a is pinned left → next is right; b is unpinned → pins left
-    fireEvent.click(screen.getByRole("button", { name: "Pin right: Alpha" }));
-    expect(layout.setPinned).toHaveBeenCalledWith("a", "right");
-    fireEvent.click(screen.getByRole("button", { name: "Pin left: Bravo" }));
-    expect(layout.setPinned).toHaveBeenCalledWith("b", "left");
+    // pin toggle: a is pinned to start → next click unpins; b is unpinned → pins to start
+    fireEvent.click(screen.getByRole("button", { name: "Unpin: Alpha" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to start: Bravo" })
+    );
+    expect(layout.setPinned).toHaveBeenCalledWith("b", "start");
   });
 
   it("reorders with the grip keyboard (arrow keys)", () => {
     const layout = fakeLayout();
     open(layout);
     const gripA = screen.getByRole("button", {
-      name: "Move left / Move right: Alpha",
+      name: "Move to start / Move to end: Alpha",
     });
     fireEvent.keyDown(gripA, { key: "ArrowRight" });
     expect(layout.move).toHaveBeenCalledWith("a", 1);
     const gripB = screen.getByRole("button", {
-      name: "Move left / Move right: Bravo",
+      name: "Move to start / Move to end: Bravo",
     });
     fireEvent.keyDown(gripB, { key: "ArrowLeft" });
     expect(layout.move).toHaveBeenCalledWith("b", 0);
@@ -163,7 +165,7 @@ describe("unstyled ColumnMenu", () => {
     open(layout);
     // Charlie is hidden but stays in position 2 with a working grip…
     const gripC = screen.getByRole("button", {
-      name: "Move left / Move right: Charlie",
+      name: "Move to start / Move to end: Charlie",
     });
     fireEvent.keyDown(gripC, { key: "ArrowLeft" });
     expect(layout.move).toHaveBeenCalledWith("c", 1);
@@ -191,7 +193,9 @@ describe("unstyled ColumnMenu", () => {
       document.querySelector('[data-adapttable-part="column-menu-separator"]')
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Move left / Move right: Actions" })
+      screen.queryByRole("button", {
+        name: "Move to start / Move to end: Actions",
+      })
     ).toBeNull();
     // The eye hides it like any data column.
     fireEvent.click(
@@ -199,8 +203,10 @@ describe("unstyled ColumnMenu", () => {
     );
     expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
     // ONE click pins straight to the inline end (no left step in the cycle).
-    fireEvent.click(screen.getByRole("button", { name: "Pin right: Actions" }));
-    expect(layout.setPinned).toHaveBeenCalledWith("actions", "right");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to end: Actions" })
+    );
+    expect(layout.setPinned).toHaveBeenCalledWith("actions", "end");
   });
 
   it("unpins a pinned actions row with one click", () => {
@@ -208,7 +214,7 @@ describe("unstyled ColumnMenu", () => {
       state: {
         hidden: [],
         order: [],
-        pinned: { actions: "right" },
+        pinned: { actions: "end" },
         widths: {},
       },
     });
@@ -216,7 +222,7 @@ describe("unstyled ColumnMenu", () => {
     const row = screen
       .getByText("Actions")
       .closest('[data-adapttable-part="column-menu-item"]');
-    expect(row).toHaveAttribute("data-pinned", "right");
+    expect(row).toHaveAttribute("data-pinned", "end");
     fireEvent.click(screen.getByRole("button", { name: "Unpin: Actions" }));
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
   });

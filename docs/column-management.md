@@ -1,5 +1,7 @@
 # Column management
 
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-pinning.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+
 Let users show/hide, reorder, pin, and resize columns — one prop per capability, with the resulting layout persistable to the URL or localStorage. Every adapter shares the same engine from `@adapttable/core`.
 
 ## Example

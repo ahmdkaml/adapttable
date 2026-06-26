@@ -1,4 +1,8 @@
-import type { ColumnMenuChromeProps, ColumnMenuLabels } from "@adapttable/core";
+import type {
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
+  Direction,
+} from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
@@ -33,6 +37,9 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * actions column always trails, so it never reorders or pins left).
    */
   hasRowActions?: boolean;
+  /** Text direction — flips the row layout (grip ↔ pin) under RTL, since the
+   *  menu portals to `<body>` and would otherwise lose the table's direction. */
+  dir?: Direction;
 }
 
 /** Eye toggle for one menu row (a data column or the actions entry). */
@@ -106,10 +113,11 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const actionsHidden = layout.isHidden(ACTIONS_COLUMN_KEY);
-  const actionsPinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "right";
+  const actionsPinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return (
     <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
       <Popover.Trigger asChild>
@@ -119,7 +127,7 @@ export function ColumnMenu<TRow>({
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>
-          <Popover.Content minW="260px" w="auto">
+          <Popover.Content minW="260px" w="auto" dir={dir}>
             <Popover.Body px={2} py={2}>
               <Text
                 fontSize="xs"
@@ -161,7 +169,7 @@ export function ColumnMenu<TRow>({
                         r.key,
                         r.index,
                         layout.move,
-                        `${labels.moveLeft} / ${labels.moveRight}: ${r.name}`
+                        `${labels.moveStart} / ${labels.moveEnd}: ${r.name}`
                       )}
                     >
                       <GripIcon />
@@ -196,11 +204,11 @@ export function ColumnMenu<TRow>({
                     <RowName hidden={actionsHidden} name={labels.actions} />
                     <PinToggle
                       pinned={actionsPinned}
-                      label={`${actionsPinned ? labels.unpin : labels.pinRight}: ${labels.actions}`}
+                      label={`${actionsPinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
                       onClick={() =>
                         layout.setPinned(
                           ACTIONS_COLUMN_KEY,
-                          actionsPinned ? undefined : "right"
+                          actionsPinned ? undefined : "end"
                         )
                       }
                     />

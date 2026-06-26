@@ -65,9 +65,11 @@ export const shadcnClassNames: DataTableClassNames = {
   actionButton:
     "h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50",
   footer:
-    "flex items-center justify-between gap-2 border-t border-border p-3 text-sm text-muted-foreground",
+    "flex flex-wrap items-center gap-2 border-t border-border p-3 text-sm text-muted-foreground",
+  pager: "ms-auto flex flex-wrap items-center gap-1",
   pageButton:
-    "inline-grid h-8 min-w-8 place-items-center rounded-md border border-input bg-background px-2 text-foreground hover:bg-accent disabled:opacity-40",
+    "inline-grid h-8 min-w-8 place-items-center rounded-md border border-input bg-background px-2 text-sm text-foreground hover:bg-accent disabled:opacity-40 aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground",
+  pageEllipsis: "grid h-8 place-items-center px-1 text-muted-foreground",
   chips: "flex flex-wrap gap-2 px-3 pb-2",
   chip: "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground",
   chipRemove:

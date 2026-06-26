@@ -71,13 +71,13 @@ describe("useColumnLayoutUrlState", () => {
       result.current.onLayoutChange({
         hidden: [],
         order: [],
-        pinned: { person: "left" },
+        pinned: { person: "start" },
         widths: {},
       });
     });
     flushUrl();
-    expect(adapter.getSearch()).toBe("colPin=person%3Aleft");
-    expect(result.current.layout.pinned).toEqual({ person: "left" });
+    expect(adapter.getSearch()).toBe("colPin=person%3Astart");
+    expect(result.current.layout.pinned).toEqual({ person: "start" });
   });
 
   it("namespaces params by urlKey so tables do not collide", () => {

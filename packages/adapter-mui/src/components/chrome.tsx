@@ -546,6 +546,7 @@ export function FilterDrawer({
       anchor={dir === "rtl" ? "left" : "right"}
       open={open}
       onClose={onClose}
+      slotProps={{ paper: { "aria-label": labels.filters } }}
     >
       <Box
         sx={{

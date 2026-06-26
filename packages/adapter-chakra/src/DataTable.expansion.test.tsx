@@ -144,7 +144,7 @@ describe("<DataTable> (Chakra) row expansion — desktop", () => {
       columnLayout: {
         hidden: [],
         order: [],
-        pinned: { name: "left" },
+        pinned: { name: "start" },
         widths: {},
       },
     });

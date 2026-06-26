@@ -1,0 +1,306 @@
+import {
+  type Direction,
+  type FilterDef,
+  filterLabel,
+  filterStateKeys,
+  type FilterValue,
+  RANGE_OP_LABEL_KEYS,
+  RANGE_OPS,
+  type RangeOp,
+  readRangeWidget,
+  resolveLabels,
+  type TableLabels,
+  type TableSource,
+  useFilterOptions,
+  writeRangeWidget,
+} from "@adapttable/core";
+import { Flex, Spinner, Text, TextField } from "@radix-ui/themes";
+import { type ReactNode, useId, useState } from "react";
+
+import type { RadixAccentColor } from "../types";
+import {
+  Checkbox,
+  FormField,
+  NativeSelect,
+  type SelectOption,
+} from "./primitives";
+
+/**
+ * A labelled GROUP wrapper for multi-control fields (the multiSelect checkbox
+ * group). Unlike {@link FormField} the label carries an `id` so the group
+ * references it via `aria-labelledby` instead of naming a single control.
+ */
+function GroupField({
+  label,
+  id,
+  children,
+}: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
+  return (
+    <Flex direction="column" gap="1">
+      <Text id={id} as="span" size="2">
+        {label}
+      </Text>
+      {children}
+    </Flex>
+  );
+}
+
+/** The slice of the table source the auto-built form reads and writes. */
+export type FilterFormSource<TRow> = Pick<
+  TableSource<TRow>,
+  "extra" | "setExtra" | "setExtras"
+>;
+
+/** Props for {@link AutoFilterForm}. */
+export interface AutoFilterFormProps<TRow> {
+  /** Writing direction (kept for parity; Radix controls flip from ambient dir). */
+  dir?: Direction;
+  /** The resolved filter definitions, in render order. */
+  defs: readonly FilterDef<TRow>[];
+  /** The resolved table source (filter bag + setters). */
+  source: FilterFormSource<TRow>;
+  /** Radix accent color for option checkboxes. */
+  accentColor?: RadixAccentColor;
+  /** Pre-translated label overrides (operator names, From/To, …). */
+  labels?: TableLabels;
+}
+
+/** A scalar filter value as input text ("" when unset; numbers stringify). */
+function scalar(value: FilterValue): string {
+  return value == null ? "" : String(value);
+}
+
+/** A multi-select value as a list — tolerating a scalar from the URL. */
+function list(value: FilterValue): string[] {
+  if (Array.isArray(value)) return [...value];
+  return value == null || value === "" ? [] : [String(value)];
+}
+
+/**
+ * Operator-first range widget (`numberRange` / `dateRange`): a comparison
+ * select, then ONE bound input — or a From/To pair for "Between". The
+ * persisted state stays the inclusive `Min`/`Max` (`From`/`To`) pair, so the
+ * operator itself is UI state seeded from the pair: the user's choice must
+ * survive an emptied input, which clears both keys.
+ */
+function RangeField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const id = useId();
+  const { extra, setExtras } = source;
+  const label = filterLabel(def);
+  const [lowKey, highKey] = filterStateKeys(def);
+  const opLabels =
+    RANGE_OP_LABEL_KEYS[def.type === "dateRange" ? "date" : "number"];
+  const inputType = def.type === "dateRange" ? "date" : "number";
+  const [op, setOp] = useState<RangeOp | undefined>(
+    () => readRangeWidget(extra, lowKey!, highKey!).op
+  );
+  // Bounds derive from the persisted pair, so URL state and chip clears stay
+  // the source of truth: "At most" reads the upper key, everything else the
+  // lower one ("Equal" wrote both identical), "Between" reads both.
+  const a = scalar(extra[op === "lte" ? highKey! : lowKey!]);
+  const b = scalar(extra[highKey!]);
+  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
+    setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
+  // The operator select offers a "no comparison" clear choice (empty value)
+  // followed by every range operator.
+  const opOptions: SelectOption[] = [
+    { value: "", label: labels.operator },
+    ...RANGE_OPS.map((o) => ({ value: o, label: labels[opLabels[o]] })),
+  ];
+  return (
+    <FormField label={label}>
+      {/* Operator and value(s) share ONE row — it reads like a sentence:
+          "At least [5]". */}
+      <Flex gap="2" align="start" wrap="wrap">
+        <NativeSelect
+          size="1"
+          width="8.5rem"
+          aria-label={labels.operator}
+          placeholder={labels.operator}
+          value={op ?? ""}
+          options={opOptions}
+          onValueChange={(value) => {
+            const next = RANGE_OPS.find((o) => o === value);
+            setOp(next);
+            write(next, a, b);
+          }}
+        />
+        {op === "between" ? (
+          <>
+            <TextField.Root
+              id={`${id}-a`}
+              size="1"
+              type={inputType}
+              aria-label={labels.from}
+              placeholder={labels.from}
+              value={a}
+              onChange={(e) => write(op, e.target.value, b)}
+              style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+            />
+            <TextField.Root
+              id={`${id}-b`}
+              size="1"
+              type={inputType}
+              aria-label={labels.to}
+              placeholder={labels.to}
+              value={b}
+              onChange={(e) => write(op, a, e.target.value)}
+              style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+            />
+          </>
+        ) : (
+          op && (
+            <TextField.Root
+              id={`${id}-a`}
+              size="1"
+              type={inputType}
+              aria-label={labels.value}
+              placeholder={labels.value}
+              value={a}
+              onChange={(e) => write(op, e.target.value, "")}
+              style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+            />
+          )
+        )}
+      </Flex>
+    </FormField>
+  );
+}
+
+/** One definition rendered as its kit-native Radix Themes control. */
+function AutoFilterField<TRow>({
+  def,
+  source,
+  labels,
+  accentColor,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+  accentColor?: RadixAccentColor;
+}>) {
+  const id = useId();
+  const { extra, setExtra } = source;
+  const label = filterLabel(def);
+  // Static arrays resolve instantly; async loaders run once and report
+  // `loading` so the select/checkbox controls can show a native affordance.
+  const { options, loading } = useFilterOptions(def);
+  switch (def.type) {
+    case "text":
+      return (
+        <FormField label={label}>
+          <TextField.Root
+            size="1"
+            aria-label={label}
+            value={scalar(extra[def.key])}
+            placeholder={def.placeholder}
+            onChange={(e) => setExtra(def.key, e.target.value)}
+          />
+        </FormField>
+      );
+    case "select": {
+      const selectOptions: SelectOption[] = loading
+        ? [{ value: "", label: "…", disabled: true }]
+        : [
+            { value: "", label: "All" },
+            ...options.map((option) => ({
+              value: option.value,
+              label: option.label,
+            })),
+          ];
+      return (
+        <FormField label={label}>
+          <NativeSelect
+            size="1"
+            aria-label={label}
+            value={scalar(extra[def.key])}
+            options={selectOptions}
+            onValueChange={(value) => setExtra(def.key, value)}
+          />
+        </FormField>
+      );
+    }
+    case "multiSelect": {
+      // A multiSelect is a GROUP of checkboxes, named through the group label
+      // via `aria-labelledby`; each box self-labels through its own text and
+      // toggles itself in/out of the current list.
+      const selected = list(extra[def.key]);
+      const toggle = (value: string) =>
+        setExtra(
+          def.key,
+          selected.includes(value)
+            ? selected.filter((v) => v !== value)
+            : [...selected, value]
+        );
+      return (
+        <GroupField label={label} id={id}>
+          {loading ? (
+            <Spinner size="1" />
+          ) : (
+            <Flex gap="3" wrap="wrap" role="group" aria-labelledby={id}>
+              {options.map((option, index) => (
+                <Checkbox
+                  key={option.value}
+                  id={`${id}-${index}`}
+                  size="1"
+                  color={accentColor}
+                  value={option.value}
+                  aria-label={
+                    typeof option.label === "string"
+                      ? option.label
+                      : option.value
+                  }
+                  checked={selected.includes(option.value)}
+                  onToggle={() => toggle(option.value)}
+                >
+                  {option.label}
+                </Checkbox>
+              ))}
+            </Flex>
+          )}
+        </GroupField>
+      );
+    }
+    case "dateRange":
+    case "numberRange":
+      return <RangeField def={def} source={source} labels={labels} />;
+  }
+}
+
+/**
+ * The auto-built filter form: one kit-native Radix Themes control per
+ * declarative {@link FilterDef}, reading and writing the source's extra-filter
+ * bag — `""` / `[]` clears a key. Rendered inside the filter popover or dialog
+ * when the `filters` prop is the declarative array form.
+ *
+ * @typeParam TRow - The row type.
+ */
+export function AutoFilterForm<TRow>({
+  defs,
+  source,
+  accentColor,
+  labels,
+}: Readonly<AutoFilterFormProps<TRow>>) {
+  const resolved = resolveLabels(labels);
+  return (
+    <Flex direction="column" gap="3">
+      {defs.map((def) => (
+        <AutoFilterField
+          key={def.key}
+          def={def}
+          source={source}
+          labels={resolved}
+          accentColor={accentColor}
+        />
+      ))}
+    </Flex>
+  );
+}
