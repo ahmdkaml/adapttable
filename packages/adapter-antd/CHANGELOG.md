@@ -1,5 +1,33 @@
 # @adapttable/antd
 
+## 0.3.0
+
+### Minor Changes
+
+- a90a2c2: Logical column pinning, so pinning stays correct under RTL.
+
+  **Breaking.** Pinned-side values are now `"start"` / `"end"` (were `"left"` /
+  `"right"`) — this is the public `pinned` layout value and the `colPin` URL token
+  (e.g. `colPin=name:start`); pre-existing `left`/`right` URLs no longer parse. The
+  label keys `pinLeft` / `pinRight` / `moveLeft` / `moveRight` are renamed to
+  `pinStart` / `pinEnd` / `moveStart` / `moveEnd`, with logical display strings
+  shipped for every locale. Pinning a data column is now a start-only toggle; the
+  injected actions column keeps its one-click end-pin.
+
+  To migrate: update any `defaultColumnLayout={{ pinned: { x: "left" } }}` to
+  `"start"` (and `"right"` → `"end"`), any persisted `colPin` URLs, and any custom
+  `labels` overriding the renamed keys.
+
+- a90a2c2: Numbered page buttons in every adapter's pagination (with first/last and
+  ellipsis truncation), replacing the prev/next-only control — driven by a shared
+  `paginationItems` builder in `@adapttable/core`.
+
+### Patch Changes
+
+- Updated dependencies [a90a2c2]
+- Updated dependencies [a90a2c2]
+  - @adapttable/core@0.3.0
+
 ## 0.2.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @adapttable/cli
 
+## 0.1.2
+
+### Patch Changes
+
+- a90a2c2: Add a demo animation to the package README.
+
 ## 0.1.1
 
 ### Patch Changes
