@@ -59,7 +59,8 @@
     "clean": "rimraf dist coverage .turbo"
   },
   "dependencies": {
-    "@adapttable/core": "workspace:*"
+    "@adapttable/core": "workspace:*",
+    "react-compiler-runtime": "^1.0.0"
   },
   "peerDependencies": {
     "@mantine/core": "^7.0.0 || ^8.0.0 || ^9.0.0",

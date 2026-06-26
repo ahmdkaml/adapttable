@@ -55,7 +55,8 @@
     "clean": "rimraf dist coverage .turbo"
   },
   "dependencies": {
-    "@adapttable/core": "workspace:*"
+    "@adapttable/core": "workspace:*",
+    "react-compiler-runtime": "^1.0.0"
   },
   "peerDependencies": {
     "@chakra-ui/react": "^3.0.0",
