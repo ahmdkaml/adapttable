@@ -1,3 +1,4 @@
+import { babel } from "@rollup/plugin-babel";
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
@@ -21,4 +22,12 @@ export default defineConfig({
       "@adapttable/core",
     ],
   },
+  plugins: [
+    babel({
+      babelHelpers: "bundled",
+      extensions: [".ts", ".tsx"],
+      presets: ["@babel/preset-typescript"],
+      plugins: [["babel-plugin-react-compiler", { target: "18" }]],
+    }),
+  ],
 });

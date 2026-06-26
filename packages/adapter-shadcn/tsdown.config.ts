@@ -12,7 +12,14 @@ export default defineConfig({
     js: format === "es" ? ".js" : ".cjs",
     dts: format === "es" ? ".d.ts" : ".d.cts",
   }),
-  deps: { neverBundle: ["react", "react-dom", "antd", "@adapttable/core"] },
+  deps: {
+    neverBundle: [
+      "react",
+      "react-dom",
+      "@adapttable/unstyled",
+      "@adapttable/core",
+    ],
+  },
   plugins: [
     babel({
       babelHelpers: "bundled",

@@ -34,6 +34,7 @@ export default defineConfig({
       "@adapttable/mui": pkg("adapter-mui"),
       "@adapttable/chakra": pkg("adapter-chakra"),
       "@adapttable/unstyled": pkg("adapter-unstyled"),
+      "@adapttable/shadcn": pkg("adapter-shadcn"),
       "@adapttable/antd": pkg("adapter-antd"),
       "@adapttable/i18n": pkg("i18n"),
     },

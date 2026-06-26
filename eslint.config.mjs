@@ -57,10 +57,10 @@ export default defineConfig(
     rules: {
       ...react.configs.recommended.rules,
       ...react.configs["jsx-runtime"].rules,
-      // Classic Rules of Hooks only. v7's `recommended` preset also enables
-      // the React Compiler rule set (preserve-manual-memoization, refs,
-      // set-state-in-effect, …); we ship hand-tuned memoization without the
-      // compiler, so enabling those would flag intentional, correct code.
+      // Classic Rules of Hooks. The React Compiler runs in the build (and test)
+      // and auto-optimizes per component — bailing to our code on the few
+      // hand-tuned hot paths it can't beat — so we do NOT enable v7's full
+      // compiler rule set (it would flag those intentionally-kept manual memos).
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       ...jsxA11y.flatConfigs.recommended.rules,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import type { SortLevel } from "../sort/compare";
 import type { ExtraFilters, SortDirection } from "../types";
@@ -98,19 +98,20 @@ export function useServerData<TRow>(
   const [generation, setGeneration] = useState(0);
 
   const controllerRef = useRef<AbortController | null>(null);
-  const liveRef = useRef({ query, onQueryChange });
-  liveRef.current = { query, onQueryChange };
 
-  useEffect(() => {
-    const { query: current, onQueryChange: emit } = liveRef.current;
-    if (!emit) return;
+  // Emits the LATEST query / handler when the value-keyed query changes,
+  // without re-subscribing on every render.
+  const emitQuery = useEffectEvent(() => {
+    if (!onQueryChange) return undefined;
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
-    void emit(current, { signal: controller.signal });
+    void onQueryChange(query, { signal: controller.signal });
     // Abort the in-flight request when the table unmounts.
     return () => controller.abort();
-  }, [queryKey, generation]);
+  });
+
+  useEffect(() => emitQuery(), [queryKey, generation]);
 
   return {
     rows,

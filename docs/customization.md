@@ -31,6 +31,11 @@ the kebab-case of the `classNames` key (`searchField` →
 `data-adapttable-part="search-field"`) — plus `data-*` state attributes, so
 plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
+> **Using shadcn/ui?** `@adapttable/shadcn` is this same unstyled adapter with
+> the shadcn class preset already applied — import `DataTable` from
+> `@adapttable/shadcn` and pass `classNames` to override only the parts you
+> name.
+
 ### Toolbar & search
 
 | Part                | Element                                                                 |

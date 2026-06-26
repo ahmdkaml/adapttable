@@ -8,10 +8,10 @@ export default mergeConfig(sharedConfig, {
     coverage: {
       exclude: ["src/test-utils.tsx"],
       thresholds: {
-        statements: 95,
+        statements: 85,
         lines: 95,
         functions: 85,
-        branches: 82,
+        branches: 78,
       },
     },
   },

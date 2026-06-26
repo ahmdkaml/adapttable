@@ -266,14 +266,13 @@ describe("memoized desktop rows (MUI)", () => {
     expect(nameAccessor).not.toHaveBeenCalled();
     expect(cityAccessor).not.toHaveBeenCalled();
 
-    // Selecting one row re-renders only it: the accessor delta is exactly
-    // that row's column count (one call per column, for the toggled row).
+    // Selecting one row re-renders only its checkbox cell. The React Compiler
+    // memoizes per cell (finer than the row-level memo), so the toggled row's
+    // data-cell accessors never re-run, while "1 selected" still updates.
     fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
     expect(screen.getByText("1 selected")).toBeInTheDocument();
-    expect(nameAccessor).toHaveBeenCalledTimes(1);
-    expect(nameAccessor).toHaveBeenCalledWith(PEOPLE[0]);
-    expect(cityAccessor).toHaveBeenCalledTimes(1);
-    expect(cityAccessor).toHaveBeenCalledWith(PEOPLE[0]);
+    expect(nameAccessor).not.toHaveBeenCalled();
+    expect(cityAccessor).not.toHaveBeenCalled();
   });
 
   it("expanding one row leaves the other rows' accessors untouched", () => {
@@ -286,9 +285,10 @@ describe("memoized desktop rows (MUI)", () => {
 
     fireEvent.click(expandButtons()[0]!);
     expect(screen.getByText("detail Alice")).toBeInTheDocument();
-    // Only the expanded row re-rendered (one column → one accessor call).
-    expect(nameAccessor).toHaveBeenCalledTimes(1);
-    expect(nameAccessor).toHaveBeenCalledWith(PEOPLE[0]);
+    // Cell-level memoization: expanding re-renders only the chevron cell and
+    // adds the detail row — the data cell is memoized, so its accessor never
+    // re-runs.
+    expect(nameAccessor).not.toHaveBeenCalled();
   });
 
   it("useStableToggle keeps one identity and dispatches to the current target", () => {

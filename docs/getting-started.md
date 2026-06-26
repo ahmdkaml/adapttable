@@ -30,7 +30,10 @@ pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 # Ant Design
 pnpm add @adapttable/core @adapttable/antd antd
 
-# Tailwind / unstyled
+# shadcn/ui — one import, pre-wired with the shadcn class preset
+pnpm add @adapttable/core @adapttable/shadcn
+
+# Tailwind / unstyled — bring your own classes
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 
@@ -83,6 +86,10 @@ import { ConfigProvider } from "antd";
 </ConfigProvider>;
 ```
 
+**shadcn/ui** — no provider. `@adapttable/shadcn` is the unstyled adapter
+pre-wired with the shadcn class preset, so it inherits your app's existing
+shadcn/ui theme (its CSS variables + Tailwind config) automatically.
+
 **Unstyled** — no provider. It renders semantic HTML with `data-*` and
 `className` hooks for your own CSS or Tailwind.
 
@@ -91,8 +98,8 @@ import { ConfigProvider } from "antd";
 Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {

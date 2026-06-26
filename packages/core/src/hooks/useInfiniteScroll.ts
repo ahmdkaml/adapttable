@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useEffectEvent, useRef } from "react";
 
 /** Options for {@link useInfiniteScroll}. */
 export interface UseInfiniteScrollOptions {
@@ -57,10 +57,12 @@ export function useInfiniteScroll<
   } = options;
 
   const ref = useRef<TElement>(null);
-  const fetchRef = useRef(fetchNextPage);
-  fetchRef.current = fetchNextPage;
-  const fetchingRef = useRef(isFetchingNextPage);
-  fetchingRef.current = isFetchingNextPage;
+  // The sentinel handler always sees the latest `fetchNextPage` /
+  // `isFetchingNextPage` without re-subscribing the observer, so passing a
+  // fresh closure each render never re-arms it.
+  const onSentinelVisible = useEffectEvent(() => {
+    if (!isFetchingNextPage) fetchNextPage();
+  });
 
   useEffect(() => {
     const el = ref.current;
@@ -69,9 +71,7 @@ export function useInfiniteScroll<
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && !fetchingRef.current) {
-          fetchRef.current();
-        }
+        if (entries[0]?.isIntersecting) onSentinelVisible();
       },
       { rootMargin }
     );
