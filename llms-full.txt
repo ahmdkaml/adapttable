@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
 
 
 ---
@@ -37,7 +37,10 @@ pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 # Ant Design
 pnpm add @adapttable/core @adapttable/antd antd
 
-# Tailwind / unstyled
+# shadcn/ui — one import, pre-wired with the shadcn class preset
+pnpm add @adapttable/core @adapttable/shadcn
+
+# Tailwind / unstyled — bring your own classes
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 
@@ -90,6 +93,10 @@ import { ConfigProvider } from "antd";
 </ConfigProvider>;
 ```
 
+**shadcn/ui** — no provider. `@adapttable/shadcn` is the unstyled adapter
+pre-wired with the shadcn class preset, so it inherits your app's existing
+shadcn/ui theme (its CSS variables + Tailwind config) automatically.
+
 **Unstyled** — no provider. It renders semantic HTML with `data-*` and
 `className` hooks for your own CSS or Tailwind.
 
@@ -98,8 +105,8 @@ import { ConfigProvider } from "antd";
 Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -355,8 +362,8 @@ identically in every tier.
 Pass the rows; the table filters, sorts, and pages them in memory.
 
 ```tsx
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -389,8 +396,8 @@ fetch.
 
 ```tsx
 import { useState } from "react";
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -441,8 +448,8 @@ headless in-memory use, or a hand-rolled object that fulfils the contract.
 
 ```tsx
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   DataTable,
   type PaginatedResponse,
@@ -554,7 +561,7 @@ Columns are plain objects — declare a `key` and the table renders the value, d
 ## Example
 
 ```tsx
-import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 import { Badge } from "@mantine/core";
 
 interface Person {
@@ -689,7 +696,7 @@ import {
   type ColumnDef,
   DataTable,
   useFrontendData,
-} from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+} from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -803,7 +810,7 @@ frontend data) the row predicate — no wiring.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -984,7 +991,7 @@ infinite scroll, or `"auto"` (the default), which picks per device.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1064,8 +1071,8 @@ No other wiring is required.
 ## Example
 
 ```tsx
-// or import from "@adapttable/mui", "@adapttable/chakra",
-// "@adapttable/antd", "@adapttable/unstyled" — same props everywhere.
+// or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
+// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   type BulkAction,
   DataTable,
@@ -1200,7 +1207,7 @@ presence is the whole API.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
 
 interface Order {
   id: string;
@@ -1280,7 +1287,7 @@ Let users show/hide, reorder, pin, and resize columns — one prop per capabilit
 
 ```tsx
 import { useColumnLayoutStorageState } from "@adapttable/core";
-import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1395,7 +1402,7 @@ ready-made menu; a headless hook backs custom UIs.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1528,7 +1535,7 @@ fixed-height box.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
 
 interface Reading {
   id: string;
@@ -1822,6 +1829,11 @@ Every unstyled node also carries a stable `data-adapttable-part` attribute —
 the kebab-case of the `classNames` key (`searchField` →
 `data-adapttable-part="search-field"`) — plus `data-*` state attributes, so
 plain CSS, Tailwind, and shadcn tokens all work. The full part map:
+
+> **Using shadcn/ui?** `@adapttable/shadcn` is this same unstyled adapter with
+> the shadcn class preset already applied — import `DataTable` from
+> `@adapttable/shadcn` and pass `classNames` to override only the parts you
+> name.
 
 ### Toolbar & search
 
@@ -2493,18 +2505,19 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn** (unstyled). You get
+**Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
-kit, the unstyled adapter exposes semantic HTML with `data-*` and `className`
-hooks, and the headless `useDataTable` core works with any markup.
+kit or plain Tailwind, the unstyled adapter exposes semantic HTML with `data-*`
+and `className` hooks, and the headless `useDataTable` core works with any
+markup.
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 
@@ -2633,7 +2646,7 @@ libraries.
 
 ## When to choose AdaptTable
 
-- You use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn** and want a table that
+- You use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui** and want a table that
   matches your kit without building it yourself.
 - You need **the same table for both in-memory and server-paginated data**.
 - You want **shareable, deep-linkable table state** for free.

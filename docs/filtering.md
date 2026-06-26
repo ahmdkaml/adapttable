@@ -8,7 +8,7 @@ frontend data) the row predicate — no wiring.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;

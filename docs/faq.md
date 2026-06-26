@@ -8,18 +8,19 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, and Tailwind/shadcn** (unstyled). You get
+**Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, or Tailwind/shadcn**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
-kit, the unstyled adapter exposes semantic HTML with `data-*` and `className`
-hooks, and the headless `useDataTable` core works with any markup.
+kit or plain Tailwind, the unstyled adapter exposes semantic HTML with `data-*`
+and `className` hooks, and the headless `useDataTable` core works with any
+markup.
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 

@@ -6,7 +6,7 @@ Let users show/hide, reorder, pin, and resize columns — one prop per capabilit
 
 ```tsx
 import { useColumnLayoutStorageState } from "@adapttable/core";
-import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 
 interface Person {
   id: string;

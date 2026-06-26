@@ -6,7 +6,7 @@ presence is the whole API.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
 
 interface Order {
   id: string;

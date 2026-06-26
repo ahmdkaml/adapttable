@@ -5,7 +5,7 @@ Columns are plain objects — declare a `key` and the table renders the value, d
 ## Example
 
 ```tsx
-import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, unstyled
+import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
 import { Badge } from "@mantine/core";
 
 interface Person {
