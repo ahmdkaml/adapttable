@@ -2,8 +2,6 @@
 
 [![@adapttable/mui — a Material UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mui-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-mui.mp4)
 
-▶ **[Watch the demo](https://orwa-mahmoud.github.io/adapttable/media/demo-mui.mp4)**
-
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
 The **Material UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —

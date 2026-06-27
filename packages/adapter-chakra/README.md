@@ -2,8 +2,6 @@
 
 [![@adapttable/chakra — a Chakra UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra.mp4)
 
-▶ **[Watch the demo](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra.mp4)**
-
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
 The **Chakra UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
