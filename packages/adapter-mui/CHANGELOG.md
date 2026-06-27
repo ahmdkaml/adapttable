@@ -1,5 +1,12 @@
 # @adapttable/mui
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [761be36]
+  - @adapttable/core@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes
