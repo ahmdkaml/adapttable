@@ -4,12 +4,6 @@
 
 ### The headless React data table that works with **any** UI kit — batteries-included adapters for Mantine, MUI, Chakra, and Ant Design, plus an unstyled path for Tailwind & shadcn/ui.
 
-**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
-
-[![AdaptTable — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind, from one headless engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
-
-▶ **[Watch the 25-second tour](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)** — sort, filter, paginate, and select, across every UI kit.
-
 [![CI](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml/badge.svg)](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
 [![downloads](https://img.shields.io/npm/dm/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
@@ -18,6 +12,10 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
 **[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[📦 npm](https://www.npmjs.com/org/adapttable)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)**
+
+**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
+
+[![AdaptTable — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind, from one headless engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
 
 </div>
 
