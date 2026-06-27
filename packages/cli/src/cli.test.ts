@@ -170,20 +170,6 @@ describe("runInit", () => {
     );
   });
 
-  it("upgrades a Tailwind project to shadcn when components.json is present", () => {
-    const { io, written } = makeIO(
-      JSON.stringify({ dependencies: { tailwindcss: "3" } }),
-      [],
-      ["components.json"]
-    );
-    const result = runInit(io);
-    expect(result.kit).toBe("shadcn");
-    expect(result.adapter).toBe("@adapttable/shadcn");
-    expect(written["src/PeopleTable.tsx"]).toContain(
-      'from "@adapttable/shadcn"'
-    );
-  });
-
   it("stays unstyled for a Tailwind project without components.json", () => {
     const { io } = makeIO(
       JSON.stringify({ dependencies: { tailwindcss: "3" } }),

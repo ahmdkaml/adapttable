@@ -88,16 +88,18 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 
 ## Packages
 
-| Package                | What it is                                                               |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `@adapttable/core`     | Headless engine. Zero UI-kit imports. Hooks, state, prop-getters, types. |
-| `@adapttable/mantine`  | Mantine adapter — batteries-included `<DataTable>`.                      |
-| `@adapttable/mui`      | Material UI adapter.                                                     |
-| `@adapttable/chakra`   | Chakra UI adapter.                                                       |
-| `@adapttable/antd`     | Ant Design adapter — drives antd's high-level `<Table>`.                 |
-| `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                         |
-| `@adapttable/i18n`     | Optional locale presets (10 languages, incl. RTL) + direction helpers.   |
-| `@adapttable/cli`      | `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.  |
+| Package                | What it is                                                                 |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `@adapttable/core`     | Headless engine. Zero UI-kit imports. Hooks, state, prop-getters, types.   |
+| `@adapttable/mantine`  | Mantine adapter — batteries-included `<DataTable>`.                        |
+| `@adapttable/mui`      | Material UI adapter.                                                       |
+| `@adapttable/chakra`   | Chakra UI adapter.                                                         |
+| `@adapttable/antd`     | Ant Design adapter — drives antd's high-level `<Table>`.                   |
+| `@adapttable/radix`    | Radix Themes adapter — batteries-included `<DataTable>`.                   |
+| `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                           |
+| `@adapttable/shadcn`   | shadcn/ui adapter — the unstyled adapter pre-wired with the shadcn preset. |
+| `@adapttable/i18n`     | Optional locale presets (10 languages, incl. RTL) + direction helpers.     |
+| `@adapttable/cli`      | `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.    |
 
 ## Install
 

@@ -26,7 +26,8 @@ AdaptTable — detected Mantine.
 ## What it does
 
 - **Detects your UI kit** from `package.json` — Mantine, MUI, Chakra, Ant
-  Design, or Tailwind (→ the unstyled adapter), falling back to unstyled.
+  Design, Radix Themes, or Tailwind (→ the unstyled adapter, or shadcn/ui when
+  a `components.json` is present), falling back to unstyled.
 - **Detects your package manager** from the lockfile (pnpm / yarn / bun /
   npm) and prints the right install command.
 - **Scaffolds** `src/PeopleTable.tsx`, a ready-to-render starter using the
