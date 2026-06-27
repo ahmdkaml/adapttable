@@ -1,6 +1,8 @@
 # @adapttable/antd
 
-![@adapttable/antd — an Ant Design data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-antd.gif)
+[![@adapttable/antd — an Ant Design data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-antd-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-antd.mp4)
+
+▶ **[Watch the demo](https://orwa-mahmoud.github.io/adapttable/media/demo-antd.mp4)**
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 

@@ -1,6 +1,8 @@
 # @adapttable/cli
 
-![AdaptTable — scaffold a table for any UI kit from one engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core.gif)
+[![AdaptTable — scaffold a table for any UI kit from one engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
+
+▶ **[Watch the 25-second tour](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)**
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
