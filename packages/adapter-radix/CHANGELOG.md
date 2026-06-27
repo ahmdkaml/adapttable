@@ -1,5 +1,18 @@
 # @adapttable/radix
 
+## 0.3.3
+
+### Patch Changes
+
+- 761be36: Internal de-duplication: hoist the logic the Chakra and Radix adapters shared
+  verbatim into `@adapttable/core` — the `<DataTable>` orchestration
+  (`useDataTableShell`), the auto-filter range-widget logic, and the sticky
+  cell-style / row-memo helpers. Each adapter now renders only its own kit's
+  controls over the shared state. No behaviour, markup, or public-API change for
+  consumers; core stays headless (zero UI-kit imports).
+- Updated dependencies [761be36]
+  - @adapttable/core@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes
