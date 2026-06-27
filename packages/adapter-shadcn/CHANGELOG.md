@@ -1,5 +1,19 @@
 # @adapttable/shadcn
 
+## 0.3.2
+
+### Patch Changes
+
+- 682d3b7: Road-to-1.0 prep: document the versioning & stability contract, mark the
+  `mergeProps`/`Props` prop-getter plumbing as `@internal` (consumers use the
+  `useDataTable` prop-getters, not the merge helper), add a `smoke-dist`
+  post-build check that asserts every advertised `exports`/`main`/`module`/`types`
+  target is actually emitted, and harden `getPath`/`humanizeKey` to tolerate an
+  empty/undefined key so a transiently-malformed column key can never crash a
+  render. No behaviour changes; no breaking changes.
+- Updated dependencies [682d3b7]
+  - @adapttable/unstyled@0.3.2
+
 ## 0.2.1
 
 ### Patch Changes
