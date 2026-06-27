@@ -1,6 +1,8 @@
 # @adapttable/core
 
-![AdaptTable — one headless engine, every UI kit, from the same data](https://orwa-mahmoud.github.io/adapttable/media/demo-core.gif)
+[![AdaptTable — one headless engine: the same table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
+
+▶ **[Watch the 25-second tour](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)** — sort, filter, paginate, and select, across every UI kit.
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 

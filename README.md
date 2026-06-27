@@ -6,6 +6,10 @@
 
 **Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
+[![AdaptTable — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind, from one headless engine](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
+
+▶ **[Watch the 25-second tour](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)** — sort, filter, paginate, and select, across every UI kit.
+
 [![CI](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml/badge.svg)](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
 [![downloads](https://img.shields.io/npm/dm/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
@@ -29,6 +33,8 @@ not ship the broken horizontal-scroll tables users hate on phones.
 
 Filters are adapter-native too: each ready UI kit renders its own drawer and
 controls, while the core keeps URL state, chips, and backend params aligned.
+
+**Built to scale.** Flip on `virtualize` and a **10,000-row table mounts just 24 DOM rows** — **417× fewer than a plain table, and ~half the memory** — holding constant whether the list is 1,000 or 100,000. [See the measured benchmark →](https://orwa-mahmoud.github.io/adapttable/virtualization/#benchmark)
 
 ```tsx
 // Batteries-included — 5 lines to a fully styled, sortable, filterable, paginated table.

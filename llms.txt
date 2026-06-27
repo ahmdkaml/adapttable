@@ -61,7 +61,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion
 - [Column management](https://orwa-mahmoud.github.io/adapttable/column-management/): menu, pin, resize, layout persistence
 - [Saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/): built-in menu, useSavedViews
-- [Virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/): 50k rows, window or scroll-box mode
+- [Virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/): row/card windowing. Measured A/B at 10,000 rows — virtualized renders 24 DOM `<tr>` vs 10,000 for a plain table (417x fewer nodes, ~half the JS heap: 169 MB vs 347 MB), and the rendered row count stays ~24 from 1k to 100k rows. Window or scroll-box mode.
 - [Data tiers](https://orwa-mahmoud.github.io/adapttable/data-tiers/): in-memory, server query event, custom TableSource
 - [Concepts](https://orwa-mahmoud.github.io/adapttable/concepts/): architecture, TableSource contract
 - [Customization](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit

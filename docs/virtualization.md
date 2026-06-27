@@ -70,29 +70,30 @@ export function Readings() {
 
 ## Benchmark
 
-The engine renders a **constant** number of DOM rows no matter how large the
-dataset is, so render cost and scroll smoothness are bounded by the viewport —
-not the row count. Measured on the showcase scale demo (`/scale/?rows=N`,
-Mantine adapter, infinite mode, 1280×900 viewport, headless Chromium):
+Virtualization renders only the rows in view, so cost is bounded by the
+viewport — not the dataset. A measured A/B on the scale demo (Mantine adapter,
+the **same 10,000-row dataset fully loaded**, headless Chromium, 1280×900):
 
-|    Rows | Time to first rows | DOM `<tr>` rendered | …while scrolling | JS heap |
-| ------: | -----------------: | ------------------: | ---------------: | ------: |
-|   1,000 |             ~0.9 s |                  24 |               33 |   65 MB |
-|  10,000 |             ~0.8 s |                  24 |               33 |   69 MB |
-|  50,000 |             ~0.8 s |                  24 |               33 |   78 MB |
-| 100,000 |             ~0.9 s |                  24 |               34 |   93 MB |
+|                                | Rows in the DOM |    JS heap |
+| :----------------------------- | --------------: | ---------: |
+| **Virtualized** (`virtualize`) |          **24** | **169 MB** |
+| Plain table — same 10,000 rows |          10,000 |     347 MB |
 
-The table keeps **~24 rows in the DOM** (about a viewport's worth, plus
-overscan) and **~33 while scrolling at any depth** — identical at 1k and 100k.
-Time-to-first-rows is flat (dominated by app boot and generating the data
-array, not the table). The only thing that grows with the dataset is the heap,
-and that is the app's own data array — a non-virtualized table would instead
-mount 100,000 `<tr>`s and block the main thread.
+Windowing mounts **417× fewer DOM nodes** (24 vs 10,000 — a viewport's worth
+plus overscan) and uses **~178 MB less memory, roughly half** — while the plain
+table blocks the main thread rendering ten thousand `<tr>`s.
 
-These numbers come from one dev laptop; absolute timings vary by hardware, but
-the **shape — constant DOM, flat mount — does not**. Reproduce with
+And it stays flat: the rendered row count holds at **~24 whether the dataset is
+1,000 or 100,000 rows**. Only your own data array grows — never the table's DOM:
+
+| Rows in the dataset |  1,000 | 10,000 | 50,000 | 100,000 |
+| ------------------: | -----: | -----: | -----: | ------: |
+|     Rows in the DOM | **24** | **24** | **24** |  **24** |
+
+Reproduce both with
 [`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
-against a running showcase.
+against a running showcase. (Numbers are from one dev laptop; the **shape** —
+constant DOM, about half the memory — does not change with hardware.)
 
 ## Notes
 
