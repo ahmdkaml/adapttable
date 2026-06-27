@@ -1,6 +1,8 @@
 # @adapttable/mantine
 
-![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.gif)
+[![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.mp4)
+
+▶ **[Watch the demo](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.mp4)**
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 
