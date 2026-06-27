@@ -2,9 +2,11 @@
  * Default column-header text from a key: the last dot-path segment, split on
  * camelCase / snake_case / kebab-case boundaries and title-cased.
  * `"hiredAt"` → `"Hired At"`, `"department.name"` → `"Name"`,
- * `"first_name"` → `"First Name"`.
+ * `"first_name"` → `"First Name"`. An empty/undefined `key` returns `""` so a
+ * transiently-malformed column key can never crash a render.
  */
 export function humanizeKey(key: string): string {
+  if (!key) return "";
   // `split` always yields at least one element, so the last one exists.
   const segment = key.split(".").at(-1)!;
   const words = segment

@@ -12,6 +12,8 @@
 
 Road-to-1.0 prep: document the versioning & stability contract, mark the
 `mergeProps`/`Props` prop-getter plumbing as `@internal` (consumers use the
-`useDataTable` prop-getters, not the merge helper), and add a `smoke-dist`
+`useDataTable` prop-getters, not the merge helper), add a `smoke-dist`
 post-build check that asserts every advertised `exports`/`main`/`module`/`types`
-target is actually emitted. No behaviour changes; no breaking changes.
+target is actually emitted, and harden `getPath`/`humanizeKey` to tolerate an
+empty/undefined key so a transiently-malformed column key can never crash a
+render. No behaviour changes; no breaking changes.
