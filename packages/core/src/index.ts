@@ -286,7 +286,14 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
-export { logicalAlign, sortArrow } from "./display";
+export {
+  logicalAlign,
+  pinnedDataCellStyle,
+  pinnedEdgeCellStyle,
+  shallowEqualByKeys,
+  SHARED_DESKTOP_ROW_KEYS,
+  sortArrow,
+} from "./display";
 export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
 export {
   type HorizontalOverflow,
