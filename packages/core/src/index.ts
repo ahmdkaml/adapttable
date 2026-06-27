@@ -43,6 +43,11 @@ export {
   useBulkActionRunner,
   type UseBulkActionRunnerOptions,
 } from "./actions/useBulkActionRunner";
+export {
+  type BulkBarState,
+  useBulkBarState,
+  type UseBulkBarStateOptions,
+} from "./actions/useBulkBarState";
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
@@ -65,6 +70,14 @@ export {
   RANGE_SUFFIXES,
   resolveFilterDefs,
 } from "./filters/filterDefs";
+export {
+  type FilterFormSource,
+  listFilterValues,
+  type RangeFieldWidget,
+  type RangeOpLabelKeys,
+  scalarFilterText,
+  useRangeFilterWidget,
+} from "./filters/filterForm";
 export {
   RANGE_OP_LABEL_KEYS,
   RANGE_OPS,
@@ -269,6 +282,7 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
+export { FiltersIcon, SearchIcon } from "./icons";
 export {
   type HorizontalOverflow,
   useHorizontalOverflow,
@@ -280,6 +294,8 @@ export {
   type PaginationInfo,
   type PaginationItem,
   paginationItems,
+  type PaginationSlot,
+  paginationSlots,
 } from "./pagination/paginationMath";
 
 /* ── Hooks ─────────────────────────────────────────────────────────── */

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { computePagination, paginationItems } from "./paginationMath";
+import {
+  computePagination,
+  paginationItems,
+  paginationSlots,
+} from "./paginationMath";
 
 describe("computePagination", () => {
   it("computes pages and range for a full set", () => {
@@ -127,5 +131,52 @@ describe("paginationItems", () => {
     expect(paginationItems(1, Number.NaN)).toEqual([1]);
     expect(paginationItems(1, Infinity)).toEqual([1]);
     expect(paginationItems(1, 0)).toEqual([1]);
+  });
+});
+
+describe("paginationSlots", () => {
+  it("keys page numbers by their value", () => {
+    expect(paginationSlots(1, 6)).toEqual([
+      { item: 1, key: "1" },
+      { item: 2, key: "2" },
+      { item: 3, key: "3" },
+      { item: 4, key: "4" },
+      { item: 5, key: "5" },
+      { item: 6, key: "6" },
+    ]);
+  });
+
+  it("keys the left ellipsis before the right one (no array index)", () => {
+    const slots = paginationSlots(10, 20);
+    expect(slots.map((s) => s.key)).toEqual([
+      "1",
+      "ellipsis-left",
+      "9",
+      "10",
+      "11",
+      "ellipsis-right",
+      "20",
+    ]);
+    expect(slots.map((s) => s.item)).toEqual([
+      1,
+      "ellipsis",
+      9,
+      10,
+      11,
+      "ellipsis",
+      20,
+    ]);
+  });
+
+  it("keys a single (right-side) ellipsis as the left side", () => {
+    expect(paginationSlots(1, 8).map((s) => s.key)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "ellipsis-left",
+      "8",
+    ]);
   });
 });
