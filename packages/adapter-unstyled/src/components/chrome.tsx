@@ -3,7 +3,7 @@ import {
   type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
-  paginationItems,
+  paginationSlots,
   resolveDisabledReason,
   type TableLabels,
   type TableSource,
@@ -224,10 +224,10 @@ export function Footer({
         >
           ‹
         </button>
-        {paginationItems(safePage, totalPages).map((item, i) =>
+        {paginationSlots(safePage, totalPages).map(({ item, key }) =>
           item === "ellipsis" ? (
             <span
-              key={`ellipsis-${i}`}
+              key={key}
               data-adapttable-part="page-ellipsis"
               aria-hidden="true"
               className={classNames.pageEllipsis}
@@ -236,7 +236,7 @@ export function Footer({
             </span>
           ) : (
             <button
-              key={item}
+              key={key}
               type="button"
               data-adapttable-part="page-number"
               aria-current={item === safePage ? "page" : undefined}

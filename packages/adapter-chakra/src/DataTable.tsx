@@ -1,15 +1,6 @@
-import {
-  ACTIONS_COLUMN_KEY,
-  isDeclarativeFilters,
-  type TableBodyRegion,
-  useChromeBodyData,
-  useChromeScrollReset,
-  useFilterTriggerToggle,
-  useTableChrome,
-  useTableData,
-} from "@adapttable/core";
+import { type TableBodyRegion, useDataTableShell } from "@adapttable/core";
 import { Box, Button, Flex, Progress, Stack, Text } from "@chakra-ui/react";
-import { type ReactNode, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import {
@@ -32,8 +23,8 @@ import type { DataTableProps } from "./types";
  * and either raw `data` (frontend tier — add `onQueryChange` for the server
  * tier) or a prebuilt `source`, for a fully styled, sortable, filterable,
  * paginated Chakra table with selection, bulk actions, RTL, and dark mode —
- * on the headless `@adapttable/core` engine. A declarative `filters` array
- * renders the auto-built Chakra filter form.
+ * on the headless `@adapttable/core` engine. The shared orchestration lives in
+ * core's `useDataTableShell`; this renders only Chakra controls over it.
  *
  * @typeParam TRow - The row type.
  */
@@ -46,93 +37,33 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const size =
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
-  // Resolve the data tier (source > onQueryChange server > frontend) and the
-  // declarative-filter runtime (defs, chip labels, URL keys, predicate).
-  const { source, runtime } = useTableData<TRow>({
-    locale: props.locale,
-    source: props.source,
-    data: props.data,
-    total: props.total,
-    loading: props.loading,
-    onQueryChange: props.onQueryChange,
-    adapter: props.urlSync === false ? undefined : props.urlAdapter,
-    enabled: props.urlSync,
-    urlKey: props.urlKey,
-    columns: props.columns,
-    filters: props.filters,
-  });
-  // Declarative `filters` array → the auto-built form; JSX passes through.
-  const autoForm =
-    runtime.defs.length > 0 ? (
-      <AutoFilterForm
-        defs={runtime.defs}
-        source={source}
-        colorScheme={colorScheme}
-        dir={props.dir}
-        labels={props.labels}
-      />
-    ) : undefined;
-  // Column-level `filter` shorthands alone must still render the auto form —
-  // only explicit JSX takes over the drawing.
-  const filtersNode =
-    isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoForm
-      : props.filters;
-  const chromeProps = {
-    ...props,
+
+  const shell = useDataTableShell<TRow>(props, (defs, source) => (
+    <AutoFilterForm
+      defs={defs}
+      source={source}
+      colorScheme={colorScheme}
+      dir={props.dir}
+      labels={props.labels}
+    />
+  ));
+  const {
     source,
-    filters: filtersNode,
-    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
-  };
-  const chrome = useTableChrome<TRow>(chromeProps);
-  const { table, confirm, getRowId } = chrome;
-  const { labels } = table;
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
-  const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, chromeProps);
-  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
-    useChromeBodyData(chrome, chromeProps);
-
-  // The injected actions column is first-class in column management: the
-  // layout state treats its reserved key like any column key, so the Columns
-  // menu can hide it (strip rowActions before the renderers) or end-pin it
-  // (the renderers stick the actions cells, with zero data columns pinned).
-  const hasRowActions = Boolean(props.rowActions?.length);
-  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
-  const actionsPinned =
-    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
-
-  const tableProps = {
+    chrome,
     table,
-    rows: source.rows,
-    rowActions,
-    actionsPinned,
-    confirm,
-    getRowId,
-    size,
-    colorScheme,
-    rowEntries: virtualization.enabled ? virtualization.rows : undefined,
-    paddingTop: virtualization.paddingTop,
-    paddingBottom: virtualization.paddingBottom,
-    measureElement: virtualization.measureElement,
-    stickyHeader: props.stickyHeader,
-    stickyTop: props.stickyTop,
-    pinOffset: chrome.columnLayout.pinOffset,
-    maxHeight: props.maxHeight,
-    virtualScrollRef,
-    setWidth: props.resizableColumns ? chrome.columnLayout.setWidth : undefined,
-    columnWidths: chrome.columnLayout.state.widths,
-    resizeLabel: table.labels.resizeColumn,
-    onRowClick: props.onRowClick,
-    rowClassName: props.rowClassName,
-    renderRowDetail: props.renderRowDetail,
-    summaryRow: props.summaryRow,
-    expansion: chrome.detail?.expansion,
-    dir: props.dir,
-  };
+    labels,
+    filtersNode,
+    filtersOpen,
+    setFiltersOpen,
+    filtersTrigger,
+    rootRef,
+    loadMoreRef,
+    canLoadMore,
+    hasRowActions,
+    toolbarProps,
+  } = shell;
+  const tableProps = { ...shell.tableProps, size, colorScheme };
+
   const bodyByRegion: Record<TableBodyRegion, ReactNode> = {
     skeleton: slots?.skeleton ?? (
       <LoadingState
@@ -182,21 +113,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     >
       <Stack gap={3}>
         <Toolbar
+          {...toolbarProps}
           className={props.classNames?.toolbar}
-          table={table}
-          hideSearch={props.hideSearch}
-          searchPlaceholder={props.searchPlaceholder}
-          sortByOptions={props.sortByOptions}
-          customToolbar={props.toolbar}
-          hasFilters={Boolean(filtersNode)}
-          activeFilterCount={chrome.activeFilterCount}
           filtersMode={filtersMode}
-          filters={filtersNode}
           filtersOpen={filtersOpen}
           onToggleFilters={filtersTrigger.onClick}
           onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
           onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={chrome.clearFilters}
           savedViewsMenu={
             props.savedViews ? (
               <SavedViewsMenu
@@ -221,9 +144,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               />
             ) : undefined
           }
-          showRowsPerPage={canLoadMore}
           colorScheme={colorScheme}
-          dir={props.dir}
         />
         {chrome.isRefreshing && (
           <Progress.Root size="xs" value={null} aria-label={labels.loading}>
@@ -242,7 +163,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             selection={table.selection}
             total={source.total}
             bulkActions={props.bulkActions}
-            confirm={confirm}
+            confirm={chrome.confirm}
             labels={labels}
             colorScheme={colorScheme}
           />

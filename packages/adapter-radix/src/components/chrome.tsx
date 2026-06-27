@@ -2,13 +2,15 @@ import {
   type ActiveFilterChip,
   type BulkBarChromeProps,
   type Direction,
+  FiltersIcon,
   pageSizeOptions,
   type PaginationInfo,
-  paginationItems,
+  paginationSlots,
   resolveDisabledReason,
+  SearchIcon,
   type TableLabels,
   type ToolbarChromeProps,
-  useBulkActionRunner,
+  useBulkBarState,
 } from "@adapttable/core";
 import {
   Badge,
@@ -29,47 +31,6 @@ import { subtleText } from "../styles";
 import type { RadixAccentColor } from "../types";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect, type SelectOption, Tooltip } from "./primitives";
-
-/** Three-line funnel/filter glyph for the Filters button. */
-function FiltersIcon() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M4 6h16M7 12h10M10 18h4" />
-    </svg>
-  );
-}
-
-/** Magnifier glyph for the search field. */
-function SearchIcon() {
-  return (
-    <svg
-      width={14}
-      height={14}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle cx={11} cy={11} r={7} />
-      <path d="M21 21l-4.35-4.35" />
-    </svg>
-  );
-}
 
 /** Map the page-size numbers to {@link NativeSelect} options. */
 function pageSizeSelectOptions(limit: number): SelectOption[] {
@@ -279,34 +240,9 @@ export function BulkBar({
   labels,
   accentColor,
 }: Readonly<BulkBarChromeProps & { accentColor?: RadixAccentColor }>) {
-  const { selectedIds, selectedCount, clear } = selection;
-  const { pending, run } = useBulkActionRunner({
-    confirm,
-    cancelLabel: labels.cancel,
-    onComplete: clear,
-  });
+  const { selectedCount, ids, pending, run, clear, expandable, scope, banner } =
+    useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
-  const ids = [...selectedIds];
-  // A full page is selected but more rows match elsewhere → show the
-  // two-state "select all N matching" banner instead of the plain count.
-  const expandable =
-    selection.headerState === "all" && total > selection.visibleIds.length;
-  // When "all matching" is active, bulk actions act on the WHOLE filtered
-  // set: the context tells the handler (and the confirm count) so.
-  const scope = selection.allMatching
-    ? { allMatching: true, total }
-    : undefined;
-  const banner = selection.allMatching
-    ? {
-        text: labels.allMatchingSelected(total),
-        action: labels.clearAll,
-        onClick: clear,
-      }
-    : {
-        text: labels.pageSelected(selection.visibleIds.length),
-        action: labels.selectAllMatching(total),
-        onClick: selection.selectAllMatching,
-      };
   return (
     <Flex gap="2" justify="between" wrap="wrap" align="center">
       {expandable ? (
@@ -416,10 +352,10 @@ export function Footer({
         >
           ‹
         </Button>
-        {paginationItems(safePage, totalPages).map((item, i) =>
+        {paginationSlots(safePage, totalPages).map(({ item, key }) =>
           item === "ellipsis" ? (
             <Text
-              key={`ellipsis-${i}`}
+              key={key}
               size="1"
               {...subtleText}
               style={{ paddingInline: "var(--space-1)" }}
@@ -428,7 +364,7 @@ export function Footer({
             </Text>
           ) : (
             <Button
-              key={item}
+              key={key}
               size="1"
               variant={item === safePage ? "solid" : "soft"}
               aria-current={item === safePage ? "page" : undefined}

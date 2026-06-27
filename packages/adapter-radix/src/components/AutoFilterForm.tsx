@@ -1,21 +1,18 @@
 import {
   type Direction,
   type FilterDef,
+  type FilterFormSource,
   filterLabel,
-  filterStateKeys,
-  type FilterValue,
-  RANGE_OP_LABEL_KEYS,
+  listFilterValues,
   RANGE_OPS,
-  type RangeOp,
-  readRangeWidget,
   resolveLabels,
+  scalarFilterText,
   type TableLabels,
-  type TableSource,
   useFilterOptions,
-  writeRangeWidget,
+  useRangeFilterWidget,
 } from "@adapttable/core";
 import { Flex, Spinner, Text, TextField } from "@radix-ui/themes";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId } from "react";
 
 import type { RadixAccentColor } from "../types";
 import {
@@ -45,12 +42,6 @@ function GroupField({
   );
 }
 
-/** The slice of the table source the auto-built form reads and writes. */
-export type FilterFormSource<TRow> = Pick<
-  TableSource<TRow>,
-  "extra" | "setExtra" | "setExtras"
->;
-
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
   /** Writing direction (kept for parity; Radix controls flip from ambient dir). */
@@ -65,23 +56,11 @@ export interface AutoFilterFormProps<TRow> {
   labels?: TableLabels;
 }
 
-/** A scalar filter value as input text ("" when unset; numbers stringify). */
-function scalar(value: FilterValue): string {
-  return value == null ? "" : String(value);
-}
-
-/** A multi-select value as a list — tolerating a scalar from the URL. */
-function list(value: FilterValue): string[] {
-  if (Array.isArray(value)) return [...value];
-  return value == null || value === "" ? [] : [String(value)];
-}
-
 /**
  * Operator-first range widget (`numberRange` / `dateRange`): a comparison
- * select, then ONE bound input — or a From/To pair for "Between". The
- * persisted state stays the inclusive `Min`/`Max` (`From`/`To`) pair, so the
- * operator itself is UI state seeded from the pair: the user's choice must
- * survive an emptied input, which clears both keys.
+ * select, then ONE bound input — or a From/To pair for "Between". The widget
+ * logic (operator seeding, bound derivation, writes) lives in core's
+ * {@link useRangeFilterWidget}; this renders the Radix controls over it.
  */
 function RangeField<TRow>({
   def,
@@ -93,27 +72,13 @@ function RangeField<TRow>({
   labels: Required<TableLabels>;
 }>) {
   const id = useId();
-  const { extra, setExtras } = source;
-  const label = filterLabel(def);
-  const [lowKey, highKey] = filterStateKeys(def);
-  const opLabels =
-    RANGE_OP_LABEL_KEYS[def.type === "dateRange" ? "date" : "number"];
-  const inputType = def.type === "dateRange" ? "date" : "number";
-  const [op, setOp] = useState<RangeOp | undefined>(
-    () => readRangeWidget(extra, lowKey!, highKey!).op
-  );
-  // Bounds derive from the persisted pair, so URL state and chip clears stay
-  // the source of truth: "At most" reads the upper key, everything else the
-  // lower one ("Equal" wrote both identical), "Between" reads both.
-  const a = scalar(extra[op === "lte" ? highKey! : lowKey!]);
-  const b = scalar(extra[highKey!]);
-  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
-    setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
+  const { label, opLabelKeys, inputType, op, setOp, a, b, write } =
+    useRangeFilterWidget(def, source);
   // The operator select offers a "no comparison" clear choice (empty value)
   // followed by every range operator.
   const opOptions: SelectOption[] = [
     { value: "", label: labels.operator },
-    ...RANGE_OPS.map((o) => ({ value: o, label: labels[opLabels[o]] })),
+    ...RANGE_OPS.map((o) => ({ value: o, label: labels[opLabelKeys[o]] })),
   ];
   return (
     <FormField label={label}>
@@ -200,7 +165,7 @@ function AutoFilterField<TRow>({
           <TextField.Root
             size="1"
             aria-label={label}
-            value={scalar(extra[def.key])}
+            value={scalarFilterText(extra[def.key])}
             placeholder={def.placeholder}
             onChange={(e) => setExtra(def.key, e.target.value)}
           />
@@ -221,7 +186,7 @@ function AutoFilterField<TRow>({
           <NativeSelect
             size="1"
             aria-label={label}
-            value={scalar(extra[def.key])}
+            value={scalarFilterText(extra[def.key])}
             options={selectOptions}
             onValueChange={(value) => setExtra(def.key, value)}
           />
@@ -232,7 +197,7 @@ function AutoFilterField<TRow>({
       // A multiSelect is a GROUP of checkboxes, named through the group label
       // via `aria-labelledby`; each box self-labels through its own text and
       // toggles itself in/out of the current list.
-      const selected = list(extra[def.key]);
+      const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
           def.key,

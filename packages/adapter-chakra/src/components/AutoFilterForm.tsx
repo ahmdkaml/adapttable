@@ -1,18 +1,15 @@
 import {
   type Direction,
   type FilterDef,
+  type FilterFormSource,
   filterLabel,
-  filterStateKeys,
-  type FilterValue,
-  RANGE_OP_LABEL_KEYS,
+  listFilterValues,
   RANGE_OPS,
-  type RangeOp,
-  readRangeWidget,
   resolveLabels,
+  scalarFilterText,
   type TableLabels,
-  type TableSource,
   useFilterOptions,
-  writeRangeWidget,
+  useRangeFilterWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -22,7 +19,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId } from "react";
 
 import { FormField, NativeSelect } from "./primitives";
 
@@ -47,12 +44,6 @@ function GroupField({
   );
 }
 
-/** The slice of the table source the auto-built form reads and writes. */
-export type FilterFormSource<TRow> = Pick<
-  TableSource<TRow>,
-  "extra" | "setExtra" | "setExtras"
->;
-
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
   /** Writing direction (flips the select chevron). */
@@ -67,23 +58,11 @@ export interface AutoFilterFormProps<TRow> {
   labels?: TableLabels;
 }
 
-/** A scalar filter value as input text ("" when unset; numbers stringify). */
-function scalar(value: FilterValue): string {
-  return value == null ? "" : String(value);
-}
-
-/** A multi-select value as a list — tolerating a scalar from the URL. */
-function list(value: FilterValue): string[] {
-  if (Array.isArray(value)) return [...value];
-  return value == null || value === "" ? [] : [String(value)];
-}
-
 /**
  * Operator-first range widget (`numberRange` / `dateRange`): a comparison
- * select, then ONE bound input — or a From/To pair for "Between". The
- * persisted state stays the inclusive `Min`/`Max` (`From`/`To`) pair, so the
- * operator itself is UI state seeded from the pair: the user's choice must
- * survive an emptied input, which clears both keys.
+ * select, then ONE bound input — or a From/To pair for "Between". The widget
+ * logic (operator seeding, bound derivation, writes) lives in core's
+ * {@link useRangeFilterWidget}; this renders the Chakra controls over it.
  */
 function RangeField<TRow>({
   def,
@@ -95,22 +74,8 @@ function RangeField<TRow>({
   labels: Required<TableLabels>;
 }>) {
   const id = useId();
-  const { extra, setExtras } = source;
-  const label = filterLabel(def);
-  const [lowKey, highKey] = filterStateKeys(def);
-  const opLabels =
-    RANGE_OP_LABEL_KEYS[def.type === "dateRange" ? "date" : "number"];
-  const inputType = def.type === "dateRange" ? "date" : "number";
-  const [op, setOp] = useState<RangeOp | undefined>(
-    () => readRangeWidget(extra, lowKey!, highKey!).op
-  );
-  // Bounds derive from the persisted pair, so URL state and chip clears stay
-  // the source of truth: "At most" reads the upper key, everything else the
-  // lower one ("Equal" wrote both identical), "Between" reads both.
-  const a = scalar(extra[op === "lte" ? highKey! : lowKey!]);
-  const b = scalar(extra[highKey!]);
-  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
-    setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
+  const { label, opLabelKeys, inputType, op, setOp, a, b, write } =
+    useRangeFilterWidget(def, source);
   return (
     <FormField label={label}>
       {/* Operator and value(s) share ONE row — it reads like a sentence:
@@ -132,7 +97,7 @@ function RangeField<TRow>({
         >
           {RANGE_OPS.map((o) => (
             <option key={o} value={o}>
-              {labels[opLabels[o]]}
+              {labels[opLabelKeys[o]]}
             </option>
           ))}
         </NativeSelect>
@@ -205,7 +170,7 @@ function AutoFilterField<TRow>({
         <FormField label={label}>
           <Input
             size="sm"
-            value={scalar(extra[def.key])}
+            value={scalarFilterText(extra[def.key])}
             placeholder={def.placeholder}
             onChange={(e) => setExtra(def.key, e.target.value)}
           />
@@ -216,7 +181,7 @@ function AutoFilterField<TRow>({
         <FormField label={label}>
           <NativeSelect
             size="sm"
-            value={scalar(extra[def.key])}
+            value={scalarFilterText(extra[def.key])}
             onChange={(e) => setExtra(def.key, e.target.value)}
           >
             {loading ? (
@@ -243,7 +208,7 @@ function AutoFilterField<TRow>({
       // through its own `Checkbox.Label`, derives its checked state from the
       // current list, and toggles itself in/out via the input's `onChange`
       // (the reliable single-source toggle in jsdom and the browser alike).
-      const selected = list(extra[def.key]);
+      const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
           def.key,

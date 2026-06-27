@@ -43,6 +43,46 @@ function range(start: number, end: number): number[] {
 }
 
 /**
+ * A pager slot paired with a stable React key — page numbers key on themselves,
+ * ellipses on their semantic side (`ellipsis-left` / `ellipsis-right`). Use this
+ * instead of indexing into {@link paginationItems} so list keys never depend on
+ * the array position.
+ */
+export interface PaginationSlot {
+  /** The page number or `"ellipsis"` marker. */
+  item: PaginationItem;
+  /** A stable, position-free React key for this slot. */
+  key: string;
+}
+
+/**
+ * Build the keyed pager slots (see {@link PaginationSlot}) for a numbered pager.
+ * Wraps {@link paginationItems}, assigning each ellipsis a `left`/`right` side
+ * key in encounter order — at most two ellipses ever appear, so the side is a
+ * stable identity that does not rely on the array index.
+ *
+ * @param page - The current (1-based) page.
+ * @param totalPages - Total page count (coerced to ≥ 1).
+ * @param siblings - Pages to show on each side of the current page.
+ * @returns Keyed pager slots.
+ */
+export function paginationSlots(
+  page: number,
+  totalPages: number,
+  siblings = 1
+): PaginationSlot[] {
+  let nextSide: "left" | "right" = "left";
+  return paginationItems(page, totalPages, siblings).map((item) => {
+    if (item === "ellipsis") {
+      const key = `ellipsis-${nextSide}`;
+      nextSide = "right";
+      return { item, key };
+    }
+    return { item, key: String(item) };
+  });
+}
+
+/**
  * Build the page-number sequence for a numbered pager — the first and last
  * (boundary) pages, the current page with `siblings` neighbours on each side,
  * and an `"ellipsis"` marker wherever a run of pages is elided. Mirrors the

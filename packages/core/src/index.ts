@@ -43,6 +43,11 @@ export {
   useBulkActionRunner,
   type UseBulkActionRunnerOptions,
 } from "./actions/useBulkActionRunner";
+export {
+  type BulkBarState,
+  useBulkBarState,
+  type UseBulkBarStateOptions,
+} from "./actions/useBulkBarState";
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
@@ -65,6 +70,14 @@ export {
   RANGE_SUFFIXES,
   resolveFilterDefs,
 } from "./filters/filterDefs";
+export {
+  type FilterFormSource,
+  listFilterValues,
+  type RangeFieldWidget,
+  type RangeOpLabelKeys,
+  scalarFilterText,
+  useRangeFilterWidget,
+} from "./filters/filterForm";
 export {
   RANGE_OP_LABEL_KEYS,
   RANGE_OPS,
@@ -89,6 +102,10 @@ export {
   type UseTableDataOptions,
   type UseTableDataResult,
 } from "./source/useTableData";
+export {
+  type DataTableShellProps,
+  useDataTableShell,
+} from "./useDataTableShell";
 export {
   type BulkBarChromeProps,
   type ChromeBodyData,
@@ -270,6 +287,15 @@ export {
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
 export {
+  logicalAlign,
+  pinnedDataCellStyle,
+  pinnedEdgeCellStyle,
+  shallowEqualByKeys,
+  SHARED_DESKTOP_ROW_KEYS,
+  sortArrow,
+} from "./display";
+export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
+export {
   type HorizontalOverflow,
   useHorizontalOverflow,
 } from "./layout/useHorizontalOverflow";
@@ -280,6 +306,8 @@ export {
   type PaginationInfo,
   type PaginationItem,
   paginationItems,
+  type PaginationSlot,
+  paginationSlots,
 } from "./pagination/paginationMath";
 
 /* ── Hooks ─────────────────────────────────────────────────────────── */

@@ -3,12 +3,14 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type Direction,
-  edgePinStyle,
+  ExpandChevron,
   headerGroupRow,
+  logicalAlign,
   PIN_Z,
   type PinLeads,
-  pinnedCellStyle,
   pinnedColumnWidth,
+  pinnedDataCellStyle,
+  pinnedEdgeCellStyle,
   type PinOffset,
   type PinSide,
   resolveDisabledReason,
@@ -18,7 +20,10 @@ import {
   type RowExpansionState,
   runRowAction,
   type SelectionState,
+  shallowEqualByKeys,
+  SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
+  sortArrow,
   type TableLabels,
   tableMinWidth,
   tableRenderModel,
@@ -110,89 +115,26 @@ function joinClasses(
 }
 
 /** Map a column's alignment onto a Radix cell `justify` value. */
-function justifyFor(
-  align: ColumnDef<unknown>["align"]
-): "start" | "center" | "end" {
-  if (align === "center") return "center";
-  if (align === "end") return "end";
-  return "start";
-}
+const justifyFor = logicalAlign;
 
 /**
  * Header sort indicator, derived from the cell's computed `aria-sort` so a
  * multi-sort chain level shows its own direction, not the single-sort one.
+ * The trailing U+FE0E forces text (not emoji) presentation — Radix's font
+ * would otherwise render the bare arrows as coloured emoji squares.
  */
-function sortGlyph(sort: unknown): string {
-  // The trailing U+FE0E forces text (not emoji) presentation — Radix's font
-  // would otherwise render the bare arrows as coloured emoji squares.
-  if (sort === "ascending") return " ↑︎";
-  if (sort === "descending") return " ↓︎";
-  return " ↕︎";
-}
+const sortGlyph = (sort: unknown): string => sortArrow(sort) + "\uFE0E";
 
 /**
  * Pinned data-cell style with an opaque background. A raw `style` keeps the
  * pixel insets the core layout computes from being mangled by any prop scale.
  */
-function pinCellStyle(
-  pin: PinOffset | undefined,
-  z: number,
-  leads: PinLeads
-): CSSProperties | undefined {
-  const style = pinnedCellStyle(pin, z, leads);
-  return style ? { ...style, background: PIN_BG } : undefined;
-}
+const pinCellStyle = (pin: PinOffset | undefined, z: number, leads: PinLeads) =>
+  pinnedDataCellStyle(pin, z, leads, PIN_BG);
 
-/**
- * Sticky style for a non-data edge cell (expand chevron, selection, actions):
- * flush to its side when a data column on that side is pinned. `shift` insets a
- * left-edge cell past the leading expansion column so the chevron and the
- * selection checkbox pin side by side.
- */
-function edgeCellStyle(
-  side: PinSide,
-  active: boolean,
-  z: number,
-  shift = 0
-): CSSProperties | undefined {
-  const pin = edgePinStyle(side, active, z);
-  if (!pin) return undefined;
-  const style: CSSProperties = { ...pin, background: PIN_BG };
-  if (shift > 0) style.insetInlineStart = shift;
-  return style;
-}
-
-/**
- * Inline expand chevron: points into the row (flipped for RTL) and rotates to
- * point down while the detail panel is open.
- */
-function ExpandChevron({
-  open,
-  dir,
-}: Readonly<{ open: boolean; dir?: Direction }>) {
-  let transform: string | undefined;
-  if (open) transform = "rotate(90deg)";
-  else if (dir === "rtl") transform = "rotate(180deg)";
-  return (
-    <svg
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-      style={{ transform, transition: "transform 0.2s ease" }}
-    >
-      <path
-        d="m9 6 6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+/** Sticky edge-cell style (chevron / selection / actions) over that background. */
+const edgeCellStyle = (side: PinSide, active: boolean, z: number, shift = 0) =>
+  pinnedEdgeCellStyle(side, active, z, PIN_BG, shift);
 
 /** Chevron toggle for a row's detail panel. */
 function ExpandToggle({
@@ -339,24 +281,8 @@ interface DesktopRowProps<TRow> {
  * never re-render because some callback's identity changed.
  */
 const ROW_VISUAL_KEYS = [
-  "row",
-  "id",
-  "index",
-  "selected",
-  "expanded",
-  "size",
+  ...SHARED_DESKTOP_ROW_KEYS,
   "accentColor",
-  "dir",
-  "columns",
-  "columnWidths",
-  "pinSignature",
-  "className",
-  "labels",
-  "hasSelection",
-  "expandable",
-  "showActions",
-  "hasRowClick",
-  "columnSpan",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -364,7 +290,7 @@ function desktopRowPropsEqual<TRow>(
   prev: Readonly<DesktopRowProps<TRow>>,
   next: Readonly<DesktopRowProps<TRow>>
 ): boolean {
-  return ROW_VISUAL_KEYS.every((key) => prev[key] === next[key]);
+  return shallowEqualByKeys(ROW_VISUAL_KEYS, prev, next);
 }
 
 /** One desktop row (+ its detail panel row while expanded). */

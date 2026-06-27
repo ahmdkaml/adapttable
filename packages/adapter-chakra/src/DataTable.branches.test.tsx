@@ -7,12 +7,11 @@ import type * as CoreModule from "@adapttable/core";
 import {
   createMemoryAdapter,
   defaultLabels,
-  useChromeBodyData,
+  useDataTableShell,
   useFrontendData,
 } from "@adapttable/core";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FilterDrawer, LoadingState } from "./components/chrome";
@@ -38,17 +37,30 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal<typeof CoreModule>();
   return {
     ...actual,
-    useChromeBodyData: vi.fn(actual.useChromeBodyData),
+    useDataTableShell: vi.fn(actual.useDataTableShell),
   };
 });
 
 const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
 
+/**
+ * Run the real shell, then patch its output (the windowed `tableProps` or the
+ * `canLoadMore` flag) — the way the body data would arrive from a real
+ * virtualizer / pager, so the adapter's render branches stay under test.
+ */
+type Shell = ReturnType<typeof actualCore.useDataTableShell>;
+
+function mockShell(patch: (real: Shell) => Shell) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) =>
+    patch(actualCore.useDataTableShell(props, render))
+  );
+}
+
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  // Default: delegate to the real hook so the normal render path runs.
-  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
+  // Default: delegate to the real shell so the normal render path runs.
+  vi.mocked(useDataTableShell).mockImplementation(actualCore.useDataTableShell);
 });
 
 function mount(
@@ -302,18 +314,16 @@ describe("tables.tsx branches", () => {
   });
 
   it("renders trailing padding in virtualized mobile cards (paddingBottom > 0 true branch)", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
+    mockShell((real) => ({
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: [{ row: ROWS[1]!, index: 1, key: "b" }],
         paddingTop: 0,
         paddingBottom: 40,
         measureElement: vi.fn(),
       },
-      loadMoreRef: createRef<HTMLDivElement>(),
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    }));
     mount({ virtualize: true, estimateCardSize: 40 }, "", {
       mode: "infinite",
       isMobile: true,
@@ -380,17 +390,7 @@ describe("DataTable.tsx branches", () => {
   it("hides the load-more affordance when the body data says it cannot load more", () => {
     // canLoadMore=false (paged mode / error in core) must suppress the
     // load-more sentinel + button even when the source reports a next page.
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: false,
-        rows: ROWS.map((row, index) => ({ row, index, key: row.id })),
-        paddingTop: 0,
-        paddingBottom: 0,
-      },
-      loadMoreRef: createRef<HTMLDivElement>(),
-      canLoadMore: false,
-      virtualScrollRef: () => undefined,
-    });
+    mockShell((real) => ({ ...real, canLoadMore: false }));
     mount({}, "limit=1", { mode: "infinite" });
     expect(
       screen.queryByRole("button", { name: defaultLabels.loadMore })
