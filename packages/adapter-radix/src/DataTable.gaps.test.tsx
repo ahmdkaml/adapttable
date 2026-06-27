@@ -2,13 +2,12 @@
 import type * as CoreModule from "@adapttable/core";
 import {
   createMemoryAdapter,
-  useChromeBodyData,
+  useDataTableShell,
   useFrontendData,
   type VirtualTableRow,
 } from "@adapttable/core";
 import { Theme } from "@radix-ui/themes";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -30,7 +29,7 @@ vi.mock("@adapttable/core", async (importOriginal) => {
   const actual = await importOriginal<typeof CoreModule>();
   return {
     ...actual,
-    useChromeBodyData: vi.fn(actual.useChromeBodyData),
+    useDataTableShell: vi.fn(actual.useDataTableShell),
   };
 });
 
@@ -39,23 +38,28 @@ const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  // Default: delegate to the real hook so non-virtual tests run untouched.
-  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
+  // Default: delegate to the real shell so non-virtual tests run untouched.
+  vi.mocked(useDataTableShell).mockImplementation(actualCore.useDataTableShell);
 });
 
-/** A controlled virtual-window body for the virtualization render tests. */
+/**
+ * Force a controlled virtual window for the virtualization render tests by
+ * overriding the shell's `tableProps` — the body renderers read `rowEntries`
+ * (the windowed subset) just as they would from a real virtualizer.
+ */
 function mockBodyData(rows: VirtualTableRow<Row>[], padding: number) {
-  vi.mocked(useChromeBodyData).mockReturnValue({
-    virtualization: {
-      enabled: true,
-      rows,
-      paddingTop: padding,
-      paddingBottom: padding,
-      measureElement: vi.fn(),
-    },
-    loadMoreRef: createRef<HTMLDivElement>(),
-    canLoadMore: true,
-    virtualScrollRef: () => undefined,
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualCore.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: rows,
+        paddingTop: padding,
+        paddingBottom: padding,
+        measureElement: vi.fn(),
+      },
+    };
   });
 }
 

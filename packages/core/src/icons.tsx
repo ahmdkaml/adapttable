@@ -47,3 +47,36 @@ export function SearchIcon(): ReactElement {
     </svg>
   );
 }
+
+/**
+ * Inline expand chevron: points into the row (flipped for RTL) and rotates to
+ * point down while the detail panel is open. Shared by every adapter's
+ * desktop row + mobile card so the expand affordance is identical.
+ */
+export function ExpandChevron({
+  open,
+  dir,
+}: Readonly<{ open: boolean; dir?: "rtl" | "ltr" }>): ReactElement {
+  let transform: string | undefined;
+  if (open) transform = "rotate(90deg)";
+  else if (dir === "rtl") transform = "rotate(180deg)";
+  return (
+    <svg
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      style={{ transform, transition: "transform 0.2s ease" }}
+    >
+      <path
+        d="m9 6 6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

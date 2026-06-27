@@ -4,7 +4,9 @@ import {
   type ConfirmHandler,
   type Direction,
   edgePinStyle,
+  ExpandChevron,
   headerGroupRow,
+  logicalAlign,
   PIN_Z,
   type PinLeads,
   pinnedCellStyle,
@@ -19,6 +21,7 @@ import {
   runRowAction,
   type SelectionState,
   type SharedTableRenderProps,
+  sortArrow,
   type TableLabels,
   tableMinWidth,
   tableRenderModel,
@@ -94,23 +97,11 @@ function joinClasses(
   return base ?? extra;
 }
 
-function chakraAlign(
-  align: ColumnDef<unknown>["align"]
-): "start" | "center" | "end" {
-  if (align === "center") return "center";
-  if (align === "end") return "end";
-  return "start";
-}
-
 /**
  * Header sort indicator, derived from the cell's computed `aria-sort` so a
  * multi-sort chain level shows its own direction, not the single-sort one.
  */
-function sortGlyph(sort: unknown): string {
-  if (sort === "ascending") return " ↑";
-  if (sort === "descending") return " ↓";
-  return " ↕";
-}
+const sortGlyph = sortArrow;
 
 /**
  * Pinned data-cell style with an opaque background. A raw `style` because
@@ -143,38 +134,6 @@ function edgeCellStyle(
   const style: CSSProperties = { ...pin, background: PIN_BG };
   if (shift > 0) style.insetInlineStart = shift;
   return style;
-}
-
-/**
- * Inline expand chevron: points into the row (flipped for RTL) and rotates
- * to point down while the detail panel is open.
- */
-function ExpandChevron({
-  open,
-  dir,
-}: Readonly<{ open: boolean; dir?: Direction }>) {
-  let transform: string | undefined;
-  if (open) transform = "rotate(90deg)";
-  else if (dir === "rtl") transform = "rotate(180deg)";
-  return (
-    <svg
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-      style={{ transform, transition: "transform 0.2s ease" }}
-    >
-      <path
-        d="m9 6 6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 /** Chevron toggle for a row's detail panel. */
@@ -418,7 +377,7 @@ function DesktopRowBase<TRow>({
         {columns.map((column) => (
           <Table.Cell
             key={column.key}
-            textAlign={chakraAlign(column.align)}
+            textAlign={logicalAlign(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
           >
             {column.Cell ? (
@@ -705,7 +664,7 @@ export function DesktopTable<TRow>({
               return (
                 <Table.ColumnHeader
                   key={column.key}
-                  textAlign={chakraAlign(column.align)}
+                  textAlign={logicalAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}
                   {...stickyTh}
@@ -815,7 +774,7 @@ export function DesktopTable<TRow>({
               {columns.map((column) => (
                 <Table.Cell
                   key={column.key}
-                  textAlign={chakraAlign(column.align)}
+                  textAlign={logicalAlign(column.align)}
                 >
                   {summary[column.key]}
                 </Table.Cell>

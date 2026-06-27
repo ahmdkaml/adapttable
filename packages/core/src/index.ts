@@ -103,6 +103,10 @@ export {
   type UseTableDataResult,
 } from "./source/useTableData";
 export {
+  type DataTableShellProps,
+  useDataTableShell,
+} from "./useDataTableShell";
+export {
   type BulkBarChromeProps,
   type ChromeBodyData,
   type FilterTriggerToggle,
@@ -282,7 +286,8 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
-export { FiltersIcon, SearchIcon } from "./icons";
+export { logicalAlign, sortArrow } from "./display";
+export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
 export {
   type HorizontalOverflow,
   useHorizontalOverflow,
