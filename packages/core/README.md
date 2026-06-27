@@ -17,8 +17,6 @@ You usually want a styled adapter on top (`@adapttable/mantine`,
 `@adapttable/core` directly when you want to render your own markup with full
 control via prop-getters.
 
-> 🚧 Pre-1.0, under active development.
-
 ## Documentation
 
 [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) · [Comparison vs ag-Grid · MUI X · TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/)
