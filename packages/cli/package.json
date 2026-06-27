@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Scaffolding CLI for AdaptTable — `npx @adapttable/cli init` detects your UI kit (Mantine, MUI, Chakra, Ant Design, Tailwind) and sets up a data table.",
   "keywords": [
     "adapttable",
