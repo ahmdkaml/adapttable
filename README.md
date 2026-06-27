@@ -169,7 +169,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 
 ## Status
 
-🚧 **Pre-1.0, under active development.** Building in the open. APIs are stabilizing toward a `v1`. Follow the [roadmap](#roadmap).
+**Stable — `v1.0`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. See the [roadmap](#roadmap) for what's next.
 
 ## Roadmap
 
@@ -184,7 +184,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 - [x] Docs (markdown + `llms.txt`) + examples
 - [x] Hosted [docs site](https://orwa-mahmoud.github.io/adapttable/) + [live demo](https://orwa-mahmoud.github.io/adapttable/demo/) (GitHub Pages, deployed on every push to `main`)
 - [x] Optional row/card virtualization (windowing) for very large lists
-- [ ] `v1.0`
+- [x] `v1.0` — stable, semver-committed public API
 
 ## Contributing
 

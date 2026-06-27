@@ -11,8 +11,7 @@ Given `MAJOR.MINOR.PATCH`:
 - **PATCH** — bug fixes and internal improvements that don't change the
   public API. Always safe to adopt.
 - **MINOR** — new features and backwards-compatible changes. Code written
-  against the current minor keeps working on the next. (Before `1.0`, a minor
-  _may_ include breaking changes — see "Pre-1.0" below.)
+  against the current minor keeps working on the next.
 - **MAJOR** — breaking changes to the public API. We avoid these; when one is
   unavoidable, it ships in a major with a migration note in the CHANGELOG.
 
@@ -23,13 +22,13 @@ need to hunt for a compatible adapter/core pair — install the same version of
 each. `@adapttable/cli` is a scaffolding tool and stays on its own cadence; it
 is not part of the library surface.
 
-## Pre-1.0
+## Stability
 
-AdaptTable is pre-`1.0`. Until `1.0.0` ships, **minors may include breaking
-changes** (per the SemVer `0.x` convention, where `0.MINOR.PATCH` is treated as
-the "major" line). In practice breaking changes are rare and called out in the
-relevant package's `CHANGELOG.md`. Once `1.0.0` is tagged, the full SemVer
-contract above applies and breaking changes require a major bump.
+AdaptTable is **stable at `1.0`**. The full SemVer contract above applies:
+breaking changes to the public API surface (below) ship only in a major
+release, with a migration note in the relevant package's `CHANGELOG.md`. In
+practice such changes are rare — most releases are additive minors and safe
+patches.
 
 ## Public API surface
 
@@ -63,8 +62,7 @@ When an API is retired, it is **not** removed immediately:
 1. The deprecated API is marked `@deprecated` with a JSDoc note pointing to the
    replacement.
 2. It keeps working for **at least one minor** release (longer when practical).
-3. Removal happens in a **major** release (or, pre-`1.0`, in a minor with an
-   explicit CHANGELOG entry).
+3. Removal happens in a **major** release.
 
 We never silently remove a documented public API.
 

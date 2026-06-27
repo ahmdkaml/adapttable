@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-AdaptTable is pre-1.0. Security fixes are applied to the latest released
-minor version. Once 1.0 ships, this policy will list the supported range.
+Security fixes are applied to the latest `1.x` release. We recommend staying on
+the latest published version of each `@adapttable/*` package.
 
 ## Reporting a vulnerability
 
