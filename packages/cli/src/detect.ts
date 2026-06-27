@@ -1,5 +1,12 @@
 /** A UI kit AdaptTable can scaffold for. */
-export type Kit = "mantine" | "mui" | "chakra" | "antd" | "unstyled";
+export type Kit =
+  | "mantine"
+  | "mui"
+  | "chakra"
+  | "antd"
+  | "radix"
+  | "shadcn"
+  | "unstyled";
 
 /** Metadata about a kit's adapter and the packages it needs. */
 export interface KitInfo {
@@ -46,6 +53,24 @@ export const KITS: readonly KitInfo[] = [
     label: "Ant Design",
   },
   {
+    kit: "radix",
+    adapter: "@adapttable/radix",
+    signals: ["@radix-ui/themes"],
+    extras: [],
+    label: "Radix Themes",
+  },
+  {
+    // shadcn/ui ships no package of its own (its components are copied into the
+    // project), so it has no dependency signal. A Tailwind project is upgraded
+    // to shadcn when a `components.json` (the shadcn config) is present — see
+    // `runInit`. Listed here so the adapter is scaffoldable.
+    kit: "shadcn",
+    adapter: "@adapttable/shadcn",
+    signals: [],
+    extras: [],
+    label: "shadcn/ui",
+  },
+  {
     kit: "unstyled",
     adapter: "@adapttable/unstyled",
     signals: ["tailwindcss"],
@@ -55,6 +80,9 @@ export const KITS: readonly KitInfo[] = [
 ];
 
 const UNSTYLED = KITS.find((k) => k.kit === "unstyled")!;
+
+/** The shadcn/ui kit — selected by `runInit` when a `components.json` is found. */
+export const SHADCN = KITS.find((k) => k.kit === "shadcn")!;
 
 /**
  * Detect which UI kit a project uses from its merged dependency map. The

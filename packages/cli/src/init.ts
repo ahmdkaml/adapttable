@@ -1,4 +1,4 @@
-import { detectKit, type Kit, mergeDependencies } from "./detect";
+import { detectKit, type Kit, mergeDependencies, SHADCN } from "./detect";
 import {
   choosePackageManager,
   installCommand,
@@ -52,17 +52,17 @@ export class InitError extends Error {}
  * @throws {InitError} When no readable `package.json` is found.
  */
 /**
- * A heads-up when the detected Chakra is v3+: `@adapttable/chakra` currently
- * targets Chakra v2, so the scaffold would not compile as-is.
+ * A heads-up when the detected Chakra is older than v3: `@adapttable/chakra`
+ * targets Chakra v3, so a v2 project's scaffold would not compile as-is.
  */
-function chakraV3Warning(
+function chakraVersionWarning(
   kit: string,
   chakraSpec: string | undefined
 ): string | undefined {
   if (kit !== "chakra" || !chakraSpec) return undefined;
   const major = /^\D*(\d+)/.exec(chakraSpec)?.[1];
-  if (major === undefined || Number(major) < 3) return undefined;
-  return `   Note: @chakra-ui/react ${chakraSpec} detected — @adapttable/chakra currently supports Chakra v2. Pin Chakra v2 or use @adapttable/unstyled until v3 support lands.`;
+  if (major === undefined || Number(major) >= 3) return undefined;
+  return `   Note: @chakra-ui/react ${chakraSpec} detected — @adapttable/chakra targets Chakra v3. Upgrade @chakra-ui/react to v3, or use @adapttable/unstyled.`;
 }
 
 export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
@@ -84,7 +84,13 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   }
 
   const deps = mergeDependencies(pkg);
-  const info = detectKit(deps);
+  const detected = detectKit(deps);
+  // A Tailwind project with a shadcn config (`components.json`) is a shadcn/ui
+  // project — scaffold its pre-wired adapter rather than the bare unstyled one.
+  const info =
+    detected.kit === "unstyled" && io.exists("components.json")
+      ? SHADCN
+      : detected;
   const pm = choosePackageManager(io.listRootFiles());
   const packages = packagesFor(info);
   const command = installCommand(pm, packages);
@@ -101,7 +107,7 @@ export function runInit(io: InitIO, options: InitOptions = {}): InitResult {
   }
 
   io.log(`AdaptTable — detected ${info.label}.`);
-  const chakraNote = chakraV3Warning(info.kit, deps["@chakra-ui/react"]);
+  const chakraNote = chakraVersionWarning(info.kit, deps["@chakra-ui/react"]);
   if (chakraNote) io.log(chakraNote);
   io.log("");
   io.log("1. Install the packages:");

@@ -11,7 +11,16 @@ describe("detectKit", () => {
     expect(detectKit({ "@mui/material": "6" }).kit).toBe("mui");
     expect(detectKit({ "@chakra-ui/react": "2" }).kit).toBe("chakra");
     expect(detectKit({ antd: "5" }).kit).toBe("antd");
+    expect(detectKit({ "@radix-ui/themes": "3" }).kit).toBe("radix");
     expect(detectKit({ tailwindcss: "3" }).kit).toBe("unstyled");
+  });
+
+  it("never auto-detects shadcn (it has no dependency signal)", () => {
+    // shadcn ships no package of its own; a Tailwind project resolves to
+    // unstyled here and is only upgraded to shadcn by runInit via components.json.
+    expect(
+      detectKit({ tailwindcss: "3", "class-variance-authority": "0.7" }).kit
+    ).toBe("unstyled");
   });
 
   it("prefers Mantine when several kits are present", () => {
@@ -119,22 +128,68 @@ describe("runInit", () => {
     expect(logs.join("\n")).toContain("Mantine");
   });
 
-  it("warns when Chakra v3 is detected (adapter targets v2)", () => {
-    const { io, logs } = makeIO(
-      JSON.stringify({ dependencies: { "@chakra-ui/react": "^3.2.0" } }),
-      []
-    );
-    runInit(io);
-    expect(logs.join("\n")).toContain("supports Chakra v2");
-  });
-
-  it("stays quiet for Chakra v2", () => {
+  it("warns when Chakra v2 is detected (adapter targets v3)", () => {
     const { io, logs } = makeIO(
       JSON.stringify({ dependencies: { "@chakra-ui/react": "^2.10.4" } }),
       []
     );
     runInit(io);
-    expect(logs.join("\n")).not.toContain("supports Chakra v2");
+    expect(logs.join("\n")).toContain("targets Chakra v3");
+  });
+
+  it("stays quiet for Chakra v3 (the supported major)", () => {
+    const { io, logs } = makeIO(
+      JSON.stringify({ dependencies: { "@chakra-ui/react": "^3.2.0" } }),
+      []
+    );
+    runInit(io);
+    expect(logs.join("\n")).not.toContain("targets Chakra v3");
+  });
+
+  it("upgrades a Tailwind project with components.json to shadcn", () => {
+    const { io, written } = makeIO(
+      JSON.stringify({ dependencies: { tailwindcss: "3" } }),
+      [],
+      ["components.json"]
+    );
+    const result = runInit(io);
+    expect(result.kit).toBe("shadcn");
+    expect(result.installCommand).toContain("@adapttable/shadcn");
+    expect(written["src/PeopleTable.tsx"]).toContain("@adapttable/shadcn");
+  });
+
+  it("scaffolds the Radix adapter for a Radix Themes project", () => {
+    const { io, written } = makeIO(
+      JSON.stringify({ dependencies: { "@radix-ui/themes": "3" } }),
+      []
+    );
+    const result = runInit(io);
+    expect(result.kit).toBe("radix");
+    expect(written["src/PeopleTable.tsx"]).toContain(
+      'from "@adapttable/radix"'
+    );
+  });
+
+  it("upgrades a Tailwind project to shadcn when components.json is present", () => {
+    const { io, written } = makeIO(
+      JSON.stringify({ dependencies: { tailwindcss: "3" } }),
+      [],
+      ["components.json"]
+    );
+    const result = runInit(io);
+    expect(result.kit).toBe("shadcn");
+    expect(result.adapter).toBe("@adapttable/shadcn");
+    expect(written["src/PeopleTable.tsx"]).toContain(
+      'from "@adapttable/shadcn"'
+    );
+  });
+
+  it("stays unstyled for a Tailwind project without components.json", () => {
+    const { io } = makeIO(
+      JSON.stringify({ dependencies: { tailwindcss: "3" } }),
+      []
+    );
+    expect(runInit(io).kit).toBe("unstyled");
   });
 
   it("skips an existing starter unless --force", () => {
