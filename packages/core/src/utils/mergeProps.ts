@@ -1,6 +1,11 @@
 import type { CSSProperties } from "react";
 
-/** Any props object a prop-getter can produce or accept for merging. */
+/**
+ * Any props object a prop-getter can produce or accept for merging.
+ *
+ * @internal — prop-getter plumbing. Consumers use the prop-getters from
+ * `useDataTable`, not this merge helper directly.
+ */
 export type Props = Record<string, unknown>;
 
 function isEventHandler(
@@ -19,6 +24,9 @@ function isEventHandler(
  * @param base - The prop-getter's own props.
  * @param overrides - Optional caller-supplied props to merge on top.
  * @returns The merged props object.
+ *
+ * @internal — prop-getter plumbing. Consumers use the prop-getters from
+ * `useDataTable`, not this merge helper directly.
  */
 export function mergeProps<T extends Props>(base: T, overrides?: Props): T {
   if (!overrides) return base;
