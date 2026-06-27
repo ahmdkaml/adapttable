@@ -1,5 +1,13 @@
 # @adapttable/cli
 
+## 0.1.3
+
+### Patch Changes
+
+- 6ab1391: docs: every package README now leads with a click-to-play demo — a poster (with
+  a play button) that links to an mp4 of the table in action — replacing the
+  autoplaying GIF. Republishing so the new READMEs land on npm.
+
 ## 0.1.2
 
 ### Patch Changes
