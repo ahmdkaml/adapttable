@@ -22,6 +22,7 @@ const target = join(here, "src/content/docs");
 
 const TITLES = {
   "getting-started.md": "Getting started",
+  "concepts.md": "Concepts",
   "columns.md": "Columns",
   "sorting.md": "Sorting",
   "filtering.md": "Filtering",
@@ -34,8 +35,55 @@ const TITLES = {
   "data-tiers.md": "Data tiers",
   "customization.md": "Customization",
   "url-state.md": "URL state",
+  "i18n-rtl.md": "i18n & RTL",
   "api.md": "API reference",
-  "comparison.md": "Comparison",
+  "faq.md": "FAQ",
+  "comparison.md": "AdaptTable vs ag-Grid, MUI X & TanStack Table",
+  "versioning.md": "Versioning & stability",
+};
+
+// Per-page meta descriptions — the SERP snippet + og:description Starlight
+// emits from `description`. Keyword-rich and unique per page so search and
+// answer engines have something better than a generic site default.
+const DESCRIPTIONS = {
+  "getting-started.md":
+    "Get started with AdaptTable — install an adapter for Mantine, MUI, Chakra, Ant, Radix or shadcn, pass columns and data, and ship a full React data table fast.",
+  "concepts.md":
+    "Core concepts behind AdaptTable — the headless engine, TableSource, adapters and columns that render one declarative API natively across React UI kits.",
+  "columns.md":
+    "Define AdaptTable columns declaratively in React: accessors, sorting, per-column filters, alignment, pinning and custom cell rendering from one ColumnDef.",
+  "sorting.md":
+    "Sorting in AdaptTable React tables — single and multi-column sort, custom comparators, server-side sorting and accessible aria-sort headers.",
+  "filtering.md":
+    "Declarative filtering for AdaptTable React tables: text, select, multi-select, number and date-range operators, filter chips and URL-synced state.",
+  "pagination.md":
+    "Pagination in AdaptTable React tables — numbered pages or infinite scroll, page-size control, server-side paging and shareable URL state.",
+  "selection.md":
+    "Row selection and bulk actions in AdaptTable — select a page or all matches across pages, and run bulk actions through an injectable confirm dialog.",
+  "row-expansion.md":
+    "Expandable rows in an AdaptTable React data table — render per-row detail panels with accessible toggles and full keyboard support.",
+  "column-management.md":
+    "Show/hide, reorder, pin (sticky) and resize columns in an AdaptTable React data table, with a persistent, URL-synced column layout.",
+  "saved-views.md":
+    "Saved views in AdaptTable — capture filters, sorting and column layout as named views your users can save, restore and share by URL.",
+  "virtualization.md":
+    "Row and card virtualization in AdaptTable — window tens of thousands of rows against the page or a scroll container for smooth, large-list React tables.",
+  "data-tiers.md":
+    "AdaptTable's three data tiers: in-memory array, server-side fetch via onQueryChange, or a custom TableSource — client and server data in one React API.",
+  "customization.md":
+    "Customize an AdaptTable React table from props to fully headless: slots, classNames, data-* state hooks, custom toolbars and prop-getters — no ejecting.",
+  "url-state.md":
+    "URL-synced state in AdaptTable — search, sort, filters, pagination and column layout live in shareable, SSR-safe URLs, namespaced per table.",
+  "i18n-rtl.md":
+    "Internationalization and RTL in AdaptTable — locale label presets, per-locale column data paths, logical column pinning and first-class Arabic/Hebrew support.",
+  "api.md":
+    "Complete API reference for AdaptTable — DataTable props, ColumnDef, filters, source builders, prop-getters and the headless useDataTable hook for React.",
+  "faq.md":
+    "Frequently asked questions about AdaptTable — the headless React data table for Mantine, MUI, Chakra, Ant Design, Radix and shadcn/ui. SSR, bundle size, licensing.",
+  "comparison.md":
+    "How AdaptTable compares to ag-Grid, MUI X DataGrid and TanStack Table — native per-kit UI, a headless core and an MIT license, feature by feature.",
+  "versioning.md":
+    "AdaptTable's versioning and stability policy — semantic versioning, the committed-stable public API surface, deprecation policy and the fixed-group release flow.",
 };
 
 mkdirSync(target, { recursive: true });
@@ -56,10 +104,11 @@ for (const file of readdirSync(source)) {
       "(https://github.com/orwa-mahmoud/adapttable/blob/main/$1)"
     );
   const title = TITLES[file] ?? file.replace(/\.md$/, "");
-  writeFileSync(
-    join(target, file),
-    `---\ntitle: ${JSON.stringify(title)}\n---\n\n${body}`
-  );
+  const description = DESCRIPTIONS[file];
+  const frontmatter = description
+    ? `---\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n`
+    : `---\ntitle: ${JSON.stringify(title)}\n---\n\n`;
+  writeFileSync(join(target, file), `${frontmatter}${body}`);
 }
 // LLM-search surface (llmstxt.org): /llms.txt is the index, /llms-full.txt
 // the whole documentation in one file. Tools like Perplexity/ChatGPT
