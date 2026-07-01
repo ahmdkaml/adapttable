@@ -46,6 +46,15 @@ export default defineConfig({
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           }),
         },
+        // Cloudflare Web Analytics — cookieless, no consent banner needed.
+        {
+          tag: "script",
+          attrs: {
+            defer: true,
+            src: "https://static.cloudflareinsights.com/beacon.min.js",
+            "data-cf-beacon": '{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}',
+          },
+        },
       ],
       customCss: ["./src/styles/custom.css"],
       social: [
