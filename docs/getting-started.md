@@ -21,33 +21,21 @@ kit's own packages (peer dependencies — skip what you already have).
 
 ```bash
 # Mantine
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 
 # Material UI
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
 # Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 
 # Ant Design
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/antd antd
 
 # shadcn/ui — one import, pre-wired with the shadcn class preset
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/shadcn
 
 # Tailwind / unstyled — bring your own classes
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 

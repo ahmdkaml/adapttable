@@ -28,33 +28,21 @@ kit's own packages (peer dependencies — skip what you already have).
 
 ```bash
 # Mantine
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 
 # Material UI
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
 # Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 
 # Ant Design
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/antd antd
 
 # shadcn/ui — one import, pre-wired with the shadcn class preset
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/shadcn
 
 # Tailwind / unstyled — bring your own classes
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 
@@ -2692,6 +2680,47 @@ libraries.
 | MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |           **✓**           |
 
 <sub>Comparison as of June 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
+
+## Head-to-head
+
+### AdaptTable vs TanStack Table
+
+TanStack Table is a headless engine — framework-agnostic and the closest in
+philosophy. The difference is what you ship: with TanStack you build every
+cell, header, filter, and pagination control yourself. AdaptTable gives you
+native, batteries-included UI for Mantine, MUI, Chakra, Ant Design, Radix, and
+shadcn/ui out of the box — and still exposes a headless core with prop-getters
+when you want to drop down. Pick TanStack for non-React or total-control
+builds; pick AdaptTable when you want the UI done for your kit without losing
+the escape hatch.
+
+### AdaptTable vs AG Grid
+
+AG Grid is the enterprise heavyweight — pivoting, range selection, Excel-style
+editing. Much of that power lives in the paid Enterprise tier, and it renders
+its own look rather than your design system's. AdaptTable is MIT and free
+end to end (including server data and infinite scroll) and renders as your UI
+kit's real components. Reach for AG Grid when you need a spreadsheet-grade
+enterprise grid today; reach for AdaptTable for application data tables that
+match your app and stay free.
+
+### AdaptTable vs MUI X DataGrid
+
+MUI X DataGrid is a strong choice if you're all-in on MUI — but it's
+MUI-only, and its server-side data, tree data, and infinite loading sit behind
+the paid Pro / Premium tiers (open-core). AdaptTable's MUI adapter gives a
+DataGrid-style experience for free, and the same API also renders in Mantine,
+Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
+state built in at no cost.
+
+### AdaptTable vs mantine-datatable
+
+mantine-datatable is a polished, popular table — but it's Mantine-only.
+AdaptTable renders natively in Mantine and five other kits from one API, and
+adds client/server data behind a single contract, shareable URL state, saved
+views, and first-class RTL. If you're on Mantine and staying there, either
+works; if you want the same table across kits (or those extra batteries),
+AdaptTable covers more ground.
 
 ## When to choose AdaptTable
 
