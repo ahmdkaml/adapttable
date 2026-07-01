@@ -21,7 +21,9 @@ packages/
   adapter-mui/      @adapttable/mui
   adapter-chakra/   @adapttable/chakra
   adapter-antd/     @adapttable/antd       Ant Design
-  adapter-unstyled/ @adapttable/unstyled   Tailwind / shadcn
+  adapter-radix/    @adapttable/radix      Radix Themes
+  adapter-shadcn/   @adapttable/shadcn     shadcn/ui (unstyled + shadcn preset)
+  adapter-unstyled/ @adapttable/unstyled   Tailwind / bring your own CSS
   i18n/             @adapttable/i18n
   cli/              @adapttable/cli
 examples/           one runnable example per adapter

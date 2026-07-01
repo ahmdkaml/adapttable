@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
 
 
 ---
@@ -2022,7 +2022,8 @@ also accepts the equivalent top-level `emptyState` / `loadingState` props
 `"comfortable"` (default) is the roomy layout; `"compact"` tightens row
 height and padding. Each adapter maps it to its kit's table size — MUI
 `"comfortable"` → `medium` / `"compact"` → `small`, antd → `middle` /
-`small` — and MUI, Chakra, and antd offer an explicit `size` prop that
+`small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
+explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
 
 ## Sticky header, offset & scroll box
@@ -2553,13 +2554,13 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind**. You get
+**Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
