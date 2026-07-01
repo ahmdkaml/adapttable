@@ -86,6 +86,77 @@ const DESCRIPTIONS = {
     "AdaptTable's versioning and stability policy — semantic versioning, the committed-stable public API surface, deprecation policy and the fixed-group release flow.",
 };
 
+const SITE = "https://orwa-mahmoud.github.io/adapttable";
+
+// Flatten an answer's markdown to plain text for FAQPage structured data.
+function mdToText(md) {
+  return md
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Parse the FAQ's `## Question` sections into question/answer pairs.
+function parseFaq(raw) {
+  return raw
+    .split(/\n## /)
+    .slice(1)
+    .map((part) => {
+      const nl = part.indexOf("\n");
+      return { q: part.slice(0, nl).trim(), a: mdToText(part.slice(nl + 1)) };
+    })
+    .filter(({ q, a }) => q && a);
+}
+
+function faqPage(pairs) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: pairs.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  };
+}
+
+function breadcrumbList(title, slug) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "AdaptTable",
+        item: `${SITE}/`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: title,
+        item: `${SITE}/${slug}/`,
+      },
+    ],
+  };
+}
+
+// Render JSON-LD objects as Starlight frontmatter `head` <script> entries.
+// JSON.stringify twice: once to the LD string, once to a YAML-safe scalar.
+function headBlock(objects) {
+  if (!objects.length) return "";
+  const items = objects
+    .map(
+      (obj) =>
+        `  - tag: script\n    attrs:\n      type: application/ld+json\n    content: ${JSON.stringify(JSON.stringify(obj))}`
+    )
+    .join("\n");
+  return `head:\n${items}\n`;
+}
+
 mkdirSync(target, { recursive: true });
 for (const file of readdirSync(source)) {
   if (!file.endsWith(".md")) continue;
@@ -105,9 +176,16 @@ for (const file of readdirSync(source)) {
     );
   const title = TITLES[file] ?? file.replace(/\.md$/, "");
   const description = DESCRIPTIONS[file];
-  const frontmatter = description
-    ? `---\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n`
-    : `---\ntitle: ${JSON.stringify(title)}\n---\n\n`;
+  const slug = file.replace(/\.md$/, "");
+
+  // Structured data: a BreadcrumbList on every page, plus FAQPage on the FAQ
+  // so its Q&As are eligible for Google rich results.
+  const jsonLd = [breadcrumbList(title, slug)];
+  if (file === "faq.md") jsonLd.push(faqPage(parseFaq(raw)));
+
+  const fm = [`title: ${JSON.stringify(title)}`];
+  if (description) fm.push(`description: ${JSON.stringify(description)}`);
+  const frontmatter = `---\n${fm.join("\n")}\n${headBlock(jsonLd)}---\n\n`;
   writeFileSync(join(target, file), `${frontmatter}${body}`);
 }
 // LLM-search surface (llmstxt.org): /llms.txt is the index, /llms-full.txt
