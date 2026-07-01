@@ -178,7 +178,8 @@ also accepts the equivalent top-level `emptyState` / `loadingState` props
 `"comfortable"` (default) is the roomy layout; `"compact"` tightens row
 height and padding. Each adapter maps it to its kit's table size — MUI
 `"comfortable"` → `medium` / `"compact"` → `small`, antd → `middle` /
-`small` — and MUI, Chakra, and antd offer an explicit `size` prop that
+`small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
+explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
 
 ## Sticky header, offset & scroll box

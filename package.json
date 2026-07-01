@@ -2,7 +2,7 @@
   "name": "adapttable-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "AdaptTable — a headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, and Ant Design, plus an unstyled path for Tailwind & shadcn/ui.",
+  "description": "AdaptTable — a headless, UI-agnostic React data table with batteries-included adapters for Mantine, MUI, Chakra, Ant Design, Radix, and shadcn/ui, plus an unstyled path for Tailwind & your own CSS.",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "engines": {

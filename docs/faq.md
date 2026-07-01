@@ -8,19 +8,26 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind**. You get
+**Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
 kit or plain Tailwind, the unstyled adapter exposes semantic HTML with `data-*`
 and `className` hooks, and the headless `useDataTable` core works with any
 markup.
+
+## Which UI libraries does AdaptTable support?
+
+Six, from one API: **Mantine, MUI, Chakra UI, Ant Design, Radix Themes, and
+shadcn/ui** — each rendered with that kit's real components. There is also an
+unstyled adapter for Tailwind or your own CSS, and a headless core
+(`useDataTable`) that works with any markup. Install only the adapter you use.
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 
@@ -29,6 +36,13 @@ data, infinite scroll, filtering, and selection. MUI X DataGrid and ag-Grid are
 **open-core**: their advanced server-side data and infinite-loading
 capabilities sit behind paid Pro/Premium or Enterprise tiers. The MUI adapter
 gives a DataGrid-style experience at no cost.
+
+## Is AdaptTable free?
+
+Yes — every package is **MIT-licensed and completely free**, including
+server-side data, infinite scroll, filtering, selection, and virtualization.
+There is no paid tier and no feature gated behind a license (unlike the
+open-core AG Grid Enterprise or MUI X DataGrid Pro / Premium).
 
 ## How does it handle responsive tables on mobile?
 
@@ -92,6 +106,14 @@ React **18+**. Every package ships dual ESM/CJS builds with `.d.ts` types
 (verified with `publint --strict` and `are-the-types-wrong`), so it works with
 Vite, Next.js, Remix, webpack, and friends. It's written in strict TypeScript.
 
+## Does AdaptTable work with Next.js and server components?
+
+Yes. It works with **Next.js (App or Pages Router), Remix, and Vite**. The
+table is interactive, so render it inside a client component (`"use client"`
+in the App Router) — you can still fetch in a server component and pass the
+data in. URL-synced state takes a router adapter for Next.js or react-router,
+and falls back to the browser History API.
+
 ## Is it accessible?
 
 Yes — semantic table markup, `aria-sort` on sortable headers, labelled
@@ -112,6 +134,13 @@ npx @adapttable/cli init   # detects your UI kit and scaffolds a table
 
 Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
 [the Getting started guide](./getting-started.md).
+
+## Is AdaptTable production-ready?
+
+Yes — AdaptTable is **stable at 1.0** and follows semantic versioning, so
+breaking changes ship only in a major release. It is strict-TypeScript, dual
+ESM/CJS with `.d.ts` types, axe-audited for accessibility in CI, and holds
+near-100% test coverage across every adapter.
 
 ## When might another library fit better?
 

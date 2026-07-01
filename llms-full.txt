@@ -1,6 +1,6 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
 
 
 ---
@@ -28,33 +28,21 @@ kit's own packages (peer dependencies — skip what you already have).
 
 ```bash
 # Mantine
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 
 # Material UI
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
 # Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
 
 # Ant Design
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/antd antd
 
 # shadcn/ui — one import, pre-wired with the shadcn class preset
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/shadcn
 
 # Tailwind / unstyled — bring your own classes
-
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 pnpm add @adapttable/core @adapttable/unstyled
 ```
 
@@ -2022,7 +2010,8 @@ also accepts the equivalent top-level `emptyState` / `loadingState` props
 `"comfortable"` (default) is the roomy layout; `"compact"` tightens row
 height and padding. Each adapter maps it to its kit's table size — MUI
 `"comfortable"` → `medium` / `"compact"` → `small`, antd → `middle` /
-`small` — and MUI, Chakra, and antd offer an explicit `size` prop that
+`small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
+explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
 
 ## Sticky header, offset & scroll box
@@ -2553,19 +2542,26 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, shadcn/ui, and unstyled Tailwind**. You get
+**Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, or shadcn/ui**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
 kit or plain Tailwind, the unstyled adapter exposes semantic HTML with `data-*`
 and `className` hooks, and the headless `useDataTable` core works with any
 markup.
+
+## Which UI libraries does AdaptTable support?
+
+Six, from one API: **Mantine, MUI, Chakra UI, Ant Design, Radix Themes, and
+shadcn/ui** — each rendered with that kit's real components. There is also an
+unstyled adapter for Tailwind or your own CSS, and a headless core
+(`useDataTable`) that works with any markup. Install only the adapter you use.
 
 ## Is there a free alternative to MUI X DataGrid or ag-Grid?
 
@@ -2574,6 +2570,13 @@ data, infinite scroll, filtering, and selection. MUI X DataGrid and ag-Grid are
 **open-core**: their advanced server-side data and infinite-loading
 capabilities sit behind paid Pro/Premium or Enterprise tiers. The MUI adapter
 gives a DataGrid-style experience at no cost.
+
+## Is AdaptTable free?
+
+Yes — every package is **MIT-licensed and completely free**, including
+server-side data, infinite scroll, filtering, selection, and virtualization.
+There is no paid tier and no feature gated behind a license (unlike the
+open-core AG Grid Enterprise or MUI X DataGrid Pro / Premium).
 
 ## How does it handle responsive tables on mobile?
 
@@ -2637,6 +2640,14 @@ React **18+**. Every package ships dual ESM/CJS builds with `.d.ts` types
 (verified with `publint --strict` and `are-the-types-wrong`), so it works with
 Vite, Next.js, Remix, webpack, and friends. It's written in strict TypeScript.
 
+## Does AdaptTable work with Next.js and server components?
+
+Yes. It works with **Next.js (App or Pages Router), Remix, and Vite**. The
+table is interactive, so render it inside a client component (`"use client"`
+in the App Router) — you can still fetch in a server component and pass the
+data in. URL-synced state takes a router adapter for Next.js or react-router,
+and falls back to the browser History API.
+
 ## Is it accessible?
 
 Yes — semantic table markup, `aria-sort` on sortable headers, labelled
@@ -2657,6 +2668,13 @@ npx @adapttable/cli init   # detects your UI kit and scaffolds a table
 
 Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
 [the Getting started guide](./getting-started.md).
+
+## Is AdaptTable production-ready?
+
+Yes — AdaptTable is **stable at 1.0** and follows semantic versioning, so
+breaking changes ship only in a major release. It is strict-TypeScript, dual
+ESM/CJS with `.d.ts` types, axe-audited for accessibility in CI, and holds
+near-100% test coverage across every adapter.
 
 ## When might another library fit better?
 
@@ -2692,6 +2710,47 @@ libraries.
 
 <sub>Comparison as of June 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
 
+## Head-to-head
+
+### AdaptTable vs TanStack Table
+
+TanStack Table is a headless engine — framework-agnostic and the closest in
+philosophy. The difference is what you ship: with TanStack you build every
+cell, header, filter, and pagination control yourself. AdaptTable gives you
+native, batteries-included UI for Mantine, MUI, Chakra, Ant Design, Radix, and
+shadcn/ui out of the box — and still exposes a headless core with prop-getters
+when you want to drop down. Pick TanStack for non-React or total-control
+builds; pick AdaptTable when you want the UI done for your kit without losing
+the escape hatch.
+
+### AdaptTable vs AG Grid
+
+AG Grid is the enterprise heavyweight — pivoting, range selection, Excel-style
+editing. Much of that power lives in the paid Enterprise tier, and it renders
+its own look rather than your design system's. AdaptTable is MIT and free
+end to end (including server data and infinite scroll) and renders as your UI
+kit's real components. Reach for AG Grid when you need a spreadsheet-grade
+enterprise grid today; reach for AdaptTable for application data tables that
+match your app and stay free.
+
+### AdaptTable vs MUI X DataGrid
+
+MUI X DataGrid is a strong choice if you're all-in on MUI — but it's
+MUI-only, and its server-side data, tree data, and infinite loading sit behind
+the paid Pro / Premium tiers (open-core). AdaptTable's MUI adapter gives a
+DataGrid-style experience for free, and the same API also renders in Mantine,
+Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
+state built in at no cost.
+
+### AdaptTable vs mantine-datatable
+
+mantine-datatable is a polished, popular table — but it's Mantine-only.
+AdaptTable renders natively in Mantine and five other kits from one API, and
+adds client/server data behind a single contract, shareable URL state, saved
+views, and first-class RTL. If you're on Mantine and staying there, either
+works; if you want the same table across kits (or those extra batteries),
+AdaptTable covers more ground.
+
 ## When to choose AdaptTable
 
 - You use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui** and want a table
@@ -2712,3 +2771,80 @@ libraries.
   framework). AdaptTable is React-only for v1.
 - You need a spreadsheet-like editing surface today, not a responsive data
   table for application lists.
+
+---
+
+# Versioning & stability
+
+AdaptTable follows [Semantic Versioning](https://semver.org/). This page states
+what that means in practice, what the committed-stable API surface is, and how
+deprecations are handled — so you can upgrade with confidence.
+
+## Versioning policy
+
+Given `MAJOR.MINOR.PATCH`:
+
+- **PATCH** — bug fixes and internal improvements that don't change the
+  public API. Always safe to adopt.
+- **MINOR** — new features and backwards-compatible changes. Code written
+  against the current minor keeps working on the next.
+- **MAJOR** — breaking changes to the public API. We avoid these; when one is
+  unavoidable, it ships in a major with a migration note in the CHANGELOG.
+
+The library packages (`@adapttable/core`, the adapters, and `@adapttable/i18n`)
+are versioned together as a [changesets](https://github.com/changesets/changesets)
+**fixed group**, so a given release lines them all up on one version. You never
+need to hunt for a compatible adapter/core pair — install the same version of
+each. `@adapttable/cli` is a scaffolding tool and stays on its own cadence; it
+is not part of the library surface.
+
+## Stability
+
+AdaptTable is **stable at `1.0`**. The full SemVer contract above applies:
+breaking changes to the public API surface (below) ship only in a major
+release, with a migration note in the relevant package's `CHANGELOG.md`. In
+practice such changes are rare — most releases are additive minors and safe
+patches.
+
+## Public API surface
+
+What "the public API" means — the things we commit to keeping stable:
+
+- **`@adapttable/core`** — the `TableSource` contract; the `useFrontendData` /
+  `useBackendData` / `useServerData` source builders; `useDataTable` and its
+  prop-getter return (`getTableProps`, `getRowProps`, `getHeaderCellProps`,
+  `getSortButtonProps`, `getSearchInputProps`, …); the core types
+  (`ColumnDef`, `RowAction`, `BulkAction`, `TableLabels`, `FilterValue`,
+  `SortDirection`, `Direction`, …); `BaseDataTableProps`; URL-state hooks
+  (`useTableUrlState`, `useColumnLayoutUrlState`, `useSavedViews`) and the
+  injectable `UrlStateAdapter`; column-layout, selection, sorting, pagination,
+  and virtualization hooks; the filter primitives (`countFilters`, chips,
+  range widget); and the i18n-agnostic labels contract.
+- **Adapters** — each `<DataTable>`'s props (extending `BaseDataTableProps`),
+  its `slots` / `classNames` / `toolbar` / `confirm` extension points, and the
+  re-exported source builders.
+- **`@adapttable/i18n`** — the locale presets and direction helpers.
+
+Anything exported but not listed above is **internal machinery** exposed
+incidentally (helpers like `mergeProps`, barrel re-exports of plumbing). It may
+change between minors. If you reach for something outside the surface above,
+prefer the documented escape hatches (`slots`, `classNames`, prop-getters, or
+the headless `useDataTable`) instead.
+
+## Deprecation policy
+
+When an API is retired, it is **not** removed immediately:
+
+1. The deprecated API is marked `@deprecated` with a JSDoc note pointing to the
+   replacement.
+2. It keeps working for **at least one minor** release (longer when practical).
+3. Removal happens in a **major** release.
+
+We never silently remove a documented public API.
+
+## Releasing
+
+Releases are produced by changesets: open a changeset describing the change,
+merge it, and the release workflow versions the fixed group together and
+publishes to npm with a generated per-package `CHANGELOG.md`. See
+[CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor flow.

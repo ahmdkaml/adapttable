@@ -5,7 +5,7 @@
 Use AdaptTable when you want TanStack-Table-style headless freedom but batteries-included for your specific UI kit — with URL state, RTL, a real filter UX, virtualization, and mobile layouts that do not break responsively.
 
 The live demo demonstrates provider-native filter UIs (Mantine, MUI, Chakra,
-Ant Design, shadcn/ui, plus unstyled class hooks), operator filters for numeric
+Ant Design, Radix, shadcn/ui, plus unstyled class hooks), operator filters for numeric
 business metrics, date ranges, status/team multi-selects, URL-synced chips, and
 automatic table-to-card responsive layouts.
 
