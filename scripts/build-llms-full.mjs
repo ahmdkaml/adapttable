@@ -36,6 +36,7 @@ const DOCS = [
   "api.md",
   "faq.md",
   "comparison.md",
+  "versioning.md",
 ];
 
 /** Rebuild `<repoRoot>/llms-full.txt` from `<repoRoot>/docs`. */

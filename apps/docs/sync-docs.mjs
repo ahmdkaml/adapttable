@@ -144,17 +144,17 @@ function breadcrumbList(title, slug) {
   };
 }
 
-// Render JSON-LD objects as Starlight frontmatter `head` <script> entries.
-// JSON.stringify twice: once to the LD string, once to a YAML-safe scalar.
-function headBlock(objects) {
-  if (!objects.length) return "";
-  const items = objects
-    .map(
-      (obj) =>
-        `  - tag: script\n    attrs:\n      type: application/ld+json\n    content: ${JSON.stringify(JSON.stringify(obj))}`
-    )
-    .join("\n");
-  return `head:\n${items}\n`;
+// Serialize Starlight frontmatter `head` entries. JSON-LD content is
+// stringified twice: once to the LD string, once to a YAML-safe scalar.
+function ldScript(obj) {
+  return `  - tag: script\n    attrs:\n      type: application/ld+json\n    content: ${JSON.stringify(JSON.stringify(obj))}`;
+}
+function metaEntry(key, name, content) {
+  return `  - tag: meta\n    attrs:\n      ${key}: ${JSON.stringify(name)}\n      content: ${JSON.stringify(content)}`;
+}
+function headBlock(entries) {
+  if (!entries.length) return "";
+  return `head:\n${entries.join("\n")}\n`;
 }
 
 mkdirSync(target, { recursive: true });
@@ -183,9 +183,17 @@ for (const file of readdirSync(source)) {
   const jsonLd = [breadcrumbList(title, slug)];
   if (file === "faq.md") jsonLd.push(faqPage(parseFaq(raw)));
 
+  // Per-page social-share card (generated under public/og/<slug>.png).
+  const ogImage = `${SITE}/og/${slug}.png`;
+  const head = [
+    ...jsonLd.map(ldScript),
+    metaEntry("property", "og:image", ogImage),
+    metaEntry("name", "twitter:image", ogImage),
+  ];
+
   const fm = [`title: ${JSON.stringify(title)}`];
   if (description) fm.push(`description: ${JSON.stringify(description)}`);
-  const frontmatter = `---\n${fm.join("\n")}\n${headBlock(jsonLd)}---\n\n`;
+  const frontmatter = `---\n${fm.join("\n")}\n${headBlock(head)}---\n\n`;
   writeFileSync(join(target, file), `${frontmatter}${body}`);
 }
 // LLM-search surface (llmstxt.org): /llms.txt is the index, /llms-full.txt

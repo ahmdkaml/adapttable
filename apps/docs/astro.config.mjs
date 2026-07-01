@@ -11,23 +11,14 @@ export default defineConfig({
       description:
         "One headless React data-table engine, native adapters for Mantine, MUI, Chakra, Ant Design and Tailwind/shadcn.",
       head: [
-        // Social-share image for every page. PNG, 1200x630: most link
-        // unfurlers (Slack, X, LinkedIn, WhatsApp) ignore SVG og images.
-        {
-          tag: "meta",
-          attrs: {
-            property: "og:image",
-            content: "https://orwa-mahmoud.github.io/adapttable/og.png",
-          },
-        },
+        // Social-share image is per-page (PNG, 1200x630): sync-docs injects a
+        // distinct og:image/twitter:image into each page's frontmatter `head`.
+        // These globals just declare the shared card dimensions and type.
         { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
         {
           tag: "meta",
-          attrs: {
-            name: "twitter:image",
-            content: "https://orwa-mahmoud.github.io/adapttable/og.png",
-          },
+          attrs: { name: "twitter:card", content: "summary_large_image" },
         },
         {
           tag: "meta",
