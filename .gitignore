@@ -25,6 +25,11 @@ coverage/
 # tsup transient bundled config
 *.bundled_*.mjs
 
+# Playwright E2E — generated reports/results. Never committed.
+/test-results/
+/playwright-report/
+/blob-report/
+
 # Playwright MCP scratch output (screenshots, snapshots) — never committed.
 .playwright-mcp/
 pg-*.png

@@ -114,6 +114,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
           <button
             key={a.key}
             type="button"
+            data-testid={`adapter-${a.key}`}
             className={adapter === a.key ? "adtab is-on" : "adtab"}
             style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
             onClick={() => setAdapter(a.key)}

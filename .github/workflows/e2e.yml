@@ -1,0 +1,62 @@
+name: E2E
+
+# Real-browser smoke suite over the showcase. Guards the bug class jsdom can't
+# see (overlay z-index / bleed-through, drawer backdrops, sticky/pinned offsets,
+# virtualization DOM bounds) — so it runs only when the library or the showcase
+# it drives actually changes.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "apps/showcase/**"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright smoke (showcase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cache the downloaded browser binary across runs, keyed on the lockfile
+      # (which pins @playwright/test, so a version bump busts the cache).
+      - name: Cache Playwright browser
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E smoke suite
+        run: pnpm test:e2e
+
+      - name: Upload report on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
