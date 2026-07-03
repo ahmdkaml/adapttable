@@ -2,7 +2,9 @@
 
 [![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.mp4)
 
-**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine)**
+
+_Migrating from mantine-datatable? See the [migration guide](https://orwa-mahmoud.github.io/adapttable/migrate-from-mantine-datatable/)._
 
 The **Mantine adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included React data table with sorting, filtering, URL-synced

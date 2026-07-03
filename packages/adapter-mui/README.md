@@ -2,7 +2,9 @@
 
 [![@adapttable/mui — a Material UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mui-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-mui.mp4)
 
-**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mui)**
+
+_Migrating from MUI X DataGrid? See the [migration guide](https://orwa-mahmoud.github.io/adapttable/migrate-from-mui-x-datagrid/)._
 
 The **Material UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included MUI data table with sorting, filtering, URL-synced

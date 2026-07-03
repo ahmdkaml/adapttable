@@ -2,7 +2,9 @@
 
 [![AdaptTable — one headless engine: the same table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, shadcn, and Tailwind](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2)](https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.mp4)
 
-**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine)**
+
+_Migrating from TanStack Table? See the [migration guide](https://orwa-mahmoud.github.io/adapttable/migrate-from-tanstack-table/)._
 
 The **headless engine** behind [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a UI-agnostic React data table. Zero UI-kit imports: state, hooks,
