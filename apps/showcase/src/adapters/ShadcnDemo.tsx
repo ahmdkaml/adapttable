@@ -22,6 +22,7 @@ export function ShadcnDemo({
   urlKey,
   density,
   filtersUi,
+  animate,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -29,6 +30,7 @@ export function ShadcnDemo({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -38,6 +40,7 @@ export function ShadcnDemo({
       urlKey={urlKey}
       density={density}
       filtersUi={filtersUi}
+      animate={animate}
       classNames={shadcnClassNames}
     />
   );

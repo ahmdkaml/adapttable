@@ -87,6 +87,7 @@ export function MuiDemo({
   urlKey,
   density,
   filtersUi,
+  animate,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -95,6 +96,7 @@ export function MuiDemo({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -121,6 +123,7 @@ export function MuiDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            animate={animate}
             resizableColumns
             stickyHeader
             filters={demoFilterDefs(locale)}

@@ -106,6 +106,7 @@ export function UnstyledLike({
   urlKey,
   density = "comfortable",
   filtersUi,
+  animate,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -114,6 +115,7 @@ export function UnstyledLike({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
 }>) {
   const s = strings(locale);
   const styled = withDensity(classNames, density);
@@ -140,6 +142,7 @@ export function UnstyledLike({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            animate={animate}
             resizableColumns
             stickyHeader
             classNames={styled}

@@ -38,6 +38,7 @@ type DemoComponent = (
     filtersUi?: FiltersUi;
     urlKey?: string;
     density?: Density;
+    animate?: boolean;
   }>
 ) => ReactNode;
 
@@ -96,6 +97,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [locale, setLocale] = useState<Locale>("en");
   const [density, setDensity] = useState<Density>("comfortable");
   const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
+  const [motion, setMotion] = useState<"on" | "off">("on");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
@@ -173,12 +175,23 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Motion">
+          <Segmented
+            label="motion"
+            value={motion}
+            onChange={setMotion}
+            options={[
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ]}
+          />
+        </Control>
       </div>
 
       <div className="demo-surface" style={cssVars({ "--c": accent })}>
         <div
           className="demo-surface__body"
-          key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${dark ? "d" : "l"}`}
+          key={`${adapter}-${mode}-${locale}-${density}-${filtersUi}-${motion}-${dark ? "d" : "l"}`}
         >
           <Demo
             mode={mode}
@@ -186,6 +199,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             density={density}
             filtersUi={filtersUi}
+            animate={motion === "on"}
             urlKey="live"
           />
         </div>
