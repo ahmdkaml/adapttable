@@ -26,8 +26,8 @@ pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 # Material UI
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
-# Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
-pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
+# Chakra UI (v3)
+pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react @emotion/react
 
 # Ant Design
 pnpm add @adapttable/core @adapttable/antd antd
@@ -67,12 +67,13 @@ import { createTheme, ThemeProvider } from "@mui/material";
 </ThemeProvider>;
 ```
 
-**Chakra UI**
+**Chakra UI** (v3) — the provider takes a system; use the built-in
+`defaultSystem` or your own:
 
 ```tsx
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
-<ChakraProvider>
+<ChakraProvider value={defaultSystem}>
   <App />
 </ChakraProvider>;
 ```
