@@ -113,6 +113,8 @@ npx @adapttable/cli init
 pnpm add @adapttable/core @adapttable/mantine
 ```
 
+**Try it first, no install:** [open a live starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) (Mantine) — or [any other kit](https://orwa-mahmoud.github.io/adapttable/getting-started/#try-it-in-stackblitz).
+
 ## The big idea: `TableSource`
 
 Every data source — in-memory or server-paginated — fulfils one contract. The table is agnostic to where rows came from:

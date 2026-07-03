@@ -26,8 +26,8 @@ pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
 # Material UI
 pnpm add @adapttable/core @adapttable/mui @mui/material
 
-# Chakra UI (v2 — pin Chakra v2; v3 support hasn't landed yet)
-pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react@2 @emotion/react
+# Chakra UI (v3)
+pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react @emotion/react
 
 # Ant Design
 pnpm add @adapttable/core @adapttable/antd antd
@@ -67,12 +67,13 @@ import { createTheme, ThemeProvider } from "@mui/material";
 </ThemeProvider>;
 ```
 
-**Chakra UI**
+**Chakra UI** (v3) — the provider takes a system; use the built-in
+`defaultSystem` or your own:
 
 ```tsx
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
-<ChakraProvider>
+<ChakraProvider value={defaultSystem}>
   <App />
 </ChakraProvider>;
 ```
@@ -174,6 +175,23 @@ filter also drives its own removable chip, URL parsing, and row predicate.
   rowKey={(r) => r.id}
 />
 ```
+
+## Try it in StackBlitz
+
+Prefer to try before installing? Each starter is a minimal Vite app — one table
+on a demo dataset — that boots in the browser with no local setup. Pick your
+kit:
+
+- [Mantine](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine)
+- [Material UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mui)
+- [Chakra UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/chakra)
+- [Ant Design](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/antd)
+- [Radix Themes](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/radix)
+- [shadcn/ui](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/shadcn)
+- [Unstyled / Tailwind](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/unstyled)
+
+The source for each lives in
+[`starters/`](https://github.com/orwa-mahmoud/adapttable/tree/main/starters).
 
 ## Where next
 
