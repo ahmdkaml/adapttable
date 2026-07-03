@@ -175,6 +175,23 @@ filter also drives its own removable chip, URL parsing, and row predicate.
 />
 ```
 
+## Try it in StackBlitz
+
+Prefer to try before installing? Each starter is a minimal Vite app — one table
+on a demo dataset — that boots in the browser with no local setup. Pick your
+kit:
+
+- [Mantine](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine)
+- [Material UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mui)
+- [Chakra UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/chakra)
+- [Ant Design](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/antd)
+- [Radix Themes](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/radix)
+- [shadcn/ui](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/shadcn)
+- [Unstyled / Tailwind](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/unstyled)
+
+The source for each lives in
+[`starters/`](https://github.com/orwa-mahmoud/adapttable/tree/main/starters).
+
 ## Where next
 
 - [Columns](./columns.md) — headers, custom cells, the Columns menu

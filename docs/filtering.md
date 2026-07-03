@@ -1,5 +1,7 @@
 # Filtering
 
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
 Declare a filter once and AdaptTable derives everything from it: the
 kit-native widget, the `f_<key>` URL param, the removable chip, and (on
 frontend data) the row predicate — no wiring.

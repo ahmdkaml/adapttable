@@ -1,5 +1,7 @@
 # Sorting
 
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
 Mark a column `sortable` and header clicks cycle it ascending → descending → cleared, with the state kept in the URL so reloads and shared links restore the exact order. Multi-column sorting is one extra prop.
 
 ## Example

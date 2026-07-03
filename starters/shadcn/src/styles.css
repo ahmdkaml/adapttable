@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* The shadcn class preset ships inside @adapttable/shadcn, outside this app's
+   auto-detected source roots, so scan it explicitly to compile its utilities.
+   (Every shadcn consumer adds the package to their Tailwind sources this way.) */
+@source "../node_modules/@adapttable/shadcn/dist";
+
+/* shadcn/ui "neutral" design tokens, exposed as Tailwind colors so the adapter's
+   classes (bg-card, text-muted-foreground, border, bg-primary, …) resolve. */
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(0 0% 3.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 3.9%);
+  --color-muted: hsl(0 0% 96.1%);
+  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-border: hsl(0 0% 89.8%);
+  --color-input: hsl(0 0% 89.8%);
+  --color-primary: hsl(0 0% 9%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-accent: hsl(0 0% 96.1%);
+  --color-accent-foreground: hsl(0 0% 9%);
+  --color-ring: hsl(0 0% 63.9%);
+}
+
+/* Overriding the same vars flips the whole table to dark with no per-cell work. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: hsl(0 0% 10%);
+    --color-foreground: hsl(0 0% 95%);
+    --color-card: hsl(0 0% 12.5%);
+    --color-card-foreground: hsl(0 0% 95%);
+    --color-muted: hsl(0 0% 17%);
+    --color-muted-foreground: hsl(0 0% 64%);
+    --color-border: hsl(0 0% 22%);
+    --color-input: hsl(0 0% 26%);
+    --color-primary: hsl(0 0% 92%);
+    --color-primary-foreground: hsl(0 0% 9%);
+    --color-accent: hsl(0 0% 20%);
+    --color-accent-foreground: hsl(0 0% 98%);
+    --color-ring: hsl(0 0% 45%);
+  }
+}
+
+body {
+  margin: 0;
+  padding: 2rem;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}

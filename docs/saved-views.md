@@ -1,5 +1,7 @@
 # Saved views
 
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
 Let users capture the table's current state — search, sort, page, filters,
 column layout — under a name and re-apply it later. One prop mounts a
 ready-made menu; a headless hook backs custom UIs.

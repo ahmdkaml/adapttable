@@ -1,0 +1,184 @@
+/*
+ * Minimal CSS for the unstyled adapter, targeting its `data-adapttable-part`
+ * hooks. This is a starting point — restyle or replace it with Tailwind/your
+ * own system. The adapter ships no styles of its own by design.
+ */
+:root {
+  --at-bg: #ffffff;
+  --at-fg: #1f2328;
+  --at-muted: #6b7280;
+  --at-border: #e5e7eb;
+  --at-subtle: #f9fafb;
+  --at-primary: #2563eb;
+  --at-radius: 8px;
+}
+
+body {
+  margin: 0;
+  padding: 2rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: var(--at-fg);
+  background: var(--at-bg);
+}
+
+[data-adapttable-part="root"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+[data-adapttable-part="toolbar"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+[data-adapttable-part="search-field"],
+[data-adapttable-part="filter-input"],
+[data-adapttable-part="filter-select"],
+[data-adapttable-part="filter-operator"],
+[data-adapttable-part="rows-per-page"] {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius);
+  background: var(--at-bg);
+  color: inherit;
+  font: inherit;
+}
+
+[data-adapttable-part="filters-button"],
+[data-adapttable-part="views-button"],
+[data-adapttable-part="column-menu-button"],
+[data-adapttable-part="action-button"],
+[data-adapttable-part="page-number"],
+[data-adapttable-part="page-prev"],
+[data-adapttable-part="page-next"] {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius);
+  background: var(--at-bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+[data-adapttable-part="sort-button"] {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+[data-adapttable-part="table"] {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+[data-adapttable-part="header-cell"] {
+  padding: 0.5rem 0.75rem;
+  text-align: start;
+  border-bottom: 2px solid var(--at-border);
+  color: var(--at-muted);
+  font-size: 0.85rem;
+}
+
+[data-adapttable-part="cell"] {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--at-border);
+}
+
+[data-adapttable-part="row"]:hover [data-adapttable-part="cell"] {
+  background: var(--at-subtle);
+}
+
+[data-adapttable-part="chips"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+[data-adapttable-part="chip"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--at-border);
+  border-radius: 999px;
+  background: var(--at-subtle);
+  font-size: 0.8rem;
+}
+
+[data-adapttable-part="chip-remove"],
+[data-adapttable-part="empty-clear"] {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+[data-adapttable-part="filters-popover"],
+[data-adapttable-part="filters-panel"],
+[data-adapttable-part="column-menu-panel"],
+[data-adapttable-part="views-panel"] {
+  padding: 0.75rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius);
+  background: var(--at-bg);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  z-index: 50;
+}
+
+[data-adapttable-part="filter-field"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+[data-adapttable-part="pager"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+[data-adapttable-part="page-number"][aria-current="page"] {
+  border-color: var(--at-primary);
+  background: var(--at-primary);
+  color: #ffffff;
+}
+
+[data-adapttable-part="summary-cell"] {
+  padding: 0.5rem 0.75rem;
+  border-top: 2px solid var(--at-border);
+  font-weight: 600;
+}
+
+[data-adapttable-part="empty"],
+[data-adapttable-part="loading"],
+[data-adapttable-part="error"] {
+  padding: 2rem;
+  text-align: center;
+  color: var(--at-muted);
+}
+
+[data-adapttable-part="card"] {
+  padding: 0.75rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius);
+  margin-bottom: 0.5rem;
+}
+
+[data-adapttable-part="card-row"] {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+}
+
+[data-adapttable-part="card-label"] {
+  color: var(--at-muted);
+}
