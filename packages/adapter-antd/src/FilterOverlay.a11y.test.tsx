@@ -184,9 +184,9 @@ describe("filter overlay a11y (axe) — Ant Design", () => {
       expect(trigger()).toHaveAttribute("aria-expanded", "false");
       expect(screen.queryByLabelText("Age")).toBeNull();
     });
-    // NOTE: antd's `Popover` is non-modal — it neither traps focus nor
-    // restores focus to the trigger on Escape, so no focus-restoration
-    // assertion is made here (the kits whose overlays manage focus assert it).
+    // Escape also hands focus back to the trigger — the popover's own keydown
+    // listener does it (antd's non-modal Popover never would on its own).
+    expect(trigger()).toHaveFocus();
   });
 
   it("outside click (mousedown) closes the popover", async () => {

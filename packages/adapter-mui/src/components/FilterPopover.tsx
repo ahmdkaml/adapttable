@@ -47,11 +47,15 @@ export function FilterPopover({
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      onClose();
+      // Escape strands keyboard focus inside the removed card — hand it back
+      // to the trigger (the anchor IS the Filters button).
+      anchorEl?.focus();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, anchorEl]);
   return (
     <Popper
       open={open && anchorEl !== null}

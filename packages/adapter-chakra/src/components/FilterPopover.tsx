@@ -1,6 +1,6 @@
 import type { Direction, TableLabels } from "@adapttable/core";
 import { Button, HStack, Popover, Portal, Stack, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 /** Props for {@link FilterPopover}. */
 export interface FilterPopoverProps {
@@ -33,6 +33,24 @@ export function FilterPopover({
   dir = "ltr",
   children,
 }: Readonly<FilterPopoverProps>) {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+
+  // Ark's `closeOnEscape` restores focus only through `Popover.Trigger`, which
+  // this layout doesn't use (the Filters button is an external anchor). Handle
+  // Escape ourselves instead: close, then hand focus back to the trigger
+  // inside the anchor — the same document-level pattern as the other adapters
+  // (and, unlike Ark's browser-only restore, exercisable in jsdom).
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      onClose();
+      anchorRef.current?.querySelector("button")?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   return (
     <Popover.Root
       open={open}
@@ -43,11 +61,15 @@ export function FilterPopover({
         placement: dir === "rtl" ? "bottom-start" : "bottom-end",
       }}
       closeOnInteractOutside
-      closeOnEscape
+      closeOnEscape={false}
       lazyMount
       unmountOnExit
     >
-      <Popover.Anchor asChild>{children}</Popover.Anchor>
+      <Popover.Anchor asChild>
+        <span ref={anchorRef} style={{ display: "inline-flex" }}>
+          {children}
+        </span>
+      </Popover.Anchor>
       <Portal>
         <Popover.Positioner>
           <Popover.Content

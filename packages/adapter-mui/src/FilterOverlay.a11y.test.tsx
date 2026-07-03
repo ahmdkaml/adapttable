@@ -9,9 +9,8 @@
  * `closeOnInteractOutside` pointer sequence, nor run its browser-only
  * `restoreFocus`), MUI's non-modal `Popper` is fully jsdom-drivable: its
  * document-level Escape listener and `ClickAwayListener mouseEvent="onMouseDown"`
- * both fire under `fireEvent`. MUI does NOT trap focus in the non-modal Popper
- * nor restore focus to the trigger on Escape, so — like the Chakra suite — this
- * file does not assert popover focus restoration (noted inline).
+ * both fire under `fireEvent`, and the popover's Escape handler hands focus
+ * back to the trigger itself — so this file asserts that restoration too.
  */
 import { createMemoryAdapter } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
@@ -176,10 +175,9 @@ describe("filter overlay a11y (axe) — MUI", () => {
       expect(trigger()).toHaveAttribute("aria-expanded", "false");
       expect(screen.queryByLabelText("Age")).toBeNull();
     });
-    // NOTE: the non-modal Popper does not trap focus and MUI does not restore
-    // focus to the trigger on Escape (it is not a Modal), so focus is not
-    // asserted here — mirroring the Chakra suite's restraint for the same
-    // jsdom/behaviour reason.
+    // Escape also hands focus back to the trigger — the popover's own
+    // document listener does it (the non-modal Popper has no Modal to).
+    expect(trigger()).toHaveFocus();
   });
 
   it("outside click (mousedown) closes the popover", async () => {
