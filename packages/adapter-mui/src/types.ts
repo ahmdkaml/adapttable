@@ -77,4 +77,9 @@ export interface DataTableProps<TRow> extends Omit<
    * `density`: `"comfortable"` → `"medium"`, `"compact"` → `"small"`.
    */
   size?: "small" | "medium";
+  /**
+   * Animate rows/cards on mount (dependency-free; honors reduced motion).
+   * Off by default.
+   */
+  animate?: boolean;
 }

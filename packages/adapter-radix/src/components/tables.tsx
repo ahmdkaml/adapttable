@@ -325,6 +325,7 @@ function DesktopRowBase<TRow>({
         {...rowClickProps(row, hasRowClick ? activateRow : undefined)}
         ref={measureRef}
         data-index={index}
+        data-stagger=""
         className={className}
         style={{ background: selected ? "var(--gray-a3)" : undefined }}
         onMouseEnter={() => api.current.prefetch?.(row)}
@@ -837,6 +838,7 @@ export function MobileCards<TRow>({
             key={key}
             ref={measureElement}
             data-index={index}
+            data-stagger=""
             size={compact ? "1" : "2"}
             role="listitem"
             className={joinClasses(className, rowClassName?.(row, index))}

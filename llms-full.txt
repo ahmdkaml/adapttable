@@ -2073,12 +2073,15 @@ to the table when search/filter/page changes, with `scrollTopGap` (default
 
 The core is style-free: wrap your app in the kit's provider and AdaptTable
 renders with that kit's real components, following its theme and dark mode
-(`prefers-color-scheme`) automatically. Kit-specific knobs:
+(`prefers-color-scheme`) automatically.
 
-- **Mantine** — `animate` enables a dependency-free row/card entrance
-  stagger (honours reduced motion). Rolling your own? Every animatable
-  row/card carries a `data-stagger` attribute — leave `animate` off and
-  target those elements with GSAP/Framer Motion.
+`animate` works on **every adapter** — a dependency-free row/card entrance
+stagger that honours reduced motion. Rolling your own? Every animatable
+row/card carries a `data-stagger` attribute, so leave `animate` off and target
+those elements with GSAP/Framer Motion.
+
+Kit-specific knobs:
+
 - **MUI** — `size` (`"small" | "medium"`) overrides the density mapping;
   `className` lands on the root `<Paper>`.
 - **Chakra** — `colorScheme` colors primary accents (buttons, badges);
@@ -2417,7 +2420,7 @@ Props beyond the core surface, with per-kit availability.
 | `slots`         | `{ skeleton?, empty? }`                         | —           | all                              | Replace sub-components (loading skeleton, empty state).                                                                           |
 | `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
 | `className`     | `string`                                        | —           | mui, antd                        | Class name applied to the root wrapper.                                                                                           |
-| `animate`       | `boolean`                                       | `false`     | mantine                          | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                             |
+| `animate`       | `boolean`                                       | `false`     | all                              | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                             |
 | `size`          | kit-specific union                              | —           | mui, chakra, antd, radix         | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).          |
 | `colorScheme`   | `string`                                        | —           | chakra                           | Chakra color scheme for primary accents (buttons, badges).                                                                        |
 | `accentColor`   | `RadixAccentColor`                              | —           | radix                            | Radix accent color for primary controls (buttons, badges, active page).                                                           |

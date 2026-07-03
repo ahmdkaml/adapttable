@@ -324,6 +324,10 @@ export {
 } from "./hooks/useIsMobile";
 export { useMediaQuery } from "./hooks/useMediaQuery";
 export {
+  type MountStaggerOptions,
+  useMountStagger,
+} from "./hooks/useMountStagger";
+export {
   REDUCED_MOTION_QUERY,
   usePrefersReducedMotion,
 } from "./hooks/usePrefersReducedMotion";

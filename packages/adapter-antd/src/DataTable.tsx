@@ -17,6 +17,7 @@ import {
   type UseDataTableResult,
   useFilterTriggerToggle,
   useInfiniteScroll,
+  useMountStagger,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
@@ -445,6 +446,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
+    animate = false,
     bordered = false,
     virtualize = false,
     virtualHeight = 480,
@@ -504,6 +506,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
+  useMountStagger(rootRef, [source.rows.length, c.isMobile], {
+    enabled: animate,
+  });
   const resolvedTableLabel = table.getTableProps()["aria-label"];
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -643,6 +648,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         onChange={handleChange}
         onRow={(record) => ({
           ...rowClickProps(record, props.onRowClick),
+          "data-stagger": "",
           onMouseEnter: props.prefetch
             ? () => props.prefetch?.(record)
             : undefined,

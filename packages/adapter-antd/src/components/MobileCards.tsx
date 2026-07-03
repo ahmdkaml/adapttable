@@ -155,6 +155,7 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
       <Card
         size="small"
         className={className}
+        data-stagger=""
         {...rowClickProps(row, onRowClick)}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
         title={

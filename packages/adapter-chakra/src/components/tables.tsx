@@ -301,6 +301,7 @@ function DesktopRowBase<TRow>({
         {...rowClickProps(row, hasRowClick ? activateRow : undefined)}
         ref={measureRef}
         data-index={index}
+        data-stagger=""
         className={className}
         bg={selected ? "blackAlpha.100" : undefined}
         _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
@@ -796,6 +797,7 @@ export function MobileCards<TRow>({
             key={key}
             ref={measureElement}
             data-index={index}
+            data-stagger=""
             variant="outline"
             role="listitem"
             className={joinClasses(className, rowClassName?.(row, index))}

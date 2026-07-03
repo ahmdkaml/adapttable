@@ -205,12 +205,15 @@ to the table when search/filter/page changes, with `scrollTopGap` (default
 
 The core is style-free: wrap your app in the kit's provider and AdaptTable
 renders with that kit's real components, following its theme and dark mode
-(`prefers-color-scheme`) automatically. Kit-specific knobs:
+(`prefers-color-scheme`) automatically.
 
-- **Mantine** — `animate` enables a dependency-free row/card entrance
-  stagger (honours reduced motion). Rolling your own? Every animatable
-  row/card carries a `data-stagger` attribute — leave `animate` off and
-  target those elements with GSAP/Framer Motion.
+`animate` works on **every adapter** — a dependency-free row/card entrance
+stagger that honours reduced motion. Rolling your own? Every animatable
+row/card carries a `data-stagger` attribute, so leave `animate` off and target
+those elements with GSAP/Framer Motion.
+
+Kit-specific knobs:
+
 - **MUI** — `size` (`"small" | "medium"`) overrides the density mapping;
   `className` lands on the root `<Paper>`.
 - **Chakra** — `colorScheme` colors primary accents (buttons, badges);

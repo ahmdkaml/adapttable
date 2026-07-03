@@ -223,4 +223,9 @@ export interface DataTableProps<TRow> extends Omit<
    * over the top-level props when both are provided.
    */
   slots?: DataTableSlots;
+  /**
+   * Animate rows/cards on mount (dependency-free; honors reduced motion).
+   * Off by default.
+   */
+  animate?: boolean;
 }
