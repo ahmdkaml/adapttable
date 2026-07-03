@@ -79,6 +79,7 @@ export function AntdDemo({
   urlKey,
   density,
   filtersUi,
+  animate,
   wide,
 }: Readonly<{
   mode: DataMode;
@@ -88,6 +89,7 @@ export function AntdDemo({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
 }>) {
@@ -130,6 +132,7 @@ export function AntdDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            animate={animate}
             resizableColumns
             filters={demoFilterDefs(locale)}
           />

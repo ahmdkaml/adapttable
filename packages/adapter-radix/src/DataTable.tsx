@@ -1,4 +1,8 @@
-import { type TableBodyRegion, useDataTableShell } from "@adapttable/core";
+import {
+  type TableBodyRegion,
+  useDataTableShell,
+  useMountStagger,
+} from "@adapttable/core";
 import { Box, Button, Flex, Progress, Text } from "@radix-ui/themes";
 import type { ReactNode } from "react";
 
@@ -29,7 +33,7 @@ import type { DataTableProps } from "./types";
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, accentColor } = props;
+  const { slots, accentColor, animate = false } = props;
   const { filtersMode = "popover" } = props;
   // Map row density to a Radix table `size` (independent of column pinning):
   // compact → "1", comfortable (default) → "2". An explicit `size` prop, if
@@ -62,6 +66,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     toolbarProps,
   } = shell;
   const tableProps = { ...shell.tableProps, size, accentColor };
+  useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
+    enabled: animate,
+  });
 
   const bodyByRegion: Record<TableBodyRegion, ReactNode> = {
     skeleton: slots?.skeleton ?? (

@@ -30,6 +30,23 @@ release, with a migration note in the relevant package's `CHANGELOG.md`. In
 practice such changes are rare — most releases are additive minors and safe
 patches.
 
+## Supported UI-kit versions
+
+Each adapter declares a wide peer range for its kit, and a weekly, non-blocking
+peer-matrix workflow typechecks each adapter against the **oldest and newest**
+supported major — so a claimed-but-broken version is caught before you hit it:
+
+| Adapter                                       | Kit peer range                         |
+| --------------------------------------------- | -------------------------------------- |
+| `@adapttable/mantine`                         | `@mantine/core` + `@mantine/hooks` 7–9 |
+| `@adapttable/mui`                             | `@mui/material` 5–9                    |
+| `@adapttable/chakra`                          | `@chakra-ui/react` 3                   |
+| `@adapttable/antd`                            | `antd` 6                               |
+| `@adapttable/radix`                           | `@radix-ui/themes` 3                   |
+| `@adapttable/unstyled` / `@adapttable/shadcn` | no UI-kit dependency                   |
+
+`react` / `react-dom` 18 and 19 are supported across every package.
+
 ## Public API surface
 
 What "the public API" means — the things we commit to keeping stable:

@@ -329,6 +329,7 @@ function DesktopRowImpl<TRow>({
       <TableRow
         {...rowClickProps(row, onRowClick)}
         className={className}
+        data-stagger=""
         ref={measureElement}
         data-index={index}
         hover
@@ -828,6 +829,7 @@ export function MobileCards<TRow>({
             key={key}
             ref={measureElement}
             data-index={index}
+            data-stagger=""
             variant="outlined"
             role="listitem"
             className={rowClassName?.(row, index)}

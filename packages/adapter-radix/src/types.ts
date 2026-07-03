@@ -112,4 +112,9 @@ export interface DataTableProps<TRow> extends Omit<
   accentColor?: RadixAccentColor;
   /** Radix table size. Defaults by density (compact → `"1"`, else `"2"`). */
   size?: "1" | "2" | "3";
+  /**
+   * Animate rows/cards on mount (dependency-free; honors reduced motion).
+   * Off by default.
+   */
+  animate?: boolean;
 }

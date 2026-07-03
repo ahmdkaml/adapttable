@@ -6,6 +6,7 @@ import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
+  useMountStagger,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -174,6 +175,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     bulkActions,
     classNames = NO_CLASSNAMES,
     toolbar: customToolbar,
+    animate = false,
   } = props;
 
   const density = props.density ?? "comfortable";
@@ -227,6 +229,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
+  useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
+    enabled: animate,
+  });
   const bodyData = useChromeBodyData(chrome, chromeProps);
   const { virtualization, canLoadMore } = bodyData;
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |

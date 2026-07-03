@@ -73,6 +73,7 @@ export function ChakraDemo({
   urlKey,
   density,
   filtersUi,
+  animate,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -81,6 +82,7 @@ export function ChakraDemo({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -109,6 +111,7 @@ export function ChakraDemo({
               bulkActions={makeBulkActions(locale)}
               confirm={demoConfirm}
               enableColumnMenu
+              animate={animate}
               resizableColumns
               stickyHeader
               filters={demoFilterDefs(locale)}

@@ -6,6 +6,7 @@ import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
+  useMountStagger,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
@@ -137,7 +138,7 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, className } = props;
+  const { slots, className, animate = false } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
   const chromeProps = useChromeProps(props);
@@ -151,6 +152,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   useChromeScrollReset(rootRef, c, chromeProps);
   const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
     useChromeBodyData(c, chromeProps);
+  useMountStagger(rootRef, [source.rows.length, c.isMobile], {
+    enabled: animate,
+  });
   const { hasRowActions, rowActions, actionsPinned } = resolveActionsColumn(
     props.rowActions,
     c.columnLayout

@@ -1623,7 +1623,8 @@ export function Readings() {
   infinite-scroll sentinel are suppressed: the box never grows, so the virtual
   window extends itself at the box's scroll end instead.
 - Ant Design maps `virtualize` to antd's **native** virtual table mode on
-  desktop; mobile cards there keep the shared sentinel.
+  desktop; on mobile the cards window through the shared engine, just like
+  every other adapter, and the page-level sentinel keeps loading more.
 
 ## Options
 
@@ -2073,12 +2074,15 @@ to the table when search/filter/page changes, with `scrollTopGap` (default
 
 The core is style-free: wrap your app in the kit's provider and AdaptTable
 renders with that kit's real components, following its theme and dark mode
-(`prefers-color-scheme`) automatically. Kit-specific knobs:
+(`prefers-color-scheme`) automatically.
 
-- **Mantine** — `animate` enables a dependency-free row/card entrance
-  stagger (honours reduced motion). Rolling your own? Every animatable
-  row/card carries a `data-stagger` attribute — leave `animate` off and
-  target those elements with GSAP/Framer Motion.
+`animate` works on **every adapter** — a dependency-free row/card entrance
+stagger that honours reduced motion. Rolling your own? Every animatable
+row/card carries a `data-stagger` attribute, so leave `animate` off and target
+those elements with GSAP/Framer Motion.
+
+Kit-specific knobs:
+
 - **MUI** — `size` (`"small" | "medium"`) overrides the density mapping;
   `className` lands on the root `<Paper>`.
 - **Chakra** — `colorScheme` colors primary accents (buttons, badges);
@@ -2417,7 +2421,7 @@ Props beyond the core surface, with per-kit availability.
 | `slots`         | `{ skeleton?, empty? }`                         | —           | all                              | Replace sub-components (loading skeleton, empty state).                                                                           |
 | `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
 | `className`     | `string`                                        | —           | mui, antd                        | Class name applied to the root wrapper.                                                                                           |
-| `animate`       | `boolean`                                       | `false`     | mantine                          | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                             |
+| `animate`       | `boolean`                                       | `false`     | all                              | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                             |
 | `size`          | kit-specific union                              | —           | mui, chakra, antd, radix         | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).          |
 | `colorScheme`   | `string`                                        | —           | chakra                           | Chakra color scheme for primary accents (buttons, badges).                                                                        |
 | `accentColor`   | `RadixAccentColor`                              | —           | radix                            | Radix accent color for primary controls (buttons, badges, active page).                                                           |
@@ -2793,6 +2797,36 @@ works; if you want the same table across kits (or those extra batteries),
 AdaptTable covers more ground.
 
 → [Migrate from mantine-datatable](./migrate-from-mantine-datatable.md).
+
+## Every adapter, every feature
+
+The point of AdaptTable is that the feature set never changes when you switch
+kits — only the look does. Every adapter ships the same batteries:
+
+| Feature                               | Mantine | MUI | Chakra | Ant Design | Radix | shadcn/ui | Unstyled |
+| ------------------------------------- | :-----: | :-: | :----: | :--------: | :---: | :-------: | :------: |
+| Filter popover                        |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Filter drawer                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅¹  |    ✅     |    ✅    |
+| Active-filter chips                   |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Column menu (show/hide, reorder, pin) |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Column resize                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Saved views                           |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |    ✅     |    ✅    |
+| Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Skeleton / empty / error states       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Mount entrance animation              |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+
+<sub>¹ Radix Themes ships no Drawer primitive, so `filtersMode="drawer"` renders
+as a Radix Dialog restyled into a side panel — same dimming backdrop and focus
+trap. ² Ant Design maps `virtualize` to its own native virtual table for desktop
+rows; mobile cards window through the shared engine like every other adapter.</sub>
+
+shadcn/ui is the unstyled adapter pre-wired with the shadcn class preset, so it
+matches unstyled feature-for-feature.
 
 ## When to choose AdaptTable
 
@@ -3369,6 +3403,23 @@ breaking changes to the public API surface (below) ship only in a major
 release, with a migration note in the relevant package's `CHANGELOG.md`. In
 practice such changes are rare — most releases are additive minors and safe
 patches.
+
+## Supported UI-kit versions
+
+Each adapter declares a wide peer range for its kit, and a weekly, non-blocking
+peer-matrix workflow typechecks each adapter against the **oldest and newest**
+supported major — so a claimed-but-broken version is caught before you hit it:
+
+| Adapter                                       | Kit peer range                         |
+| --------------------------------------------- | -------------------------------------- |
+| `@adapttable/mantine`                         | `@mantine/core` + `@mantine/hooks` 7–9 |
+| `@adapttable/mui`                             | `@mui/material` 5–9                    |
+| `@adapttable/chakra`                          | `@chakra-ui/react` 3                   |
+| `@adapttable/antd`                            | `antd` 6                               |
+| `@adapttable/radix`                           | `@radix-ui/themes` 3                   |
+| `@adapttable/unstyled` / `@adapttable/shadcn` | no UI-kit dependency                   |
+
+`react` / `react-dom` 18 and 19 are supported across every package.
 
 ## Public API surface
 

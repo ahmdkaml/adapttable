@@ -2,21 +2,21 @@
 
 [![@adapttable/chakra — a Chakra UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra.mp4)
 
-**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/chakra)**
 
 The **Chakra UI adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a batteries-included Chakra data table with sorting, filtering, URL-synced
 state, selection + bulk actions, RTL, and dark mode. Built on the headless
-`@adapttable/core` engine. (Targets Chakra UI **v2**.)
+`@adapttable/core` engine. (Targets Chakra UI **v3**.)
 
 ```bash
-pnpm add @adapttable/chakra @adapttable/core @chakra-ui/react @emotion/react @emotion/styled framer-motion react react-dom
+pnpm add @adapttable/chakra @adapttable/core @chakra-ui/react @emotion/react react react-dom
 ```
 
 ## Quickstart
 
 ```tsx
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { DataTable, useFrontendData, type ColumnDef } from "@adapttable/chakra";
 
 const columns: ColumnDef<Person>[] = [
@@ -27,7 +27,7 @@ const columns: ColumnDef<Person>[] = [
 export function People({ data }: { data: Person[] }) {
   const source = useFrontendData({ data, columns });
   return (
-    <ChakraProvider>
+    <ChakraProvider value={defaultSystem}>
       <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
     </ChakraProvider>
   );

@@ -1,0 +1,38 @@
+name: Peer matrix
+
+# Weekly, NON-BLOCKING probe of each adapter against the oldest and newest major
+# of its UI-kit peer range. It never gates a PR — it just surfaces a
+# claimed-but-broken major before a user does. Any findings upload as an
+# artifact for a human to triage (ranges are never narrowed automatically).
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: peer-matrix
+  cancel-in-progress: true
+
+jobs:
+  peer-matrix:
+    name: Kit peer-range compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The script installs published adapters + kit majors into throwaway dirs
+      # with npm, so no workspace install is needed.
+      - name: Probe oldest + newest supported kit majors
+        run: node scripts/peer-matrix.mjs
+
+      - name: Upload findings (if any)
+        if: ${{ hashFiles('ai_docs/peer-matrix-findings.md') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: peer-matrix-findings
+          path: ai_docs/peer-matrix-findings.md
+          retention-days: 30

@@ -83,4 +83,9 @@ export interface DataTableProps<TRow> extends Omit<
   colorScheme?: string;
   /** Chakra table size. Defaults to `"md"`. */
   size?: "sm" | "md" | "lg";
+  /**
+   * Animate rows/cards on mount (dependency-free; honors reduced motion).
+   * Off by default.
+   */
+  animate?: boolean;
 }

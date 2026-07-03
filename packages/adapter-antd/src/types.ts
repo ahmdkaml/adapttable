@@ -59,4 +59,9 @@ export interface DataTableProps<TRow>
   virtualHeight?: number;
   /** Horizontal scroll width used when `virtualize` is true. Defaults to 960. */
   virtualWidth?: number;
+  /**
+   * Animate rows/cards on mount (dependency-free; honors reduced motion).
+   * Off by default.
+   */
+  animate?: boolean;
 }

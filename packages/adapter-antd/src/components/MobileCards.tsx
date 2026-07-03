@@ -2,12 +2,14 @@ import {
   type ColumnDef,
   type ConfirmHandler,
   resolveDisabledReason,
+  resolveVirtualRows,
   type RowAction,
   rowClickProps,
   type RowExpansionState,
   runRowAction,
   type TableLabels,
   type UseDataTableResult,
+  type VirtualTableRow,
 } from "@adapttable/core";
 import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 import { type ReactNode, useMemo } from "react";
@@ -155,6 +157,7 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
       <Card
         size="small"
         className={className}
+        data-stagger=""
         {...rowClickProps(row, onRowClick)}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
         title={
@@ -249,6 +252,10 @@ export function MobileCards<TRow>({
   expansion,
   renderRowDetail,
   summaryRow,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   rows: readonly TRow[];
@@ -269,8 +276,22 @@ export function MobileCards<TRow>({
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /**
+   * Windowed entries to render — the virtual slice when virtualization is on,
+   * `undefined` to render every source row (the non-windowed default).
+   */
+  rowEntries?: readonly VirtualTableRow<TRow>[];
+  /** Spacer height (px) reserving the rows scrolled off the top. */
+  paddingTop?: number;
+  /** Spacer height (px) reserving the rows still below the window. */
+  paddingBottom?: number;
+  /** Card measurement callback for the virtual window. */
+  measureElement?: (node: Element | null) => void;
 }>) {
   const { labels, selection, columns } = table;
+  // Either the virtual slice or every source row, resolved to render entries
+  // with their ORIGINAL index (so cells and classes see the true row index).
+  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   return (
     <ul
       data-adapttable-part="cards"
@@ -284,19 +305,20 @@ export function MobileCards<TRow>({
         gap: compact ? 4 : 8,
       }}
     >
-      {rows.map((row, rowIndex) => {
+      {paddingTop > 0 && <li aria-hidden style={{ height: paddingTop }} />}
+      {entries.map(({ row, index, key }) => {
         const id = getRowId(row);
         return (
-          <li key={id}>
+          <li key={key} ref={measureElement} data-index={index}>
             <CardItem
               row={row}
-              rowIndex={rowIndex}
+              rowIndex={index}
               id={id}
               columns={columns}
               labels={labels}
               confirm={confirm}
               rowActions={rowActions}
-              className={rowClassName?.(row, rowIndex)}
+              className={rowClassName?.(row, index)}
               selected={selection ? selection.isSelected(id) : false}
               expanded={expansion ? expansion.isExpanded(id) : false}
               onToggleSelect={selection ? selection.toggle : undefined}
@@ -312,6 +334,9 @@ export function MobileCards<TRow>({
         <li>
           <SummaryCard rows={rows} columns={columns} summaryRow={summaryRow} />
         </li>
+      )}
+      {paddingBottom > 0 && (
+        <li aria-hidden style={{ height: paddingBottom }} />
       )}
     </ul>
   );

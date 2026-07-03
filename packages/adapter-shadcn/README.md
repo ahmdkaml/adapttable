@@ -2,7 +2,7 @@
 
 [![@adapttable/shadcn — a shadcn/ui data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-shadcn-poster.png)](https://orwa-mahmoud.github.io/adapttable/media/demo-shadcn.mp4)
 
-**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
+**[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/shadcn)**
 
 The **shadcn/ui adapter** for [AdaptTable](https://github.com/orwa-mahmoud/adapttable) —
 a fully-styled React data table in **one import**, with sorting, filtering,

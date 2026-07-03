@@ -283,6 +283,7 @@ function DesktopRowBase<TRow>(
         {...rowClickProps(row, clickable ? onRowClick : undefined)}
         ref={measureElement}
         data-adapttable-part="row"
+        data-stagger=""
         data-selected={selected ? "" : undefined}
         data-clickable={clickable ? "" : undefined}
         className={cx(classNames.row, rowClass)}
@@ -846,6 +847,7 @@ export function MobileCards<TRow>({
             ref={measureElement}
             data-index={index}
             data-adapttable-part="card"
+            data-stagger=""
             data-selected={selection?.isSelected(id) ? "" : undefined}
             data-clickable={onRowClick ? "" : undefined}
             className={cx(classNames.card, rowClassName?.(row, index))}

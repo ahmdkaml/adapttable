@@ -47,7 +47,11 @@ export function FilterPopover({
       onClose();
     };
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      onClose();
+      // Escape strands keyboard focus inside the removed card — hand it back
+      // to the trigger inside the anchor.
+      anchorRef.current?.querySelector("button")?.focus();
     };
     document.addEventListener("mousedown", handlePointer);
     document.addEventListener("keydown", handleKey);

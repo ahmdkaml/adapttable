@@ -6,10 +6,11 @@
  * behind a backdrop.
  *
  * jsdom can drive Chakra v3's Ark overlays only so far: it cannot simulate the
- * pointer/focus sequence Ark's `closeOnInteractOutside` listens for, nor does
- * it run Ark's browser-only `restoreFocus`. Those two assertions are therefore
- * exercised by the kits that CAN honour them in jsdom (e.g. MUI/unstyled);
- * here we assert what Chakra genuinely does — see the inline notes.
+ * pointer/focus sequence Ark's `closeOnInteractOutside` listens for — that
+ * assertion lives with the kits jsdom CAN drive (e.g. MUI/unstyled). Escape,
+ * however, is the popover's own document-level listener (Ark's `closeOnEscape`
+ * is off because its focus restore only works through `Popover.Trigger`), so
+ * both the close and the focus hand-back ARE asserted here.
  */
 import { createMemoryAdapter } from "@adapttable/core";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
@@ -172,9 +173,10 @@ describe("filter overlay a11y (axe) — Chakra", () => {
       expect(trigger()).toHaveAttribute("aria-expanded", "false");
       expect(screen.queryByLabelText("Age")).toBeNull();
     });
-    // NOTE: Ark restores focus to the trigger via its browser-only
-    // `restoreFocus`, which jsdom does not run — so focus lands on <body>
-    // here. The unstyled/MUI suites assert the restore where jsdom honours it.
+    // Escape also hands focus back to the trigger — the popover's own
+    // document-level listener does it (Ark's restore only works through
+    // `Popover.Trigger`, which this anchored layout doesn't use).
+    expect(trigger()).toHaveFocus();
   });
 
   it("opening the drawer moves focus into the dialog behind a backdrop", async () => {

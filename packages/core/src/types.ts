@@ -67,12 +67,6 @@ export interface ColumnDef<TRow> {
    */
   header?: ReactNode;
   /**
-   * Declarative filter for this column: a bare type (`"dateRange"`) or a
-   * definition without `key`/`label` (inherited from the column). Merged
-   * with the table-level `filters` array; a `filters` entry with the same
-   * key wins.
-   */
-  /**
    * Presentational header group: contiguous columns sharing a `group`
    * render under one spanning header cell. Reordering columns apart
    * splits the group (adjacency-based, never lies about layout).
@@ -87,6 +81,12 @@ export interface ColumnDef<TRow> {
    * the resolved path. Header TEXT stays whatever you pass in `header`.
    */
   i18n?: Readonly<Record<string, string>>;
+  /**
+   * Declarative filter for this column: a bare type (`"dateRange"`) or a
+   * definition without `key`/`label` (inherited from the column). Merged
+   * with the table-level `filters` array; a `filters` entry with the same
+   * key wins.
+   */
   filter?: ColumnFilter<TRow>;
   /**
    * Component rendered per row. Define at module level (or memoise) so

@@ -1,4 +1,8 @@
-import { type TableBodyRegion, useDataTableShell } from "@adapttable/core";
+import {
+  type TableBodyRegion,
+  useDataTableShell,
+  useMountStagger,
+} from "@adapttable/core";
 import { Box, Button, Flex, Progress, Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
@@ -29,7 +33,7 @@ import type { DataTableProps } from "./types";
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, colorScheme } = props;
+  const { slots, colorScheme, animate = false } = props;
   const { filtersMode = "popover" } = props;
   // Map row density to Chakra's table `size` (independent of column pinning):
   // compact → "sm", comfortable (default) → "md". An explicit `size` prop, if
@@ -63,6 +67,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     toolbarProps,
   } = shell;
   const tableProps = { ...shell.tableProps, size, colorScheme };
+  useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
+    enabled: animate,
+  });
 
   const bodyByRegion: Record<TableBodyRegion, ReactNode> = {
     skeleton: slots?.skeleton ?? (

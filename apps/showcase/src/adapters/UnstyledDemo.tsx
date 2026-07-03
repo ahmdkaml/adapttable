@@ -114,6 +114,7 @@ export function UnstyledDemo({
   urlKey,
   density,
   filtersUi,
+  animate,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -121,6 +122,7 @@ export function UnstyledDemo({
   urlKey?: string;
   density?: Density;
   filtersUi?: FiltersUi;
+  animate?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -130,6 +132,7 @@ export function UnstyledDemo({
       urlKey={urlKey}
       density={density}
       filtersUi={filtersUi}
+      animate={animate}
       classNames={TAILWIND}
     />
   );
