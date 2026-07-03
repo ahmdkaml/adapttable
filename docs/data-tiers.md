@@ -12,7 +12,7 @@ Pass the rows; the table filters, sorts, and pages them in memory.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -46,7 +46,7 @@ fetch.
 ```tsx
 import { useState } from "react";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -98,7 +98,7 @@ headless in-memory use, or a hand-rolled object that fulfils the contract.
 ```tsx
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   DataTable,
   type PaginatedResponse,

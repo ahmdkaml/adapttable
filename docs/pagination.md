@@ -6,7 +6,7 @@ infinite scroll, or `"auto"` (the default), which picks per device.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;

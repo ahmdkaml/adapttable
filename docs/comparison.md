@@ -35,6 +35,8 @@ when you want to drop down. Pick TanStack for non-React or total-control
 builds; pick AdaptTable when you want the UI done for your kit without losing
 the escape hatch.
 
+→ [Migrate from TanStack Table](./migrate-from-tanstack-table.md).
+
 ### AdaptTable vs AG Grid
 
 AG Grid is the enterprise heavyweight — pivoting, range selection, Excel-style
@@ -54,6 +56,8 @@ DataGrid-style experience for free, and the same API also renders in Mantine,
 Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
 state built in at no cost.
 
+→ [Migrate from MUI X DataGrid](./migrate-from-mui-x-datagrid.md).
+
 ### AdaptTable vs mantine-datatable
 
 mantine-datatable is a polished, popular table — but it's Mantine-only.
@@ -62,6 +66,8 @@ adds client/server data behind a single contract, shareable URL state, saved
 views, and first-class RTL. If you're on Mantine and staying there, either
 works; if you want the same table across kits (or those extra batteries),
 AdaptTable covers more ground.
+
+→ [Migrate from mantine-datatable](./migrate-from-mantine-datatable.md).
 
 ## When to choose AdaptTable
 

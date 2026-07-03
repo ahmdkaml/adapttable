@@ -39,6 +39,9 @@ const TITLES = {
   "api.md": "API reference",
   "faq.md": "FAQ",
   "comparison.md": "AdaptTable vs ag-Grid, MUI X & TanStack Table",
+  "migrate-from-mantine-datatable.md": "Migrate from mantine-datatable",
+  "migrate-from-mui-x-datagrid.md": "Migrate from MUI X DataGrid",
+  "migrate-from-tanstack-table.md": "Migrate from TanStack Table",
   "versioning.md": "Versioning & stability",
 };
 
@@ -82,6 +85,12 @@ const DESCRIPTIONS = {
     "Frequently asked questions about AdaptTable — the headless React data table for Mantine, MUI, Chakra, Ant Design, Radix and shadcn/ui. SSR, bundle size, licensing.",
   "comparison.md":
     "How AdaptTable compares to ag-Grid, MUI X DataGrid and TanStack Table — native per-kit UI, a headless core and an MIT license, feature by feature.",
+  "migrate-from-mantine-datatable.md":
+    "Migrate from mantine-datatable to @adapttable/mantine — keep the Mantine look and gain URL-synced state, a filter UI with chips, column management, saved views and virtualization, with a prop-by-prop mapping.",
+  "migrate-from-mui-x-datagrid.md":
+    "Migrate from MUI X DataGrid to @adapttable/mui — get column pinning, row virtualization, multi-sort/filter, resizing and master-detail free under MIT, plus URL state and an automatic mobile layout.",
+  "migrate-from-tanstack-table.md":
+    "Migrate from TanStack Table to @adapttable/core — keep headless control but stop rebuilding filters, toolbars, pagination, URL sync and saved views on every React project.",
   "versioning.md":
     "AdaptTable's versioning and stability policy — semantic versioning, the committed-stable public API surface, deprecation policy and the fixed-group release flow.",
 };

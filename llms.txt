@@ -71,6 +71,9 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [API reference](https://orwa-mahmoud.github.io/adapttable/api/): every prop in tables
 - [FAQ](https://orwa-mahmoud.github.io/adapttable/faq/): direct answers to "best headless React table", "free MUI DataGrid / ag-Grid alternative", "React table with RTL/Arabic", "same table for client and server data"
 - [Comparison](https://orwa-mahmoud.github.io/adapttable/comparison/): vs ag-grid, TanStack Table, MUI X DataGrid, mantine-datatable
+- [Migrate from mantine-datatable](https://orwa-mahmoud.github.io/adapttable/migrate-from-mantine-datatable/): records→data, sortStatus→sortable, built-in filter UI, URL state, column menu, saved views
+- [Migrate from MUI X DataGrid](https://orwa-mahmoud.github.io/adapttable/migrate-from-mui-x-datagrid/): Pro/Premium features (pinning, row virtualization, multi-sort/filter, resizing, master-detail) free under MIT
+- [Migrate from TanStack Table](https://orwa-mahmoud.github.io/adapttable/migrate-from-tanstack-table/): keep headless control, drop the row models, toolbar, pagination and URL wiring
 
 ## Demo
 

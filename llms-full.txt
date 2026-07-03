@@ -108,7 +108,7 @@ Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -365,7 +365,7 @@ Pass the rows; the table filters, sorts, and pages them in memory.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -399,7 +399,7 @@ fetch.
 ```tsx
 import { useState } from "react";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -451,7 +451,7 @@ headless in-memory use, or a hand-rolled object that fulfils the contract.
 ```tsx
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   DataTable,
   type PaginatedResponse,
@@ -563,7 +563,7 @@ Columns are plain objects — declare a `key` and the table renders the value, d
 ## Example
 
 ```tsx
-import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 import { Badge } from "@mantine/core";
 
 interface Person {
@@ -698,7 +698,7 @@ import {
   type ColumnDef,
   DataTable,
   useFrontendData,
-} from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+} from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -812,7 +812,7 @@ frontend data) the row predicate — no wiring.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -993,7 +993,7 @@ infinite scroll, or `"auto"` (the default), which picks per device.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1074,7 +1074,7 @@ No other wiring is required.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   type BulkAction,
   DataTable,
@@ -1209,7 +1209,7 @@ presence is the whole API.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Order {
   id: string;
@@ -1291,7 +1291,7 @@ Let users show/hide, reorder, pin, and resize columns — one prop per capabilit
 
 ```tsx
 import { useColumnLayoutStorageState } from "@adapttable/core";
-import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1406,7 +1406,7 @@ ready-made menu; a headless hook backs custom UIs.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1541,7 +1541,7 @@ fixed-height box.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Reading {
   id: string;
@@ -2379,11 +2379,12 @@ Props beyond the core surface, with per-kit availability.
 | `urlSync`       | `boolean`                                       | `true`      | all                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                             |
 | `savedViews`    | `UseSavedViewsOptions`                          | —           | all                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.   |
 | `slots`         | `{ skeleton?, empty? }`                         | —           | all                       | Replace sub-components (loading skeleton, empty state).                                                                     |
-| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, unstyled | Per-part class overrides — five parts on Mantine/Chakra (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
+| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
 | `className`     | `string`                                        | —           | mui, antd                 | Class name applied to the root wrapper.                                                                                     |
 | `animate`       | `boolean`                                       | `false`     | mantine                   | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                       |
-| `size`          | kit-specific union                              | —           | mui, chakra, antd         | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`).                                |
+| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix  | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).    |
 | `colorScheme`   | `string`                                        | —           | chakra                    | Chakra color scheme for primary accents (buttons, badges).                                                                  |
+| `accentColor`   | `RadixAccentColor`                              | —           | radix                     | Radix accent color for primary controls (buttons, badges, active page).                                                     |
 | `bordered`      | `boolean`                                       | `false`     | antd                      | Render the table with cell borders.                                                                                         |
 | `virtualHeight` | `number`                                        | `480`       | antd                      | Vertical scroll height used when `virtualize` is true.                                                                      |
 | `virtualWidth`  | `number`                                        | `960`       | antd                      | Horizontal scroll width used when `virtualize` is true.                                                                     |
@@ -2723,6 +2724,8 @@ when you want to drop down. Pick TanStack for non-React or total-control
 builds; pick AdaptTable when you want the UI done for your kit without losing
 the escape hatch.
 
+→ [Migrate from TanStack Table](./migrate-from-tanstack-table.md).
+
 ### AdaptTable vs AG Grid
 
 AG Grid is the enterprise heavyweight — pivoting, range selection, Excel-style
@@ -2742,6 +2745,8 @@ DataGrid-style experience for free, and the same API also renders in Mantine,
 Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
 state built in at no cost.
 
+→ [Migrate from MUI X DataGrid](./migrate-from-mui-x-datagrid.md).
+
 ### AdaptTable vs mantine-datatable
 
 mantine-datatable is a polished, popular table — but it's Mantine-only.
@@ -2750,6 +2755,8 @@ adds client/server data behind a single contract, shareable URL state, saved
 views, and first-class RTL. If you're on Mantine and staying there, either
 works; if you want the same table across kits (or those extra batteries),
 AdaptTable covers more ground.
+
+→ [Migrate from mantine-datatable](./migrate-from-mantine-datatable.md).
 
 ## When to choose AdaptTable
 
@@ -2771,6 +2778,527 @@ AdaptTable covers more ground.
   framework). AdaptTable is React-only for v1.
 - You need a spreadsheet-like editing surface today, not a responsive data
   table for application lists.
+
+---
+
+# Migrate from mantine-datatable
+
+[mantine-datatable](https://icflorescu.github.io/mantine-datatable/) is a
+polished, Mantine-only table. `@adapttable/mantine` renders the **same Mantine
+primitives**, so the look barely changes — what changes is how much you wire by
+hand. Sorting, pagination, filtering, and data fetching move from imperative
+state you manage into declarative props the table owns.
+
+Both are Mantine-native and both do RTL first-class, so those stay the same.
+This page maps the API across and shows a before/after.
+
+## What you gain
+
+Things mantine-datatable leaves to you that AdaptTable does for you:
+
+- **One data contract for client and server.** Pass `data` for in-memory rows,
+  or `data` + `total` + `loading` + `onQueryChange` for a paginated API — no
+  manual `useEffect`/`fetching`/`totalRecords` juggling. See
+  [data tiers](./data-tiers.md).
+- **A real filter UI.** Declare `filter` on a column and get a kit-native
+  widget, a removable chip, and URL parsing for free. mantine-datatable's
+  `column.filter` is an empty slot you render yourself. See
+  [filtering](./filtering.md).
+- **Search, sort, and paging applied for you.** On the frontend tier AdaptTable
+  filters, sorts, and pages the array itself — you no longer sort and slice
+  `records` in response to `sortStatus`/`page`.
+- **URL-synced, shareable, reload-safe state** — mantine-datatable keeps state
+  in React only. See [URL state](./url-state.md).
+- **A ready Columns menu** (show/hide, reorder, pin) via `enableColumnMenu`, and
+  drag/keyboard resize via `resizableColumns`. mantine-datatable gives you the
+  column mechanics but no menu UI. See
+  [column management](./column-management.md).
+- **Saved views, an automatic mobile card layout, and opt-in
+  virtualization** — none of which mantine-datatable ships. See
+  [saved views](./saved-views.md) and [virtualization](./virtualization.md).
+
+## Install
+
+```bash
+pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
+```
+
+Keep your existing `<MantineProvider>` at the app root — the adapter renders
+through it exactly as mantine-datatable did.
+
+## Prop mapping
+
+`<DataTable>` props:
+
+| mantine-datatable                             | `@adapttable/mantine`                                      | Notes                                                                             |
+| --------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `records`                                     | `data`                                                     | Frontend tier. Server tier: `data` (current page) + `total` + `onQueryChange`.    |
+| `columns`                                     | `columns`                                                  | Field-by-field mapping below.                                                     |
+| `idAccessor`                                  | `rowKey`                                                   | **Required** — `(row) => string`. There is no `"id"` default.                     |
+| `sortStatus` / `onSortStatusChange`           | `sortable` per column (+ `multiSort`)                      | AdaptTable owns sort state and applies it; you don't sort `records` yourself.     |
+| `page` / `onPageChange` / `totalRecords`      | automatic (frontend) or `total` + `onQueryChange` (server) | Pagination is `"auto"`: paged on desktop, infinite on mobile.                     |
+| `recordsPerPage` / `recordsPerPageOptions`    | built-in page-size control                                 | Defaults to `PAGE_SIZE_OPTIONS`; `DEFAULT_LIMIT` is 25.                           |
+| `selectedRecords` / `onSelectedRecordsChange` | `bulkActions`, or `selectedIds` / `onSelectionChange`      | Providing `bulkActions` turns selection on and mounts the bulk bar.               |
+| `isRecordSelectable`                          | `selectionGetId`                                           | Selection id extractor; gate rows in your own action logic.                       |
+| `rowExpansion={{ content }}`                  | `renderRowDetail`                                          | `(row) => ReactNode`; multiple rows may be open at once.                          |
+| `fetching`                                    | `loading`                                                  | Server tier: skeleton when empty, subtle refresh indicator otherwise.             |
+| `noRecordsText` / `emptyState`                | `slots.empty`                                              | Replace the empty state; `slots.skeleton` replaces the loader.                    |
+| `column.filter` (your JSX popover)            | column `filter` shorthand                                  | Declarative — see below. JSX is still allowed via the table-level `filters` prop. |
+
+Column fields (`DataTableColumn` → `ColumnDef`):
+
+| mantine-datatable           | `@adapttable/mantine`                               | Notes                                                                     |
+| --------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------- |
+| `accessor`                  | `key`                                               | Both support dot paths (`"department.name"`).                             |
+| `title`                     | `header`                                            | Auto-derived from `key` when omitted (`hiredAt` → "Hired At").            |
+| `render: (rec, i) => …`     | `Cell` (component) or `accessor: (row) => …`        | `Cell` receives `{ row, rowIndex }`; define it at module level.           |
+| `sortable`                  | `sortable`                                          | Add `sortValue` when the cell renders formatted/JSX content.              |
+| `textAlign: 'left'/'right'` | `align: 'start'/'end'`                              | Logical alignment — correct under RTL automatically.                      |
+| `width`                     | `width`                                             | —                                                                         |
+| `hidden` / `toggleable`     | `hideOnMobile`/`hideOnDesktop` + `enableColumnMenu` | Per-layout hiding is a column flag; user toggling lives in the menu.      |
+| `draggable` / `resizable`   | `enableColumnMenu` / `resizableColumns`             | Enabled once at the table level, not per column.                          |
+| `pinned: 'left'/'right'`    | `columnLayout` / `defaultColumnLayout`              | Pinning is part of the column-layout state (menu-driven or controlled).   |
+| `footer`                    | `summaryRow`                                        | One table-level function maps the page's rows to per-column footer cells. |
+
+## Before / after
+
+**Before** — mantine-datatable, wiring sort + paging yourself:
+
+```tsx
+import { DataTable } from "mantine-datatable";
+import { useMemo, useState } from "react";
+
+function PeopleTable({ people }: { people: Person[] }) {
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 25;
+  const [sortStatus, setSortStatus] = useState<DataTableSortStatus<Person>>({
+    columnAccessor: "name",
+    direction: "asc",
+  });
+
+  const sorted = useMemo(() => {
+    const data = [...people].sort((a, b) =>
+      String(a[sortStatus.columnAccessor]).localeCompare(
+        String(b[sortStatus.columnAccessor])
+      )
+    );
+    return sortStatus.direction === "desc" ? data.reverse() : data;
+  }, [people, sortStatus]);
+
+  const records = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  return (
+    <DataTable
+      records={records}
+      idAccessor="id"
+      totalRecords={people.length}
+      recordsPerPage={PER_PAGE}
+      page={page}
+      onPageChange={setPage}
+      sortStatus={sortStatus}
+      onSortStatusChange={setSortStatus}
+      columns={[
+        { accessor: "name", sortable: true },
+        { accessor: "role" },
+        { accessor: "status" },
+      ]}
+    />
+  );
+}
+```
+
+**After** — AdaptTable applies search, sort, filters, and paging itself:
+
+```tsx
+import { DataTable } from "@adapttable/mantine";
+
+function PeopleTable({ people }: { people: Person[] }) {
+  return (
+    <DataTable
+      data={people}
+      rowKey={(r) => r.id}
+      columns={[
+        { key: "name", sortable: true },
+        { key: "role" },
+        { key: "status", filter: { type: "select", options: "auto" } },
+      ]}
+    />
+  );
+}
+```
+
+The `status` filter alone — a kit-native select, a removable chip, a URL param,
+and the row predicate — is code you would have written by hand before.
+
+## Gotchas
+
+- **`rowKey` is required.** mantine-datatable defaults `idAccessor` to `"id"`;
+  AdaptTable has no default, so always pass `rowKey={(r) => r.id}`.
+- **Stop sorting and slicing `records`.** On the frontend tier, hand the full
+  array to `data` and delete your `sortStatus`/`page` sort-and-slice logic — the
+  table does it. For a server API, use the [server tier](./data-tiers.md)
+  instead of manual `fetching`.
+- **`render(record, index)` → `Cell`.** Use a module-level component receiving
+  `{ row, rowIndex }`, or the lighter `accessor: (row) => …`. A cell that
+  returns formatted/JSX content needs `sortValue` to stay sortable.
+- **Filters are declarative.** Replace a hand-built `column.filter` popover with
+  a `filter` shorthand (`"text"`, `"select"`, `"dateRange"`, …). A genuinely
+  bespoke control can still be passed as JSX to the table-level `filters` prop.
+- **`textAlign` values change.** `'left'`/`'right'` become the logical
+  `'start'`/`'end'`, which flip correctly in RTL.
+
+## Where next
+
+- [Getting started](./getting-started.md) — install, providers, first table.
+- [Filtering](./filtering.md) · [Data tiers](./data-tiers.md) ·
+  [Column management](./column-management.md) · [Saved views](./saved-views.md).
+- [Comparison](./comparison.md) — where each library fits.
+
+---
+
+# Migrate from MUI X DataGrid
+
+[MUI X DataGrid](https://mui.com/x/react-data-grid/) is an excellent grid if
+you are all-in on Material UI. The catch is its licensing: many everyday table
+features live in the paid **Pro** and **Premium** tiers. `@adapttable/mui`
+renders real MUI components — so it looks like Material UI — while giving you a
+lot of that paid surface **free under MIT**, plus shareable URL state and an
+automatic mobile layout the DataGrid doesn't ship at any tier.
+
+This page maps `<DataGrid>` to `<DataTable>` and shows a before/after.
+
+## What you gain (free, MIT)
+
+Features that are **paid** in MUI X but built into `@adapttable/mui`:
+
+- **Column pinning** (Pro) → AdaptTable column layout / Columns menu.
+- **Row virtualization** (Pro in v8) → `virtualize`. Community `<DataGrid>` also
+  caps pages at 100 rows; AdaptTable has no such cap.
+- **Multi-column sort** (Pro) → `multiSort`.
+- **Multiple simultaneous filters** (Pro) → declarative `filters`, always
+  multi-condition.
+- **Column resizing** (Pro) → `resizableColumns`.
+- **Master-detail / detail panel** (Pro) → `renderRowDetail`.
+- **Multiple row selection** (Pro) → `bulkActions` / `selectedIds`.
+- **Footer summary rows** → `summaryRow` (MUI's statistical aggregation is
+  Premium; AdaptTable gives you the footer row, you supply the values).
+
+Plus things DataGrid has no built-in answer for at any tier:
+
+- **URL-synced, shareable state** — see [URL state](./url-state.md).
+- **An automatic responsive card layout** on mobile (DataGrid's List view is
+  Pro and manual).
+- **One API for six UI kits** — the same code renders in Mantine, Chakra, Ant
+  Design, Radix, and shadcn/ui too.
+
+> Tiers above reflect MUI X **v8** (2025), verified against MUI's licensing
+> docs. MUI may move features between tiers — check their
+> [licensing page](https://mui.com/x/introduction/licensing/) before relying on
+> a specific boundary.
+
+## Install
+
+```bash
+pnpm add @adapttable/core @adapttable/mui @mui/material
+```
+
+Works with the default theme; wrap in `<ThemeProvider>` to customize, exactly as
+DataGrid does.
+
+## Prop mapping
+
+`<DataGrid>` → `<DataTable>`:
+
+| MUI X DataGrid                                       | `@adapttable/mui`                                     | Notes                                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| `rows`                                               | `data`                                                | Frontend tier. Server tier: `data` (page) + `total` + `onQueryChange`. |
+| `columns`                                            | `columns`                                             | `GridColDef` → `ColumnDef`, mapped below.                              |
+| `getRowId`                                           | `rowKey`                                              | **Required** — `(row) => string`.                                      |
+| `sortModel` / `onSortModelChange`                    | `sortable` per column (+ `multiSort`)                 | AdaptTable owns and applies sort state.                                |
+| `sortingMode: "server"`                              | `onQueryChange` (or `source`)                         | The consolidated query carries `sortBy`/`sortDir`.                     |
+| `filterModel` / `onFilterModelChange`                | column `filter` shorthand + table `filters`           | Widgets, chips, and URL params are derived for you.                    |
+| `paginationModel` / `onPaginationModelChange`        | automatic (frontend) or `total` + `onQueryChange`     | No 100-row community cap.                                              |
+| `checkboxSelection` + `rowSelectionModel`            | `bulkActions`, or `selectedIds` / `onSelectionChange` | Multi-row selection is free; no `{ type, ids }` model to manage.       |
+| `getDetailPanelContent` (Pro)                        | `renderRowDetail`                                     | `(row) => ReactNode`.                                                  |
+| `loading`                                            | `loading`                                             | —                                                                      |
+| `slots.noRowsOverlay` / `loadingOverlay`             | `slots.empty` / `slots.skeleton`                      | —                                                                      |
+| `initialState` / `apiRef.exportState()` (state only) | `urlSync` + `urlKey` (+ `savedViews`)                 | State lives in the URL, shareable and reload-safe.                     |
+| `pinnedColumns` (Pro) / `columnVisibilityModel`      | `enableColumnMenu` / `columnLayout`                   | Show/hide, reorder, pin in one menu.                                   |
+
+`GridColDef` → `ColumnDef`:
+
+| MUI X DataGrid                         | `@adapttable/mui`                     | Notes                                                         |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------- |
+| `field`                                | `key`                                 | Also the value path (dot paths supported).                    |
+| `headerName`                           | `header`                              | Auto-derived from `key` when omitted.                         |
+| `width` / `flex`                       | `width`                               | —                                                             |
+| `valueGetter: (value, row) => …`       | `accessor: (row) => …`                | AdaptTable reads the row directly — no v7/v8 signature churn. |
+| `valueFormatter` / `renderCell`        | `accessor` / `Cell`                   | `Cell` is a component receiving `{ row, rowIndex }`.          |
+| `type: "singleSelect"`, `valueOptions` | `filter: { type: "select", options }` | Turns the column into a native select filter.                 |
+| `sortable`                             | `sortable`                            | Add `sortValue` for formatted/JSX cells.                      |
+| `align` / `headerAlign`                | `align`                               | Use logical `"start"`/`"center"`/`"end"`.                     |
+
+## Before / after
+
+**Before** — MUI X, reaching for `<DataGridPro>` to pin and resize columns:
+
+```tsx
+import { DataGridPro } from "@mui/x-data-grid-pro"; // paid tier
+
+function PeopleGrid({ rows }: { rows: Person[] }) {
+  return (
+    <DataGridPro
+      rows={rows}
+      getRowId={(r) => r.id}
+      checkboxSelection
+      columns={[
+        { field: "name", headerName: "Name", sortable: true },
+        { field: "role", headerName: "Role" },
+        {
+          field: "status",
+          headerName: "Status",
+          type: "singleSelect",
+          valueOptions: ["active", "retired"],
+        },
+      ]}
+      initialState={{ pinnedColumns: { left: ["name"] } }}
+    />
+  );
+}
+```
+
+**After** — `@adapttable/mui`, all MIT, with a status filter + chip and URL state
+for free:
+
+```tsx
+import { DataTable } from "@adapttable/mui";
+
+function PeopleTable({ people }: { people: Person[] }) {
+  return (
+    <DataTable
+      data={people}
+      rowKey={(r) => r.id}
+      enableColumnMenu // show/hide, reorder, pin — no Pro licence
+      resizableColumns
+      bulkActions={
+        [
+          /* … turns on multi-row selection */
+        ]
+      }
+      columns={[
+        { key: "name", sortable: true },
+        { key: "role" },
+        { key: "status", filter: { type: "select", options: "auto" } },
+      ]}
+    />
+  );
+}
+```
+
+## Gotchas
+
+- **`rowKey` is required** — the equivalent of `getRowId`, but with no `id`
+  default.
+- **No `sortModel`/`filterModel`/`paginationModel` objects.** Sorting is a
+  per-column `sortable` flag; filtering is declarative `filter` shorthands;
+  pagination is automatic. For a server API, emit one query via
+  [`onQueryChange`](./data-tiers.md) instead of three `*Mode="server"` props.
+- **`valueGetter` becomes `accessor`.** AdaptTable passes the row, so the v7/v8
+  `(value, row, column, apiRef)` signature change doesn't apply — and a JSX cell
+  uses `Cell` (a `{ row, rowIndex }` component).
+- **Selection is a plain id list.** No v8 `{ type: "include" | "exclude", ids:
+Set }` model — `onSelectionChange` hands you `string[]`.
+- **Row expansion replaces master-detail.** `renderRowDetail` is the free
+  equivalent of the Pro `getDetailPanelContent`.
+- **`summaryRow` is a footer, not aggregation.** You compute the totals from the
+  page's rows; there is no Premium aggregation engine (and none needed for a
+  sum/count footer).
+
+## Where next
+
+- [Getting started](./getting-started.md) · [Data tiers](./data-tiers.md) ·
+  [Filtering](./filtering.md) · [Column management](./column-management.md).
+- [Virtualization](./virtualization.md) — window large lists, free.
+- [Comparison](./comparison.md) — where each library fits.
+
+---
+
+# Migrate from TanStack Table
+
+[TanStack Table](https://tanstack.com/table/latest) is a superb headless engine
+— you keep total control because it renders nothing: no markup, no toolbar, no
+filter inputs, no pagination controls, no URL sync. AdaptTable shares that
+philosophy. `@adapttable/core` is also headless (prop-getters, no forced
+markup), but it comes with the parts you rebuild on every TanStack project
+already wired: a filter UI, a toolbar, pagination, URL-synced state, and saved
+views. And when you _don't_ need bespoke markup, an adapter renders native kit
+components so you can delete the table UI entirely.
+
+TanStack is multi-framework (React, Vue, Svelte, Solid, …); AdaptTable is
+React-only. If you're not on React, stay on TanStack. This page is for React
+teams tired of rebuilding the same chrome.
+
+## What you gain
+
+Everything TanStack leaves to you (verified from its docs), done for you:
+
+- **A filter UI.** TanStack gives you `columnFilters` state and
+  `getFacetedUniqueValues`, but you render every input. AdaptTable derives
+  kit-native widgets, removable chips, and URL params from a `filter`
+  declaration. See [filtering](./filtering.md).
+- **A toolbar, pagination, and search** — none of which exist in TanStack; you
+  wire the buttons around `nextPage()`/`setPageIndex()` yourself.
+- **URL-synced state.** TanStack has no URL API; you serialize
+  `sorting`/`columnFilters`/`pagination` by hand. AdaptTable does it. See
+  [URL state](./url-state.md).
+- **Saved views** — no concept in TanStack. See [saved views](./saved-views.md).
+- **No opt-in row models.** You don't import `getSortedRowModel` /
+  `getFilteredRowModel` / `getPaginationRowModel` — search, filter, sort, and
+  paging run by default on the frontend tier.
+- **Native kit UI, optional.** Keep headless control with `useDataTable`
+  prop-getters, or adopt an adapter (`@adapttable/mantine`, `mui`, …) and drop
+  your hand-written markup.
+
+## Install
+
+Headless core only, or core plus an adapter for ready UI:
+
+```bash
+# Headless (keep rendering your own markup, TanStack-style)
+pnpm add @adapttable/core
+
+# Batteries — native components for your kit (delete the markup)
+pnpm add @adapttable/core @adapttable/mantine @mantine/core @mantine/hooks
+```
+
+## Concept mapping
+
+| TanStack Table                                                        | AdaptTable                                                      | Notes                                                             |
+| --------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `useReactTable({ data, columns, getCoreRowModel })`                   | `useDataTable({ source, columns })` or an adapter `<DataTable>` | `source` from `useFrontendData`; adapters accept `data` directly. |
+| `getSortedRowModel` / `getFilteredRowModel` / `getPaginationRowModel` | (none needed)                                                   | Applied automatically on the frontend tier.                       |
+| `flexRender(cell.column.columnDef.cell, …)`                           | adapter renders, or prop-getters (`getCellProps`, …)            | Headless route mirrors TanStack's model.                          |
+| `columnHelper.accessor("name", …)`                                    | `{ key: "name" }`                                               | Dot paths work in both.                                           |
+| `columnHelper.accessor(row => …)` (`accessorFn`)                      | `{ key, accessor: (row) => … }`                                 | —                                                                 |
+| `columnHelper.display({ cell })`                                      | `{ key, Cell }`                                                 | `Cell` receives `{ row, rowIndex }`.                              |
+| `header` / `cell` / `footer`                                          | `header` / `Cell` (or `accessor`) / `summaryRow`                | Footer is one table-level function.                               |
+| `enableSorting` / `state.sorting` / `onSortingChange`                 | `sortable` per column (+ `multiSort`)                           | AdaptTable owns sort state.                                       |
+| `columnFilters` + `getFilteredRowModel` + your inputs                 | column `filter` shorthand + `filters` array                     | Widgets + chips built for you.                                    |
+| `state.pagination` + `getPaginationRowModel` + your controls          | automatic pagination                                            | Paged on desktop, infinite on mobile.                             |
+| `enableRowSelection` + `state.rowSelection` + your checkboxes         | `bulkActions` / `selectedIds` / `onSelectionChange`             | —                                                                 |
+| `getExpandedRowModel` + `row.getToggleExpandedHandler()`              | `renderRowDetail`                                               | Toggle UI is provided, not hand-added.                            |
+| `columnVisibility` / `columnOrder` / `columnPinning` state            | `enableColumnMenu` / `columnLayout`                             | One built-in menu instead of hand-wired state + DnD.              |
+| `manualSorting` / `manualFiltering` / `manualPagination`              | `onQueryChange` (or `source` via `useBackendData`)              | One consolidated server query. See [data tiers](./data-tiers.md). |
+| (serialize state to the URL yourself)                                 | `urlSync` / `urlKey` / `savedViews`                             | On by default.                                                    |
+
+## Before / after
+
+**Before** — TanStack: opt-in row models, `flexRender`, and hand-built
+pagination:
+
+```tsx
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+
+const col = createColumnHelper<Person>();
+const columns = [
+  col.accessor("name", { header: "Name" }),
+  col.accessor("role", { header: "Role" }),
+];
+
+function PeopleTable({ people }: { people: Person[] }) {
+  const table = useReactTable({
+    data: people,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  return (
+    <>
+      <table>
+        <thead>
+          {table.getHeaderGroups().map((hg) => (
+            <tr key={hg.id}>
+              {hg.headers.map((h) => (
+                <th key={h.id} onClick={h.column.getToggleSortingHandler()}>
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {/* …and you still hand-write the pagination buttons, search box,
+          filter inputs, and URL syncing. */}
+    </>
+  );
+}
+```
+
+**After** — an adapter renders native UI; search, sort, filters, pagination, and
+URL state come built in:
+
+```tsx
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, …
+
+function PeopleTable({ people }: { people: Person[] }) {
+  return (
+    <DataTable
+      data={people}
+      rowKey={(r) => r.id}
+      columns={[
+        { key: "name", sortable: true },
+        { key: "role", filter: { type: "select", options: "auto" } },
+      ]}
+    />
+  );
+}
+```
+
+Prefer to keep your own markup? Stay headless with `@adapttable/core`:
+`useFrontendData` for the source and `useDataTable` for the prop-getters
+(`getTableProps`, `getHeaderCellProps`, `getSortButtonProps`, `getRowProps`,
+`getCellProps`, `getSearchInputProps`) — the same headless shape as TanStack,
+but with filters, pagination, and URL state already handled.
+
+## Gotchas
+
+- **React only.** On Vue/Svelte/Solid/Angular, keep TanStack — AdaptTable has no
+  adapter for those.
+- **`rowKey` is required** (AdaptTable's `getRowId`).
+- **Delete the opt-in row models.** No `getSortedRowModel` /
+  `getFilteredRowModel` / `getPaginationRowModel` imports — those run for you.
+- **Filters are declarative, not hand-rendered.** Swap your custom filter inputs
+  for a `filter` shorthand; a bespoke control can still be JSX in `filters`.
+- **You keep the headless escape hatch.** `useDataTable` returns prop-getters, so
+  moving to AdaptTable doesn't mean giving up control — it means not rebuilding
+  the chrome first.
+
+## Where next
+
+- [Concepts](./concepts.md) — the headless engine and `TableSource`.
+- [Getting started](./getting-started.md) · [Filtering](./filtering.md) ·
+  [Data tiers](./data-tiers.md) · [API reference](./api.md).
+- [Comparison](./comparison.md) — where each library fits.
 
 ---
 

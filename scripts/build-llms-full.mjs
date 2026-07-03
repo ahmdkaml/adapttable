@@ -36,6 +36,9 @@ const DOCS = [
   "api.md",
   "faq.md",
   "comparison.md",
+  "migrate-from-mantine-datatable.md",
+  "migrate-from-mui-x-datagrid.md",
+  "migrate-from-tanstack-table.md",
   "versioning.md",
 ];
 
