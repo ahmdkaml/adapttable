@@ -118,6 +118,23 @@ export default defineConfig({
             { label: "Comparison", slug: "comparison" },
           ],
         },
+        {
+          label: "Migrating",
+          items: [
+            {
+              label: "From mantine-datatable",
+              slug: "migrate-from-mantine-datatable",
+            },
+            {
+              label: "From MUI X DataGrid",
+              slug: "migrate-from-mui-x-datagrid",
+            },
+            {
+              label: "From TanStack Table",
+              slug: "migrate-from-tanstack-table",
+            },
+          ],
+        },
       ],
     }),
   ],
