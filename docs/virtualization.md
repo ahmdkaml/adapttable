@@ -9,7 +9,7 @@ fixed-height box.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Reading {
   id: string;

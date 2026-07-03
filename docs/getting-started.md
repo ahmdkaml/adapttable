@@ -101,7 +101,7 @@ Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {

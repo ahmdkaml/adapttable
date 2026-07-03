@@ -9,7 +9,7 @@ import {
   type ColumnDef,
   DataTable,
   useFrontendData,
-} from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+} from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;

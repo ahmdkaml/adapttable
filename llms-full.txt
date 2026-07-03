@@ -108,7 +108,7 @@ Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -365,7 +365,7 @@ Pass the rows; the table filters, sorts, and pages them in memory.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -399,7 +399,7 @@ fetch.
 ```tsx
 import { useState } from "react";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -451,7 +451,7 @@ headless in-memory use, or a hand-rolled object that fulfils the contract.
 ```tsx
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   DataTable,
   type PaginatedResponse,
@@ -563,7 +563,7 @@ Columns are plain objects — declare a `key` and the table renders the value, d
 ## Example
 
 ```tsx
-import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { type CellProps, type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 import { Badge } from "@mantine/core";
 
 interface Person {
@@ -698,7 +698,7 @@ import {
   type ColumnDef,
   DataTable,
   useFrontendData,
-} from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+} from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -812,7 +812,7 @@ frontend data) the row predicate — no wiring.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -993,7 +993,7 @@ infinite scroll, or `"auto"` (the default), which picks per device.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1074,7 +1074,7 @@ No other wiring is required.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   type BulkAction,
   DataTable,
@@ -1209,7 +1209,7 @@ presence is the whole API.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Order {
   id: string;
@@ -1291,7 +1291,7 @@ Let users show/hide, reorder, pin, and resize columns — one prop per capabilit
 
 ```tsx
 import { useColumnLayoutStorageState } from "@adapttable/core";
-import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { type ColumnDef, DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1406,7 +1406,7 @@ ready-made menu; a headless hook backs custom UIs.
 
 ```tsx
 // Needs your kit's provider once at the root (e.g. <MantineProvider>).
-import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, shadcn, unstyled
 
 interface Person {
   id: string;
@@ -1541,7 +1541,7 @@ fixed-height box.
 ## Example
 
 ```tsx
-import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, shadcn, unstyled
+import { DataTable } from "@adapttable/mantine"; // or @adapttable/mui, chakra, antd, radix, shadcn, unstyled
 
 interface Reading {
   id: string;
@@ -2379,11 +2379,12 @@ Props beyond the core surface, with per-kit availability.
 | `urlSync`       | `boolean`                                       | `true`      | all                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                             |
 | `savedViews`    | `UseSavedViewsOptions`                          | —           | all                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.   |
 | `slots`         | `{ skeleton?, empty? }`                         | —           | all                       | Replace sub-components (loading skeleton, empty state).                                                                     |
-| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, unstyled | Per-part class overrides — five parts on Mantine/Chakra (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
+| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
 | `className`     | `string`                                        | —           | mui, antd                 | Class name applied to the root wrapper.                                                                                     |
 | `animate`       | `boolean`                                       | `false`     | mantine                   | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                       |
-| `size`          | kit-specific union                              | —           | mui, chakra, antd         | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`).                                |
+| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix  | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).    |
 | `colorScheme`   | `string`                                        | —           | chakra                    | Chakra color scheme for primary accents (buttons, badges).                                                                  |
+| `accentColor`   | `RadixAccentColor`                              | —           | radix                     | Radix accent color for primary controls (buttons, badges, active page).                                                     |
 | `bordered`      | `boolean`                                       | `false`     | antd                      | Render the table with cell borders.                                                                                         |
 | `virtualHeight` | `number`                                        | `480`       | antd                      | Vertical scroll height used when `virtualize` is true.                                                                      |
 | `virtualWidth`  | `number`                                        | `960`       | antd                      | Horizontal scroll width used when `virtualize` is true.                                                                     |

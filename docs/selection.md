@@ -8,7 +8,7 @@ No other wiring is required.
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
 import {
   type BulkAction,
   DataTable,
