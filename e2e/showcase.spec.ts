@@ -78,6 +78,9 @@ for (const adapter of ADAPTERS) {
       await control.focus();
       await page.keyboard.press("Escape");
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      // Escape must also RESTORE focus to the trigger (CLAUDE.md overlay
+      // rule) — a closed-but-focus-lost popover strands keyboard users.
+      await expect(trigger).toBeFocused();
 
       // Re-open, then a click in the far corner (outside the anchored card)
       // dismisses it.
