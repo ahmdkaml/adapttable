@@ -1623,7 +1623,8 @@ export function Readings() {
   infinite-scroll sentinel are suppressed: the box never grows, so the virtual
   window extends itself at the box's scroll end instead.
 - Ant Design maps `virtualize` to antd's **native** virtual table mode on
-  desktop; mobile cards there keep the shared sentinel.
+  desktop; on mobile the cards window through the shared engine, just like
+  every other adapter, and the page-level sentinel keeps loading more.
 
 ## Options
 

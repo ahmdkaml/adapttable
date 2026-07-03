@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   type ColumnDef,
+  DEFAULT_CARD_SIZE_PX,
   type FilterRuntime,
   isDeclarativeFilters,
   pageSizeOptions,
@@ -21,6 +22,7 @@ import {
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
+  useTableVirtualization,
 } from "@adapttable/core";
 import {
   Button,
@@ -293,8 +295,9 @@ function SavedViewsSlot({
  * Whether the page-level load-more sentinel should stay armed. It disarms
  * only while the antd virtual table renders (desktop): there the rows live in
  * antd's own fixed-height scroll container, and `handleVirtualScroll` drives
- * paging instead. Mobile cards are never virtualized, so the sentinel keeps
- * auto-loading there even with `virtualize` set.
+ * paging instead. Mobile cards window through core virtualization but still
+ * flow in the page (no inner scroll box), so the sentinel stays the single
+ * load-more trigger there even with `virtualize` set.
  */
 function sentinelEnabled(
   isPaged: boolean,
@@ -433,6 +436,44 @@ function resolveSize(
 }
 
 /**
+ * Windowing props for the mobile card list. Desktop rows window through antd's
+ * own native virtual `<Table>`, so this is gated to the card body and never
+ * touches that path. Cards flow in the page (no inner scroll box), so the
+ * page-level sentinel stays the single load-more trigger — the window needs no
+ * second sentinel of its own.
+ */
+function useCardWindowing<TRow>(options: {
+  rows: readonly TRow[];
+  rowKey: (row: TRow) => string;
+  virtualize: boolean;
+  isPaged: boolean;
+  error: Error | null;
+  body: string;
+  estimateCardSize?: number;
+  overscan?: number;
+  scrollMargin?: number;
+}) {
+  const virtualization = useTableVirtualization({
+    rows: options.rows,
+    rowKey: options.rowKey,
+    enabled:
+      options.virtualize &&
+      !options.isPaged &&
+      !options.error &&
+      options.body === "mobile",
+    estimateSize: options.estimateCardSize ?? DEFAULT_CARD_SIZE_PX,
+    overscan: options.overscan,
+    scrollMargin: options.scrollMargin,
+  });
+  return {
+    rowEntries: virtualization.enabled ? virtualization.rows : undefined,
+    paddingTop: virtualization.paddingTop,
+    paddingBottom: virtualization.paddingBottom,
+    measureElement: virtualization.measureElement,
+  };
+}
+
+/**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully wired antd `<Table>` — sorting, selection,
  * filtering, URL-synced state, RTL, and dark mode — on the headless
@@ -526,6 +567,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     source,
     virtualize && !c.isPaged && !source.error
   );
+
+  // Window the MOBILE card list with core virtualization — desktop rows still
+  // window through antd's own native virtual `<Table>`, so this is gated to
+  // the card body and never touches that path. Cards flow in the page (no
+  // inner scroll box), so the sentinel above stays the single load-more
+  // trigger; the virtual window needs no second sentinel of its own.
+  const cardWindow = useCardWindowing({
+    rows: source.rows,
+    rowKey: getRowId,
+    virtualize,
+    isPaged: c.isPaged,
+    error: source.error,
+    body: c.body,
+    estimateCardSize: props.estimateCardSize,
+    overscan: props.virtualOverscan,
+    scrollMargin: props.virtualScrollMargin,
+  });
 
   const columns = buildColumns<TRow>({
     columns: table.columns,
@@ -624,6 +682,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         expansion={c.detail?.expansion}
         renderRowDetail={c.detail?.render}
         summaryRow={props.summaryRow}
+        {...cardWindow}
       />
     );
   } else {
