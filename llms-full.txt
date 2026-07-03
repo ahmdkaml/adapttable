@@ -2798,6 +2798,36 @@ AdaptTable covers more ground.
 
 → [Migrate from mantine-datatable](./migrate-from-mantine-datatable.md).
 
+## Every adapter, every feature
+
+The point of AdaptTable is that the feature set never changes when you switch
+kits — only the look does. Every adapter ships the same batteries:
+
+| Feature                               | Mantine | MUI | Chakra | Ant Design | Radix | shadcn/ui | Unstyled |
+| ------------------------------------- | :-----: | :-: | :----: | :--------: | :---: | :-------: | :------: |
+| Filter popover                        |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Filter drawer                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅¹  |    ✅     |    ✅    |
+| Active-filter chips                   |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Column menu (show/hide, reorder, pin) |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Column resize                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Saved views                           |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |    ✅     |    ✅    |
+| Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Skeleton / empty / error states       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Mount entrance animation              |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+
+<sub>¹ Radix Themes ships no Drawer primitive, so `filtersMode="drawer"` renders
+as a Radix Dialog restyled into a side panel — same dimming backdrop and focus
+trap. ² Ant Design maps `virtualize` to its own native virtual table for desktop
+rows; mobile cards window through the shared engine like every other adapter.</sub>
+
+shadcn/ui is the unstyled adapter pre-wired with the shadcn class preset, so it
+matches unstyled feature-for-feature.
+
 ## When to choose AdaptTable
 
 - You use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui** and want a table
