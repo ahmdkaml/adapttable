@@ -172,7 +172,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 
 ## Status
 
-**Stable — `v1.0`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. See the [roadmap](#roadmap) for what's next.
+**Stable — `v1`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. See the [roadmap](#roadmap) for what's next.
 
 ## Roadmap
 

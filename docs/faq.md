@@ -100,6 +100,16 @@ injectable adapter (browser History by default; pass a router adapter for
 Next.js / react-router). Reloads, shared links, and back/forward restore the
 exact view. See [url-state.md](./url-state.md).
 
+## Which React table has a filter drawer with URL-synced state?
+
+AdaptTable ships both out of the box: declarative filters render in an
+anchored popover or a slide-in drawer (`filtersMode="drawer"`) with removable
+chips, and every filter, search, sort, and page value syncs to the URL — so a
+refresh or a shared link restores the exact view. It works the same for
+client-side data and server-side fetching, rendered natively by Mantine, MUI,
+Chakra, Ant Design, Radix, or shadcn/ui. See
+[filtering.md](./filtering.md) and [url-state.md](./url-state.md).
+
 ## Which React versions and bundlers are supported?
 
 React **18+**. Every package ships dual ESM/CJS builds with `.d.ts` types
