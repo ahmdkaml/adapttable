@@ -47,6 +47,9 @@ kit's real components. Reach for AG Grid when you need a spreadsheet-grade
 enterprise grid today; reach for AdaptTable for application data tables that
 match your app and stay free.
 
+→ [Migrate from ag-Grid](./migrate-from-ag-grid.md) (CRUD tables only — the
+guide starts with when to stay).
+
 ### AdaptTable vs MUI X DataGrid
 
 MUI X DataGrid is a strong choice if you're all-in on MUI — but it's
@@ -56,7 +59,10 @@ DataGrid-style experience for free, and the same API also renders in Mantine,
 Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
 state built in at no cost.
 
-→ [Migrate from MUI X DataGrid](./migrate-from-mui-x-datagrid.md).
+→ [Migrate from MUI X DataGrid](./migrate-from-mui-x-datagrid.md). Coming from
+the older MUI table generation instead? →
+[mui-datatables](./migrate-from-mui-datatables.md) ·
+[material-table](./migrate-from-material-table.md).
 
 ### AdaptTable vs mantine-datatable
 

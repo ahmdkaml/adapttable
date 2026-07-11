@@ -168,6 +168,28 @@ but with filters, pagination, and URL state already handled.
   moving to AdaptTable doesn't mean giving up control — it means not rebuilding
   the chrome first.
 
+## Still on react-table v7?
+
+If your project uses the legacy `react-table` package (v7 — `useTable` +
+`useSortBy` / `useFilters` / `usePagination` / `useRowSelect` plugin hooks),
+you're on a frozen library: v7 stopped receiving releases when the project
+became TanStack Table v8. You have two upgrade paths, and both are rewrites of
+your table UI — the v7 plugin-hook API doesn't carry over:
+
+- **react-table v7 → TanStack v8**: new package, new column defs, new row
+  models — and you still hand-build every piece of UI afterwards.
+- **react-table v7 → AdaptTable**: the same rewrite cost, but you come out the
+  other side with the toolbar, filters, pagination, URL sync, and native kit
+  rendering already done.
+
+The v7 concepts map cleanly: `useTable({ columns, data })` → `<DataTable
+data={…} columns={…}>`; a v7 column's `Header`/`accessor`/`Cell` →
+AdaptTable's `header`/`key` (or `accessor`)/`Cell`; `useSortBy` → per-column
+`sortable`; `usePagination` → automatic; `useRowSelect` → `bulkActions` /
+`onSelectionChange`; `useExpanded` → `renderRowDetail`. Since you must rewrite
+anyway, migrating "up" to batteries beats migrating sideways to another
+build-it-yourself engine.
+
 ## Where next
 
 - [Concepts](./concepts.md) — the headless engine and `TableSource`.

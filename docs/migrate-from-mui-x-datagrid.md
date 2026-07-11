@@ -137,6 +137,24 @@ function PeopleTable({ people }: { people: Person[] }) {
 }
 ```
 
+## Escaping the version churn (v6 → v7 → v8 breaking changes)
+
+A big reason teams migrate is that each DataGrid major rewrites your code.
+If one of these breaking changes brought you here, the right column is what
+the same thing looks like in AdaptTable — where it hasn't changed since 1.0:
+
+| DataGrid breaking change                                                                                                            | In AdaptTable                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **`valueGetter` signature** rewritten in v7: `(params) => …` became `(value, row, column, apiRef) => …` (same for `valueFormatter`) | `accessor: (row) => …` — one argument, the row, stable API                     |
+| **`disableSelectionOnClick` renamed** to `disableRowSelectionOnClick` (v6)                                                          | selection never binds to row clicks; `onRowClick` is a separate, explicit prop |
+| **`rowSelectionModel` reshaped** in v8: a plain id array became `{ type: "include" \| "exclude", ids: Set }`                        | `onSelectionChange` hands you a plain `string[]` — no model object             |
+| **Row virtualization moved to Pro** in v8 (Community pages cap at 100 rows)                                                         | `virtualize` — free, MIT, no page cap                                          |
+| **Multi-column sorting / multi-filters** gated behind Pro                                                                           | `multiSort` and multi-condition `filters` — free                               |
+| **Column resizing** gated behind Pro                                                                                                | `resizableColumns` — free                                                      |
+
+One declarative API, semver-stable, and the features that keep moving behind
+the paywall are simply included.
+
 ## Gotchas
 
 - **`rowKey` is required** — the equivalent of `getRowId`, but with no `id`

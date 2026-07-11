@@ -39,6 +39,9 @@ const DOCS = [
   "migrate-from-mantine-datatable.md",
   "migrate-from-mui-x-datagrid.md",
   "migrate-from-tanstack-table.md",
+  "migrate-from-mui-datatables.md",
+  "migrate-from-material-table.md",
+  "migrate-from-ag-grid.md",
   "versioning.md",
 ];
 
