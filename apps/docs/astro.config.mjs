@@ -133,6 +133,18 @@ export default defineConfig({
               label: "From TanStack Table",
               slug: "migrate-from-tanstack-table",
             },
+            {
+              label: "From mui-datatables",
+              slug: "migrate-from-mui-datatables",
+            },
+            {
+              label: "From material-table",
+              slug: "migrate-from-material-table",
+            },
+            {
+              label: "From ag-Grid",
+              slug: "migrate-from-ag-grid",
+            },
           ],
         },
       ],

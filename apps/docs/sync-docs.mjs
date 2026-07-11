@@ -42,6 +42,9 @@ const TITLES = {
   "migrate-from-mantine-datatable.md": "Migrate from mantine-datatable",
   "migrate-from-mui-x-datagrid.md": "Migrate from MUI X DataGrid",
   "migrate-from-tanstack-table.md": "Migrate from TanStack Table",
+  "migrate-from-mui-datatables.md": "Migrate from mui-datatables",
+  "migrate-from-material-table.md": "Migrate from material-table",
+  "migrate-from-ag-grid.md": "Migrate from ag-Grid",
   "versioning.md": "Versioning & stability",
 };
 
@@ -91,6 +94,12 @@ const DESCRIPTIONS = {
     "Migrate from MUI X DataGrid to @adapttable/mui — get column pinning, row virtualization, multi-sort/filter, resizing and master-detail free under MIT, plus URL state and an automatic mobile layout.",
   "migrate-from-tanstack-table.md":
     "Migrate from TanStack Table to @adapttable/core — keep headless control but stop rebuilding filters, toolbars, pagination, URL sync and saved views on every React project.",
+  "migrate-from-mui-datatables.md":
+    "Migrate from mui-datatables — unmaintained since January 2023 and locked to MUI v5 — to @adapttable/mui: a prop-by-prop mapping that replaces the onTableChange switch and unblocks MUI v6+ and React 19.",
+  "migrate-from-material-table.md":
+    "Migrate from material-table (MUI v4-era, dormant) to @adapttable/mui — prop mapping for columns, remote data, actions and filters, plus what genuinely doesn't map.",
+  "migrate-from-ag-grid.md":
+    "Migrate CRUD tables from AG Grid to AdaptTable — ~300 kB lighter, native UI-kit rendering, URL-synced state, free master-detail and filter UI — and an honest list of when to stay on AG Grid.",
   "versioning.md":
     "AdaptTable's versioning and stability policy — semantic versioning, the committed-stable public API surface, deprecation policy and the fixed-group release flow.",
 };
