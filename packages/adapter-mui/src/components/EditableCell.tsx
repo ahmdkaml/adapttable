@@ -31,8 +31,6 @@ export function MuiCellEditor({
     return (
       <TextField
         inputRef={focusEditorOnMount}
-        data-adapttable-part="edit-cell-editor"
-        aria-label={label}
         select
         size="small"
         fullWidth
@@ -40,6 +38,12 @@ export function MuiCellEditor({
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
+        slotProps={{
+          htmlInput: {
+            "aria-label": label,
+            "data-adapttable-part": "edit-cell-editor",
+          },
+        }}
       >
         {ctrl.selectOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
@@ -53,8 +57,6 @@ export function MuiCellEditor({
   return (
     <TextField
       inputRef={focusEditorOnMount}
-      data-adapttable-part="edit-cell-editor"
-      aria-label={label}
       size="small"
       fullWidth
       type={ctrl.editor === "number" ? "number" : "text"}
@@ -62,6 +64,12 @@ export function MuiCellEditor({
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
       onBlur={ctrl.commitOnBlur}
+      slotProps={{
+        htmlInput: {
+          "aria-label": label,
+          "data-adapttable-part": "edit-cell-editor",
+        },
+      }}
     />
   );
 }

@@ -170,7 +170,9 @@ near-100% test coverage across every adapter.
 ## When might another library fit better?
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  Excel-style fill-handle editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  (AdaptTable does ship opt-in single-cell editing — see
+  [Inline cell editing](./cell-editing.md).)
 - You're not on React → TanStack Table (multi-framework).
-- You need spreadsheet-grade enterprise features like pivoting, Excel-style
-  editing, or range selection _today_.
+- You need spreadsheet-grade enterprise features like pivoting, Excel fill
+  handles, or range selection _today_.

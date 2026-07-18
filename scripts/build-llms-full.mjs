@@ -27,6 +27,7 @@ const DOCS = [
   "pagination.md",
   "selection.md",
   "row-expansion.md",
+  "cell-editing.md",
   "column-management.md",
   "saved-views.md",
   "virtualization.md",

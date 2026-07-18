@@ -97,6 +97,7 @@ export default defineConfig({
             { label: "Pagination", slug: "pagination" },
             { label: "Selection & bulk actions", slug: "selection" },
             { label: "Row expansion", slug: "row-expansion" },
+            { label: "Inline cell editing", slug: "cell-editing" },
             { label: "Column management", slug: "column-management" },
             { label: "Saved views", slug: "saved-views" },
             { label: "Virtualization", slug: "virtualization" },

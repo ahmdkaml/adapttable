@@ -19,10 +19,12 @@ material-table is a table-plus-CRUD-suite. AdaptTable deliberately isn't.
 If you depend on these, AdaptTable is the wrong target (Material React Table
 is the closer fit):
 
-- **Inline row/cell editing** (`editable`, `cellEditable`, `editComponent`) —
-  AdaptTable has no editing engine. The equivalent pattern is `rowActions`
-  opening your own form/dialog, with the built-in `confirm` seam for
-  destructive actions.
+- **Full row-edit CRUD suites** (`editable` as a material-table-style
+  object with `onRowAdd` / `onRowUpdate`) — AdaptTable ships **opt-in
+  inline cell editing** via `onCellEdit` + `ColumnDef.editable` (see
+  [Inline cell editing](./cell-editing.md)), not material-table's row
+  dialog engine. Multi-field forms still go through `rowActions` + your
+  own UI, with the built-in `confirm` seam for destructive actions.
 - **Drag-to-group aggregation** (`options.grouping`) — AdaptTable has
   presentational header groups, not runtime grouping.
 - **Tree data** (`parentChildData`) — not supported.

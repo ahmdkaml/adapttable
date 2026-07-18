@@ -123,6 +123,16 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `detailRow` / `detailCell`    | The full-width detail `<tr>` and its spanning `<td>`. |
 | `cardDetail`                  | The detail section inside an expanded mobile card.    |
 
+### Inline cell editing
+
+Opt-in via `onCellEdit` — see [Inline cell editing](./cell-editing.md). When
+editing is dormant these parts are never mounted.
+
+| Part                 | Element                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `edit-cell-activate` | Invisible activate control (double-click / Enter / F2 begins edit). |
+| `edit-cell-editor`   | Kit-native input / select while the cell is active.                 |
+
 ### Mobile cards & summary
 
 | Part                                     | Element                                            |

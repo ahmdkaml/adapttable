@@ -189,5 +189,30 @@ for (const adapter of ADAPTERS) {
       // The re-rendered table flips its writing direction.
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
     });
+
+    test("inline cell edit commits on Enter", async ({ page }) => {
+      await openDemo(page, adapter);
+      // Frontend mode ships onCellEdit; email is editable + visible.
+      const activate = demo(page)
+        .locator('[data-adapttable-part="edit-cell-activate"]')
+        .first();
+      await expect(activate).toBeVisible();
+      await activate.dblclick();
+      // Prefer the accessible textbox — kit wrappers may put the data-* on a
+      // non-input root (MUI TextField), so role is the stable target.
+      const editor = demo(page)
+        .getByRole("textbox", { name: "Edit cell" })
+        .or(
+          demo(page).locator(
+            '[data-adapttable-part="edit-cell-editor"] input, input[data-adapttable-part="edit-cell-editor"]'
+          )
+        );
+      await expect(editor).toBeVisible();
+      await editor.fill("edited@example.com");
+      await editor.press("Enter");
+      await expect(
+        demo(page).getByText("edited@example.com").first()
+      ).toBeVisible();
+    });
   });
 }

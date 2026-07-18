@@ -222,6 +222,8 @@ The source for each lives in
 
 - [Columns](./columns.md) — headers, custom cells, the Columns menu
   (show/hide, reorder, pin), resizing.
+- [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
+  editors, keyboard flow.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
 - [Data tiers](./data-tiers.md) — server data without a query library
@@ -1329,6 +1331,102 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 ---
 
+# React table inline cell editing
+
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
+Edit a cell in place by passing `onCellEdit` and marking columns `editable`.
+Omit `onCellEdit` and the table never opens an editor — even if columns
+declare `editable`. The table never mutates rows; your handler applies the
+change.
+
+## Example
+
+```tsx
+import { useState } from "react";
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, base-ui, shadcn, unstyled
+
+interface Person {
+  id: string;
+  name: string;
+  role: string;
+  status: "Active" | "Planned" | "Blocked";
+}
+
+const SEED: Person[] = [
+  { id: "1", name: "Aisha", role: "Engineer", status: "Active" },
+  { id: "2", name: "Jonas", role: "Designer", status: "Planned" },
+];
+
+export function People() {
+  const [rows, setRows] = useState(SEED);
+  return (
+    <DataTable
+      data={rows}
+      columns={[
+        { key: "name", sortable: true, editable: true },
+        {
+          key: "status",
+          editable: true,
+          editor: {
+            type: "select",
+            options: ["Active", "Planned", "Blocked"],
+          },
+        },
+        { key: "role", editable: (row) => row.status !== "Blocked" },
+      ]}
+      rowKey={(r) => r.id}
+      onCellEdit={(row, key, nextValue) => {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === row.id ? { ...r, [key]: nextValue as never } : r
+          )
+        );
+      }}
+    />
+  );
+}
+```
+
+## How it works
+
+- **Opt-in.** `onCellEdit` is the switch. Without it, cells stay plain display
+  (package DNA: nothing is pushed on the developer).
+- **Per-column.** `editable` is `true`, `false`, or `(row) => boolean`. The
+  editor defaults to `"text"`; use `"number"` or
+  `{ type: "select", options }` for the other kits.
+- **Keyboard.** Double-click / Enter / F2 begins; Enter commits; Escape
+  cancels and restores focus; Tab / Shift+Tab commits and advances to the
+  next editable cell.
+- **One-way data flow.** The commit payload is
+  `onCellEdit(row, key, nextValue)` — adapters render kit-native inputs;
+  core owns the state machine so every kit behaves the same.
+- Out of scope (by design): row-level edit mode, validation UI, and
+  optimistic-update helpers — persistence stays with the host.
+
+## Options
+
+| Prop / field | Type                                                   | Default  | Description                                                                |
+| ------------ | ------------------------------------------------------ | -------- | -------------------------------------------------------------------------- |
+| `onCellEdit` | `(row: TRow, key: string, nextValue: unknown) => void` | —        | Change channel; its presence enables editing.                              |
+| `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
+| `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
+| `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+
+## Notes
+
+- Works on desktop rows and mobile cards, LTR and RTL.
+- Custom `Cell` / `accessor` still render in display mode; the editor replaces
+  them only while that cell is active.
+- Prefer updating your row list immutably in `onCellEdit` so React sees a new
+  `data` / source identity.
+
+See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/) —
+double-click the Email column.
+
+---
+
 # React table column management — show/hide, reorder, pin, resize
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
@@ -2010,6 +2108,16 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `detailRow` / `detailCell`    | The full-width detail `<tr>` and its spanning `<td>`. |
 | `cardDetail`                  | The detail section inside an expanded mobile card.    |
 
+### Inline cell editing
+
+Opt-in via `onCellEdit` — see [Inline cell editing](./cell-editing.md). When
+editing is dormant these parts are never mounted.
+
+| Part                 | Element                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `edit-cell-activate` | Invisible activate control (double-click / Enter / F2 begins edit). |
+| `edit-cell-editor`   | Kit-native input / select while the cell is active.                 |
+
 ### Mobile cards & summary
 
 | Part                                     | Element                                            |
@@ -2398,6 +2506,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `scrollTopGap`        | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                             |
 | `rowClassName`        | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                    |
 | `renderRowDetail`     | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                            |
+| `onCellEdit`          | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.  |
 | `summaryRow`          | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                |
 
 ### Virtualization
@@ -2427,23 +2536,26 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop            | Type                             | Default       | Description                                                                                                                                             |
-| --------------- | -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`           | `string`                         | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
-| `header`        | `ReactNode`                      | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
-| `group`         | `string`                         | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
-| `i18n`          | `Record<string, string>`         | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
-| `filter`        | `ColumnFilter<TRow>`             | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
-| `Cell`          | `ComponentType<CellProps<TRow>>` | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
-| `accessor`      | `(row: TRow) => ReactNode`       | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
-| `sortValue`     | `(row: TRow) => SortableValue`   | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
-| `sortable`      | `boolean`                        | `false`       | Enable sorting for this column.                                                                                                                         |
-| `width`         | `number \| string`               | —             | Column width passed through to the rendered header/cell.                                                                                                |
-| `align`         | `"start" \| "center" \| "end"`   | `"start"`     | Text alignment within the cell.                                                                                                                         |
-| `mobileLabel`   | `string`                         | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
-| `hideOnMobile`  | `boolean`                        | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
-| `hideOnDesktop` | `boolean`                        | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
-| `meta`          | `Record<string, unknown>`        | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
+| Prop            | Type                                                | Default       | Description                                                                                                                                             |
+| --------------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
+| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
+| `group`         | `string`                                            | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
+| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
+| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
+| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
+| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
+| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
+| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
+| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
+| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
+| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
+| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
+| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
+| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                           |
+| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                      |
+| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                             |
+| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
 
 ## FilterDef
 
@@ -2804,10 +2916,12 @@ near-100% test coverage across every adapter.
 ## When might another library fit better?
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  Excel-style fill-handle editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  (AdaptTable does ship opt-in single-cell editing — see
+  [Inline cell editing](./cell-editing.md).)
 - You're not on React → TanStack Table (multi-framework).
-- You need spreadsheet-grade enterprise features like pivoting, Excel-style
-  editing, or range selection _today_.
+- You need spreadsheet-grade enterprise features like pivoting, Excel fill
+  handles, or range selection _today_.
 
 ---
 
@@ -2904,6 +3018,7 @@ kits — only the look does. Every adapter ships the same batteries:
 | Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Inline cell editing (opt-in)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
@@ -3738,10 +3853,12 @@ material-table is a table-plus-CRUD-suite. AdaptTable deliberately isn't.
 If you depend on these, AdaptTable is the wrong target (Material React Table
 is the closer fit):
 
-- **Inline row/cell editing** (`editable`, `cellEditable`, `editComponent`) —
-  AdaptTable has no editing engine. The equivalent pattern is `rowActions`
-  opening your own form/dialog, with the built-in `confirm` seam for
-  destructive actions.
+- **Full row-edit CRUD suites** (`editable` as a material-table-style
+  object with `onRowAdd` / `onRowUpdate`) — AdaptTable ships **opt-in
+  inline cell editing** via `onCellEdit` + `ColumnDef.editable` (see
+  [Inline cell editing](./cell-editing.md)), not material-table's row
+  dialog engine. Multi-field forms still go through `rowActions` + your
+  own UI, with the built-in `confirm` seam for destructive actions.
 - **Drag-to-group aggregation** (`options.grouping`) — AdaptTable has
   presentational header groups, not runtime grouping.
 - **Tree data** (`parentChildData`) — not supported.
@@ -4028,7 +4145,7 @@ Grid-level (`<AgGridReact>` → `<DataTable>`):
 | `pinned: "left" \| "right"`         | pinning via Columns menu / `columnLayout`                       | Logical sides — RTL-correct.                  |
 | `hide`                              | `enableColumnMenu` + `columnLayout`                             | User-facing visibility lives in the menu.     |
 | `resizable` (default true)          | `resizableColumns` (table-level)                                | —                                             |
-| `editable`                          | — (see Gotchas)                                                 | No cell-editing engine.                       |
+| `editable`                          | `editable` + `editor` + table `onCellEdit`                      | Opt-in; no editor until `onCellEdit` is set.  |
 
 ## Before / after
 
@@ -4102,9 +4219,11 @@ table is your design system's, not a themed grid.
 - **Don't migrate the analytics grids.** Grouping, pivoting, aggregation,
   tree data, range selection, clipboard, Excel export have no AdaptTable
   equivalent — that's deliberate scope, not a roadmap gap.
-- **No cell editing.** AG Grid Community's inline editors don't map; the
-  AdaptTable pattern is `rowActions` opening your own form/dialog with the
-  built-in `confirm` seam.
+- **Cell editing is opt-in, not spreadsheet-grade.** Map AG Grid `editable`
+  columns to `ColumnDef.editable` + table `onCellEdit` (see
+  [Inline cell editing](./cell-editing.md)). Full Excel-style fill-handle /
+  clipboard editing stays out of scope — use `rowActions` + your own form
+  when you need a multi-field edit dialog.
 - **The imperative API disappears.** Anywhere you called
   `api.getSelectedRows()`, `api.setFilterModel()`, or `api.sizeColumnsToFit()`,
   you now read props/state (`onSelectionChange`, URL-synced filters, column

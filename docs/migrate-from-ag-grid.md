@@ -90,7 +90,7 @@ Grid-level (`<AgGridReact>` → `<DataTable>`):
 | `pinned: "left" \| "right"`         | pinning via Columns menu / `columnLayout`                       | Logical sides — RTL-correct.                  |
 | `hide`                              | `enableColumnMenu` + `columnLayout`                             | User-facing visibility lives in the menu.     |
 | `resizable` (default true)          | `resizableColumns` (table-level)                                | —                                             |
-| `editable`                          | — (see Gotchas)                                                 | No cell-editing engine.                       |
+| `editable`                          | `editable` + `editor` + table `onCellEdit`                      | Opt-in; no editor until `onCellEdit` is set.  |
 
 ## Before / after
 
@@ -164,9 +164,11 @@ table is your design system's, not a themed grid.
 - **Don't migrate the analytics grids.** Grouping, pivoting, aggregation,
   tree data, range selection, clipboard, Excel export have no AdaptTable
   equivalent — that's deliberate scope, not a roadmap gap.
-- **No cell editing.** AG Grid Community's inline editors don't map; the
-  AdaptTable pattern is `rowActions` opening your own form/dialog with the
-  built-in `confirm` seam.
+- **Cell editing is opt-in, not spreadsheet-grade.** Map AG Grid `editable`
+  columns to `ColumnDef.editable` + table `onCellEdit` (see
+  [Inline cell editing](./cell-editing.md)). Full Excel-style fill-handle /
+  clipboard editing stays out of scope — use `rowActions` + your own form
+  when you need a multi-field edit dialog.
 - **The imperative API disappears.** Anywhere you called
   `api.getSelectedRows()`, `api.setFilterModel()`, or `api.sizeColumnsToFit()`,
   you now read props/state (`onSelectionChange`, URL-synced filters, column

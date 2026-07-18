@@ -75,6 +75,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `scrollTopGap`        | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                             |
 | `rowClassName`        | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                    |
 | `renderRowDetail`     | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                            |
+| `onCellEdit`          | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.  |
 | `summaryRow`          | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                |
 
 ### Virtualization
@@ -104,23 +105,26 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop            | Type                             | Default       | Description                                                                                                                                             |
-| --------------- | -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`           | `string`                         | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
-| `header`        | `ReactNode`                      | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
-| `group`         | `string`                         | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
-| `i18n`          | `Record<string, string>`         | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
-| `filter`        | `ColumnFilter<TRow>`             | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
-| `Cell`          | `ComponentType<CellProps<TRow>>` | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
-| `accessor`      | `(row: TRow) => ReactNode`       | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
-| `sortValue`     | `(row: TRow) => SortableValue`   | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
-| `sortable`      | `boolean`                        | `false`       | Enable sorting for this column.                                                                                                                         |
-| `width`         | `number \| string`               | —             | Column width passed through to the rendered header/cell.                                                                                                |
-| `align`         | `"start" \| "center" \| "end"`   | `"start"`     | Text alignment within the cell.                                                                                                                         |
-| `mobileLabel`   | `string`                         | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
-| `hideOnMobile`  | `boolean`                        | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
-| `hideOnDesktop` | `boolean`                        | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
-| `meta`          | `Record<string, unknown>`        | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
+| Prop            | Type                                                | Default       | Description                                                                                                                                             |
+| --------------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
+| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
+| `group`         | `string`                                            | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
+| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
+| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
+| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
+| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
+| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
+| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
+| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
+| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
+| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
+| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
+| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
+| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                           |
+| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                      |
+| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                             |
+| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
 
 ## FilterDef
 
