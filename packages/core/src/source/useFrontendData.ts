@@ -146,7 +146,7 @@ export function useFrontendData<TRow>(
   const paged = resolvedMode === "paged";
 
   const state = useTableUrlState(urlOptions);
-  const { page, limit, search, sortBy, sortDir } = state;
+  const { page, limit, search, sortBy, sortDir, groupBy } = state;
 
   // Project each row's searchable text ONCE per dataset — not once per row
   // per keystroke. On large arrays the projector (which may JSON.stringify
@@ -232,10 +232,12 @@ export function useFrontendData<TRow>(
     search,
     sortBy,
     sortDir,
+    groupBy,
     extra: state.extra,
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    setGroupBy: state.setGroupBy,
     sortLevels: state.sortLevels,
     toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,

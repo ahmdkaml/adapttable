@@ -146,6 +146,7 @@ export function useDataTableShell<TRow>(
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,
+    grouping: chrome.grouping,
     dir: props.dir,
   };
 

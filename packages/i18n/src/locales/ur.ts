@@ -61,4 +61,7 @@ export const ur: Required<TableLabels> = {
   hideColumn: "کالم چھپائیں",
   exportCsv: "CSV برآمد کریں",
   editCell: "سیل میں ترمیم",
+  expandGroup: "گروپ پھیلائیں",
+  collapseGroup: "گروپ سکیڑیں",
+  groupCount: (count) => `(${count})`,
 };

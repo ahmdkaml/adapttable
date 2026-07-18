@@ -61,4 +61,7 @@ export const he: Required<TableLabels> = {
   hideColumn: "הסתר עמודה",
   exportCsv: "ייצוא CSV",
   editCell: "עריכת תא",
+  expandGroup: "הרחב קבוצה",
+  collapseGroup: "כווץ קבוצה",
+  groupCount: (count) => `(${count})`,
 };

@@ -17,6 +17,15 @@ import {
   mergeFilterChips,
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
+import {
+  buildGroupedFlatModel,
+  type GroupAggregatesFn,
+  type GroupedFlatEntry,
+} from "./grouping/groupRows";
+import {
+  type GroupCollapseState,
+  useGroupCollapse,
+} from "./grouping/useGroupCollapse";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
@@ -168,6 +177,19 @@ export interface TableChrome<TRow> {
     onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
     /** Headless active-cell / draft / keyboard state. */
     state: CellEditingState;
+  };
+  /**
+   * Row-grouping bundle — present iff an effective `groupBy` is set AND the
+   * source can supply a full filtered set (`allFilteredRows`). Omit
+   * `groupBy` and grouping stays fully dormant (package DNA: opt-in).
+   */
+  grouping?: {
+    groupBy: string;
+    collapsed: GroupCollapseState;
+    aggregates?: GroupAggregatesFn<TRow>;
+    /** Flat group-header + leaf entries for adapters to render. */
+    entries: readonly GroupedFlatEntry<TRow>[];
+    setGroupBy: (key: string | null) => void;
   };
   /** Whether the paged footer should render. */
   showFooter: boolean;
@@ -331,6 +353,64 @@ export function useTableChrome<TRow>(
     );
   }, [editing, source.rows, rowKey]);
 
+  const groupCollapse = useGroupCollapse({
+    collapsedIds: props.collapsedGroupIds,
+    onCollapsedIdsChange: props.onCollapsedGroupIdsChange,
+  });
+
+  // Effective groupBy: prop wins when provided (including `null` to force off);
+  // otherwise the URL/source value. Empty string is treated as unset.
+  const requestedGroupBy =
+    props.groupBy !== undefined ? (props.groupBy ?? undefined) : source.groupBy;
+  const effectiveGroupBy =
+    requestedGroupBy && requestedGroupBy.length > 0
+      ? requestedGroupBy
+      : undefined;
+
+  useEffect(() => {
+    if (!effectiveGroupBy) return;
+    if (source.allFilteredRows) return;
+    devWarn(
+      "groupBy is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot regroup a full result set; grouping is ignored."
+    );
+  }, [effectiveGroupBy, source.allFilteredRows]);
+
+  const setGroupBy = useCallback(
+    (key: string | null) => {
+      if (props.onGroupByChange) props.onGroupByChange(key);
+      else source.setGroupBy(key ?? undefined);
+    },
+    [props, source]
+  );
+
+  const getRowId = selectionGetId ?? rowKey;
+  const grouping = useMemo(() => {
+    if (!effectiveGroupBy || !source.allFilteredRows) return undefined;
+    const entries = buildGroupedFlatModel({
+      rows: source.allFilteredRows,
+      groupBy: effectiveGroupBy,
+      columns: columnLayout.visibleColumns,
+      getRowId,
+      collapsedIds: groupCollapse.collapsedIds,
+      aggregates: props.groupAggregates,
+    });
+    return {
+      groupBy: effectiveGroupBy,
+      collapsed: groupCollapse,
+      aggregates: props.groupAggregates,
+      entries,
+      setGroupBy,
+    };
+  }, [
+    effectiveGroupBy,
+    source.allFilteredRows,
+    columnLayout.visibleColumns,
+    getRowId,
+    groupCollapse,
+    props.groupAggregates,
+    setGroupBy,
+  ]);
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -340,7 +420,7 @@ export function useTableChrome<TRow>(
     table,
     isMobile,
     confirm,
-    getRowId: selectionGetId ?? rowKey,
+    getRowId,
     mergedChips,
     activeFilterCount,
     isPaged,
@@ -350,6 +430,7 @@ export function useTableChrome<TRow>(
     clearFilters,
     detail,
     editing,
+    grouping,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,

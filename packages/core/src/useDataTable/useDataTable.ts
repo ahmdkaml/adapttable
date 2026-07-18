@@ -288,7 +288,7 @@ export function useDataTable<TRow>(
   // changes — i.e. a new search term or a filter change. Keyed on the filter
   // *values* (not just the active count) so swapping one filter value for
   // another — same count, different rows — still clears the stale selection.
-  const selectionResetKey = `${source.search}|${stableKey(source.extra)}`;
+  const selectionResetKey = `${source.search}|${stableKey(source.extra)}|${source.groupBy ?? ""}`;
   const selectionState = useSelection<TRow>({
     rows: source.rows,
     getId,

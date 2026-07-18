@@ -59,4 +59,7 @@ export const ru: Required<TableLabels> = {
   hideColumn: "Скрыть столбец",
   exportCsv: "Экспорт CSV",
   editCell: "Изменить ячейку",
+  expandGroup: "Развернуть группу",
+  collapseGroup: "Свернуть группу",
+  groupCount: (count) => `(${count})`,
 };

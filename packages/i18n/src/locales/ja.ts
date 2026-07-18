@@ -59,4 +59,7 @@ export const ja: Required<TableLabels> = {
   hideColumn: "列を非表示",
   exportCsv: "CSVをエクスポート",
   editCell: "セルを編集",
+  expandGroup: "グループを展開",
+  collapseGroup: "グループを折りたたむ",
+  groupCount: (count) => `(${count})`,
 };

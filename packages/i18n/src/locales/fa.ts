@@ -60,4 +60,7 @@ export const fa: Required<TableLabels> = {
   hideColumn: "پنهان‌کردن ستون",
   exportCsv: "خروجی CSV",
   editCell: "ویرایش سلول",
+  expandGroup: "باز کردن گروه",
+  collapseGroup: "بستن گروه",
+  groupCount: (count) => `(${count})`,
 };

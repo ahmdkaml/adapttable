@@ -59,4 +59,7 @@ export const zhTW: Required<TableLabels> = {
   hideColumn: "隱藏欄位",
   exportCsv: "匯出 CSV",
   editCell: "編輯儲存格",
+  expandGroup: "展開群組",
+  collapseGroup: "摺疊群組",
+  groupCount: (count) => `(${count})`,
 };

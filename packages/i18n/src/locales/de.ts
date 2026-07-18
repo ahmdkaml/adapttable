@@ -60,4 +60,7 @@ export const de: Required<TableLabels> = {
   hideColumn: "Spalte ausblenden",
   exportCsv: "CSV exportieren",
   editCell: "Zelle bearbeiten",
+  expandGroup: "Gruppe erweitern",
+  collapseGroup: "Gruppe einklappen",
+  groupCount: (count) => `(${count})`,
 };

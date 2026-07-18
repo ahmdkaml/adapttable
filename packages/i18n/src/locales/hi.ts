@@ -60,4 +60,7 @@ export const hi: Required<TableLabels> = {
   hideColumn: "स्तंभ छिपाएँ",
   exportCsv: "CSV निर्यात करें",
   editCell: "सेल संपादित करें",
+  expandGroup: "समूह विस्तारित करें",
+  collapseGroup: "समूह संक्षिप्त करें",
+  groupCount: (count) => `(${count})`,
 };

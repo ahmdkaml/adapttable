@@ -56,6 +56,12 @@ export interface TableSource<TRow> extends TableStateMutators {
   readonly sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   readonly extra: ExtraFilters;
+  /**
+   * Active single-level row-grouping column key, if any. Frontend chrome
+   * builds the grouped flat model when set; server sources may echo the URL
+   * param but grouping stays dormant without `allFilteredRows`.
+   */
+  readonly groupBy: string | undefined;
 
   /* State (write) is the shared {@link TableStateMutators} contract. */
 }

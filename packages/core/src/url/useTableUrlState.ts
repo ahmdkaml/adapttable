@@ -14,6 +14,7 @@ import {
   FILTER_PREFIX,
   isEmptyFilterValue,
   MAX_LIMIT,
+  PARAM_GROUP_BY,
   PARAM_LIMIT,
   PARAM_PAGE,
   PARAM_SEARCH,
@@ -68,6 +69,8 @@ export interface UseTableUrlStateResult extends TableStateMutators {
   sortBy: string | undefined;
   /** Active sort direction, if any. */
   sortDir: SortDirection | undefined;
+  /** Active single-level row-grouping column key, if any. */
+  groupBy: string | undefined;
   /** The extra-filter bag. */
   extra: ExtraFilters;
 }
@@ -165,6 +168,9 @@ export function useTableUrlState(
     sortBy === undefined
       ? undefined
       : (readSortDir(params, ns) ?? sortDirFallback);
+  const groupByRaw = params.get(ns + PARAM_GROUP_BY);
+  const groupBy =
+    groupByRaw === null ? defaults.groupBy : groupByRaw || undefined;
   const sortLevels = useMemo(() => readSortLevels(params, ns), [params, ns]);
 
   /** Merge `defaults.extra` under the URL bag, honouring cleared markers. */
@@ -283,6 +289,17 @@ export function useTableUrlState(
     [commit, defaults.sortBy, ns, resetPage]
   );
 
+  const setGroupBy = useCallback(
+    (key: string | undefined) =>
+      commit((p) => {
+        if (key) p.set(ns + PARAM_GROUP_BY, key);
+        else if (defaults.groupBy) p.set(ns + PARAM_GROUP_BY, "");
+        else p.delete(ns + PARAM_GROUP_BY);
+        resetPage(p);
+      }),
+    [commit, defaults.groupBy, ns, resetPage]
+  );
+
   const toggleSortLevel = useCallback(
     (key: string) =>
       commit((p) => {
@@ -338,6 +355,8 @@ export function useTableUrlState(
         if (defaults.sortBy) p.set(ns + PARAM_SORT_BY, "");
         else p.delete(ns + PARAM_SORT_BY);
         p.delete(ns + PARAM_SORT_DIR);
+        if (defaults.groupBy) p.set(ns + PARAM_GROUP_BY, "");
+        else p.delete(ns + PARAM_GROUP_BY);
         resetPage(p);
         writeExtraWithDefaults(p, {});
       }),
@@ -345,6 +364,7 @@ export function useTableUrlState(
       commit,
       defaults.search,
       defaults.sortBy,
+      defaults.groupBy,
       ns,
       resetPage,
       writeExtraWithDefaults,
@@ -357,10 +377,12 @@ export function useTableUrlState(
     search: searchTerm,
     sortBy,
     sortDir,
+    groupBy,
     extra,
     setPage,
     setLimit,
     setSort,
+    setGroupBy,
     sortLevels,
     toggleSortLevel,
     setSearch,

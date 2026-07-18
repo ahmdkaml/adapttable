@@ -3,7 +3,7 @@
  * of React so they can be unit-tested directly and reused by any adapter.
  *
  * Conventions (compatible with shareable links):
- * - `page`, `limit`, `q`, `sortBy`, `sortDir` are top-level params.
+ * - `page`, `limit`, `q`, `sortBy`, `sortDir`, `groupBy` are top-level params.
  * - Extra (caller-defined) filters live under the `f_` prefix.
  * - Arrays serialise as comma-separated, percent-encoded values (so a value
  *   may itself contain a comma); numbers are parsed back.
@@ -37,6 +37,8 @@ export const PARAM_SORT_BY = "sortBy";
 export const PARAM_SORT_DIR = "sortDir";
 /** Multi-sort chain: `sort=name:asc,age:desc` (keys percent-encoded). */
 export const PARAM_SORT = "sort";
+/** Single-level row grouping column key. */
+export const PARAM_GROUP_BY = "groupBy";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
 /** Column-layout params (hidden / pinned / order / widths). */

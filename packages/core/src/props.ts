@@ -95,6 +95,28 @@ export interface BaseDataTableProps<TRow> {
    * under its columns; keys absent from the result render empty cells.
    */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /**
+   * Single-level row grouping by column key. Its presence (or
+   * `source.groupBy`) arms grouping chrome — omit it and the table never
+   * inserts group header rows (package DNA: opt-in). Frontend tier only;
+   * server-paginated sources get a devWarn and grouping is ignored.
+   */
+  groupBy?: string | null;
+  /** Controlled change channel for {@link groupBy}; falls back to `source.setGroupBy`. */
+  onGroupByChange?: (groupBy: string | null) => void;
+  /**
+   * Per-group aggregate cells — **same signature as {@link summaryRow}**.
+   * Called with each group's leaf rows. Omit for headers without subtotals.
+   */
+  groupAggregates?: (
+    rows: readonly TRow[]
+  ) => Partial<Record<string, ReactNode>>;
+  /**
+   * Controlled collapsed group keys (ephemeral — not URL-synced).
+   * Uncontrolled: internal {@link useGroupCollapse}.
+   */
+  collapsedGroupIds?: readonly string[];
+  onCollapsedGroupIdsChange?: (ids: string[]) => void;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
   /**

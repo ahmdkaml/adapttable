@@ -61,4 +61,7 @@ export const ar: Required<TableLabels> = {
   hideColumn: "إخفاء العمود",
   exportCsv: "تصدير CSV",
   editCell: "تعديل الخلية",
+  expandGroup: "توسيع المجموعة",
+  collapseGroup: "طي المجموعة",
+  groupCount: (count) => `(${count})`,
 };

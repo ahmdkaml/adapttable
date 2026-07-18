@@ -222,6 +222,8 @@ export interface TableQueryParams {
   search?: string;
   sortBy?: string;
   sortDir?: SortDirection;
+  /** Single-level row grouping column key (URL-synced; frontend chrome only). */
+  groupBy?: string;
 }
 
 /** Standard paginated response envelope. */
@@ -334,4 +336,10 @@ export interface TableLabels {
   exportCsv?: string;
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
+  /** Expand-group chevron accessible name. */
+  expandGroup?: string;
+  /** Collapse-group chevron accessible name. */
+  collapseGroup?: string;
+  /** Leaf-count suffix on a group header, e.g. `(12)`. */
+  groupCount?: (count: number) => string;
 }

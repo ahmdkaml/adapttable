@@ -62,6 +62,9 @@ export const defaultLabels: Required<TableLabels> = {
   hideColumn: "Hide column",
   exportCsv: "Export CSV",
   editCell: "Edit cell",
+  expandGroup: "Expand group",
+  collapseGroup: "Collapse group",
+  groupCount: (count) => `(${count})`,
 };
 
 /**

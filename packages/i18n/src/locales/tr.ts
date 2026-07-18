@@ -60,4 +60,7 @@ export const tr: Required<TableLabels> = {
   hideColumn: "Sütunu gizle",
   exportCsv: "CSV olarak dışa aktar",
   editCell: "Hücreyi düzenle",
+  expandGroup: "Grubu genişlet",
+  collapseGroup: "Grubu daralt",
+  groupCount: (count) => `(${count})`,
 };

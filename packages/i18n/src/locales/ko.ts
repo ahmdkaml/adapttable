@@ -59,4 +59,7 @@ export const ko: Required<TableLabels> = {
   hideColumn: "열 숨기기",
   exportCsv: "CSV 내보내기",
   editCell: "셀 편집",
+  expandGroup: "그룹 펼치기",
+  collapseGroup: "그룹 접기",
+  groupCount: (count) => `(${count})`,
 };

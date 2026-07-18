@@ -412,6 +412,25 @@ export {
   useCellEditing,
 } from "./editing/useCellEditing";
 
+/* ── Row grouping ──────────────────────────────────────────────────── */
+export {
+  buildGroupedFlatModel,
+  formatGroupLabel,
+  type GroupAggregatesFn,
+  type GroupedFlatEntry,
+  groupValueKey,
+  makeGroupRowKey,
+  resolveGroupValue,
+} from "./grouping/groupRows";
+export {
+  groupSelectionState,
+  nextGroupSelection,
+} from "./grouping/groupSelection";
+export {
+  type GroupCollapseState,
+  useGroupCollapse,
+} from "./grouping/useGroupCollapse";
+
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
 export {
