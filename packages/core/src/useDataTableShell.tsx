@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import { makeExportCsvHandler } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
@@ -160,6 +161,7 @@ export function useDataTableShell<TRow>(
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,
     showRowsPerPage: canLoadMore,
+    onExportCsv: makeExportCsvHandler(props.exportCsv, source, table.columns),
     dir: props.dir,
   };
 

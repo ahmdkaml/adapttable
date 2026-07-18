@@ -55,6 +55,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersButton`                                   | The Filters trigger button.                                                            |
 | `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
 | `filtersCount`                                    | The active-filter count badge.                                                         |
+| `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -181,6 +182,36 @@ height and padding. Each adapter maps it to its kit's table size — MUI
 `small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
 explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
+
+## CSV export
+
+Opt in with `exportCsv` to render a kit-native **Export CSV** button next to
+Filters / Columns. The file mirrors the current view: visible columns in
+display order, under the active search, filters, and sort.
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv // defaults: export.csv, current page
+/>
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv={{ filename: "people.csv", scope: "all" }}
+/>
+```
+
+- `scope: "page"` (default) — the current page / loaded slice.
+- `scope: "all"` — the full filtered+sorted set when the source exposes it
+  (frontend does); server-backed sources fall back to the current page unless
+  you wire your own download against an export endpoint via `toolbar`.
+
+Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
+`downloadTableCsv` from `@adapttable/core`.
 
 ## Sticky header, offset & scroll box
 

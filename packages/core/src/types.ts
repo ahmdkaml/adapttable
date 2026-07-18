@@ -312,4 +312,6 @@ export interface TableLabels {
   showColumn?: string;
   /** Accessible label prefix for the column-menu visibility toggle (hide). */
   hideColumn?: string;
+  /** Toolbar CSV export button. */
+  exportCsv?: string;
 }

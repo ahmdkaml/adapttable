@@ -58,4 +58,5 @@ export const de: Required<TableLabels> = {
   resizeColumn: "Spalte anpassen",
   showColumn: "Spalte einblenden",
   hideColumn: "Spalte ausblenden",
+  exportCsv: "CSV exportieren",
 };

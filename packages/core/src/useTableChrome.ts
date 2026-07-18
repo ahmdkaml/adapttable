@@ -70,6 +70,11 @@ export interface ToolbarChromeProps<TRow> {
   showRowsPerPage: boolean;
   /** Built column-menu node, when `enableColumnMenu` is set. */
   columnMenu?: ReactNode;
+  /**
+   * When set, render the Export CSV toolbar button and call this on click.
+   * Built by {@link makeExportCsvHandler} from the `exportCsv` prop.
+   */
+  onExportCsv?: () => void;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }

@@ -217,6 +217,7 @@ export function useFrontendData<TRow>(
 
   return {
     rows,
+    allFilteredRows: sorted,
     total,
     isLoading,
     isFetching,

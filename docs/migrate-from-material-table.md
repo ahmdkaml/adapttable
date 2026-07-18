@@ -77,7 +77,7 @@ Same Material look, on a current MUI — and your rows stay untouched.
 | `options.columnResizable`                            | `resizableColumns`                                    | —                                                                    |
 | `options.fixedColumns: { left, right }`              | column pinning via `columnLayout` / Columns menu      | Logical sides — RTL-correct.                                         |
 | `options.padding: "dense"`                           | `density="compact"`                                   | —                                                                    |
-| `options.exportButton`                               | `rowsToCsv` / `downloadCsv` + `toolbar`               | CSV headless helper; PDF is out of scope.                            |
+| `options.exportButton`                               | `exportCsv` / `rowsToCsv` + `downloadCsv`             | Built-in CSV button or headless helper; PDF is out of scope.         |
 | `options.maxBodyHeight`                              | `maxHeight`                                           | Enables the scroll box + sticky pinning.                             |
 | `localization`                                       | `labels` (+ [`@adapttable/i18n`](./i18n-rtl.md))      | Flat label object; presets for 10 locales incl. RTL.                 |
 | `isLoading`                                          | `loading`                                             | —                                                                    |

@@ -116,6 +116,7 @@ export function Toolbar<TRow>({
   onClearFilters,
   dir,
   columnMenu,
+  onExportCsv,
 }: Readonly<MuiToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
@@ -214,6 +215,11 @@ export function Toolbar<TRow>({
           />
         )}
         {columnMenu}
+        {onExportCsv && (
+          <Button variant="outlined" size="small" onClick={onExportCsv}>
+            {labels.exportCsv}
+          </Button>
+        )}
         {showRowsPerPage && (
           <TextField
             select

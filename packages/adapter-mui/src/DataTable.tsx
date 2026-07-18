@@ -2,6 +2,7 @@ import type { RowAction, UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
+  makeExportCsvHandler,
   resolveLabels,
   useChromeBodyData,
   useChromeScrollReset,
@@ -289,6 +290,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearFilters={c.clearFilters}
           dir={props.dir}
           columnMenu={columnMenu}
+          onExportCsv={makeExportCsvHandler(
+            props.exportCsv,
+            source,
+            table.columns
+          )}
         />
         {c.isRefreshing && <LinearProgress aria-label={labels.loading} />}
         <Chips

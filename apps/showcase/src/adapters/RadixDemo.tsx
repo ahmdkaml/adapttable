@@ -109,6 +109,7 @@ export function RadixDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            exportCsv
             animate={animate}
             resizableColumns
             stickyHeader

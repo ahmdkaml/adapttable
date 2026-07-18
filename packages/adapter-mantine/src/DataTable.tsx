@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
+  makeExportCsvHandler,
   resolveLabels,
   type TableLabels,
   useChromeBodyData,
@@ -137,6 +138,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     stickyHeader = false,
     enableColumnMenu = false,
     savedViews,
+    exportCsv,
   } = chromeProps;
   const density = chromeProps.density ?? "comfortable";
 
@@ -310,6 +312,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                   />
                 </>
               }
+              onExportCsv={makeExportCsvHandler(
+                exportCsv,
+                source,
+                table.columns
+              )}
               showRowsPerPage={canLoadMore}
             />
             <ActiveFilterChips

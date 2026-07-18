@@ -123,6 +123,7 @@ export function MuiDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            exportCsv
             animate={animate}
             resizableColumns
             stickyHeader

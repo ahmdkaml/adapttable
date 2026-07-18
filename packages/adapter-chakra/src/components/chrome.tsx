@@ -72,6 +72,7 @@ export function Toolbar<TRow>({
   onClearFilters,
   savedViewsMenu,
   columnMenu,
+  onExportCsv,
   showRowsPerPage,
   colorScheme,
   dir,
@@ -172,6 +173,16 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onExportCsv && (
+          <Button
+            size="sm"
+            variant="outline"
+            colorPalette={colorScheme}
+            onClick={onExportCsv}
+          >
+            {labels.exportCsv}
+          </Button>
+        )}
         {showRowsPerPage && (
           <NativeSelect
             size="sm"

@@ -59,4 +59,5 @@ export const ar: Required<TableLabels> = {
   resizeColumn: "تغيير حجم العمود",
   showColumn: "إظهار العمود",
   hideColumn: "إخفاء العمود",
+  exportCsv: "تصدير CSV",
 };

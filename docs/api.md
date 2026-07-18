@@ -58,23 +58,24 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Appearance & chrome
 
-| Prop                  | Type                                                            | Default         | Description                                                                                         |
-| --------------------- | --------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
-| `tableLabel`          | `string`                                                        | —               | Accessible label for the table.                                                                     |
-| `labels`              | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                         |
-| `dir`                 | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                     |
-| `locale`              | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.          |
-| `density`             | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                          |
-| `isMobile`            | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                     |
-| `toolbar`             | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, export buttons, …).                          |
-| `skeletonRows`        | `number`                                                        | page size       | Number of skeleton rows while loading.                                                              |
-| `stickyHeader`        | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                               |
-| `stickyTop`           | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                  |
-| `scrollToTopOnChange` | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                           |
-| `scrollTopGap`        | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                  |
-| `rowClassName`        | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                         |
-| `renderRowDetail`     | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id. |
-| `summaryRow`          | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                     |
+| Prop                  | Type                                                            | Default         | Description                                                                                                                                    |
+| --------------------- | --------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tableLabel`          | `string`                                                        | —               | Accessible label for the table.                                                                                                                |
+| `labels`              | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                    |
+| `dir`                 | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                |
+| `locale`              | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                     |
+| `density`             | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                     |
+| `isMobile`            | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                |
+| `toolbar`             | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                  |
+| `exportCsv`           | `boolean \| { filename?: string; scope?: "page" \| "all" }`     | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page; `scope: "all"` uses the full filtered set when the source provides it. |
+| `skeletonRows`        | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                         |
+| `stickyHeader`        | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                          |
+| `stickyTop`           | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                             |
+| `scrollToTopOnChange` | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                      |
+| `scrollTopGap`        | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                             |
+| `rowClassName`        | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                    |
+| `renderRowDetail`     | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                            |
+| `summaryRow`          | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                |
 
 ### Virtualization
 
@@ -242,8 +243,9 @@ All from `@adapttable/core`.
 - `useDebounce(value, ms)`, `useMediaQuery(query)`, `useIsMobile()`,
   `usePrefersReducedMotion()`, `useColorScheme(preference)`.
 
-Notable non-hook helpers: `rowsToCsv` / `downloadCsv` (CSV export from your
-column defs), `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
+Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
+(CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
+`sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
 `computePagination`, `headerGroupRow`, `columnMenuRows` +
 `columnRowDragProps` / `columnDropProps` / `columnReorderKeyProps` /
 `columnResizeHandleProps` (RTL-aware), `pinnedCellStyle` / `edgePinStyle` /

@@ -374,3 +374,11 @@ export {
 
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
+export {
+  buildTableCsv,
+  downloadTableCsv,
+  exportableColumns,
+  type ExportCsvOptions,
+  makeExportCsvHandler,
+  resolveExportCsv,
+} from "./export/tableCsv";

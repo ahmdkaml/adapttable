@@ -18,6 +18,12 @@ export interface TableSource<TRow> extends TableStateMutators {
   /* ── Data ────────────────────────────────────────────────────────── */
   /** The current materialised rows for the active page/slice. */
   readonly rows: readonly TRow[];
+  /**
+   * Every row matching the active search/filters/sort, unpaginated.
+   * Frontend sources set this; server sources typically omit it (only the
+   * current page is loaded). CSV `scope: "all"` prefers this when present.
+   */
+  readonly allFilteredRows?: readonly TRow[];
   /** Total row count across all pages (server total or full array length). */
   readonly total: number;
   /** True during the first load (no data yet). */

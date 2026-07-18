@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type {
   ActiveFilterChip,
@@ -172,6 +173,12 @@ export interface BaseDataTableProps<TRow> {
   onSelectionChange?: (selectedIds: string[]) => void;
 
   /* ── Customisation (common) ──────────────────────────────────────── */
+  /**
+   * Opt-in CSV export toolbar button. Pass `true` for defaults
+   * (`export.csv`, current page) or an options object for filename/scope.
+   * Omit or `false` to hide the button.
+   */
+  exportCsv?: boolean | ExportCsvOptions;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
   /** Confirmation handler for actions; defaults to `window.confirm`. */

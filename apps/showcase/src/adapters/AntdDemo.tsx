@@ -132,6 +132,7 @@ export function AntdDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            exportCsv
             animate={animate}
             resizableColumns
             filters={demoFilterDefs(locale)}

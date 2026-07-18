@@ -4,6 +4,7 @@ import {
   DEFAULT_CARD_SIZE_PX,
   type FilterRuntime,
   isDeclarativeFilters,
+  makeExportCsvHandler,
   pageSizeOptions,
   resolveLabels,
   rowClickProps,
@@ -760,6 +761,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               hasRowActions={Boolean(props.rowActions?.length)}
             />
           }
+          onExportCsv={makeExportCsvHandler(
+            props.exportCsv,
+            source,
+            table.columns
+          )}
           savedViewsMenu={
             <SavedViewsSlot
               options={props.savedViews}

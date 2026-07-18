@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
+  makeExportCsvHandler,
   type TableSource,
   type TableVirtualization,
   useChromeBodyData,
@@ -276,6 +277,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     </button>
   );
 
+  const onExportCsv = makeExportCsvHandler(
+    props.exportCsv,
+    source,
+    table.columns
+  );
+
   return (
     <div
       ref={rootRef}
@@ -375,6 +382,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             classNames={classNames}
             hasRowActions={(props.rowActions?.length ?? 0) > 0}
           />
+        )}
+        {onExportCsv && (
+          <button
+            type="button"
+            data-adapttable-part="export-csv-button"
+            className={classNames.exportCsvButton}
+            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+            onClick={onExportCsv}
+          >
+            {labels.exportCsv}
+          </button>
         )}
         {props.savedViews && (
           // The menu must capture/apply through the SAME URL backend and

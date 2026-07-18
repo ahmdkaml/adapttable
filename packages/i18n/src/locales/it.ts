@@ -57,4 +57,5 @@ export const it: Required<TableLabels> = {
   resizeColumn: "Ridimensiona colonna",
   showColumn: "Mostra colonna",
   hideColumn: "Nascondi colonna",
+  exportCsv: "Esporta CSV",
 };
