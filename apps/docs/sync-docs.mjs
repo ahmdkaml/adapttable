@@ -39,7 +39,7 @@ const TITLES = {
   "customization.md":
     "Customize AdaptTable — slots, classNames, headless prop-getters",
   "url-state.md": "React table URL state — shareable filters, sort, and page",
-  "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew, 10 locales",
+  "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew, 17 locales",
   "api.md": "AdaptTable API reference — DataTable, columns, hooks",
   "faq.md": "AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR",
   "comparison.md":

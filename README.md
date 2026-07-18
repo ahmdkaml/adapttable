@@ -101,7 +101,7 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 | `@adapttable/base-ui`  | Base UI adapter — batteries-included `<DataTable>` on `@base-ui/react`.    |
 | `@adapttable/unstyled` | Headless primitives + Tailwind / shadcn classes.                           |
 | `@adapttable/shadcn`   | shadcn/ui adapter — the unstyled adapter pre-wired with the shadcn preset. |
-| `@adapttable/i18n`     | Optional locale presets (10 languages, incl. RTL) + direction helpers.     |
+| `@adapttable/i18n`     | Optional locale presets (17 languages, incl. RTL) + direction helpers.     |
 | `@adapttable/cli`      | `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.    |
 
 ## Install

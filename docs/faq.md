@@ -83,9 +83,10 @@ const source = useBackendData({ usePaginatedQuery });
 
 Yes, RTL is first-class. Column alignment uses **logical CSS** (`start`/`end`),
 so it flips automatically under `dir="rtl"`. The optional `@adapttable/i18n`
-package ships **10 locales** — English, Arabic, German, Spanish, French,
-Hebrew, Italian, Japanese, Portuguese, and Chinese — plus `getDirection` /
-`isRtlLocale` helpers. Arabic and Hebrew are right-to-left.
+package ships **17 locales** — English, Arabic, German, Spanish, Persian,
+French, Hebrew, Hindi, Italian, Japanese, Korean, Portuguese, Russian,
+Turkish, Urdu, Simplified Chinese, and Traditional Chinese — plus `getDirection` /
+`isRtlLocale` helpers. Arabic, Hebrew, Persian, and Urdu are right-to-left.
 
 ## Does it have dark mode?
 
