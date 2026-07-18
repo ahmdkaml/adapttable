@@ -58,4 +58,5 @@ export const ko: Required<TableLabels> = {
   showColumn: "열 표시",
   hideColumn: "열 숨기기",
   exportCsv: "CSV 내보내기",
+  editCell: "셀 편집",
 };

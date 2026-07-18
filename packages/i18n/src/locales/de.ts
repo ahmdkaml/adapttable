@@ -59,4 +59,5 @@ export const de: Required<TableLabels> = {
   showColumn: "Spalte einblenden",
   hideColumn: "Spalte ausblenden",
   exportCsv: "CSV exportieren",
+  editCell: "Zelle bearbeiten",
 };

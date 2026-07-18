@@ -135,6 +135,7 @@ function DataTableBody<TRow>({
       renderRowDetail={props.renderRowDetail}
       summaryRow={props.summaryRow}
       expansion={chrome.detail?.expansion}
+      editing={chrome.editing}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}

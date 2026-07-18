@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  type EditableCellEditing,
   headerGroupRow,
   PIN_Z,
   type PinLeads,
@@ -11,6 +12,7 @@ import {
   resolveDisabledReason,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
@@ -32,6 +34,7 @@ import type { CSSProperties, MouseEvent, ReactNode, RefObject } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { type Density, DENSITY_SPACING } from "../density";
+import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
@@ -240,6 +243,7 @@ interface DesktopRowProps<TRow> {
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   cancelLabel: string;
+  editLabel: string;
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
   /** Resolved `rowClassName(row, index)` output. */
@@ -252,6 +256,10 @@ interface DesktopRowProps<TRow> {
   actionsCellStyle?: CSSProperties;
   /** Fingerprint of the pin layout, compared instead of the styles above. */
   pinSignature: string;
+  editing: EditableCellEditing<TRow> | undefined;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -264,7 +272,10 @@ type UncomparedRowProp =
   | "pinStyleFor"
   | "selectionCellStyle"
   | "expansionCellStyle"
-  | "actionsCellStyle";
+  | "actionsCellStyle"
+  | "editing"
+  | "rows"
+  | "getRowId";
 
 /** Every row prop the memo comparator checks with `Object.is`. */
 const COMPARED_ROW_PROPS: readonly Exclude<
@@ -288,11 +299,13 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   "rowActions",
   "confirm",
   "cancelLabel",
+  "editLabel",
   "onRowClick",
   "prefetch",
   "className",
   "measureElement",
   "pinSignature",
+  "editingSignature",
 ];
 
 /**
@@ -367,6 +380,7 @@ function DesktopRowBase<TRow>({
   rowActions,
   confirm,
   cancelLabel,
+  editLabel,
   onRowClick,
   prefetch,
   className,
@@ -375,6 +389,9 @@ function DesktopRowBase<TRow>({
   selectionCellStyle,
   expansionCellStyle,
   actionsCellStyle,
+  editing,
+  rows,
+  getRowId,
 }: Readonly<DesktopRowProps<TRow>>) {
   const showActions = (rowActions?.length ?? 0) > 0;
   return (
@@ -414,11 +431,23 @@ function DesktopRowBase<TRow>({
             {...getCellProps(column)}
             style={pinStyleFor(column.key)}
           >
-            {column.Cell ? (
-              <column.Cell row={row} rowIndex={index} />
-            ) : (
-              column.accessor?.(row)
-            )}
+            <EditableDataCell
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={editLabel}
+              display={
+                column.Cell ? (
+                  <column.Cell row={row} rowIndex={index} />
+                ) : (
+                  column.accessor?.(row)
+                )
+              }
+            />
           </Table.Td>
         ))}
         {showActions && (
@@ -453,6 +482,7 @@ export function DesktopTable<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   getRowId,
   bodyRef,
   className,
@@ -768,6 +798,7 @@ export function DesktopTable<TRow>({
                 rowActions={rowActions}
                 confirm={confirm}
                 cancelLabel={labels.cancel}
+                editLabel={labels.editCell}
                 onRowClick={onRowClick}
                 prefetch={prefetch}
                 className={rowClassName?.(row, index)}
@@ -777,6 +808,10 @@ export function DesktopTable<TRow>({
                 expansionCellStyle={expansionCellStyle}
                 actionsCellStyle={actionsCellStyle}
                 pinSignature={pinSignature}
+                editing={editing}
+                rows={rows}
+                getRowId={getRowId}
+                editingSignature={rowEditingSignature(editing, id)}
               />
             );
           })}

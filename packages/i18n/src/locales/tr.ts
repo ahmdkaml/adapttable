@@ -59,4 +59,5 @@ export const tr: Required<TableLabels> = {
   showColumn: "Sütunu göster",
   hideColumn: "Sütunu gizle",
   exportCsv: "CSV olarak dışa aktar",
+  editCell: "Hücreyi düzenle",
 };

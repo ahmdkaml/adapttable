@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type Direction,
+  type EditableCellEditing,
   ExpandChevron,
   headerGroupRow,
   logicalAlign,
@@ -17,6 +18,7 @@ import {
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   type RowExpansionState,
   runRowAction,
   type SelectionState,
@@ -51,6 +53,7 @@ import {
 } from "react";
 
 import { subtleText } from "../styles";
+import { EditableDataCell } from "./EditableCell";
 import { Checkbox, Tooltip } from "./primitives";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
@@ -249,6 +252,10 @@ interface DesktopRowProps<TRow> {
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
   measureRef: (element: HTMLTableRowElement | null) => void;
+  editing: EditableCellEditing<TRow> | undefined;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -259,6 +266,7 @@ interface DesktopRowProps<TRow> {
 const ROW_VISUAL_KEYS = [
   ...SHARED_DESKTOP_ROW_KEYS,
   "colorScheme",
+  "editingSignature",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -288,6 +296,9 @@ function DesktopRowBase<TRow>({
   columnSpan,
   api,
   measureRef,
+  editing,
+  rows,
+  getRowId,
 }: Readonly<DesktopRowProps<TRow>>) {
   // Render-time geometry reads the latest ref values: whenever they change,
   // a compared prop (pinSignature / hasSelection / …) changes with them.
@@ -342,11 +353,23 @@ function DesktopRowBase<TRow>({
             textAlign={logicalAlign(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
           >
-            {column.Cell ? (
-              <column.Cell row={row} rowIndex={index} />
-            ) : (
-              column.accessor?.(row)
-            )}
+            <EditableDataCell
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={labels.editCell}
+              display={
+                column.Cell ? (
+                  <column.Cell row={row} rowIndex={index} />
+                ) : (
+                  column.accessor?.(row)
+                )
+              }
+            />
           </Table.Cell>
         ))}
         {showActions && (
@@ -400,6 +423,7 @@ export function DesktopTable<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   className,
   rowEntries,
   paddingTop = 0,
@@ -719,6 +743,10 @@ export function DesktopTable<TRow>({
                 columnSpan={columnSpan}
                 api={api}
                 measureRef={measureRef}
+                editing={editing}
+                rows={rows}
+                getRowId={getRowId}
+                editingSignature={rowEditingSignature(editing, id)}
               />
             );
           })}
@@ -772,6 +800,7 @@ export function MobileCards<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   className,
   rowEntries,
   paddingTop = 0,
@@ -830,11 +859,23 @@ export function MobileCards<TRow>({
                   {/* Cells are arbitrary ReactNode (often block elements) —
                       a <p> wrapper would be invalid HTML. */}
                   <Text as="div" fontSize="sm">
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
+                    <EditableDataCell
+                      editing={editing}
+                      row={row}
+                      column={column}
+                      rowId={id}
+                      rows={rows}
+                      columns={columns}
+                      rowKey={getRowId}
+                      editLabel={labels.editCell}
+                      display={
+                        column.Cell ? (
+                          <column.Cell row={row} rowIndex={index} />
+                        ) : (
+                          column.accessor?.(row)
+                        )
+                      }
+                    />
                   </Text>
                 </Box>
               ))}

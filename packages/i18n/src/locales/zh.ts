@@ -58,4 +58,5 @@ export const zh: Required<TableLabels> = {
   showColumn: "显示列",
   hideColumn: "隐藏列",
   exportCsv: "导出 CSV",
+  editCell: "编辑单元格",
 };

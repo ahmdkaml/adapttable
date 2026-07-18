@@ -58,4 +58,5 @@ export const fr: Required<TableLabels> = {
   showColumn: "Afficher la colonne",
   hideColumn: "Masquer la colonne",
   exportCsv: "Exporter en CSV",
+  editCell: "Modifier la cellule",
 };

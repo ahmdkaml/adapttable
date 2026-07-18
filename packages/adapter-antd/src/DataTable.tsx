@@ -593,6 +593,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     sortDir: source.sortDir,
     confirm,
     labels,
+    editing: c.editing,
+    rows: source.rows,
+    getRowId,
     pinned: c.columnLayout.state.pinned,
     setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
     columnWidths: c.columnLayout.state.widths,
@@ -681,6 +684,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         tableLabel={resolvedTableLabel}
         compact={(props.density ?? "comfortable") === "compact"}
         expansion={c.detail?.expansion}
+        editing={c.editing}
         renderRowDetail={c.detail?.render}
         summaryRow={props.summaryRow}
         {...cardWindow}

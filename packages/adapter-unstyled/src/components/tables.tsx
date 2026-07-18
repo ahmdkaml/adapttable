@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  type EditableCellEditing,
   headerGroupRow,
   PIN_Z,
   type PinLeads,
@@ -13,6 +14,7 @@ import {
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   runRowAction,
   type SharedTableRenderProps,
   type TableLabels,
@@ -26,6 +28,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
+import { EditableDataCell } from "./EditableCell";
 import { ChevronIcon } from "./icons";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
@@ -194,6 +197,16 @@ interface DesktopRowProps<TRow> {
   rowClass: string | undefined;
   clickable: boolean;
   hasPrefetch: boolean;
+  /**
+   * Opt-in editing bundle — uncompared; visual churn is fingerprinted by
+   * `editingSignature` so idle rows bail out while the active draft updates.
+   */
+  editing: EditableCellEditing<TRow> | undefined;
+  /** Page rows for Tab advance — uncompared (see `editing`). */
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  /** Memo digest from {@link rowEditingSignature}. */
+  editingSignature: string | null;
   /* Latest-ref wrappers from DesktopTable — identity-stable for the mount. */
   onRowClick: (row: TRow) => void;
   onPrefetch: (row: TRow) => void;
@@ -232,7 +245,8 @@ function desktopRowPropsEqual<TRow>(
     prev.actionsPinned === next.actionsPinned &&
     prev.rowClass === next.rowClass &&
     prev.clickable === next.clickable &&
-    prev.hasPrefetch === next.hasPrefetch
+    prev.hasPrefetch === next.hasPrefetch &&
+    prev.editingSignature === next.editingSignature
   );
 }
 
@@ -260,6 +274,9 @@ function DesktopRowBase<TRow>(
     rowClass,
     clickable,
     hasPrefetch,
+    editing,
+    rows,
+    getRowId,
     onRowClick,
     onPrefetch,
     onToggleSelect,
@@ -328,11 +345,23 @@ function DesktopRowBase<TRow>(
               data-pinned={pinOffset?.(column.key)?.side}
               className={classNames.cell}
             >
-              {column.Cell ? (
-                <column.Cell row={row} rowIndex={index} />
-              ) : (
-                column.accessor?.(row)
-              )}
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+                display={
+                  column.Cell ? (
+                    <column.Cell row={row} rowIndex={index} />
+                  ) : (
+                    column.accessor?.(row)
+                  )
+                }
+              />
             </td>
           );
         })}
@@ -392,6 +421,7 @@ export function DesktopTable<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -745,6 +775,10 @@ export function DesktopTable<TRow>({
               onToggleExpand={onToggleExpand}
               renderDetail={renderDetail}
               measureElement={measureElement}
+              editing={editing}
+              rows={rows}
+              getRowId={getRowId}
+              editingSignature={rowEditingSignature(editing, id)}
             />
           );
         })}
@@ -814,6 +848,7 @@ export function MobileCards<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -885,11 +920,23 @@ export function MobileCards<TRow>({
                   data-adapttable-part="card-value"
                   className={classNames.cardValue}
                 >
-                  {column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )}
+                  <EditableDataCell
+                    editing={editing}
+                    row={row}
+                    column={column}
+                    rowId={id}
+                    rows={rows}
+                    columns={columns}
+                    rowKey={getRowId}
+                    editLabel={labels.editCell}
+                    display={
+                      column.Cell ? (
+                        <column.Cell row={row} rowIndex={index} />
+                      ) : (
+                        column.accessor?.(row)
+                      )
+                    }
+                  />
                 </span>
               </div>
             ))}

@@ -3,6 +3,7 @@ import {
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
+  type EditableCellEditing,
   headerGroupRow,
   type PinSide,
   resolveDisabledReason,
@@ -16,6 +17,7 @@ import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type { CSSProperties, HTMLAttributes, MouseEvent } from "react";
 
 import { isDangerColor } from "./colors";
+import { EditableDataCell } from "./components/EditableCell";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
@@ -204,6 +206,11 @@ export interface BuildColumnsOptions<TRow> {
   sortDir: SortDirection | undefined;
   confirm: ConfirmHandler;
   labels: Required<TableLabels>;
+  /** Opt-in editing bundle — omit and cells stay display-only. */
+  editing?: EditableCellEditing<TRow>;
+  /** Current page rows (Tab advance); required when editing is set. */
+  rows?: readonly TRow[];
+  getRowId?: (row: TRow) => string;
   /** Per-column edge pinning (logical start/end), mapped to antd's native
    *  physical `fixed` via {@link antdFixed}. */
   pinned?: Readonly<Record<string, PinSide>>;
@@ -235,6 +242,9 @@ export function buildColumns<TRow>({
   sortDir,
   confirm,
   labels,
+  editing,
+  rows = [],
+  getRowId = () => "",
   pinned,
   setWidth,
   columnWidths,
@@ -289,12 +299,19 @@ export function buildColumns<TRow>({
           pinned?.[column.key] != null,
           onToggleSortLevel
         ),
-      render: (_value: unknown, row: TRow, index: number) =>
-        column.Cell ? (
-          <column.Cell row={row} rowIndex={index} />
-        ) : (
-          column.accessor?.(row)
-        ),
+      render: (_value: unknown, row: TRow, index: number) => (
+        <EditableDataCell
+          editing={editing}
+          row={row}
+          column={column}
+          rowId={getRowId(row)}
+          rowIndex={index}
+          rows={rows}
+          columns={columns}
+          rowKey={getRowId}
+          editLabel={labels.editCell}
+        />
+      ),
     };
   });
   const cols = groupColumns(columns, leaves);

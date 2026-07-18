@@ -58,4 +58,5 @@ export const ru: Required<TableLabels> = {
   showColumn: "Показать столбец",
   hideColumn: "Скрыть столбец",
   exportCsv: "Экспорт CSV",
+  editCell: "Изменить ячейку",
 };

@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   edgePinStyle,
+  type EditableCellEditing,
   headerGroupRow,
   PIN_Z,
   type PinLeads,
@@ -12,6 +13,7 @@ import {
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   runRowAction,
   type SharedTableRenderProps,
   tableMinWidth,
@@ -51,6 +53,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+
+import { EditableDataCell } from "./EditableCell";
 
 /** Map a destructive colour token to MUI's `"error"` palette, else default. */
 function muiColor(color: string | undefined): "default" | "error" {
@@ -260,6 +264,11 @@ interface DesktopRowProps<TRow> {
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
   measureElement?: (element: Element | null) => void;
+  editLabel: string;
+  editing: EditableCellEditing<TRow> | undefined;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -288,6 +297,8 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "cancelLabel",
   "expandLabel",
   "collapseLabel",
+  "editLabel",
+  "editingSignature",
 ];
 
 function desktopRowPropsAreEqual(
@@ -323,6 +334,10 @@ function DesktopRowImpl<TRow>({
   onRowClick,
   prefetch,
   measureElement,
+  editLabel,
+  editing,
+  rows,
+  getRowId,
 }: Readonly<DesktopRowProps<TRow>>) {
   return (
     <>
@@ -359,11 +374,17 @@ function DesktopRowImpl<TRow>({
         )}
         {columns.map((column) => (
           <TableCell key={column.key} sx={sx.cells[column.key]}>
-            {column.Cell ? (
-              <column.Cell row={row} rowIndex={index} />
-            ) : (
-              column.accessor?.(row)
-            )}
+            <EditableDataCell
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rowIndex={index}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={editLabel}
+            />
           </TableCell>
         ))}
         {showActions && (
@@ -414,6 +435,7 @@ export function DesktopTable<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -743,6 +765,11 @@ export function DesktopTable<TRow>({
                 onRowClick={onRowClick}
                 prefetch={prefetch}
                 measureElement={measureElement}
+                editLabel={labels.editCell}
+                editing={editing}
+                rows={rows}
+                getRowId={getRowId}
+                editingSignature={rowEditingSignature(editing, id)}
               />
             );
           })}
@@ -800,6 +827,7 @@ export function MobileCards<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -869,11 +897,17 @@ export function MobileCards<TRow>({
                   {/* Cells are arbitrary ReactNode (often block elements) —
                       a <p> wrapper would be invalid HTML. */}
                   <Typography component="div" variant="body2">
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
+                    <EditableDataCell
+                      editing={editing}
+                      row={row}
+                      column={column}
+                      rowId={id}
+                      rowIndex={index}
+                      rows={rows}
+                      columns={columns}
+                      rowKey={getRowId}
+                      editLabel={labels.editCell}
+                    />
                   </Typography>
                 </Box>
               ))}

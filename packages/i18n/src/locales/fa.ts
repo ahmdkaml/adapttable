@@ -59,4 +59,5 @@ export const fa: Required<TableLabels> = {
   showColumn: "نمایش ستون",
   hideColumn: "پنهان‌کردن ستون",
   exportCsv: "خروجی CSV",
+  editCell: "ویرایش سلول",
 };

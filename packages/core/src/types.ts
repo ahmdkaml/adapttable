@@ -332,4 +332,6 @@ export interface TableLabels {
   hideColumn?: string;
   /** Toolbar CSV export button. */
   exportCsv?: string;
+  /** Accessible name for starting inline cell edit (double-click / activate). */
+  editCell?: string;
 }

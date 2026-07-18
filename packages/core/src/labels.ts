@@ -61,6 +61,7 @@ export const defaultLabels: Required<TableLabels> = {
   showColumn: "Show column",
   hideColumn: "Hide column",
   exportCsv: "Export CSV",
+  editCell: "Edit cell",
 };
 
 /**

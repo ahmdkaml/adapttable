@@ -59,4 +59,5 @@ export const hi: Required<TableLabels> = {
   showColumn: "स्तंभ दिखाएँ",
   hideColumn: "स्तंभ छिपाएँ",
   exportCsv: "CSV निर्यात करें",
+  editCell: "सेल संपादित करें",
 };

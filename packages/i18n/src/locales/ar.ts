@@ -60,4 +60,5 @@ export const ar: Required<TableLabels> = {
   showColumn: "إظهار العمود",
   hideColumn: "إخفاء العمود",
   exportCsv: "تصدير CSV",
+  editCell: "تعديل الخلية",
 };

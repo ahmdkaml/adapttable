@@ -1,10 +1,12 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  type EditableCellEditing,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   type RowExpansionState,
   runRowAction,
   type TableLabels,
@@ -15,6 +17,7 @@ import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 import { type ReactNode, useMemo } from "react";
 
 import { isDangerColor } from "../colors";
+import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 
 /** The mobile-card label for a column: explicit `mobileLabel`, else a string
@@ -121,6 +124,10 @@ interface CardItemProps<TRow> {
   /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
+  editing?: EditableCellEditing<TRow>;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -150,7 +157,11 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
     renderDetail,
     onRowClick,
     prefetch,
+    editing,
+    rows,
+    getRowId,
   } = props;
+  const { editingSignature } = props;
   return useMemo(() => {
     const actions = rowActions && rowActions.length > 0 ? rowActions : null;
     return (
@@ -194,11 +205,17 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
         <Descriptions column={1} size="small" colon={false}>
           {columns.map((column) => (
             <Descriptions.Item key={column.key} label={cardLabel(column)}>
-              {column.Cell ? (
-                <column.Cell row={row} rowIndex={rowIndex} />
-              ) : (
-                column.accessor?.(row)
-              )}
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rowIndex={rowIndex}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+              />
             </Descriptions.Item>
           ))}
         </Descriptions>
@@ -225,6 +242,10 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
     renderDetail,
     onRowClick,
     prefetch,
+    editing,
+    rows,
+    getRowId,
+    editingSignature,
   ]);
 }
 
@@ -252,6 +273,7 @@ export function MobileCards<TRow>({
   expansion,
   renderRowDetail,
   summaryRow,
+  editing,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -276,6 +298,8 @@ export function MobileCards<TRow>({
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /** Opt-in editing bundle — omit and cells stay display-only. */
+  editing?: EditableCellEditing<TRow>;
   /**
    * Windowed entries to render — the virtual slice when virtualization is on,
    * `undefined` to render every source row (the non-windowed default).
@@ -326,6 +350,10 @@ export function MobileCards<TRow>({
               renderDetail={renderRowDetail}
               onRowClick={onRowClick}
               prefetch={prefetch}
+              editing={editing}
+              rows={rows}
+              getRowId={getRowId}
+              editingSignature={rowEditingSignature(editing, id)}
             />
           </li>
         );

@@ -60,4 +60,5 @@ export const he: Required<TableLabels> = {
   showColumn: "הצג עמודה",
   hideColumn: "הסתר עמודה",
   exportCsv: "ייצוא CSV",
+  editCell: "עריכת תא",
 };

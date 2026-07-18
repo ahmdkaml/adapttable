@@ -59,4 +59,5 @@ export const pt: Required<TableLabels> = {
   showColumn: "Mostrar coluna",
   hideColumn: "Ocultar coluna",
   exportCsv: "Exportar CSV",
+  editCell: "Editar célula",
 };

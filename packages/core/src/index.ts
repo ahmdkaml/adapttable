@@ -390,6 +390,20 @@ export {
   stepEditableCell,
 } from "./editing/cellEditing";
 export {
+  type EditableCellController,
+  editableCellController,
+  type EditableCellEditing,
+  type EditableCellMode,
+  focusEditorOnMount,
+  rowEditingSignature,
+  stopCellEditKeyboard,
+} from "./editing/editableCellController";
+export {
+  type EditableCellEditorCtrl,
+  EditableCellGate,
+  type EditableCellGateProps,
+} from "./editing/EditableCellGate";
+export {
   beginCellEdit,
   type CellEditingState,
   type CellEditKeyAction,

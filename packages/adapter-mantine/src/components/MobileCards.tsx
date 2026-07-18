@@ -18,6 +18,7 @@ import {
 import type { RefObject } from "react";
 
 import type { Density } from "../density";
+import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 
 /**
@@ -37,6 +38,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "renderRowDetail"
   | "summaryRow"
   | "expansion"
+  | "editing"
   | "rowEntries"
   | "paddingTop"
   | "paddingBottom"
@@ -73,6 +75,7 @@ export function MobileCards<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -139,11 +142,23 @@ export function MobileCards<TRow>({
                   {/* Cells are arbitrary ReactNode (often block elements) —
                       a <p> wrapper would be invalid HTML. */}
                   <Text component="div" fz="sm">
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
+                    <EditableDataCell
+                      editing={editing}
+                      row={row}
+                      column={column}
+                      rowId={id}
+                      rows={rows}
+                      columns={columns}
+                      rowKey={getRowId}
+                      editLabel={labels.editCell}
+                      display={
+                        column.Cell ? (
+                          <column.Cell row={row} rowIndex={index} />
+                        ) : (
+                          column.accessor?.(row)
+                        )
+                      }
+                    />
                   </Text>
                 </div>
               ))}

@@ -106,12 +106,14 @@ export function useCellEditing(): CellEditingState {
         return;
       }
       setActive({ rowId, columnKey });
+      draftRef.current = initialValue;
       setDraftState(initialValue);
     },
     []
   );
 
   const setDraft = useCallback((value: string) => {
+    draftRef.current = value;
     setDraftState(value);
   }, []);
 
@@ -124,12 +126,14 @@ export function useCellEditing(): CellEditingState {
       draft: draftRef.current,
     };
     setActive(null);
+    draftRef.current = "";
     setDraftState("");
     return result;
   }, []);
 
   const cancel = useCallback(() => {
     setActive(null);
+    draftRef.current = "";
     setDraftState("");
   }, []);
 
@@ -139,6 +143,7 @@ export function useCellEditing(): CellEditingState {
       if (!current) return;
       if (rows.some((row) => rowKey(row) === current.rowId)) return;
       setActive(null);
+      draftRef.current = "";
       setDraftState("");
     },
     []

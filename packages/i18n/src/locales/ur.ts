@@ -60,4 +60,5 @@ export const ur: Required<TableLabels> = {
   showColumn: "کالم دکھائیں",
   hideColumn: "کالم چھپائیں",
   exportCsv: "CSV برآمد کریں",
+  editCell: "سیل میں ترمیم",
 };

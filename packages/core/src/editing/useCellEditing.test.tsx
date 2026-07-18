@@ -167,6 +167,21 @@ describe("useCellEditing", () => {
     rerender();
     expect(result.current).toBe(first);
   });
+
+  it("setDraft updates the ref so commit sees the latest keystroke", () => {
+    const { result } = renderHook(() => useCellEditing());
+    act(() => result.current.begin("1", "name", "Ada"));
+    act(() => result.current.setDraft("Augusta"));
+    let commit: ReturnType<typeof result.current.commit> | undefined;
+    act(() => {
+      commit = result.current.commit();
+    });
+    expect(commit).toEqual({
+      rowId: "1",
+      columnKey: "name",
+      draft: "Augusta",
+    });
+  });
 });
 
 describe("beginCellEdit", () => {
