@@ -372,6 +372,32 @@ export {
   useRowExpansion,
 } from "./rows/useRowExpansion";
 
+/* ── Inline cell editing ───────────────────────────────────────────── */
+export {
+  applyCellEditCommit,
+  type CellEditCommit,
+  type CellEditor,
+  type CellEditorOption,
+  type CellEditTarget,
+  type EditableColumnLike,
+  hasEditableColumns,
+  isCellEditable,
+  nextEditableCell,
+  normalizeEditorOptions,
+  parseCellEditValue,
+  readEditableCellValue,
+  resolveCellEditor,
+  stepEditableCell,
+} from "./editing/cellEditing";
+export {
+  beginCellEdit,
+  type CellEditingState,
+  type CellEditKeyAction,
+  type CellEditKeyOutcome,
+  type CellEditNavigation,
+  useCellEditing,
+} from "./editing/useCellEditing";
+
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
 export {

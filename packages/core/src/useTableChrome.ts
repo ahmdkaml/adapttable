@@ -9,6 +9,10 @@ import {
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import {
+  type CellEditingState,
+  useCellEditing,
+} from "./editing/useCellEditing";
+import {
   type ActiveFilterChip,
   mergeFilterChips,
   resolveActiveFilterCount,
@@ -154,6 +158,17 @@ export interface TableChrome<TRow> {
     /** Expansion state for the chevrons. */
     expansion: RowExpansionState;
   };
+  /**
+   * Inline cell-editing bundle — present iff `onCellEdit` is set, so ONE
+   * guard narrows both the host channel and the state machine. Omit
+   * `onCellEdit` and editing stays fully dormant (no UI, no keyboard).
+   */
+  editing?: {
+    /** Host change channel — the table never mutates rows. */
+    onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
+    /** Headless active-cell / draft / keyboard state. */
+    state: CellEditingState;
+  };
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -298,6 +313,24 @@ export function useTableChrome<TRow>(
     [renderRowDetail, expansionState]
   );
 
+  // Same opt-in pattern as `detail`: the hook always runs (Rules of Hooks),
+  // but `editing` is only exposed when the host passes `onCellEdit`.
+  const cellEditingState = useCellEditing();
+  const onCellEdit = props.onCellEdit;
+  const editing = useMemo(
+    () => (onCellEdit ? { onCellEdit, state: cellEditingState } : undefined),
+    [onCellEdit, cellEditingState]
+  );
+
+  // If the active row leaves the current page/filter set, drop the draft
+  // without committing — the host never receives a stale edit.
+  useEffect(() => {
+    if (!editing) return;
+    editing.state.discardIfRowMissing(source.rows, (row) =>
+      rowKey(row as TRow)
+    );
+  }, [editing, source.rows, rowKey]);
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -316,6 +349,7 @@ export function useTableChrome<TRow>(
     isRefreshing,
     clearFilters,
     detail,
+    editing,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,

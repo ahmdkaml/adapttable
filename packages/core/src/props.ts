@@ -72,6 +72,13 @@ export interface BaseDataTableProps<TRow> {
   /** Called whenever the materialized source rows change. */
   onRowsChange?: (rows: readonly TRow[]) => void;
   /**
+   * Inline cell-edit channel. Providing this (together with per-column
+   * `editable`) activates editing — omit it and the table never opens an
+   * editor, even if columns declare `editable`. The table never mutates
+   * rows; apply `nextValue` in your own state / mutation.
+   */
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */

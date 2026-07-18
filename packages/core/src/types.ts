@@ -10,6 +10,7 @@
 
 import type { ComponentType, ReactNode } from "react";
 
+import type { CellEditor } from "./editing/cellEditing";
 import type { ColumnFilter } from "./filters/filterDefs";
 
 /** Sort direction for a column. */
@@ -88,6 +89,23 @@ export interface ColumnDef<TRow> {
    * key wins.
    */
   filter?: ColumnFilter<TRow>;
+  /**
+   * Opt this column into inline cell editing. `true` for every row, or a
+   * predicate for per-row control. Editing stays fully dormant unless the
+   * table also receives `onCellEdit` — omit both and nothing changes.
+   */
+  editable?: boolean | ((row: TRow) => boolean);
+  /**
+   * Editor widget when {@link ColumnDef.editable} is set. Defaults to
+   * `"text"`. Select options may be `{ value, label }` or plain strings.
+   */
+  editor?: CellEditor;
+  /**
+   * Override the draft seed for the editor (raw value). Defaults to
+   * `sortValue` then the column key path — use this when the displayed
+   * cell is formatted but editing needs the underlying value.
+   */
+  editValue?: (row: TRow) => string;
   /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.
