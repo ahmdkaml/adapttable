@@ -16,11 +16,13 @@ Given `MAJOR.MINOR.PATCH`:
   unavoidable, it ships in a major with a migration note in the CHANGELOG.
 
 The library packages (`@adapttable/core`, the adapters, and `@adapttable/i18n`)
-are versioned together as a [changesets](https://github.com/changesets/changesets)
-**fixed group**, so a given release lines them all up on one version. You never
-need to hunt for a compatible adapter/core pair — install the same version of
-each. `@adapttable/cli` is a scaffolding tool and stays on its own cadence; it
-is not part of the library surface.
+each follow [changesets](https://github.com/changesets/changesets) **independently**:
+a package only bumps when a changeset names it. Adapters and `@adapttable/i18n`
+depend on a concrete `@adapttable/core` version at publish time (exact pin), so
+you do not need matching version numbers across kits — install the adapter you
+use and let npm pull the core it was published against. `@adapttable/cli` is a
+scaffolding tool and stays on its own cadence; it is not part of the library
+surface.
 
 ## Stability
 
@@ -43,6 +45,7 @@ supported major — so a claimed-but-broken version is caught before you hit it:
 | `@adapttable/chakra`                          | `@chakra-ui/react` 3                   |
 | `@adapttable/antd`                            | `antd` 6                               |
 | `@adapttable/radix`                           | `@radix-ui/themes` 3                   |
+| `@adapttable/base-ui`                         | `@base-ui/react` ^1.6                  |
 | `@adapttable/unstyled` / `@adapttable/shadcn` | no UI-kit dependency                   |
 
 `react` / `react-dom` 18 and 19 are supported across every package.
@@ -85,7 +88,7 @@ We never silently remove a documented public API.
 
 ## Releasing
 
-Releases are produced by changesets: open a changeset describing the change,
-merge it, and the release workflow versions the fixed group together and
-publishes to npm with a generated per-package `CHANGELOG.md`. See
+Releases are produced by changesets: open a changeset describing which packages
+changed, merge it, and the release workflow versions **only those packages** and
+publishes them to npm with a generated per-package `CHANGELOG.md`. See
 [CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor flow.

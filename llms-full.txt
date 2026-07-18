@@ -1,21 +1,13 @@
 # AdaptTable — full documentation
 
-> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
+> Headless, UI-agnostic React data table with ready adapters for Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn/ui, and unstyled Tailwind. Unified client/server data via TableSource, URL-synced state, column management (show/hide, reorder, pin left/right, resize, density), responsive mobile cards, optional row/card virtualization, provider-native filter popovers/drawers with chips, numeric/date/status filters, i18n + RTL (logical pinning — works in Arabic/Hebrew), dark mode. MIT.
 
 
 ---
 
 # Get started with AdaptTable — React table for your UI kit
 
-<video
-src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4"
-poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2"
-controls
-playsinline
-preload="none"
-style="width:100%;border-radius:8px"
-
-> </video>
+<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-poster.png?v=2" controls playsinline preload="none" style="width:100%;border-radius:8px"></video>
 
 AdaptTable is a headless, UI-agnostic React data table. Pick the adapter for
 your design system and you get a styled, sortable, filterable, paginated
@@ -50,6 +42,12 @@ pnpm add @adapttable/core @adapttable/chakra @chakra-ui/react @emotion/react
 
 # Ant Design
 pnpm add @adapttable/core @adapttable/antd antd
+
+# Radix Themes
+pnpm add @adapttable/core @adapttable/radix @radix-ui/themes
+
+# Base UI
+pnpm add @adapttable/core @adapttable/base-ui @base-ui/react
 
 # shadcn/ui — one import, pre-wired with the shadcn class preset
 pnpm add @adapttable/core @adapttable/shadcn
@@ -108,6 +106,12 @@ import { ConfigProvider } from "antd";
 </ConfigProvider>;
 ```
 
+**Radix Themes** — import the Themes stylesheet and wrap in `<Theme>` (see
+Radix Themes docs).
+
+**Base UI** — no provider. Import `@adapttable/base-ui` (it side-effect-loads
+minimal chrome CSS) or `@adapttable/base-ui/styles.css` once at the app entry.
+
 **shadcn/ui** — no provider. `@adapttable/shadcn` is the unstyled adapter
 pre-wired with the shadcn class preset, so it inherits your app's existing
 shadcn/ui theme (its CSS variables + Tailwind config) automatically.
@@ -121,7 +125,8 @@ Pass `data` and declare columns — that's the whole thing:
 
 ```tsx
 // or import from "@adapttable/mui", "@adapttable/chakra", "@adapttable/antd",
-// "@adapttable/radix", "@adapttable/shadcn", "@adapttable/unstyled" — same props everywhere.
+// "@adapttable/radix", "@adapttable/base-ui", "@adapttable/shadcn",
+// "@adapttable/unstyled" — same props everywhere.
 import { DataTable } from "@adapttable/mantine";
 
 interface Person {
@@ -206,6 +211,7 @@ kit:
 - [Chakra UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/chakra)
 - [Ant Design](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/antd)
 - [Radix Themes](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/radix)
+- [Base UI](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/base-ui)
 - [shadcn/ui](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/shadcn)
 - [Unstyled / Tailwind](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/unstyled)
 
@@ -2283,7 +2289,7 @@ JSDoc, so editor autocomplete mirrors everything below.
 
 ## `<DataTable>` props
 
-Every adapter (`@adapttable/mantine`, `mui`, `chakra`, `antd`, `unstyled`)
+Every adapter (`@adapttable/mantine`, `mui`, `chakra`, `antd`, `radix`, `base-ui`, `shadcn`, `unstyled`)
 exports `DataTable<TRow>`. The props below are the shared core surface
 (`BaseDataTableProps`); kit-specific extras follow in
 [Adapter extras](#adapter-extras).
@@ -2420,28 +2426,28 @@ On or after / On or before / Between) — headless: `readRangeWidget`,
 
 Props beyond the core surface, with per-kit availability.
 
-| Prop            | Type                                            | Default     | Available on                     | Description                                                                                                                       |
-| --------------- | ----------------------------------------------- | ----------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `data`          | `readonly TRow[]`                               | —           | all                              | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                        |
-| `total`         | `number`                                        | —           | all                              | Server tier: total row count across all pages (drives the pager).                                                                 |
-| `loading`       | `boolean`                                       | —           | all                              | Server tier: a request is in flight.                                                                                              |
-| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —           | all                              | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.        |
-| `urlKey`        | `string`                                        | —           | all                              | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                               |
-| `urlAdapter`    | `UrlStateAdapter`                               | History API | all                              | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                        |
-| `urlSync`       | `boolean`                                       | `true`      | all                              | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                   |
-| `savedViews`    | `UseSavedViewsOptions`                          | —           | all                              | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.         |
-| `slots`         | `{ skeleton?, empty? }`                         | —           | all                              | Replace sub-components (loading skeleton, empty state).                                                                           |
-| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
-| `className`     | `string`                                        | —           | mui, antd                        | Class name applied to the root wrapper.                                                                                           |
-| `animate`       | `boolean`                                       | `false`     | all                              | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                             |
-| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix         | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).          |
-| `colorScheme`   | `string`                                        | —           | chakra                           | Chakra color scheme for primary accents (buttons, badges).                                                                        |
-| `accentColor`   | `RadixAccentColor`                              | —           | radix                            | Radix accent color for primary controls (buttons, badges, active page).                                                           |
-| `bordered`      | `boolean`                                       | `false`     | antd                             | Render the table with cell borders.                                                                                               |
-| `virtualHeight` | `number`                                        | `480`       | antd                             | Vertical scroll height used when `virtualize` is true.                                                                            |
-| `virtualWidth`  | `number`                                        | `960`       | antd                             | Horizontal scroll width used when `virtualize` is true.                                                                           |
-| `emptyState`    | `ReactNode`                                     | —           | unstyled                         | Empty-state node override (`slots.empty` alias wins when both are set).                                                           |
-| `loadingState`  | `ReactNode`                                     | —           | unstyled                         | Loading-state node override (`slots.skeleton` alias wins when both are set).                                                      |
+| Prop            | Type                                            | Default     | Available on                              | Description                                                                                                                               |
+| --------------- | ----------------------------------------------- | ----------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`          | `readonly TRow[]`                               | —           | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                |
+| `total`         | `number`                                        | —           | all                                       | Server tier: total row count across all pages (drives the pager).                                                                         |
+| `loading`       | `boolean`                                       | —           | all                                       | Server tier: a request is in flight.                                                                                                      |
+| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —           | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                |
+| `urlKey`        | `string`                                        | —           | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                       |
+| `urlAdapter`    | `UrlStateAdapter`                               | History API | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                |
+| `urlSync`       | `boolean`                                       | `true`      | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                           |
+| `savedViews`    | `UseSavedViewsOptions`                          | —           | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                 |
+| `slots`         | `{ skeleton?, empty? }`                         | —           | all                                       | Replace sub-components (loading skeleton, empty state).                                                                                   |
+| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled. |
+| `className`     | `string`                                        | —           | mui, antd                                 | Class name applied to the root wrapper.                                                                                                   |
+| `animate`       | `boolean`                                       | `false`     | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                     |
+| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix                  | Explicit kit table size, overriding the size derived from `density` (chakra default `"md"`; radix `"2"`, compact `"1"`).                  |
+| `colorScheme`   | `string`                                        | —           | chakra                                    | Chakra color scheme for primary accents (buttons, badges).                                                                                |
+| `accentColor`   | kit accent union                                | —           | radix, base-ui                            | Accent color for primary controls (buttons, badges, active page).                                                                         |
+| `bordered`      | `boolean`                                       | `false`     | antd                                      | Render the table with cell borders.                                                                                                       |
+| `virtualHeight` | `number`                                        | `480`       | antd                                      | Vertical scroll height used when `virtualize` is true.                                                                                    |
+| `virtualWidth`  | `number`                                        | `960`       | antd                                      | Horizontal scroll width used when `virtualize` is true.                                                                                   |
+| `emptyState`    | `ReactNode`                                     | —           | unstyled                                  | Empty-state node override (`slots.empty` alias wins when both are set).                                                                   |
+| `loadingState`  | `ReactNode`                                     | —           | unstyled                                  | Loading-state node override (`slots.skeleton` alias wins when both are set).                                                              |
 
 Each adapter also re-exports the core source builders and types, so one
 import path covers everything.
@@ -2609,13 +2615,13 @@ Short, direct answers to the things people ask when choosing a React table.
 
 AdaptTable is a **headless, UI-agnostic React data table**. A single headless
 engine (`@adapttable/core`) powers ready, batteries-included adapters for
-**Mantine, MUI, Chakra, Ant Design, Radix, shadcn/ui, and unstyled Tailwind**. You get
+**Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn/ui, and unstyled Tailwind**. You get
 TanStack-Table-style headless freedom _and_ a styled table for the UI kit you
 already use — from the same core.
 
 ## What is the best headless React table that works with my design system?
 
-If you use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui**, AdaptTable
+If you use **Mantine, MUI, Chakra, Ant Design, Radix, Base UI, or shadcn/ui**, AdaptTable
 gives you a fully-featured table (sorting, filtering, selection, pagination,
 infinite scroll, optional virtualization, URL state, i18n/RTL, dark mode) that
 matches your kit without building the UI yourself. If you're on a different
@@ -2625,7 +2631,7 @@ markup.
 
 ## Which UI libraries does AdaptTable support?
 
-Six, from one API: **Mantine, MUI, Chakra UI, Ant Design, Radix Themes, and
+Seven, from one API: **Mantine, MUI, Chakra UI, Ant Design, Radix Themes, Base UI, and
 shadcn/ui** — each rendered with that kit's real components. There is also an
 unstyled adapter for Tailwind or your own CSS, and a headless core
 (`useDataTable`) that works with any markup. Install only the adapter you use.
@@ -2708,7 +2714,7 @@ anchored popover or a slide-in drawer (`filtersMode="drawer"`) with removable
 chips, and every filter, search, sort, and page value syncs to the URL — so a
 refresh or a shared link restores the exact view. It works the same for
 client-side data and server-side fetching, rendered natively by Mantine, MUI,
-Chakra, Ant Design, Radix, or shadcn/ui. See
+Chakra, Ant Design, Radix, Base UI, or shadcn/ui. See
 [filtering.md](./filtering.md) and [url-state.md](./url-state.md).
 
 ## Which React versions and bundlers are supported?
@@ -2794,7 +2800,7 @@ libraries.
 TanStack Table is a headless engine — framework-agnostic and the closest in
 philosophy. The difference is what you ship: with TanStack you build every
 cell, header, filter, and pagination control yourself. AdaptTable gives you
-native, batteries-included UI for Mantine, MUI, Chakra, Ant Design, Radix, and
+native, batteries-included UI for Mantine, MUI, Chakra, Ant Design, Radix, Base UI, and
 shadcn/ui out of the box — and still exposes a headless core with prop-getters
 when you want to drop down. Pick TanStack for non-React or total-control
 builds; pick AdaptTable when you want the UI done for your kit without losing
@@ -2821,7 +2827,7 @@ MUI X DataGrid is a strong choice if you're all-in on MUI — but it's
 MUI-only, and its server-side data, tree data, and infinite loading sit behind
 the paid Pro / Premium tiers (open-core). AdaptTable's MUI adapter gives a
 DataGrid-style experience for free, and the same API also renders in Mantine,
-Chakra, Ant Design, Radix, and shadcn/ui, with server data and shareable URL
+Chakra, Ant Design, Radix, Base UI, and shadcn/ui, with server data and shareable URL
 state built in at no cost.
 
 → [Migrate from MUI X DataGrid](./migrate-from-mui-x-datagrid.md). Coming from
@@ -2845,22 +2851,22 @@ AdaptTable covers more ground.
 The point of AdaptTable is that the feature set never changes when you switch
 kits — only the look does. Every adapter ships the same batteries:
 
-| Feature                               | Mantine | MUI | Chakra | Ant Design | Radix | shadcn/ui | Unstyled |
-| ------------------------------------- | :-----: | :-: | :----: | :--------: | :---: | :-------: | :------: |
-| Filter popover                        |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Filter drawer                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅¹  |    ✅     |    ✅    |
-| Active-filter chips                   |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Column menu (show/hide, reorder, pin) |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Column resize                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Saved views                           |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |    ✅     |    ✅    |
-| Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Skeleton / empty / error states       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
-| Mount entrance animation              |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |    ✅     |    ✅    |
+| Feature                               | Mantine | MUI | Chakra | Ant Design | Radix | Base UI | shadcn/ui | Unstyled |
+| ------------------------------------- | :-----: | :-: | :----: | :--------: | :---: | :-----: | :-------: | :------: |
+| Filter popover                        |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Filter drawer                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅¹  |   ✅    |    ✅     |    ✅    |
+| Active-filter chips                   |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Column menu (show/hide, reorder, pin) |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Column resize                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Saved views                           |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Skeleton / empty / error states       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Mount entrance animation              |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 
 <sub>¹ Radix Themes ships no Drawer primitive, so `filtersMode="drawer"` renders
 as a Radix Dialog restyled into a side panel — same dimming backdrop and focus
@@ -2872,7 +2878,7 @@ matches unstyled feature-for-feature.
 
 ## When to choose AdaptTable
 
-- You use **Mantine, MUI, Chakra, Ant Design, Radix, or shadcn/ui** and want a table
+- You use **Mantine, MUI, Chakra, Ant Design, Radix, Base UI, or shadcn/ui** and want a table
   that matches your kit without building it yourself.
 - You need **the same table for both in-memory and server-paginated data**.
 - You want **shareable, deep-linkable table state** for free.
@@ -3113,8 +3119,8 @@ Plus things DataGrid has no built-in answer for at any tier:
 - **URL-synced, shareable state** — see [URL state](./url-state.md).
 - **An automatic responsive card layout** on mobile (DataGrid's List view is
   Pro and manual).
-- **One API for six UI kits** — the same code renders in Mantine, Chakra, Ant
-  Design, Radix, and shadcn/ui too.
+- **One API for seven UI kits** — the same code renders in Mantine, Chakra, Ant
+  Design, Radix, Base UI, and shadcn/ui too.
 
 > Tiers above reflect MUI X **v8** (2025), verified against MUI's licensing
 > docs. MUI may move features between tiers — check their
@@ -4098,11 +4104,13 @@ Given `MAJOR.MINOR.PATCH`:
   unavoidable, it ships in a major with a migration note in the CHANGELOG.
 
 The library packages (`@adapttable/core`, the adapters, and `@adapttable/i18n`)
-are versioned together as a [changesets](https://github.com/changesets/changesets)
-**fixed group**, so a given release lines them all up on one version. You never
-need to hunt for a compatible adapter/core pair — install the same version of
-each. `@adapttable/cli` is a scaffolding tool and stays on its own cadence; it
-is not part of the library surface.
+each follow [changesets](https://github.com/changesets/changesets) **independently**:
+a package only bumps when a changeset names it. Adapters and `@adapttable/i18n`
+depend on a concrete `@adapttable/core` version at publish time (exact pin), so
+you do not need matching version numbers across kits — install the adapter you
+use and let npm pull the core it was published against. `@adapttable/cli` is a
+scaffolding tool and stays on its own cadence; it is not part of the library
+surface.
 
 ## Stability
 
@@ -4125,6 +4133,7 @@ supported major — so a claimed-but-broken version is caught before you hit it:
 | `@adapttable/chakra`                          | `@chakra-ui/react` 3                   |
 | `@adapttable/antd`                            | `antd` 6                               |
 | `@adapttable/radix`                           | `@radix-ui/themes` 3                   |
+| `@adapttable/base-ui`                         | `@base-ui/react` ^1.6                  |
 | `@adapttable/unstyled` / `@adapttable/shadcn` | no UI-kit dependency                   |
 
 `react` / `react-dom` 18 and 19 are supported across every package.
@@ -4167,7 +4176,7 @@ We never silently remove a documented public API.
 
 ## Releasing
 
-Releases are produced by changesets: open a changeset describing the change,
-merge it, and the release workflow versions the fixed group together and
-publishes to npm with a generated per-package `CHANGELOG.md`. See
+Releases are produced by changesets: open a changeset describing which packages
+changed, merge it, and the release workflow versions **only those packages** and
+publishes them to npm with a generated per-package `CHANGELOG.md`. See
 [CONTRIBUTING.md](../CONTRIBUTING.md) for the contributor flow.
