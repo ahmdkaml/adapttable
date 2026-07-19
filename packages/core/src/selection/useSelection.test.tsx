@@ -35,6 +35,17 @@ describe("useSelection", () => {
     expect(result.current.selectedCount).toBe(0);
   });
 
+  it("toggleGroupLeaves selects then deselects the group's leaf ids", () => {
+    const { result } = renderHook(() => useSelection({ rows, getId }));
+    act(() => result.current.toggleGroupLeaves(["a", "b"]));
+    expect(result.current.isSelected("a")).toBe(true);
+    expect(result.current.isSelected("b")).toBe(true);
+    expect(result.current.isSelected("c")).toBe(false);
+    expect(result.current.headerState).toBe("some");
+    act(() => result.current.toggleGroupLeaves(["a", "b"]));
+    expect(result.current.selectedCount).toBe(0);
+  });
+
   it("clear empties the selection", () => {
     const { result } = renderHook(() => useSelection({ rows, getId }));
     act(() => result.current.toggle("a"));

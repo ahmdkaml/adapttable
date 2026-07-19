@@ -49,24 +49,24 @@ whenever you want.
 
 `<MUIDataTable>` → `<DataTable>`:
 
-| mui-datatables                                        | `@adapttable/mui`                                     | Notes                                                                |
-| ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `data` (objects)                                      | `data`                                                | Array-of-objects only; no array-of-arrays mode.                      |
-| `data` (arrays)                                       | convert to objects                                    | One `map()` at the boundary — see Gotchas.                           |
-| `columns` (`name`, `label`, `options`)                | `columns` (`key`, `header`, …)                        | Field-by-field below.                                                |
-| `options.serverSide` + `count` + `onTableChange`      | `data` + `total` + `onQueryChange`                    | One consolidated query object replaces the action-string switch.     |
-| `options.page` / `rowsPerPage` / `rowsPerPageOptions` | automatic                                             | Built-in pager; page size control included.                          |
-| `options.sortOrder` / `onColumnSortChange`            | per-column `sortable` (+ `multiSort`)                 | AdaptTable owns and applies sort state.                              |
-| `options.filterType` / `onFilterChange`               | column `filter` shorthand + table `filters`           | Kit-native widgets + removable chips, derived for you.               |
-| `options.search` / `searchText` / `onSearchChange`    | built-in search (`searchPlaceholder`, `hideSearch`)   | Debounced and URL-synced.                                            |
-| `options.selectableRows` + `onRowSelectionChange`     | `bulkActions`, or `selectedIds` / `onSelectionChange` | Providing `bulkActions` enables selection + the bulk bar.            |
-| `options.expandableRows` + `renderExpandableRow`      | `renderRowDetail`                                     | `(row) => ReactNode` — no separate flag, no colSpan markup.          |
-| `options.viewColumns` / `draggableColumns`            | `enableColumnMenu`                                    | Show/hide, reorder, and pin in one menu.                             |
-| `options.resizableColumns`                            | `resizableColumns`                                    | Drag + keyboard resize.                                              |
-| `options.responsive` (`'vertical'`, …)                | automatic mobile cards                                | Cards render below the breakpoint — no mode to configure.            |
-| `options.download` / `print`                          | `rowsToCsv` / `downloadCsv` helpers                   | CSV as a headless helper you wire to your own button; print via CSS. |
-| `options.textLabels`                                  | `labels`                                              | Same idea; English defaults fill missing keys.                       |
-| `options.storageKey`                                  | `savedViews` / URL state                              | Views are named, shareable snapshots instead of one implicit save.   |
+| mui-datatables                                        | `@adapttable/mui`                                     | Notes                                                                                        |
+| ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `data` (objects)                                      | `data`                                                | Array-of-objects only; no array-of-arrays mode.                                              |
+| `data` (arrays)                                       | convert to objects                                    | One `map()` at the boundary — see Gotchas.                                                   |
+| `columns` (`name`, `label`, `options`)                | `columns` (`key`, `header`, …)                        | Field-by-field below.                                                                        |
+| `options.serverSide` + `count` + `onTableChange`      | `data` + `total` + `onQueryChange`                    | One consolidated query object replaces the action-string switch.                             |
+| `options.page` / `rowsPerPage` / `rowsPerPageOptions` | automatic                                             | Built-in pager; page size control included.                                                  |
+| `options.sortOrder` / `onColumnSortChange`            | per-column `sortable` (+ `multiSort`)                 | AdaptTable owns and applies sort state.                                                      |
+| `options.filterType` / `onFilterChange`               | column `filter` shorthand + table `filters`           | Kit-native widgets + removable chips, derived for you.                                       |
+| `options.search` / `searchText` / `onSearchChange`    | built-in search (`searchPlaceholder`, `hideSearch`)   | Debounced and URL-synced.                                                                    |
+| `options.selectableRows` + `onRowSelectionChange`     | `bulkActions`, or `selectedIds` / `onSelectionChange` | Providing `bulkActions` enables selection + the bulk bar.                                    |
+| `options.expandableRows` + `renderExpandableRow`      | `renderRowDetail`                                     | `(row) => ReactNode` — no separate flag, no colSpan markup.                                  |
+| `options.viewColumns` / `draggableColumns`            | `enableColumnMenu`                                    | Show/hide, reorder, and pin in one menu.                                                     |
+| `options.resizableColumns`                            | `resizableColumns`                                    | Drag + keyboard resize.                                                                      |
+| `options.responsive` (`'vertical'`, …)                | automatic mobile cards                                | Cards render below the breakpoint — no mode to configure.                                    |
+| `options.download` / `print`                          | `exportCsv` prop / `rowsToCsv` + `downloadCsv`        | Built-in Export CSV button, or headless helpers on a custom `toolbar` button; print via CSS. |
+| `options.textLabels`                                  | `labels`                                              | Same idea; English defaults fill missing keys.                                               |
+| `options.storageKey`                                  | `savedViews` / URL state                              | Views are named, shareable snapshots instead of one implicit save.                           |
 
 Column options → `ColumnDef`:
 
@@ -184,9 +184,9 @@ function PeopleTable({ people }: { people: Person[] }) {
 - **Filters become declarative.** A `filterType: "dropdown"` column becomes
   `filter: { type: "select", options: "auto" }`; ranges become
   `"numberRange"` / `"dateRange"` with operator widgets and chips included.
-- **No built-in print/CSV buttons.** CSV is a headless helper
-  (`rowsToCsv` / `downloadCsv`) you attach to your own toolbar button via the
-  `toolbar` slot; print is your app's concern.
+- **CSV export is built-in and headless.** Pass `exportCsv` for a toolbar
+  button, or wire `rowsToCsv` / `downloadCsv` yourself via the `toolbar` slot;
+  print is your app's concern.
 - **`textLabels` → `labels`**, and locale presets (incl. RTL languages) come
   from [`@adapttable/i18n`](./i18n-rtl.md).
 

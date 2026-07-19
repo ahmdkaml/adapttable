@@ -209,19 +209,29 @@ function AutoFilterField<TRow>({
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (
-                  <button
+                  <label
                     key={option.value}
-                    type="button"
-                    id={`${id}-${option.value}`}
-                    role="checkbox"
-                    aria-checked={checked}
+                    htmlFor={`${id}-${option.value}`}
                     className="adapttable-filter-chip"
                     data-checked={checked ? "true" : "false"}
                     data-accent={accentColor}
-                    onClick={() => toggle(option.value)}
                   >
+                    <input
+                      type="checkbox"
+                      id={`${id}-${option.value}`}
+                      checked={checked}
+                      onChange={() => toggle(option.value)}
+                      style={{
+                        position: "absolute",
+                        opacity: 0,
+                        width: 1,
+                        height: 1,
+                        margin: 0,
+                        pointerEvents: "none",
+                      }}
+                    />
                     {option.label}
-                  </button>
+                  </label>
                 );
               })}
             </Flex>

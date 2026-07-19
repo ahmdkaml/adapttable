@@ -189,5 +189,47 @@ for (const adapter of ADAPTERS) {
       // The re-rendered table flips its writing direction.
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
     });
+
+    test("inline cell edit commits on Enter", async ({ page }) => {
+      await openDemo(page, adapter);
+      // Frontend mode ships onCellEdit; email is editable + visible.
+      const activate = demo(page)
+        .locator('[data-adapttable-part="edit-cell-activate"]')
+        .first();
+      await expect(activate).toBeVisible();
+      await activate.dblclick();
+      // Prefer the accessible textbox — kit wrappers may put the data-* on a
+      // non-input root (MUI TextField), so role is the stable target.
+      const editor = demo(page)
+        .getByRole("textbox", { name: "Edit cell" })
+        .or(
+          demo(page).locator(
+            '[data-adapttable-part="edit-cell-editor"] input, input[data-adapttable-part="edit-cell-editor"]'
+          )
+        );
+      await expect(editor).toBeVisible();
+      await editor.fill("edited@example.com");
+      await editor.press("Enter");
+      await expect(
+        demo(page).getByText("edited@example.com").first()
+      ).toBeVisible();
+    });
+
+    test("group header expands and collapses", async ({ page }) => {
+      await openDemo(page, adapter);
+      // Frontend mode groups by team; group headers replace bare leaf rows.
+      const groupRow = demo(page)
+        .locator('[data-adapttable-part="group-row"]')
+        .first();
+      await expect(groupRow).toBeVisible();
+      const toggle = groupRow.locator('[data-adapttable-part="group-toggle"]');
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(groupRow).toHaveAttribute("data-collapsed", "true");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await expect(groupRow).not.toHaveAttribute("data-collapsed", "true");
+    });
   });
 }

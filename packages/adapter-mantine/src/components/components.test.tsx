@@ -131,6 +131,7 @@ function makeSelection(
     isSelected: () => true,
     toggle: vi.fn(),
     toggleAll: vi.fn(),
+    toggleGroupLeaves: vi.fn(),
     clear: vi.fn(),
     visibleIds: ["a", "b"],
     allMatching: false,

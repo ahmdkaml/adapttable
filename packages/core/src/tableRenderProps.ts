@@ -16,6 +16,9 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
+import type { EditableCellEditing } from "./editing/editableCellController";
+import type { GroupedFlatEntry } from "./grouping/groupRows";
+import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
@@ -49,6 +52,21 @@ export interface SharedTableRenderProps<TRow> {
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
+  /**
+   * Inline cell-editing bundle — present iff the host passed `onCellEdit`.
+   * Omit it and every cell stays plain display (package DNA: opt-in).
+   */
+  editing?: EditableCellEditing<TRow>;
+  /**
+   * Row-grouping bundle — present iff chrome armed grouping. Adapters that
+   * do not yet render group headers may ignore it; leaf `rows` stay valid.
+   */
+  grouping?: {
+    groupBy: string;
+    collapsed: GroupCollapseState;
+    entries: readonly GroupedFlatEntry<TRow>[];
+    setGroupBy: (key: string | null) => void;
+  };
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];
   /** Spacer height above the virtual window. */

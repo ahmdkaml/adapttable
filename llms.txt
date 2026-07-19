@@ -20,7 +20,7 @@ automatic table-to-card responsive layouts.
 - [@adapttable/base-ui](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/adapter-base-ui): Base UI adapter — batteries-included `<DataTable>` on `@base-ui/react`.
 - [@adapttable/shadcn](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/adapter-shadcn): shadcn/ui adapter — the unstyled adapter pre-wired with the shadcn class preset; a one-import styled `<DataTable>`.
 - [@adapttable/unstyled](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/adapter-unstyled): Headless/unstyled adapter with `data-*` + `className` hooks for Tailwind or any custom CSS.
-- [@adapttable/i18n](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/i18n): Locale presets for 10 languages (English, Arabic, German, Spanish, French, Hebrew, Italian, Japanese, Portuguese, Chinese) + RTL direction helpers.
+- [@adapttable/i18n](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/i18n): Locale presets for 17 languages (English, Arabic, German, Spanish, Persian, French, Hebrew, Hindi, Italian, Japanese, Korean, Portuguese, Russian, Turkish, Urdu, Simplified Chinese, Traditional Chinese) + RTL direction helpers.
 - [@adapttable/cli](https://github.com/orwa-mahmoud/adapttable/tree/main/packages/cli): `npx @adapttable/cli init` — detects your UI kit and scaffolds a table.
 
 ## Quickstart (batteries-included)
@@ -61,6 +61,8 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device
 - [React table row selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/): checkboxes, bulk bar, select-all-matching
 - [React table expandable rows & detail panels](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion
+- [React table inline cell editing — opt-in onCellEdit](https://orwa-mahmoud.github.io/adapttable/cell-editing/): text/number/select editors, keyboard commit/cancel, kit-native inputs
+- [React table row grouping — single-level groupBy & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/): per-group subtotals sharing the summaryRow mapper, expand/collapse, frontend tier only
 - [React table column management — show/hide, reorder, pin, resize](https://orwa-mahmoud.github.io/adapttable/column-management/): menu, pin, resize, layout persistence
 - [React table saved views — shareable named layouts](https://orwa-mahmoud.github.io/adapttable/saved-views/): built-in menu, useSavedViews
 - [React table virtualization — 10k rows, ~24 DOM nodes](https://orwa-mahmoud.github.io/adapttable/virtualization/): row/card windowing. Measured A/B at 10,000 rows — virtualized renders 24 DOM `<tr>` vs 10,000 for a plain table (417x fewer nodes, ~half the JS heap: 169 MB vs 347 MB), and the rendered row count stays ~24 from 1k to 100k rows. Window or scroll-box mode.
@@ -68,7 +70,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [AdaptTable concepts — headless core, TableSource, adapters](https://orwa-mahmoud.github.io/adapttable/concepts/): architecture, TableSource contract
 - [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit
 - [React table URL state — shareable filters, sort, and page](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out
-- [React table i18n & RTL — Arabic, Hebrew, 10 locales](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/): 10 locales, per-locale data paths, logical layout
+- [React table i18n & RTL — Arabic, Hebrew, 17 locales](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/): 17 locales, per-locale data paths, logical layout
 - [AdaptTable API reference — DataTable, columns, hooks](https://orwa-mahmoud.github.io/adapttable/api/): every prop in tables
 - [AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR](https://orwa-mahmoud.github.io/adapttable/faq/): direct answers to "best headless React table", "free MUI DataGrid / ag-Grid alternative", "React table with RTL/Arabic", "same table for client and server data"
 - [React data table comparison — AdaptTable vs ag-Grid, MUI X, TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/): feature-by-feature vs ag-grid, TanStack Table, MUI X DataGrid, mantine-datatable

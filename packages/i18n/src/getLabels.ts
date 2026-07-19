@@ -5,43 +5,70 @@ import { ar } from "./locales/ar";
 import { de } from "./locales/de";
 import { en } from "./locales/en";
 import { es } from "./locales/es";
+import { fa } from "./locales/fa";
 import { fr } from "./locales/fr";
 import { he } from "./locales/he";
+import { hi } from "./locales/hi";
 import { it } from "./locales/it";
 import { ja } from "./locales/ja";
+import { ko } from "./locales/ko";
 import { pt } from "./locales/pt";
+import { ru } from "./locales/ru";
+import { tr } from "./locales/tr";
+import { ur } from "./locales/ur";
 import { zh } from "./locales/zh";
+import { zhTW } from "./locales/zh-TW";
 
-/** The bundled locale presets, keyed by primary language subtag. */
+/** The bundled locale presets, keyed by BCP-47 tag (or primary subtag). */
 export const locales = {
   en,
   ar,
   de,
   es,
+  fa,
   fr,
   he,
+  hi,
   it,
   ja,
+  ko,
   pt,
+  ru,
+  tr,
+  ur,
   zh,
+  "zh-TW": zhTW,
 } as const;
 
 /** A key of {@link locales}. */
 export type LocaleKey = keyof typeof locales;
 
+/** Resolve a BCP-47 tag to a bundled key: exact tag first, then primary subtag. */
+function resolveLocaleKey(locale: string): LocaleKey | undefined {
+  const normalized = locale.trim().replaceAll("_", "-");
+  const lower = normalized.toLowerCase();
+  for (const key of Object.keys(locales) as LocaleKey[]) {
+    if (key.toLowerCase() === lower) return key;
+  }
+  const primary = primarySubtag(locale);
+  if (primary in locales) return primary as LocaleKey;
+  return undefined;
+}
+
 /** Whether a locale has a bundled preset. */
 export function hasLocale(locale: string): boolean {
-  return primarySubtag(locale) in locales;
+  return resolveLocaleKey(locale) !== undefined;
 }
 
 /**
- * Resolve the label preset for a locale, matching on the primary subtag
+ * Resolve the label preset for a locale. Prefers an exact tag match
+ * (e.g. `"zh-TW"` → Traditional Chinese) before the primary subtag
  * (e.g. `"ar-EG"` → Arabic). Falls back to English for unknown locales.
  *
- * @param locale - A BCP-47 locale such as `"en"`, `"ar"`, or `"ar-EG"`.
+ * @param locale - A BCP-47 locale such as `"en"`, `"ar"`, `"zh-TW"`, or `"ar-EG"`.
  * @returns The matching {@link TableLabels} preset, or English.
  */
 export function getLabels(locale: string): Required<TableLabels> {
-  const key = primarySubtag(locale);
-  return key in locales ? locales[key as LocaleKey] : en;
+  const key = resolveLocaleKey(locale);
+  return key ? locales[key] : en;
 }

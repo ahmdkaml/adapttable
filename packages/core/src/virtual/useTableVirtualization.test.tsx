@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   resolveVirtualRows,
+  useKeyedVirtualization,
   useTableVirtualization,
   virtualColumnSpan,
+  windowGroupedEntries,
 } from "./useTableVirtualization";
 
 vi.mock("@tanstack/react-virtual", () => ({
@@ -311,5 +313,176 @@ describe("element-mode virtualization (maxHeight scroll boxes)", () => {
     expect(result.current.paddingTop).toBe(56);
     expect(result.current.paddingBottom).toBe(280 - 168);
     expect(result.current.measureElement).toBe(measureElement);
+  });
+});
+
+describe("useKeyedVirtualization", () => {
+  const keys = ["g-a", "r-1", "r-2", "g-b", "r-3"];
+
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [],
+      getTotalSize: () => 0,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+    vi.mocked(useVirtualizer).mockReturnValue({
+      getVirtualItems: () => [],
+      getTotalSize: () => 0,
+      measureElement: vi.fn(),
+      options: {},
+    } as unknown as ReturnType<typeof useVirtualizer>);
+  });
+
+  it("returns every index when disabled", () => {
+    const { result } = renderHook(() =>
+      useKeyedVirtualization({ keys, enabled: false })
+    );
+    expect(result.current.enabled).toBe(false);
+    expect(result.current.indices).toEqual([0, 1, 2, 3, 4]);
+    expect(result.current.paddingTop).toBe(0);
+    expect(result.current.paddingBottom).toBe(0);
+    expect(result.current.measureElement).toBeUndefined();
+  });
+
+  it("windows indices and paddings when the virtualizer has items", () => {
+    const measureElement = vi.fn();
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 1, key: "r-1", start: 40, end: 80 },
+        { index: 2, key: "r-2", start: 80, end: 120 },
+      ],
+      getTotalSize: () => 240,
+      measureElement,
+      options: { scrollMargin: 10 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { result } = renderHook(() =>
+      useKeyedVirtualization({
+        keys,
+        enabled: true,
+        estimateSize: 40,
+        overscan: 2,
+        scrollMargin: 10,
+      })
+    );
+
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.indices).toEqual([1, 2]);
+    expect(result.current.paddingTop).toBe(30);
+    expect(result.current.paddingBottom).toBe(130);
+    expect(result.current.measureElement).toBe(measureElement);
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(options.estimateSize(0)).toBe(40);
+    expect(options.getItemKey!(1)).toBe("r-1");
+    expect(options.getItemKey!(99)).toBe("99");
+  });
+
+  it("calls onEndReached once when the window reaches the last key", () => {
+    const onEndReached = vi.fn();
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [{ index: 4, key: "r-3", start: 160, end: 200 }],
+      getTotalSize: () => 200,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { rerender } = renderHook(() =>
+      useKeyedVirtualization({ keys, enabled: true, onEndReached })
+    );
+    expect(onEndReached).toHaveBeenCalledTimes(1);
+    rerender();
+    expect(onEndReached).toHaveBeenCalledTimes(1);
+  });
+
+  it("resets the end-reached latch when the window leaves the end", () => {
+    const onEndReached = vi.fn();
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [{ index: 4, key: "r-3", start: 160, end: 200 }],
+      getTotalSize: () => 200,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const { rerender } = renderHook(
+      ({ atEnd }: { atEnd: boolean }) => {
+        if (atEnd) {
+          vi.mocked(useWindowVirtualizer).mockReturnValue({
+            getVirtualItems: () => [
+              { index: 4, key: "r-3", start: 160, end: 200 },
+            ],
+            getTotalSize: () => 200,
+            measureElement: vi.fn(),
+            options: { scrollMargin: 0 },
+          } as unknown as ReturnType<typeof useWindowVirtualizer>);
+        } else {
+          vi.mocked(useWindowVirtualizer).mockReturnValue({
+            getVirtualItems: () => [
+              { index: 1, key: "r-1", start: 40, end: 80 },
+            ],
+            getTotalSize: () => 200,
+            measureElement: vi.fn(),
+            options: { scrollMargin: 0 },
+          } as unknown as ReturnType<typeof useWindowVirtualizer>);
+        }
+        return useKeyedVirtualization({ keys, enabled: true, onEndReached });
+      },
+      { initialProps: { atEnd: true } }
+    );
+    expect(onEndReached).toHaveBeenCalledTimes(1);
+    rerender({ atEnd: false });
+    rerender({ atEnd: true });
+    expect(onEndReached).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the element virtualizer when getScrollElement is provided", () => {
+    const box = document.createElement("div");
+    const measureElement = vi.fn();
+    vi.mocked(useVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 0, key: "g-a", start: 0, end: 56 },
+        { index: 1, key: "r-1", start: 56, end: 112 },
+      ],
+      getTotalSize: () => 280,
+      measureElement,
+      options: {},
+    } as unknown as ReturnType<typeof useVirtualizer>);
+
+    const { result } = renderHook(() =>
+      useKeyedVirtualization({
+        keys,
+        enabled: true,
+        getScrollElement: () => box,
+      })
+    );
+
+    expect(vi.mocked(useVirtualizer).mock.calls.at(-1)![0].enabled).toBe(true);
+    expect(vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0].enabled).toBe(
+      false
+    );
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.indices).toEqual([0, 1]);
+    expect(result.current.measureElement).toBe(measureElement);
+  });
+
+  it("passes a null-safe scroll accessor to the idle element virtualizer", () => {
+    renderHook(() => useKeyedVirtualization({ keys, enabled: true }));
+    const elementOptions = vi.mocked(useVirtualizer).mock.calls.at(-1)![0];
+    expect(elementOptions.enabled).toBe(false);
+    expect(elementOptions.getScrollElement()).toBeNull();
+  });
+});
+
+describe("windowGroupedEntries", () => {
+  const entries = ["a", "b", "c", "d"] as const;
+
+  it("returns the same array when every index is in the window", () => {
+    const windowed = windowGroupedEntries(entries, [0, 1, 2, 3]);
+    expect(windowed).toBe(entries);
+  });
+
+  it("slices to the requested indices and skips holes", () => {
+    expect(windowGroupedEntries(entries, [1, 3])).toEqual(["b", "d"]);
+    expect(windowGroupedEntries(entries, [1, 99, 2])).toEqual(["b", "c"]);
   });
 });

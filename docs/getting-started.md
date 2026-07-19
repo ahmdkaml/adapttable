@@ -215,6 +215,8 @@ The source for each lives in
 
 - [Columns](./columns.md) — headers, custom cells, the Columns menu
   (show/hide, reorder, pin), resizing.
+- [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
+  editors, keyboard flow.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
 - [Data tiers](./data-tiers.md) — server data without a query library

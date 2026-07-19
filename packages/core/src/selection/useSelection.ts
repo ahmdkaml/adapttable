@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { applyGroupLeafSelection } from "../grouping/groupSelection";
+
 /** Tri-state of the "select all visible" header control. */
 export type HeaderSelectionState = "all" | "some" | "none";
 
@@ -37,6 +39,11 @@ export interface SelectionState {
   isSelected: (id: string) => boolean;
   /** Toggle a single id. */
   toggle: (id: string) => void;
+  /**
+   * Toggle all leaf ids in a group (select missing, or deselect when all
+   * selected) — one commit so memoized rows see a single selection change.
+   */
+  toggleGroupLeaves: (leafIds: readonly string[]) => void;
   /** Toggle every visible id (select all, or clear all if already full). */
   toggleAll: () => void;
   /** Clear the entire selection. */
@@ -143,6 +150,13 @@ export function useSelection<TRow>({
     [commit]
   );
 
+  const toggleGroupLeaves = useCallback(
+    (leafIds: readonly string[]) => {
+      commit((prev) => applyGroupLeafSelection(leafIds, prev));
+    },
+    [commit]
+  );
+
   const toggleAll = useCallback(() => {
     commit((prev) => {
       const next = new Set(prev);
@@ -167,6 +181,7 @@ export function useSelection<TRow>({
       headerState,
       isSelected,
       toggle,
+      toggleGroupLeaves,
       toggleAll,
       clear,
       visibleIds,
@@ -178,6 +193,7 @@ export function useSelection<TRow>({
       headerState,
       isSelected,
       toggle,
+      toggleGroupLeaves,
       toggleAll,
       clear,
       visibleIds,

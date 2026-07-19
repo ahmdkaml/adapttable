@@ -142,6 +142,7 @@ export function UnstyledLike({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            exportCsv
             animate={animate}
             resizableColumns
             stickyHeader

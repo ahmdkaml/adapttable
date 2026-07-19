@@ -5,6 +5,7 @@ import type {
   ConfirmHandler,
   ConfirmRequest,
   FilterDef,
+  GroupAggregatesFn,
   RowAction,
 } from "@adapttable/core";
 import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
@@ -282,7 +283,9 @@ export function statusTone(
  * past its container so a pinned column visibly sticks while scrolling.
  */
 export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
-  hidden: ["email", "team"],
+  // Keep email visible so the opt-in cell-editing demo is discoverable;
+  // hide team so revealing/pinning still widens past the container.
+  hidden: ["team"],
 };
 
 export function makeColumns(
@@ -291,7 +294,7 @@ export function makeColumns(
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
-  // Fixed pixel widths (not %) so revealing the hidden email/team columns
+  // Fixed pixel widths (not %) so revealing the hidden team column
   // pushes the total past the container and the table scrolls horizontally —
   // the only way a pinned column can be seen to stick.
   return [
@@ -319,6 +322,10 @@ export function makeColumns(
     {
       key: "email",
       header: s.email,
+      // Opt-in cell editing demo — only activates when the host passes
+      // `onCellEdit` (Frontend path in DemoBody). Column flag alone is inert.
+      editable: true,
+      editor: "text",
       accessor: (r) => (
         <span style={{ opacity: 0.7, fontSize: "0.9em" }}>{r.email}</span>
       ),
@@ -456,7 +463,14 @@ export function makeWideColumns(
       sortable: true,
       width: 140,
     },
-    { key: "email", header: s.email, accessor: (r) => r.email, width: 240 },
+    {
+      key: "email",
+      header: s.email,
+      editable: true,
+      editor: "text",
+      accessor: (r) => r.email,
+      width: 240,
+    },
     {
       key: "timeline",
       header: s.timeline,
@@ -670,3 +684,19 @@ export const DEMO_FILTER_RUNTIME = buildFilterRuntime(
 
 /** Client-side predicate; the mock API applies the same logic server-side. */
 export const matchesDemoFilters = DEMO_FILTER_RUNTIME.filterFn;
+
+/**
+ * Per-group budget subtotal for the opt-in grouping demo (frontend path
+ * only). Shares the `summaryRow` mapper shape — one function type for
+ * footer totals and group headers.
+ */
+export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> = (rows) => ({
+  budget: (
+    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+      {formatMoney(
+        rows.reduce((sum, row) => sum + budget(row), 0),
+        "en"
+      )}
+    </span>
+  ),
+});

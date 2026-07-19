@@ -78,7 +78,8 @@ export function useServerData<TRow>(
     ...urlOptions
   } = options;
   const state = useTableUrlState(urlOptions);
-  const { page, limit, search, sortBy, sortDir, sortLevels, extra } = state;
+  const { page, limit, search, sortBy, sortDir, groupBy, sortLevels, extra } =
+    state;
 
   const query = useMemo<TableQuery>(
     () => ({
@@ -121,6 +122,7 @@ export function useServerData<TRow>(
     search,
     sortBy,
     sortDir,
+    groupBy,
     extra,
     isLoading: loading && rows.length === 0,
     isFetching: loading,
@@ -131,6 +133,7 @@ export function useServerData<TRow>(
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    setGroupBy: state.setGroupBy,
     sortLevels: state.sortLevels,
     toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,

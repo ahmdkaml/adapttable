@@ -18,7 +18,8 @@
     "@adapttable/starter-mui",
     "@adapttable/starter-radix",
     "@adapttable/starter-shadcn",
-    "@adapttable/starter-unstyled"
+    "@adapttable/starter-unstyled",
+    "@adapttable/starter-unstyled-tailwind"
   ],
   "bumpVersionsWithWorkspaceProtocolOnly": true
 }

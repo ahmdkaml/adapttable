@@ -100,7 +100,7 @@ export function useBackendData<
   const paged = resolvedMode === "paged";
 
   const state = useTableUrlState(urlOptions);
-  const { page, limit, search, sortBy, sortDir, extra } = state;
+  const { page, limit, search, sortBy, sortDir, groupBy, extra } = state;
 
   const params = useMemo(() => {
     const merged: Record<string, unknown> = { ...extra, ...baseParams };
@@ -109,9 +109,20 @@ export function useBackendData<
     merged.search = search || undefined;
     merged.sortBy = sortBy;
     merged.sortDir = sortDir;
+    merged.groupBy = groupBy;
     const next = merged as Partial<TParams>;
     return sanitizeParams ? sanitizeParams(next) : next;
-  }, [extra, baseParams, page, limit, search, sortBy, sortDir, sanitizeParams]);
+  }, [
+    extra,
+    baseParams,
+    page,
+    limit,
+    search,
+    sortBy,
+    sortDir,
+    groupBy,
+    sanitizeParams,
+  ]);
 
   const query = usePaginatedQuery(params);
 
@@ -180,10 +191,12 @@ export function useBackendData<
     search,
     sortBy,
     sortDir,
+    groupBy,
     extra,
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
+    setGroupBy: state.setGroupBy,
     sortLevels: state.sortLevels,
     toggleSortLevel: state.toggleSortLevel,
     setSearch: state.setSearch,

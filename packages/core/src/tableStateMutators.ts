@@ -32,6 +32,12 @@ export interface TableStateMutators {
   setExtras: (updates: ExtraFilters) => void;
   /** Clear every extra filter (and reset the page) — search/sort stay. */
   clearExtras: () => void;
-  /** Clear search + sort + page + every extra filter in one commit. */
+  /** Clear search + sort + groupBy + page + every extra filter in one commit. */
   clearAll: () => void;
+  /**
+   * Set or clear the single-level row-grouping column key; resets to page 1.
+   * Frontend tier only — server sources may carry the URL param but chrome
+   * ignores grouping without `allFilteredRows`.
+   */
+  setGroupBy: (key: string | undefined) => void;
 }

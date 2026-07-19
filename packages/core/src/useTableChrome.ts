@@ -9,10 +9,23 @@ import {
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import {
+  type CellEditingState,
+  useCellEditing,
+} from "./editing/useCellEditing";
+import {
   type ActiveFilterChip,
   mergeFilterChips,
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
+import {
+  buildGroupedFlatModel,
+  type GroupAggregatesFn,
+  type GroupedFlatEntry,
+} from "./grouping/groupRows";
+import {
+  type GroupCollapseState,
+  useGroupCollapse,
+} from "./grouping/useGroupCollapse";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
@@ -30,7 +43,9 @@ import {
 import { devWarn } from "./utils/devWarn";
 import {
   type TableVirtualization,
+  useKeyedVirtualization,
   useTableVirtualization,
+  windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
 
 /**
@@ -70,6 +85,11 @@ export interface ToolbarChromeProps<TRow> {
   showRowsPerPage: boolean;
   /** Built column-menu node, when `enableColumnMenu` is set. */
   columnMenu?: ReactNode;
+  /**
+   * When set, render the Export CSV toolbar button and call this on click.
+   * Built by {@link makeExportCsvHandler} from the `exportCsv` prop.
+   */
+  onExportCsv?: () => void;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }
@@ -148,6 +168,30 @@ export interface TableChrome<TRow> {
     render: (row: TRow) => ReactNode;
     /** Expansion state for the chevrons. */
     expansion: RowExpansionState;
+  };
+  /**
+   * Inline cell-editing bundle — present iff `onCellEdit` is set, so ONE
+   * guard narrows both the host channel and the state machine. Omit
+   * `onCellEdit` and editing stays fully dormant (no UI, no keyboard).
+   */
+  editing?: {
+    /** Host change channel — the table never mutates rows. */
+    onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
+    /** Headless active-cell / draft / keyboard state. */
+    state: CellEditingState;
+  };
+  /**
+   * Row-grouping bundle — present iff an effective `groupBy` is set AND the
+   * source can supply a full filtered set (`allFilteredRows`). Omit
+   * `groupBy` and grouping stays fully dormant (package DNA: opt-in).
+   */
+  grouping?: {
+    groupBy: string;
+    collapsed: GroupCollapseState;
+    aggregates?: GroupAggregatesFn<TRow>;
+    /** Flat group-header + leaf entries for adapters to render. */
+    entries: readonly GroupedFlatEntry<TRow>[];
+    setGroupBy: (key: string | null) => void;
   };
   /** Whether the paged footer should render. */
   showFooter: boolean;
@@ -293,6 +337,82 @@ export function useTableChrome<TRow>(
     [renderRowDetail, expansionState]
   );
 
+  // Same opt-in pattern as `detail`: the hook always runs (Rules of Hooks),
+  // but `editing` is only exposed when the host passes `onCellEdit`.
+  const cellEditingState = useCellEditing();
+  const onCellEdit = props.onCellEdit;
+  const editing = useMemo(
+    () => (onCellEdit ? { onCellEdit, state: cellEditingState } : undefined),
+    [onCellEdit, cellEditingState]
+  );
+
+  // If the active row leaves the current page/filter set, drop the draft
+  // without committing — the host never receives a stale edit.
+  useEffect(() => {
+    if (!editing) return;
+    editing.state.discardIfRowMissing(source.rows, (row) =>
+      rowKey(row as TRow)
+    );
+  }, [editing, source.rows, rowKey]);
+
+  const groupCollapse = useGroupCollapse({
+    collapsedIds: props.collapsedGroupIds,
+    onCollapsedIdsChange: props.onCollapsedGroupIdsChange,
+  });
+
+  // Effective groupBy: prop wins when provided (including `null` to force off);
+  // otherwise the URL/source value. Empty string is treated as unset.
+  const requestedGroupBy =
+    props.groupBy === undefined ? source.groupBy : (props.groupBy ?? undefined);
+  const effectiveGroupBy =
+    requestedGroupBy && requestedGroupBy.length > 0
+      ? requestedGroupBy
+      : undefined;
+
+  useEffect(() => {
+    if (!effectiveGroupBy) return;
+    if (source.allFilteredRows) return;
+    devWarn(
+      "groupBy is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot regroup a full result set; grouping is ignored."
+    );
+  }, [effectiveGroupBy, source.allFilteredRows]);
+
+  const setGroupBy = useCallback(
+    (key: string | null) => {
+      if (props.onGroupByChange) props.onGroupByChange(key);
+      else source.setGroupBy(key ?? undefined);
+    },
+    [props, source]
+  );
+
+  const getRowId = selectionGetId ?? rowKey;
+  const grouping = useMemo(() => {
+    if (!effectiveGroupBy || !source.allFilteredRows) return undefined;
+    const entries = buildGroupedFlatModel({
+      rows: source.allFilteredRows,
+      groupBy: effectiveGroupBy,
+      columns: columnLayout.visibleColumns,
+      getRowId,
+      collapsedIds: groupCollapse.collapsedIds,
+      aggregates: props.groupAggregates,
+    });
+    return {
+      groupBy: effectiveGroupBy,
+      collapsed: groupCollapse,
+      aggregates: props.groupAggregates,
+      entries,
+      setGroupBy,
+    };
+  }, [
+    effectiveGroupBy,
+    source.allFilteredRows,
+    columnLayout.visibleColumns,
+    getRowId,
+    groupCollapse,
+    props.groupAggregates,
+    setGroupBy,
+  ]);
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -302,7 +422,7 @@ export function useTableChrome<TRow>(
     table,
     isMobile,
     confirm,
-    getRowId: selectionGetId ?? rowKey,
+    getRowId,
     mergedChips,
     activeFilterCount,
     isPaged,
@@ -311,6 +431,8 @@ export function useTableChrome<TRow>(
     isRefreshing,
     clearFilters,
     detail,
+    editing,
+    grouping,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,
@@ -321,6 +443,11 @@ export function useTableChrome<TRow>(
 export interface ChromeBodyData<TRow> {
   /** Row/card window virtualization state (disabled unless eligible). */
   virtualization: TableVirtualization<TRow>;
+  /**
+   * When grouping is armed, the (possibly virtual-windowed) flat entries
+   * adapters should render. `undefined` when grouping is dormant.
+   */
+  groupingEntries?: readonly GroupedFlatEntry<TRow>[];
   /** Sentinel ref that auto-loads the next page in infinite mode. */
   loadMoreRef: RefObject<HTMLDivElement | null>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
@@ -355,49 +482,89 @@ export function useChromeBodyData<TRow>(
       "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
     );
   }
-  // One guarded loader for both triggers (virtual end + sentinel).
   const fetchNext = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
     }
   }, [source]);
-  // Inside a maxHeight box the BOX is the scroller, so the virtual window
-  // must track it (element mode); otherwise the page scrolls (window mode).
   const scrollBoxRef = useRef<HTMLElement | null>(null);
   const virtualScrollRef = useCallback((node: HTMLElement | null) => {
     scrollBoxRef.current = node;
   }, []);
   const inScrollBox = props.maxHeight != null;
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey,
-    enabled:
-      virtualize &&
-      !chrome.isPaged &&
-      !source.error &&
-      (chrome.body === "desktop" || chrome.body === "mobile"),
-    estimateSize: chrome.isMobile
-      ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-      : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
+  const bodyEligible =
+    !chrome.isPaged &&
+    !source.error &&
+    (chrome.body === "desktop" || chrome.body === "mobile");
+  const groupingArmed = Boolean(chrome.grouping);
+  const groupKeys = chrome.grouping?.entries.map((entry) => entry.key) ?? [];
+  const estimateSize = chrome.isMobile
+    ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+    : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+  const scrollOpts = {
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
     getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
+    estimateSize,
+  } as const;
+
+  // Both hooks run unconditionally (Rules of Hooks); exactly one is enabled.
+  const groupVirtualization = useKeyedVirtualization({
+    keys: groupKeys,
+    enabled: virtualize && groupingArmed && bodyEligible,
+    ...scrollOpts,
   });
-  // A virtual window INSIDE a maxHeight box extends itself at the box's
-  // scroll end — the box never grows, so a page-level sentinel below it
-  // would stay visible and fire forever (and a Load-more button appends
-  // rows the window doesn't show). Both yield to the box.
-  const boxVirtual = virtualization.enabled && inScrollBox;
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey,
+    enabled: virtualize && !groupingArmed && bodyEligible,
+    ...scrollOpts,
+  });
+
+  const groupingEntries = chrome.grouping
+    ? windowGroupedEntries(chrome.grouping.entries, groupVirtualization.indices)
+    : undefined;
+
+  const resolvedVirtualization = resolveBodyVirtualization(
+    groupingArmed,
+    groupVirtualization,
+    virtualization
+  );
+
+  const boxVirtual = resolvedVirtualization.enabled && inScrollBox;
   const canLoadMore = !chrome.isPaged && !source.error && !boxVirtual;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: fetchNext,
-    itemCount: source.rows.length,
+    itemCount: groupingArmed
+      ? (chrome.grouping?.entries.length ?? 0)
+      : source.rows.length,
     enabled: canLoadMore,
   });
-  return { virtualization, loadMoreRef, canLoadMore, virtualScrollRef };
+  return {
+    virtualization: resolvedVirtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  };
+}
+
+function resolveBodyVirtualization<TRow>(
+  groupingArmed: boolean,
+  groupVirtualization: ReturnType<typeof useKeyedVirtualization>,
+  virtualization: TableVirtualization<TRow>
+): TableVirtualization<TRow> {
+  if (!(groupingArmed && groupVirtualization.enabled)) return virtualization;
+  return {
+    enabled: true,
+    rows: [],
+    paddingTop: groupVirtualization.paddingTop,
+    paddingBottom: groupVirtualization.paddingBottom,
+    measureElement: groupVirtualization.measureElement,
+  };
 }
 
 /**

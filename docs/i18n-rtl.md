@@ -1,4 +1,4 @@
-# React table i18n & RTL — Arabic, Hebrew, 10 locales
+# React table i18n & RTL — Arabic, Hebrew, 17 locales
 
 <video src="https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 
@@ -50,22 +50,30 @@ export function People({ data }: { data: Person[] }) {
 
 ## Bundled presets
 
-Ten label sets ship in `@adapttable/i18n`. `getLabels` matches the primary
-subtag (`"ar-EG"` → Arabic, `"de-AT"` → German) and falls back to English
-for unknown locales; `hasLocale(locale)` tells you whether a preset exists.
+Seventeen label sets ship in `@adapttable/i18n`. `getLabels` prefers an
+exact tag (`"zh-TW"` → Traditional Chinese), then the primary subtag
+(`"ar-EG"` → Arabic, `"de-AT"` → German), and falls back to English for
+unknown locales; `hasLocale(locale)` tells you whether a preset exists.
 
-| Preset | Language   | Direction |
-| ------ | ---------- | --------- |
-| `en`   | English    | ltr       |
-| `ar`   | Arabic     | rtl       |
-| `de`   | German     | ltr       |
-| `es`   | Spanish    | ltr       |
-| `fr`   | French     | ltr       |
-| `he`   | Hebrew     | rtl       |
-| `it`   | Italian    | ltr       |
-| `ja`   | Japanese   | ltr       |
-| `pt`   | Portuguese | ltr       |
-| `zh`   | Chinese    | ltr       |
+| Preset  | Language              | Direction |
+| ------- | --------------------- | --------- |
+| `en`    | English               | ltr       |
+| `ar`    | Arabic                | rtl       |
+| `de`    | German                | ltr       |
+| `es`    | Spanish               | ltr       |
+| `fa`    | Persian               | rtl       |
+| `fr`    | French                | ltr       |
+| `he`    | Hebrew                | rtl       |
+| `hi`    | Hindi                 | ltr       |
+| `it`    | Italian               | ltr       |
+| `ja`    | Japanese              | ltr       |
+| `ko`    | Korean                | ltr       |
+| `pt`    | Portuguese            | ltr       |
+| `ru`    | Russian               | ltr       |
+| `tr`    | Turkish               | ltr       |
+| `ur`    | Urdu                  | rtl       |
+| `zh`    | Chinese (Simplified)  | ltr       |
+| `zh-TW` | Chinese (Traditional) | ltr       |
 
 ## Per-column `i18n` data paths
 

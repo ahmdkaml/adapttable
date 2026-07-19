@@ -57,4 +57,9 @@ export const it: Required<TableLabels> = {
   resizeColumn: "Ridimensiona colonna",
   showColumn: "Mostra colonna",
   hideColumn: "Nascondi colonna",
+  exportCsv: "Esporta CSV",
+  editCell: "Modifica cella",
+  expandGroup: "Espandi gruppo",
+  collapseGroup: "Comprimi gruppo",
+  groupCount: (count) => `(${count})`,
 };

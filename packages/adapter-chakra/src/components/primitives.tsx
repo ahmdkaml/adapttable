@@ -5,7 +5,12 @@ import {
   Portal,
   Tooltip as ChakraTooltip,
 } from "@chakra-ui/react";
-import { type ChangeEvent, type ReactNode } from "react";
+import {
+  type ChangeEvent,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 
 /**
  * Checkbox wrapper recomposing Chakra v3's compound `Checkbox.*` into the v2
@@ -105,29 +110,41 @@ export function NativeSelect({
   value,
   placeholder,
   onChange,
+  onKeyDown,
+  onBlur,
+  fieldRef,
   flex,
   w,
   minW,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
 }: Readonly<{
   size?: "xs" | "sm" | "md" | "lg";
   value?: string | number;
   placeholder?: string;
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLSelectElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLSelectElement>) => void;
+  fieldRef?: (node: HTMLSelectElement | null) => void;
   flex?: string;
   w?: string;
   minW?: string;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children: ReactNode;
 }>) {
   return (
     <ChakraNativeSelect.Root size={size} flex={flex} w={w} minW={minW}>
       <ChakraNativeSelect.Field
+        ref={fieldRef}
+        data-adapttable-part={dataPart}
         aria-label={ariaLabel}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onKeyDown={onKeyDown}
+        onBlur={onBlur}
       >
         {children}
       </ChakraNativeSelect.Field>

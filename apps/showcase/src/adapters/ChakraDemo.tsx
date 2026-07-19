@@ -111,6 +111,7 @@ export function ChakraDemo({
               bulkActions={makeBulkActions(locale)}
               confirm={demoConfirm}
               enableColumnMenu
+              exportCsv
               animate={animate}
               resizableColumns
               stickyHeader

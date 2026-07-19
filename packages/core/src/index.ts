@@ -353,12 +353,15 @@ export {
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
+  type KeyedVirtualization,
   resolveVirtualRows,
   type TableVirtualization,
+  useKeyedVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
   virtualColumnSpan,
   type VirtualTableRow,
+  windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */
@@ -372,5 +375,73 @@ export {
   useRowExpansion,
 } from "./rows/useRowExpansion";
 
+/* ── Inline cell editing ───────────────────────────────────────────── */
+export {
+  applyCellEditCommit,
+  type CellEditCommit,
+  type CellEditor,
+  type CellEditorOption,
+  type CellEditTarget,
+  type EditableColumnLike,
+  hasEditableColumns,
+  isCellEditable,
+  nextEditableCell,
+  normalizeEditorOptions,
+  parseCellEditValue,
+  readEditableCellValue,
+  resolveCellEditor,
+  stepEditableCell,
+} from "./editing/cellEditing";
+export {
+  type EditableCellController,
+  editableCellController,
+  type EditableCellEditing,
+  type EditableCellMode,
+  focusEditorOnMount,
+  rowEditingSignature,
+  stopCellEditKeyboard,
+} from "./editing/editableCellController";
+export {
+  type EditableCellEditorCtrl,
+  EditableCellGate,
+  type EditableCellGateProps,
+} from "./editing/EditableCellGate";
+export {
+  beginCellEdit,
+  type CellEditingState,
+  type CellEditKeyAction,
+  type CellEditKeyOutcome,
+  type CellEditNavigation,
+  useCellEditing,
+} from "./editing/useCellEditing";
+
+/* ── Row grouping ──────────────────────────────────────────────────── */
+export {
+  buildGroupedFlatModel,
+  formatGroupLabel,
+  type GroupAggregatesFn,
+  type GroupedFlatEntry,
+  groupValueKey,
+  makeGroupRowKey,
+  resolveGroupValue,
+} from "./grouping/groupRows";
+export {
+  applyGroupLeafSelection,
+  groupSelectionState,
+  nextGroupSelection,
+} from "./grouping/groupSelection";
+export {
+  type GroupCollapseState,
+  useGroupCollapse,
+} from "./grouping/useGroupCollapse";
+
 /* ── Export (CSV) ──────────────────────────────────────────────────── */
 export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
+export {
+  buildTableCsv,
+  downloadTableCsv,
+  exportableColumns,
+  type ExportCsvOptions,
+  makeExportCsvHandler,
+  resolveExportCsv,
+} from "./export/tableCsv";

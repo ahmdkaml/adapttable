@@ -61,6 +61,7 @@ export function Toolbar<TRow>({
   isRefreshing,
   dir,
   columnMenu,
+  onExportCsv,
   savedViewsMenu,
   showRowsPerPage,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -135,6 +136,9 @@ export function Toolbar<TRow>({
             filtersButton
           ))}
         {columnMenu}
+        {onExportCsv && (
+          <Button onClick={onExportCsv}>{labels.exportCsv}</Button>
+        )}
         {savedViewsMenu}
         {showRowsPerPage && (
           <Select

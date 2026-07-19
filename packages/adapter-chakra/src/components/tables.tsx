@@ -3,6 +3,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type Direction,
+  type EditableCellEditing,
   ExpandChevron,
   headerGroupRow,
   logicalAlign,
@@ -17,6 +18,7 @@ import {
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   type RowExpansionState,
   runRowAction,
   type SelectionState,
@@ -51,6 +53,8 @@ import {
 } from "react";
 
 import { subtleText } from "../styles";
+import { EditableDataCell } from "./EditableCell";
+import { GroupHeaderCard, GroupHeaderRow } from "./GroupHeader";
 import { Checkbox, Tooltip } from "./primitives";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
@@ -249,6 +253,10 @@ interface DesktopRowProps<TRow> {
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
   measureRef: (element: HTMLTableRowElement | null) => void;
+  editing: EditableCellEditing<TRow> | undefined;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -259,6 +267,7 @@ interface DesktopRowProps<TRow> {
 const ROW_VISUAL_KEYS = [
   ...SHARED_DESKTOP_ROW_KEYS,
   "colorScheme",
+  "editingSignature",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -288,6 +297,9 @@ function DesktopRowBase<TRow>({
   columnSpan,
   api,
   measureRef,
+  editing,
+  rows,
+  getRowId,
 }: Readonly<DesktopRowProps<TRow>>) {
   // Render-time geometry reads the latest ref values: whenever they change,
   // a compared prop (pinSignature / hasSelection / …) changes with them.
@@ -342,11 +354,23 @@ function DesktopRowBase<TRow>({
             textAlign={logicalAlign(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
           >
-            {column.Cell ? (
-              <column.Cell row={row} rowIndex={index} />
-            ) : (
-              column.accessor?.(row)
-            )}
+            <EditableDataCell
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={labels.editCell}
+              display={
+                column.Cell ? (
+                  <column.Cell row={row} rowIndex={index} />
+                ) : (
+                  column.accessor?.(row)
+                )
+              }
+            />
           </Table.Cell>
         ))}
         {showActions && (
@@ -384,6 +408,138 @@ function createDesktopRow<TRow>() {
   return memo(DesktopRowBase<TRow>, desktopRowPropsEqual<TRow>);
 }
 
+/** Body rows for {@link DesktopTable}: group headers + leaves, or leaf-only. */
+function DesktopTableRows<TRow>({
+  grouping,
+  entries,
+  getRowId,
+  selection,
+  expansion,
+  size,
+  colorScheme,
+  dir,
+  columns,
+  columnWidths,
+  pinSignature,
+  rowClassName,
+  labels,
+  expandable,
+  showActions,
+  onRowClick,
+  columnSpan,
+  api,
+  measureRef,
+  editing,
+  rows,
+  Row,
+  onToggleGroup,
+}: Readonly<{
+  grouping: SharedTableRenderProps<TRow>["grouping"];
+  entries: ReturnType<typeof tableRenderModel<TRow>>["entries"];
+  getRowId: (row: TRow) => string;
+  selection: SelectionState | null;
+  expansion: RowExpansionState | undefined;
+  size: SharedProps<TRow>["size"];
+  colorScheme?: string;
+  dir?: Direction;
+  columns: ColumnDef<TRow>[];
+  columnWidths?: Readonly<Record<string, number>>;
+  pinSignature: string;
+  rowClassName?: (row: TRow, index: number) => string | undefined;
+  labels: Required<TableLabels>;
+  expandable: boolean;
+  showActions: boolean;
+  onRowClick?: (row: TRow) => void;
+  columnSpan: number;
+  api: RefObject<DesktopRowApi<TRow>>;
+  measureRef: (element: HTMLTableRowElement | null) => void;
+  editing?: EditableCellEditing<TRow>;
+  rows: readonly TRow[];
+  Row: ReturnType<typeof createDesktopRow<TRow>>;
+  onToggleGroup: (groupKey: string) => void;
+}>): ReactNode {
+  if (grouping) {
+    return grouping.entries.map((entry) => {
+      if (entry.kind === "group") {
+        return (
+          <GroupHeaderRow
+            key={entry.key}
+            entry={entry}
+            columnSpan={columnSpan}
+            selection={selection}
+            labels={labels}
+            dir={dir}
+            colorScheme={colorScheme}
+            onToggleCollapse={onToggleGroup}
+          />
+        );
+      }
+      const id = getRowId(entry.row);
+      return (
+        <Row
+          key={entry.key}
+          row={entry.row}
+          id={id}
+          index={entry.index}
+          selected={selection?.isSelected(id) ?? false}
+          expanded={expansion?.isExpanded(id) ?? false}
+          size={size}
+          colorScheme={colorScheme}
+          dir={dir}
+          columns={columns}
+          columnWidths={columnWidths}
+          pinSignature={pinSignature}
+          className={rowClassName?.(entry.row, entry.index)}
+          labels={labels}
+          hasSelection={Boolean(selection)}
+          expandable={expandable}
+          showActions={showActions}
+          hasRowClick={Boolean(onRowClick)}
+          columnSpan={columnSpan}
+          api={api}
+          measureRef={measureRef}
+          editing={editing}
+          rows={rows}
+          getRowId={getRowId}
+          editingSignature={rowEditingSignature(editing, id)}
+        />
+      );
+    });
+  }
+  return entries.map(({ row, index, key }) => {
+    const id = getRowId(row);
+    return (
+      <Row
+        key={key}
+        row={row}
+        id={id}
+        index={index}
+        selected={selection?.isSelected(id) ?? false}
+        expanded={expansion?.isExpanded(id) ?? false}
+        size={size}
+        colorScheme={colorScheme}
+        dir={dir}
+        columns={columns}
+        columnWidths={columnWidths}
+        pinSignature={pinSignature}
+        className={rowClassName?.(row, index)}
+        labels={labels}
+        hasSelection={Boolean(selection)}
+        expandable={expandable}
+        showActions={showActions}
+        hasRowClick={Boolean(onRowClick)}
+        columnSpan={columnSpan}
+        api={api}
+        measureRef={measureRef}
+        editing={editing}
+        rows={rows}
+        getRowId={getRowId}
+        editingSignature={rowEditingSignature(editing, id)}
+      />
+    );
+  });
+}
+
 /** Desktop Chakra table. */
 export function DesktopTable<TRow>({
   table,
@@ -400,6 +556,8 @@ export function DesktopTable<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
+  grouping,
   className,
   rowEntries,
   paddingTop = 0,
@@ -544,6 +702,12 @@ export function DesktopTable<TRow>({
       return pin ? `${column.key}:${pin.side}:${pin.inset}` : "";
     }),
   ].join("|");
+  const groupingRef = useRef(grouping);
+  groupingRef.current = grouping;
+  const onToggleGroup = useCallback(
+    (groupKey: string) => groupingRef.current?.collapsed.toggle(groupKey),
+    []
+  );
 
   return (
     <Box
@@ -694,34 +858,31 @@ export function DesktopTable<TRow>({
               <Table.Cell colSpan={columnSpan} h={`${paddingTop}px`} p={0} />
             </Table.Row>
           )}
-          {entries.map(({ row, index, key }) => {
-            const id = getRowId(row);
-            return (
-              <Row
-                key={key}
-                row={row}
-                id={id}
-                index={index}
-                selected={selection?.isSelected(id) ?? false}
-                expanded={expansion?.isExpanded(id) ?? false}
-                size={size}
-                colorScheme={colorScheme}
-                dir={dir}
-                columns={columns}
-                columnWidths={columnWidths}
-                pinSignature={pinSignature}
-                className={rowClassName?.(row, index)}
-                labels={labels}
-                hasSelection={Boolean(selection)}
-                expandable={expandable}
-                showActions={showActions}
-                hasRowClick={Boolean(onRowClick)}
-                columnSpan={columnSpan}
-                api={api}
-                measureRef={measureRef}
-              />
-            );
-          })}
+          <DesktopTableRows
+            grouping={grouping}
+            entries={entries}
+            getRowId={getRowId}
+            selection={selection}
+            expansion={expansion}
+            size={size}
+            colorScheme={colorScheme}
+            dir={dir}
+            columns={columns}
+            columnWidths={columnWidths}
+            pinSignature={pinSignature}
+            rowClassName={rowClassName}
+            labels={labels}
+            expandable={expandable}
+            showActions={showActions}
+            onRowClick={onRowClick}
+            columnSpan={columnSpan}
+            api={api}
+            measureRef={measureRef}
+            editing={editing}
+            rows={rows}
+            Row={Row}
+            onToggleGroup={onToggleGroup}
+          />
           {paddingBottom > 0 && (
             <Table.Row aria-hidden>
               <Table.Cell colSpan={columnSpan} h={`${paddingBottom}px`} p={0} />
@@ -772,6 +933,8 @@ export function MobileCards<TRow>({
   renderRowDetail,
   summaryRow,
   expansion,
+  editing,
+  grouping,
   className,
   rowEntries,
   paddingTop = 0,
@@ -782,6 +945,81 @@ export function MobileCards<TRow>({
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const compact = size === "sm";
   const summary = summaryRow?.(rows);
+
+  const renderCard = (row: TRow, index: number, key: string) => {
+    const id = getRowId(row);
+    const expanded = expansion?.isExpanded(id) ?? false;
+    return (
+      <Card.Root
+        key={key}
+        ref={measureElement}
+        data-index={index}
+        data-stagger=""
+        variant="outline"
+        role="listitem"
+        className={joinClasses(className, rowClassName?.(row, index))}
+        {...rowClickProps(row, onRowClick)}
+      >
+        <Card.Body p={compact ? 3 : undefined}>
+          {selection && (
+            <Checkbox
+              aria-label={labels.selectRow}
+              checked={selection.isSelected(id)}
+              onToggle={() => selection.toggle(id)}
+              mb={2}
+            />
+          )}
+          {expansion && (
+            <Box mb={2}>
+              <ExpandToggle
+                open={expanded}
+                dir={dir}
+                labels={labels}
+                onToggle={() => expansion.toggle(id)}
+              />
+            </Box>
+          )}
+          {columns.map((column) => (
+            <Box key={column.key} mb={compact ? 1 : 2}>
+              <Text fontSize="xs" {...subtleText} textTransform="uppercase">
+                {mobileLabel(column)}
+              </Text>
+              <Text as="div" fontSize="sm">
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={labels.editCell}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </Text>
+            </Box>
+          ))}
+          {expanded && <Box pt={1}>{renderRowDetail?.(row)}</Box>}
+          {rowActions && rowActions.length > 0 && (
+            <RowActionButtons
+              row={row}
+              actions={rowActions}
+              confirm={confirm}
+              cancelLabel={labels.cancel}
+              colorScheme={colorScheme}
+            />
+          )}
+        </Card.Body>
+      </Card.Root>
+    );
+  };
+
   return (
     <Stack
       gap={compact ? 2 : 3}
@@ -789,69 +1027,23 @@ export function MobileCards<TRow>({
       aria-label={table.getTableProps()["aria-label"]}
     >
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
-      {entries.map(({ row, index, key }) => {
-        const id = getRowId(row);
-        const expanded = expansion?.isExpanded(id) ?? false;
-        return (
-          <Card.Root
-            key={key}
-            ref={measureElement}
-            data-index={index}
-            data-stagger=""
-            variant="outline"
-            role="listitem"
-            className={joinClasses(className, rowClassName?.(row, index))}
-            {...rowClickProps(row, onRowClick)}
-          >
-            <Card.Body p={compact ? 3 : undefined}>
-              {selection && (
-                <Checkbox
-                  aria-label={labels.selectRow}
-                  checked={selection.isSelected(id)}
-                  onToggle={() => selection.toggle(id)}
-                  mb={2}
-                />
-              )}
-              {expansion && (
-                <Box mb={2}>
-                  <ExpandToggle
-                    open={expanded}
-                    dir={dir}
-                    labels={labels}
-                    onToggle={() => expansion.toggle(id)}
-                  />
-                </Box>
-              )}
-              {columns.map((column) => (
-                <Box key={column.key} mb={compact ? 1 : 2}>
-                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-                    {mobileLabel(column)}
-                  </Text>
-                  {/* Cells are arbitrary ReactNode (often block elements) —
-                      a <p> wrapper would be invalid HTML. */}
-                  <Text as="div" fontSize="sm">
-                    {column.Cell ? (
-                      <column.Cell row={row} rowIndex={index} />
-                    ) : (
-                      column.accessor?.(row)
-                    )}
-                  </Text>
-                </Box>
-              ))}
-              {expanded && <Box pt={1}>{renderRowDetail?.(row)}</Box>}
-              {rowActions && rowActions.length > 0 && (
-                <RowActionButtons
-                  row={row}
-                  actions={rowActions}
-                  confirm={confirm}
-                  cancelLabel={labels.cancel}
-                  colorScheme={colorScheme}
-                />
-              )}
-            </Card.Body>
-          </Card.Root>
-        );
-      })}
+      {grouping
+        ? grouping.entries.map((entry) =>
+            entry.kind === "group" ? (
+              <GroupHeaderCard
+                key={entry.key}
+                entry={entry}
+                selection={selection}
+                labels={labels}
+                dir={dir}
+                colorScheme={colorScheme}
+                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+              />
+            ) : (
+              renderCard(entry.row, entry.index, entry.key)
+            )
+          )
+        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
       {paddingBottom > 0 && <Box aria-hidden h={`${paddingBottom}px`} />}
       {summary && (
         <Card.Root variant="outline" role="listitem" className={className}>

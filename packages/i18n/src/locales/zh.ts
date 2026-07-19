@@ -57,4 +57,9 @@ export const zh: Required<TableLabels> = {
   resizeColumn: "调整列宽",
   showColumn: "显示列",
   hideColumn: "隐藏列",
+  exportCsv: "导出 CSV",
+  editCell: "编辑单元格",
+  expandGroup: "展开分组",
+  collapseGroup: "折叠分组",
+  groupCount: (count) => `(${count})`,
 };

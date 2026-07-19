@@ -1,10 +1,13 @@
 import {
   type ColumnDef,
   type ConfirmHandler,
+  type EditableCellEditing,
+  type GroupedFlatEntry,
   resolveDisabledReason,
   resolveVirtualRows,
   type RowAction,
   rowClickProps,
+  rowEditingSignature,
   type RowExpansionState,
   runRowAction,
   type TableLabels,
@@ -15,7 +18,13 @@ import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 import { type ReactNode, useMemo } from "react";
 
 import { isDangerColor } from "../colors";
+import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import {
+  ADAPTTABLE_GROUP,
+  type AdaptTableGroupRow,
+  GroupHeaderCard,
+} from "./grouping";
 
 /** The mobile-card label for a column: explicit `mobileLabel`, else a string
  * `header`, else the column key. */
@@ -121,6 +130,10 @@ interface CardItemProps<TRow> {
   /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
+  editing?: EditableCellEditing<TRow>;
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  editingSignature: string | null;
 }
 
 /**
@@ -150,7 +163,11 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
     renderDetail,
     onRowClick,
     prefetch,
+    editing,
+    rows,
+    getRowId,
   } = props;
+  const { editingSignature } = props;
   return useMemo(() => {
     const actions = rowActions && rowActions.length > 0 ? rowActions : null;
     return (
@@ -194,11 +211,17 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
         <Descriptions column={1} size="small" colon={false}>
           {columns.map((column) => (
             <Descriptions.Item key={column.key} label={cardLabel(column)}>
-              {column.Cell ? (
-                <column.Cell row={row} rowIndex={rowIndex} />
-              ) : (
-                column.accessor?.(row)
-              )}
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rowIndex={rowIndex}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+              />
             </Descriptions.Item>
           ))}
         </Descriptions>
@@ -225,6 +248,10 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
     renderDetail,
     onRowClick,
     prefetch,
+    editing,
+    rows,
+    getRowId,
+    editingSignature,
   ]);
 }
 
@@ -252,6 +279,8 @@ export function MobileCards<TRow>({
   expansion,
   renderRowDetail,
   summaryRow,
+  editing,
+  grouping,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -276,6 +305,16 @@ export function MobileCards<TRow>({
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /** Opt-in editing bundle — omit and cells stay display-only. */
+  editing?: EditableCellEditing<TRow>;
+  /**
+   * Opt-in grouping bundle — when set, cards iterate flat group/leaf entries
+   * instead of the leaf-only virtual window.
+   */
+  grouping?: {
+    collapsed: { toggle: (key: string) => void };
+    entries: readonly GroupedFlatEntry<TRow>[];
+  };
   /**
    * Windowed entries to render — the virtual slice when virtualization is on,
    * `undefined` to render every source row (the non-windowed default).
@@ -292,6 +331,47 @@ export function MobileCards<TRow>({
   // Either the virtual slice or every source row, resolved to render entries
   // with their ORIGINAL index (so cells and classes see the true row index).
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+
+  const renderLeafCard = (row: TRow, index: number, key: string) => {
+    const id = getRowId(row);
+    return (
+      <li key={key} ref={measureElement} data-index={index}>
+        <CardItem
+          row={row}
+          rowIndex={index}
+          id={id}
+          columns={columns}
+          labels={labels}
+          confirm={confirm}
+          rowActions={rowActions}
+          className={rowClassName?.(row, index)}
+          selected={selection ? selection.isSelected(id) : false}
+          expanded={expansion ? expansion.isExpanded(id) : false}
+          onToggleSelect={selection ? selection.toggle : undefined}
+          onToggleExpand={expansion ? expansion.toggle : undefined}
+          renderDetail={renderRowDetail}
+          onRowClick={onRowClick}
+          prefetch={prefetch}
+          editing={editing}
+          rows={rows}
+          getRowId={getRowId}
+          editingSignature={rowEditingSignature(editing, id)}
+        />
+      </li>
+    );
+  };
+
+  const toGroupRow = (
+    entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>
+  ): AdaptTableGroupRow => ({
+    [ADAPTTABLE_GROUP]: true,
+    key: entry.key,
+    label: entry.label,
+    leafIds: entry.leafIds,
+    aggregateCells: entry.aggregateCells,
+    collapsed: entry.collapsed,
+  });
+
   return (
     <ul
       data-adapttable-part="cards"
@@ -306,30 +386,34 @@ export function MobileCards<TRow>({
       }}
     >
       {paddingTop > 0 && <li aria-hidden style={{ height: paddingTop }} />}
-      {entries.map(({ row, index, key }) => {
-        const id = getRowId(row);
-        return (
-          <li key={key} ref={measureElement} data-index={index}>
-            <CardItem
-              row={row}
-              rowIndex={index}
-              id={id}
-              columns={columns}
-              labels={labels}
-              confirm={confirm}
-              rowActions={rowActions}
-              className={rowClassName?.(row, index)}
-              selected={selection ? selection.isSelected(id) : false}
-              expanded={expansion ? expansion.isExpanded(id) : false}
-              onToggleSelect={selection ? selection.toggle : undefined}
-              onToggleExpand={expansion ? expansion.toggle : undefined}
-              renderDetail={renderRowDetail}
-              onRowClick={onRowClick}
-              prefetch={prefetch}
-            />
-          </li>
-        );
-      })}
+      {grouping
+        ? grouping.entries.map((entry) => {
+            if (entry.kind === "group") {
+              return (
+                <li key={entry.key} ref={measureElement}>
+                  <GroupHeaderCard
+                    group={toGroupRow(entry)}
+                    labels={labels}
+                    onToggle={() => grouping.collapsed.toggle(entry.key)}
+                    selection={selection ?? undefined}
+                    aggregateNodes={
+                      entry.aggregateCells
+                        ? Object.entries(entry.aggregateCells).map(
+                            ([colKey, node]) => (
+                              <span key={colKey} data-column={colKey}>
+                                {node}
+                              </span>
+                            )
+                          )
+                        : undefined
+                    }
+                  />
+                </li>
+              );
+            }
+            return renderLeafCard(entry.row, entry.index, entry.key);
+          })
+        : entries.map(({ row, index, key }) => renderLeafCard(row, index, key))}
       {summaryRow && (
         <li>
           <SummaryCard rows={rows} columns={columns} summaryRow={summaryRow} />

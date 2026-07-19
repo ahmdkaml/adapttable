@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import { makeExportCsvHandler } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
@@ -104,8 +105,13 @@ export function useDataTableShell<TRow>(
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
-  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
-    useChromeBodyData(chrome, chromeProps);
+  const {
+    virtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  } = useChromeBodyData(chrome, chromeProps);
 
   // The injected actions column is first-class in column management: the layout
   // state treats its reserved key like any column key, so the Columns menu can
@@ -117,6 +123,11 @@ export function useDataTableShell<TRow>(
     : props.rowActions;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+
+  const grouping =
+    chrome.grouping && groupingEntries
+      ? { ...chrome.grouping, entries: groupingEntries }
+      : chrome.grouping;
 
   // The kit-agnostic slice of a table renderer's props — the adapter spreads
   // this and adds its kit's row `size` and accent colour.
@@ -144,6 +155,8 @@ export function useDataTableShell<TRow>(
     renderRowDetail: props.renderRowDetail,
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
+    editing: chrome.editing,
+    grouping,
     dir: props.dir,
   };
 
@@ -160,6 +173,7 @@ export function useDataTableShell<TRow>(
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,
     showRowsPerPage: canLoadMore,
+    onExportCsv: makeExportCsvHandler(props.exportCsv, source, table.columns),
     dir: props.dir,
   };
 

@@ -6,9 +6,15 @@ import {
   useFrontendData,
 } from "@adapttable/core";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 
-import { BASE_COLUMNS, DEMO_FILTER_RUNTIME, PEOPLE, type Person } from "./data";
+import {
+  BASE_COLUMNS,
+  DEMO_FILTER_RUNTIME,
+  DEMO_GROUP_AGGREGATES,
+  PEOPLE,
+  type Person,
+} from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
 export type DataMode = "frontend" | "backend";
@@ -26,10 +32,21 @@ const DEFAULTS = { limit: 5 };
  * `<DataTable>`. Wiring these makes pin / hide / reorder / resize survive a
  * kit remount and a page reload. Density / locale / filters update as props
  * without tearing the table down.
+ *
+ * `onCellEdit` is frontend-only: mutable local rows. Backend mode omits it
+ * so editing stays fully dormant (package DNA — nothing forced).
+ *
+ * `groupBy` / `groupAggregates` follow the same rule — frontend tier only;
+ * server-paginated sources cannot regroup a full result set.
  */
 export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
+  onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
+  groupBy?: string;
+  groupAggregates?: (
+    rows: readonly Person[]
+  ) => Partial<Record<string, ReactNode>>;
 }
 
 /** Adapter demos provide this — given a source + column controls, render. */
@@ -71,8 +88,20 @@ interface DataProps {
 }
 
 function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
+  // Clone so cell edits never mutate the shared PEOPLE seed.
+  const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
+  const onCellEdit = useCallback(
+    (row: Person, key: string, nextValue: unknown) => {
+      setData((prev) =>
+        prev.map((r) =>
+          r.id === row.id ? { ...r, [key]: nextValue as never } : r
+        )
+      );
+    },
+    []
+  );
   const source = useFrontendData<Person>({
-    data: PEOPLE,
+    data,
     columns: BASE_COLUMNS,
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
@@ -81,7 +110,16 @@ function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     paginationMode: pageMode,
     urlKey,
   });
-  return <>{render(source, columns)}</>;
+  return (
+    <>
+      {render(source, {
+        ...columns,
+        onCellEdit,
+        groupBy: "team",
+        groupAggregates: DEMO_GROUP_AGGREGATES,
+      })}
+    </>
+  );
 }
 
 function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
@@ -93,6 +131,7 @@ function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     paginationMode: pageMode,
     urlKey,
   });
+  // No onCellEdit — editing stays dormant on the server path.
   return <>{render(source, columns)}</>;
 }
 

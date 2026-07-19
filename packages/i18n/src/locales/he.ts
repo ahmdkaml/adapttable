@@ -59,4 +59,9 @@ export const he: Required<TableLabels> = {
   resizeColumn: "שנה גודל עמודה",
   showColumn: "הצג עמודה",
   hideColumn: "הסתר עמודה",
+  exportCsv: "ייצוא CSV",
+  editCell: "עריכת תא",
+  expandGroup: "הרחב קבוצה",
+  collapseGroup: "כווץ קבוצה",
+  groupCount: (count) => `(${count})`,
 };

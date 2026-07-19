@@ -18,6 +18,12 @@ export interface TableSource<TRow> extends TableStateMutators {
   /* ── Data ────────────────────────────────────────────────────────── */
   /** The current materialised rows for the active page/slice. */
   readonly rows: readonly TRow[];
+  /**
+   * Every row matching the active search/filters/sort, unpaginated.
+   * Frontend sources set this; server sources typically omit it (only the
+   * current page is loaded). CSV `scope: "all"` prefers this when present.
+   */
+  readonly allFilteredRows?: readonly TRow[];
   /** Total row count across all pages (server total or full array length). */
   readonly total: number;
   /** True during the first load (no data yet). */
@@ -50,6 +56,12 @@ export interface TableSource<TRow> extends TableStateMutators {
   readonly sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   readonly extra: ExtraFilters;
+  /**
+   * Active single-level row-grouping column key, if any. Frontend chrome
+   * builds the grouped flat model when set; server sources may echo the URL
+   * param but grouping stays dormant without `allFilteredRows`.
+   */
+  readonly groupBy: string | undefined;
 
   /* State (write) is the shared {@link TableStateMutators} contract. */
 }

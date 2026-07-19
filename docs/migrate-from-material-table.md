@@ -19,10 +19,12 @@ material-table is a table-plus-CRUD-suite. AdaptTable deliberately isn't.
 If you depend on these, AdaptTable is the wrong target (Material React Table
 is the closer fit):
 
-- **Inline row/cell editing** (`editable`, `cellEditable`, `editComponent`) —
-  AdaptTable has no editing engine. The equivalent pattern is `rowActions`
-  opening your own form/dialog, with the built-in `confirm` seam for
-  destructive actions.
+- **Full row-edit CRUD suites** (`editable` as a material-table-style
+  object with `onRowAdd` / `onRowUpdate`) — AdaptTable ships **opt-in
+  inline cell editing** via `onCellEdit` + `ColumnDef.editable` (see
+  [Inline cell editing](./cell-editing.md)), not material-table's row
+  dialog engine. Multi-field forms still go through `rowActions` + your
+  own UI, with the built-in `confirm` seam for destructive actions.
 - **Drag-to-group aggregation** (`options.grouping`) — AdaptTable has
   presentational header groups, not runtime grouping.
 - **Tree data** (`parentChildData`) — not supported.
@@ -77,9 +79,9 @@ Same Material look, on a current MUI — and your rows stay untouched.
 | `options.columnResizable`                            | `resizableColumns`                                    | —                                                                    |
 | `options.fixedColumns: { left, right }`              | column pinning via `columnLayout` / Columns menu      | Logical sides — RTL-correct.                                         |
 | `options.padding: "dense"`                           | `density="compact"`                                   | —                                                                    |
-| `options.exportButton`                               | `rowsToCsv` / `downloadCsv` + `toolbar`               | CSV headless helper; PDF is out of scope.                            |
+| `options.exportButton`                               | `exportCsv` / `rowsToCsv` + `downloadCsv`             | Built-in CSV button or headless helper; PDF is out of scope.         |
 | `options.maxBodyHeight`                              | `maxHeight`                                           | Enables the scroll box + sticky pinning.                             |
-| `localization`                                       | `labels` (+ [`@adapttable/i18n`](./i18n-rtl.md))      | Flat label object; presets for 10 locales incl. RTL.                 |
+| `localization`                                       | `labels` (+ [`@adapttable/i18n`](./i18n-rtl.md))      | Flat label object; presets for 17 locales incl. RTL.                 |
 | `isLoading`                                          | `loading`                                             | —                                                                    |
 
 Column def → `ColumnDef`:

@@ -38,6 +38,7 @@ export function Toolbar<TRow>({
   onClearFilters,
   dir,
   columnMenu,
+  onExportCsv,
   showRowsPerPage,
   className,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -120,6 +121,11 @@ export function Toolbar<TRow>({
             filtersButton
           ))}
         {columnMenu}
+        {onExportCsv && (
+          <Button variant="default" size="sm" onClick={onExportCsv}>
+            {labels.exportCsv}
+          </Button>
+        )}
         {showRowsPerPage && (
           <Group gap="xs" align="center">
             <Text fz="xs" c="dimmed">

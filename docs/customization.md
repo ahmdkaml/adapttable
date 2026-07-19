@@ -55,6 +55,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersButton`                                   | The Filters trigger button.                                                            |
 | `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
 | `filtersCount`                                    | The active-filter count badge.                                                         |
+| `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -122,6 +123,32 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `detailRow` / `detailCell`    | The full-width detail `<tr>` and its spanning `<td>`. |
 | `cardDetail`                  | The detail section inside an expanded mobile card.    |
 
+### Inline cell editing
+
+Opt-in via `onCellEdit` — see [Inline cell editing](./cell-editing.md). When
+editing is dormant these parts are never mounted.
+
+| Part                 | Element                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `edit-cell-activate` | Invisible activate control (double-click / Enter / F2 begins edit). |
+| `edit-cell-editor`   | Kit-native input / select while the cell is active.                 |
+
+### Row grouping
+
+Opt-in via `groupBy` — see [Row grouping](./row-grouping.md). When grouping
+is dormant these parts are never mounted.
+
+| Part              | Element                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| `group-row`       | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
+| `group-cell`      | The spanning `<td>` / `<th>` inside a group header (most kits).       |
+| `group-card`      | Group header block in the mobile card list.                           |
+| `group-toggle`    | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
+| `group-label`     | The group's display label (bucket value).                             |
+| `group-count`     | Leaf count beside the label (`labels.groupCount`).                    |
+| `group-select`    | Tri-state checkbox over the group's leaf rows (when selection is on). |
+| `group-aggregate` | One per-group aggregate cell (`data-column` = column key).            |
+
 ### Mobile cards & summary
 
 | Part                                     | Element                                            |
@@ -181,6 +208,36 @@ height and padding. Each adapter maps it to its kit's table size — MUI
 `small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
 explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
+
+## CSV export
+
+Opt in with `exportCsv` to render a kit-native **Export CSV** button next to
+Filters / Columns. The file mirrors the current view: visible columns in
+display order, under the active search, filters, and sort.
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv // defaults: export.csv, current page
+/>
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv={{ filename: "people.csv", scope: "all" }}
+/>
+```
+
+- `scope: "page"` (default) — the current page / loaded slice.
+- `scope: "all"` — the full filtered+sorted set when the source exposes it
+  (frontend does); server-backed sources fall back to the current page unless
+  you wire your own download against an export endpoint via `toolbar`.
+
+Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
+`downloadTableCsv` from `@adapttable/core`.
 
 ## Sticky header, offset & scroll box
 

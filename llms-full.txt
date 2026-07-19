@@ -222,6 +222,8 @@ The source for each lives in
 
 - [Columns](./columns.md) — headers, custom cells, the Columns menu
   (show/hide, reorder, pin), resizing.
+- [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
+  editors, keyboard flow.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
 - [Data tiers](./data-tiers.md) — server data without a query library
@@ -1329,6 +1331,198 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 ---
 
+# React table inline cell editing
+
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
+Edit a cell in place by passing `onCellEdit` and marking columns `editable`.
+Omit `onCellEdit` and the table never opens an editor — even if columns
+declare `editable`. The table never mutates rows; your handler applies the
+change.
+
+## Example
+
+```tsx
+import { useState } from "react";
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, base-ui, shadcn, unstyled
+
+interface Person {
+  id: string;
+  name: string;
+  role: string;
+  status: "Active" | "Planned" | "Blocked";
+}
+
+const SEED: Person[] = [
+  { id: "1", name: "Aisha", role: "Engineer", status: "Active" },
+  { id: "2", name: "Jonas", role: "Designer", status: "Planned" },
+];
+
+export function People() {
+  const [rows, setRows] = useState(SEED);
+  return (
+    <DataTable
+      data={rows}
+      columns={[
+        { key: "name", sortable: true, editable: true },
+        {
+          key: "status",
+          editable: true,
+          editor: {
+            type: "select",
+            options: ["Active", "Planned", "Blocked"],
+          },
+        },
+        { key: "role", editable: (row) => row.status !== "Blocked" },
+      ]}
+      rowKey={(r) => r.id}
+      onCellEdit={(row, key, nextValue) => {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === row.id ? { ...r, [key]: nextValue as never } : r
+          )
+        );
+      }}
+    />
+  );
+}
+```
+
+## How it works
+
+- **Opt-in.** `onCellEdit` is the switch. Without it, cells stay plain display
+  (package DNA: nothing is pushed on the developer).
+- **Per-column.** `editable` is `true`, `false`, or `(row) => boolean`. The
+  editor defaults to `"text"`; use `"number"` or
+  `{ type: "select", options }` for the other kits.
+- **Keyboard.** Double-click / Enter / F2 begins; Enter commits; Escape
+  cancels and restores focus; Tab / Shift+Tab commits and advances to the
+  next editable cell.
+- **One-way data flow.** The commit payload is
+  `onCellEdit(row, key, nextValue)` — adapters render kit-native inputs;
+  core owns the state machine so every kit behaves the same.
+- Out of scope (by design): row-level edit mode, validation UI, and
+  optimistic-update helpers — persistence stays with the host.
+
+## Options
+
+| Prop / field | Type                                                   | Default  | Description                                                                |
+| ------------ | ------------------------------------------------------ | -------- | -------------------------------------------------------------------------- |
+| `onCellEdit` | `(row: TRow, key: string, nextValue: unknown) => void` | —        | Change channel; its presence enables editing.                              |
+| `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
+| `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
+| `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+
+## Notes
+
+- Works on desktop rows and mobile cards, LTR and RTL.
+- Custom `Cell` / `accessor` still render in display mode; the editor replaces
+  them only while that cell is active.
+- Prefer updating your row list immutably in `onCellEdit` so React sees a new
+  `data` / source identity.
+
+See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/) —
+double-click the Email column.
+
+---
+
+# React table row grouping & per-group aggregates
+
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
+Group rows by one column with `groupBy` and optional per-group subtotals via
+`groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
+`groupBy` and the table never inserts group header rows (package DNA: opt-in).
+
+## Example
+
+```tsx
+import { DataTable } from "@adapttable/mantine"; // or mui, chakra, antd, radix, base-ui, shadcn, unstyled
+
+interface Person {
+  id: string;
+  name: string;
+  team: string;
+  budget: number;
+}
+
+const PEOPLE: Person[] = [
+  { id: "1", name: "Aisha", team: "Core", budget: 42_000 },
+  { id: "2", name: "Jonas", team: "Platform", budget: 38_000 },
+  { id: "3", name: "Mei", team: "Core", budget: 51_000 },
+];
+
+export function People() {
+  return (
+    <DataTable
+      data={PEOPLE}
+      columns={[
+        { key: "name", sortable: true },
+        { key: "team", sortable: true },
+        {
+          key: "budget",
+          accessor: (r) => `$${r.budget.toLocaleString()}`,
+          sortValue: (r) => r.budget,
+        },
+      ]}
+      rowKey={(r) => r.id}
+      groupBy="team"
+      groupAggregates={(rows) => ({
+        budget: (
+          <b>${rows.reduce((sum, r) => sum + r.budget, 0).toLocaleString()}</b>
+        ),
+      })}
+    />
+  );
+}
+```
+
+## How it works
+
+- **Opt-in.** Pass `groupBy` (a column key) or set `source.groupBy` via
+  `useFrontendData` / URL state — without it, grouping stays fully dormant.
+- **Single level.** One grouping column at a time (no nested groups, no
+  drag-to-group panel).
+- **Frontend tier only.** Grouping needs the full filtered row set in memory
+  (`allFilteredRows`). Server-paginated sources log a dev-mode warning and
+  ignore grouping — see [Data tiers](./data-tiers.md).
+- **Shared mapper.** `groupAggregates(rows)` uses the same
+  `(rows) => Partial<Record<string, ReactNode>>` shape as `summaryRow`; reuse
+  one function for both if the math is identical.
+- **Expand / collapse.** Groups start expanded. Collapse state is ephemeral
+  (not URL-synced). `groupBy` itself serializes to the URL like sort and
+  filters.
+- **Selection.** When row checkboxes are enabled, each group header exposes a
+  tri-state checkbox over its leaf rows.
+
+## Options
+
+| Prop / field                | Type                                                            | Default | Description                                                                                 |
+| --------------------------- | --------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `groupBy`                   | `string \| null`                                                | —       | Column key to group by; its presence arms grouping (still requires a frontend data source). |
+| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —       | Controlled change channel; falls back to `source.setGroupBy`.                               |
+| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —       | Per-group cells — **same signature as `summaryRow`**. Omit for headers without subtotals.   |
+| `collapsedGroupIds`         | `readonly string[]`                                             | —       | Controlled collapsed group keys (ephemeral — not URL-synced).                               |
+| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —       | Controlled collapse channel; uncontrolled mode uses internal state.                         |
+| `labels`                    | `TableLabels`                                                   | English | Override `expandGroup`, `collapseGroup`, and `groupCount` for header controls.              |
+
+## Notes
+
+- Bucketing uses the column's `sortValue` when present, otherwise a path lookup
+  on the column key — never the JSX `accessor`.
+- Works on desktop rows and mobile cards, LTR and RTL, with and without
+  `virtualize` (virtual windows count collapsed groups as one row).
+- Out of scope (by design): multi-level nesting, pivot mode, drag-to-group,
+  and Excel-style aggregation pickers.
+- Ant Design maps group headers onto its high-level `Table` via custom row
+  rendering; every other kit renders native group header rows/cards.
+
+See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/) —
+rows are grouped by team with a budget subtotal per group.
+
+---
+
 # React table column management — show/hide, reorder, pin, resize
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
@@ -1942,6 +2136,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersButton`                                   | The Filters trigger button.                                                            |
 | `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
 | `filtersCount`                                    | The active-filter count badge.                                                         |
+| `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -2009,6 +2204,32 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `detailRow` / `detailCell`    | The full-width detail `<tr>` and its spanning `<td>`. |
 | `cardDetail`                  | The detail section inside an expanded mobile card.    |
 
+### Inline cell editing
+
+Opt-in via `onCellEdit` — see [Inline cell editing](./cell-editing.md). When
+editing is dormant these parts are never mounted.
+
+| Part                 | Element                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `edit-cell-activate` | Invisible activate control (double-click / Enter / F2 begins edit). |
+| `edit-cell-editor`   | Kit-native input / select while the cell is active.                 |
+
+### Row grouping
+
+Opt-in via `groupBy` — see [Row grouping](./row-grouping.md). When grouping
+is dormant these parts are never mounted.
+
+| Part              | Element                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| `group-row`       | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
+| `group-cell`      | The spanning `<td>` / `<th>` inside a group header (most kits).       |
+| `group-card`      | Group header block in the mobile card list.                           |
+| `group-toggle`    | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
+| `group-label`     | The group's display label (bucket value).                             |
+| `group-count`     | Leaf count beside the label (`labels.groupCount`).                    |
+| `group-select`    | Tri-state checkbox over the group's leaf rows (when selection is on). |
+| `group-aggregate` | One per-group aggregate cell (`data-column` = column key).            |
+
 ### Mobile cards & summary
 
 | Part                                     | Element                                            |
@@ -2068,6 +2289,36 @@ height and padding. Each adapter maps it to its kit's table size — MUI
 `small`, Radix `"2"` / `"1"` — and MUI, Chakra, antd, and Radix offer an
 explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
+
+## CSV export
+
+Opt in with `exportCsv` to render a kit-native **Export CSV** button next to
+Filters / Columns. The file mirrors the current view: visible columns in
+display order, under the active search, filters, and sort.
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv // defaults: export.csv, current page
+/>
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv={{ filename: "people.csv", scope: "all" }}
+/>
+```
+
+- `scope: "page"` (default) — the current page / loaded slice.
+- `scope: "all"` — the full filtered+sorted set when the source exposes it
+  (frontend does); server-backed sources fall back to the current page unless
+  you wire your own download against an export endpoint via `toolbar`.
+
+Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
+`downloadTableCsv` from `@adapttable/core`.
 
 ## Sticky header, offset & scroll box
 
@@ -2145,7 +2396,7 @@ See the [Columns guide](./columns.md) and the
 
 ---
 
-# React table i18n & RTL — Arabic, Hebrew, 10 locales
+# React table i18n & RTL — Arabic, Hebrew, 17 locales
 
 <video src="https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
 
@@ -2197,22 +2448,30 @@ export function People({ data }: { data: Person[] }) {
 
 ## Bundled presets
 
-Ten label sets ship in `@adapttable/i18n`. `getLabels` matches the primary
-subtag (`"ar-EG"` → Arabic, `"de-AT"` → German) and falls back to English
-for unknown locales; `hasLocale(locale)` tells you whether a preset exists.
+Seventeen label sets ship in `@adapttable/i18n`. `getLabels` prefers an
+exact tag (`"zh-TW"` → Traditional Chinese), then the primary subtag
+(`"ar-EG"` → Arabic, `"de-AT"` → German), and falls back to English for
+unknown locales; `hasLocale(locale)` tells you whether a preset exists.
 
-| Preset | Language   | Direction |
-| ------ | ---------- | --------- |
-| `en`   | English    | ltr       |
-| `ar`   | Arabic     | rtl       |
-| `de`   | German     | ltr       |
-| `es`   | Spanish    | ltr       |
-| `fr`   | French     | ltr       |
-| `he`   | Hebrew     | rtl       |
-| `it`   | Italian    | ltr       |
-| `ja`   | Japanese   | ltr       |
-| `pt`   | Portuguese | ltr       |
-| `zh`   | Chinese    | ltr       |
+| Preset  | Language              | Direction |
+| ------- | --------------------- | --------- |
+| `en`    | English               | ltr       |
+| `ar`    | Arabic                | rtl       |
+| `de`    | German                | ltr       |
+| `es`    | Spanish               | ltr       |
+| `fa`    | Persian               | rtl       |
+| `fr`    | French                | ltr       |
+| `he`    | Hebrew                | rtl       |
+| `hi`    | Hindi                 | ltr       |
+| `it`    | Italian               | ltr       |
+| `ja`    | Japanese              | ltr       |
+| `ko`    | Korean                | ltr       |
+| `pt`    | Portuguese            | ltr       |
+| `ru`    | Russian               | ltr       |
+| `tr`    | Turkish               | ltr       |
+| `ur`    | Urdu                  | rtl       |
+| `zh`    | Chinese (Simplified)  | ltr       |
+| `zh-TW` | Chinese (Traditional) | ltr       |
 
 ## Per-column `i18n` data paths
 
@@ -2342,23 +2601,30 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Appearance & chrome
 
-| Prop                  | Type                                                            | Default         | Description                                                                                         |
-| --------------------- | --------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
-| `tableLabel`          | `string`                                                        | —               | Accessible label for the table.                                                                     |
-| `labels`              | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                         |
-| `dir`                 | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                     |
-| `locale`              | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.          |
-| `density`             | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                          |
-| `isMobile`            | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                     |
-| `toolbar`             | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, export buttons, …).                          |
-| `skeletonRows`        | `number`                                                        | page size       | Number of skeleton rows while loading.                                                              |
-| `stickyHeader`        | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                               |
-| `stickyTop`           | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                  |
-| `scrollToTopOnChange` | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                           |
-| `scrollTopGap`        | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                  |
-| `rowClassName`        | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                         |
-| `renderRowDetail`     | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id. |
-| `summaryRow`          | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                     |
+| Prop                        | Type                                                            | Default         | Description                                                                                                                                                                                                                                |
+| --------------------------- | --------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tableLabel`                | `string`                                                        | —               | Accessible label for the table.                                                                                                                                                                                                            |
+| `labels`                    | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                                                                                                                |
+| `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                            |
+| `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                 |
+| `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                 |
+| `isMobile`                  | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                            |
+| `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                              |
+| `exportCsv`                 | `boolean \| { filename?: string; scope?: "page" \| "all" }`     | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page; `scope: "all"` uses the full filtered set when the source provides it — server sources without `allFilteredRows` fall back to the current page with a dev warning. |
+| `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                     |
+| `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                      |
+| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                         |
+| `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                  |
+| `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                         |
+| `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                |
+| `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                        |
+| `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                              |
+| `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                            |
+| `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                          |
+| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                |
+| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                        |
+| `collapsedGroupIds`         | `readonly string[]`                                             | —               | Controlled collapsed group keys (ephemeral — not URL-synced).                                                                                                                                                                              |
+| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —               | Controlled collapse channel; uncontrolled mode uses internal state.                                                                                                                                                                        |
 
 ### Virtualization
 
@@ -2387,23 +2653,26 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop            | Type                             | Default       | Description                                                                                                                                             |
-| --------------- | -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`           | `string`                         | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
-| `header`        | `ReactNode`                      | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
-| `group`         | `string`                         | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
-| `i18n`          | `Record<string, string>`         | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
-| `filter`        | `ColumnFilter<TRow>`             | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
-| `Cell`          | `ComponentType<CellProps<TRow>>` | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
-| `accessor`      | `(row: TRow) => ReactNode`       | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
-| `sortValue`     | `(row: TRow) => SortableValue`   | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
-| `sortable`      | `boolean`                        | `false`       | Enable sorting for this column.                                                                                                                         |
-| `width`         | `number \| string`               | —             | Column width passed through to the rendered header/cell.                                                                                                |
-| `align`         | `"start" \| "center" \| "end"`   | `"start"`     | Text alignment within the cell.                                                                                                                         |
-| `mobileLabel`   | `string`                         | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
-| `hideOnMobile`  | `boolean`                        | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
-| `hideOnDesktop` | `boolean`                        | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
-| `meta`          | `Record<string, unknown>`        | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
+| Prop            | Type                                                | Default       | Description                                                                                                                                             |
+| --------------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
+| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
+| `group`         | `string`                                            | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
+| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
+| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
+| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
+| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
+| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
+| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
+| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
+| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
+| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
+| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
+| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
+| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                           |
+| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                      |
+| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                             |
+| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
 
 ## FilterDef
 
@@ -2526,8 +2795,9 @@ All from `@adapttable/core`.
 - `useDebounce(value, ms)`, `useMediaQuery(query)`, `useIsMobile()`,
   `usePrefersReducedMotion()`, `useColorScheme(preference)`.
 
-Notable non-hook helpers: `rowsToCsv` / `downloadCsv` (CSV export from your
-column defs), `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
+Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
+(CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
+`sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
 `computePagination`, `headerGroupRow`, `columnMenuRows` +
 `columnRowDragProps` / `columnDropProps` / `columnReorderKeyProps` /
 `columnResizeHandleProps` (RTL-aware), `pinnedCellStyle` / `edgePinStyle` /
@@ -2676,9 +2946,10 @@ const source = useBackendData({ usePaginatedQuery });
 
 Yes, RTL is first-class. Column alignment uses **logical CSS** (`start`/`end`),
 so it flips automatically under `dir="rtl"`. The optional `@adapttable/i18n`
-package ships **10 locales** — English, Arabic, German, Spanish, French,
-Hebrew, Italian, Japanese, Portuguese, and Chinese — plus `getDirection` /
-`isRtlLocale` helpers. Arabic and Hebrew are right-to-left.
+package ships **17 locales** — English, Arabic, German, Spanish, Persian,
+French, Hebrew, Hindi, Italian, Japanese, Korean, Portuguese, Russian,
+Turkish, Urdu, Simplified Chinese, and Traditional Chinese — plus `getDirection` /
+`isRtlLocale` helpers. Arabic, Hebrew, Persian, and Urdu are right-to-left.
 
 ## Does it have dark mode?
 
@@ -2762,10 +3033,12 @@ near-100% test coverage across every adapter.
 ## When might another library fit better?
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  Excel-style fill-handle editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  (AdaptTable does ship opt-in single-cell editing — see
+  [Inline cell editing](./cell-editing.md).)
 - You're not on React → TanStack Table (multi-framework).
-- You need spreadsheet-grade enterprise features like pivoting, Excel-style
-  editing, or range selection _today_.
+- You need spreadsheet-grade enterprise features like pivoting, Excel fill
+  handles, or range selection _today_.
 
 ---
 
@@ -2862,6 +3135,7 @@ kits — only the look does. Every adapter ships the same batteries:
 | Bulk action bar                       |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Summary / footer row                  |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Row expansion                         |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
+| Inline cell editing (opt-in)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Row virtualization                    |   ✅    | ✅  |   ✅   |    ✅²     |  ✅   |   ✅    |    ✅     |    ✅    |
 | Card virtualization (mobile)          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
 | RTL / Arabic                          |   ✅    | ✅  |   ✅   |     ✅     |  ✅   |   ✅    |    ✅     |    ✅    |
@@ -3524,24 +3798,24 @@ whenever you want.
 
 `<MUIDataTable>` → `<DataTable>`:
 
-| mui-datatables                                        | `@adapttable/mui`                                     | Notes                                                                |
-| ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `data` (objects)                                      | `data`                                                | Array-of-objects only; no array-of-arrays mode.                      |
-| `data` (arrays)                                       | convert to objects                                    | One `map()` at the boundary — see Gotchas.                           |
-| `columns` (`name`, `label`, `options`)                | `columns` (`key`, `header`, …)                        | Field-by-field below.                                                |
-| `options.serverSide` + `count` + `onTableChange`      | `data` + `total` + `onQueryChange`                    | One consolidated query object replaces the action-string switch.     |
-| `options.page` / `rowsPerPage` / `rowsPerPageOptions` | automatic                                             | Built-in pager; page size control included.                          |
-| `options.sortOrder` / `onColumnSortChange`            | per-column `sortable` (+ `multiSort`)                 | AdaptTable owns and applies sort state.                              |
-| `options.filterType` / `onFilterChange`               | column `filter` shorthand + table `filters`           | Kit-native widgets + removable chips, derived for you.               |
-| `options.search` / `searchText` / `onSearchChange`    | built-in search (`searchPlaceholder`, `hideSearch`)   | Debounced and URL-synced.                                            |
-| `options.selectableRows` + `onRowSelectionChange`     | `bulkActions`, or `selectedIds` / `onSelectionChange` | Providing `bulkActions` enables selection + the bulk bar.            |
-| `options.expandableRows` + `renderExpandableRow`      | `renderRowDetail`                                     | `(row) => ReactNode` — no separate flag, no colSpan markup.          |
-| `options.viewColumns` / `draggableColumns`            | `enableColumnMenu`                                    | Show/hide, reorder, and pin in one menu.                             |
-| `options.resizableColumns`                            | `resizableColumns`                                    | Drag + keyboard resize.                                              |
-| `options.responsive` (`'vertical'`, …)                | automatic mobile cards                                | Cards render below the breakpoint — no mode to configure.            |
-| `options.download` / `print`                          | `rowsToCsv` / `downloadCsv` helpers                   | CSV as a headless helper you wire to your own button; print via CSS. |
-| `options.textLabels`                                  | `labels`                                              | Same idea; English defaults fill missing keys.                       |
-| `options.storageKey`                                  | `savedViews` / URL state                              | Views are named, shareable snapshots instead of one implicit save.   |
+| mui-datatables                                        | `@adapttable/mui`                                     | Notes                                                                                        |
+| ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `data` (objects)                                      | `data`                                                | Array-of-objects only; no array-of-arrays mode.                                              |
+| `data` (arrays)                                       | convert to objects                                    | One `map()` at the boundary — see Gotchas.                                                   |
+| `columns` (`name`, `label`, `options`)                | `columns` (`key`, `header`, …)                        | Field-by-field below.                                                                        |
+| `options.serverSide` + `count` + `onTableChange`      | `data` + `total` + `onQueryChange`                    | One consolidated query object replaces the action-string switch.                             |
+| `options.page` / `rowsPerPage` / `rowsPerPageOptions` | automatic                                             | Built-in pager; page size control included.                                                  |
+| `options.sortOrder` / `onColumnSortChange`            | per-column `sortable` (+ `multiSort`)                 | AdaptTable owns and applies sort state.                                                      |
+| `options.filterType` / `onFilterChange`               | column `filter` shorthand + table `filters`           | Kit-native widgets + removable chips, derived for you.                                       |
+| `options.search` / `searchText` / `onSearchChange`    | built-in search (`searchPlaceholder`, `hideSearch`)   | Debounced and URL-synced.                                                                    |
+| `options.selectableRows` + `onRowSelectionChange`     | `bulkActions`, or `selectedIds` / `onSelectionChange` | Providing `bulkActions` enables selection + the bulk bar.                                    |
+| `options.expandableRows` + `renderExpandableRow`      | `renderRowDetail`                                     | `(row) => ReactNode` — no separate flag, no colSpan markup.                                  |
+| `options.viewColumns` / `draggableColumns`            | `enableColumnMenu`                                    | Show/hide, reorder, and pin in one menu.                                                     |
+| `options.resizableColumns`                            | `resizableColumns`                                    | Drag + keyboard resize.                                                                      |
+| `options.responsive` (`'vertical'`, …)                | automatic mobile cards                                | Cards render below the breakpoint — no mode to configure.                                    |
+| `options.download` / `print`                          | `exportCsv` prop / `rowsToCsv` + `downloadCsv`        | Built-in Export CSV button, or headless helpers on a custom `toolbar` button; print via CSS. |
+| `options.textLabels`                                  | `labels`                                              | Same idea; English defaults fill missing keys.                                               |
+| `options.storageKey`                                  | `savedViews` / URL state                              | Views are named, shareable snapshots instead of one implicit save.                           |
 
 Column options → `ColumnDef`:
 
@@ -3659,9 +3933,9 @@ function PeopleTable({ people }: { people: Person[] }) {
 - **Filters become declarative.** A `filterType: "dropdown"` column becomes
   `filter: { type: "select", options: "auto" }`; ranges become
   `"numberRange"` / `"dateRange"` with operator widgets and chips included.
-- **No built-in print/CSV buttons.** CSV is a headless helper
-  (`rowsToCsv` / `downloadCsv`) you attach to your own toolbar button via the
-  `toolbar` slot; print is your app's concern.
+- **CSV export is built-in and headless.** Pass `exportCsv` for a toolbar
+  button, or wire `rowsToCsv` / `downloadCsv` yourself via the `toolbar` slot;
+  print is your app's concern.
 - **`textLabels` → `labels`**, and locale presets (incl. RTL languages) come
   from [`@adapttable/i18n`](./i18n-rtl.md).
 
@@ -3696,10 +3970,12 @@ material-table is a table-plus-CRUD-suite. AdaptTable deliberately isn't.
 If you depend on these, AdaptTable is the wrong target (Material React Table
 is the closer fit):
 
-- **Inline row/cell editing** (`editable`, `cellEditable`, `editComponent`) —
-  AdaptTable has no editing engine. The equivalent pattern is `rowActions`
-  opening your own form/dialog, with the built-in `confirm` seam for
-  destructive actions.
+- **Full row-edit CRUD suites** (`editable` as a material-table-style
+  object with `onRowAdd` / `onRowUpdate`) — AdaptTable ships **opt-in
+  inline cell editing** via `onCellEdit` + `ColumnDef.editable` (see
+  [Inline cell editing](./cell-editing.md)), not material-table's row
+  dialog engine. Multi-field forms still go through `rowActions` + your
+  own UI, with the built-in `confirm` seam for destructive actions.
 - **Drag-to-group aggregation** (`options.grouping`) — AdaptTable has
   presentational header groups, not runtime grouping.
 - **Tree data** (`parentChildData`) — not supported.
@@ -3754,9 +4030,9 @@ Same Material look, on a current MUI — and your rows stay untouched.
 | `options.columnResizable`                            | `resizableColumns`                                    | —                                                                    |
 | `options.fixedColumns: { left, right }`              | column pinning via `columnLayout` / Columns menu      | Logical sides — RTL-correct.                                         |
 | `options.padding: "dense"`                           | `density="compact"`                                   | —                                                                    |
-| `options.exportButton`                               | `rowsToCsv` / `downloadCsv` + `toolbar`               | CSV headless helper; PDF is out of scope.                            |
+| `options.exportButton`                               | `exportCsv` / `rowsToCsv` + `downloadCsv`             | Built-in CSV button or headless helper; PDF is out of scope.         |
 | `options.maxBodyHeight`                              | `maxHeight`                                           | Enables the scroll box + sticky pinning.                             |
-| `localization`                                       | `labels` (+ [`@adapttable/i18n`](./i18n-rtl.md))      | Flat label object; presets for 10 locales incl. RTL.                 |
+| `localization`                                       | `labels` (+ [`@adapttable/i18n`](./i18n-rtl.md))      | Flat label object; presets for 17 locales incl. RTL.                 |
 | `isLoading`                                          | `loading`                                             | —                                                                    |
 
 Column def → `ColumnDef`:
@@ -3964,7 +4240,7 @@ Grid-level (`<AgGridReact>` → `<DataTable>`):
 | `rowSelection={{ mode: "multiRow" }}`              | `bulkActions`, or `selectedIds` / `onSelectionChange` | Checkboxes render when selection is on.                           |
 | `api.getSelectedRows()`                            | `onSelectionChange` state                             | Selection is React state, not an API call.                        |
 | `rowModelType: "infinite"`                         | `onQueryChange` (+ infinite mode)                     | One consolidated query; superseded fetches abort via `signal`.    |
-| `api.exportDataAsCsv()`                            | `rowsToCsv` / `downloadCsv`                           | Headless helper + your own toolbar button.                        |
+| `api.exportDataAsCsv()`                            | `exportCsv` / `rowsToCsv` + `downloadCsv`             | Built-in toolbar button or headless helpers.                      |
 | `theme={themeQuartz}`                              | your kit's provider/theme                             | The table inherits the design system, incl. dark mode.            |
 | `<AgGridProvider modules={[AllCommunityModule]}>`  | (nothing)                                             | No module registry.                                               |
 | `onGridReady` / `gridRef.current.api`              | (nothing)                                             | Declarative props replace the imperative API.                     |
@@ -3986,7 +4262,7 @@ Grid-level (`<AgGridReact>` → `<DataTable>`):
 | `pinned: "left" \| "right"`         | pinning via Columns menu / `columnLayout`                       | Logical sides — RTL-correct.                  |
 | `hide`                              | `enableColumnMenu` + `columnLayout`                             | User-facing visibility lives in the menu.     |
 | `resizable` (default true)          | `resizableColumns` (table-level)                                | —                                             |
-| `editable`                          | — (see Gotchas)                                                 | No cell-editing engine.                       |
+| `editable`                          | `editable` + `editor` + table `onCellEdit`                      | Opt-in; no editor until `onCellEdit` is set.  |
 
 ## Before / after
 
@@ -4060,9 +4336,11 @@ table is your design system's, not a themed grid.
 - **Don't migrate the analytics grids.** Grouping, pivoting, aggregation,
   tree data, range selection, clipboard, Excel export have no AdaptTable
   equivalent — that's deliberate scope, not a roadmap gap.
-- **No cell editing.** AG Grid Community's inline editors don't map; the
-  AdaptTable pattern is `rowActions` opening your own form/dialog with the
-  built-in `confirm` seam.
+- **Cell editing is opt-in, not spreadsheet-grade.** Map AG Grid `editable`
+  columns to `ColumnDef.editable` + table `onCellEdit` (see
+  [Inline cell editing](./cell-editing.md)). Full Excel-style fill-handle /
+  clipboard editing stays out of scope — use `rowActions` + your own form
+  when you need a multi-field edit dialog.
 - **The imperative API disappears.** Anywhere you called
   `api.getSelectedRows()`, `api.setFilterModel()`, or `api.sizeColumnsToFit()`,
   you now read props/state (`onSelectionChange`, URL-synced filters, column
@@ -4070,9 +4348,9 @@ table is your design system's, not a themed grid.
   stops breaking on majors.
 - **Sorting is opt-in.** AG Grid columns sort by default; AdaptTable columns
   need `sortable: true`.
-- **CSV export is a helper, not a context menu.** Wire `rowsToCsv` /
-  `downloadCsv` to a `toolbar` button. (AG Grid's context menu is Enterprise
-  anyway.)
+- **CSV export is built-in.** Pass `exportCsv` for a toolbar button, or wire
+  `rowsToCsv` / `downloadCsv` to a custom `toolbar` control. (AG Grid's context
+  menu is Enterprise anyway.)
 - **Row virtualization is opt-in** (`virtualize`) rather than always-on —
   enable it for genuinely large lists; a benchmark lives in the
   [virtualization docs](./virtualization.md).

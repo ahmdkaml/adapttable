@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type {
   ActiveFilterChip,
@@ -71,6 +72,13 @@ export interface BaseDataTableProps<TRow> {
   /** Called whenever the materialized source rows change. */
   onRowsChange?: (rows: readonly TRow[]) => void;
   /**
+   * Inline cell-edit channel. Providing this (together with per-column
+   * `editable`) activates editing — omit it and the table never opens an
+   * editor, even if columns declare `editable`. The table never mutates
+   * rows; apply `nextValue` in your own state / mutation.
+   */
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */
@@ -87,6 +95,28 @@ export interface BaseDataTableProps<TRow> {
    * under its columns; keys absent from the result render empty cells.
    */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /**
+   * Single-level row grouping by column key. Its presence (or
+   * `source.groupBy`) arms grouping chrome — omit it and the table never
+   * inserts group header rows (package DNA: opt-in). Frontend tier only;
+   * server-paginated sources get a devWarn and grouping is ignored.
+   */
+  groupBy?: string | null;
+  /** Controlled change channel for {@link groupBy}; falls back to `source.setGroupBy`. */
+  onGroupByChange?: (groupBy: string | null) => void;
+  /**
+   * Per-group aggregate cells — **same signature as {@link summaryRow}**.
+   * Called with each group's leaf rows. Omit for headers without subtotals.
+   */
+  groupAggregates?: (
+    rows: readonly TRow[]
+  ) => Partial<Record<string, ReactNode>>;
+  /**
+   * Controlled collapsed group keys (ephemeral — not URL-synced).
+   * Uncontrolled: internal {@link useGroupCollapse}.
+   */
+  collapsedGroupIds?: readonly string[];
+  onCollapsedGroupIdsChange?: (ids: string[]) => void;
   /** Disable the built-in search box. */
   hideSearch?: boolean;
   /**
@@ -172,6 +202,12 @@ export interface BaseDataTableProps<TRow> {
   onSelectionChange?: (selectedIds: string[]) => void;
 
   /* ── Customisation (common) ──────────────────────────────────────── */
+  /**
+   * Opt-in CSV export toolbar button. Pass `true` for defaults
+   * (`export.csv`, current page) or an options object for filename/scope.
+   * Omit or `false` to hide the button.
+   */
+  exportCsv?: boolean | ExportCsvOptions;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
   /** Confirmation handler for actions; defaults to `window.confirm`. */

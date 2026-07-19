@@ -83,9 +83,10 @@ const source = useBackendData({ usePaginatedQuery });
 
 Yes, RTL is first-class. Column alignment uses **logical CSS** (`start`/`end`),
 so it flips automatically under `dir="rtl"`. The optional `@adapttable/i18n`
-package ships **10 locales** — English, Arabic, German, Spanish, French,
-Hebrew, Italian, Japanese, Portuguese, and Chinese — plus `getDirection` /
-`isRtlLocale` helpers. Arabic and Hebrew are right-to-left.
+package ships **17 locales** — English, Arabic, German, Spanish, Persian,
+French, Hebrew, Hindi, Italian, Japanese, Korean, Portuguese, Russian,
+Turkish, Urdu, Simplified Chinese, and Traditional Chinese — plus `getDirection` /
+`isRtlLocale` helpers. Arabic, Hebrew, Persian, and Urdu are right-to-left.
 
 ## Does it have dark mode?
 
@@ -169,7 +170,9 @@ near-100% test coverage across every adapter.
 ## When might another library fit better?
 
 - You need a heavyweight enterprise grid with pivoting, range selection, and
-  Excel-style editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  Excel-style fill-handle editing _today_ → ag-Grid or MUI X DataGrid (paid).
+  (AdaptTable does ship opt-in single-cell editing — see
+  [Inline cell editing](./cell-editing.md).)
 - You're not on React → TanStack Table (multi-framework).
-- You need spreadsheet-grade enterprise features like pivoting, Excel-style
-  editing, or range selection _today_.
+- You need spreadsheet-grade enterprise features like pivoting, Excel fill
+  handles, or range selection _today_.

@@ -95,6 +95,7 @@ export function MantineDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
+            exportCsv
             animate={animate}
             resizableColumns
             stickyHeader

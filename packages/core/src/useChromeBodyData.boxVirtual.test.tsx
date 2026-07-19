@@ -92,3 +92,65 @@ describe("box-virtual suppresses the page-level load-more affordances", () => {
     expect(result.current.canLoadMore).toBe(true);
   });
 });
+
+describe("useChromeBodyData with row grouping", () => {
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    vi.mocked(useVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useVirtualizer>
+    );
+  });
+
+  it("windows groupingEntries and disables leaf row virtualization", () => {
+    const groupedRows: Row[] = [
+      { id: "1", name: "Alice" },
+      { id: "2", name: "Bob" },
+      { id: "3", name: "Cara" },
+    ];
+    const groupCols: ColumnDef<Row>[] = [
+      { key: "name" },
+      { key: "team", accessor: () => "A" },
+    ];
+    // Force every row into the same group via a constant accessor.
+    groupCols[1] = { key: "team", accessor: () => "A" };
+
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 0, start: 0, end: 48, key: "group:A" },
+        { index: 1, start: 48, end: 96, key: "1" },
+      ],
+      getTotalSize: () => 400,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: groupedRows,
+        columns: groupCols,
+        adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: groupCols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        groupBy: "team",
+      };
+      const chrome = useTableChrome<Row>(props);
+      return { chrome, body: useChromeBodyData(chrome, props) };
+    });
+
+    expect(result.current.chrome.grouping).toBeDefined();
+    expect(result.current.body.groupingEntries).toBeDefined();
+    expect(result.current.body.groupingEntries!.length).toBe(2);
+    // Leaf row virtualization is off while grouping is armed — the keyed
+    // group window owns the spacers instead.
+    expect(result.current.body.virtualization.rows).toEqual([]);
+    expect(result.current.body.virtualization.enabled).toBe(true);
+  });
+});

@@ -27,6 +27,8 @@ export interface DataTableClassNames {
   /** The leading funnel icon inside the Filters button. */
   filtersIcon?: string;
   filtersCount?: string;
+  /** The Export CSV toolbar button (when `exportCsv` is set). */
+  exportCsvButton?: string;
   filtersAnchor?: string;
   filtersBackdrop?: string;
   filtersPopover?: string;
