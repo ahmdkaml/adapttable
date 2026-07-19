@@ -133,6 +133,22 @@ editing is dormant these parts are never mounted.
 | `edit-cell-activate` | Invisible activate control (double-click / Enter / F2 begins edit). |
 | `edit-cell-editor`   | Kit-native input / select while the cell is active.                 |
 
+### Row grouping
+
+Opt-in via `groupBy` — see [Row grouping](./row-grouping.md). When grouping
+is dormant these parts are never mounted.
+
+| Part              | Element                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| `group-row`       | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
+| `group-cell`      | The spanning `<td>` / `<th>` inside a group header (most kits).       |
+| `group-card`      | Group header block in the mobile card list.                           |
+| `group-toggle`    | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
+| `group-label`     | The group's display label (bucket value).                             |
+| `group-count`     | Leaf count beside the label (`labels.groupCount`).                    |
+| `group-select`    | Tri-state checkbox over the group's leaf rows (when selection is on). |
+| `group-aggregate` | One per-group aggregate cell (`data-column` = column key).            |
+
 ### Mobile cards & summary
 
 | Part                                     | Element                                            |

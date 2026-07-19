@@ -32,6 +32,8 @@ const TITLES = {
   "selection.md": "React table row selection & bulk actions",
   "row-expansion.md": "React table expandable rows & detail panels",
   "cell-editing.md": "React table inline cell editing — opt-in onCellEdit",
+  "row-grouping.md":
+    "React table row grouping — single-level groupBy, per-group aggregates",
   "column-management.md":
     "React table column management — show/hide, reorder, pin, resize",
   "saved-views.md": "React table saved views — shareable named layouts",
@@ -82,6 +84,8 @@ const DESCRIPTIONS = {
     "Expandable rows for React data tables — per-row detail panels with accessible toggles and keyboard support, on the same API across every UI kit adapter.",
   "cell-editing.md":
     "Inline cell editing for React CRUD tables — opt-in onCellEdit, text/number/select editors, keyboard commit/cancel, kit-native inputs across every adapter.",
+  "row-grouping.md":
+    "Single-level React table row grouping — opt-in groupBy, per-group aggregates sharing the summaryRow mapper, expand/collapse, frontend tier only.",
   "column-management.md":
     "Show/hide, reorder, pin and resize React table columns with a built-in Columns menu and URL-persisted layout — MIT, no Pro tier.",
   "saved-views.md":

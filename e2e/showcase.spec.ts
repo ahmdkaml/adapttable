@@ -214,5 +214,22 @@ for (const adapter of ADAPTERS) {
         demo(page).getByText("edited@example.com").first()
       ).toBeVisible();
     });
+
+    test("group header expands and collapses", async ({ page }) => {
+      await openDemo(page, adapter);
+      // Frontend mode groups by team; group headers replace bare leaf rows.
+      const groupRow = demo(page)
+        .locator('[data-adapttable-part="group-row"]')
+        .first();
+      await expect(groupRow).toBeVisible();
+      const toggle = groupRow.locator('[data-adapttable-part="group-toggle"]');
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(groupRow).toHaveAttribute("data-collapsed", "true");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await expect(groupRow).not.toHaveAttribute("data-collapsed", "true");
+    });
   });
 }

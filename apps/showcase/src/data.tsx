@@ -5,6 +5,7 @@ import type {
   ConfirmHandler,
   ConfirmRequest,
   FilterDef,
+  GroupAggregatesFn,
   RowAction,
 } from "@adapttable/core";
 import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
@@ -683,3 +684,19 @@ export const DEMO_FILTER_RUNTIME = buildFilterRuntime(
 
 /** Client-side predicate; the mock API applies the same logic server-side. */
 export const matchesDemoFilters = DEMO_FILTER_RUNTIME.filterFn;
+
+/**
+ * Per-group budget subtotal for the opt-in grouping demo (frontend path
+ * only). Shares the `summaryRow` mapper shape — one function type for
+ * footer totals and group headers.
+ */
+export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> = (rows) => ({
+  budget: (
+    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+      {formatMoney(
+        rows.reduce((sum, row) => sum + budget(row), 0),
+        "en"
+      )}
+    </span>
+  ),
+});

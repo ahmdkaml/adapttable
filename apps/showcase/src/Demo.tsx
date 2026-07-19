@@ -8,7 +8,13 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useState } from "react";
 
-import { BASE_COLUMNS, DEMO_FILTER_RUNTIME, PEOPLE, type Person } from "./data";
+import {
+  BASE_COLUMNS,
+  DEMO_FILTER_RUNTIME,
+  DEMO_GROUP_AGGREGATES,
+  PEOPLE,
+  type Person,
+} from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
 export type DataMode = "frontend" | "backend";
@@ -29,11 +35,18 @@ const DEFAULTS = { limit: 5 };
  *
  * `onCellEdit` is frontend-only: mutable local rows. Backend mode omits it
  * so editing stays fully dormant (package DNA — nothing forced).
+ *
+ * `groupBy` / `groupAggregates` follow the same rule — frontend tier only;
+ * server-paginated sources cannot regroup a full result set.
  */
 export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
+  groupBy?: string;
+  groupAggregates?: (
+    rows: readonly Person[]
+  ) => Partial<Record<string, ReactNode>>;
 }
 
 /** Adapter demos provide this — given a source + column controls, render. */
@@ -97,7 +110,16 @@ function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     paginationMode: pageMode,
     urlKey,
   });
-  return <>{render(source, { ...columns, onCellEdit })}</>;
+  return (
+    <>
+      {render(source, {
+        ...columns,
+        onCellEdit,
+        groupBy: "team",
+        groupAggregates: DEMO_GROUP_AGGREGATES,
+      })}
+    </>
+  );
 }
 
 function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
