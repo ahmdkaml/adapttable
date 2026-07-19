@@ -1,13 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TableSource } from "../source/TableSource";
 import type { ColumnDef } from "../types";
+import { resetDevWarnings } from "../utils/devWarn";
 import {
   buildTableCsv,
   exportableColumns,
   makeExportCsvHandler,
   resolveExportCsv,
 } from "./tableCsv";
+
+beforeEach(() => {
+  resetDevWarnings();
+  vi.restoreAllMocks();
+});
 
 interface Person {
   id: string;
@@ -108,13 +114,17 @@ describe("buildTableCsv", () => {
     ]);
   });
 
-  it("falls back to page rows when allFilteredRows is missing", () => {
+  it("falls back to page rows with a devWarn when allFilteredRows is missing", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const csv = buildTableCsv({
       source: source(PAGE),
       columns: COLS,
       scope: "all",
     });
     expect(csv).toBe("Name,Age\r\nAda,36\r\nGrace,85");
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('scope "all" is only supported on the frontend')
+    );
   });
 });
 

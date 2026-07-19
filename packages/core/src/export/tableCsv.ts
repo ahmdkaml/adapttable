@@ -1,6 +1,7 @@
 import { ACTIONS_COLUMN_KEY } from "../columns/columnMenuModel";
 import type { TableSource } from "../source/TableSource";
 import type { ColumnDef } from "../types";
+import { devWarn } from "../utils/devWarn";
 import { downloadCsv, rowsToCsv } from "./csv";
 
 /** Opt-in CSV export config for the shared DataTable surface. */
@@ -10,7 +11,8 @@ export interface ExportCsvOptions {
   /**
    * `"page"` (default) — current page / loaded slice.
    * `"all"` — full filtered+sorted set when the source exposes
-   * {@link TableSource.allFilteredRows}; otherwise falls back to the page.
+   * {@link TableSource.allFilteredRows}; otherwise falls back to the
+   * page with a dev-only warning.
    */
   scope?: "page" | "all";
 }
@@ -42,6 +44,11 @@ export function buildTableCsv<TRow>(options: {
   scope?: "page" | "all";
 }): string {
   const scope = options.scope ?? "page";
+  if (scope === "all" && !options.source.allFilteredRows) {
+    devWarn(
+      'exportCsv scope "all" is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot rebuild the full set; exporting the current page instead.'
+    );
+  }
   const rows =
     scope === "all"
       ? (options.source.allFilteredRows ?? options.source.rows)
