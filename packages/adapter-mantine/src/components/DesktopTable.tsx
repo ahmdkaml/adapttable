@@ -36,6 +36,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 import { type Density, DENSITY_SPACING } from "../density";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import { GroupHeaderRow } from "./GroupHeader";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -483,6 +484,7 @@ export function DesktopTable<TRow>({
   summaryRow,
   expansion,
   editing,
+  grouping,
   getRowId,
   bodyRef,
   className,
@@ -655,8 +657,14 @@ export function DesktopTable<TRow>({
   // rows hold this FIXED identity that always dispatches to the live one.
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  const groupingRef = useRef(grouping);
+  groupingRef.current = grouping;
   const toggleSelect = useCallback(
     (id: string) => selectionRef.current!.toggle(id),
+    []
+  );
+  const onToggleGroup = useCallback(
+    (groupKey: string) => groupingRef.current?.collapsed.toggle(groupKey),
     []
   );
 
@@ -776,45 +784,97 @@ export function DesktopTable<TRow>({
               />
             </Table.Tr>
           )}
-          {entries.map(({ row, index, key }) => {
-            const id = getRowId(row);
-            return (
-              <Row
-                key={key}
-                row={row}
-                index={index}
-                id={id}
-                columns={columns}
-                getCellProps={table.getCellProps}
-                selected={selection?.isSelected(id)}
-                selectLabel={labels.selectRow}
-                onToggleSelect={toggleSelect}
-                expanded={expansion?.isExpanded(id)}
-                expandLabel={labels.expandRow}
-                collapseLabel={labels.collapseRow}
-                onToggleExpand={expansion?.toggle}
-                renderRowDetail={renderRowDetail}
-                columnSpan={columnSpan}
-                rowActions={rowActions}
-                confirm={confirm}
-                cancelLabel={labels.cancel}
-                editLabel={labels.editCell}
-                onRowClick={onRowClick}
-                prefetch={prefetch}
-                className={rowClassName?.(row, index)}
-                measureElement={measureElement}
-                pinStyleFor={bodyPinStyle}
-                selectionCellStyle={selectionCellStyle}
-                expansionCellStyle={expansionCellStyle}
-                actionsCellStyle={actionsCellStyle}
-                pinSignature={pinSignature}
-                editing={editing}
-                rows={rows}
-                getRowId={getRowId}
-                editingSignature={rowEditingSignature(editing, id)}
-              />
-            );
-          })}
+          {grouping
+            ? grouping.entries.map((entry) => {
+                if (entry.kind === "group") {
+                  return (
+                    <GroupHeaderRow
+                      key={entry.key}
+                      entry={entry}
+                      columnSpan={columnSpan}
+                      selection={selection}
+                      labels={labels}
+                      onToggleCollapse={onToggleGroup}
+                    />
+                  );
+                }
+                const id = getRowId(entry.row);
+                return (
+                  <Row
+                    key={entry.key}
+                    row={entry.row}
+                    index={entry.index}
+                    id={id}
+                    columns={columns}
+                    getCellProps={table.getCellProps}
+                    selected={selection?.isSelected(id)}
+                    selectLabel={labels.selectRow}
+                    onToggleSelect={toggleSelect}
+                    expanded={expansion?.isExpanded(id)}
+                    expandLabel={labels.expandRow}
+                    collapseLabel={labels.collapseRow}
+                    onToggleExpand={expansion?.toggle}
+                    renderRowDetail={renderRowDetail}
+                    columnSpan={columnSpan}
+                    rowActions={rowActions}
+                    confirm={confirm}
+                    cancelLabel={labels.cancel}
+                    editLabel={labels.editCell}
+                    onRowClick={onRowClick}
+                    prefetch={prefetch}
+                    className={rowClassName?.(entry.row, entry.index)}
+                    measureElement={measureElement}
+                    pinStyleFor={bodyPinStyle}
+                    selectionCellStyle={selectionCellStyle}
+                    expansionCellStyle={expansionCellStyle}
+                    actionsCellStyle={actionsCellStyle}
+                    pinSignature={pinSignature}
+                    editing={editing}
+                    rows={rows}
+                    getRowId={getRowId}
+                    editingSignature={rowEditingSignature(editing, id)}
+                  />
+                );
+              })
+            : entries.map(({ row, index, key }) => {
+                const id = getRowId(row);
+                return (
+                  <Row
+                    key={key}
+                    row={row}
+                    index={index}
+                    id={id}
+                    columns={columns}
+                    getCellProps={table.getCellProps}
+                    selected={selection?.isSelected(id)}
+                    selectLabel={labels.selectRow}
+                    onToggleSelect={toggleSelect}
+                    expanded={expansion?.isExpanded(id)}
+                    expandLabel={labels.expandRow}
+                    collapseLabel={labels.collapseRow}
+                    onToggleExpand={expansion?.toggle}
+                    renderRowDetail={renderRowDetail}
+                    columnSpan={columnSpan}
+                    rowActions={rowActions}
+                    confirm={confirm}
+                    cancelLabel={labels.cancel}
+                    editLabel={labels.editCell}
+                    onRowClick={onRowClick}
+                    prefetch={prefetch}
+                    className={rowClassName?.(row, index)}
+                    measureElement={measureElement}
+                    pinStyleFor={bodyPinStyle}
+                    selectionCellStyle={selectionCellStyle}
+                    expansionCellStyle={expansionCellStyle}
+                    actionsCellStyle={actionsCellStyle}
+                    pinSignature={pinSignature}
+                    editing={editing}
+                    rows={rows}
+                    getRowId={getRowId}
+                    editingSignature={rowEditingSignature(editing, id)}
+                  />
+                );
+              })}
           {paddingBottom > 0 && (
             <Table.Tr aria-hidden>
               <Table.Td

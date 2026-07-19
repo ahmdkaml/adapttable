@@ -1,5 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
+  type GroupCollapseState,
+  type GroupedFlatEntry,
   isDeclarativeFilters,
   makeExportCsvHandler,
   resolveLabels,
@@ -31,6 +33,26 @@ import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
+
+/** Chrome grouping bundle shape (matches `useTableChrome` / SharedTableRenderProps). */
+interface GroupingBundle<TRow> {
+  groupBy: string;
+  collapsed: GroupCollapseState;
+  entries: readonly GroupedFlatEntry<TRow>[];
+  setGroupBy: (key: string | null) => void;
+}
+
+/**
+ * Prefer chrome body data's (possibly virtual-windowed) flat entries when
+ * grouping is armed; otherwise leave the bundle untouched / dormant.
+ */
+function withWindowedGroupingEntries<TRow>(
+  grouping: GroupingBundle<TRow> | undefined,
+  groupingEntries: readonly GroupedFlatEntry<TRow>[] | undefined
+): GroupingBundle<TRow> | undefined {
+  if (!(grouping && groupingEntries)) return grouping;
+  return { ...grouping, entries: groupingEntries };
+}
 
 const stickyToolbarStyle = (top: number) => ({
   position: "sticky" as const,
@@ -155,8 +177,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     : rowActions;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
-  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
-    useChromeBodyData(chrome, chromeProps);
+  const {
+    virtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  } = useChromeBodyData(chrome, chromeProps);
+  const grouping = withWindowedGroupingEntries(
+    chrome.grouping,
+    groupingEntries
+  );
   const [drawerOpened, setDrawerOpened] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(drawerOpened, setDrawerOpened);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -212,6 +243,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         summaryRow={props.summaryRow}
         expansion={chrome.detail?.expansion}
         editing={chrome.editing}
+        grouping={grouping}
         bodyRef={mobileBodyRef}
         className={classNames?.card}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
@@ -235,6 +267,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         summaryRow={props.summaryRow}
         expansion={chrome.detail?.expansion}
         editing={chrome.editing}
+        grouping={grouping}
         getRowId={getRowId}
         bodyRef={desktopBodyRef}
         className={classNames?.table}

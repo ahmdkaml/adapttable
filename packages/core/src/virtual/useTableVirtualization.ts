@@ -196,3 +196,109 @@ export function useTableVirtualization<TRow>({
     measureElement: virtualizer.measureElement,
   };
 }
+
+/** Result of {@link useKeyedVirtualization} — index window over a keyed list. */
+export interface KeyedVirtualization {
+  enabled: boolean;
+  /** Source indices in the virtual window (or every index when disabled). */
+  indices: readonly number[];
+  paddingTop: number;
+  paddingBottom: number;
+  measureElement?: (node: Element | null) => void;
+}
+
+/**
+ * Virtualize an opaque keyed list (e.g. grouped flat entries). Same window /
+ * element modes as {@link useTableVirtualization}.
+ */
+export function useKeyedVirtualization(options: {
+  keys: readonly string[];
+  enabled?: boolean;
+  estimateSize?: number;
+  overscan?: number;
+  scrollMargin?: number;
+  getScrollElement?: () => Element | null;
+  onEndReached?: () => void;
+}): KeyedVirtualization {
+  const {
+    keys,
+    enabled = false,
+    estimateSize = 56,
+    overscan = VIRTUAL_OVERSCAN,
+    scrollMargin = 0,
+    getScrollElement,
+    onEndReached,
+  } = options;
+  const elementMode = getScrollElement !== undefined;
+  const getItemKey = (index: number): string => keys[index] ?? String(index);
+  const windowVirtualizer = useWindowVirtualizer({
+    count: keys.length,
+    enabled: enabled && !elementMode,
+    estimateSize: () => estimateSize,
+    getItemKey,
+    overscan,
+    scrollMargin,
+  });
+  const elementVirtualizer = useVirtualizer({
+    count: keys.length,
+    enabled: enabled && elementMode,
+    getScrollElement: getScrollElement ?? (() => null),
+    estimateSize: () => estimateSize,
+    getItemKey,
+    overscan,
+  });
+  const virtualizer = elementMode ? elementVirtualizer : windowVirtualizer;
+  const virtualItems = virtualizer.getVirtualItems();
+  const active = enabled && virtualItems.length > 0;
+
+  const indices = useMemo<readonly number[]>(() => {
+    if (!active) return keys.map((_, index) => index);
+    return virtualItems.map((item) => item.index);
+  }, [active, keys, virtualItems]);
+
+  const notifiedAtCount = useRef(-1);
+  useEffect(() => {
+    if (!active || keys.length === 0) return;
+    const last = virtualItems.at(-1);
+    const atEnd = last !== undefined && last.index >= keys.length - 1;
+    if (!atEnd) {
+      notifiedAtCount.current = -1;
+      return;
+    }
+    if (notifiedAtCount.current !== keys.length) {
+      notifiedAtCount.current = keys.length;
+      onEndReached?.();
+    }
+  }, [active, onEndReached, keys.length, virtualItems]);
+
+  if (!active) {
+    return { enabled: false, indices, paddingTop: 0, paddingBottom: 0 };
+  }
+
+  const first = virtualItems[0]!;
+  const last = virtualItems.at(-1)!;
+  const resolvedScrollMargin = virtualizer.options.scrollMargin ?? 0;
+  const paddingTop = first.start - resolvedScrollMargin;
+  const paddingBottom =
+    virtualizer.getTotalSize() - (last.end - resolvedScrollMargin);
+
+  return {
+    enabled: true,
+    indices,
+    paddingTop: Math.max(0, paddingTop),
+    paddingBottom: Math.max(0, paddingBottom),
+    measureElement: virtualizer.measureElement,
+  };
+}
+
+/** Slice a flat grouped model to the virtual window indices. */
+export function windowGroupedEntries<TEntry>(
+  entries: readonly TEntry[],
+  indices: readonly number[]
+): readonly TEntry[] {
+  if (indices.length === entries.length) return entries;
+  return indices.flatMap((index) => {
+    const entry = entries[index];
+    return entry === undefined ? [] : [entry];
+  });
+}

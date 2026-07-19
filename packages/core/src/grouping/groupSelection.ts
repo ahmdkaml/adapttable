@@ -30,3 +30,20 @@ export function nextGroupSelection(
   if (state === "all") return { action: "deselect", ids: leafIds };
   return { action: "select", ids: leafIds };
 }
+
+/**
+ * Apply a group checkbox toggle in one pass — returns the next selected-id
+ * set (adapters / {@link useSelection.toggleGroupLeaves} commit this).
+ */
+export function applyGroupLeafSelection(
+  leafIds: readonly string[],
+  selectedIds: ReadonlySet<string>
+): Set<string> {
+  const { action, ids } = nextGroupSelection(leafIds, selectedIds);
+  const next = new Set(selectedIds);
+  for (const id of ids) {
+    if (action === "select") next.add(id);
+    else next.delete(id);
+  }
+  return next;
+}

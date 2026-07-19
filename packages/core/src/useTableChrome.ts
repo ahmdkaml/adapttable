@@ -43,7 +43,9 @@ import {
 import { devWarn } from "./utils/devWarn";
 import {
   type TableVirtualization,
+  useKeyedVirtualization,
   useTableVirtualization,
+  windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
 
 /**
@@ -361,7 +363,7 @@ export function useTableChrome<TRow>(
   // Effective groupBy: prop wins when provided (including `null` to force off);
   // otherwise the URL/source value. Empty string is treated as unset.
   const requestedGroupBy =
-    props.groupBy !== undefined ? (props.groupBy ?? undefined) : source.groupBy;
+    props.groupBy === undefined ? source.groupBy : (props.groupBy ?? undefined);
   const effectiveGroupBy =
     requestedGroupBy && requestedGroupBy.length > 0
       ? requestedGroupBy
@@ -441,6 +443,11 @@ export function useTableChrome<TRow>(
 export interface ChromeBodyData<TRow> {
   /** Row/card window virtualization state (disabled unless eligible). */
   virtualization: TableVirtualization<TRow>;
+  /**
+   * When grouping is armed, the (possibly virtual-windowed) flat entries
+   * adapters should render. `undefined` when grouping is dormant.
+   */
+  groupingEntries?: readonly GroupedFlatEntry<TRow>[];
   /** Sentinel ref that auto-loads the next page in infinite mode. */
   loadMoreRef: RefObject<HTMLDivElement | null>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
@@ -475,49 +482,89 @@ export function useChromeBodyData<TRow>(
       "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
     );
   }
-  // One guarded loader for both triggers (virtual end + sentinel).
   const fetchNext = useCallback(() => {
     if (source.hasNextPage && !source.isFetchingNextPage) {
       source.fetchNextPage();
     }
   }, [source]);
-  // Inside a maxHeight box the BOX is the scroller, so the virtual window
-  // must track it (element mode); otherwise the page scrolls (window mode).
   const scrollBoxRef = useRef<HTMLElement | null>(null);
   const virtualScrollRef = useCallback((node: HTMLElement | null) => {
     scrollBoxRef.current = node;
   }, []);
   const inScrollBox = props.maxHeight != null;
-  const virtualization = useTableVirtualization({
-    rows: source.rows,
-    rowKey,
-    enabled:
-      virtualize &&
-      !chrome.isPaged &&
-      !source.error &&
-      (chrome.body === "desktop" || chrome.body === "mobile"),
-    estimateSize: chrome.isMobile
-      ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-      : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX),
+  const bodyEligible =
+    !chrome.isPaged &&
+    !source.error &&
+    (chrome.body === "desktop" || chrome.body === "mobile");
+  const groupingArmed = Boolean(chrome.grouping);
+  const groupKeys = chrome.grouping?.entries.map((entry) => entry.key) ?? [];
+  const estimateSize = chrome.isMobile
+    ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+    : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+  const scrollOpts = {
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
     getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
+    estimateSize,
+  } as const;
+
+  // Both hooks run unconditionally (Rules of Hooks); exactly one is enabled.
+  const groupVirtualization = useKeyedVirtualization({
+    keys: groupKeys,
+    enabled: virtualize && groupingArmed && bodyEligible,
+    ...scrollOpts,
   });
-  // A virtual window INSIDE a maxHeight box extends itself at the box's
-  // scroll end — the box never grows, so a page-level sentinel below it
-  // would stay visible and fire forever (and a Load-more button appends
-  // rows the window doesn't show). Both yield to the box.
-  const boxVirtual = virtualization.enabled && inScrollBox;
+  const virtualization = useTableVirtualization({
+    rows: source.rows,
+    rowKey,
+    enabled: virtualize && !groupingArmed && bodyEligible,
+    ...scrollOpts,
+  });
+
+  const groupingEntries = chrome.grouping
+    ? windowGroupedEntries(chrome.grouping.entries, groupVirtualization.indices)
+    : undefined;
+
+  const resolvedVirtualization = resolveBodyVirtualization(
+    groupingArmed,
+    groupVirtualization,
+    virtualization
+  );
+
+  const boxVirtual = resolvedVirtualization.enabled && inScrollBox;
   const canLoadMore = !chrome.isPaged && !source.error && !boxVirtual;
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: fetchNext,
-    itemCount: source.rows.length,
+    itemCount: groupingArmed
+      ? (chrome.grouping?.entries.length ?? 0)
+      : source.rows.length,
     enabled: canLoadMore,
   });
-  return { virtualization, loadMoreRef, canLoadMore, virtualScrollRef };
+  return {
+    virtualization: resolvedVirtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  };
+}
+
+function resolveBodyVirtualization<TRow>(
+  groupingArmed: boolean,
+  groupVirtualization: ReturnType<typeof useKeyedVirtualization>,
+  virtualization: TableVirtualization<TRow>
+): TableVirtualization<TRow> {
+  if (!(groupingArmed && groupVirtualization.enabled)) return virtualization;
+  return {
+    enabled: true,
+    rows: [],
+    paddingTop: groupVirtualization.paddingTop,
+    paddingBottom: groupVirtualization.paddingBottom,
+    measureElement: groupVirtualization.measureElement,
+  };
 }
 
 /**

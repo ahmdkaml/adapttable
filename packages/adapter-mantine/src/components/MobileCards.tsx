@@ -15,11 +15,12 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
-import type { RefObject } from "react";
+import type { ReactElement, RefObject } from "react";
 
 import type { Density } from "../density";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import { GroupHeaderCard } from "./GroupHeader";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared
@@ -39,6 +40,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "summaryRow"
   | "expansion"
   | "editing"
+  | "grouping"
   | "rowEntries"
   | "paddingTop"
   | "paddingBottom"
@@ -76,6 +78,7 @@ export function MobileCards<TRow>({
   summaryRow,
   expansion,
   editing,
+  grouping,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -93,6 +96,122 @@ export function MobileCards<TRow>({
   // here. The footer summary still applies — it closes the list as one card.
   const summaryCells = summaryRow?.(rows);
 
+  const renderCard = (row: TRow, index: number, key: string): ReactElement => {
+    const id = getRowId(row);
+    return (
+      <Card
+        key={key}
+        {...rowClickProps(row, onRowClick)}
+        className={rowClassName?.(row, index)}
+        ref={measureElement}
+        data-index={index}
+        withBorder
+        radius="md"
+        padding={cardPadding}
+        role="listitem"
+        data-stagger=""
+      >
+        <Stack gap={cardGap}>
+          {selection && (
+            <Checkbox
+              aria-label={labels.selectRow}
+              checked={selection.isSelected(id)}
+              onChange={() => selection.toggle(id)}
+            />
+          )}
+          {expansion && (
+            <Group justify="flex-end">
+              <ExpandToggle
+                expanded={expansion.isExpanded(id)}
+                expandLabel={labels.expandRow}
+                collapseLabel={labels.collapseRow}
+                onToggle={() => expansion.toggle(id)}
+              />
+            </Group>
+          )}
+          {columns.map((column) => (
+            <div key={column.key}>
+              <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                {mobileLabel(column)}
+              </Text>
+              {/* Cells are arbitrary ReactNode (often block elements) —
+                  a <p> wrapper would be invalid HTML. */}
+              <Text component="div" fz="sm">
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={labels.editCell}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </Text>
+            </div>
+          ))}
+          {expansion?.isExpanded(id) === true && (
+            <div>{renderRowDetail!(row)}</div>
+          )}
+          {rowActions && rowActions.length > 0 && (
+            <Group gap={4} justify="flex-end" pt={4}>
+              {rowActions.map((action) => {
+                if (action.isHidden?.(row)) return null;
+                const reason = resolveDisabledReason(
+                  action.disabledReason?.(row)
+                );
+                const disabled =
+                  reason !== undefined || (action.isDisabled?.(row) ?? false);
+                // The disabled attribute already blocks activation, so attach
+                // the handler only when the action can run.
+                const run = disabled
+                  ? undefined
+                  : () => runRowAction(action, row, confirm, labels.cancel);
+                return action.icon ? (
+                  <Tooltip
+                    key={action.key}
+                    label={reason ?? action.label}
+                    withArrow
+                    openDelay={200}
+                  >
+                    <ActionIcon
+                      variant="subtle"
+                      color={action.color}
+                      size="sm"
+                      disabled={disabled}
+                      aria-label={action.label}
+                      onClick={run}
+                    >
+                      {action.icon}
+                    </ActionIcon>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    key={action.key}
+                    variant="subtle"
+                    color={action.color}
+                    size="compact-sm"
+                    disabled={disabled}
+                    onClick={run}
+                  >
+                    {action.label}
+                  </Button>
+                );
+              })}
+            </Group>
+          )}
+        </Stack>
+      </Card>
+    );
+  };
+
   return (
     <Stack
       gap={compact ? "xs" : "sm"}
@@ -101,122 +220,22 @@ export function MobileCards<TRow>({
       {...table.getTableProps({ role: "list" })}
     >
       {paddingTop > 0 && <div aria-hidden style={{ height: paddingTop }} />}
-      {entries.map(({ row, index, key }) => {
-        const id = getRowId(row);
-        return (
-          <Card
-            key={key}
-            {...rowClickProps(row, onRowClick)}
-            className={rowClassName?.(row, index)}
-            ref={measureElement}
-            data-index={index}
-            withBorder
-            radius="md"
-            padding={cardPadding}
-            role="listitem"
-            data-stagger=""
-          >
-            <Stack gap={cardGap}>
-              {selection && (
-                <Checkbox
-                  aria-label={labels.selectRow}
-                  checked={selection.isSelected(id)}
-                  onChange={() => selection.toggle(id)}
-                />
-              )}
-              {expansion && (
-                <Group justify="flex-end">
-                  <ExpandToggle
-                    expanded={expansion.isExpanded(id)}
-                    expandLabel={labels.expandRow}
-                    collapseLabel={labels.collapseRow}
-                    onToggle={() => expansion.toggle(id)}
-                  />
-                </Group>
-              )}
-              {columns.map((column) => (
-                <div key={column.key}>
-                  <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                    {mobileLabel(column)}
-                  </Text>
-                  {/* Cells are arbitrary ReactNode (often block elements) —
-                      a <p> wrapper would be invalid HTML. */}
-                  <Text component="div" fz="sm">
-                    <EditableDataCell
-                      editing={editing}
-                      row={row}
-                      column={column}
-                      rowId={id}
-                      rows={rows}
-                      columns={columns}
-                      rowKey={getRowId}
-                      editLabel={labels.editCell}
-                      display={
-                        column.Cell ? (
-                          <column.Cell row={row} rowIndex={index} />
-                        ) : (
-                          column.accessor?.(row)
-                        )
-                      }
-                    />
-                  </Text>
-                </div>
-              ))}
-              {expansion?.isExpanded(id) === true && (
-                <div>{renderRowDetail!(row)}</div>
-              )}
-              {rowActions && rowActions.length > 0 && (
-                <Group gap={4} justify="flex-end" pt={4}>
-                  {rowActions.map((action) => {
-                    if (action.isHidden?.(row)) return null;
-                    const reason = resolveDisabledReason(
-                      action.disabledReason?.(row)
-                    );
-                    const disabled =
-                      reason !== undefined ||
-                      (action.isDisabled?.(row) ?? false);
-                    // The disabled attribute already blocks activation, so
-                    // attach the handler only when the action can run.
-                    const run = disabled
-                      ? undefined
-                      : () => runRowAction(action, row, confirm, labels.cancel);
-                    return action.icon ? (
-                      <Tooltip
-                        key={action.key}
-                        label={reason ?? action.label}
-                        withArrow
-                        openDelay={200}
-                      >
-                        <ActionIcon
-                          variant="subtle"
-                          color={action.color}
-                          size="sm"
-                          disabled={disabled}
-                          aria-label={action.label}
-                          onClick={run}
-                        >
-                          {action.icon}
-                        </ActionIcon>
-                      </Tooltip>
-                    ) : (
-                      <Button
-                        key={action.key}
-                        variant="subtle"
-                        color={action.color}
-                        size="compact-sm"
-                        disabled={disabled}
-                        onClick={run}
-                      >
-                        {action.label}
-                      </Button>
-                    );
-                  })}
-                </Group>
-              )}
-            </Stack>
-          </Card>
-        );
-      })}
+      {grouping
+        ? grouping.entries.map((entry) =>
+            entry.kind === "group" ? (
+              <GroupHeaderCard
+                key={entry.key}
+                entry={entry}
+                selection={selection}
+                labels={labels}
+                padding={cardPadding}
+                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+              />
+            ) : (
+              renderCard(entry.row, entry.index, entry.key)
+            )
+          )
+        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
       {paddingBottom > 0 && (
         <div aria-hidden style={{ height: paddingBottom }} />
       )}

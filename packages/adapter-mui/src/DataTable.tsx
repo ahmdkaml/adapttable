@@ -1,4 +1,9 @@
-import type { RowAction, UseColumnLayoutResult } from "@adapttable/core";
+import type {
+  GroupCollapseState,
+  GroupedFlatEntry,
+  RowAction,
+  UseColumnLayoutResult,
+} from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   isDeclarativeFilters,
@@ -36,6 +41,26 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { DesktopTable, MobileCards } from "./components/tables";
 import type { DataTableProps } from "./types";
+
+/** Chrome grouping bundle shape (matches SharedTableRenderProps.grouping). */
+interface GroupingBundle<TRow> {
+  groupBy: string;
+  collapsed: GroupCollapseState;
+  entries: readonly GroupedFlatEntry<TRow>[];
+  setGroupBy: (key: string | null) => void;
+}
+
+/**
+ * Prefer the (possibly virtual-windowed) flat entries from chrome body data
+ * when grouping is armed; otherwise leave the bundle untouched / dormant.
+ */
+function withWindowedGroupingEntries<TRow>(
+  grouping: GroupingBundle<TRow> | undefined,
+  groupingEntries: readonly GroupedFlatEntry<TRow>[] | undefined
+): GroupingBundle<TRow> | undefined {
+  if (!(grouping && groupingEntries)) return grouping;
+  return { ...grouping, entries: groupingEntries };
+}
 
 /**
  * Map row density to MUI's table `size`, independent of column pinning. An
@@ -151,8 +176,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
-  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
-    useChromeBodyData(c, chromeProps);
+  const {
+    virtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  } = useChromeBodyData(c, chromeProps);
+  const grouping = withWindowedGroupingEntries(c.grouping, groupingEntries);
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -219,6 +250,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         summaryRow={props.summaryRow}
         expansion={c.detail?.expansion}
         editing={c.editing}
+        grouping={grouping}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
@@ -243,6 +275,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         summaryRow={props.summaryRow}
         expansion={c.detail?.expansion}
         editing={c.editing}
+        grouping={grouping}
         rowEntries={virtualization.enabled ? virtualization.rows : undefined}
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}

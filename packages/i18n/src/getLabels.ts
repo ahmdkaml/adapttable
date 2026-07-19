@@ -45,7 +45,7 @@ export type LocaleKey = keyof typeof locales;
 
 /** Resolve a BCP-47 tag to a bundled key: exact tag first, then primary subtag. */
 function resolveLocaleKey(locale: string): LocaleKey | undefined {
-  const normalized = locale.trim().replace(/_/g, "-");
+  const normalized = locale.trim().replaceAll("_", "-");
   const lower = normalized.toLowerCase();
   for (const key of Object.keys(locales) as LocaleKey[]) {
     if (key.toLowerCase() === lower) return key;

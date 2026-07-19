@@ -4,6 +4,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type EditableCellEditing,
+  type GroupCollapseState,
   headerGroupRow,
   type PinSide,
   resolveDisabledReason,
@@ -14,10 +15,21 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
-import type { CSSProperties, HTMLAttributes, MouseEvent } from "react";
+import type {
+  CSSProperties,
+  HTMLAttributes,
+  MouseEvent,
+  ReactNode,
+} from "react";
 
 import { isDangerColor } from "./colors";
 import { EditableDataCell } from "./components/EditableCell";
+import {
+  type AdaptTableGroupRow,
+  type GroupedDataRecord,
+  GroupHeaderCell,
+  isAdaptTableGroupRow,
+} from "./components/grouping";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
@@ -49,9 +61,11 @@ function columnLabel<TRow>(column: ColumnDef<TRow>): string {
 }
 
 /** Logical (RTL-aware) text alignment for a column. */
+export type LogicalTextAlign = "start" | "center" | "end";
+
 export function logicalAlign(
   align: ColumnDef<unknown>["align"]
-): "start" | "center" | "end" {
+): LogicalTextAlign {
   if (align === "center") return "center";
   if (align === "end") return "end";
   return "start";
@@ -59,7 +73,7 @@ export function logicalAlign(
 
 /** antd cell/header props applying logical alignment. */
 function cellStyle(align: ColumnDef<unknown>["align"]): {
-  style: { textAlign: "start" | "center" | "end" };
+  style: { textAlign: LogicalTextAlign };
 } {
   return { style: { textAlign: logicalAlign(align) } };
 }
@@ -198,6 +212,13 @@ function groupColumns<TRow>(
   return grouped;
 }
 
+/** Opt-in grouping chrome passed into {@link buildColumns} when armed. */
+export interface BuildColumnsGrouping {
+  collapsed: GroupCollapseState;
+  /** Number of leaf data columns (for group-header colSpan). */
+  dataColumnCount: number;
+}
+
 /** Options for {@link buildColumns}. */
 export interface BuildColumnsOptions<TRow> {
   columns: readonly ColumnDef<TRow>[];
@@ -224,6 +245,11 @@ export interface BuildColumnsOptions<TRow> {
   sortLevels?: readonly SortLevel[];
   /** Shift-click chain toggler; provided only when `multiSort` is on. */
   onToggleSortLevel?: (key: string) => void;
+  /**
+   * When set, column cells detect synthetic group rows and render a spanning
+   * group header (or per-column aggregates). Omit and grouping stays dormant.
+   */
+  grouping?: BuildColumnsGrouping;
 }
 
 /**
@@ -235,6 +261,122 @@ export interface BuildColumnsOptions<TRow> {
  * @typeParam TRow - The row type.
  * @returns The antd column definitions.
  */
+/** Whether a group header should span every data column (no aggregates). */
+function groupSpansAll(group: AdaptTableGroupRow): boolean {
+  const cells = group.aggregateCells;
+  if (!cells) return true;
+  return Object.keys(cells).length === 0;
+}
+
+/** Cell props for a data column when grouping may produce synthetic rows. */
+function groupedOnCell<TRow>(
+  columnIndex: number,
+  align: ColumnDef<unknown>["align"],
+  grouping: BuildColumnsGrouping | undefined,
+  record: GroupedDataRecord<TRow>
+): { style: { textAlign: LogicalTextAlign }; colSpan?: number } {
+  const base = cellStyle(align);
+  if (!grouping || !isAdaptTableGroupRow(record)) return base;
+  if (groupSpansAll(record)) {
+    if (columnIndex === 0) {
+      return { ...base, colSpan: grouping.dataColumnCount };
+    }
+    return { ...base, colSpan: 0 };
+  }
+  return base;
+}
+
+/** Normalize optional aggregate content to a ReactNode (never bare `false`). */
+function aggregateCellContent(value: ReactNode | undefined): ReactNode {
+  if (value == null || value === false) return null;
+  return value;
+}
+
+/** Render group-header cell content for a data column. */
+function renderGroupDataCell<TRow>(
+  column: ColumnDef<TRow>,
+  columnIndex: number,
+  record: AdaptTableGroupRow,
+  options: {
+    labels: Required<TableLabels>;
+    grouping?: BuildColumnsGrouping;
+  }
+): ReactNode {
+  let content: ReactNode = null;
+  if (groupSpansAll(record)) {
+    if (columnIndex === 0) {
+      content = (
+        <GroupHeaderCell
+          group={record}
+          labels={options.labels}
+          onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+        />
+      );
+    }
+  } else if (columnIndex === 0) {
+    content = (
+      <GroupHeaderCell
+        group={record}
+        labels={options.labels}
+        onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+        aggregate={record.aggregateCells?.[column.key]}
+      />
+    );
+  } else {
+    content = aggregateCellContent(record.aggregateCells?.[column.key]);
+  }
+  return content;
+}
+
+/** Render a normal editable leaf cell. */
+function renderLeafDataCell<TRow>(
+  column: ColumnDef<TRow>,
+  record: TRow,
+  index: number,
+  options: {
+    editing?: EditableCellEditing<TRow>;
+    rows: readonly TRow[];
+    columns: readonly ColumnDef<TRow>[];
+    getRowId: (row: TRow) => string;
+    labels: Required<TableLabels>;
+  }
+): ReactNode {
+  return (
+    <EditableDataCell
+      editing={options.editing}
+      row={record}
+      column={column}
+      rowId={options.getRowId(record)}
+      rowIndex={index}
+      rows={options.rows}
+      columns={options.columns}
+      rowKey={options.getRowId}
+      editLabel={options.labels.editCell}
+    />
+  );
+}
+
+/** Render a group header or a normal editable leaf cell. */
+function renderDataCell<TRow>(
+  column: ColumnDef<TRow>,
+  columnIndex: number,
+  record: GroupedDataRecord<TRow>,
+  index: number,
+  options: {
+    editing?: EditableCellEditing<TRow>;
+    rows: readonly TRow[];
+    columns: readonly ColumnDef<TRow>[];
+    getRowId: (row: TRow) => string;
+    labels: Required<TableLabels>;
+    grouping?: BuildColumnsGrouping;
+  }
+): ReactNode {
+  if (isAdaptTableGroupRow(record)) {
+    return renderGroupDataCell(column, columnIndex, record, options);
+  }
+  return renderLeafDataCell(column, record, index, options);
+}
+
 export function buildColumns<TRow>({
   columns,
   rowActions,
@@ -251,70 +393,77 @@ export function buildColumns<TRow>({
   resizeLabel = "Resize column",
   sortLevels = [],
   onToggleSortLevel,
-}: BuildColumnsOptions<TRow>): TableColumnsType<TRow> {
-  const leaves: TableColumnsType<TRow> = columns.map((column) => {
-    // An active chain level supersedes the single sort for this column's
-    // caret and `aria-sort`, mirroring core's headless header cells.
-    const dir = chainDir(sortLevels, column.key);
-    const effectiveSortBy = dir ? column.key : sortBy;
-    const effectiveSortDir = dir ?? sortDir;
-    const sortIndex = chainIndex(sortLevels, column.key);
-    return {
-      key: column.key,
-      // A real element (not a Fragment): antd v6 attaches a `ref` to the
-      // column title to measure it, which logs "ref on React.Fragment" in dev.
-      // The wrapper takes the ref; the absolute resize handle still anchors to
-      // the (positioned) header cell, so the layout is unchanged.
-      title: (
-        <span>
-          {column.header}
-          <SortIndexBadge index={sortIndex} />
-          {setWidth && (
-            <span
-              {...columnResizeHandleProps(
-                column.key,
-                setWidth,
-                `${resizeLabel}: ${columnLabel(column)}`
-              )}
-              style={RESIZE_HANDLE_STYLE}
-            />
-          )}
-        </span>
-      ),
-      width: columnWidths?.[column.key] ?? column.width,
-      fixed: antdFixed(pinned?.[column.key]),
-      sorter: column.sortable ? true : undefined,
-      sortOrder: column.sortable
-        ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
-        : undefined,
-      showSorterTooltip: false,
-      onCell: () => cellStyle(column.align),
-      onHeaderCell: () =>
-        headerCellProps(
-          column,
-          effectiveSortBy,
-          effectiveSortDir,
-          sortIndex,
-          Boolean(setWidth),
-          pinned?.[column.key] != null,
-          onToggleSortLevel
+  grouping,
+}: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
+  const cellOpts = {
+    editing,
+    rows,
+    columns,
+    getRowId,
+    labels,
+    grouping,
+  };
+  const leaves: TableColumnsType<GroupedDataRecord<TRow>> = columns.map(
+    (column, columnIndex) => {
+      // An active chain level supersedes the single sort for this column's
+      // caret and `aria-sort`, mirroring core's headless header cells.
+      const dir = chainDir(sortLevels, column.key);
+      const effectiveSortBy = dir ? column.key : sortBy;
+      const effectiveSortDir = dir ?? sortDir;
+      const sortIndex = chainIndex(sortLevels, column.key);
+      return {
+        key: column.key,
+        // A real element (not a Fragment): antd v6 attaches a `ref` to the
+        // column title to measure it, which logs "ref on React.Fragment" in
+        // dev. The wrapper takes the ref; the absolute resize handle still
+        // anchors to the (positioned) header cell, so the layout is unchanged.
+        title: (
+          <span>
+            {column.header}
+            <SortIndexBadge index={sortIndex} />
+            {setWidth && (
+              <span
+                {...columnResizeHandleProps(
+                  column.key,
+                  setWidth,
+                  `${resizeLabel}: ${columnLabel(column)}`
+                )}
+                style={RESIZE_HANDLE_STYLE}
+              />
+            )}
+          </span>
         ),
-      render: (_value: unknown, row: TRow, index: number) => (
-        <EditableDataCell
-          editing={editing}
-          row={row}
-          column={column}
-          rowId={getRowId(row)}
-          rowIndex={index}
-          rows={rows}
-          columns={columns}
-          rowKey={getRowId}
-          editLabel={labels.editCell}
-        />
-      ),
-    };
-  });
-  const cols = groupColumns(columns, leaves);
+        width: columnWidths?.[column.key] ?? column.width,
+        fixed: antdFixed(pinned?.[column.key]),
+        sorter: column.sortable ? true : undefined,
+        sortOrder: column.sortable
+          ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
+          : undefined,
+        showSorterTooltip: false,
+        onCell: (record: GroupedDataRecord<TRow>) =>
+          groupedOnCell(columnIndex, column.align, grouping, record),
+        onHeaderCell: () =>
+          headerCellProps(
+            column,
+            effectiveSortBy,
+            effectiveSortDir,
+            sortIndex,
+            Boolean(setWidth),
+            pinned?.[column.key] != null,
+            onToggleSortLevel
+          ),
+        render: (
+          _value: unknown,
+          record: GroupedDataRecord<TRow>,
+          index: number
+        ) => renderDataCell(column, columnIndex, record, index, cellOpts),
+      };
+    }
+  );
+  const cols = groupColumns(
+    columns,
+    leaves as TableColumnsType<TRow>
+  ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
   if (rowActions && rowActions.length > 0) {
     // The actions column rides antd's `fixed: "right"` when the user pins it
@@ -330,42 +479,51 @@ export function buildColumns<TRow>({
       title: labels.actions,
       width: 1,
       fixed: actionsFixed ? "right" : undefined,
-      onCell: () => cellStyle("end"),
+      onCell: (record: GroupedDataRecord<TRow>) => {
+        if (isAdaptTableGroupRow(record)) return { colSpan: 0 };
+        return cellStyle("end");
+      },
       onHeaderCell: () => cellStyle("end"),
-      render: (_value: unknown, row: TRow) => (
-        <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-          {rowActions.map((action) => {
-            if (action.isHidden?.(row)) return null;
-            const reason = resolveDisabledReason(action.disabledReason?.(row));
-            const disabled =
-              reason !== undefined || (action.isDisabled?.(row) ?? false);
-            return (
-              <Tooltip key={action.key} title={reason ?? action.label}>
-                <Button
-                  size="small"
-                  type="text"
-                  danger={isDangerColor(action.color)}
-                  disabled={disabled}
-                  title={reason}
-                  aria-label={action.label}
-                  // The disabled attribute already blocks activation, so
-                  // attach the handler only when the action can run.
-                  onClick={
-                    disabled
-                      ? undefined
-                      : (e) => {
-                          e.stopPropagation();
-                          runRowAction(action, row, confirm, labels.cancel);
-                        }
-                  }
-                >
-                  {action.icon ?? action.label}
-                </Button>
-              </Tooltip>
-            );
-          })}
-        </div>
-      ),
+      render: (_value: unknown, record: GroupedDataRecord<TRow>) => {
+        if (isAdaptTableGroupRow(record)) return null;
+        const row = record;
+        return (
+          <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+            {rowActions.map((action) => {
+              if (action.isHidden?.(row)) return null;
+              const reason = resolveDisabledReason(
+                action.disabledReason?.(row)
+              );
+              const disabled =
+                reason !== undefined || (action.isDisabled?.(row) ?? false);
+              return (
+                <Tooltip key={action.key} title={reason ?? action.label}>
+                  <Button
+                    size="small"
+                    type="text"
+                    danger={isDangerColor(action.color)}
+                    disabled={disabled}
+                    title={reason}
+                    aria-label={action.label}
+                    // The disabled attribute already blocks activation, so
+                    // attach the handler only when the action can run.
+                    onClick={
+                      disabled
+                        ? undefined
+                        : (e) => {
+                            e.stopPropagation();
+                            runRowAction(action, row, confirm, labels.cancel);
+                          }
+                    }
+                  >
+                    {action.icon ?? action.label}
+                  </Button>
+                </Tooltip>
+              );
+            })}
+          </div>
+        );
+      },
     });
   }
 

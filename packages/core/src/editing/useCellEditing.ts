@@ -85,13 +85,19 @@ export interface CellEditingState {
  */
 export function useCellEditing(): CellEditingState {
   const [active, setActive] = useState<CellEditTarget | null>(null);
-  const [draft, setDraftState] = useState("");
+  const [draft, setDraft] = useState("");
   // Refs so commit/cancel always see the latest values without stale
   // closures when wired through a keydown listener.
   const activeRef = useRef(active);
   const draftRef = useRef(draft);
   activeRef.current = active;
   draftRef.current = draft;
+
+  /** Update draft state and the sync ref in the same tick. */
+  const writeDraft = useCallback((value: string) => {
+    draftRef.current = value;
+    setDraft(value);
+  }, []);
 
   const isActive = useCallback(
     (rowId: string, columnKey: string) =>
@@ -106,16 +112,10 @@ export function useCellEditing(): CellEditingState {
         return;
       }
       setActive({ rowId, columnKey });
-      draftRef.current = initialValue;
-      setDraftState(initialValue);
+      writeDraft(initialValue);
     },
-    []
+    [writeDraft]
   );
-
-  const setDraft = useCallback((value: string) => {
-    draftRef.current = value;
-    setDraftState(value);
-  }, []);
 
   const commit = useCallback((): CellEditCommit | null => {
     const current = activeRef.current;
@@ -126,16 +126,14 @@ export function useCellEditing(): CellEditingState {
       draft: draftRef.current,
     };
     setActive(null);
-    draftRef.current = "";
-    setDraftState("");
+    writeDraft("");
     return result;
-  }, []);
+  }, [writeDraft]);
 
   const cancel = useCallback(() => {
     setActive(null);
-    draftRef.current = "";
-    setDraftState("");
-  }, []);
+    writeDraft("");
+  }, [writeDraft]);
 
   const discardIfRowMissing = useCallback(
     (rows: readonly unknown[], rowKey: (row: unknown) => string) => {
@@ -143,10 +141,9 @@ export function useCellEditing(): CellEditingState {
       if (!current) return;
       if (rows.some((row) => rowKey(row) === current.rowId)) return;
       setActive(null);
-      draftRef.current = "";
-      setDraftState("");
+      writeDraft("");
     },
-    []
+    [writeDraft]
   );
 
   const handleKeyDown = useCallback(
@@ -201,7 +198,7 @@ export function useCellEditing(): CellEditingState {
       draft,
       isActive,
       begin,
-      setDraft,
+      setDraft: writeDraft,
       commit,
       cancel,
       discardIfRowMissing,
@@ -212,7 +209,7 @@ export function useCellEditing(): CellEditingState {
       draft,
       isActive,
       begin,
-      setDraft,
+      writeDraft,
       commit,
       cancel,
       discardIfRowMissing,

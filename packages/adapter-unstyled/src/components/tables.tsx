@@ -29,6 +29,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
 import { EditableDataCell } from "./EditableCell";
+import { GroupHeaderCard, GroupHeaderRow } from "./GroupHeader";
 import { ChevronIcon } from "./icons";
 
 /** Inline style for an absolutely-positioned column-resize handle. */
@@ -422,6 +423,7 @@ export function DesktopTable<TRow>({
   summaryRow,
   expansion,
   editing,
+  grouping,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -464,6 +466,7 @@ export function DesktopTable<TRow>({
   const live = useRef({
     selection,
     expansion: expansionState,
+    grouping,
     onRowClick,
     prefetch,
     renderRowDetail,
@@ -471,6 +474,7 @@ export function DesktopTable<TRow>({
   live.current = {
     selection,
     expansion: expansionState,
+    grouping,
     onRowClick,
     prefetch,
     renderRowDetail,
@@ -481,6 +485,10 @@ export function DesktopTable<TRow>({
   );
   const onToggleExpand = useCallback(
     (id: string) => live.current.expansion?.toggle(id),
+    []
+  );
+  const onToggleGroup = useCallback(
+    (groupKey: string) => live.current.grouping?.collapsed.toggle(groupKey),
     []
   );
   const handleRowClick = useCallback(
@@ -740,48 +748,104 @@ export function DesktopTable<TRow>({
             />
           </tr>
         )}
-        {entries.map(({ row, index, key }) => {
-          const id = getRowId(row);
-          return (
-            <Row
-              key={key}
-              row={row}
-              index={index}
-              id={id}
-              table={table}
-              columns={columns}
-              labels={labels}
-              classNames={classNames}
-              selected={selection ? selection.isSelected(id) : undefined}
-              expanded={
-                expansionState ? expansionState.isExpanded(id) : undefined
+        {grouping
+          ? grouping.entries.map((entry) => {
+              if (entry.kind === "group") {
+                return (
+                  <GroupHeaderRow
+                    key={entry.key}
+                    entry={entry}
+                    columnSpan={columnSpan}
+                    selection={selection}
+                    labels={labels}
+                    classNames={classNames}
+                    onToggleCollapse={onToggleGroup}
+                  />
+                );
               }
-              showActions={showActions}
-              rowActions={rowActions}
-              confirm={confirm}
-              columnSpan={columnSpan}
-              columnWidths={columnWidths}
-              pinOffset={pinOffset}
-              pinSignature={pinSignature}
-              hasStartPin={hasStartPin}
-              hasEndPin={hasEndPin}
-              actionsPinned={stickActions}
-              rowClass={rowClassName?.(row, index)}
-              clickable={Boolean(onRowClick)}
-              hasPrefetch={Boolean(prefetch)}
-              onRowClick={handleRowClick}
-              onPrefetch={handlePrefetch}
-              onToggleSelect={onToggleSelect}
-              onToggleExpand={onToggleExpand}
-              renderDetail={renderDetail}
-              measureElement={measureElement}
-              editing={editing}
-              rows={rows}
-              getRowId={getRowId}
-              editingSignature={rowEditingSignature(editing, id)}
-            />
-          );
-        })}
+              const id = getRowId(entry.row);
+              return (
+                <Row
+                  key={entry.key}
+                  row={entry.row}
+                  index={entry.index}
+                  id={id}
+                  table={table}
+                  columns={columns}
+                  labels={labels}
+                  classNames={classNames}
+                  selected={selection ? selection.isSelected(id) : undefined}
+                  expanded={
+                    expansionState ? expansionState.isExpanded(id) : undefined
+                  }
+                  showActions={showActions}
+                  rowActions={rowActions}
+                  confirm={confirm}
+                  columnSpan={columnSpan}
+                  columnWidths={columnWidths}
+                  pinOffset={pinOffset}
+                  pinSignature={pinSignature}
+                  hasStartPin={hasStartPin}
+                  hasEndPin={hasEndPin}
+                  actionsPinned={stickActions}
+                  rowClass={rowClassName?.(entry.row, entry.index)}
+                  clickable={Boolean(onRowClick)}
+                  hasPrefetch={Boolean(prefetch)}
+                  onRowClick={handleRowClick}
+                  onPrefetch={handlePrefetch}
+                  onToggleSelect={onToggleSelect}
+                  onToggleExpand={onToggleExpand}
+                  renderDetail={renderDetail}
+                  measureElement={measureElement}
+                  editing={editing}
+                  rows={rows}
+                  getRowId={getRowId}
+                  editingSignature={rowEditingSignature(editing, id)}
+                />
+              );
+            })
+          : entries.map(({ row, index, key }) => {
+              const id = getRowId(row);
+              return (
+                <Row
+                  key={key}
+                  row={row}
+                  index={index}
+                  id={id}
+                  table={table}
+                  columns={columns}
+                  labels={labels}
+                  classNames={classNames}
+                  selected={selection ? selection.isSelected(id) : undefined}
+                  expanded={
+                    expansionState ? expansionState.isExpanded(id) : undefined
+                  }
+                  showActions={showActions}
+                  rowActions={rowActions}
+                  confirm={confirm}
+                  columnSpan={columnSpan}
+                  columnWidths={columnWidths}
+                  pinOffset={pinOffset}
+                  pinSignature={pinSignature}
+                  hasStartPin={hasStartPin}
+                  hasEndPin={hasEndPin}
+                  actionsPinned={stickActions}
+                  rowClass={rowClassName?.(row, index)}
+                  clickable={Boolean(onRowClick)}
+                  hasPrefetch={Boolean(prefetch)}
+                  onRowClick={handleRowClick}
+                  onPrefetch={handlePrefetch}
+                  onToggleSelect={onToggleSelect}
+                  onToggleExpand={onToggleExpand}
+                  renderDetail={renderDetail}
+                  measureElement={measureElement}
+                  editing={editing}
+                  rows={rows}
+                  getRowId={getRowId}
+                  editingSignature={rowEditingSignature(editing, id)}
+                />
+              );
+            })}
         {paddingBottom > 0 && (
           <tr>
             <td
@@ -849,6 +913,7 @@ export function MobileCards<TRow>({
   summaryRow,
   expansion,
   editing,
+  grouping,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -858,6 +923,98 @@ export function MobileCards<TRow>({
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const expansionState = renderRowDetail ? expansion : undefined;
   const summary = summaryRow?.(rows);
+
+  const renderCard = (row: TRow, index: number, key: string): ReactElement => {
+    const id = getRowId(row);
+    const expanded = expansionState?.isExpanded(id) ?? false;
+    return (
+      <li
+        key={key}
+        {...rowClickProps(row, onRowClick)}
+        ref={measureElement}
+        data-index={index}
+        data-adapttable-part="card"
+        data-stagger=""
+        data-selected={selection?.isSelected(id) ? "" : undefined}
+        data-clickable={onRowClick ? "" : undefined}
+        className={cx(classNames.card, rowClassName?.(row, index))}
+      >
+        {selection && (
+          <input
+            type="checkbox"
+            aria-label={labels.selectRow}
+            checked={selection.isSelected(id)}
+            onChange={() => selection.toggle(id)}
+            className={classNames.checkbox}
+          />
+        )}
+        {expansionState && (
+          <ExpandButton
+            expanded={expanded}
+            labels={labels}
+            classNames={classNames}
+            onToggle={() => expansionState.toggle(id)}
+          />
+        )}
+        {columns.map((column) => (
+          <div
+            key={column.key}
+            data-adapttable-part="card-row"
+            className={classNames.cardRow}
+          >
+            <span
+              data-adapttable-part="card-label"
+              className={classNames.cardLabel}
+            >
+              {cardLabel(column)}
+            </span>
+            <span
+              data-adapttable-part="card-value"
+              className={classNames.cardValue}
+            >
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+                display={
+                  column.Cell ? (
+                    <column.Cell row={row} rowIndex={index} />
+                  ) : (
+                    column.accessor?.(row)
+                  )
+                }
+              />
+            </span>
+          </div>
+        ))}
+        {rowActions && rowActions.length > 0 && (
+          <div data-adapttable-part="card-actions">
+            <RowActionButtons
+              row={row}
+              actions={rowActions}
+              confirm={confirm}
+              cancelLabel={labels.cancel}
+              classNames={classNames}
+            />
+          </div>
+        )}
+        {expansionState && expanded && renderRowDetail && (
+          <div
+            data-adapttable-part="card-detail"
+            className={classNames.cardDetail}
+          >
+            {renderRowDetail(row)}
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
     <ul
       {...table.getTableProps({ role: undefined })}
@@ -872,101 +1029,23 @@ export function MobileCards<TRow>({
           style={{ height: paddingTop }}
         />
       )}
-      {entries.map(({ row, index, key }) => {
-        const id = getRowId(row);
-        const expanded = expansionState?.isExpanded(id) ?? false;
-        return (
-          <li
-            key={key}
-            {...rowClickProps(row, onRowClick)}
-            ref={measureElement}
-            data-index={index}
-            data-adapttable-part="card"
-            data-stagger=""
-            data-selected={selection?.isSelected(id) ? "" : undefined}
-            data-clickable={onRowClick ? "" : undefined}
-            className={cx(classNames.card, rowClassName?.(row, index))}
-          >
-            {selection && (
-              <input
-                type="checkbox"
-                aria-label={labels.selectRow}
-                checked={selection.isSelected(id)}
-                onChange={() => selection.toggle(id)}
-                className={classNames.checkbox}
-              />
-            )}
-            {expansionState && (
-              <ExpandButton
-                expanded={expanded}
-                labels={labels}
-                classNames={classNames}
-                onToggle={() => expansionState.toggle(id)}
-              />
-            )}
-            {columns.map((column) => (
-              <div
-                key={column.key}
-                data-adapttable-part="card-row"
-                className={classNames.cardRow}
-              >
-                <span
-                  data-adapttable-part="card-label"
-                  className={classNames.cardLabel}
-                >
-                  {cardLabel(column)}
-                </span>
-                <span
-                  data-adapttable-part="card-value"
-                  className={classNames.cardValue}
-                >
-                  <EditableDataCell
-                    editing={editing}
-                    row={row}
-                    column={column}
-                    rowId={id}
-                    rows={rows}
-                    columns={columns}
-                    rowKey={getRowId}
-                    editLabel={labels.editCell}
-                    display={
-                      column.Cell ? (
-                        <column.Cell row={row} rowIndex={index} />
-                      ) : (
-                        column.accessor?.(row)
-                      )
-                    }
-                  />
-                </span>
-              </div>
-            ))}
-            {rowActions && rowActions.length > 0 && (
-              <div
-                data-adapttable-part="card-actions"
-                className={classNames.actionsCell}
-              >
-                <RowActionButtons
-                  row={row}
-                  actions={rowActions}
-                  confirm={confirm}
-                  cancelLabel={labels.cancel}
+      {grouping
+        ? grouping.entries.map((entry) =>
+            entry.kind === "group" ? (
+              <li key={entry.key} style={{ listStyle: "none" }}>
+                <GroupHeaderCard
+                  entry={entry}
+                  selection={selection}
+                  labels={labels}
                   classNames={classNames}
+                  onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
                 />
-              </div>
-            )}
-            {expanded && (
-              // Inside the measured card `<li>`, so the virtualizer's size
-              // measurement tracks the open detail panel.
-              <div
-                data-adapttable-part="card-detail"
-                className={classNames.cardDetail}
-              >
-                {renderRowDetail!(row)}
-              </div>
-            )}
-          </li>
-        );
-      })}
+              </li>
+            ) : (
+              renderCard(entry.row, entry.index, entry.key)
+            )
+          )
+        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
       {paddingBottom > 0 && (
         <li
           aria-hidden
@@ -977,11 +1056,10 @@ export function MobileCards<TRow>({
       {summary && (
         <li
           data-adapttable-part="summary-card"
-          className={classNames.summaryCard}
+          className={cx(classNames.card, classNames.summaryCard)}
         >
-          {columns
-            .filter((column) => summary[column.key] !== undefined)
-            .map((column) => (
+          {columns.map((column) =>
+            summary[column.key] == null ? null : (
               <div
                 key={column.key}
                 data-adapttable-part="card-row"
@@ -1000,7 +1078,8 @@ export function MobileCards<TRow>({
                   {summary[column.key]}
                 </span>
               </div>
-            ))}
+            )
+          )}
         </li>
       )}
     </ul>

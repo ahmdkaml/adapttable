@@ -1,8 +1,11 @@
 import {
   ACTIONS_COLUMN_KEY,
   type ColumnDef,
+  type ConfirmHandler,
   DEFAULT_CARD_SIZE_PX,
   type FilterRuntime,
+  type GroupCollapseState,
+  type GroupedFlatEntry,
   isDeclarativeFilters,
   makeExportCsvHandler,
   pageSizeOptions,
@@ -19,11 +22,13 @@ import {
   type UseDataTableResult,
   useFilterTriggerToggle,
   useInfiniteScroll,
+  useKeyedVirtualization,
   useMountStagger,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
   useTableVirtualization,
+  windowGroupedEntries,
 } from "@adapttable/core";
 import {
   Button,
@@ -38,6 +43,8 @@ import {
   Typography,
 } from "antd";
 import {
+  type CSSProperties,
+  type HTMLAttributes,
   type ReactNode,
   type UIEventHandler,
   useMemo,
@@ -56,6 +63,13 @@ import {
 } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
 import { ExpandToggle } from "./components/ExpandToggle";
+import {
+  buildGroupedDataSource,
+  type GroupedDataRecord,
+  groupedRowKey,
+  GroupSelectionCheckbox,
+  isAdaptTableGroupRow,
+} from "./components/grouping";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { SkeletonTable } from "./components/SkeletonTable";
@@ -85,12 +99,16 @@ function virtualScrollEndHandler<TRow>(
 
 /**
  * Adapt the shared `(row, index) => string | undefined` contract to antd's
- * `rowClassName`, which expects a string for every row.
+ * `rowClassName`, which expects a string for every row. Group header rows
+ * get a stable class and skip the host callback (they are not leaf rows).
  */
 function buildRowClassName<TRow>(
-  rowClassName: (row: TRow, index: number) => string | undefined
-): (record: TRow, index: number) => string {
-  return (record, index) => rowClassName(record, index) ?? "";
+  rowClassName: ((row: TRow, index: number) => string | undefined) | undefined
+): (record: GroupedDataRecord<TRow>, index: number) => string {
+  return (record, index) => {
+    if (isAdaptTableGroupRow(record)) return "adapttable-group-row";
+    return rowClassName?.(record, index) ?? "";
+  };
 }
 
 /**
@@ -175,20 +193,59 @@ function resolveScroll(
   return { x, y: maxHeight };
 }
 
+/** Uniform shape for antd row-selection checkbox props. */
+interface RowSelectionCheckboxProps {
+  disabled?: boolean;
+  style?: CSSProperties;
+  title?: string;
+}
+
+/** Selection column cell: group tri-state or antd's leaf checkbox node. */
+function selectionCellNode<TRow>(
+  record: GroupedDataRecord<TRow>,
+  selection: SelectionState,
+  labels: Required<TableLabels>,
+  originNode: ReactNode
+): ReactNode {
+  if (isAdaptTableGroupRow(record)) {
+    return (
+      <GroupSelectionCheckbox
+        group={record}
+        selection={selection}
+        labels={labels}
+      />
+    );
+  }
+  return <>{originNode}</>;
+}
+
 /** Build antd's rowSelection from the headless selection state. */
 function buildRowSelection<TRow>(
   selection: SelectionState | null | undefined,
   getRowId: (row: TRow) => string,
   labels: Required<TableLabels>,
   fixedLeft: boolean
-): TableProps<TRow>["rowSelection"] {
+): TableProps<GroupedDataRecord<TRow>>["rowSelection"] {
   if (!selection) return undefined;
   return {
     // Pin the checkbox column alongside any left-fixed data column.
     fixed: fixedLeft ? "left" : undefined,
     selectedRowKeys: [...selection.selectedIds],
-    onSelect: (record) => selection.toggle(getRowId(record)),
-    getCheckboxProps: () => ({ title: labels.selectRow }),
+    onSelect: (record) => {
+      if (isAdaptTableGroupRow(record)) return;
+      selection.toggle(getRowId(record));
+    },
+    getCheckboxProps: (record): RowSelectionCheckboxProps => {
+      const isGroup = isAdaptTableGroupRow(record);
+      return {
+        disabled: isGroup || undefined,
+        style: isGroup ? { display: "none" } : undefined,
+        title: isGroup ? undefined : labels.selectRow,
+      };
+    },
+    // Group headers render a tri-state over leaf ids; leaf rows keep antd's node.
+    renderCell: (_checked, record, _index, originNode) =>
+      selectionCellNode(record, selection, labels, originNode),
     // Select-all is driven by the custom `columnTitle` checkbox below; with
     // `columnTitle` set antd never renders its own header checkbox, so an
     // `onSelectAll` callback could never fire.
@@ -217,19 +274,27 @@ function buildExpandable<TRow>(
   expansion: RowExpansionState | undefined,
   getRowId: (row: TRow) => string,
   labels: Required<TableLabels>
-): TableProps<TRow>["expandable"] {
+): TableProps<GroupedDataRecord<TRow>>["expandable"] {
   if (!renderRowDetail || !expansion) return undefined;
   return {
     expandedRowKeys: [...expansion.expandedIds],
-    onExpand: (_open, row) => expansion.toggle(getRowId(row)),
-    expandedRowRender: (row) => renderRowDetail(row),
-    expandIcon: ({ expanded, record, onExpand }) => (
-      <ExpandToggle
-        expanded={expanded}
-        labels={labels}
-        onClick={(event) => onExpand(record, event)}
-      />
-    ),
+    onExpand: (_open, row) => {
+      if (isAdaptTableGroupRow(row)) return;
+      expansion.toggle(getRowId(row));
+    },
+    rowExpandable: (row) => !isAdaptTableGroupRow(row),
+    expandedRowRender: (row) =>
+      isAdaptTableGroupRow(row) ? null : renderRowDetail(row),
+    expandIcon: ({ expanded, onExpand, record }) => {
+      if (isAdaptTableGroupRow(record)) return null;
+      return (
+        <ExpandToggle
+          expanded={expanded}
+          labels={labels}
+          onClick={(event) => onExpand(record, event)}
+        />
+      );
+    },
   };
 }
 
@@ -324,10 +389,13 @@ function buildSummary<TRow>(
   columns: readonly ColumnDef<TRow>[],
   leadingCells: number,
   hasActions: boolean
-): TableProps<TRow>["summary"] {
+): TableProps<GroupedDataRecord<TRow>>["summary"] {
   if (!summaryRow) return undefined;
-  return function SummaryCells(rows) {
-    const cells = summaryRow(rows);
+  return function SummaryCells(pageData) {
+    const leafRows = pageData.filter(
+      (record): record is TRow => !isAdaptTableGroupRow(record)
+    );
+    const cells = summaryRow(leafRows);
     return (
       <Table.Summary.Row>
         {Array.from({ length: leadingCells }, (_, i) => (
@@ -423,15 +491,18 @@ function autoFilterForm<TRow>(
   return <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />;
 }
 
+/** antd `<Table>` size tokens. */
+type AntdTableSize = "small" | "middle" | "large";
+
 /**
  * antd table size from the shared `density` contract (independent of column
  * pinning): "compact" → the small table, "comfortable" (default) → the middle
  * one. An explicit `size` prop wins so callers can opt into "large".
  */
 function resolveSize(
-  size: "small" | "middle" | "large" | undefined,
+  size: AntdTableSize | undefined,
   density: "comfortable" | "compact" | undefined
-): "small" | "middle" | "large" {
+): AntdTableSize {
   if (size) return size;
   return (density ?? "comfortable") === "compact" ? "small" : "middle";
 }
@@ -472,6 +543,313 @@ function useCardWindowing<TRow>(options: {
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
   };
+}
+
+/** Row-grouping bundle from `useTableChrome` (opt-in when `groupBy` is set). */
+interface GroupingBundle<TRow> {
+  groupBy: string;
+  collapsed: GroupCollapseState;
+  entries: readonly GroupedFlatEntry<TRow>[];
+  setGroupBy: (key: string | null) => void;
+}
+
+/**
+ * Window grouped flat entries when virtualization is eligible. Grouping stays
+ * dormant when chrome does not supply a bundle (no effective `groupBy`).
+ */
+function useGroupingWindow<TRow>(options: {
+  grouping: GroupingBundle<TRow> | undefined;
+  virtualize: boolean;
+  isPaged: boolean;
+  error: Error | null;
+  body: string;
+  isMobile: boolean;
+  estimateCardSize?: number;
+  virtualOverscan?: number;
+  virtualScrollMargin?: number;
+}): GroupingBundle<TRow> | undefined {
+  const groupingArmed = Boolean(options.grouping);
+  const groupKeys = options.grouping?.entries.map((entry) => entry.key) ?? [];
+  const groupBodyEligible =
+    groupingArmed &&
+    !options.isPaged &&
+    !options.error &&
+    (options.body === "desktop" || options.body === "mobile");
+  const groupVirtualization = useKeyedVirtualization({
+    keys: groupKeys,
+    enabled: Boolean(options.virtualize && groupBodyEligible),
+    estimateSize: options.isMobile
+      ? (options.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+      : 56,
+    overscan: options.virtualOverscan,
+    scrollMargin: options.virtualScrollMargin,
+  });
+  const groupingEntries = options.grouping
+    ? windowGroupedEntries(
+        options.grouping.entries,
+        groupVirtualization.indices
+      )
+    : undefined;
+  if (!options.grouping || !groupingEntries) return options.grouping;
+  return { ...options.grouping, entries: groupingEntries };
+}
+
+/** Props shared by mobile and desktop body regions. */
+interface DataTableBodyRegionProps<TRow> {
+  chromeBody: string;
+  source: TableSource<TRow>;
+  table: UseDataTableResult<TRow>;
+  slots: DataTableProps<TRow>["slots"];
+  columns: ReturnType<typeof buildColumns<TRow>>;
+  rowActions: DataTableProps<TRow>["rowActions"];
+  confirm: ConfirmHandler;
+  getRowId: (row: TRow) => string;
+  labels: Required<TableLabels>;
+  emptyNode: ReactNode;
+  grouping: GroupingBundle<TRow> | undefined;
+  detailRender: ((row: TRow) => ReactNode) | undefined;
+  detailExpansion: RowExpansionState | undefined;
+  editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
+  cardWindow: ReturnType<typeof useCardWindowing<TRow>>;
+  tableLabel: string | undefined;
+  density: "comfortable" | "compact" | undefined;
+  prefetch: DataTableProps<TRow>["prefetch"];
+  onRowClick: DataTableProps<TRow>["onRowClick"];
+  rowClassName: DataTableProps<TRow>["rowClassName"];
+  summaryRow: DataTableProps<TRow>["summaryRow"];
+  skeletonRows: number | undefined;
+  size: AntdTableSize;
+  bordered: boolean;
+  virtualize: boolean;
+  virtualHeight: number;
+  virtualWidth: number;
+  maxHeight: number | undefined;
+  sticky: TableProps<unknown>["sticky"];
+  dataSource: readonly GroupedDataRecord<TRow>[];
+  rowSelection: TableProps<GroupedDataRecord<TRow>>["rowSelection"];
+  expandable: TableProps<GroupedDataRecord<TRow>>["expandable"];
+  summary: TableProps<GroupedDataRecord<TRow>>["summary"];
+  handleVirtualScroll: UIEventHandler<HTMLElement>;
+  handleChange: TableProps<TRow>["onChange"];
+  minWidth: number;
+  hasPinned: boolean;
+  hasRowActions: boolean;
+}
+
+/** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
+function DesktopTableBody<TRow>({
+  tableLabel,
+  columns,
+  dataSource,
+  getRowId,
+  size,
+  bordered,
+  virtualize,
+  grouping,
+  sticky,
+  handleVirtualScroll,
+  rowSelection,
+  expandable,
+  summary,
+  handleChange,
+  rowClassName,
+  onRowClick,
+  prefetch,
+  virtualWidth,
+  virtualHeight,
+  hasPinned,
+  maxHeight,
+  minWidth,
+  emptyNode,
+}: Readonly<{
+  tableLabel: string | undefined;
+  columns: ReturnType<typeof buildColumns<TRow>>;
+  dataSource: readonly GroupedDataRecord<TRow>[];
+  getRowId: (row: TRow) => string;
+  size: AntdTableSize;
+  bordered: boolean;
+  virtualize: boolean;
+  grouping: GroupingBundle<TRow> | undefined;
+  sticky: TableProps<unknown>["sticky"];
+  handleVirtualScroll: UIEventHandler<HTMLElement>;
+  rowSelection: TableProps<GroupedDataRecord<TRow>>["rowSelection"];
+  expandable: TableProps<GroupedDataRecord<TRow>>["expandable"];
+  summary: TableProps<GroupedDataRecord<TRow>>["summary"];
+  handleChange: TableProps<TRow>["onChange"];
+  rowClassName: DataTableProps<TRow>["rowClassName"];
+  onRowClick: DataTableProps<TRow>["onRowClick"];
+  prefetch: DataTableProps<TRow>["prefetch"];
+  virtualWidth: number;
+  virtualHeight: number;
+  hasPinned: boolean;
+  maxHeight: number | undefined;
+  minWidth: number;
+  emptyNode: ReactNode;
+}>) {
+  return (
+    <Table<GroupedDataRecord<TRow>>
+      aria-label={tableLabel}
+      columns={columns}
+      dataSource={[...dataSource]}
+      rowKey={(record) => groupedRowKey(record, getRowId)}
+      size={size}
+      bordered={bordered}
+      virtual={virtualize && !grouping}
+      sticky={sticky}
+      onScroll={handleVirtualScroll}
+      rowSelection={rowSelection}
+      expandable={expandable}
+      summary={summary}
+      pagination={false}
+      rowClassName={rowClassName ? buildRowClassName(rowClassName) : undefined}
+      onChange={handleChange as TableProps<GroupedDataRecord<TRow>>["onChange"]}
+      onRow={(record) => {
+        if (isAdaptTableGroupRow(record)) {
+          return {
+            "data-adapttable-part": "group-row",
+            "data-collapsed": record.collapsed ? "true" : undefined,
+          } as HTMLAttributes<HTMLElement>;
+        }
+        return {
+          ...rowClickProps(record, onRowClick),
+          "data-stagger": "",
+          onMouseEnter: prefetch ? () => prefetch(record) : undefined,
+        };
+      }}
+      scroll={resolveScroll(
+        virtualize && !grouping,
+        virtualWidth,
+        virtualHeight,
+        hasPinned,
+        maxHeight,
+        minWidth
+      )}
+      locale={{ emptyText: emptyNode }}
+    />
+  );
+}
+
+/**
+ * The table body region (error, skeleton, empty, mobile cards, desktop table).
+ * Extracted outside `DataTable` to keep cognitive complexity within budget.
+ */
+function DataTableBodyRegion<TRow>(
+  props: Readonly<DataTableBodyRegionProps<TRow>>
+): ReactNode {
+  const {
+    chromeBody,
+    source,
+    table,
+    slots,
+    columns,
+    rowActions,
+    confirm,
+    getRowId,
+    labels,
+    emptyNode,
+    grouping,
+    detailRender,
+    detailExpansion,
+    editing,
+    cardWindow,
+    tableLabel,
+    density,
+    prefetch,
+    onRowClick,
+    rowClassName,
+    summaryRow,
+    skeletonRows,
+    size,
+    bordered,
+    virtualize,
+    virtualHeight,
+    virtualWidth,
+    maxHeight,
+    sticky,
+    dataSource,
+    rowSelection,
+    expandable,
+    summary,
+    handleVirtualScroll,
+    handleChange,
+    minWidth,
+    hasPinned,
+    hasRowActions,
+  } = props;
+
+  let body: ReactNode;
+  if (source.error) {
+    body = (
+      <ErrorState
+        error={source.error}
+        labels={labels}
+        onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+      />
+    );
+  } else if (chromeBody === "skeleton") {
+    body = slots?.skeleton ?? (
+      <SkeletonTable
+        columnCount={columns.length}
+        rowCount={skeletonRows ?? source.limit}
+        loadingLabel={labels.loading}
+        size={size}
+        bordered={bordered}
+        hasActions={hasRowActions}
+      />
+    );
+  } else if (chromeBody === "empty") {
+    body = slots?.empty ?? <output>{emptyNode}</output>;
+  } else if (chromeBody === "mobile") {
+    body = (
+      <MobileCards
+        table={table}
+        rows={source.rows}
+        rowActions={rowActions}
+        confirm={confirm}
+        getRowId={getRowId}
+        prefetch={prefetch}
+        onRowClick={onRowClick}
+        rowClassName={rowClassName}
+        tableLabel={tableLabel}
+        compact={(density ?? "comfortable") === "compact"}
+        expansion={detailExpansion}
+        editing={editing}
+        grouping={grouping}
+        renderRowDetail={detailRender}
+        summaryRow={summaryRow}
+        {...cardWindow}
+      />
+    );
+  } else {
+    body = (
+      <DesktopTableBody
+        tableLabel={tableLabel}
+        columns={columns}
+        dataSource={dataSource}
+        getRowId={getRowId}
+        size={size}
+        bordered={bordered}
+        virtualize={virtualize}
+        grouping={grouping}
+        sticky={sticky}
+        handleVirtualScroll={handleVirtualScroll}
+        rowSelection={rowSelection}
+        expandable={expandable}
+        summary={summary}
+        handleChange={handleChange}
+        rowClassName={rowClassName}
+        onRowClick={onRowClick}
+        prefetch={prefetch}
+        virtualWidth={virtualWidth}
+        virtualHeight={virtualHeight}
+        hasPinned={hasPinned}
+        maxHeight={maxHeight}
+        minWidth={minWidth}
+        emptyNode={emptyNode}
+      />
+    );
+  }
+  return body;
 }
 
 /**
@@ -551,33 +929,52 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
   });
+  // antd does not use useChromeBodyData (that hook arms a page sentinel + leaf
+  // virtualizer with onEndReached — both fight antd's native virtual Table).
+  // When grouping is armed we window the flat group/leaf list ourselves.
+  const grouping = useGroupingWindow({
+    grouping: c.grouping,
+    virtualize,
+    isPaged: c.isPaged,
+    error: source.error,
+    body: c.body,
+    isMobile: c.isMobile,
+    estimateCardSize: props.estimateCardSize,
+    virtualOverscan: props.virtualOverscan,
+    virtualScrollMargin: props.virtualScrollMargin,
+  });
   const resolvedTableLabel = table.getTableProps()["aria-label"];
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
   // internal scroll (`handleVirtualScroll`) drives paging instead. Disable
   // the sentinel there to avoid an eager fetch from the always-visible button.
+  // When grouping is armed, antd virtual is off and the page sentinel stays
+  // the load-more trigger (same as mobile cards).
   const loadMoreRef = useInfiniteScroll<HTMLDivElement>({
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: () => source.fetchNextPage(),
-    itemCount: source.rows.length,
-    enabled: sentinelEnabled(c.isPaged, source.error, virtualize, c.body),
+    itemCount: grouping ? grouping.entries.length : source.rows.length,
+    enabled: sentinelEnabled(
+      c.isPaged,
+      source.error,
+      Boolean(virtualize && !grouping),
+      c.body
+    ),
   });
 
   const handleVirtualScroll = virtualScrollEndHandler(
     source,
-    virtualize && !c.isPaged && !source.error
+    virtualize && !grouping && !c.isPaged && !source.error
   );
 
   // Window the MOBILE card list with core virtualization — desktop rows still
-  // window through antd's own native virtual `<Table>`, so this is gated to
-  // the card body and never touches that path. Cards flow in the page (no
-  // inner scroll box), so the sentinel above stays the single load-more
-  // trigger; the virtual window needs no second sentinel of its own.
+  // window through antd's own native virtual `<Table>` when grouping is off.
+  // When grouping is armed, grouping.entries already carries the window.
   const cardWindow = useCardWindowing({
     rows: source.rows,
     rowKey: getRowId,
-    virtualize,
+    virtualize: virtualize && !grouping,
     isPaged: c.isPaged,
     error: source.error,
     body: c.body,
@@ -604,7 +1001,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // Shift-click multi-sort is opt-in; without it antd keeps full control
     // of header clicks (single-sort via `onChange`).
     onToggleSortLevel: chainToggler(props.multiSort, source),
+    grouping: grouping
+      ? {
+          collapsed: grouping.collapsed,
+          dataColumnCount: table.columns.length,
+        }
+      : undefined,
   });
+  const dataSource: readonly GroupedDataRecord<TRow>[] = grouping
+    ? buildGroupedDataSource(grouping.entries)
+    : source.rows;
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
   const hasStartPin = pinnedSides.includes("start");
@@ -648,87 +1054,48 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     />
   );
 
-  let bodyRegion: ReactNode;
-  if (source.error) {
-    bodyRegion = (
-      <ErrorState
-        error={source.error}
-        labels={labels}
-        onRetry={source.refetch ? () => void source.refetch?.() : undefined}
-      />
-    );
-  } else if (c.body === "skeleton") {
-    bodyRegion = slots?.skeleton ?? (
-      <SkeletonTable
-        columnCount={columns.length}
-        rowCount={props.skeletonRows ?? source.limit}
-        loadingLabel={labels.loading}
-        size={size}
-        bordered={bordered}
-        hasActions={hasRowActions}
-      />
-    );
-  } else if (c.body === "empty") {
-    bodyRegion = slots?.empty ?? <output>{emptyNode}</output>;
-  } else if (c.body === "mobile") {
-    bodyRegion = (
-      <MobileCards
-        table={table}
-        rows={source.rows}
-        rowActions={rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        prefetch={props.prefetch}
-        onRowClick={props.onRowClick}
-        rowClassName={props.rowClassName}
-        tableLabel={resolvedTableLabel}
-        compact={(props.density ?? "comfortable") === "compact"}
-        expansion={c.detail?.expansion}
-        editing={c.editing}
-        renderRowDetail={c.detail?.render}
-        summaryRow={props.summaryRow}
-        {...cardWindow}
-      />
-    );
-  } else {
-    bodyRegion = (
-      <Table<TRow>
-        aria-label={resolvedTableLabel}
-        columns={columns}
-        dataSource={source.rows}
-        rowKey={getRowId}
-        size={size}
-        bordered={bordered}
-        virtual={virtualize}
-        sticky={sticky}
-        onScroll={handleVirtualScroll}
-        rowSelection={rowSelection}
-        expandable={expandable}
-        summary={summary}
-        pagination={false}
-        rowClassName={
-          props.rowClassName ? buildRowClassName(props.rowClassName) : undefined
-        }
-        onChange={handleChange}
-        onRow={(record) => ({
-          ...rowClickProps(record, props.onRowClick),
-          "data-stagger": "",
-          onMouseEnter: props.prefetch
-            ? () => props.prefetch?.(record)
-            : undefined,
-        })}
-        scroll={resolveScroll(
-          virtualize,
-          virtualWidth,
-          virtualHeight,
-          hasPinned,
-          props.maxHeight,
-          minWidth
-        )}
-        locale={{ emptyText: emptyNode }}
-      />
-    );
-  }
+  const bodyRegion = (
+    <DataTableBodyRegion
+      chromeBody={c.body}
+      source={source}
+      table={table}
+      slots={slots}
+      columns={columns}
+      rowActions={rowActions}
+      confirm={confirm}
+      getRowId={getRowId}
+      labels={labels}
+      emptyNode={emptyNode}
+      grouping={grouping}
+      detailRender={c.detail?.render}
+      detailExpansion={c.detail?.expansion}
+      editing={c.editing}
+      cardWindow={cardWindow}
+      tableLabel={resolvedTableLabel}
+      density={props.density}
+      prefetch={props.prefetch}
+      onRowClick={props.onRowClick}
+      rowClassName={props.rowClassName}
+      summaryRow={props.summaryRow}
+      skeletonRows={props.skeletonRows}
+      size={size}
+      bordered={bordered}
+      virtualize={virtualize}
+      virtualHeight={virtualHeight}
+      virtualWidth={virtualWidth}
+      maxHeight={props.maxHeight}
+      sticky={sticky}
+      dataSource={dataSource}
+      rowSelection={rowSelection}
+      expandable={expandable}
+      summary={summary}
+      handleVirtualScroll={handleVirtualScroll}
+      handleChange={handleChange}
+      minWidth={minWidth}
+      hasPinned={hasPinned}
+      hasRowActions={hasRowActions}
+    />
+  );
 
   return (
     <div

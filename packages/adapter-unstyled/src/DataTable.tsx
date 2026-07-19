@@ -58,6 +58,7 @@ interface DataTableBodyProps<TRow> {
   virtualization: TableVirtualization<TRow>;
   virtualScrollRef: (node: HTMLElement | null) => void;
   labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
+  grouping: ReturnType<typeof useTableChrome<TRow>>["grouping"];
 }
 
 function DataTableBody<TRow>({
@@ -69,6 +70,7 @@ function DataTableBody<TRow>({
   virtualization,
   virtualScrollRef,
   labels,
+  grouping,
 }: Readonly<DataTableBodyProps<TRow>>): ReactElement {
   // The injected actions column obeys the user column layout like any data
   // column: hiding it strips `rowActions` before the renderers (desktop and
@@ -136,6 +138,7 @@ function DataTableBody<TRow>({
       summaryRow={props.summaryRow}
       expansion={chrome.detail?.expansion}
       editing={chrome.editing}
+      grouping={grouping}
       rowEntries={virtualization.enabled ? virtualization.rows : undefined}
       paddingTop={virtualization.paddingTop}
       paddingBottom={virtualization.paddingBottom}
@@ -235,7 +238,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     enabled: animate,
   });
   const bodyData = useChromeBodyData(chrome, chromeProps);
-  const { virtualization, canLoadMore } = bodyData;
+  const { virtualization, groupingEntries, canLoadMore } = bodyData;
+  const grouping =
+    chrome.grouping && groupingEntries
+      ? { ...chrome.grouping, entries: groupingEntries }
+      : chrome.grouping;
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
   // null>` through interface variance; the same object viewed through its
   // structural shape attaches fine.
@@ -472,6 +479,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           virtualization={virtualization}
           virtualScrollRef={bodyData.virtualScrollRef}
           labels={labels}
+          grouping={grouping}
         />
       )}
 

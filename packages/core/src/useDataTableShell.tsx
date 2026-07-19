@@ -105,8 +105,13 @@ export function useDataTableShell<TRow>(
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
-  const { virtualization, loadMoreRef, canLoadMore, virtualScrollRef } =
-    useChromeBodyData(chrome, chromeProps);
+  const {
+    virtualization,
+    groupingEntries,
+    loadMoreRef,
+    canLoadMore,
+    virtualScrollRef,
+  } = useChromeBodyData(chrome, chromeProps);
 
   // The injected actions column is first-class in column management: the layout
   // state treats its reserved key like any column key, so the Columns menu can
@@ -118,6 +123,11 @@ export function useDataTableShell<TRow>(
     : props.rowActions;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+
+  const grouping =
+    chrome.grouping && groupingEntries
+      ? { ...chrome.grouping, entries: groupingEntries }
+      : chrome.grouping;
 
   // The kit-agnostic slice of a table renderer's props — the adapter spreads
   // this and adds its kit's row `size` and accent colour.
@@ -146,7 +156,7 @@ export function useDataTableShell<TRow>(
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,
-    grouping: chrome.grouping,
+    grouping,
     dir: props.dir,
   };
 

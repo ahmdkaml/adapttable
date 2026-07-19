@@ -353,12 +353,15 @@ export {
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
+  type KeyedVirtualization,
   resolveVirtualRows,
   type TableVirtualization,
+  useKeyedVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
   virtualColumnSpan,
   type VirtualTableRow,
+  windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
 
 /* ── Utils ─────────────────────────────────────────────────────────── */
@@ -423,6 +426,7 @@ export {
   resolveGroupValue,
 } from "./grouping/groupRows";
 export {
+  applyGroupLeafSelection,
   groupSelectionState,
   nextGroupSelection,
 } from "./grouping/groupSelection";
