@@ -13,7 +13,7 @@
 
 **[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[📦 npm](https://www.npmjs.com/org/adapttable)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)**
 
-**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), **inline cell editing**, **row grouping** with per-group aggregates, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
+**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), **inline cell editing**, **row grouping** with per-group aggregates, **CSV export**, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
 <video src="https://github.com/user-attachments/assets/4dee1efd-3f19-47f4-abbd-cdccad76c4b7" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2" controls playsinline width="860">
   <a href="https://github.com/user-attachments/assets/4dee1efd-3f19-47f4-abbd-cdccad76c4b7">▶ Watch the 25-second tour — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn, and Tailwind, from one headless engine.</a>
