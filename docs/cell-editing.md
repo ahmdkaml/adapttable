@@ -2,6 +2,8 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`editable` columns + `onCellEdit`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
+▶ **See it working:** [edit cells in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/editing/) — a real table you can type into, not a recording.
+
 Edit a cell in place by passing `onCellEdit` and marking columns `editable`.
 Omit `onCellEdit` and the table never opens an editor — even if columns
 declare `editable`. The table never mutates rows; your handler applies the

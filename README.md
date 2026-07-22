@@ -13,10 +13,10 @@
 
 **[🌐 Website](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[📖 Docs](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[📦 npm](https://www.npmjs.com/org/adapttable)** · **[Compare](https://orwa-mahmoud.github.io/adapttable/comparison/)**
 
-**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
+**Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), **inline cell editing**, **row grouping** with per-group aggregates, **CSV export**, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
-<video src="https://github.com/user-attachments/assets/1d59e6de-b201-4997-bcd5-beef1133c769" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2" controls playsinline width="860">
-  <a href="https://github.com/user-attachments/assets/1d59e6de-b201-4997-bcd5-beef1133c769">▶ Watch the 25-second tour — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn, and Tailwind, from one headless engine.</a>
+<video src="https://github.com/user-attachments/assets/4dee1efd-3f19-47f4-abbd-cdccad76c4b7" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2" controls playsinline width="860">
+  <a href="https://github.com/user-attachments/assets/4dee1efd-3f19-47f4-abbd-cdccad76c4b7">▶ Watch the 25-second tour — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn, and Tailwind, from one headless engine.</a>
 </video>
 
 </div>
@@ -80,6 +80,9 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 | Infinite scroll **and** paged (auto by device)    |     ✓     |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**    |
 | Responsive mobile card layout                     |     ✗     |    build it yourself    |      partial      |   partial    | **✓ automatic + tunable** |
 | Optional row/card virtualization                  |     ✓     |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ built-in opt-in**   |
+| Inline cell editing                               |     ✓     |    build it yourself    |         ✗         |      ✓       |   **✓ opt-in built-in**   |
+| Row grouping + per-group aggregates               | open-core |      _(build it)_       |         ✗         |  ✓ _(paid)_  |   **✓ opt-in built-in**   |
+| CSV export                                        |     ✓     |    build it yourself    |         ✗         |      ✓       |      **✓ built-in**       |
 | i18n + **RTL / Arabic** first-class               |  partial  |            ✗            |         ✗         |   partial    |           **✓**           |
 | Dark mode                                         |     ✓     |           n/a           |         ✓         |      ✓       |      **✓ seamless**       |
 | MIT / free                                        | open-core |            ✓            |         ✓         |  open-core   |           **✓**           |
@@ -151,11 +154,11 @@ Row/card stagger on mount is **opt-in**, dependency-free (no GSAP required), and
 Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/adapttable/)** — every feature has its own page with a complete copy-paste example and a full options table.
 
 - [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Concepts](https://orwa-mahmoud.github.io/adapttable/concepts/) · [Data tiers](https://orwa-mahmoud.github.io/adapttable/data-tiers/)
-- Features: [Columns](https://orwa-mahmoud.github.io/adapttable/columns/) · [Sorting](https://orwa-mahmoud.github.io/adapttable/sorting/) · [Filtering](https://orwa-mahmoud.github.io/adapttable/filtering/) · [Pagination](https://orwa-mahmoud.github.io/adapttable/pagination/) · [Selection](https://orwa-mahmoud.github.io/adapttable/selection/) · [Row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/) · [Column management](https://orwa-mahmoud.github.io/adapttable/column-management/) · [Saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/) · [Virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/)
+- Features: [Columns](https://orwa-mahmoud.github.io/adapttable/columns/) · [Sorting](https://orwa-mahmoud.github.io/adapttable/sorting/) · [Filtering](https://orwa-mahmoud.github.io/adapttable/filtering/) · [Pagination](https://orwa-mahmoud.github.io/adapttable/pagination/) · [Selection](https://orwa-mahmoud.github.io/adapttable/selection/) · [Row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/) · [Inline cell editing](https://orwa-mahmoud.github.io/adapttable/cell-editing/) · [Row grouping](https://orwa-mahmoud.github.io/adapttable/row-grouping/) · [Column management](https://orwa-mahmoud.github.io/adapttable/column-management/) · [Saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/) · [Virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/)
 - [URL state](https://orwa-mahmoud.github.io/adapttable/url-state/) · [Customization](https://orwa-mahmoud.github.io/adapttable/customization/) · [i18n & RTL](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/)
 - [API reference](https://orwa-mahmoud.github.io/adapttable/api/) · [Comparison](https://orwa-mahmoud.github.io/adapttable/comparison/) · [Versioning & stability](https://orwa-mahmoud.github.io/adapttable/versioning/) · [FAQ](https://orwa-mahmoud.github.io/adapttable/faq/)
 - Migrating from another table library? [mantine-datatable](https://orwa-mahmoud.github.io/adapttable/migrate-from-mantine-datatable/) · [MUI X DataGrid](https://orwa-mahmoud.github.io/adapttable/migrate-from-mui-x-datagrid/) · [TanStack Table](https://orwa-mahmoud.github.io/adapttable/migrate-from-tanstack-table/) · [mui-datatables](https://orwa-mahmoud.github.io/adapttable/migrate-from-mui-datatables/) · [material-table](https://orwa-mahmoud.github.io/adapttable/migrate-from-material-table/) · [ag-Grid](https://orwa-mahmoud.github.io/adapttable/migrate-from-ag-grid/)
-- [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — every adapter on one dataset, plus [Columns](https://orwa-mahmoud.github.io/adapttable/demo/columns/), [RTL](https://orwa-mahmoud.github.io/adapttable/demo/rtl/) and [50k-row Scale](https://orwa-mahmoud.github.io/adapttable/demo/scale/) pages
+- [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — every adapter on one dataset, plus [Columns](https://orwa-mahmoud.github.io/adapttable/demo/columns/), [Editing](https://orwa-mahmoud.github.io/adapttable/demo/editing/), [Grouping](https://orwa-mahmoud.github.io/adapttable/demo/grouping/), [RTL](https://orwa-mahmoud.github.io/adapttable/demo/rtl/) and [50k-row Scale](https://orwa-mahmoud.github.io/adapttable/demo/scale/) pages
 - [Examples per adapter](https://github.com/orwa-mahmoud/adapttable/tree/main/examples)
 - For LLMs/agents: [`llms.txt`](https://orwa-mahmoud.github.io/adapttable/llms.txt) · [`llms-full.txt`](https://orwa-mahmoud.github.io/adapttable/llms-full.txt)
 
@@ -188,6 +191,9 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 - [x] Docs (markdown + `llms.txt`) + examples
 - [x] Hosted [docs site](https://orwa-mahmoud.github.io/adapttable/) + [live demo](https://orwa-mahmoud.github.io/adapttable/demo/) (GitHub Pages, deployed on every push to `main`)
 - [x] Optional row/card virtualization (windowing) for very large lists
+- [x] Inline cell editing — opt-in `onCellEdit`, kit-native editors
+- [x] Row grouping — single-level `groupBy` with per-group aggregates
+- [x] CSV export
 - [x] `v1.0` — stable, semver-committed public API
 
 ## Contributing
