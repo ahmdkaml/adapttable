@@ -1,5 +1,12 @@
 # Get started with AdaptTable — React table for your UI kit
 
+▶ **Nothing to install yet — [open the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) and use it.** Flip
+between [Mantine](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mantine) · [MUI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) ·
+[Chakra](https://orwa-mahmoud.github.io/adapttable/demo/?kit=chakra) · [Ant Design](https://orwa-mahmoud.github.io/adapttable/demo/?kit=antd) ·
+[Radix](https://orwa-mahmoud.github.io/adapttable/demo/?kit=radix) · [Base UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=base-ui) ·
+[shadcn](https://orwa-mahmoud.github.io/adapttable/demo/?kit=shadcn) · [Tailwind](https://orwa-mahmoud.github.io/adapttable/demo/?kit=tailwind) on the same data,
+and toggle grouping and inline editing while you are there.
+
 <video src="https://orwa-mahmoud.github.io/adapttable/media/demo-core.mp4" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2" controls playsinline preload="none" style="width:100%;border-radius:8px"></video>
 
 AdaptTable is a headless, UI-agnostic React data table. Pick the adapter for

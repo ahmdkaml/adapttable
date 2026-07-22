@@ -1,5 +1,7 @@
 # mantine-datatable alternative — same Mantine, more built-in
 
+▶ **See it before you install:** [the live demo running on real Mantine](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mantine) — same components you already use, nothing to set up.
+
 [mantine-datatable](https://icflorescu.github.io/mantine-datatable/) is a
 polished, Mantine-only table. `@adapttable/mantine` renders the **same Mantine
 primitives**, so the look barely changes — what changes is how much you wire by
