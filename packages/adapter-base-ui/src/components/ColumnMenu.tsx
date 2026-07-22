@@ -1,4 +1,8 @@
-import type { ColumnMenuChromeProps, ColumnMenuLabels } from "@adapttable/core";
+import type {
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
+  Direction,
+} from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
@@ -27,6 +31,9 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * actions column always trails, so it never reorders or pins left).
    */
   hasRowActions?: boolean;
+  /** Text direction — the menu portals to `<body>`, so it loses the table's
+   *  direction unless we hand it over explicitly (RTL flips grip ↔ pin). */
+  dir?: Direction;
 }
 
 /** Eye toggle for one menu row (a data column or the actions entry). */
@@ -103,6 +110,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const actionsHidden = layout.isHidden(ACTIONS_COLUMN_KEY);
@@ -123,7 +131,11 @@ export function ColumnMenu<TRow>({
           align="end"
           sideOffset={8}
         >
-          <Popover.Popup className="adapttable-popup" style={{ minWidth: 260 }}>
+          <Popover.Popup
+            className="adapttable-popup"
+            dir={dir}
+            style={{ minWidth: 260 }}
+          >
             <Flex direction="column" gap="1">
               <Text
                 size="1"

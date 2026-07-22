@@ -1,6 +1,7 @@
 import type {
   ColumnMenuChromeProps,
   ColumnMenuLabels,
+  Direction,
   UseColumnLayoutResult,
 } from "@adapttable/core";
 import {
@@ -26,6 +27,9 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: ColumnMenuLabels & { actions: string };
   /** Whether the table has row actions (lists the injected actions column). */
   hasRowActions?: boolean;
+  /** Text direction — the menu portals to `<body>`, so it loses the table's
+   *  direction unless we hand it over explicitly (RTL flipped grip ↔ pin). */
+  dir?: Direction;
 }
 
 /** The eye toggle + struck-through name shared by data and actions rows. */
@@ -127,6 +131,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions = false,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   return (
@@ -136,7 +141,7 @@ export function ColumnMenu<TRow>({
           {labels.columns}
         </Button>
       </Menu.Target>
-      <Menu.Dropdown>
+      <Menu.Dropdown dir={dir}>
         <Box p={4} miw={250}>
           <Text size="xs" c="dimmed" fw={600} tt="uppercase" px={4} pb={6}>
             {labels.columns}

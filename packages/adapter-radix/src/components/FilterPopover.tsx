@@ -51,6 +51,19 @@ export function FilterPopover({
         width="340px"
         maxWidth="90vw"
         dir={dir}
+        // The form GROWS while open (the "between" operator reveals a second
+        // bound input). Radix's collision handling answered that by flipping
+        // the whole panel above the trigger, covering the page header and the
+        // control just clicked. Pin the side and let the panel scroll instead
+        // — `maxHeight` keeps it inside the viewport either way.
+        avoidCollisions={false}
+        // Pinned below the trigger, the panel must stop at the viewport edge
+        // or its lower half becomes unreachable — an inner scrollbar cannot
+        // rescue content that is painted off-screen. Radix publishes the room
+        // it measured under the trigger; take the smaller of that and our own
+        // cap, minus a little breathing room at the bottom.
+        maxHeight="min(70vh, 560px, calc(var(--radix-popper-available-height) - 8px))"
+        style={{ overflowY: "auto" }}
       >
         <Flex direction="column" gap="3">
           <Flex justify="between" align="center">

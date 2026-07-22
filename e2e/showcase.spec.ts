@@ -199,6 +199,62 @@ for (const adapter of ADAPTERS) {
         .click();
       // The re-rendered table flips its writing direction.
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
+
+      // A dir attribute SOMEWHERE is not enough — that assertion passed for
+      // months while Radix rendered its columns left-to-right. Check what the
+      // browser actually resolves on the table and inside a cell, which is
+      // the only place the CSS overrides (Radix's own ScrollArea dir, and its
+      // physical text-align classes) can be proven.
+      const table = demo(page).locator("table").first();
+      await expect(table).toHaveCSS("direction", "rtl");
+
+      // Alignment: kits resolve this to the logical "start" (already correct
+      // under RTL); Radix compiles it to a physical value. Either is fine —
+      // "left" is the bug, because it does not follow direction.
+      const firstDataHeader = demo(page).locator("thead th").nth(1);
+      const align = await firstDataHeader.evaluate(
+        (el) => getComputedStyle(el).textAlign
+      );
+      expect(align).not.toBe("left");
+
+      // And prove it where it counts — the pixels. Measure the first
+      // text-bearing cell's own TEXT NODE (not its wrapper, which stretches
+      // to the full column width and hides the misalignment) against its own
+      // padding box: under RTL the glyphs must hug the RIGHT edge. This is
+      // the assertion that fails on the shipped Radix build, where the cell
+      // kept a physical `text-align: left` and the text sat on the far side
+      // of the column from where an Arabic reader looks for it.
+      const gaps = await demo(page)
+        .locator("tbody tr")
+        .first()
+        .evaluate((row) => {
+          for (const cell of row.querySelectorAll("td")) {
+            const walker = document.createTreeWalker(
+              cell,
+              NodeFilter.SHOW_TEXT
+            );
+            let node = walker.nextNode();
+            while (node && !node.textContent?.trim()) node = walker.nextNode();
+            if (!node) continue; // checkbox / icon-only column — nothing to align
+            const range = document.createRange();
+            range.selectNode(node);
+            const text = range.getBoundingClientRect();
+            const box = cell.getBoundingClientRect();
+            const css = getComputedStyle(cell);
+            return {
+              left: text.left - (box.left + parseFloat(css.paddingLeft)),
+              right: box.right - parseFloat(css.paddingRight) - text.right,
+            };
+          }
+          return null;
+        });
+      // 1px of subpixel slack; the real regression is a whole column width.
+      expect(gaps!.right).toBeLessThanOrEqual(gaps!.left + 1);
+
+      // …and the mirrored order puts that first column on the right half.
+      const t = await table.boundingBox();
+      const h = await firstDataHeader.boundingBox();
+      expect(h!.x - t!.x).toBeGreaterThan(t!.width / 2);
     });
 
     test("inline cell edit commits on Enter", async ({ page }) => {

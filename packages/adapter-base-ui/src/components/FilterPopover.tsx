@@ -55,6 +55,18 @@ export function FilterPopover({
           side="bottom"
           align={dir === "rtl" ? "start" : "end"}
           sideOffset={8}
+          // The filter form GROWS while it is open (picking the "between"
+          // operator reveals a second bound input). With the default
+          // flip behaviour Base UI answered that by throwing the whole
+          // panel above the trigger — it covered the page header and the
+          // control the user had just clicked. `shift` keeps it anchored
+          // below and slides it just enough to stay on screen; the popup's
+          // own max-height + overflow handle the extreme case.
+          collisionAvoidance={{
+            side: "shift",
+            align: "shift",
+            fallbackAxisSide: "none",
+          }}
         >
           <Popover.Popup
             data-testid="adapttable-filter-popover"

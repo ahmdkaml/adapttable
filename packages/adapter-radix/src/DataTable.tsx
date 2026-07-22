@@ -153,6 +153,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}
+                dir={props.dir}
               />
             ) : undefined
           }
