@@ -98,4 +98,4 @@ Every clip is the same table under an Arabic locale — the whole UI mirrors, no
 
 ## License
 
-[MIT](../../LICENSE) © Orwa Mahmoud
+[MIT](../../LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)

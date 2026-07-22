@@ -75,4 +75,4 @@ One dataset, re-rendered by each adapter — these clips are the cross-kit tour.
 
 ## License
 
-[MIT](../../LICENSE) © Orwa Mahmoud
+[MIT](../../LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)

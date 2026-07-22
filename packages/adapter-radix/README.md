@@ -96,4 +96,4 @@ Each clip is the real adapter, recorded on the live demo.
 
 ## License
 
-[MIT](../../LICENSE) © Orwa Mahmoud
+[MIT](../../LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)

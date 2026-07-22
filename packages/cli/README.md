@@ -89,4 +89,4 @@ What `npx @adapttable/cli init` scaffolds, running.
 
 ## License
 
-[MIT](../../LICENSE) © Orwa Mahmoud
+[MIT](../../LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)
