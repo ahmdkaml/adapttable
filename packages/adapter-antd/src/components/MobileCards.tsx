@@ -15,7 +15,7 @@ import {
   type VirtualTableRow,
 } from "@adapttable/core";
 import { Button, Card, Checkbox, Descriptions, Space } from "antd";
-import { type ReactNode, useMemo } from "react";
+import { memo, type ReactNode, useMemo } from "react";
 
 import { isDangerColor } from "../colors";
 import { EditableDataCell } from "./EditableCell";
@@ -107,7 +107,7 @@ function SummaryCard<TRow>({
   );
 }
 
-/** Per-card inputs for the memoized {@link CardItem}. */
+/** Per-card inputs for the memoized {@link CardItemBase}. */
 interface CardItemProps<TRow> {
   row: TRow;
   rowIndex: number;
@@ -130,23 +130,57 @@ interface CardItemProps<TRow> {
   /** Row activation handler — see `BaseDataTableProps.onRowClick`. */
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
+  /**
+   * Opt-in editing bundle — uncompared. Its identity changes on every
+   * keystroke anywhere in the table (it wraps the shared editing state), so
+   * comparing it would re-render every card on each character typed. The
+   * per-row visual churn is fingerprinted by `editingSignature` instead. A
+   * held card keeps an older bundle, which is safe: the state's handlers read
+   * their values through refs, so they always act on the current draft.
+   */
   editing?: EditableCellEditing<TRow>;
+  /** Page rows for Tab advance — uncompared (see `editing`). */
   rows: readonly TRow[];
   getRowId: (row: TRow) => string;
+  /** Memo digest from {@link rowEditingSignature}. */
   editingSignature: string | null;
 }
 
 /**
- * One memoized card. `React.memo` cannot keep `TRow` generic without a type
- * cast, so the card memoizes its rendered element instead: the dependency
- * list below IS the `areEqual` contract — row identity, the selected /
- * expanded flags, and the visual inputs — and React reuses the previous
- * subtree (column accessors and all) whenever none of them changed. The
- * callbacks must therefore be referentially stable across unrelated renders;
- * `selection.toggle` (whose identity tracks the selection by design) is in
- * the list, so a selection change still reaches every card un-stale.
+ * `React.memo` comparator: re-render a card only when one of its VISUAL
+ * inputs changes. A search keystroke, another card's checkbox, or an edit in
+ * a different row re-renders the list shell, but every unchanged card bails
+ * out here (column accessors are not re-invoked). The callbacks compared
+ * below must stay referentially stable across unrelated renders;
+ * `selection.toggle` (whose identity tracks the selection by design) is
+ * compared, so a selection change still reaches every card un-stale.
  */
-function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
+function cardItemPropsEqual<TRow>(
+  prev: Readonly<CardItemProps<TRow>>,
+  next: Readonly<CardItemProps<TRow>>
+): boolean {
+  return (
+    prev.row === next.row &&
+    prev.rowIndex === next.rowIndex &&
+    prev.id === next.id &&
+    prev.columns === next.columns &&
+    prev.labels === next.labels &&
+    prev.confirm === next.confirm &&
+    prev.rowActions === next.rowActions &&
+    prev.className === next.className &&
+    prev.selected === next.selected &&
+    prev.expanded === next.expanded &&
+    prev.onToggleSelect === next.onToggleSelect &&
+    prev.onToggleExpand === next.onToggleExpand &&
+    prev.renderDetail === next.renderDetail &&
+    prev.onRowClick === next.onRowClick &&
+    prev.prefetch === next.prefetch &&
+    prev.editingSignature === next.editingSignature
+  );
+}
+
+/** One card. Memoized by {@link cardItemPropsEqual} at the call site. */
+function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
   const {
     row,
     rowIndex,
@@ -167,92 +201,69 @@ function CardItem<TRow>(props: Readonly<CardItemProps<TRow>>) {
     rows,
     getRowId,
   } = props;
-  const { editingSignature } = props;
-  return useMemo(() => {
-    const actions = rowActions && rowActions.length > 0 ? rowActions : null;
-    return (
-      <Card
-        size="small"
-        className={className}
-        data-stagger=""
-        {...rowClickProps(row, onRowClick)}
-        onMouseEnter={prefetch ? () => prefetch(row) : undefined}
-        title={
-          onToggleSelect ? (
-            <Checkbox
-              checked={selected}
-              aria-label={labels.selectRow}
-              onChange={() => onToggleSelect(id)}
-            />
-          ) : undefined
-        }
-        extra={
-          (onToggleExpand ?? actions) ? (
-            <Space size="small">
-              {onToggleExpand && (
-                <ExpandToggle
-                  expanded={expanded}
-                  labels={labels}
-                  onClick={() => onToggleExpand(id)}
-                />
-              )}
-              {actions && (
-                <CardActions
-                  row={row}
-                  rowActions={actions}
-                  confirm={confirm}
-                  labels={labels}
-                />
-              )}
-            </Space>
-          ) : undefined
-        }
-      >
-        <Descriptions column={1} size="small" colon={false}>
-          {columns.map((column) => (
-            <Descriptions.Item key={column.key} label={cardLabel(column)}>
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rowIndex={rowIndex}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
+  const actions = rowActions && rowActions.length > 0 ? rowActions : null;
+  return (
+    <Card
+      size="small"
+      className={className}
+      data-stagger=""
+      {...rowClickProps(row, onRowClick)}
+      onMouseEnter={prefetch ? () => prefetch(row) : undefined}
+      title={
+        onToggleSelect ? (
+          <Checkbox
+            checked={selected}
+            aria-label={labels.selectRow}
+            onChange={() => onToggleSelect(id)}
+          />
+        ) : undefined
+      }
+      extra={
+        (onToggleExpand ?? actions) ? (
+          <Space size="small">
+            {onToggleExpand && (
+              <ExpandToggle
+                expanded={expanded}
+                labels={labels}
+                onClick={() => onToggleExpand(id)}
               />
-            </Descriptions.Item>
-          ))}
-        </Descriptions>
-        {expanded && renderDetail ? (
-          <div data-adapttable-part="card-detail" style={{ marginTop: 8 }}>
-            {renderDetail(row)}
-          </div>
-        ) : null}
-      </Card>
-    );
-  }, [
-    row,
-    rowIndex,
-    id,
-    columns,
-    labels,
-    confirm,
-    rowActions,
-    className,
-    selected,
-    expanded,
-    onToggleSelect,
-    onToggleExpand,
-    renderDetail,
-    onRowClick,
-    prefetch,
-    editing,
-    rows,
-    getRowId,
-    editingSignature,
-  ]);
+            )}
+            {actions && (
+              <CardActions
+                row={row}
+                rowActions={actions}
+                confirm={confirm}
+                labels={labels}
+              />
+            )}
+          </Space>
+        ) : undefined
+      }
+    >
+      <Descriptions column={1} size="small" colon={false}>
+        {columns.map((column) => (
+          <Descriptions.Item key={column.key} label={cardLabel(column)}>
+            <EditableDataCell
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rowIndex={rowIndex}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={labels.editCell}
+            />
+          </Descriptions.Item>
+        ))}
+      </Descriptions>
+      {expanded && renderDetail ? (
+        <div data-adapttable-part="card-detail" style={{ marginTop: 8 }}>
+          {renderDetail(row)}
+        </div>
+      ) : null}
+    </Card>
+  );
 }
 
 /**
@@ -331,6 +342,13 @@ export function MobileCards<TRow>({
   // Either the virtual slice or every source row, resolved to render entries
   // with their ORIGINAL index (so cells and classes see the true row index).
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+
+  // `memo` erases generics at module level, so the memoized card is
+  // instantiated here (once — the identity is stable for the list's life).
+  const CardItem = useMemo(
+    () => memo(CardItemBase<TRow>, cardItemPropsEqual),
+    []
+  );
 
   const renderLeafCard = (row: TRow, index: number, key: string) => {
     const id = getRowId(row);

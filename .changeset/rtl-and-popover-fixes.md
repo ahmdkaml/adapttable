@@ -31,3 +31,9 @@ anchored below and scrolls if it runs out of room.
 **Ant Design column menu rendered a card inside a card.** The menu repainted
 the elevated surface antd's Popover already provides; only spacing belongs to
 the adapter now.
+
+**Ant Design mobile cards re-rendered on every keystroke.** Each card compared
+the shared editing bundle, whose identity changes whenever any draft changes,
+so typing in one cell re-rendered every card on screen and the per-row digest
+that exists to prevent exactly that was dead weight. Cards are now memoized on
+their visual inputs plus that digest, matching every other adapter.
