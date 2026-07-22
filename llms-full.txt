@@ -3044,7 +3044,7 @@ near-100% test coverage across every adapter.
 
 ---
 
-# React data table comparison — AdaptTable vs ag-Grid, MUI X, TanStack
+# AdaptTable vs TanStack, ag-Grid & MUI X DataGrid
 
 How AdaptTable compares to popular React table libraries — scoped to what
 each ships **built-in**. Every one of these projects is excellent at what it
@@ -3363,7 +3363,7 @@ and the row predicate — is code you would have written by hand before.
 
 ---
 
-# MUI X DataGrid alternative — Pro features, MIT, real MUI
+# MUI X DataGrid alternative — v8 breaking changes, Pro free
 
 [MUI X DataGrid](https://mui.com/x/react-data-grid/) is an excellent grid if
 you are all-in on Material UI. The catch is its licensing: many everyday table
@@ -4172,7 +4172,7 @@ function PeopleTable({ people }: { people: Person[] }) {
 
 ---
 
-# ag-Grid alternative for CRUD — lighter, native UI kits, MIT
+# ag-Grid alternative for CRUD — 300 kB lighter, MIT
 
 [AG Grid](https://www.ag-grid.com/) is the best spreadsheet-grade grid in the
 React ecosystem — and this page starts by telling you when **not** to migrate.
