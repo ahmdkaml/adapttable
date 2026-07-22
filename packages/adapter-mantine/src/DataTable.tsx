@@ -233,7 +233,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <MobileCards
         table={table}
-        rows={source.rows}
+        rows={chrome.editingRows}
         rowActions={visibleRowActions}
         confirm={confirm}
         getRowId={getRowId}
@@ -257,7 +257,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <DesktopTable
         table={table}
-        rows={source.rows}
+        rows={chrome.editingRows}
         rowActions={visibleRowActions}
         confirm={confirm}
         prefetch={prefetch}

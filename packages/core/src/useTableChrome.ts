@@ -193,6 +193,14 @@ export interface TableChrome<TRow> {
     entries: readonly GroupedFlatEntry<TRow>[];
     setGroupBy: (key: string | null) => void;
   };
+  /**
+   * The rows the editing layer must treat as present: the grouped leaf set
+   * (in render order) while grouping renders the full filtered set, the
+   * page slice otherwise. Adapters pass THIS — never `source.rows` — as the
+   * `rows` context for editable cells, so an edit on a row outside the
+   * current page slice survives and Tab-advance follows the rendered order.
+   */
+  editingRows: readonly TRow[];
   /** Whether the paged footer should render. */
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
@@ -346,14 +354,12 @@ export function useTableChrome<TRow>(
     [onCellEdit, cellEditingState]
   );
 
-  // If the active row leaves the current page/filter set, drop the draft
-  // without committing — the host never receives a stale edit.
-  useEffect(() => {
-    if (!editing) return;
-    editing.state.discardIfRowMissing(source.rows, (row) =>
-      rowKey(row as TRow)
-    );
-  }, [editing, source.rows, rowKey]);
+  // If the active row leaves the rendered set, drop the draft without
+  // committing — the host never receives a stale edit. The check runs
+  // against `editingRows` (defined after grouping below): the grouped body
+  // renders the FULL filtered leaf set, so validating against the page
+  // slice would silently kill edits on every off-page row (each group's
+  // rows beyond page 1 froze as display-only).
 
   const groupCollapse = useGroupCollapse({
     collapsedIds: props.collapsedGroupIds,
@@ -413,6 +419,24 @@ export function useTableChrome<TRow>(
     setGroupBy,
   ]);
 
+  // See TableChrome.editingRows — the row universe the editing layer
+  // validates against must match what the body renders.
+  const editingRows = useMemo<readonly TRow[]>(() => {
+    if (!grouping) return source.rows;
+    const leaves: TRow[] = [];
+    for (const entry of grouping.entries) {
+      if (entry.kind === "row") leaves.push(entry.row);
+    }
+    return leaves;
+  }, [grouping, source.rows]);
+
+  useEffect(() => {
+    if (!editing) return;
+    editing.state.discardIfRowMissing(editingRows, (row) =>
+      rowKey(row as TRow)
+    );
+  }, [editing, editingRows, rowKey]);
+
   const showFooter =
     isPaged &&
     !source.error &&
@@ -433,6 +457,7 @@ export function useTableChrome<TRow>(
     detail,
     editing,
     grouping,
+    editingRows,
     showFooter,
     columnLayout,
     allColumns: resolvedColumns,

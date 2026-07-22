@@ -125,7 +125,7 @@ function DataTableBody<TRow>({
   return (
     <Renderer
       table={chrome.table}
-      rows={props.source.rows}
+      rows={chrome.editingRows}
       rowActions={rowActions}
       actionsPinned={actionsPinned}
       confirm={confirm}

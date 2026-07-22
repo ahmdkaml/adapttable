@@ -238,7 +238,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <MobileCards
         table={table}
-        rows={source.rows}
+        rows={c.editingRows}
         rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
@@ -261,7 +261,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <DesktopTable
         table={table}
-        rows={source.rows}
+        rows={c.editingRows}
         rowActions={rowActions}
         actionsPinned={actionsPinned}
         confirm={confirm}

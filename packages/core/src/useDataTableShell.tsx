@@ -133,7 +133,7 @@ export function useDataTableShell<TRow>(
   // this and adds its kit's row `size` and accent colour.
   const tableProps = {
     table,
-    rows: source.rows,
+    rows: chrome.editingRows,
     rowActions,
     actionsPinned,
     confirm,

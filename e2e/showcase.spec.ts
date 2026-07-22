@@ -193,9 +193,13 @@ for (const adapter of ADAPTERS) {
     test("inline cell edit commits on Enter", async ({ page }) => {
       await openDemo(page, adapter);
       // Frontend mode ships onCellEdit; email is editable + visible.
+      // nth(1) — the second leaf of the first group — sits OUTSIDE the
+      // current page slice while grouping renders the full filtered set.
+      // Guards the regression where the page-slice discard froze every
+      // off-page row as display-only (only each group's first row edited).
       const activate = demo(page)
         .locator('[data-adapttable-part="edit-cell-activate"]')
-        .first();
+        .nth(1);
       await expect(activate).toBeVisible();
       await activate.dblclick();
       // Prefer the accessible textbox — kit wrappers may put the data-* on a
