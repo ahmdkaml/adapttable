@@ -30,15 +30,15 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FEATURES = {
   "cell-editing": /cell edit/i,
   "column-management": /column management/i,
-  "filtering": /filtering/i,
+  filtering: /filtering/i,
   "i18n-rtl": /\bRTL\b/i,
-  "pagination": /paginat/i,
+  pagination: /paginat/i,
   "row-expansion": /row expansion/i,
   "row-grouping": /grouping/i,
   "saved-views": /saved view/i,
-  "selection": /selection/i,
-  "sorting": /sorting/i,
-  "virtualization": /virtuali/i,
+  selection: /selection/i,
+  sorting: /sorting/i,
+  virtualization: /virtuali/i,
   // Not its own page — documented under customization.
   "csv-export": /csv/i,
 };
@@ -54,8 +54,16 @@ const documented = readdirSync(join(root, "docs"))
   .filter((f) => f.endsWith(".md"))
   .map((f) => f.replace(/\.md$/, ""));
 const IGNORED = new Set([
-  "api", "columns", "comparison", "concepts", "customization", "data-tiers",
-  "faq", "getting-started", "url-state", "versioning",
+  "api",
+  "columns",
+  "comparison",
+  "concepts",
+  "customization",
+  "data-tiers",
+  "faq",
+  "getting-started",
+  "url-state",
+  "versioning",
 ]);
 for (const page of documented) {
   if (page.startsWith("migrate-") || IGNORED.has(page)) continue;
@@ -74,7 +82,9 @@ for (const adapter of adapters) {
   const section = /^## Features\n([\s\S]*?)(?=^## )/m.exec(readme);
 
   if (!section) {
-    problems.push(`packages/${adapter}/README.md has no "## Features" section.`);
+    problems.push(
+      `packages/${adapter}/README.md has no "## Features" section.`
+    );
     continue;
   }
 
