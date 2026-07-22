@@ -1,6 +1,6 @@
 # @adapttable/mantine
 
-[![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mantine.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mantine)
+[![@adapttable/mantine — a Mantine data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mantine)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine)**
 
@@ -52,18 +52,49 @@ server-paginated `useInfiniteQuery` — nothing else changes.
 
 ## Features
 
-- **Client or server data** through one `TableSource` contract.
-- **URL-synced** search / sort / filters / page (shareable links).
-- **Sorting** with accessible header controls.
-- **Filter drawer + removable chips** (`filters` + `filterLabels`).
-- **Selection + bulk actions** with confirm dialogs (`bulkActions`).
-- **Row actions** with optional confirm.
-- **Auto desktop table ↔ mobile cards** by viewport (or force `isMobile`).
-- **RTL** via the `dir` prop; **dark mode** via Mantine's color scheme.
-- **Optional entrance animation** (`animate`) — dependency-free, honors
-  `prefers-reduced-motion`.
-- **Customisation**: `slots`, `classNames`, custom `toolbar`, injectable
-  `confirm`, and full headless escape hatch via `@adapttable/core`.
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via accessible header controls.
+- **Filtering** — a `Drawer` or anchored `Popover` of filters plus removable chips (`filters` + `filterLabels`), with a filter count on the trigger.
+- **Selection + bulk actions** using Mantine `Checkbox`es, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — numbered `Pagination`, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile cards by viewport (or force `isMobile`).
+- **States** — `Skeleton` loading, error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** via Mantine's color scheme.
+- **Customisation** — `slots`, `classNames`, custom `toolbar`, injectable `confirm`, optional entrance animation (`animate`, honours `prefers-reduced-motion`), and the full headless escape hatch via `@adapttable/core`.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![mantine Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![mantine Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![mantine Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![mantine Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![mantine RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/mantine/parts/rtl.gif)
 
 ## Documentation
 

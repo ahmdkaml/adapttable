@@ -15,7 +15,7 @@
 
 **Easy by default, infinitely customizable.** One unified data source for both client-side and server-side data, URL-synced shareable state, optional virtualization, infinite-scroll & paging (auto by device), responsive mobile cards, a real filter UX, **column management** (reorder · pin · resize · show/hide), **inline cell editing**, **row grouping** with per-group aggregates, **CSV export**, first-class **i18n + RTL**, and seamless **dark mode** — out of the box.
 
-<video src="https://github.com/user-attachments/assets/3b9f8a41-a2d6-4a36-bc61-50fac3d8c3ed" poster="https://orwa-mahmoud.github.io/adapttable/media/demo-core-tour.png?v=2" controls playsinline width="860">
+<video src="https://github.com/user-attachments/assets/3b9f8a41-a2d6-4a36-bc61-50fac3d8c3ed" poster="https://orwa-mahmoud.github.io/adapttable/media/core/poster.png?v=2" controls playsinline width="860">
   <a href="https://github.com/user-attachments/assets/3b9f8a41-a2d6-4a36-bc61-50fac3d8c3ed">▶ Watch the tour — the same data table re-rendered through Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn, and Tailwind, from one headless engine.</a>
 </video>
 

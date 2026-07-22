@@ -1,6 +1,6 @@
 # @adapttable/radix
 
-[![@adapttable/radix — a Radix Themes data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-radix.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=radix)
+[![@adapttable/radix — a Radix Themes data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=radix)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/radix)**
 
@@ -41,10 +41,49 @@ pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
 
 ## Features
 
-Sortable headers, `Checkbox` selection + bulk actions with confirm, `Badge`
-filter chips, `Popover` / `Dialog` filters, numbered pagination,
-`Skeleton`/empty/error states, auto desktop table ↔ mobile cards, RTL (`dir`),
-`slots`, `size`, `accentColor`, and an injectable `confirm`.
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via sortable headers.
+- **Filtering** — a `Popover` or `Dialog` of filters plus removable `Badge` chips, with a filter count on the trigger.
+- **Selection + bulk actions** using Radix `Checkbox`es, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — numbered pagination, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile cards by viewport (or force `isMobile`).
+- **States** — `Skeleton` loading, error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** via the Radix Themes appearance.
+- **Customisation** — `slots`, `size`, `accentColor`, `className`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![radix Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![radix Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![radix Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![radix Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![radix RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/radix/parts/rtl.gif)
 
 ## Documentation
 

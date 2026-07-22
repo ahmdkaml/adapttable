@@ -1,6 +1,6 @@
 # @adapttable/chakra
 
-[![@adapttable/chakra — a Chakra UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-chakra.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=chakra)
+[![@adapttable/chakra — a Chakra UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=chakra)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/chakra)**
 
@@ -40,10 +40,49 @@ server-paginated query.
 
 ## Features
 
-Sortable headers, `Checkbox` selection + bulk actions with confirm, `Tag`
-filter chips, `Drawer` filters, prev/next pagination, `Skeleton`/`Alert`
-states, auto desktop table ↔ mobile cards, RTL (`dir`), `slots`, `size`,
-and an injectable `confirm`.
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via sortable headers.
+- **Filtering** — a `Drawer` or `Popover` of filters plus removable `Tag` chips, with a filter count on the trigger.
+- **Selection + bulk actions** using Chakra `Checkbox`es, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — prev/next pagination, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile cards by viewport (or force `isMobile`).
+- **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** via Chakra's color mode.
+- **Customisation** — `slots`, `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![chakra Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![chakra Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![chakra Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![chakra Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![chakra RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/chakra/parts/rtl.gif)
 
 ## Documentation
 

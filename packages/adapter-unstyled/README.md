@@ -1,6 +1,6 @@
 # @adapttable/unstyled
 
-[![@adapttable/unstyled — a headless table styled with Tailwind / shadcn](https://orwa-mahmoud.github.io/adapttable/media/demo-unstyled.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=tailwind)
+[![@adapttable/unstyled — a headless table styled with Tailwind / shadcn](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=tailwind)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/unstyled)**
 
@@ -44,6 +44,28 @@ export function People({ data }: { data: Person[] }) {
   );
 }
 ```
+
+## Features
+
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via sortable headers.
+- **Filtering** — a drawer or popover of filters plus removable removable chips, with a filter count on the trigger.
+- **Selection + bulk actions** using plain `<input type="checkbox">`, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — numbered pagination, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile cards by viewport (or force `isMobile`).
+- **States** — skeleton loading, error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** is whatever your CSS says.
+- **Customisation** — `classNames` for every part, `slots`, injectable `confirm` — zero opinions about styling, and the full headless escape hatch via `@adapttable/core`.
 
 ## Styling hooks
 
@@ -89,6 +111,30 @@ whichever your other adapters already use:
 Everything else — client/server data, URL state, sorting, filtering,
 selection + bulk actions, RTL (`dir`), auto desktop/mobile — works the same
 as the other adapters, on the headless `@adapttable/core` engine.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![unstyled Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![unstyled Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![unstyled Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![unstyled Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![unstyled RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/unstyled/parts/rtl.gif)
 
 ## Documentation
 
