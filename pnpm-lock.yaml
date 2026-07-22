@@ -296,7 +296,7 @@ importers:
   packages/adapter-antd:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -330,7 +330,7 @@ importers:
   packages/adapter-base-ui:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -367,7 +367,7 @@ importers:
   packages/adapter-chakra:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -410,7 +410,7 @@ importers:
   packages/adapter-mantine:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -456,7 +456,7 @@ importers:
   packages/adapter-mui:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -496,7 +496,7 @@ importers:
   packages/adapter-radix:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -530,7 +530,7 @@ importers:
   packages/adapter-shadcn:
     dependencies:
       '@adapttable/unstyled':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapter-unstyled
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -564,7 +564,7 @@ importers:
   packages/adapter-unstyled:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -625,7 +625,7 @@ importers:
   packages/i18n:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       react:

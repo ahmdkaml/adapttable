@@ -19,6 +19,51 @@ You usually want a styled adapter on top (`@adapttable/mantine`,
 `@adapttable/core` directly when you want to render your own markup with full
 control via prop-getters.
 
+## Features
+
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Pagination** — paged or infinite scroll via `paginationMode`; server sources
+  report their own totals, client sources derive them.
+- **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
+- **Filtering** — filter model, operators, chips and counts; bring your own predicate.
+- **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — detail-panel state via `renderRowDetail`.
+- **Inline cell editing** — `onCellEdit` plus `editable` columns; text, number and select
+  editors, keyboard commit/cancel, Tab advance. Omit the handler and no cell opens.
+- **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize state.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — row/card windowing for very large lists.
+- **RTL** and i18n-agnostic labels — pass `labels` or a `t` function.
+- **Headless** — hooks and prop-getters only. No components, no styling, no UI-kit imports.
+
+## See it work
+
+One dataset, re-rendered by each adapter — these clips are the cross-kit tour.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![row-grouping](https://orwa-mahmoud.github.io/adapttable/media/core/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![cell-editing](https://orwa-mahmoud.github.io/adapttable/media/core/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![filtering](https://orwa-mahmoud.github.io/adapttable/media/core/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![column-management](https://orwa-mahmoud.github.io/adapttable/media/core/parts/column-management.gif)
+
+**RTL** — the whole table mirrors, not just the text
+
+![rtl](https://orwa-mahmoud.github.io/adapttable/media/core/parts/rtl.gif)
+
 ## Documentation
 
 [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) · [Comparison vs ag-Grid · MUI X · TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/)

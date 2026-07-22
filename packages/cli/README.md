@@ -43,6 +43,41 @@ import { detectKit, runInit } from "@adapttable/cli";
 detectKit({ "@mui/material": "^6" }).kit; // "mui"
 ```
 
+## Features
+
+- **Detects your UI kit** from `package.json` — Mantine, MUI, Chakra, Ant Design, Radix,
+  Base UI, shadcn/ui (via `components.json`) or Tailwind.
+- **Installs the matching adapter** plus any peer packages it needs.
+- **Scaffolds a working table** wired to your kit, not a blank file.
+- The table it generates supports the full feature set: sorting, filtering, selection,
+  row expansion, inline cell editing, row grouping, column management, saved views,
+  CSV export, virtualization, pagination and RTL.
+- **Programmatic API** — call it from your own scripts, not only the terminal.
+
+## See it work
+
+What `npx @adapttable/cli init` scaffolds, running.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![row-grouping](https://orwa-mahmoud.github.io/adapttable/media/core/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![cell-editing](https://orwa-mahmoud.github.io/adapttable/media/core/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![filtering](https://orwa-mahmoud.github.io/adapttable/media/core/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![column-management](https://orwa-mahmoud.github.io/adapttable/media/core/parts/column-management.gif)
+
+**RTL** — the whole table mirrors, not just the text
+
+![rtl](https://orwa-mahmoud.github.io/adapttable/media/core/parts/rtl.gif)
+
 ## Documentation
 
 [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) · [Comparison vs ag-Grid · MUI X · TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/)

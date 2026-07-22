@@ -55,7 +55,7 @@
     "clean": "rimraf dist coverage .turbo"
   },
   "dependencies": {
-    "@adapttable/core": "workspace:*"
+    "@adapttable/core": "workspace:^"
   },
   "devDependencies": {
     "react": "^19.2.7",

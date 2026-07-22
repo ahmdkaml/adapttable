@@ -43,9 +43,13 @@ const FEATURES = {
   "csv-export": /csv/i,
 };
 
-const adapters = readdirSync(join(root, "packages")).filter((d) =>
-  d.startsWith("adapter-")
+// Adapters and core all ship the full feature set, so all of them must list
+// it. `cli` and `i18n` cover different ground (scaffolding, locales) but still
+// need a Features section — a package page with none tells a reader nothing.
+const adapters = readdirSync(join(root, "packages")).filter(
+  (d) => d.startsWith("adapter-") || d === "core"
 );
+const needSectionOnly = ["cli", "i18n"];
 
 const problems = [];
 
@@ -99,6 +103,13 @@ for (const adapter of adapters) {
   }
 }
 
+for (const pkg of needSectionOnly) {
+  const readme = readFileSync(join(root, "packages", pkg, "README.md"), "utf8");
+  if (!/^## Features\n/m.test(readme)) {
+    problems.push(`packages/${pkg}/README.md has no "## Features" section.`);
+  }
+}
+
 if (problems.length > 0) {
   console.error("README feature parity check failed:\n");
   for (const problem of problems) console.error(`  • ${problem}`);
@@ -110,6 +121,6 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `README feature parity: ${adapters.length} adapters × ` +
+  `README feature parity: ${adapters.length} packages × ` +
     `${Object.keys(FEATURES).length} features, all present.`
 );
