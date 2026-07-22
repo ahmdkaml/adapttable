@@ -99,3 +99,7 @@ Each clip is the real adapter, recorded on the live demo.
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)
 - [Documentation](https://orwa-mahmoud.github.io/adapttable/)
 - [StackBlitz starter](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/base-ui)
+
+## License
+
+[MIT](../../LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)
