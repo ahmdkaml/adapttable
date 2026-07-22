@@ -451,6 +451,9 @@ export function makeWideColumns(
       header: s.person,
       sortable: true,
       sortValue: (r) => r.name,
+      editable: true,
+      editor: "text",
+      editValue: (r) => r.name,
       width: 240,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
@@ -470,6 +473,8 @@ export function makeWideColumns(
       key: "role",
       header: s.role,
       i18n: { ar: "roleAr" },
+      editable: true,
+      editor: "text",
       width: 150,
     },
     {
@@ -477,6 +482,12 @@ export function makeWideColumns(
       header: s.team,
       i18n: { ar: "teamAr" },
       sortable: true,
+      editable: true,
+      editor: {
+        type: "select",
+        options: TEAMS.map((v) => ({ value: v, label: v })),
+      },
+      editValue: (r) => r.team,
       width: 130,
     },
     {
@@ -490,6 +501,15 @@ export function makeWideColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
+      editable: true,
+      editor: {
+        type: "select",
+        options: STATUSES.map((v) => ({
+          value: v,
+          label: STATUS_LABELS[locale][v],
+        })),
+      },
+      editValue: (r) => personStatus(r),
       width: 140,
     },
     {
@@ -527,6 +547,9 @@ export function makeWideColumns(
       ),
       sortValue: (r) => budget(r),
       sortable: true,
+      editable: true,
+      editor: "number",
+      editValue: (r) => String(budget(r)),
       align: "end",
       width: 150,
     },
@@ -535,6 +558,9 @@ export function makeWideColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
+      editable: true,
+      editor: "number",
+      editValue: (r) => String(utilization(r)),
       width: 190,
       accessor: (row) => (
         <Load

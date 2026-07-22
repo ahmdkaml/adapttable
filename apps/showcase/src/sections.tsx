@@ -91,12 +91,19 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
   );
 }
 
-export type DemoPage = "demo" | "columns" | "grouping" | "scale" | "rtl";
+export type DemoPage =
+  | "demo"
+  | "columns"
+  | "editing"
+  | "grouping"
+  | "scale"
+  | "rtl";
 
 /** The demo pages — each a static HTML entry, linked with plain anchors. */
 const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
   { key: "columns", label: "Columns", path: "columns" },
+  { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "rtl", label: "RTL", path: "rtl" },
   { key: "scale", label: "Scale", path: "scale" },

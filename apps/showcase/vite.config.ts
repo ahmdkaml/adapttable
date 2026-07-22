@@ -22,6 +22,7 @@ export default defineConfig({
       input: {
         main: page("./index.html"),
         columns: page("./columns/index.html"),
+        editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),
