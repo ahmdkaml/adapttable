@@ -51,6 +51,42 @@ import { en } from "@adapttable/i18n";
 const fr = { ...en, search: "Rechercher", noData: "Aucune donnée" };
 ```
 
+## Features
+
+- **Ready label sets** for English and Arabic — every string the table renders.
+- **RTL** — pair `ar` with `dir="rtl"` and the whole table mirrors: column order, filter
+  panel, column menu, pagination and chips, not just the text.
+- **Column-level i18n** — map a column to a localized field with `i18n: { ar: "…" }` so
+  sorting and filtering follow the translated value.
+- **Bring your own stack** — the core is i18n-agnostic; use these sets, or pass a `t`
+  function from i18next, FormatJS or anything else.
+- Covers every feature's strings: filtering, selection, row expansion, cell editing,
+  row grouping, column management, saved views, CSV export and pagination.
+
+## See it work
+
+Every clip is the same table under an Arabic locale — the whole UI mirrors, not just the labels.
+
+**Selection + bulk actions** — select-all and act on the selection, in Arabic
+
+![selection](https://orwa-mahmoud.github.io/adapttable/media/features/parts/selection.gif)
+
+**Inline cell editing** — editors open and commit under RTL
+
+![cell-editing](https://orwa-mahmoud.github.io/adapttable/media/features/parts/cell-editing.gif)
+
+**Row grouping** — group headers carry Arabic labels and subtotals
+
+![row-grouping](https://orwa-mahmoud.github.io/adapttable/media/features/parts/row-grouping.gif)
+
+**Filtering** — the filter panel mirrors; chips read right-to-left
+
+![filtering](https://orwa-mahmoud.github.io/adapttable/media/features/parts/filtering.gif)
+
+**Column management** — the column menu mirrors with the table
+
+![column-management](https://orwa-mahmoud.github.io/adapttable/media/features/parts/column-management.gif)
+
 ## Documentation
 
 [Getting started](https://orwa-mahmoud.github.io/adapttable/getting-started/) · [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/) · [Comparison vs ag-Grid · MUI X · TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/)

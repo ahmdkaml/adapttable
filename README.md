@@ -23,6 +23,23 @@
 
 ---
 
+## Features
+
+Every one of these works in **all eight adapters** — the same props, whichever kit you use.
+
+|             |                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data**    | Client or server through one [`TableSource`](https://orwa-mahmoud.github.io/adapttable/data-tiers/) contract · [pagination or infinite scroll](https://orwa-mahmoud.github.io/adapttable/pagination/) (auto by device) · [URL-synced state](https://orwa-mahmoud.github.io/adapttable/url-state/) for shareable links                                                               |
+| **Reading** | [Sorting](https://orwa-mahmoud.github.io/adapttable/sorting/) · [filtering](https://orwa-mahmoud.github.io/adapttable/filtering/) with a real drawer/popover UX and removable chips · [row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/) · [virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/) for very large lists                  |
+| **Writing** | [Inline cell editing](https://orwa-mahmoud.github.io/adapttable/cell-editing/) — text, number and select editors, keyboard commit/cancel · [selection + bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/) · row actions with confirm                                                                                                                              |
+| **Shaping** | [Row grouping](https://orwa-mahmoud.github.io/adapttable/row-grouping/) with per-group aggregates · [column management](https://orwa-mahmoud.github.io/adapttable/column-management/) — show/hide, reorder, pin, resize · [saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/) · [CSV export](https://orwa-mahmoud.github.io/adapttable/customization/#csv-export) |
+| **Reach**   | First-class [RTL and i18n](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/) · dark mode · responsive mobile cards · full [customization](https://orwa-mahmoud.github.io/adapttable/customization/) down to a headless escape hatch                                                                                                                                              |
+
+Everything above is **opt-in**: omit the prop and the feature stays dormant — no bundle
+cost, no UI, no keyboard handlers. See each one running per kit on its
+[npm page](https://www.npmjs.com/org/adapttable), or click through the
+[live demo](https://orwa-mahmoud.github.io/adapttable/demo/).
+
 ## Why AdaptTable?
 
 Most React tables force a choice: **headless freedom** (you build all the UI yourself) **or** **batteries-included** (locked to one design system). AdaptTable gives you **both from the same core** — a truly headless engine plus ready-to-drop styled adapters for the UI kit you already use.
