@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node ./sync-docs.mjs && astro dev",
     "build": "node ./sync-docs.mjs && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "postbuild": "node ./fix-sitemap.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
