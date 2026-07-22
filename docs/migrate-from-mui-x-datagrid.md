@@ -1,4 +1,6 @@
-# MUI X DataGrid alternative — Pro features, MIT, real MUI
+# MUI X DataGrid alternative — v8 breaking changes, Pro free
+
+▶ **See it before you install:** [the live demo running on real Material UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) — same components you already use, nothing to set up.
 
 [MUI X DataGrid](https://mui.com/x/react-data-grid/) is an excellent grid if
 you are all-in on Material UI. The catch is its licensing: many everyday table

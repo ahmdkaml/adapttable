@@ -93,7 +93,23 @@ const PIN_BG = "var(--color-background)";
  * `!important` is needed.
  */
 const STICKY_FIX_CLASS = "adapttable-radix-scroll";
-const STICKY_FIX_CSS = `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}`;
+/**
+ * Second Radix quirk, this one about direction: the ScrollArea that
+ * `Table.Root` wraps the table in writes its OWN `dir="ltr"` attribute, which
+ * outranks any inherited RTL. Under an Arabic locale the labels translated
+ * but the columns stayed left-to-right — every other adapter mirrored. Force
+ * the viewport back to the direction the table asked for.
+ */
+const STICKY_FIX_CSS =
+  `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}` +
+  `.rt-TableRoot[dir="rtl"] .rt-ScrollAreaRoot,.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport{direction:rtl}` +
+  // Third Radix quirk: `justify` is compiled to PHYSICAL alignment classes
+  // (`rt-r-ta-left` / `rt-r-ta-right`), not the logical `start` / `end` every
+  // other adapter resolves to. Under RTL that left every header and cell
+  // hugging the left edge while the column order mirrored around them. Swap
+  // the two physical classes so start reads right and end reads left.
+  `.rt-TableRoot[dir="rtl"] .rt-r-ta-left{text-align:right}` +
+  `.rt-TableRoot[dir="rtl"] .rt-r-ta-right{text-align:left}`;
 
 interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   /** Class hook for the table (desktop) / each card (mobile). */
@@ -621,9 +637,14 @@ export function DesktopTable<TRow>({
       {/* See STICKY_FIX_CSS: restore the table's `overflow: visible` and push
           its min-width onto the inner <table> so pinning sticks. */}
       <style>{STICKY_FIX_CSS}</style>
+      {/* `dir` must sit on the <table> itself: Radix's ScrollArea wrapper
+          between the root Box and the table does not inherit direction, so
+          without this the columns stay left-to-right under an RTL locale
+          while every other adapter mirrors. */}
       <Table.Root
         size={size}
         variant="surface"
+        dir={dir}
         data-size={size}
         className={className}
         aria-label={table.getTableProps()["aria-label"]}

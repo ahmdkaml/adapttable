@@ -1,4 +1,4 @@
-import type { ColumnMenuChromeProps } from "@adapttable/core";
+import type { ColumnMenuChromeProps, Direction } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
@@ -27,6 +27,10 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: ColumnMenuChromeProps<TRow>["labels"] & { actions: string };
   /** Whether the table has row actions — lists the injected actions column. */
   hasRowActions?: boolean;
+  /** Text direction — the Popover portals to `<body>`, so it loses the
+   *  table's direction unless we hand it over explicitly (RTL flips
+   *  grip ↔ pin). */
+  dir?: Direction;
 }
 
 /** Labels the visibility toggle and the row name share. */
@@ -150,6 +154,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
@@ -170,7 +175,7 @@ export function ColumnMenu<TRow>({
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <Box sx={{ p: 0.75, minWidth: 250 }}>
+        <Box dir={dir} sx={{ p: 0.75, minWidth: 250 }}>
           <Typography
             variant="caption"
             sx={{

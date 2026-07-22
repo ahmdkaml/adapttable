@@ -598,6 +598,8 @@ function useGroupingWindow<TRow>(options: {
 interface DataTableBodyRegionProps<TRow> {
   chromeBody: string;
   source: TableSource<TRow>;
+  /** Editing row universe from chrome — grouped leaf set or page slice. */
+  editingRows: readonly TRow[];
   table: UseDataTableResult<TRow>;
   slots: DataTableProps<TRow>["slots"];
   columns: ReturnType<typeof buildColumns<TRow>>;
@@ -739,6 +741,7 @@ function DataTableBodyRegion<TRow>(
   const {
     chromeBody,
     source,
+    editingRows,
     table,
     slots,
     columns,
@@ -803,7 +806,7 @@ function DataTableBodyRegion<TRow>(
     body = (
       <MobileCards
         table={table}
-        rows={source.rows}
+        rows={editingRows}
         rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
@@ -991,7 +994,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     confirm,
     labels,
     editing: c.editing,
-    rows: source.rows,
+    rows: c.editingRows,
     getRowId,
     pinned: c.columnLayout.state.pinned,
     setWidth: props.resizableColumns ? c.columnLayout.setWidth : undefined,
@@ -1058,6 +1061,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <DataTableBodyRegion
       chromeBody={c.body}
       source={source}
+      editingRows={c.editingRows}
       table={table}
       slots={slots}
       columns={columns}

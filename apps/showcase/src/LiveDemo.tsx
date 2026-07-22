@@ -23,6 +23,8 @@ type DemoComponent = ComponentType<
     urlKey?: string;
     density?: Density;
     animate?: boolean;
+    grouping?: boolean;
+    editing?: boolean;
   }>
 >;
 
@@ -101,13 +103,24 @@ function DemoFallback() {
   );
 }
 
+/** The kit lives in the URL (`?kit=mui`) so docs, posts and teammates can
+ * link straight to a specific adapter — the same URL-state idea the library
+ * ships for filters and sorting. Unknown/missing values fall back to Mantine. */
+function readKitFromUrl(): string {
+  if (typeof window === "undefined") return "mantine";
+  const kit = new URLSearchParams(window.location.search).get("kit");
+  return kit && kit in ADAPTERS ? kit : "mantine";
+}
+
 export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [adapter, setAdapter] = useState("mantine");
+  const [adapter, setAdapter] = useState(readKitFromUrl);
   const [mode, setMode] = useState<DataMode>("frontend");
   const [locale, setLocale] = useState<Locale>("en");
   const [density, setDensity] = useState<Density>("comfortable");
   const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const [motion, setMotion] = useState<"on" | "off">("on");
+  const [grouping, setGrouping] = useState<"on" | "off">("off");
+  const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
@@ -130,6 +143,10 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             className={adapter === a.key ? "adtab is-on" : "adtab"}
             style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
             onClick={() => {
+              const url = new URL(window.location.href);
+              if (a.key === "mantine") url.searchParams.delete("kit");
+              else url.searchParams.set("kit", a.key);
+              window.history.replaceState(null, "", url);
               startTransition(() => setAdapter(a.key));
             }}
           >
@@ -197,6 +214,33 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <div className="controls__break" aria-hidden="true" />
+        <Control label="Grouping">
+          <Segmented
+            label="grouping"
+            value={grouping}
+            onChange={(v) => {
+              startTransition(() => setGrouping(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Editing">
+          <Segmented
+            label="editing"
+            value={editing}
+            onChange={(v) => {
+              startTransition(() => setEditing(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Motion">
           <Segmented
             label="motion"
@@ -228,6 +272,8 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               density={density}
               filtersUi={filtersUi}
               animate={motion === "on"}
+              grouping={grouping === "on"}
+              editing={editing === "on"}
               urlKey="live"
             />
           </Suspense>

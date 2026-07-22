@@ -43,7 +43,8 @@ export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
-  groupBy?: string;
+  /** `null` forces grouping off even if the URL carries a groupBy. */
+  groupBy?: string | null;
   groupAggregates?: (
     rows: readonly Person[]
   ) => Partial<Record<string, ReactNode>>;
@@ -85,16 +86,34 @@ interface DataProps {
   pageMode?: PageMode;
   /** URL-param namespace, so each table on the page has isolated state. */
   urlKey?: string;
+  /** Opt-in feature toggles — off renders the plain table (package DNA). */
+  grouping?: boolean;
+  editing?: boolean;
 }
 
-function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
+/** Column key → row field for composite cells (person shows name; load
+ * shows utilisation). Every other column key IS the field name. */
+const EDIT_FIELD: Record<string, keyof Person> = {
+  person: "name",
+  load: "utilization",
+};
+
+function Frontend({
+  render,
+  columns,
+  pageMode,
+  urlKey,
+  grouping,
+  editing,
+}: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
   const onCellEdit = useCallback(
     (row: Person, key: string, nextValue: unknown) => {
+      const field = EDIT_FIELD[key] ?? (key as keyof Person);
       setData((prev) =>
         prev.map((r) =>
-          r.id === row.id ? { ...r, [key]: nextValue as never } : r
+          r.id === row.id ? { ...r, [field]: nextValue as never } : r
         )
       );
     },
@@ -114,9 +133,12 @@ function Frontend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     <>
       {render(source, {
         ...columns,
-        onCellEdit,
-        groupBy: "team",
-        groupAggregates: DEMO_GROUP_AGGREGATES,
+        // Both features are strictly opt-in: the toggles mirror the API —
+        // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
+        ...(editing ? { onCellEdit } : {}),
+        ...(grouping
+          ? { groupBy: "team", groupAggregates: DEMO_GROUP_AGGREGATES }
+          : { groupBy: null }),
       })}
     </>
   );
@@ -148,12 +170,16 @@ export function DemoBody({
   urlKey,
   defaultColumnLayout,
   render,
+  grouping,
+  editing,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
   urlKey?: string;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   render: TableRender;
+  grouping?: boolean;
+  editing?: boolean;
 }>) {
   const { layout, onLayoutChange } = useColumnLayoutUrlState({
     urlKey,
@@ -182,6 +208,8 @@ export function DemoBody({
       columns={columns}
       pageMode={pageMode}
       urlKey={urlKey}
+      grouping={grouping}
+      editing={editing}
     />
   );
 }

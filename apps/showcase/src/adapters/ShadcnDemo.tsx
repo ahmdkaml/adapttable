@@ -23,6 +23,8 @@ export function ShadcnDemo({
   density,
   filtersUi,
   animate,
+  grouping,
+  editing,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -31,6 +33,8 @@ export function ShadcnDemo({
   density?: Density;
   filtersUi?: FiltersUi;
   animate?: boolean;
+  grouping?: boolean;
+  editing?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -41,6 +45,8 @@ export function ShadcnDemo({
       density={density}
       filtersUi={filtersUi}
       animate={animate}
+      grouping={grouping}
+      editing={editing}
       classNames={shadcnClassNames}
     />
   );

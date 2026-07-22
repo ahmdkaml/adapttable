@@ -194,4 +194,22 @@ describe("mui ColumnMenu", () => {
     await screen.findByText("Reset columns");
     expect(screen.queryByText("Actions")).toBeNull();
   });
+
+  // Regression: the menu portals to <body>, so it does not inherit the
+  // table's direction. Under an Arabic locale the grip and pin controls
+  // stayed on the LTR sides while the table itself mirrored. Only Chakra
+  // passed `dir` through; the rest silently dropped it.
+  it("forwards dir to the portalled menu", async () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        dir="rtl"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    const reset = await screen.findByText("Reset columns");
+    expect(reset.closest('[dir="rtl"]')).not.toBeNull();
+  });
 });

@@ -197,6 +197,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       layout={c.columnLayout}
       labels={labels}
       hasRowActions={hasRowActions}
+      dir={props.dir}
     />
   );
   // Saved views capture the table's own URL params, so the menu defaults to
@@ -238,7 +239,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <MobileCards
         table={table}
-        rows={source.rows}
+        rows={c.editingRows}
         rowActions={rowActions}
         confirm={confirm}
         getRowId={getRowId}
@@ -261,7 +262,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <DesktopTable
         table={table}
-        rows={source.rows}
+        rows={c.editingRows}
         rowActions={rowActions}
         actionsPinned={actionsPinned}
         confirm={confirm}

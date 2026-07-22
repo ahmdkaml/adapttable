@@ -157,16 +157,13 @@ export function ColumnMenu<TRow>({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
+  // antd's Popover already paints the elevated surface (background, radius,
+  // shadow) on `.ant-popover-container`. Repeating it here stacked a second
+  // card inside the first — a visible card-in-a-card. Only the inner spacing
+  // and width belong to us; `styles.content` below zeroes antd's own padding
+  // so this is the single source of it.
   const content = (
-    <div
-      style={{
-        background: "var(--ant-color-bg-elevated, #fff)",
-        borderRadius: 8,
-        boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-        padding: 8,
-        minWidth: 260,
-      }}
-    >
+    <div style={{ padding: 8, minWidth: 260 }}>
       <div
         style={{
           fontSize: 11,

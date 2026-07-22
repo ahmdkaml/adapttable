@@ -45,12 +45,11 @@ const TITLES = {
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew, 17 locales",
   "api.md": "AdaptTable API reference — DataTable, columns, hooks",
   "faq.md": "AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR",
-  "comparison.md":
-    "React data table comparison — AdaptTable vs ag-Grid, MUI X, TanStack",
+  "comparison.md": "AdaptTable vs TanStack, ag-Grid & MUI X DataGrid",
   "migrate-from-mantine-datatable.md":
     "mantine-datatable alternative — same Mantine, more built-in",
   "migrate-from-mui-x-datagrid.md":
-    "MUI X DataGrid alternative — Pro features, MIT, real MUI",
+    "MUI X DataGrid alternative — v8 breaking changes, Pro free",
   "migrate-from-tanstack-table.md":
     "TanStack Table alternative — headless + ready UI kits",
   "migrate-from-mui-datatables.md":
@@ -58,7 +57,7 @@ const TITLES = {
   "migrate-from-material-table.md":
     "material-table alternative — modern MUI, still MIT",
   "migrate-from-ag-grid.md":
-    "ag-Grid alternative for CRUD — lighter, native UI kits, MIT",
+    "ag-Grid alternative for CRUD — 300 kB lighter, MIT",
   "versioning.md": "AdaptTable versioning & stability policy",
 };
 
@@ -105,11 +104,11 @@ const DESCRIPTIONS = {
   "faq.md":
     "AdaptTable FAQ: free MIT alternative to MUI X DataGrid and ag-Grid, URL state, RTL/Arabic, client+server data, bundle size, and when to stay on TanStack.",
   "comparison.md":
-    "Choosing a React data table? Feature-by-feature AdaptTable vs ag-Grid, MUI X DataGrid and TanStack Table — native UI-kit adapters, a headless core and an MIT license.",
+    "React data table comparison — AdaptTable head-to-head with TanStack Table, ag-Grid and MUI X DataGrid: licence, bundle size, UI-kit rendering, URL state, and when each one fits.",
   "migrate-from-mantine-datatable.md":
     "Need more than mantine-datatable? @adapttable/mantine keeps real Mantine components and adds URL-synced state, filter chips, column management, saved views and virtualization. Prop-by-prop migration map.",
   "migrate-from-mui-x-datagrid.md":
-    "Looking past MUI X Pro pricing? @adapttable/mui keeps real Material UI components and ships pinning, virtualization, multi-filter and more under MIT — plus URL-synced state. Migration map inside.",
+    "MUI X v6→v8 renamed disableSelectionOnClick and rewrote valueGetter. Every breaking change mapped to a stable API — plus Pro features free under MIT.",
   "migrate-from-tanstack-table.md":
     "Love TanStack's headless model but tired of rebuilding filters, toolbars, pagination and URL sync? AdaptTable keeps prop-getters and ships native adapters for eight React UI kits. Migration map inside.",
   "migrate-from-mui-datatables.md":

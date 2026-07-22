@@ -107,6 +107,8 @@ export function UnstyledLike({
   density = "comfortable",
   filtersUi,
   animate,
+  grouping,
+  editing,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -116,6 +118,8 @@ export function UnstyledLike({
   density?: Density;
   filtersUi?: FiltersUi;
   animate?: boolean;
+  grouping?: boolean;
+  editing?: boolean;
 }>) {
   const s = strings(locale);
   const styled = withDensity(classNames, density);
@@ -125,6 +129,8 @@ export function UnstyledLike({
       pageMode={pageMode}
       urlKey={urlKey}
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+      grouping={grouping}
+      editing={editing}
       render={(source, columns) => {
         return (
           <DataTable

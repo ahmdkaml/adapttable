@@ -1,6 +1,6 @@
 # React table i18n & RTL — Arabic, Hebrew, 17 locales
 
-<video src="https://orwa-mahmoud.github.io/adapttable/media/demo-rtl.mp4" autoplay loop muted playsinline style="width:100%;border-radius:8px"></video>
+▶ **See it working:** [flip the whole table to Arabic RTL in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/rtl/) — a real table you can interact with, not a recording.
 
 AdaptTable is **i18n-agnostic at its core** — it never imports an i18n
 library. Strings come in through a `labels` prop, so you can use your own

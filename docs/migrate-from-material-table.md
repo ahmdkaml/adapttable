@@ -1,5 +1,7 @@
 # material-table alternative — modern MUI, still MIT
 
+▶ **See it before you install:** [the live demo running on real Material UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) — same components material-table wraps, nothing to set up.
+
 [material-table](https://github.com/mbrn/material-table) was once the default
 Material UI table. Today it's effectively dormant: the last release with
 release notes shipped in **August 2020**, maintenance since has been sporadic

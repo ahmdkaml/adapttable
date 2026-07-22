@@ -414,6 +414,44 @@ describe("<DataTable> (Radix)", () => {
     expect(screen.getByLabelText("Rows per page")).toBeInTheDocument();
   });
 
+  it("puts dir on Table.Root, not only on the outer box", () => {
+    // Regression: `dir` used to stop at the outer Box, so the table rendered
+    // left-to-right under an Arabic locale while the labels translated. Radix
+    // renders Table.Root as a wrapper div and the <table> inherits direction
+    // from it, so THIS is the element that must carry it. (The two CSS
+    // overrides that make the inheritance actually land — Radix's ScrollArea
+    // writes its own dir="ltr", and `justify` compiles to physical
+    // left/right classes — are asserted below and exercised in the e2e
+    // suite, since jsdom does not resolve them.)
+    const { container } = renderHarness({ override: { dir: "rtl" } });
+    expect(container.querySelector(".rt-TableRoot")).toHaveAttribute(
+      "dir",
+      "rtl"
+    );
+  });
+
+  it("leaves Table.Root undirected when no direction is given", () => {
+    const { container } = renderHarness();
+    expect(container.querySelector(".rt-TableRoot")).not.toHaveAttribute(
+      "dir",
+      "rtl"
+    );
+  });
+
+  it("ships the RTL overrides Radix's own styles would otherwise win", () => {
+    // Radix hard-codes dir="ltr" on the ScrollArea wrapping the table, and
+    // compiles `justify` to physical `rt-r-ta-left` / `rt-r-ta-right`
+    // classes rather than logical start/end. Both outrank inherited RTL, so
+    // the adapter injects overrides; assert they are present.
+    const { container } = renderHarness({ override: { dir: "rtl" } });
+    const css = [...container.querySelectorAll("style")]
+      .map((s) => s.textContent ?? "")
+      .join("");
+    expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport');
+    expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-left');
+    expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-right');
+  });
+
   it("changes rows-per-page (infinite) and sort selects", () => {
     renderHarness({
       mode: "infinite",

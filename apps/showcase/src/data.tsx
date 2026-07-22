@@ -32,6 +32,11 @@ export interface Person {
   nameAr: string;
   roleAr: string;
   teamAr: string;
+  /** Editable overrides — the demo derives these from `id` until a cell
+   * edit materializes a real value on the row. */
+  status?: DemoStatus;
+  budget?: number;
+  utilization?: number;
 }
 
 export const PEOPLE = people as Person[];
@@ -303,6 +308,9 @@ export function makeColumns(
       header: s.person,
       sortable: true,
       sortValue: (r) => r.name,
+      editable: true,
+      editor: "text",
+      editValue: (r) => r.name,
       width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
@@ -338,6 +346,12 @@ export function makeColumns(
       key: "team",
       header: s.team,
       i18n: { ar: "teamAr" },
+      editable: true,
+      editor: {
+        type: "select",
+        options: TEAMS.map((v) => ({ value: v, label: v })),
+      },
+      editValue: (r) => r.team,
       width: 130,
       mobileLabel: s.team,
     },
@@ -352,6 +366,15 @@ export function makeColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
+      editable: true,
+      editor: {
+        type: "select",
+        options: STATUSES.map((v) => ({
+          value: v,
+          label: STATUS_LABELS[locale][v],
+        })),
+      },
+      editValue: (r) => personStatus(r),
       width: 130,
       mobileLabel: s.status,
     },
@@ -383,6 +406,9 @@ export function makeColumns(
       ),
       sortValue: (r) => budget(r),
       sortable: true,
+      editable: true,
+      editor: "number",
+      editValue: (r) => String(budget(r)),
       align: "end",
       width: 130,
       mobileLabel: s.budget,
@@ -392,6 +418,9 @@ export function makeColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
+      editable: true,
+      editor: "number",
+      editValue: (r) => String(utilization(r)),
       width: 175,
       accessor: (row) => (
         <Load
@@ -575,11 +604,11 @@ export function allocationCount(row: Person): number {
 }
 
 export function budget(row: Person): number {
-  return 18_000 + ((Number(row.id) * 7300) % 95_000);
+  return row.budget ?? 18_000 + ((Number(row.id) * 7300) % 95_000);
 }
 
 export function utilization(row: Person): number {
-  return 45 + ((Number(row.id) * 11) % 55);
+  return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
 }
 
 export function startDate(row: Person): Date {
@@ -594,7 +623,7 @@ export function dueDate(row: Person): Date {
 }
 
 export function personStatus(row: Person): DemoStatus {
-  return STATUSES[Number(row.id) % STATUSES.length];
+  return row.status ?? STATUSES[Number(row.id) % STATUSES.length];
 }
 
 export function formatDate(date: Date, locale: Locale = "en"): string {

@@ -1,5 +1,7 @@
 # React table URL state — shareable filters, sort, and page
 
+▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — filter, sort and page it, then copy the URL: every bit of that state is in the address bar (the kit switcher too).
+
 AdaptTable keeps the table's state in the URL query string: search (`q`),
 pagination (`page`, `limit`), sorting (`sortBy`/`sortDir`, or `sort` for a
 multi-sort chain), and every filter value (`f_<key>`). Column layout

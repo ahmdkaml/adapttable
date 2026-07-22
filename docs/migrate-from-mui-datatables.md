@@ -1,5 +1,7 @@
 # mui-datatables alternative — maintained, MUI v6+, React 19
 
+▶ **See it before you install:** [the live demo running on real Material UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) — nothing to set up.
+
 [mui-datatables](https://github.com/gregnb/mui-datatables) served a generation
 of Material UI apps well — but it has had **no releases or commits since
 January 2023** (last version 4.3.0). Its peer range stops at

@@ -71,6 +71,17 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
   ).toBeVisible();
 });
 
+/** Grouping and editing are opt-in control-bar toggles (off by default). */
+async function enableToggle(
+  page: Page,
+  group: "grouping" | "editing"
+): Promise<void> {
+  await page
+    .getByRole("group", { name: group })
+    .getByRole("button", { name: "On", exact: true })
+    .click();
+}
+
 async function setFiltersMode(
   page: Page,
   mode: "Popover" | "Drawer"
@@ -188,14 +199,79 @@ for (const adapter of ADAPTERS) {
         .click();
       // The re-rendered table flips its writing direction.
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
+
+      // A dir attribute SOMEWHERE is not enough — that assertion passed for
+      // months while Radix rendered its columns left-to-right. Check what the
+      // browser actually resolves on the table and inside a cell, which is
+      // the only place the CSS overrides (Radix's own ScrollArea dir, and its
+      // physical text-align classes) can be proven.
+      const table = demo(page).locator("table").first();
+      await expect(table).toHaveCSS("direction", "rtl");
+
+      // Alignment: kits resolve this to the logical "start" (already correct
+      // under RTL); Radix compiles it to a physical value. Either is fine —
+      // "left" is the bug, because it does not follow direction.
+      const firstDataHeader = demo(page).locator("thead th").nth(1);
+      const align = await firstDataHeader.evaluate(
+        (el) => getComputedStyle(el).textAlign
+      );
+      expect(align).not.toBe("left");
+
+      // And prove it where it counts — the pixels. Measure the first
+      // text-bearing cell's own TEXT NODE (not its wrapper, which stretches
+      // to the full column width and hides the misalignment) against its own
+      // padding box: under RTL the glyphs must hug the RIGHT edge. This is
+      // the assertion that fails on the shipped Radix build, where the cell
+      // kept a physical `text-align: left` and the text sat on the far side
+      // of the column from where an Arabic reader looks for it.
+      const gaps = await demo(page)
+        .locator("tbody tr")
+        .first()
+        .evaluate((row) => {
+          for (const cell of row.querySelectorAll("td")) {
+            const walker = document.createTreeWalker(
+              cell,
+              NodeFilter.SHOW_TEXT
+            );
+            let node = walker.nextNode();
+            while (node && !node.textContent?.trim()) node = walker.nextNode();
+            if (!node) continue; // checkbox / icon-only column — nothing to align
+            const range = document.createRange();
+            range.selectNode(node);
+            const text = range.getBoundingClientRect();
+            const box = cell.getBoundingClientRect();
+            const css = getComputedStyle(cell);
+            return {
+              left: text.left - (box.left + parseFloat(css.paddingLeft)),
+              right: box.right - parseFloat(css.paddingRight) - text.right,
+            };
+          }
+          return null;
+        });
+      // 1px of subpixel slack; the real regression is a whole column width.
+      expect(gaps!.right).toBeLessThanOrEqual(gaps!.left + 1);
+
+      // …and the mirrored order puts that first column on the right half.
+      const t = await table.boundingBox();
+      const h = await firstDataHeader.boundingBox();
+      expect(h!.x - t!.x).toBeGreaterThan(t!.width / 2);
     });
 
     test("inline cell edit commits on Enter", async ({ page }) => {
       await openDemo(page, adapter);
-      // Frontend mode ships onCellEdit; email is editable + visible.
+      // Editing and grouping are opt-in toggles; grouping stays ON here so
+      // the edit below exercises a row OUTSIDE the page slice.
+      await enableToggle(page, "editing");
+      await enableToggle(page, "grouping");
+      // Frontend mode ships onCellEdit; every data column is editable, so
+      // scope to Barbara's row (id 6 — OUTSIDE the current page slice while
+      // grouping renders the full filtered set) and take its email cell.
+      // Guards the regression where the page-slice discard froze every
+      // off-page row as display-only (only each group's first row edited).
       const activate = demo(page)
+        .locator("tr", { hasText: "barbara.liskov" })
         .locator('[data-adapttable-part="edit-cell-activate"]')
-        .first();
+        .nth(1);
       await expect(activate).toBeVisible();
       await activate.dblclick();
       // Prefer the accessible textbox — kit wrappers may put the data-* on a
@@ -217,6 +293,7 @@ for (const adapter of ADAPTERS) {
 
     test("group header expands and collapses", async ({ page }) => {
       await openDemo(page, adapter);
+      await enableToggle(page, "grouping");
       // Frontend mode groups by team; group headers replace bare leaf rows.
       const groupRow = demo(page)
         .locator('[data-adapttable-part="group-row"]')
