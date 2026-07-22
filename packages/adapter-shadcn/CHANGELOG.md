@@ -1,5 +1,21 @@
 # @adapttable/shadcn
 
+## 1.2.1
+
+### Patch Changes
+
+- b77bcdc: Point each README's demo image at the live demo instead of a raw `.mp4` file,
+  and deep-link it to that package's own adapter (`/demo/?kit=mui`,
+  `?kit=radix`, …) now that the kit selector is URL-addressable. Clicking the
+  image lands on a table you can actually use rather than a video download.
+- a719db6: List inline cell editing and row grouping in each README's feature links. Both
+  shipped in 1.2.0 but the package pages never mentioned them, so anyone reading
+  on npm had no way to learn they exist.
+- Updated dependencies [b535c41]
+- Updated dependencies [b77bcdc]
+- Updated dependencies [a719db6]
+  - @adapttable/unstyled@1.2.1
+
 ## 1.2.0
 
 ### Minor Changes
