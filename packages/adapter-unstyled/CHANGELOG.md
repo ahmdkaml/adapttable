@@ -1,5 +1,24 @@
 # @adapttable/unstyled
 
+## 1.2.2
+
+### Patch Changes
+
+- feed13d: Fix the broken hero image on every npm package page, and add a clip per feature.
+
+  npm renders README images through GitHub's camo proxy, which refuses anything
+  over 5 MB. Every demo GIF was 5.2–8.7 MB, so camo returned `Content length
+exceeded` and each package page showed a broken image instead of the table.
+
+  The clips are now cut per feature — row grouping, cell editing, filtering,
+  column management and RTL — cropped to the table at native resolution rather
+  than downscaling the whole page. Each is 232 KB–2.3 MB, and each is sharper
+  than the 8 MB version it replaces, because a shorter clip spends its budget on
+  pixels instead of length.
+
+- Updated dependencies [feed13d]
+  - @adapttable/core@1.2.2
+
 ## 1.2.1
 
 ### Patch Changes

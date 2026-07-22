@@ -1,5 +1,12 @@
 # @adapttable/base-ui
 
+## 1.3.2
+
+### Patch Changes
+
+- Updated dependencies [feed13d]
+  - @adapttable/core@1.2.2
+
 ## 1.3.1
 
 ### Patch Changes
