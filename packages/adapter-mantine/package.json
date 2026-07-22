@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/mantine",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Mantine adapter for AdaptTable — a batteries-included, themeable React data table with sorting, filtering, URL state, virtualization, RTL, dark mode, and responsive card rendering.",
   "keywords": [
     "react",

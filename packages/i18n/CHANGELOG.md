@@ -1,5 +1,21 @@
 # @adapttable/i18n
 
+## 1.2.3
+
+### Patch Changes
+
+- a7e51ba: Give these three package pages a Features section and a clip per feature.
+
+  The eight adapters listed their features; `core`, `cli` and `i18n` listed none, so
+  their npm pages described the packages without ever saying what they do. Each now
+  carries a Features section written for what it actually is — the headless engine, the
+  scaffolder, the locale sets — plus clips cut from the cross-kit tour (`core`, `cli`)
+  and from the Arabic recording (`i18n`, where every feature is shown running RTL).
+
+- Updated dependencies [a7e51ba]
+- Updated dependencies [a7e51ba]
+  - @adapttable/core@1.2.3
+
 ## 1.2.2
 
 ### Patch Changes
