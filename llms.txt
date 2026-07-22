@@ -68,7 +68,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table virtualization — 10k rows, ~24 DOM nodes](https://orwa-mahmoud.github.io/adapttable/virtualization/): row/card windowing. Measured A/B at 10,000 rows — virtualized renders 24 DOM `<tr>` vs 10,000 for a plain table (417x fewer nodes, ~half the JS heap: 169 MB vs 347 MB), and the rendered row count stays ~24 from 1k to 100k rows. Window or scroll-box mode.
 - [Client & server React table data — one TableSource API](https://orwa-mahmoud.github.io/adapttable/data-tiers/): in-memory, server query event, custom TableSource
 - [AdaptTable concepts — headless core, TableSource, adapters](https://orwa-mahmoud.github.io/adapttable/concepts/): architecture, TableSource contract
-- [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit
+- [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit, CSV export (exportCsv)
 - [React table URL state — shareable filters, sort, and page](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out
 - [React table i18n & RTL — Arabic, Hebrew, 17 locales](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/): 17 locales, per-locale data paths, logical layout
 - [AdaptTable API reference — DataTable, columns, hooks](https://orwa-mahmoud.github.io/adapttable/api/): every prop in tables
