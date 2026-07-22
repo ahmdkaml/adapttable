@@ -80,6 +80,8 @@ export function AntdDemo({
   density,
   filtersUi,
   animate,
+  grouping,
+  editing,
   wide,
 }: Readonly<{
   mode: DataMode;
@@ -90,6 +92,8 @@ export function AntdDemo({
   density?: Density;
   filtersUi?: FiltersUi;
   animate?: boolean;
+  grouping?: boolean;
+  editing?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
 }>) {
@@ -112,6 +116,8 @@ export function AntdDemo({
             ? { pinned: { person: "start", actions: "end" } }
             : LIVE_DEFAULT_LAYOUT
         }
+        grouping={grouping}
+        editing={editing}
         render={(source, columns) => (
           <DataTable
             source={source}

@@ -71,6 +71,17 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
   ).toBeVisible();
 });
 
+/** Grouping and editing are opt-in control-bar toggles (off by default). */
+async function enableToggle(
+  page: Page,
+  group: "grouping" | "editing"
+): Promise<void> {
+  await page
+    .getByRole("group", { name: group })
+    .getByRole("button", { name: "On", exact: true })
+    .click();
+}
+
 async function setFiltersMode(
   page: Page,
   mode: "Popover" | "Drawer"
@@ -192,12 +203,17 @@ for (const adapter of ADAPTERS) {
 
     test("inline cell edit commits on Enter", async ({ page }) => {
       await openDemo(page, adapter);
-      // Frontend mode ships onCellEdit; email is editable + visible.
-      // nth(1) — the second leaf of the first group — sits OUTSIDE the
-      // current page slice while grouping renders the full filtered set.
+      // Editing and grouping are opt-in toggles; grouping stays ON here so
+      // the edit below exercises a row OUTSIDE the page slice.
+      await enableToggle(page, "editing");
+      await enableToggle(page, "grouping");
+      // Frontend mode ships onCellEdit; every data column is editable, so
+      // scope to Barbara's row (id 6 — OUTSIDE the current page slice while
+      // grouping renders the full filtered set) and take its email cell.
       // Guards the regression where the page-slice discard froze every
       // off-page row as display-only (only each group's first row edited).
       const activate = demo(page)
+        .locator("tr", { hasText: "barbara.liskov" })
         .locator('[data-adapttable-part="edit-cell-activate"]')
         .nth(1);
       await expect(activate).toBeVisible();
@@ -221,6 +237,7 @@ for (const adapter of ADAPTERS) {
 
     test("group header expands and collapses", async ({ page }) => {
       await openDemo(page, adapter);
+      await enableToggle(page, "grouping");
       // Frontend mode groups by team; group headers replace bare leaf rows.
       const groupRow = demo(page)
         .locator('[data-adapttable-part="group-row"]')

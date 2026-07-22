@@ -88,6 +88,8 @@ export function MuiDemo({
   density,
   filtersUi,
   animate,
+  grouping,
+  editing,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -97,6 +99,8 @@ export function MuiDemo({
   density?: Density;
   filtersUi?: FiltersUi;
   animate?: boolean;
+  grouping?: boolean;
+  editing?: boolean;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -107,6 +111,8 @@ export function MuiDemo({
         pageMode={pageMode}
         urlKey={urlKey}
         defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+        grouping={grouping}
+        editing={editing}
         render={(source, columns) => (
           <DataTable
             source={source}

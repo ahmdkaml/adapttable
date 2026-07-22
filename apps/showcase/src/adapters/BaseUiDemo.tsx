@@ -98,6 +98,8 @@ export function BaseUiDemo({
   density,
   filtersUi,
   animate,
+  grouping,
+  editing,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -107,6 +109,8 @@ export function BaseUiDemo({
   density?: Density;
   filtersUi?: FiltersUi;
   animate?: boolean;
+  grouping?: boolean;
+  editing?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -115,6 +119,8 @@ export function BaseUiDemo({
       pageMode={pageMode}
       urlKey={urlKey}
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+      grouping={grouping}
+      editing={editing}
       render={(source, columns) => (
         <DataTable
           source={source}

@@ -746,8 +746,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@adapttable/mantine':
-        specifier: ^1.0.0
-        version: 1.0.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^1.2.0
+        version: 1.2.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/core':
         specifier: ^9.4.1
         version: 9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -981,8 +981,14 @@ packages:
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
-  '@adapttable/mantine@1.0.0':
-    resolution: {integrity: sha512-UkLpQYrF5weIYNBPF5Q9K5P09KbtzKymPw3w8q51U1kD+xRplO681cdOJawI0IXvS+jvfoEAqnD+1mtr+ifHOg==}
+  '@adapttable/core@1.2.0':
+    resolution: {integrity: sha512-AiLY9BB8t4pXVxr8btL3gWhxGNCtxGMCq5iTiFI5uZ6PtUbhyrZtFrLaN/TSNrUNvU/n14U0EOKm8/OZUSWRTw==}
+    engines: {node: '>=18.18.0'}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+
+  '@adapttable/mantine@1.2.0':
+    resolution: {integrity: sha512-YDHXKOhpB2RrPuo83wQxg2gCPgySWJPEhedLg4Uw+euMSOS1AGwhKs+Ys9W0emfN3fMCNRXoZNFbCHGCcySSaw==}
     engines: {node: '>=18.18.0'}
     peerDependencies:
       '@mantine/core': ^7.0.0 || ^8.0.0 || ^9.0.0
@@ -7838,9 +7844,17 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@adapttable/mantine@1.0.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@adapttable/core@1.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
-      '@adapttable/core': 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tanstack/react-virtual': 3.14.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react: 19.2.7
+      react-compiler-runtime: 1.0.0(react@19.2.7)
+    transitivePeerDependencies:
+      - react-dom
+
+  '@adapttable/mantine@1.2.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@adapttable/core': 1.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/core': 9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/hooks': 9.4.1(react@19.2.7)
       react: 19.2.7
