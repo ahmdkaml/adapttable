@@ -1,6 +1,6 @@
 # @adapttable/shadcn
 
-[![@adapttable/shadcn — a shadcn/ui data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-shadcn.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=shadcn)
+[![@adapttable/shadcn — a shadcn/ui data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=shadcn)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/shadcn)**
 
@@ -51,6 +51,28 @@ That's it — a styled shadcn table, no class wiring. Swap `useFrontendData` for
 `useBackendData` to drive it from a server-paginated query; the component doesn't
 change.
 
+## Features
+
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via sortable headers.
+- **Filtering** — a `Sheet` or `Popover` of filters plus removable `Badge` chips, with a filter count on the trigger.
+- **Selection + bulk actions** using shadcn `Checkbox`es, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — numbered pagination, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile `Card`s by viewport (or force `isMobile`).
+- **States** — `Skeleton` loading, error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** via your Tailwind `dark:` class strategy.
+- **Customisation** — the components are copied into your project — edit them directly, plus `slots`, `className`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.
+
 ## Customizing
 
 Restyle any part by passing your own `classNames` — they're merged **over** the
@@ -71,6 +93,30 @@ table)? It's exported:
 ```tsx
 import { shadcnClassNames } from "@adapttable/shadcn";
 ```
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![shadcn Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![shadcn Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![shadcn Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![shadcn Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![shadcn RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/shadcn/parts/rtl.gif)
 
 ## Documentation
 

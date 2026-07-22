@@ -1,6 +1,6 @@
 # @adapttable/antd
 
-[![@adapttable/antd — an Ant Design data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-antd.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=antd)
+[![@adapttable/antd — an Ant Design data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=antd)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/antd)**
 
@@ -43,22 +43,49 @@ component doesn't change.
 
 ## Features
 
-- Client or server data through one `TableSource`.
-- URL-synced search / sort / filters / page — shareable, deep-linkable.
-- Native antd `<Table>` header sort carets, row `Checkbox` selection (with
-  indeterminate select-all) + bulk actions with confirm.
-- Filter `Drawer` + removable `Tag` chips.
-- antd `Pagination` (with page-size changer) in paged mode; **infinite
-  scroll** (IntersectionObserver auto-load + a "Load more" fallback) in
-  infinite mode.
-- **Responsive:** a horizontally-scrollable `<Table>` on desktop, and an
-  antd `Card` + `Descriptions` layout on mobile (auto by viewport).
-- antd `Skeleton` loading (honouring `skeletonRows`), `Alert` error with
-  retry, and an `Empty` state.
-- Logical (RTL-aware) column alignment, column `width`, custom `Cell`
-  renderers, and conditional row actions (`isHidden` / `isDisabled`).
-- `slots` (skeleton, empty), `className`, `size`, `bordered`, injectable
-  `confirm`.
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via native antd `<Table>` header sort carets.
+- **Filtering** — a `Drawer` or `Popover` of filters plus removable `Tag` chips, with a filter count on the trigger.
+- **Selection + bulk actions** using antd `Checkbox`es (with indeterminate select-all), with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — antd `Pagination` with page-size changer, or infinite scroll (IntersectionObserver auto-load plus a "Load more" fallback).
+- **Responsive** — a horizontally-scrollable `<Table>` on desktop, `Card` + `Descriptions` on mobile.
+- **States** — antd `Skeleton` (honouring `skeletonRows`), `Alert` error with retry, and `Empty`.
+- **RTL** via `dir`-aware logical column alignment; **dark mode** via antd's algorithm.
+- **Customisation** — `slots` (skeleton, empty), `className`, `size`, `bordered`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![antd Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![antd Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![antd Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![antd Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![antd RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/antd/parts/rtl.gif)
 
 ## Documentation
 

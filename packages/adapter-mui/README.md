@@ -1,6 +1,6 @@
 # @adapttable/mui
 
-[![@adapttable/mui — a Material UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/demo-mui.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui)
+[![@adapttable/mui — a Material UI data table built on AdaptTable](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/filtering.gif)](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)** · **[⚡ Try in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mui)**
 
@@ -43,13 +43,49 @@ from a server-paginated query — the component doesn't change.
 
 ## Features
 
-- Client or server data through one `TableSource`.
-- URL-synced search / sort / filters / page.
-- `TableSortLabel` headers, `Checkbox` selection + bulk actions with confirm.
-- Filter drawer + removable `Chip`s.
-- `Pagination` footer, `Skeleton` loading, `Alert` error with retry.
-- Auto desktop table ↔ mobile cards.
-- `slots` (skeleton, empty), `className`, `size`, injectable `confirm`.
+- **Client or server data** through one `TableSource` contract — same props either way.
+- **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
+- **Sorting** via `TableSortLabel` headers.
+- **Filtering** — a `Drawer` or `Popover` of filters plus removable `Chip`s, with a filter count on the trigger.
+- **Selection + bulk actions** using MUI `Checkbox`es, with confirm dialogs (`bulkActions`).
+- **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
+- **Row expansion** — inline detail panels via `renderRowDetail`.
+- **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
+  editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Saved views** — name a filter/sort/column arrangement and switch between them.
+- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
+- **Pagination** — `Pagination` footer, or infinite scroll (auto by device).
+- **Responsive** — desktop table ↔ mobile `Card`s by viewport (or force `isMobile`).
+- **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
+- **RTL** via `dir`; **dark mode** follows the MUI theme.
+- **Customisation** — `slots` (skeleton, empty), `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.
+
+## See it work
+
+Each clip is the real adapter, recorded on the live demo.
+
+**Row grouping** — group rows by a column with per-group subtotals
+
+![mui Row grouping](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/row-grouping.gif)
+
+**Inline cell editing** — double-click a cell; text, number and select editors
+
+![mui Inline cell editing](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/cell-editing.gif)
+
+**Filtering** — type a bound and the table answers as you type
+
+![mui Filtering](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/filtering.gif)
+
+**Column management** — show, hide, reorder, pin and resize
+
+![mui Column management](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/column-management.gif)
+
+**RTL / Arabic** — the whole table mirrors, not just the text
+
+![mui RTL / Arabic](https://orwa-mahmoud.github.io/adapttable/media/adapters/mui/parts/rtl.gif)
 
 ## Documentation
 
