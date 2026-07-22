@@ -219,7 +219,7 @@ PRs welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md). This is a friendly, well-
 
 ## License
 
-[MIT](./LICENSE) © Orwa Mahmoud
+[MIT](./LICENSE) © [Orwa Mahmoud](https://orwamahmoud.com)
 
 ---
 
