@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/i18n",
-  "version": "2.0.0-rc.0",
+  "version": "2.0.0",
   "description": "Locale presets for 17 languages plus RTL direction helpers for AdaptTable — first-class right-to-left and Arabic support.",
   "keywords": [
     "react",
