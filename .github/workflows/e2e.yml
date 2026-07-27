@@ -23,6 +23,9 @@ jobs:
   e2e:
     name: Playwright smoke (showcase)
     runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
     steps:
       # Full history: the three-dot diff below needs a merge base, which a
       # shallow clone lacks (that failure once skipped the suite on a branch

@@ -283,13 +283,21 @@ export function statusTone(
 
 /**
  * The live-demo's default column layout: `email` and `team` ship as real
- * columns but start hidden, so the table is clean by default yet has columns
- * to reveal. Revealing them (or pinning — see the showcase) widens the table
- * past its container so a pinned column visibly sticks while scrolling.
+ * columns but start hidden, so the table fits its container with no
+ * horizontal scrollbar by default. Revealing them (or pinning — see the
+ * showcase) widens the table past its container so a pinned column visibly
+ * sticks while scrolling.
  */
 export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
-  // Keep email visible so the opt-in cell-editing demo is discoverable;
-  // hide team so revealing/pinning still widens past the container.
+  hidden: ["email", "team"],
+};
+
+/**
+ * The editing page's default layout: email stays visible there — it is the
+ * column its walkthrough (and e2e specs) edit — while team stays hidden so
+ * the table still fits without a horizontal scrollbar.
+ */
+export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
   hidden: ["team"],
 };
 

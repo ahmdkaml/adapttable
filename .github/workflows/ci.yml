@@ -16,8 +16,16 @@ jobs:
   verify:
     name: Format · Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
+    env:
+      # Turborepo Remote Cache (optional): with the secrets set, local green
+      # gates pre-warm CI. Absent secrets are a silent no-op.
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
     steps:
+      # Full history: the three-dot diff below needs a merge base.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -42,19 +50,56 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
+      # Docs-only / workflow-only diffs skip the package gate but ALWAYS
+      # report (required checks must never sit "expected"). The doc guards
+      # and format check still run in light mode — docs edits can break
+      # check:readmes / check:docsurface. Fail-open: no diff → full gate.
+      - name: Detect relevant changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --quiet origin "$BASE_REF"
+          if ! diff_files="$(git diff --name-only "origin/$BASE_REF"...HEAD)"; then
+            echo "Could not compute the diff — running the full gate."
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$diff_files" \
+            | grep -qvE '^(docs/|llms.*\.txt$|README\.md$|packages/[^/]+/README\.md$|\.github/|\.changeset/|ai_docs/)'; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "full=false" >> "$GITHUB_OUTPUT"
+            echo "Docs/workflow-only diff — running format + doc guards only."
+          fi
+
       - name: Format check
         run: pnpm format:check
 
+      - name: Check adapter READMEs advertise every feature
+        run: pnpm check:readmes
+
+      - name: Check every export is documented
+        run: pnpm check:docsurface
+
       - name: Lint
+        if: steps.changes.outputs.full == 'true'
         run: pnpm lint
 
       - name: Lint root tooling
+        if: steps.changes.outputs.full == 'true'
         run: pnpm lint:root
 
       - name: Typecheck
+        if: steps.changes.outputs.full == 'true'
         run: pnpm typecheck
 
       - name: Test with coverage
+        if: steps.changes.outputs.full == 'true'
         # One package's suite at a time: the 2-core runner can't host several
         # vitest processes at once — antd's cssinjs-heavy tests get starved
         # past the 30s per-test budget (same contention class as the local
@@ -62,9 +107,11 @@ jobs:
         run: pnpm test:coverage --concurrency=1
 
       - name: Build
+        if: steps.changes.outputs.full == 'true'
         run: pnpm build
 
       - name: Validate published package configs
+        if: steps.changes.outputs.full == 'true'
         run: pnpm publint
 
   # Every package promises `react: ^18 || ^19`, but the workspace develops on
