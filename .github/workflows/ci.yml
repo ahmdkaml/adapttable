@@ -55,7 +55,11 @@ jobs:
         run: pnpm typecheck
 
       - name: Test with coverage
-        run: pnpm test:coverage
+        # One package's suite at a time: the 2-core runner can't host several
+        # vitest processes at once — antd's cssinjs-heavy tests get starved
+        # past the 30s per-test budget (same contention class as the local
+        # fileParallelism remedy, applied at the turbo level for CI).
+        run: pnpm test:coverage --concurrency=1
 
       - name: Build
         run: pnpm build
