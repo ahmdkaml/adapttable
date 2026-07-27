@@ -3,8 +3,8 @@ import type {
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
-  UseServerDataOptions,
 } from "@adapttable/core";
+import type { DataModeProps } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 /** Overridable sub-components. Each defaults to a styled Mantine part. */
@@ -25,13 +25,13 @@ export interface DataTableClassNames {
 }
 
 /** Props for the Mantine `<DataTable>`. */
-export interface DataTableProps<TRow> extends Omit<
+interface DataTablePropsBase<TRow> extends Omit<
   BaseDataTableProps<TRow>,
   "source"
 > {
   /**
    * Full-control tier: a prebuilt source (`useFrontendData` /
-   * `useBackendData`). Omit it and pass `data` for the zero-ceremony tiers.
+   * `useQuerySource`). Omit it and pass `data` for the zero-ceremony tiers.
    */
   source?: TableSource<TRow>;
   /**
@@ -44,12 +44,8 @@ export interface DataTableProps<TRow> extends Omit<
   total?: number;
   /** Server tier: a request is in flight. */
   loading?: boolean;
-  /**
-   * Server tier: fired with the consolidated query (page, limit, search,
-   * sort, filters) whenever it changes — including once on mount with the
-   * URL-restored values. Fetch in response and hand back `data` + `total`.
-   */
-  onQueryChange?: UseServerDataOptions<TRow>["onQueryChange"];
+  /** Forwarded error to display in the table's error state. */
+  error?: Error | null;
   /**
    * Namespace for this table's URL params (`urlKey="left"` → `left.q`,
    * `left.page`, …) so multiple tables can share one URL. Applies to the
@@ -84,11 +80,27 @@ export interface DataTableProps<TRow> extends Omit<
   /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
   /**
+   * Keep the toolbar sticky while the page scrolls, parked at `stickyTop`.
+   * The sticky HEADER then offsets below it automatically. Off by default —
+   * `stickyTop` alone means the same thing here as in every other adapter:
+   * the sticky-header inset.
+   */
+  stickyToolbar?: boolean;
+  /**
    * Animate rows/cards on mount (dependency-free; honors reduced motion).
    * Off by default.
    */
   animate?: boolean;
 }
+
+/**
+ * Props for the Mantine `<DataTable>`: the base surface intersected
+ * with core's data-mode union, so `mode="server"` requires
+ * `onQueryChange` at compile time and `mode="frontend"` turns it into a
+ * pure notification.
+ */
+export type DataTableProps<TRow> = DataTablePropsBase<TRow> &
+  DataModeProps<TRow>;
 
 /** Mantine color alias re-export for action colors. */
 export type { MantineColor } from "@mantine/core";

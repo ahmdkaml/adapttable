@@ -4,6 +4,7 @@ import type {
   UseSavedViewsOptions,
   UseTableDataOptions,
 } from "@adapttable/core";
+import type { DataModeProps } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 /** Overridable sub-components. */
@@ -15,12 +16,30 @@ export interface DataTableSlots {
 }
 
 /** Props for the Ant Design `<DataTable>`. */
-export interface DataTableProps<TRow>
+/**
+ * Structural class hooks for the antd adapter. Fine-grained per-part
+ * styling belongs to `@adapttable/unstyled` / `@adapttable/shadcn`; here
+ * the kit owns the visuals and these hooks target the wrapper elements.
+ */
+export interface DataTableClassNames {
+  /** The root wrapper (also reachable via `className`). */
+  root?: string;
+  /** The toolbar row (search, filters, export, menus). */
+  toolbar?: string;
+  /** The desktop table region. */
+  table?: string;
+  /** One mobile card (merged with `rowClassName`). */
+  card?: string;
+  /** The pagination footer region. */
+  footer?: string;
+}
+
+interface DataTablePropsBase<TRow>
   extends
     Omit<BaseDataTableProps<TRow>, "source">,
     Pick<
       UseTableDataOptions<TRow>,
-      "source" | "data" | "total" | "loading" | "onQueryChange" | "urlKey"
+      "source" | "data" | "total" | "loading" | "error" | "urlKey"
     > {
   /**
    * URL-state backend for the built-in `data` / `onQueryChange` tiers.
@@ -47,6 +66,8 @@ export interface DataTableProps<TRow>
   slots?: DataTableSlots;
   /** Class name applied to the outer wrapper. */
   className?: string;
+  /** Per-part class hooks for the structural elements. */
+  classNames?: DataTableClassNames;
   /**
    * antd table size. Overrides the size derived from `density`
    * (`"compact"` → `"small"`, `"comfortable"` → `"middle"`); use it to opt
@@ -55,13 +76,18 @@ export interface DataTableProps<TRow>
   size?: "small" | "middle" | "large";
   /** Render the table with cell borders. Defaults to `false`. */
   bordered?: boolean;
-  /** Vertical scroll height used when `virtualize` is true. Defaults to 480. */
-  virtualHeight?: number;
-  /** Horizontal scroll width used when `virtualize` is true. Defaults to 960. */
-  virtualWidth?: number;
   /**
    * Animate rows/cards on mount (dependency-free; honors reduced motion).
    * Off by default.
    */
   animate?: boolean;
 }
+
+/**
+ * Props for the antd `<DataTable>`: the base surface intersected with
+ * core's data-mode union, so `mode="server"` requires `onQueryChange`
+ * at compile time and `mode="frontend"` turns it into a pure
+ * notification.
+ */
+export type DataTableProps<TRow> = DataTablePropsBase<TRow> &
+  DataModeProps<TRow>;

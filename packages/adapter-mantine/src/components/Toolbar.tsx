@@ -1,4 +1,5 @@
-import { pageSizeOptions, type ToolbarChromeProps } from "@adapttable/core";
+import { pageSizeOptions } from "@adapttable/core";
+import { type ToolbarChromeProps } from "@adapttable/core/adapter";
 import { Badge, Button, Group, Select, Text, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
@@ -23,10 +24,10 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
 /** Sticky toolbar: search, optional sort select, custom slot, filters, size. */
 export function Toolbar<TRow>({
   table,
-  hideSearch,
+  searchable,
   searchPlaceholder,
   sortByOptions,
-  customToolbar,
+  toolbar,
   hasFilters,
   activeFilterCount,
   onToggleFilters,
@@ -79,7 +80,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
-      {!hideSearch && (
+      {searchable !== false && (
         <TextInput
           {...searchProps}
           leftSection={<SearchIcon size={14} />}
@@ -103,7 +104,7 @@ export function Toolbar<TRow>({
             comboboxProps={{ withinPortal: false }}
           />
         )}
-        {customToolbar}
+        {toolbar}
         {hasFilters &&
           (filtersMode === "popover" ? (
             <FilterPopover

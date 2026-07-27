@@ -18,13 +18,14 @@ export interface UseSelectionOptions<TRow> {
    */
   resetKey?: unknown;
   /**
-   * Controlled selection. When provided, the hook reads from this value and
-   * reports every change request through `onChange` instead of mutating its
-   * own state — the same controlled/uncontrolled split as `useColumnLayout`.
+   * Controlled selection. When provided, the hook reads from this value
+   * and reports every change request through `onSelectionChange` instead
+   * of mutating its own state — the same controlled/uncontrolled split as
+   * `useColumnLayout`.
    */
-  selected?: readonly string[];
+  selectedIds?: readonly string[];
   /** Change handler; required for the controlled mode to update. */
-  onChange?: (selectedIds: string[]) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 /** Selection state + actions returned by {@link useSelection}. */
@@ -65,19 +66,18 @@ export interface SelectionState {
  * @param options - See {@link UseSelectionOptions}.
  * @returns Selection state and actions.
  */
-export function useSelection<TRow>({
-  rows,
-  getId,
-  resetKey,
-  selected,
-  onChange,
-}: UseSelectionOptions<TRow>): SelectionState {
+export function useSelection<TRow>(
+  options: UseSelectionOptions<TRow>
+): SelectionState {
+  const { rows, getId, resetKey } = options;
+  const controlledValue = options.selectedIds;
+  const onChange = options.onSelectionChange;
   const [internal, setInternal] = useState<Set<string>>(() => new Set());
   const [allMatching, setAllMatching] = useState(false);
-  const controlled = selected !== undefined;
+  const controlled = controlledValue !== undefined;
   const selectedIds = useMemo(
-    () => (selected === undefined ? internal : new Set(selected)),
-    [selected, internal]
+    () => (controlledValue === undefined ? internal : new Set(controlledValue)),
+    [controlledValue, internal]
   );
 
   // The mutators below close over `commit`; reading the live mode/state
@@ -105,15 +105,16 @@ export function useSelection<TRow>({
   const selectAllMatching = useCallback(() => setAllMatching(true), []);
 
   // Clear on reset-key change, but not on first mount. The effect reads the
-  // LATEST size through a ref so only `resetKey` retriggers it.
+  // LATEST size through a ref so only `resetKey` retriggers it. The guard
+  // is last-seen-value, not a boolean first-run flag: refs survive
+  // StrictMode's simulated remount, so a boolean guard saw the doubled
+  // mount effect as a "change" and wiped a controlled preselection.
   const liveRef = useRef({ commit, size: selectedIds.size });
   liveRef.current = { commit, size: selectedIds.size };
-  const firstRef = useRef(true);
+  const lastResetKeyRef = useRef(resetKey);
   useEffect(() => {
-    if (firstRef.current) {
-      firstRef.current = false;
-      return;
-    }
+    if (Object.is(lastResetKeyRef.current, resetKey)) return;
+    lastResetKeyRef.current = resetKey;
     // Identity-preserving no-op when there is nothing to clear.
     if (liveRef.current.size === 0) return;
     liveRef.current.commit(() => new Set());

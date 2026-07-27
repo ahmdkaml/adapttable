@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useSelection } from "./useSelection";
@@ -73,6 +74,39 @@ describe("useSelection", () => {
     rerender({ k: "same" });
     expect(result.current.selectedIds).toBe(before);
   });
+
+  it("a controlled preselection survives a StrictMode mount", () => {
+    const onChange = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ k }) =>
+        useSelection({
+          rows,
+          getId,
+          resetKey: k,
+          selectedIds: ["a"],
+          onSelectionChange: onChange,
+        }),
+      { initialProps: { k: "page1" }, wrapper: StrictMode }
+    );
+    // StrictMode's doubled mount effect must NOT request a clear.
+    expect(onChange).not.toHaveBeenCalled();
+    expect(result.current.selectedCount).toBe(1);
+    // A REAL reset-key change still requests one.
+    rerender({ k: "page2" });
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+
+  it("an uncontrolled selection made before a StrictMode re-render is kept", () => {
+    const { result, rerender } = renderHook(
+      ({ k }) => useSelection({ rows, getId, resetKey: k }),
+      { initialProps: { k: "page1" }, wrapper: StrictMode }
+    );
+    act(() => result.current.toggle("a"));
+    rerender({ k: "page1" });
+    expect(result.current.selectedCount).toBe(1);
+    rerender({ k: "page2" });
+    expect(result.current.selectedCount).toBe(0);
+  });
 });
 
 describe("controlled selection", () => {
@@ -82,7 +116,12 @@ describe("controlled selection", () => {
   it("reads from the controlled value and routes changes to onChange", () => {
     const onChange = vi.fn();
     const { result } = renderHook(() =>
-      useSelection({ rows, getId, selected: ["a"], onChange })
+      useSelection({
+        rows,
+        getId,
+        selectedIds: ["a"],
+        onSelectionChange: onChange,
+      })
     );
     expect(result.current.isSelected("a")).toBe(true);
     expect(result.current.selectedCount).toBe(1);
@@ -97,7 +136,12 @@ describe("controlled selection", () => {
   it("toggleAll and clear go through onChange in controlled mode", () => {
     const onChange = vi.fn();
     const { result } = renderHook(() =>
-      useSelection({ rows, getId, selected: [], onChange })
+      useSelection({
+        rows,
+        getId,
+        selectedIds: [],
+        onSelectionChange: onChange,
+      })
     );
     act(() => result.current.toggleAll());
     expect(onChange).toHaveBeenLastCalledWith(["a", "b"]);
@@ -109,7 +153,13 @@ describe("controlled selection", () => {
     const onChange = vi.fn();
     const { rerender } = renderHook(
       ({ resetKey }) =>
-        useSelection({ rows, getId, resetKey, selected: ["a"], onChange }),
+        useSelection({
+          rows,
+          getId,
+          resetKey,
+          selectedIds: ["a"],
+          onSelectionChange: onChange,
+        }),
       { initialProps: { resetKey: "k1" } }
     );
     rerender({ resetKey: "k2" });
@@ -120,7 +170,13 @@ describe("controlled selection", () => {
     const onChange = vi.fn();
     const { rerender } = renderHook(
       ({ resetKey }) =>
-        useSelection({ rows, getId, resetKey, selected: [], onChange }),
+        useSelection({
+          rows,
+          getId,
+          resetKey,
+          selectedIds: [],
+          onSelectionChange: onChange,
+        }),
       { initialProps: { resetKey: "k1" } }
     );
     rerender({ resetKey: "k2" });
@@ -133,11 +189,12 @@ describe("controlled selection", () => {
     let applied: string[] = [];
     const onChange = (ids: string[]) => {
       applied = ids;
-      rerender({ selected: ids });
+      rerender({ selectedIds: ids });
     };
     const { result, rerender } = renderHook(
-      ({ selected }) => useSelection({ rows, getId, selected, onChange }),
-      { initialProps: { selected: [] as string[] } }
+      ({ selectedIds }) =>
+        useSelection({ rows, getId, selectedIds, onSelectionChange: onChange }),
+      { initialProps: { selectedIds: [] as string[] } }
     );
     const heldToggle = result.current.toggle;
     act(() => heldToggle("a"));

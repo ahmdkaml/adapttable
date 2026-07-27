@@ -30,11 +30,11 @@ function Harness(props: {
   refetch?: () => void;
   isLoading?: boolean;
   isFetching?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
@@ -47,7 +47,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -65,9 +65,27 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (unstyled)", () => {
-  it("applies the rowsPerPageSelect class hook to both selects", () => {
+  it("renders normally under hostile URL params and corrupt storage", () => {
+    // Prototype-named filter keys, an absurd colW, and garbage in the
+    // column-layout storage must all degrade silently.
+    globalThis.localStorage.setItem("hostile-cols", "{not json");
+    const { container } = renderHarness(
+      {
+        override: {
+          filterLabels: { status: (v: string) => `Status: ${v}` },
+          columnLayout: undefined,
+        },
+      },
+      "f_valueOf=x&f___proto__=y&f_constructor=z&colW=name:1000000000"
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(container.querySelector("table")).toBeInTheDocument();
+    globalThis.localStorage.removeItem("hostile-cols");
+  });
+
+  it("applies the rowsPerPage class hook to both selects", () => {
     const { container } = renderHarness({
-      override: { classNames: { rowsPerPageSelect: "my-rpp" } },
+      override: { classNames: { rowsPerPage: "my-rpp" } },
     });
     // Paged mode renders the footer select.
     expect(
@@ -75,7 +93,7 @@ describe("<DataTable> (unstyled)", () => {
     ).toBeInTheDocument();
     const infinite = renderHarness({
       mode: "infinite",
-      override: { classNames: { rowsPerPageSelect: "my-rpp" } },
+      override: { classNames: { rowsPerPage: "my-rpp" } },
     });
     // Infinite mode renders the toolbar select instead.
     expect(
@@ -161,7 +179,10 @@ describe("<DataTable> (unstyled)", () => {
   });
 
   it("renders a custom empty state", () => {
-    renderHarness({ rows: [], override: { emptyState: <div>nada</div> } });
+    renderHarness({
+      rows: [],
+      override: { slots: { empty: <div>nada</div> } },
+    });
     expect(screen.getByText("nada")).toBeInTheDocument();
   });
 
@@ -251,58 +272,16 @@ describe("<DataTable> (unstyled)", () => {
     });
     expect(
       container.querySelectorAll('[data-adapttable-part="loading-header-cell"]')
-        .length
-    ).toBe(3);
+    ).toHaveLength(3);
   });
 
-  it("renders a loadingState override", () => {
+  it("renders a slots.skeleton override while loading", () => {
     renderHarness({
       rows: [],
       isLoading: true,
-      override: { loadingState: <div>load-custom</div> },
+      override: { slots: { skeleton: <div>load-custom</div> } },
     });
     expect(screen.getByText("load-custom")).toBeInTheDocument();
-  });
-
-  it("accepts slots.empty / slots.skeleton as aliases that take precedence", () => {
-    const { unmount } = renderHarness({
-      rows: [],
-      override: {
-        emptyState: <div>top-empty</div>,
-        slots: { empty: <div>slot-empty</div> },
-      },
-    });
-    // slots.empty wins over the top-level emptyState prop.
-    expect(screen.getByText("slot-empty")).toBeInTheDocument();
-    expect(screen.queryByText("top-empty")).toBeNull();
-    unmount();
-
-    renderHarness({
-      rows: [],
-      isLoading: true,
-      override: {
-        loadingState: <div>top-load</div>,
-        slots: { skeleton: <div>slot-load</div> },
-      },
-    });
-    expect(screen.getByText("slot-load")).toBeInTheDocument();
-    expect(screen.queryByText("top-load")).toBeNull();
-  });
-
-  it("falls back to emptyState / loadingState when slots are absent", () => {
-    const { unmount } = renderHarness({
-      rows: [],
-      override: { emptyState: <div>top-empty</div>, slots: {} },
-    });
-    expect(screen.getByText("top-empty")).toBeInTheDocument();
-    unmount();
-
-    renderHarness({
-      rows: [],
-      isLoading: true,
-      override: { loadingState: <div>top-load</div>, slots: {} },
-    });
-    expect(screen.getByText("top-load")).toBeInTheDocument();
   });
 
   it("renders the search icon glyph inside the search field", () => {
@@ -470,6 +449,27 @@ describe("<DataTable> (unstyled)", () => {
       allMatching: false,
       total: 2,
     });
+  });
+
+  it("a rejecting bulk action shows the error and keeps the selection", async () => {
+    const onClick = vi.fn().mockRejectedValue(new Error("backend said no"));
+    renderHarness({
+      override: {
+        bulkActions: [{ key: "del", label: "Delete", onClick }],
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Select all"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    // The failure is announced in the bar and the selection survives for
+    // a retry — nothing vanishes into an unhandled rejection.
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveAttribute("data-adapttable-part", "bulk-error");
+    expect(alert).toHaveTextContent("Something went wrong: backend said no");
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
   });
 
   it("hides the select-all banner when the page holds every match", () => {

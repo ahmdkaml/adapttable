@@ -1,17 +1,19 @@
 import {
   type ActiveFilterChip,
-  type BulkBarChromeProps,
   type Direction,
-  FiltersIcon,
   pageSizeOptions,
   type PaginationInfo,
+  type TableLabels,
+} from "@adapttable/core";
+import {
+  type BulkBarChromeProps,
+  FiltersIcon,
   paginationSlots,
   resolveDisabledReason,
   SearchIcon,
-  type TableLabels,
   type ToolbarChromeProps,
   useBulkBarState,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import {
   Alert,
   Badge,
@@ -49,7 +51,7 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Built saved-views menu node, when the `savedViews` prop is set. */
   savedViewsMenu?: ReactNode;
   /** Chakra color scheme for primary accents. */
-  colorScheme?: string;
+  accentColor?: string;
   /** Class hook for the toolbar row. */
   className?: string;
 }
@@ -57,10 +59,10 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
 /** Search + sort select + filters button + columns menu + rows-per-page. */
 export function Toolbar<TRow>({
   table,
-  hideSearch,
+  searchable,
   searchPlaceholder,
   sortByOptions,
-  customToolbar,
+  toolbar,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -74,7 +76,7 @@ export function Toolbar<TRow>({
   columnMenu,
   onExportCsv,
   showRowsPerPage,
-  colorScheme,
+  accentColor,
   dir,
   className,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -89,7 +91,7 @@ export function Toolbar<TRow>({
     <Button
       size="sm"
       variant="outline"
-      colorPalette={colorScheme}
+      colorPalette={accentColor}
       aria-expanded={filtersMode === "popover" ? filtersOpen : undefined}
       data-active={filtersOpen || undefined}
       onPointerDown={onFiltersTriggerPointerDown}
@@ -98,7 +100,7 @@ export function Toolbar<TRow>({
       <FiltersIcon />
       {labels.filters}
       {activeFilterCount > 0 && (
-        <Badge ml={2} colorPalette={colorScheme} borderRadius="full">
+        <Badge ml={2} colorPalette={accentColor} borderRadius="full">
           {activeFilterCount}
         </Badge>
       )}
@@ -114,7 +116,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
-      {!hideSearch && (
+      {searchable !== false && (
         <InputGroup
           maxW="360px"
           flex="1"
@@ -153,7 +155,7 @@ export function Toolbar<TRow>({
             ))}
           </NativeSelect>
         )}
-        {customToolbar}
+        {toolbar}
         {hasFilters &&
           (filtersMode === "popover" ? (
             <FilterPopover
@@ -163,7 +165,7 @@ export function Toolbar<TRow>({
               activeFilterCount={activeFilterCount}
               onClearFilters={onClearFilters}
               labels={labels}
-              colorScheme={colorScheme}
+              accentColor={accentColor}
               dir={dir}
             >
               {filtersButton}
@@ -177,7 +179,7 @@ export function Toolbar<TRow>({
           <Button
             size="sm"
             variant="outline"
-            colorPalette={colorScheme}
+            colorPalette={accentColor}
             onClick={onExportCsv}
           >
             {labels.exportCsv}
@@ -243,10 +245,19 @@ export function BulkBar({
   bulkActions,
   confirm,
   labels,
-  colorScheme,
-}: Readonly<BulkBarChromeProps & { colorScheme?: string }>) {
-  const { selectedCount, ids, pending, run, clear, expandable, scope, banner } =
-    useBulkBarState({ selection, total, confirm, labels });
+  accentColor,
+}: Readonly<BulkBarChromeProps & { accentColor?: string }>) {
+  const {
+    selectedCount,
+    ids,
+    pending,
+    errorMessage,
+    run,
+    clear,
+    expandable,
+    scope,
+    banner,
+  } = useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
   return (
     <HStack gap={2} justify="space-between" flexWrap="wrap">
@@ -256,7 +267,7 @@ export function BulkBar({
           <Button
             size="xs"
             variant="plain"
-            colorPalette={colorScheme}
+            colorPalette={accentColor}
             disabled={pending !== null}
             onClick={banner.onClick}
           >
@@ -281,7 +292,7 @@ export function BulkBar({
             <Tooltip key={action.key} label={reason ?? ""} disabled={!reason}>
               <Button
                 size="xs"
-                colorPalette={action.color ?? colorScheme}
+                colorPalette={action.color ?? accentColor}
                 disabled={reason !== undefined || pending !== null}
                 onClick={() => run(action, ids, scope)}
               >
@@ -291,6 +302,11 @@ export function BulkBar({
             </Tooltip>
           );
         })}
+        {errorMessage !== null && (
+          <Text fontSize="sm" color="red.500" role="alert">
+            {`${labels.errorTitle}: ${errorMessage}`}
+          </Text>
+        )}
       </HStack>
     </HStack>
   );
@@ -305,6 +321,7 @@ export function Footer({
   setLimit,
   labels,
   className,
+  showRowsPerPage = true,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
@@ -314,6 +331,8 @@ export function Footer({
   labels: Required<TableLabels>;
   /** Class hook for the footer row. */
   className?: string;
+  /** Hidden in the grouped full-set view, where page size has no effect. */
+  showRowsPerPage?: boolean;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
@@ -324,22 +343,26 @@ export function Footer({
       className={className}
     >
       <HStack gap={2}>
-        <Text fontSize="xs" {...subtleText}>
-          {labels.rowsPerPage}
-        </Text>
-        <NativeSelect
-          size="xs"
-          w="72px"
-          aria-label={labels.rowsPerPage}
-          value={String(limit)}
-          onChange={(e) => setLimit(Number(e.target.value))}
-        >
-          {pageSizeOptions(limit).map((n) => (
-            <option key={n} value={String(n)}>
-              {n}
-            </option>
-          ))}
-        </NativeSelect>
+        {showRowsPerPage && (
+          <>
+            <Text fontSize="xs" {...subtleText}>
+              {labels.rowsPerPage}
+            </Text>
+            <NativeSelect
+              size="xs"
+              w="72px"
+              aria-label={labels.rowsPerPage}
+              value={String(limit)}
+              onChange={(e) => setLimit(Number(e.target.value))}
+            >
+              {pageSizeOptions(limit).map((n) => (
+                <option key={n} value={String(n)}>
+                  {n}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        )}
         {total > 0 && (
           <Text fontSize="xs" {...subtleText}>
             {labels.showing({ from: fromIndex, to: toIndex, total })}
@@ -449,7 +472,7 @@ export function FilterDrawer({
   activeFilterCount,
   onClearFilters,
   labels,
-  colorScheme,
+  accentColor,
   dir = "ltr",
 }: Readonly<{
   open: boolean;
@@ -458,7 +481,7 @@ export function FilterDrawer({
   activeFilterCount: number;
   onClearFilters: () => void;
   labels: Required<TableLabels>;
-  colorScheme?: string;
+  accentColor?: string;
   dir?: Direction;
 }>) {
   return (
@@ -489,8 +512,8 @@ export function FilterDrawer({
               >
                 {labels.clearAll}
               </Button>
-              <Button colorPalette={colorScheme} onClick={onClose}>
-                {labels.applyFilters}
+              <Button colorPalette={accentColor} onClick={onClose}>
+                {labels.filtersDone}
               </Button>
             </Drawer.Footer>
           </Drawer.Content>

@@ -44,7 +44,7 @@ beforeEach(async () => {
 });
 
 function mount(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   mode: "paged" | "infinite" = "paged",
   url = ""
 ) {
@@ -52,7 +52,7 @@ function mount(
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter,
+      urlAdapter: adapter,
       columns,
       paginationMode: mode,
     });
@@ -192,7 +192,7 @@ describe("MUI coverage gaps", () => {
     function Harness() {
       const source = useFrontendData<Row>({
         data: many,
-        adapter,
+        urlAdapter: adapter,
         columns,
         paginationMode: "paged",
       });
@@ -390,7 +390,7 @@ describe("MUI coverage gaps", () => {
       canLoadMore: true,
       virtualScrollRef: () => undefined,
     });
-    mount({ isMobile: true, virtualize: true }, "infinite");
+    mount({ forceMobile: true, virtualize: true }, "infinite");
     const list = screen.getByRole("list");
     expect(within(list).getByText("Bob")).toBeInTheDocument();
     // The list's direct spacer children: a bottom spacer (height 80) but no top

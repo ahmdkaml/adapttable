@@ -5,19 +5,22 @@ import {
   type ConfirmHandler,
   type EditableCellEditing,
   type GroupCollapseState,
-  headerGroupRow,
   type PinSide,
-  resolveDisabledReason,
   type RowAction,
   runRowAction,
   type SortDirection,
   type SortLevel,
   type TableLabels,
 } from "@adapttable/core";
+import {
+  headerGroupRow,
+  resolveDisabledReason,
+} from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type {
   CSSProperties,
   HTMLAttributes,
+  KeyboardEvent,
   MouseEvent,
   ReactNode,
 } from "react";
@@ -182,6 +185,15 @@ function headerCellProps<TRow>(
     props.onClickCapture = (event: MouseEvent<HTMLElement>) => {
       if (!event.shiftKey) return;
       event.stopPropagation();
+      onToggleSortLevel(column.key);
+    };
+    // Keyboard parity for the shift-click chain: Shift+Enter on the
+    // focused header toggles the column's multi-sort level (plain Enter
+    // stays antd's single sort).
+    props.onKeyDownCapture = (event: KeyboardEvent<HTMLElement>) => {
+      if (!event.shiftKey || event.key !== "Enter") return;
+      event.stopPropagation();
+      event.preventDefault();
       onToggleSortLevel(column.key);
     };
   }

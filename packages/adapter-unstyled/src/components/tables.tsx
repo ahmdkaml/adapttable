@@ -4,25 +4,28 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
-  headerGroupRow,
   PIN_Z,
-  type PinLeads,
   pinnedCellStyle,
+  type RowAction,
+  runRowAction,
+  type TableLabels,
+  tableMinWidth,
+  type UseDataTableResult,
+  useHorizontalOverflow,
+} from "@adapttable/core";
+import {
+  headerGroupRow,
+  type PinLeads,
   pinnedColumnWidth,
   type PinOffset,
   resolveDisabledReason,
   resolveVirtualRows,
-  type RowAction,
   rowClickProps,
   rowEditingSignature,
-  runRowAction,
   type SharedTableRenderProps,
-  type TableLabels,
-  tableMinWidth,
   tableRenderModel,
-  type UseDataTableResult,
-  useHorizontalOverflow,
-} from "@adapttable/core";
+  useSummaryCells,
+} from "@adapttable/core/adapter";
 import type { CSSProperties, MouseEvent, ReactElement, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
@@ -292,13 +295,11 @@ function DesktopRowBase<TRow>(
   };
   const bodyPinStyle = (key: string): CSSProperties | undefined =>
     pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
-  const rowProps = { ...table.getRowProps(row, index) };
-  delete rowProps.key;
   return (
     <>
       <tr
-        {...rowProps}
-        {...rowClickProps(row, clickable ? onRowClick : undefined)}
+        {...table.getRowProps(row, index)}
+        {...rowClickProps(row, clickable ? onRowClick : undefined, index)}
         ref={measureElement}
         data-adapttable-part="row"
         data-stagger=""
@@ -329,6 +330,7 @@ function DesktopRowBase<TRow>(
           >
             <input
               type="checkbox"
+              data-adapttable-part="checkbox"
               aria-label={labels.selectRow}
               checked={selected}
               onChange={() => onToggleSelect(id)}
@@ -347,6 +349,8 @@ function DesktopRowBase<TRow>(
               className={classNames.cell}
             >
               <EditableDataCell
+                activateClassName={classNames.editCellActivate}
+                editorClassName={classNames.editCellEditor}
                 editing={editing}
                 row={row}
                 column={column}
@@ -596,9 +600,12 @@ export function DesktopTable<TRow>({
   // the footer summary both align under the data columns, so the leading
   // expand/selection and trailing actions columns get unlabeled pad cells.
   const groups = headerGroupRow(columns);
-  const summary = summaryRow?.(rows);
+  const summary = useSummaryCells(summaryRow, rows);
   const groupPad = (
-    <th data-adapttable-part="group-cell" className={classNames.groupCell} />
+    <th
+      data-adapttable-part="header-group-cell"
+      className={classNames.headerGroupCell}
+    />
   );
   const summaryPad = (
     <td
@@ -616,15 +623,18 @@ export function DesktopTable<TRow>({
     >
       <thead data-adapttable-part="thead" className={classNames.thead}>
         {groups && (
-          <tr data-adapttable-part="group-row" className={classNames.groupRow}>
+          <tr
+            data-adapttable-part="header-group-row"
+            className={classNames.headerGroupRow}
+          >
             {expandable && groupPad}
             {selection && groupPad}
             {groups.map((group) => (
               <th
                 key={group.key}
                 colSpan={group.span}
-                data-adapttable-part="group-cell"
-                className={classNames.groupCell}
+                data-adapttable-part="header-group-cell"
+                className={classNames.headerGroupCell}
               >
                 {group.label}
               </th>
@@ -652,7 +662,7 @@ export function DesktopTable<TRow>({
               data-sticky={stickyAttr}
               data-pinned={hasStartPin ? "start" : undefined}
               style={edgeHeadStyle("start", hasStartPin)}
-              className={cx(classNames.headerCell, classNames.selectionCell)}
+              className={cx(classNames.headerCell, classNames.selectionHeader)}
             >
               <input
                 type="checkbox"
@@ -661,6 +671,7 @@ export function DesktopTable<TRow>({
                 ref={(el) => {
                   if (el) el.indeterminate = selection.headerState === "some";
                 }}
+                data-adapttable-part="checkbox"
                 onChange={selection.toggleAll}
                 className={classNames.checkbox}
               />
@@ -675,7 +686,15 @@ export function DesktopTable<TRow>({
               column,
               localStyle && { style: localStyle }
             );
-            const active = table.sortBy === column.key;
+            // A multi-sort chain level counts as sorted too — data-sorted
+            // and the glyph must agree with the aria-sort core reports.
+            const chainDir = table.source.sortLevels.find(
+              (level) => level.key === column.key
+            )?.dir;
+            const effectiveDir =
+              chainDir ??
+              (table.sortBy === column.key ? table.sortDir : undefined);
+            const active = effectiveDir !== undefined;
             // Spread the core prop-getter as-is so React hands the click
             // EVENT to core's onClick (shift-click chains a multi-sort
             // level). Its `data-sort-index` doubles as the badge content.
@@ -686,7 +705,7 @@ export function DesktopTable<TRow>({
                 key={column.key}
                 {...headerProps}
                 data-adapttable-part="header-cell"
-                data-sorted={active ? table.sortDir : undefined}
+                data-sorted={effectiveDir}
                 data-sticky={stickyAttr}
                 data-pinned={pinOffset?.(column.key)?.side}
                 className={classNames.headerCell}
@@ -706,7 +725,7 @@ export function DesktopTable<TRow>({
                         {sortIndex}
                       </span>
                     )}
-                    <span aria-hidden> {sortGlyph(active, table.sortDir)}</span>
+                    <span aria-hidden> {sortGlyph(active, effectiveDir)}</span>
                   </button>
                 ) : (
                   column.header
@@ -732,7 +751,7 @@ export function DesktopTable<TRow>({
               data-sticky={stickyAttr}
               data-pinned={hasEndPin || stickActions ? "end" : undefined}
               style={edgeHeadStyle("end", hasEndPin || stickActions)}
-              className={cx(classNames.headerCell, classNames.actionsCell)}
+              className={cx(classNames.headerCell, classNames.actionsHeader)}
             >
               {labels.actions}
             </th>
@@ -741,7 +760,10 @@ export function DesktopTable<TRow>({
       </thead>
       <tbody data-adapttable-part="tbody" className={classNames.tbody}>
         {paddingTop > 0 && (
-          <tr>
+          <tr
+            data-adapttable-part="virtual-spacer"
+            className={classNames.virtualSpacer}
+          >
             <td
               colSpan={columnSpan}
               style={{ height: paddingTop, padding: 0 }}
@@ -847,7 +869,10 @@ export function DesktopTable<TRow>({
               );
             })}
         {paddingBottom > 0 && (
-          <tr>
+          <tr
+            data-adapttable-part="virtual-spacer"
+            className={classNames.virtualSpacer}
+          >
             <td
               colSpan={columnSpan}
               style={{ height: paddingBottom, padding: 0 }}
@@ -892,10 +917,204 @@ export function DesktopTable<TRow>({
         virtualScrollRef?.(node);
       }}
       data-adapttable-part="scroll-box"
+      className={classNames.scrollBox}
       style={scrollBoxStyle(maxHeight, hasPinned || overflowing)}
     >
       {tableEl}
     </div>
+  );
+}
+
+/** Per-card inputs for the memoized {@link MobileCardBase}. */
+interface MobileCardProps<TRow> {
+  row: TRow;
+  index: number;
+  /** Stable row id (selection / expansion key). */
+  id: string;
+  columns: ColumnDef<TRow>[];
+  labels: Required<TableLabels>;
+  confirm: ConfirmHandler;
+  rowActions?: RowAction<TRow>[];
+  classNames: DataTableClassNames;
+  /** Resolved `rowClassName(row, index)`, compared as a plain string. */
+  className?: string;
+  selected: boolean;
+  expanded: boolean;
+  /** Selection toggle — present only when selection is enabled. */
+  onToggleSelect?: (id: string) => void;
+  /** Expansion toggle — present only when `renderRowDetail` is set. */
+  onToggleExpand?: (id: string) => void;
+  renderDetail?: (row: TRow) => ReactNode;
+  onRowClick?: (row: TRow) => void;
+  measureElement?: (node: Element | null) => void;
+  clickable: boolean;
+  /**
+   * Opt-in editing bundle — uncompared. Its identity changes on every
+   * keystroke anywhere in the table; the per-row visual churn is
+   * fingerprinted by `editingSignature` instead. A held card keeps an
+   * older bundle safely: its handlers read live state through refs.
+   */
+  editing?: EditableCellEditing<TRow>;
+  /** Page rows for Tab advance — uncompared (see `editing`). */
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  /** Memo digest from {@link rowEditingSignature}. */
+  editingSignature: string | null;
+}
+
+/** The card props the memo comparator deliberately skips (see `editing`). */
+type UncomparedCardProp = "editing" | "rows" | "getRowId";
+
+/** Every card prop the memo comparator checks with `Object.is`. */
+const COMPARED_CARD_PROPS: readonly Exclude<
+  keyof MobileCardProps<unknown>,
+  UncomparedCardProp
+>[] = [
+  "row",
+  "index",
+  "id",
+  "columns",
+  "labels",
+  "confirm",
+  "rowActions",
+  "classNames",
+  "className",
+  "selected",
+  "expanded",
+  "onToggleSelect",
+  "onToggleExpand",
+  "renderDetail",
+  "onRowClick",
+  "measureElement",
+  "clickable",
+  "editingSignature",
+];
+
+/**
+ * `React.memo` comparator: re-render a card only when one of its VISUAL
+ * inputs changes — a search keystroke or another card's checkbox re-renders
+ * the list shell, but every unchanged card bails out here.
+ */
+function mobileCardPropsEqual<TRow>(
+  prev: Readonly<MobileCardProps<TRow>>,
+  next: Readonly<MobileCardProps<TRow>>
+): boolean {
+  return COMPARED_CARD_PROPS.every((key) => Object.is(prev[key], next[key]));
+}
+
+/** One card. Memoized by {@link mobileCardPropsEqual} at the call site. */
+function MobileCardBase<TRow>({
+  row,
+  index,
+  id,
+  columns,
+  labels,
+  confirm,
+  rowActions,
+  classNames,
+  className,
+  selected,
+  expanded,
+  onToggleSelect,
+  onToggleExpand,
+  renderDetail,
+  onRowClick,
+  measureElement,
+  clickable,
+  editing,
+  rows,
+  getRowId,
+}: Readonly<MobileCardProps<TRow>>) {
+  return (
+    <li
+      {...rowClickProps(row, onRowClick, index)}
+      ref={measureElement}
+      data-index={index}
+      data-adapttable-part="card"
+      data-stagger=""
+      data-selected={selected ? "" : undefined}
+      data-clickable={clickable ? "" : undefined}
+      className={cx(classNames.card, className)}
+    >
+      {onToggleSelect && (
+        <input
+          type="checkbox"
+          data-adapttable-part="checkbox"
+          aria-label={labels.selectRow}
+          checked={selected}
+          onChange={() => onToggleSelect(id)}
+          className={classNames.checkbox}
+        />
+      )}
+      {onToggleExpand && (
+        <ExpandButton
+          expanded={expanded}
+          labels={labels}
+          classNames={classNames}
+          onToggle={() => onToggleExpand(id)}
+        />
+      )}
+      {columns.map((column) => (
+        <div
+          key={column.key}
+          data-adapttable-part="card-row"
+          className={classNames.cardRow}
+        >
+          <span
+            data-adapttable-part="card-label"
+            className={classNames.cardLabel}
+          >
+            {cardLabel(column)}
+          </span>
+          <span
+            data-adapttable-part="card-value"
+            className={classNames.cardValue}
+          >
+            <EditableDataCell
+              activateClassName={classNames.editCellActivate}
+              editorClassName={classNames.editCellEditor}
+              editing={editing}
+              row={row}
+              column={column}
+              rowId={id}
+              rows={rows}
+              columns={columns}
+              rowKey={getRowId}
+              editLabel={labels.editCell}
+              display={
+                column.Cell ? (
+                  <column.Cell row={row} rowIndex={index} />
+                ) : (
+                  column.accessor?.(row)
+                )
+              }
+            />
+          </span>
+        </div>
+      ))}
+      {rowActions && rowActions.length > 0 && (
+        <div
+          data-adapttable-part="card-actions"
+          className={classNames.cardActions}
+        >
+          <RowActionButtons
+            row={row}
+            actions={rowActions}
+            confirm={confirm}
+            cancelLabel={labels.cancel}
+            classNames={classNames}
+          />
+        </div>
+      )}
+      {expanded && renderDetail && (
+        <div
+          data-adapttable-part="card-detail"
+          className={classNames.cardDetail}
+        >
+          {renderDetail(row)}
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -922,96 +1141,42 @@ export function MobileCards<TRow>({
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
   const expansionState = renderRowDetail ? expansion : undefined;
-  const summary = summaryRow?.(rows);
+  const summary = useSummaryCells(summaryRow, rows);
+
+  // `memo` erases generics at module level, so the memoized card is
+  // instantiated here (once — the identity is stable for the list's life).
+  const CardItem = useMemo(
+    () => memo(MobileCardBase<TRow>, mobileCardPropsEqual),
+    []
+  );
 
   const renderCard = (row: TRow, index: number, key: string): ReactElement => {
     const id = getRowId(row);
-    const expanded = expansionState?.isExpanded(id) ?? false;
     return (
-      <li
+      <CardItem
         key={key}
-        {...rowClickProps(row, onRowClick)}
-        ref={measureElement}
-        data-index={index}
-        data-adapttable-part="card"
-        data-stagger=""
-        data-selected={selection?.isSelected(id) ? "" : undefined}
-        data-clickable={onRowClick ? "" : undefined}
-        className={cx(classNames.card, rowClassName?.(row, index))}
-      >
-        {selection && (
-          <input
-            type="checkbox"
-            aria-label={labels.selectRow}
-            checked={selection.isSelected(id)}
-            onChange={() => selection.toggle(id)}
-            className={classNames.checkbox}
-          />
-        )}
-        {expansionState && (
-          <ExpandButton
-            expanded={expanded}
-            labels={labels}
-            classNames={classNames}
-            onToggle={() => expansionState.toggle(id)}
-          />
-        )}
-        {columns.map((column) => (
-          <div
-            key={column.key}
-            data-adapttable-part="card-row"
-            className={classNames.cardRow}
-          >
-            <span
-              data-adapttable-part="card-label"
-              className={classNames.cardLabel}
-            >
-              {cardLabel(column)}
-            </span>
-            <span
-              data-adapttable-part="card-value"
-              className={classNames.cardValue}
-            >
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
-            </span>
-          </div>
-        ))}
-        {rowActions && rowActions.length > 0 && (
-          <div data-adapttable-part="card-actions">
-            <RowActionButtons
-              row={row}
-              actions={rowActions}
-              confirm={confirm}
-              cancelLabel={labels.cancel}
-              classNames={classNames}
-            />
-          </div>
-        )}
-        {expansionState && expanded && renderRowDetail && (
-          <div
-            data-adapttable-part="card-detail"
-            className={classNames.cardDetail}
-          >
-            {renderRowDetail(row)}
-          </div>
-        )}
-      </li>
+        row={row}
+        index={index}
+        id={id}
+        columns={columns}
+        labels={labels}
+        confirm={confirm}
+        rowActions={rowActions}
+        classNames={classNames}
+        className={rowClassName?.(row, index)}
+        selected={selection ? selection.isSelected(id) : false}
+        expanded={expansionState ? expansionState.isExpanded(id) : false}
+        onToggleSelect={selection ? selection.toggle : undefined}
+        onToggleExpand={expansionState ? expansionState.toggle : undefined}
+        renderDetail={renderRowDetail}
+        onRowClick={onRowClick}
+        measureElement={measureElement}
+        clickable={Boolean(onRowClick)}
+        editing={editing}
+        rows={rows}
+        getRowId={getRowId}
+        editingSignature={rowEditingSignature(editing, id)}
+      />
     );
   };
 
@@ -1020,19 +1185,21 @@ export function MobileCards<TRow>({
       {...table.getTableProps({ role: undefined })}
       data-adapttable-part="cards"
       className={classNames.cards}
-      style={{ listStyle: "none", margin: 0, padding: 0 }}
+      // No `list-style: none` here: Safari/VoiceOver strips list semantics
+      // from such lists. Markers are suppressed per-item with display:block.
+      style={{ margin: 0, padding: 0 }}
     >
       {paddingTop > 0 && (
         <li
-          aria-hidden
           data-adapttable-part="virtual-spacer"
-          style={{ height: paddingTop }}
+          className={classNames.virtualSpacer}
+          style={{ display: "block", height: paddingTop }}
         />
       )}
       {grouping
         ? grouping.entries.map((entry) =>
             entry.kind === "group" ? (
-              <li key={entry.key} style={{ listStyle: "none" }}>
+              <li key={entry.key} style={{ display: "block" }}>
                 <GroupHeaderCard
                   entry={entry}
                   selection={selection}
@@ -1048,15 +1215,16 @@ export function MobileCards<TRow>({
         : entries.map(({ row, index, key }) => renderCard(row, index, key))}
       {paddingBottom > 0 && (
         <li
-          aria-hidden
           data-adapttable-part="virtual-spacer"
-          style={{ height: paddingBottom }}
+          className={classNames.virtualSpacer}
+          style={{ display: "block", height: paddingBottom }}
         />
       )}
       {summary && (
         <li
           data-adapttable-part="summary-card"
           className={cx(classNames.card, classNames.summaryCard)}
+          style={{ display: "block" }}
         >
           {columns.map((column) =>
             summary[column.key] == null ? null : (

@@ -48,12 +48,12 @@ function Harness(props: {
   refetch?: () => void;
   isLoading?: boolean;
   isFetching?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
   onSource?: (s: TableSource<Row>) => void;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
@@ -85,6 +85,15 @@ beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
 describe("<DataTable> (Ant Design)", () => {
+  it("the pager names its arrows and announces the current page", () => {
+    renderHarness({}, "limit=1");
+    const current = document.querySelector('[aria-current="page"]');
+    expect(current).not.toBeNull();
+    expect(current?.textContent).toBe("1");
+    expect(screen.getByLabelText("Previous page")).toBeInTheDocument();
+    expect(screen.getByLabelText("Next page")).toBeInTheDocument();
+  });
+
   it("activates onRowClick from a row, but never from row actions", () => {
     const onRowClick = vi.fn();
     const onAction = vi.fn();
@@ -589,7 +598,7 @@ describe("<DataTable> (Ant Design)", () => {
   });
 
   it("renders cards instead of a table on mobile", () => {
-    const { container } = renderHarness({ override: { isMobile: true } });
+    const { container } = renderHarness({ override: { forceMobile: true } });
     expect(
       container.querySelector('[data-adapttable-part="cards"]')
     ).toBeInTheDocument();
@@ -603,7 +612,7 @@ describe("<DataTable> (Ant Design)", () => {
     const onClick = vi.fn();
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }],
         rowActions: [{ key: "e", label: "Edit", onClick }],
         columns: [
@@ -623,7 +632,7 @@ describe("<DataTable> (Ant Design)", () => {
   });
 
   it("shows the empty state on mobile too", () => {
-    renderHarness({ rows: [], override: { isMobile: true } });
+    renderHarness({ rows: [], override: { forceMobile: true } });
     expect(screen.queryByRole("listitem")).toBeNull();
     expect(screen.getAllByText("No data").length).toBeGreaterThan(0);
   });
@@ -631,7 +640,7 @@ describe("<DataTable> (Ant Design)", () => {
   it("hides actions and uses the key as the card label for a non-string header", () => {
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         rowActions: [
           {
             key: "h",
@@ -709,11 +718,12 @@ describe("<DataTable> (Ant Design)", () => {
   });
 
   it("enables antd virtual scrolling when virtualize is true", () => {
+    // The shared maxHeight model bounds the virtual scroller (no more
+    // antd-only virtualHeight/virtualWidth extras).
     const { container } = renderHarness({
       override: {
         virtualize: true,
-        virtualHeight: 240,
-        virtualWidth: 720,
+        maxHeight: 240,
       },
     });
     expect(
@@ -766,7 +776,7 @@ describe("<DataTable> (Ant Design)", () => {
     // Mobile renders cards (never antd's virtual table), so the page-level
     // sentinel must stay enabled or infinite mode silently stops auto-loading.
     renderHarness(
-      { mode: "infinite", override: { virtualize: true, isMobile: true } },
+      { mode: "infinite", override: { virtualize: true, forceMobile: true } },
       "limit=1"
     );
     expect(screen.queryByText("Bob")).toBeNull();
@@ -948,7 +958,7 @@ describe("<DataTable> (Ant Design)", () => {
 
   it("tightens the card gap for density='compact' on mobile", () => {
     const { container } = renderHarness({
-      override: { isMobile: true, density: "compact" },
+      override: { forceMobile: true, density: "compact" },
     });
     // Compact density halves the vertical rhythm between cards.
     const list = container.querySelector<HTMLElement>(
@@ -961,7 +971,7 @@ describe("<DataTable> (Ant Design)", () => {
     const onClick = vi.fn();
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         rowActions: [
           { key: "d", label: "DisabledAct", onClick, isDisabled: () => true },
         ],
@@ -976,7 +986,7 @@ describe("<DataTable> (Ant Design)", () => {
 
   it("prefetches a row on card hover in mobile mode", () => {
     const prefetch = vi.fn();
-    renderHarness({ override: { isMobile: true, prefetch } });
+    renderHarness({ override: { forceMobile: true, prefetch } });
     fireEvent.mouseEnter(screen.getByText("Alice").closest(".ant-card")!);
     expect(prefetch).toHaveBeenCalledWith(ROWS[0]);
   });
@@ -984,7 +994,7 @@ describe("<DataTable> (Ant Design)", () => {
   it("uses an explicit mobileLabel for the card descriptions label", () => {
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         columns: [
           {
             key: "name",
@@ -999,7 +1009,7 @@ describe("<DataTable> (Ant Design)", () => {
   });
 
   it("derives mobile sort options from sortable columns when none are passed", () => {
-    renderHarness({ override: { isMobile: true } });
+    renderHarness({ override: { forceMobile: true } });
     // "name" is sortable, so the mobile toolbar exposes a Sort by select.
     expect(
       screen.getByRole("combobox", { name: "Sort by" })
@@ -1326,7 +1336,7 @@ describe("<DataTable> (Ant Design)", () => {
   it("applies rowClassName to the mobile card root", () => {
     const { container } = renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         rowClassName: (r) => (r.name === "Alice" ? "card-vip" : undefined),
       },
     });
@@ -1410,7 +1420,7 @@ describe("<DataTable> (Ant Design)", () => {
   it("expands and collapses a mobile card's detail section via the chevron", () => {
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         renderRowDetail: (r) => <div>detail-{r.name}</div>,
       },
     });
@@ -1437,7 +1447,7 @@ describe("<DataTable> (Ant Design)", () => {
     const onRowClick = vi.fn();
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         onRowClick,
         renderRowDetail: (r) => <div>detail-{r.name}</div>,
         rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
@@ -1467,7 +1477,7 @@ describe("<DataTable> (Ant Design)", () => {
     const cityAccessor = vi.fn((r: Row) => r.city);
     renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         columns: [
           { key: "name", header: "Name", accessor: nameAccessor },
           { key: "city", header: "City", accessor: cityAccessor },
@@ -1567,7 +1577,7 @@ const TYPE_FILTERS: FilterDef<Person>[] = [
 ];
 
 function renderZero(
-  override: Partial<Parameters<typeof DataTable<Person>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Person>>[0], "mode">> = {},
   url = ""
 ) {
   adapter = createMemoryAdapter(url);

@@ -26,20 +26,24 @@ const renderRowDetail = (row: Row) => <div>Detail for {row.name}</div>;
 
 interface HarnessProps {
   isMobile?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 function Harness(props: HarnessProps) {
-  const source = useFrontendData<Row>({ data: ROWS, adapter, columns });
+  const source = useFrontendData<Row>({
+    data: ROWS,
+    urlAdapter: adapter,
+    columns,
+  });
   return (
     <DataTable<Row>
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
       renderRowDetail={renderRowDetail}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );

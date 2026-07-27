@@ -7,10 +7,10 @@ import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
-  useMountStagger,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
+import { useMountStagger, useResolvedAdapter } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 
@@ -84,7 +84,7 @@ function DataTableBody<TRow>({
   if (chrome.body === "skeleton") {
     return (
       <>
-        {props.slots?.skeleton ?? props.loadingState ?? (
+        {props.slots?.skeleton ?? (
           <LoadingState
             rows={props.skeletonRows ?? props.source.limit}
             columns={chrome.table.columns.length}
@@ -103,7 +103,7 @@ function DataTableBody<TRow>({
     const noResults = chrome.emptyVariant === "noResults";
     return (
       <>
-        {props.slots?.empty ?? props.emptyState ?? (
+        {props.slots?.empty ?? (
           <output data-adapttable-part="empty" className={classNames.empty}>
             {noResults ? labels.noResults : labels.noData}
             {noResults && (
@@ -175,16 +175,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     searchPlaceholder,
     sortByOptions,
     dir,
-    hideSearch,
     filtersMode = "popover",
     bulkActions,
     classNames = NO_CLASSNAMES,
-    toolbar: customToolbar,
+    toolbar,
     animate = false,
   } = props;
 
   const density = props.density ?? "comfortable";
 
+  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
+  // so with `urlSync={false}` both share the same in-memory backend instead
+  // of the menu silently reading the real address bar.
+  const resolvedUrlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : urlAdapter,
+    props.urlSync !== false
+  );
   // Resolve the data tier (prebuilt source > server > frontend) and the
   // declarative-filter runtime (URL keys, chip labels, predicate).
   const { source, runtime } = useTableData<TRow>({
@@ -193,12 +199,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     data,
     total,
     loading,
+    error: props.error,
+    mode: props.mode,
     onQueryChange,
-    adapter: props.urlSync === false ? undefined : urlAdapter,
-    enabled: props.urlSync,
+    urlAdapter: resolvedUrlAdapter,
+    urlSync: props.urlSync,
     urlKey,
     columns: props.columns,
     filters: props.filters,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
   });
 
   // The declarative array becomes the auto-built form; JSX passes through.
@@ -229,12 +239,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
+  // Everything rendered below reads the chrome's VIEW facade — identical to
+  // `source` except under grouping, where it presents the full rendered set.
+  const viewSource = chrome.source;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
-  useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
+  useMountStagger(rootRef, [viewSource.rows.length, chrome.isMobile], {
     enabled: animate,
   });
   const bodyData = useChromeBodyData(chrome, chromeProps);
@@ -285,10 +298,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     </button>
   );
 
+  // Layout-visible columns WITHOUT device filtering: the same button must
+  // produce the same file on phone and desktop.
   const onExportCsv = makeExportCsvHandler(
     props.exportCsv,
-    source,
-    table.columns
+    viewSource,
+    chrome.columnLayout.visibleColumns
   );
 
   return (
@@ -314,7 +329,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           rowGap: 8,
         }}
       >
-        {!hideSearch && (
+        {props.searchable !== false && (
           <span
             data-adapttable-part="search-field"
             className={classNames.searchField}
@@ -364,7 +379,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </select>
           </label>
         )}
-        {customToolbar}
+        {toolbar}
         {filters &&
           (filtersMode === "popover" ? (
             <FilterPopover
@@ -407,14 +422,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           // namespace the table reads, so those default from the table's
           // own props (explicit option values still win).
           <SavedViewsMenu
-            options={{ adapter: urlAdapter, urlKey, ...props.savedViews }}
+            options={{
+              urlAdapter: resolvedUrlAdapter,
+              urlKey,
+              ...props.savedViews,
+            }}
             labels={labels}
             classNames={classNames}
           />
         )}
-        {canLoadMore && (
+        {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
-            source={source}
+            source={viewSource}
             labels={labels}
             classNames={classNames}
           />
@@ -444,7 +463,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       {table.selection && bulkActions && (
         <BulkBar
           selection={table.selection}
-          total={source.total}
+          total={viewSource.total}
           bulkActions={bulkActions}
           confirm={confirm}
           labels={labels}
@@ -462,11 +481,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       )}
 
-      {source.error ? (
+      {viewSource.error ? (
         <ErrorState
-          error={source.error}
+          error={viewSource.error}
           labels={labels}
-          onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+          onRetry={
+            viewSource.refetch ? () => void viewSource.refetch?.() : undefined
+          }
           classNames={classNames}
         />
       ) : (
@@ -483,7 +504,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       )}
 
-      {canLoadMore && source.hasNextPage && (
+      {canLoadMore && viewSource.hasNextPage && (
         <div
           ref={loadMoreRef}
           data-adapttable-part="load-more"
@@ -491,10 +512,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         >
           <button
             type="button"
-            disabled={source.isFetchingNextPage}
+            disabled={viewSource.isFetchingNextPage}
             data-adapttable-part="load-more-button"
             className={classNames.loadMoreButton}
-            onClick={() => source.fetchNextPage()}
+            onClick={() => viewSource.fetchNextPage()}
           >
             {labels.loadMore}
           </button>
@@ -504,9 +525,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       {chrome.showFooter && (
         <Footer
           pagination={table.pagination}
-          source={source}
+          source={viewSource}
           labels={labels}
           classNames={classNames}
+          showRowsPerPage={!chrome.grouping}
         />
       )}
     </div>

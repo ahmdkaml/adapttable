@@ -2,7 +2,6 @@ import {
   ACTIONS_COLUMN_KEY,
   type ColumnDef,
   type ConfirmHandler,
-  DEFAULT_CARD_SIZE_PX,
   type FilterRuntime,
   type GroupCollapseState,
   type GroupedFlatEntry,
@@ -10,7 +9,6 @@ import {
   makeExportCsvHandler,
   pageSizeOptions,
   resolveLabels,
-  rowClickProps,
   type RowExpansionState,
   type SelectionState,
   type TableLabels,
@@ -22,14 +20,19 @@ import {
   type UseDataTableResult,
   useFilterTriggerToggle,
   useInfiniteScroll,
-  useKeyedVirtualization,
-  useMountStagger,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
   useTableVirtualization,
   windowGroupedEntries,
 } from "@adapttable/core";
+import {
+  DEFAULT_CARD_SIZE_PX,
+  rowClickProps,
+  useKeyedVirtualization,
+  useMountStagger,
+  useResolvedAdapter,
+} from "@adapttable/core/adapter";
 import {
   Button,
   Checkbox,
@@ -43,8 +46,11 @@ import {
   Typography,
 } from "antd";
 import {
+  cloneElement,
   type CSSProperties,
   type HTMLAttributes,
+  isValidElement,
+  type ReactElement,
   type ReactNode,
   type UIEventHandler,
   useMemo,
@@ -133,14 +139,6 @@ function EmptyState({
   );
 }
 
-/** The URL adapter the table should use — none at all when sync is off. */
-function resolveUrlAdapter(
-  urlSync: boolean | undefined,
-  adapter: UrlStateAdapter | undefined
-): UrlStateAdapter | undefined {
-  return urlSync === false ? undefined : adapter;
-}
-
 /** Map antd's `onChange` sort event back onto the source's sort state. */
 function sortChangeHandler<TRow>(
   source: TableSource<TRow>
@@ -174,17 +172,26 @@ function antdMinWidth<TRow>(
   });
 }
 
+// antd's virtual table requires explicit x/y; these bound the scroller
+// when neither maxHeight nor a measured column width supplies one.
+const VIRTUAL_FALLBACK_HEIGHT = 480;
+const VIRTUAL_FALLBACK_WIDTH = 960;
+
 /** antd scroll config: virtual sizing, else x for pinning + y for the box. */
 function resolveScroll(
   virtualize: boolean,
-  virtualWidth: number,
-  virtualHeight: number,
   hasPinned: boolean,
   maxHeight: number | undefined,
   minWidth: number
 ): NonNullable<TableProps<unknown>["scroll"]> {
-  // Virtual rows need explicit x/y so antd can size its internal scroller.
-  if (virtualize) return { x: virtualWidth, y: virtualHeight };
+  // Virtual rows need explicit x/y so antd can size its internal scroller —
+  // the shared maxHeight model bounds the box, content width drives x.
+  if (virtualize) {
+    return {
+      x: minWidth > 0 ? minWidth : VIRTUAL_FALLBACK_WIDTH,
+      y: maxHeight ?? VIRTUAL_FALLBACK_HEIGHT,
+    };
+  }
   // Pinning needs content-driven width; otherwise a fixed-width column set
   // gets its summed min-width so the table scrolls instead of squishing.
   let x: number | "max-content" | undefined;
@@ -350,7 +357,7 @@ function SavedViewsSlot({
   if (!options) return null;
   return (
     <SavedViewsMenu
-      options={{ adapter: urlAdapter, urlKey, ...options }}
+      options={{ urlAdapter, urlKey, ...options }}
       labels={labels}
       dir={dir}
     />
@@ -440,27 +447,36 @@ function PagedFooter<TRow>({
   table,
   source,
   labels,
+  showRowsPerPage = true,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   source: TableSource<TRow>;
   labels: Required<TableLabels>;
+  /** Hidden in the grouped full-set view, where page size has no effect. */
+  showRowsPerPage?: boolean;
 }>) {
   const from = (table.pagination.safePage - 1) * source.limit + 1;
   const to = Math.min(table.pagination.safePage * source.limit, source.total);
   return (
     <Flex justify="space-between" align="center" wrap gap={8}>
       <Flex align="center" gap={8}>
-        <Typography.Text type="secondary">{labels.rowsPerPage}</Typography.Text>
-        <Select
-          size="small"
-          aria-label={labels.rowsPerPage}
-          value={source.limit}
-          onChange={(value: number) => source.setLimit(value)}
-          options={pageSizeOptions(source.limit).map((n) => ({
-            value: n,
-            label: n,
-          }))}
-        />
+        {showRowsPerPage && (
+          <>
+            <Typography.Text type="secondary">
+              {labels.rowsPerPage}
+            </Typography.Text>
+            <Select
+              size="small"
+              aria-label={labels.rowsPerPage}
+              value={source.limit}
+              onChange={(value: number) => source.setLimit(value)}
+              options={pageSizeOptions(source.limit).map((n) => ({
+                value: n,
+                label: n,
+              }))}
+            />
+          </>
+        )}
         {source.total > 0 && (
           <Typography.Text type="secondary">
             {labels.showing({ from, to, total: source.total })}
@@ -473,6 +489,30 @@ function PagedFooter<TRow>({
         total={source.total}
         showSizeChanger={false}
         onChange={(page: number) => source.setPage(page)}
+        // antd's pager exposes neither aria-current nor per-arrow names by
+        // default — clone its own items with the missing attributes.
+        itemRender={(page, type, original) => {
+          let extra: Record<string, unknown> | null = null;
+          if (isValidElement(original)) {
+            if (type === "page") {
+              extra = {
+                "aria-current":
+                  page === table.pagination.safePage ? "page" : undefined,
+              };
+            } else if (type === "prev" || type === "next") {
+              extra = {
+                "aria-label":
+                  type === "prev" ? labels.previousPage : labels.nextPage,
+              };
+            }
+          }
+          return extra
+            ? cloneElement(
+                original as ReactElement<Record<string, unknown>>,
+                extra
+              )
+            : original;
+        }}
       />
     </Flex>
   );
@@ -618,13 +658,12 @@ interface DataTableBodyRegionProps<TRow> {
   prefetch: DataTableProps<TRow>["prefetch"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
   skeletonRows: number | undefined;
   size: AntdTableSize;
   bordered: boolean;
   virtualize: boolean;
-  virtualHeight: number;
-  virtualWidth: number;
   maxHeight: number | undefined;
   sticky: TableProps<unknown>["sticky"];
   dataSource: readonly GroupedDataRecord<TRow>[];
@@ -657,8 +696,6 @@ function DesktopTableBody<TRow>({
   rowClassName,
   onRowClick,
   prefetch,
-  virtualWidth,
-  virtualHeight,
   hasPinned,
   maxHeight,
   minWidth,
@@ -681,8 +718,6 @@ function DesktopTableBody<TRow>({
   rowClassName: DataTableProps<TRow>["rowClassName"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
   prefetch: DataTableProps<TRow>["prefetch"];
-  virtualWidth: number;
-  virtualHeight: number;
   hasPinned: boolean;
   maxHeight: number | undefined;
   minWidth: number;
@@ -705,7 +740,7 @@ function DesktopTableBody<TRow>({
       pagination={false}
       rowClassName={rowClassName ? buildRowClassName(rowClassName) : undefined}
       onChange={handleChange as TableProps<GroupedDataRecord<TRow>>["onChange"]}
-      onRow={(record) => {
+      onRow={(record, rowIndex) => {
         if (isAdaptTableGroupRow(record)) {
           return {
             "data-adapttable-part": "group-row",
@@ -713,15 +748,13 @@ function DesktopTableBody<TRow>({
           } as HTMLAttributes<HTMLElement>;
         }
         return {
-          ...rowClickProps(record, onRowClick),
+          ...rowClickProps(record, onRowClick, rowIndex),
           "data-stagger": "",
           onMouseEnter: prefetch ? () => prefetch(record) : undefined,
         };
       }}
       scroll={resolveScroll(
         virtualize && !grouping,
-        virtualWidth,
-        virtualHeight,
         hasPinned,
         maxHeight,
         minWidth
@@ -760,13 +793,12 @@ function DataTableBodyRegion<TRow>(
     prefetch,
     onRowClick,
     rowClassName,
+    cardClassName,
     summaryRow,
     skeletonRows,
     size,
     bordered,
     virtualize,
-    virtualHeight,
-    virtualWidth,
     maxHeight,
     sticky,
     dataSource,
@@ -806,6 +838,7 @@ function DataTableBodyRegion<TRow>(
     body = (
       <MobileCards
         table={table}
+        cardClassName={cardClassName}
         rows={editingRows}
         rowActions={rowActions}
         confirm={confirm}
@@ -843,8 +876,6 @@ function DataTableBodyRegion<TRow>(
         rowClassName={rowClassName}
         onRowClick={onRowClick}
         prefetch={prefetch}
-        virtualWidth={virtualWidth}
-        virtualHeight={virtualHeight}
         hasPinned={hasPinned}
         maxHeight={maxHeight}
         minWidth={minWidth}
@@ -869,29 +900,39 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
     className,
+    classNames,
     animate = false,
     bordered = false,
     virtualize = false,
-    virtualHeight = 480,
-    virtualWidth = 960,
   } = props;
   const size = resolveSize(props.size, props.density);
   const filtersMode = props.filtersMode ?? "popover";
   // Resolve the data tier (source > onQueryChange server > frontend data)
   // and the declarative-filter runtime; everything below — pagination, row
   // selection, the sentinel — uses the RESOLVED source via `table.source`.
+  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
+  // so with `urlSync={false}` both share the same in-memory backend instead
+  // of the menu silently reading the real address bar.
+  const resolvedUrlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : props.urlAdapter,
+    props.urlSync !== false
+  );
   const { source: resolvedSource, runtime } = useTableData<TRow>({
     locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,
     loading: props.loading,
+    error: props.error,
+    mode: props.mode,
     onQueryChange: props.onQueryChange,
-    adapter: resolveUrlAdapter(props.urlSync, props.urlAdapter),
-    enabled: props.urlSync,
+    urlAdapter: resolvedUrlAdapter,
+    urlSync: props.urlSync,
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
   });
   // A declarative `filters` array becomes the auto-built form; JSX passes
   // through untouched. Column-level `filter` shorthands alone (no `filters`
@@ -1080,13 +1121,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
       rowClassName={props.rowClassName}
+      cardClassName={classNames?.card}
       summaryRow={props.summaryRow}
       skeletonRows={props.skeletonRows}
       size={size}
       bordered={bordered}
       virtualize={virtualize}
-      virtualHeight={virtualHeight}
-      virtualWidth={virtualWidth}
       maxHeight={props.maxHeight}
       sticky={sticky}
       dataSource={dataSource}
@@ -1105,53 +1145,59 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <div
       ref={rootRef}
       dir={props.dir}
-      className={className}
+      className={
+        [className, classNames?.root].filter(Boolean).join(" ") || undefined
+      }
       aria-busy={c.isRefreshing || undefined}
     >
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
-        <Toolbar
-          table={table}
-          hideSearch={props.hideSearch}
-          searchPlaceholder={props.searchPlaceholder}
-          sortByOptions={props.sortByOptions}
-          customToolbar={props.toolbar}
-          hasFilters={Boolean(filtersNode)}
-          activeFilterCount={c.activeFilterCount}
-          filters={filtersNode}
-          filtersMode={filtersMode}
-          filtersOpen={filtersOpen}
-          onToggleFilters={filtersTrigger.onClick}
-          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
-          onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={c.clearFilters}
-          isRefreshing={c.isRefreshing}
-          dir={props.dir}
-          columnMenu={
-            <ColumnMenuSlot
-              enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
-              allColumns={c.allColumns}
-              layout={c.columnLayout}
-              labels={labels}
-              dir={props.dir}
-              hasRowActions={Boolean(props.rowActions?.length)}
-            />
-          }
-          onExportCsv={makeExportCsvHandler(
-            props.exportCsv,
-            source,
-            table.columns
-          )}
-          savedViewsMenu={
-            <SavedViewsSlot
-              options={props.savedViews}
-              urlAdapter={props.urlAdapter}
-              urlKey={props.urlKey}
-              labels={labels}
-              dir={props.dir}
-            />
-          }
-          showRowsPerPage={!c.isPaged}
-        />
+        <div className={classNames?.toolbar}>
+          <Toolbar
+            table={table}
+            searchable={props.searchable !== false}
+            searchPlaceholder={props.searchPlaceholder}
+            sortByOptions={props.sortByOptions}
+            toolbar={props.toolbar}
+            hasFilters={Boolean(filtersNode)}
+            activeFilterCount={c.activeFilterCount}
+            filters={filtersNode}
+            filtersMode={filtersMode}
+            filtersOpen={filtersOpen}
+            onToggleFilters={filtersTrigger.onClick}
+            onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
+            onCloseFilters={() => setFiltersOpen(false)}
+            onClearFilters={c.clearFilters}
+            isRefreshing={c.isRefreshing}
+            dir={props.dir}
+            columnMenu={
+              <ColumnMenuSlot
+                enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
+                allColumns={c.allColumns}
+                layout={c.columnLayout}
+                labels={labels}
+                dir={props.dir}
+                hasRowActions={Boolean(props.rowActions?.length)}
+              />
+            }
+            onExportCsv={makeExportCsvHandler(
+              props.exportCsv,
+              source,
+              // Layout-visible columns WITHOUT device filtering: the same
+              // button must produce the same file on phone and desktop.
+              c.columnLayout.visibleColumns
+            )}
+            savedViewsMenu={
+              <SavedViewsSlot
+                options={props.savedViews}
+                urlAdapter={resolvedUrlAdapter}
+                urlKey={props.urlKey}
+                labels={labels}
+                dir={props.dir}
+              />
+            }
+            showRowsPerPage={!c.isPaged}
+          />
+        </div>
         <Chips
           chips={c.mergedChips}
           onClearAll={c.clearFilters}
@@ -1166,9 +1212,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
           />
         )}
-        {bodyRegion}
+        <div className={c.body === "desktop" ? classNames?.table : undefined}>
+          {bodyRegion}
+        </div>
         {c.isPaged && !source.error && c.body === "desktop" && (
-          <PagedFooter table={table} source={source} labels={labels} />
+          <div className={classNames?.footer}>
+            <PagedFooter
+              table={table}
+              source={source}
+              labels={labels}
+              showRowsPerPage={!c.grouping}
+            />
+          </div>
         )}
         {!c.isPaged && !source.error && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center">

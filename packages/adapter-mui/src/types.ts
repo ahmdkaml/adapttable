@@ -3,8 +3,8 @@ import type {
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
-  UseServerDataOptions,
 } from "@adapttable/core";
+import type { DataModeProps } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 /** Overridable sub-components. */
@@ -16,13 +16,31 @@ export interface DataTableSlots {
 }
 
 /** Props for the Material UI `<DataTable>`. */
-export interface DataTableProps<TRow> extends Omit<
+/**
+ * Structural class hooks for the MUI adapter. Fine-grained per-part
+ * styling belongs to `@adapttable/unstyled` / `@adapttable/shadcn`; here
+ * the kit owns the visuals and these hooks target the wrapper elements.
+ */
+export interface DataTableClassNames {
+  /** The root `<Paper>` (also reachable via `className`). */
+  root?: string;
+  /** The toolbar row (search, filters, export, menus). */
+  toolbar?: string;
+  /** The desktop table region. */
+  table?: string;
+  /** One mobile card (merged with `rowClassName`). */
+  card?: string;
+  /** The pagination footer region. */
+  footer?: string;
+}
+
+interface DataTablePropsBase<TRow> extends Omit<
   BaseDataTableProps<TRow>,
   "source"
 > {
   /**
    * Full-control data tier: a prebuilt source (`useFrontendData` /
-   * `useBackendData`). Omit it and pass `data` instead for the zero-ceremony
+   * `useQuerySource`). Omit it and pass `data` instead for the zero-ceremony
    * tiers below.
    */
   source?: TableSource<TRow>;
@@ -36,12 +54,8 @@ export interface DataTableProps<TRow> extends Omit<
   total?: number;
   /** Server tier: request in flight. */
   loading?: boolean;
-  /**
-   * Server tier: fired with the consolidated query (page, search, sort,
-   * filters) whenever it changes — including once on mount with the
-   * URL-restored values. Run the request and hand back `data` + `total`.
-   */
-  onQueryChange?: UseServerDataOptions<TRow>["onQueryChange"];
+  /** Forwarded error to display in the table's error state. */
+  error?: Error | null;
   /**
    * URL-state backend for the built-in tiers. Defaults to the browser
    * History API; supply a router adapter (react-router / Next.js) — or a
@@ -72,6 +86,8 @@ export interface DataTableProps<TRow> extends Omit<
   slots?: DataTableSlots;
   /** Class name applied to the root `<Paper>`. */
   className?: string;
+  /** Per-part class hooks for the structural elements. */
+  classNames?: DataTableClassNames;
   /**
    * Explicit MUI table size override. When omitted, the size is derived from
    * `density`: `"comfortable"` → `"medium"`, `"compact"` → `"small"`.
@@ -83,3 +99,12 @@ export interface DataTableProps<TRow> extends Omit<
    */
   animate?: boolean;
 }
+
+/**
+ * Props for the MUI `<DataTable>`: the base surface intersected
+ * with core's data-mode union, so `mode="server"` requires
+ * `onQueryChange` at compile time and `mode="frontend"` turns it into a
+ * pure notification.
+ */
+export type DataTableProps<TRow> = DataTablePropsBase<TRow> &
+  DataModeProps<TRow>;

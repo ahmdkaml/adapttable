@@ -1,11 +1,10 @@
 /** Gap-fill: footer prev, clear-all link, bulk clear. */
-import type * as CoreModule from "@adapttable/core";
+import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import type * as AdapterModule from "@adapttable/core/adapter";
 import {
-  createMemoryAdapter,
   useDataTableShell,
-  useFrontendData,
   type VirtualTableRow,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,15 +24,17 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
 ];
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal<typeof CoreModule>();
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
   return {
     ...actual,
     useDataTableShell: vi.fn(actual.useDataTableShell),
   };
 });
 
-const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
+const actualCore = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
@@ -64,7 +65,7 @@ function mockBodyData(rows: VirtualTableRow<Row>[], padding: number) {
 }
 
 function mount(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   url = "",
   mode: "paged" | "infinite" = "paged"
 ) {
@@ -72,7 +73,7 @@ function mount(
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter,
+      urlAdapter: adapter,
       columns,
       paginationMode: mode,
     });
@@ -142,7 +143,7 @@ describe("Chakra gaps", () => {
 
   it("virtualizes mobile cards when enabled", () => {
     mockBodyData([{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }], 132);
-    mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
+    mount({ forceMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });

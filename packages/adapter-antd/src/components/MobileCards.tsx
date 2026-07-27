@@ -3,17 +3,20 @@ import {
   type ConfirmHandler,
   type EditableCellEditing,
   type GroupedFlatEntry,
-  resolveDisabledReason,
-  resolveVirtualRows,
   type RowAction,
-  rowClickProps,
-  rowEditingSignature,
   type RowExpansionState,
   runRowAction,
   type TableLabels,
   type UseDataTableResult,
-  type VirtualTableRow,
 } from "@adapttable/core";
+import {
+  resolveDisabledReason,
+  resolveVirtualRows,
+  rowClickProps,
+  rowEditingSignature,
+  useSummaryCells,
+  type VirtualTableRow,
+} from "@adapttable/core/adapter";
 import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 import { memo, type ReactNode, useMemo } from "react";
 
@@ -91,7 +94,7 @@ function SummaryCard<TRow>({
   columns: ColumnDef<TRow>[];
   summaryRow: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
 }>) {
-  const cells = summaryRow(rows);
+  const cells = useSummaryCells(summaryRow, rows) ?? {};
   return (
     <Card size="small" data-adapttable-part="summary-card">
       <Descriptions column={1} size="small" colon={false}>
@@ -207,7 +210,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
       size="small"
       className={className}
       data-stagger=""
-      {...rowClickProps(row, onRowClick)}
+      {...rowClickProps(row, onRowClick, rowIndex)}
       onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       title={
         onToggleSelect ? (
@@ -278,6 +281,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
  */
 export function MobileCards<TRow>({
   table,
+  cardClassName,
   rows,
   rowActions,
   confirm,
@@ -298,6 +302,8 @@ export function MobileCards<TRow>({
   measureElement,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
+  /** Class applied to every card (merged before `rowClassName`). */
+  cardClassName?: string;
   rows: readonly TRow[];
   rowActions?: readonly RowAction<TRow>[];
   confirm: ConfirmHandler;
@@ -362,7 +368,11 @@ export function MobileCards<TRow>({
           labels={labels}
           confirm={confirm}
           rowActions={rowActions}
-          className={rowClassName?.(row, index)}
+          className={
+            [cardClassName, rowClassName?.(row, index)]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           selected={selection ? selection.isSelected(id) : false}
           expanded={expansion ? expansion.isExpanded(id) : false}
           onToggleSelect={selection ? selection.toggle : undefined}

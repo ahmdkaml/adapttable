@@ -2,7 +2,7 @@ import {
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -145,7 +145,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             props.savedViews ? (
               <SavedViewsMenu
                 options={{
-                  adapter: props.urlAdapter,
+                  // The table's RESOLVED backend — shared so views follow urlSync.
+                  urlAdapter: shell.urlAdapter,
                   urlKey: props.urlKey,
                   ...props.savedViews,
                 }}
@@ -215,6 +216,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}
+            showRowsPerPage={!chrome.grouping}
           />
         )}
       </Flex>

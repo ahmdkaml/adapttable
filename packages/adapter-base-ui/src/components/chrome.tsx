@@ -1,17 +1,19 @@
 import {
   type ActiveFilterChip,
-  type BulkBarChromeProps,
   type Direction,
-  FiltersIcon,
   pageSizeOptions,
   type PaginationInfo,
+  type TableLabels,
+} from "@adapttable/core";
+import {
+  type BulkBarChromeProps,
+  FiltersIcon,
   paginationSlots,
   resolveDisabledReason,
   SearchIcon,
-  type TableLabels,
   type ToolbarChromeProps,
   useBulkBarState,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import { Drawer } from "@base-ui/react/drawer";
 import { isValidElement, type ReactNode } from "react";
 
@@ -61,10 +63,10 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
 /** Search + sort select + filters button + columns menu + rows-per-page. */
 export function Toolbar<TRow>({
   table,
-  hideSearch,
+  searchable,
   searchPlaceholder,
   sortByOptions,
-  customToolbar,
+  toolbar,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -117,7 +119,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
-      {!hideSearch && (
+      {searchable !== false && (
         <Box style={{ flex: 1, minWidth: 160, maxWidth: 360 }}>
           <TextField.Root
             size="2"
@@ -150,7 +152,7 @@ export function Toolbar<TRow>({
             }
           />
         )}
-        {customToolbar}
+        {toolbar}
         {hasFilters &&
           (filtersMode === "popover" ? (
             <FilterPopover
@@ -254,8 +256,17 @@ export function BulkBar({
   labels,
   accentColor,
 }: Readonly<BulkBarChromeProps & { accentColor?: BaseUiAccentColor }>) {
-  const { selectedCount, ids, pending, run, clear, expandable, scope, banner } =
-    useBulkBarState({ selection, total, confirm, labels });
+  const {
+    selectedCount,
+    ids,
+    pending,
+    errorMessage,
+    run,
+    clear,
+    expandable,
+    scope,
+    banner,
+  } = useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
   return (
     <Flex gap="2" justify="between" wrap="wrap" align="center">
@@ -301,6 +312,11 @@ export function BulkBar({
             </Tooltip>
           );
         })}
+        {errorMessage !== null && (
+          <Text size="2" color="red" role="alert">
+            {`${labels.errorTitle}: ${errorMessage}`}
+          </Text>
+        )}
       </Flex>
     </Flex>
   );
@@ -315,6 +331,7 @@ export function Footer({
   setLimit,
   labels,
   className,
+  showRowsPerPage = true,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
@@ -324,6 +341,8 @@ export function Footer({
   labels: Required<TableLabels>;
   /** Class hook for the footer row. */
   className?: string;
+  /** Hidden in the grouped full-set view, where page size has no effect. */
+  showRowsPerPage?: boolean;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
@@ -335,17 +354,21 @@ export function Footer({
       className={className}
     >
       <Flex gap="2" align="center">
-        <Text size="1" {...subtleText}>
-          {labels.rowsPerPage}
-        </Text>
-        <NativeSelect
-          size="1"
-          width="72px"
-          aria-label={labels.rowsPerPage}
-          value={String(limit)}
-          options={pageSizeSelectOptions(limit)}
-          onValueChange={(value) => setLimit(Number(value))}
-        />
+        {showRowsPerPage && (
+          <>
+            <Text size="1" {...subtleText}>
+              {labels.rowsPerPage}
+            </Text>
+            <NativeSelect
+              size="1"
+              width="72px"
+              aria-label={labels.rowsPerPage}
+              value={String(limit)}
+              options={pageSizeSelectOptions(limit)}
+              onValueChange={(value) => setLimit(Number(value))}
+            />
+          </>
+        )}
         {total > 0 && (
           <Text size="1" {...subtleText}>
             {labels.showing({ from: fromIndex, to: toIndex, total })}
@@ -512,7 +535,7 @@ export function FilterDrawer({
                   {labels.clearAll}
                 </Button>
                 <Button color={accentColor} variant="solid" onClick={onClose}>
-                  {labels.applyFilters}
+                  {labels.filtersDone}
                 </Button>
               </Flex>
             </Drawer.Content>

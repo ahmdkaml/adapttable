@@ -9,11 +9,11 @@ import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
-  useSavedViews,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
+import { useResolvedAdapter } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
 import { type ReactNode, useMemo, useRef, useState } from "react";
@@ -62,6 +62,20 @@ const stickyToolbarStyle = (top: number) => ({
   paddingBottom: "var(--mantine-spacing-xs)",
 });
 
+/** The toolbar's style: parked sticky at `stickyTop` only when asked to. */
+const toolbarStyle = (stickyToolbar: boolean, stickyTop: number) =>
+  stickyToolbar ? stickyToolbarStyle(stickyTop) : undefined;
+
+/**
+ * The sticky header's inset: below the sticky toolbar when it sticks,
+ * otherwise the caller's inset alone — the cross-adapter meaning.
+ */
+const stickyHeaderInset = (
+  stickyToolbar: boolean,
+  stickyTop: number,
+  toolbarHeight: number
+) => (stickyToolbar ? stickyTop + toolbarHeight : stickyTop);
+
 /** The Columns menu, rendered inline in the toolbar — or nothing when off. */
 function ColumnMenuSlot<TRow>({
   enabled,
@@ -79,8 +93,7 @@ function SavedViewsSlot({
   options,
   labels,
 }: Readonly<{ options: UseSavedViewsOptions; labels: Required<TableLabels> }>) {
-  const views = useSavedViews(options);
-  return <SavedViewsMenu views={views} labels={labels} />;
+  return <SavedViewsMenu options={options} labels={labels} />;
 }
 
 /**
@@ -91,18 +104,29 @@ function SavedViewsSlot({
  * per key). Everything downstream consumes these.
  */
 function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
+  // so with `urlSync={false}` both share the same in-memory backend instead
+  // of the menu silently reading the real address bar.
+  const urlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : props.urlAdapter,
+    props.urlSync !== false
+  );
   const { source, runtime } = useTableData<TRow>({
     locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,
     loading: props.loading,
+    error: props.error,
+    mode: props.mode,
     onQueryChange: props.onQueryChange,
     columns: props.columns,
     filters: props.filters,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
     urlKey: props.urlKey,
-    adapter: props.urlSync === false ? undefined : props.urlAdapter,
-    enabled: props.urlSync,
+    urlAdapter,
+    urlSync: props.urlSync,
   });
 
   // The same resolution `useTableChrome` applies — the auto form needs the
@@ -126,7 +150,9 @@ function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
     [runtime.filterLabels, props.filterLabels]
   );
 
-  return { ...props, source, filters, filterLabels };
+  // `urlAdapter` is the RESOLVED backend from here on — downstream chrome
+  // (the saved-views menu) must share the table's own instance.
+  return { ...props, urlAdapter, source, filters, filterLabels };
 }
 
 /**
@@ -141,21 +167,20 @@ function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const chromeProps = useResolvedTableProps(props);
   const {
-    source,
     rowActions,
     searchPlaceholder,
     sortByOptions,
     dir,
     prefetch,
-    hideSearch,
     filters,
     filtersMode = "popover",
     bulkActions,
     slots,
     classNames,
-    toolbar: customToolbar,
+    toolbar,
     skeletonRows,
     stickyTop = 0,
+    stickyToolbar = false,
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
@@ -165,6 +190,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const density = chromeProps.density ?? "comfortable";
 
   const chrome = useTableChrome<TRow>(chromeProps);
+  // Everything rendered below reads the chrome's VIEW facade — identical to
+  // `source` except under grouping, where it presents the full rendered set.
+  const viewSource = chrome.source;
   const { table, isMobile, confirm, getRowId } = chrome;
   // The injected actions column is first-class in the column layout: the
   // menu lists it under `labels.actions`, hiding it strips the row actions
@@ -208,7 +236,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = slots?.skeleton ?? (
       <TableSkeleton
         columns={table.columns.length || 1}
-        rows={skeletonRows ?? source.limit}
+        rows={skeletonRows ?? viewSource.limit}
         loadingLabel={table.labels.loading}
       />
     );
@@ -275,7 +303,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         paddingTop={virtualization.paddingTop}
         paddingBottom={virtualization.paddingBottom}
         measureElement={virtualization.measureElement}
-        stickyHeaderOffset={stickyTop + toolbarHeight}
+        stickyHeaderOffset={stickyHeaderInset(
+          stickyToolbar,
+          stickyTop,
+          toolbarHeight
+        )}
         stickyHeader={stickyHeader}
         pinOffset={chrome.columnLayout.pinOffset}
         actionsPinned={actionsPinned}
@@ -304,16 +336,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <Stack gap="xs">
         <Box
           ref={toolbarRef}
-          style={stickyToolbarStyle(stickyTop)}
+          style={toolbarStyle(stickyToolbar, stickyTop)}
           className={classNames?.toolbar}
         >
           <Stack gap="xs">
             <Toolbar
               table={table}
-              hideSearch={hideSearch}
+              searchable={chromeProps.searchable !== false}
               searchPlaceholder={searchPlaceholder}
               sortByOptions={sortByOptions}
-              customToolbar={customToolbar}
+              toolbar={toolbar}
               hasFilters={Boolean(filters)}
               activeFilterCount={chrome.activeFilterCount}
               filtersMode={filtersMode}
@@ -331,7 +363,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                       // The table's own URL backend/namespace are the
                       // defaults — an explicit option still wins.
                       options={{
-                        adapter: chromeProps.urlAdapter,
+                        urlAdapter: chromeProps.urlAdapter,
                         urlKey: chromeProps.urlKey,
                         ...savedViews,
                       }}
@@ -350,10 +382,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               }
               onExportCsv={makeExportCsvHandler(
                 exportCsv,
-                source,
-                table.columns
+                viewSource,
+                chrome.columnLayout.visibleColumns
               )}
-              showRowsPerPage={canLoadMore}
+              showRowsPerPage={canLoadMore && !chrome.grouping}
             />
             <ActiveFilterChips
               chips={chrome.mergedChips}
@@ -364,7 +396,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {table.selection && bulkActions && (
               <BulkActionBar
                 selection={table.selection}
-                total={source.total}
+                total={viewSource.total}
                 bulkActions={bulkActions}
                 confirm={confirm}
                 labels={table.labels}
@@ -382,26 +414,28 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
 
-        {source.error && (
+        {viewSource.error && (
           <ErrorState
-            error={source.error}
+            error={viewSource.error}
             title={table.labels.errorTitle}
             message={table.labels.errorMessage}
             retryLabel={table.labels.retry}
-            onRetry={source.refetch ? () => void source.refetch?.() : undefined}
-            isRetrying={source.isFetching}
+            onRetry={
+              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
+            }
+            isRetrying={viewSource.isFetching}
           />
         )}
 
-        {!source.error && body}
+        {!viewSource.error && body}
 
-        {canLoadMore && source.hasNextPage && (
+        {canLoadMore && viewSource.hasNextPage && (
           <Group ref={loadMoreRef} justify="center" py="xs">
             <Button
               variant="default"
               size="sm"
-              loading={source.isFetchingNextPage}
-              onClick={() => source.fetchNextPage()}
+              loading={viewSource.isFetchingNextPage}
+              onClick={() => viewSource.fetchNextPage()}
             >
               {table.labels.loadMore}
             </Button>
@@ -413,13 +447,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             <PaginationFooter
               page={table.pagination.safePage}
               totalPages={table.pagination.totalPages}
-              limit={source.limit}
-              total={source.total}
+              limit={viewSource.limit}
+              total={viewSource.total}
               fromIndex={table.pagination.fromIndex}
               toIndex={table.pagination.toIndex}
-              onPageChange={source.setPage}
-              onLimitChange={source.setLimit}
+              onPageChange={viewSource.setPage}
+              onLimitChange={viewSource.setLimit}
               labels={table.labels}
+              showRowsPerPage={!chrome.grouping}
             />
           </Box>
         )}

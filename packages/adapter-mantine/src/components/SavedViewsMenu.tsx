@@ -1,10 +1,15 @@
-import type { TableLabels, UseSavedViewsResult } from "@adapttable/core";
+import {
+  type TableLabels,
+  useSavedViews,
+  type UseSavedViewsOptions,
+} from "@adapttable/core";
 import {
   ActionIcon,
   Box,
   Button,
+  Divider,
   Group,
-  Menu,
+  Popover,
   Text,
   TextInput,
 } from "@mantine/core";
@@ -12,12 +17,18 @@ import { useState } from "react";
 
 import { CloseIcon } from "../icons";
 
+/** The label strings the saved-views menu renders. */
+export type SavedViewsLabels = Pick<
+  Required<TableLabels>,
+  "savedViews" | "saveView" | "viewName" | "deleteView"
+>;
+
 /** Props for {@link SavedViewsMenu}. */
 export interface SavedViewsMenuProps {
-  /** The saved-views state from core's `useSavedViews`. */
-  views: UseSavedViewsResult;
-  /** Resolved table labels (e.g. `table.labels` from `useDataTable`). */
-  labels: Required<TableLabels>;
+  /** Storage + URL backend wiring, forwarded to core's `useSavedViews`. */
+  options: UseSavedViewsOptions;
+  /** Resolved table labels (trigger, save row, delete action). */
+  labels: SavedViewsLabels;
 }
 
 /**
@@ -28,9 +39,11 @@ export interface SavedViewsMenuProps {
  * mount it for you next to the Columns menu.
  */
 export function SavedViewsMenu({
-  views,
+  options,
   labels,
 }: Readonly<SavedViewsMenuProps>) {
+  const views = useSavedViews(options);
+  const [opened, setOpened] = useState(false);
   const [name, setName] = useState("");
   const trimmed = name.trim();
   // Saving clears the input but keeps the menu open, so several views can
@@ -39,14 +52,27 @@ export function SavedViewsMenu({
     views.save(trimmed);
     setName("");
   };
+  // A Popover, not a Menu: the panel holds buttons and a text input, so
+  // `role="menu"` semantics (menuitem children, typeahead) would be a lie.
   return (
-    <Menu closeOnItemClick={false} position="bottom-end" withinPortal>
-      <Menu.Target>
-        <Button variant="default" size="sm">
+    <Popover
+      opened={opened}
+      onDismiss={() => setOpened(false)}
+      position="bottom-end"
+      withinPortal
+      returnFocus
+    >
+      <Popover.Target>
+        <Button
+          variant="default"
+          size="sm"
+          aria-expanded={opened}
+          onClick={() => setOpened((value) => !value)}
+        >
           {labels.savedViews}
         </Button>
-      </Menu.Target>
-      <Menu.Dropdown>
+      </Popover.Target>
+      <Popover.Dropdown>
         <Box p={4} miw={220}>
           <Text size="xs" c="dimmed" fw={600} tt="uppercase" px={4} pb={6}>
             {labels.savedViews}
@@ -73,7 +99,7 @@ export function SavedViewsMenu({
               </ActionIcon>
             </Group>
           ))}
-          <Menu.Divider />
+          <Divider my={4} />
           <Group gap={6} p={4} wrap="nowrap">
             <TextInput
               size="xs"
@@ -87,7 +113,7 @@ export function SavedViewsMenu({
             </Button>
           </Group>
         </Box>
-      </Menu.Dropdown>
-    </Menu>
+      </Popover.Dropdown>
+    </Popover>
   );
 }

@@ -28,7 +28,7 @@ describe("groupBy URL round-trip", () => {
   it("reads, writes, and clearAll clears groupBy", () => {
     const adapter = createMemoryAdapter("groupBy=team");
     const { result } = renderHook(() =>
-      useTableUrlState({ adapter, defaults: { limit: 10 } })
+      useTableUrlState({ urlAdapter: adapter, defaults: { limit: 10 } })
     );
     expect(result.current.groupBy).toBe("team");
     act(() => result.current.setGroupBy("name"));
@@ -44,7 +44,7 @@ describe("groupBy URL round-trip", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
       useTableUrlState({
-        adapter,
+        urlAdapter: adapter,
         defaults: { limit: 10, groupBy: "team" },
       })
     );
@@ -70,7 +70,7 @@ describe("editing row universe under grouping", () => {
       useFrontendData<Row>({
         data: PAGED_ROWS,
         columns: [{ key: "team" }, { key: "name" }],
-        adapter: createMemoryAdapter(""),
+        urlAdapter: createMemoryAdapter(""),
         defaults: { limit: 2 },
       })
     );
@@ -131,7 +131,7 @@ describe("useTableChrome grouping bundle", () => {
       useFrontendData<Row>({
         data: ROWS,
         columns: [{ key: "team" }, { key: "name" }],
-        adapter: createMemoryAdapter(""),
+        urlAdapter: createMemoryAdapter(""),
         defaults: { limit: 10 },
       })
     );
@@ -150,7 +150,7 @@ describe("useTableChrome grouping bundle", () => {
       useFrontendData<Row>({
         data: ROWS,
         columns: [{ key: "team" }, { key: "name" }],
-        adapter: createMemoryAdapter(""),
+        urlAdapter: createMemoryAdapter(""),
         defaults: { limit: 10 },
       })
     );
@@ -180,7 +180,7 @@ describe("useTableChrome grouping bundle", () => {
       useFrontendData<Row>({
         data: ROWS,
         columns: [{ key: "team" }],
-        adapter: createMemoryAdapter(""),
+        urlAdapter: createMemoryAdapter(""),
         defaults: { limit: 10 },
       })
     );

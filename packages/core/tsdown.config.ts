@@ -2,7 +2,11 @@ import { babel } from "@rollup/plugin-babel";
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  // React Server Components: hook-bearing client libraries must mark
+  // their built entries, or every Next.js App Router consumer has to
+  // hand-write a client wrapper.
+  banner: { js: '"use client";' },
+  entry: ["src/index.ts", "src/adapter.ts"],
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,

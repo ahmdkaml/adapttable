@@ -31,6 +31,7 @@ export {
   type PaginationFooterProps,
 } from "./components/PaginationFooter";
 export {
+  type SavedViewsLabels,
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
@@ -72,12 +73,12 @@ export {
   type TableQuery,
   type TableQueryParams,
   type TableSource,
-  useBackendData,
-  type UseBackendDataOptions,
   useDataTable,
   type UseDataTableResult,
   useFrontendData,
   type UseFrontendDataOptions,
+  useQuerySource,
+  type UseQuerySourceOptions,
   useSavedViews,
   type UseSavedViewsOptions,
   type UseSavedViewsResult,
@@ -89,7 +90,6 @@ export {
   type ActionConfirm,
   createHistoryAdapter,
   createMemoryAdapter,
-  deriveSortByOptions,
   getHistoryAdapter,
   type InfiniteQueryLike,
   type PageSelector,
@@ -98,3 +98,21 @@ export {
   type UseTableUrlStateOptions,
   type UseTableUrlStateResult,
 } from "@adapttable/core";
+export { deriveSortByOptions } from "@adapttable/core/adapter";
+
+/* Completed public surface (v2): every type a consumer's own code
+   needs — CSV options, column layout, cell editors, tier props —
+   without ever depending on @adapttable/core directly. */
+export {
+  type BaseDataTableProps,
+  type BulkActionContext,
+  type CellEditor,
+  type ChipLabelResolver,
+  type ColumnFilter,
+  type ColumnLayoutState,
+  type ExportCsvOptions,
+  FILTER_TYPES,
+  type UseServerDataOptions,
+  type UseTableDataOptions,
+} from "@adapttable/core";
+export { type DataModeProps } from "@adapttable/core/adapter";

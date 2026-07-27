@@ -40,7 +40,7 @@ const CHROME_PROPS = {
 };
 
 function renderTable(
-  override: Partial<Parameters<typeof DataTable<Person>>[0]> = {}
+  override: Partial<Omit<Parameters<typeof DataTable<Person>>[0], "mode">> = {}
 ) {
   return render(
     <MantineProvider>
@@ -96,7 +96,7 @@ describe("summaryRow (Mantine)", () => {
 
   it("mobile: renders a final summary card with only the present keys", () => {
     renderTable({
-      isMobile: true,
+      forceMobile: true,
       summaryRow: () => ({ budget: "Σ 600" }),
     });
     const items = screen.getAllByRole("listitem");
@@ -108,7 +108,7 @@ describe("summaryRow (Mantine)", () => {
   });
 
   it("mobile: renders no summary card without the prop", () => {
-    renderTable({ isMobile: true });
+    renderTable({ forceMobile: true });
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 });

@@ -31,7 +31,8 @@ export const ur: Required<TableLabels> = {
   loadMore: "مزید لوڈ کریں",
   filters: "فلٹرز",
   clearAll: "سب صاف کریں",
-  applyFilters: "مکمل",
+  removeFilter: (label) => `فلٹر ہٹائیں: ${label}`,
+  filtersDone: "مکمل",
   sortBy: "ترتیب دیں بذریعہ",
   rowsPerPage: "فی صفحہ قطاریں",
   actions: "اقدامات",
@@ -47,7 +48,7 @@ export const ur: Required<TableLabels> = {
   selectedCount: (count) => `${count} منتخب`,
   showing: ({ from, to, total }) =>
     `${total} میں سے ${from}–${to} دکھائے جا رہے ہیں`,
-  pageOf: ({ page, total }) => `صفحہ ${page} از ${total}`,
+  pageOf: ({ page, total }) => `${total} میں سے صفحہ ${page}`,
   columns: "کالمز",
   // Pinning/reorder follow writing direction — keep copy direction-neutral.
   pinStart: "شروع میں پن کریں",

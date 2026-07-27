@@ -22,11 +22,11 @@ import {
 /** Options for {@link useColumnLayoutUrlState}. */
 export interface UseColumnLayoutUrlStateOptions {
   /** URL-state backend. Defaults to the browser History API. */
-  adapter?: UrlStateAdapter;
+  urlAdapter?: UrlStateAdapter;
   /** When `false`, keep the layout in a local memory store. Defaults `true`. */
-  enabled?: boolean;
+  urlSync?: boolean;
   /** Layout applied when the URL carries no column layout yet. */
-  defaultLayout?: Partial<ColumnLayoutState>;
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
    * Namespace for this table's params, so multiple tables can share one URL
    * (`left.colHide`, `right.colPin`, …). Omit for the bare keys.
@@ -57,7 +57,7 @@ export interface UseColumnLayoutUrlStateResult {
  * shared links, and re-mounts restore the exact layout. Feed the result into
  * a table's `columnLayout` / `onColumnLayoutChange`.
  *
- * `defaultLayout` applies only while the URL carries no layout. When the user
+ * `defaultColumnLayout` applies only while the URL carries no layout. When the user
  * explicitly empties the layout (e.g. unhides the last default-hidden
  * column), an empty `colHide=` marker records that emptiness — deleting every
  * param would resurrect the default on the next read. A change back to the
@@ -69,22 +69,25 @@ export interface UseColumnLayoutUrlStateResult {
 export function useColumnLayoutUrlState(
   options: UseColumnLayoutUrlStateOptions = {}
 ): UseColumnLayoutUrlStateResult {
-  const { adapter, enabled = true, defaultLayout, urlKey } = options;
+  const { urlAdapter, urlSync, defaultColumnLayout, urlKey } = options;
+  const baseLayout = defaultColumnLayout;
+  const backend = urlAdapter;
+  const syncToUrl = urlSync ?? true;
   const ns = urlKey ? `${urlKey}.` : "";
 
-  const resolved = useResolvedAdapter(adapter, enabled);
+  const resolved = useResolvedAdapter(backend, syncToUrl);
   // Same SSR rule as useTableUrlState: only an explicit adapter is trusted
   // to be hydration-consistent; the default history adapter hydrates from "".
   const search = useSyncExternalStore(
     (onChange) => resolved.subscribe(onChange),
     () => resolved.getSearch(),
-    () => (adapter ? adapter.getSearch() : "")
+    () => (backend ? backend.getSearch() : "")
   );
   const params = useMemo(() => new URLSearchParams(search), [search]);
 
   const fallback = useMemo<ColumnLayoutState>(
-    () => ({ ...EMPTY_COLUMN_LAYOUT, ...defaultLayout }),
-    [defaultLayout]
+    () => ({ ...EMPTY_COLUMN_LAYOUT, ...baseLayout }),
+    [baseLayout]
   );
   // Optimistic overlay: the most recent layout not yet flushed to the URL.
   const [pending, setPending] = useState<ColumnLayoutState | null>(null);

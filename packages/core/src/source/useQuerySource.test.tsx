@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { PaginatedResponse, TableQueryParams } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
-import { type InfiniteQueryLike, useBackendData } from "./useBackendData";
+import { type InfiniteQueryLike, useQuerySource } from "./useQuerySource";
 
 interface Row {
   id: string;
@@ -22,7 +22,7 @@ const page = (items: Row[], total: number): Page => ({
   items,
   pagination: { total },
 });
-const selectPage = (p: Page) => ({ items: p.items, total: p.pagination.total });
+const selectPage = (p: Page) => ({ rows: p.items, total: p.pagination.total });
 
 function makeQuery(opts?: {
   pages?: Page[];
@@ -61,7 +61,7 @@ const last = <T,>(arr: T[]): T => {
 };
 
 /**
- * Mount `useBackendData` with a STABLE memory adapter created once
+ * Mount `useQuerySource` with a STABLE memory adapter created once
  * outside the render callback. (Creating the adapter inside the render
  * function would rebuild it every render and reset URL state.)
  */
@@ -70,22 +70,50 @@ function mount<TPage = Page>(
     usePaginatedQuery: (p: Partial<ListParams>) => InfiniteQueryLike<TPage>;
   },
   opts: Omit<
-    Parameters<typeof useBackendData<Row, ListParams, TPage>>[0],
+    Parameters<typeof useQuerySource<Row, ListParams, TPage>>[0],
     "usePaginatedQuery"
   > & { initial?: string }
 ) {
   const { initial = "", ...rest } = opts;
   const adapter = createMemoryAdapter(initial);
   return renderHook(() =>
-    useBackendData<Row, ListParams, TPage>({
+    useQuerySource<Row, ListParams, TPage>({
       usePaginatedQuery: query.usePaginatedQuery,
-      adapter,
+      urlAdapter: adapter,
       ...rest,
     })
   );
 }
 
-describe("useBackendData", () => {
+describe("useQuerySource", () => {
+  it("the default selector reads the rows envelope field", () => {
+    const query = makeQuery({
+      pages: [
+        {
+          rows: [{ id: "a", name: "A" }],
+          total: 1,
+          page: 1,
+          limit: 25,
+          hasNextPage: false,
+        } as unknown as Page,
+      ],
+    });
+    const view = mount(query, {});
+    expect(view.result.current.rows).toHaveLength(1);
+  });
+
+  it("keeps the source identity stable across unrelated re-renders", () => {
+    const q = makeQuery({ pages: [page([{ id: "a", name: "A" }], 1)] });
+    const view = mount(q, { selectPage });
+    const first = view.result.current;
+    view.rerender();
+    view.rerender();
+    expect(view.result.current).toBe(first);
+    // A real state change produces a NEW source object.
+    act(() => view.result.current.setSearch("term"));
+    expect(view.result.current).not.toBe(first);
+  });
+
   it("flattens rows across infinite pages and keeps the latest total", () => {
     const q = makeQuery({
       pages: [
@@ -112,7 +140,7 @@ describe("useBackendData", () => {
       ],
     });
     const { result } = mount(q, {
-      selectPage: (p) => ({ items: p.items }),
+      selectPage: (p) => ({ rows: p.items }),
       paginationMode: "infinite",
     });
     expect(result.current.rows).toHaveLength(2);
@@ -144,7 +172,7 @@ describe("useBackendData", () => {
       ],
     });
     const { result } = mount(q, {
-      selectPage: (p) => ({ items: p.items }),
+      selectPage: (p) => ({ rows: p.items }),
       paginationMode: "paged",
     });
     expect(result.current.total).toBe(2);
@@ -157,11 +185,10 @@ describe("useBackendData", () => {
       data: {
         pages: [
           {
-            items: [{ id: "a", name: "A" }],
+            rows: [{ id: "a", name: "A" }],
             total: 1,
             page: 1,
             limit: 25,
-            hasNext: false,
           },
         ],
         pageParams: [0],
@@ -202,8 +229,35 @@ describe("useBackendData", () => {
     expect(l.search).toBe("alpha");
     expect(l.sortBy).toBe("name");
     expect(l.sortDir).toBe("desc");
-    expect(l.status).toEqual(["Active", "Planned"]);
+    // Filter values travel under their own namespace, never at top level.
+    expect(l.filters).toEqual({ status: ["Active", "Planned"] });
     expect(l.scopeId).toBe("s-1");
+  });
+
+  it("keeps a user filter named like a state param intact under `filters`", () => {
+    const q = makeQuery({ pages: [page([], 0)] });
+    mount(q, {
+      selectPage,
+      initial: "sortBy=name&sortDir=asc&f_sortBy=priority&f_search=urgent",
+    });
+    const l = last(q.calls);
+    // The state params and the same-named filters coexist untouched.
+    expect(l.sortBy).toBe("name");
+    expect(l.filters).toEqual({ sortBy: "priority", search: "urgent" });
+    expect(l.search).toBeUndefined();
+  });
+
+  it("never lets baseParams beat the live table state", () => {
+    const q = makeQuery({ pages: [page([], 0)] });
+    mount(q, {
+      selectPage,
+      baseParams: { scopeId: "s-1", sortBy: "createdAt", page: 99 },
+      initial: "page=3&sortBy=name&sortDir=desc",
+    });
+    const l = last(q.calls);
+    expect(l.scopeId).toBe("s-1");
+    expect(l.page).toBe(3);
+    expect(l.sortBy).toBe("name");
   });
 
   it("applies sanitizeParams as the final scrubber", () => {

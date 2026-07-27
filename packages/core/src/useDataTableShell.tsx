@@ -6,9 +6,12 @@ import { makeExportCsvHandler } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
-import type { UseServerDataOptions } from "./source/useServerData";
-import { isDeclarativeFilters, useTableData } from "./source/useTableData";
-import type { UrlStateAdapter } from "./url/adapter";
+import {
+  type DataModeProps,
+  isDeclarativeFilters,
+  useTableData,
+} from "./source/useTableData";
+import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
 import {
   useChromeBodyData,
   useChromeScrollReset,
@@ -37,15 +40,15 @@ export type DataTableShellProps<TRow> = Omit<
   total?: number;
   /** Server tier: a request is in flight. */
   loading?: boolean;
-  /** Server tier: consolidated-query callback. */
-  onQueryChange?: UseServerDataOptions<TRow>["onQueryChange"];
+  /** Forwarded error to display in the table's error state. */
+  error?: Error | null;
   /** URL-state backend (defaults to the History API). */
   urlAdapter?: UrlStateAdapter;
   /** Sync table state to the URL (default `true`). */
   urlSync?: boolean;
   /** Namespace for this table's URL params. */
   urlKey?: string;
-};
+} & DataModeProps<TRow>;
 
 /**
  * The whole shared orchestration behind a batteries-included `<DataTable>`:
@@ -70,6 +73,14 @@ export function useDataTableShell<TRow>(
     source: TableSource<TRow>
   ) => ReactNode
 ) {
+  // ONE resolved URL backend for everything in this table: the tier hooks
+  // AND chrome that reads URL state (saved views) share this instance, so
+  // with `urlSync={false}` they share the same in-memory backend instead of
+  // the views hook silently falling back to the real address bar.
+  const urlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : props.urlAdapter,
+    props.urlSync !== false
+  );
   // Resolve the data tier (source > onQueryChange server > frontend) and the
   // declarative-filter runtime (defs, chip labels, URL keys, predicate).
   const { source, runtime } = useTableData<TRow>({
@@ -78,12 +89,16 @@ export function useDataTableShell<TRow>(
     data: props.data,
     total: props.total,
     loading: props.loading,
+    error: props.error,
+    mode: props.mode,
     onQueryChange: props.onQueryChange,
-    adapter: props.urlSync === false ? undefined : props.urlAdapter,
-    enabled: props.urlSync,
+    urlAdapter,
+    urlSync: props.urlSync,
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
   });
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
@@ -151,6 +166,7 @@ export function useDataTableShell<TRow>(
     columnWidths: chrome.columnLayout.state.widths,
     resizeLabel: table.labels.resizeColumn,
     onRowClick: props.onRowClick,
+    prefetch: props.prefetch,
     rowClassName: props.rowClassName,
     renderRowDetail: props.renderRowDetail,
     summaryRow: props.summaryRow,
@@ -164,22 +180,33 @@ export function useDataTableShell<TRow>(
   // and adds its filters-mode wiring, saved-views / column menus, and colour.
   const toolbarProps = {
     table,
-    hideSearch: props.hideSearch,
+    searchable: props.searchable !== false,
     searchPlaceholder: props.searchPlaceholder,
     sortByOptions: props.sortByOptions,
-    customToolbar: props.toolbar,
+    toolbar: props.toolbar,
     hasFilters: Boolean(filtersNode),
     activeFilterCount: chrome.activeFilterCount,
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,
-    showRowsPerPage: canLoadMore,
-    onExportCsv: makeExportCsvHandler(props.exportCsv, source, table.columns),
+    // Hidden in the grouped full-set view, where page size has no effect.
+    showRowsPerPage: canLoadMore && !chrome.grouping,
+    // Layout-visible columns WITHOUT device filtering: the same button
+    // must produce the same file on phone and desktop.
+    onExportCsv: makeExportCsvHandler(
+      props.exportCsv,
+      chrome.source,
+      chrome.columnLayout.visibleColumns
+    ),
     dir: props.dir,
   };
 
   return {
-    source,
+    // The chrome's VIEW facade — with grouping armed it presents the full
+    // rendered set, so adapter footers and export buttons stay truthful.
+    source: chrome.source,
     runtime,
+    /** The table's resolved URL backend — pass to saved-views UIs. */
+    urlAdapter,
     chrome,
     table,
     labels,

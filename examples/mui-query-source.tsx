@@ -1,4 +1,4 @@
-import { type ColumnDef, DataTable, useBackendData } from "@adapttable/mui";
+import { type ColumnDef, DataTable, useQuerySource } from "@adapttable/mui";
 import {
   QueryClient,
   QueryClientProvider,
@@ -53,7 +53,7 @@ function usePeopleQuery(params: {
 const queryClient = new QueryClient();
 
 /**
- * Server data, query-library tier: `useBackendData` + TanStack Query gives
+ * Server data, query-library tier: `useQuerySource` + TanStack Query gives
  * caching, infinite mode and prefetching. No query library? See
  * `mantine-server.tsx` — `onQueryChange` needs nothing but `fetch`.
  */
@@ -66,13 +66,13 @@ export function MuiBackendExample() {
 }
 
 function Inner() {
-  const source = useBackendData<
+  const source = useQuerySource<
     Person,
     { page?: number; limit?: number; search?: string },
     Page
   >({
     usePaginatedQuery: usePeopleQuery,
-    selectPage: (page) => ({ items: page.items, total: page.total }),
+    selectPage: (page) => ({ rows: page.items, total: page.total }),
   });
   return <DataTable source={source} columns={columns} rowKey={(r) => r.id} />;
 }

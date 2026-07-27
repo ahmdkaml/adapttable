@@ -4,8 +4,8 @@ import {
   createMemoryAdapter,
   useChromeBodyData,
   useFrontendData,
-  type VirtualTableRow,
 } from "@adapttable/core";
+import { type VirtualTableRow } from "@adapttable/core/adapter";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +43,7 @@ beforeEach(async () => {
 });
 
 function mount(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   mode: "paged" | "infinite" = "paged",
   url = ""
 ) {
@@ -51,7 +51,7 @@ function mount(
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter,
+      urlAdapter: adapter,
       columns,
       paginationMode: mode,
     });
@@ -192,7 +192,7 @@ describe("MUI gaps", () => {
       canLoadMore: false,
       virtualScrollRef: () => undefined,
     });
-    mount({ isMobile: true, virtualize: true, estimateCardSize: 132 });
+    mount({ forceMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });

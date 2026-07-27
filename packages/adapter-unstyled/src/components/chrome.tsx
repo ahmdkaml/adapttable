@@ -1,17 +1,21 @@
 import {
   type ActiveFilterChip,
-  type BulkBarChromeProps,
   pageSizeOptions,
   type PaginationInfo,
-  paginationSlots,
-  resolveDisabledReason,
   type TableLabels,
   type TableSource,
   useBulkActionRunner,
 } from "@adapttable/core";
+import {
+  bulkActionErrorMessage,
+  type BulkBarChromeProps,
+  paginationSlots,
+  resolveDisabledReason,
+} from "@adapttable/core/adapter";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
+import { SR_ONLY } from "./srOnly";
 
 /** Removable filter-chip strip. Renders nothing when empty. */
 export function Chips({
@@ -42,7 +46,7 @@ export function Chips({
           {chip.label}
           <button
             type="button"
-            aria-label={`${labels.clearAll}: ${chip.label}`}
+            aria-label={labels.removeFilter(chip.label)}
             data-adapttable-part="chip-remove"
             className={classNames.chipRemove}
             onClick={chip.onRemove}
@@ -85,12 +89,16 @@ export function BulkBar({
     allMatching,
     selectAllMatching,
   } = selection;
-  const { pending, run } = useBulkActionRunner({
+  const { pending, error, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
-    onComplete: clear,
+    // Clear only on success — a failed run keeps the selection for retry.
+    onComplete: (outcome) => {
+      if (outcome.status === "success") clear();
+    },
   });
   if (selectedCount === 0) return null;
+  const errorMessage = bulkActionErrorMessage(error);
   const ids = [...selectedIds];
   // Offer the cross-page scope only when a full page is selected and more
   // rows match elsewhere; once active, actions run against the whole set.
@@ -99,7 +107,10 @@ export function BulkBar({
 
   return (
     <div data-adapttable-part="bulk-bar" className={classNames.bulkBar}>
-      <span>{labels.selectedCount(selectedCount)}</span>
+      {/* A live region (implicit status role): selection changes are
+          announced without stealing focus — the count was previously
+          silent to screen readers. */}
+      <output>{labels.selectedCount(selectedCount)}</output>
       {showBanner && (
         <div
           data-adapttable-part="select-all-banner"
@@ -144,6 +155,15 @@ export function BulkBar({
           </button>
         );
       })}
+      {errorMessage !== null && (
+        <span
+          role="alert"
+          data-adapttable-part="bulk-error"
+          className={classNames.bulkError}
+        >
+          {`${labels.errorTitle}: ${errorMessage}`}
+        </span>
+      )}
     </div>
   );
 }
@@ -164,7 +184,7 @@ export function RowsPerPageSelect({
       <select
         aria-label={labels.rowsPerPage}
         data-adapttable-part="rows-per-page"
-        className={classNames.rowsPerPageSelect}
+        className={classNames.rowsPerPage}
         value={source.limit}
         onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
       >
@@ -184,6 +204,7 @@ export function Footer({
   source,
   labels,
   classNames,
+  showRowsPerPage = true,
 }: Readonly<{
   pagination: PaginationInfo;
   source: {
@@ -194,15 +215,19 @@ export function Footer({
   };
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
+  /** Hidden in the grouped full-set view, where page size has no effect. */
+  showRowsPerPage?: boolean;
 }>) {
   const { safePage, totalPages, fromIndex, toIndex } = pagination;
   return (
     <div data-adapttable-part="footer" className={classNames.footer}>
-      <RowsPerPageSelect
-        source={source}
-        labels={labels}
-        classNames={classNames}
-      />
+      {showRowsPerPage && (
+        <RowsPerPageSelect
+          source={source}
+          labels={labels}
+          classNames={classNames}
+        />
+      )}
       {source.total > 0 && (
         <span>
           {labels.showing({
@@ -218,7 +243,7 @@ export function Footer({
           type="button"
           aria-label={labels.previousPage}
           data-adapttable-part="page-prev"
-          className={classNames.pageButton}
+          className={classNames.pagePrev}
           disabled={safePage <= 1}
           onClick={() => source.setPage(safePage - 1)}
         >
@@ -240,7 +265,7 @@ export function Footer({
               type="button"
               data-adapttable-part="page-number"
               aria-current={item === safePage ? "page" : undefined}
-              className={classNames.pageButton}
+              className={classNames.pageNumber}
               onClick={() => source.setPage(item)}
             >
               {item}
@@ -251,7 +276,7 @@ export function Footer({
           type="button"
           aria-label={labels.nextPage}
           data-adapttable-part="page-next"
-          className={classNames.pageButton}
+          className={classNames.pageNext}
           disabled={safePage >= totalPages}
           onClick={() => source.setPage(safePage + 1)}
         >
@@ -283,7 +308,7 @@ export function ErrorState({
         <button
           type="button"
           onClick={onRetry}
-          data-adapttable-part="retry"
+          data-adapttable-part="retry-button"
           className={classNames.retryButton}
         >
           {labels.retry}
@@ -321,20 +346,30 @@ export function LoadingState({
   const columnKeys = Array.from({ length: columnCount }, (_, i) => i);
   return (
     <div
-      role="status"
       aria-busy="true"
       aria-live="polite"
       data-adapttable-part="loading"
       className={cx(classNames.loading)}
     >
       {variant === "table" ? (
-        <table data-adapttable-part="loading-table">
+        <table
+          data-adapttable-part="loading-table"
+          className={classNames.loadingTable}
+        >
           <thead>
-            <tr data-adapttable-part="loading-header-row">
+            <tr
+              data-adapttable-part="loading-header-row"
+              className={classNames.loadingHeaderRow}
+            >
               {columnKeys.map((column) => (
-                <th key={column} data-adapttable-part="loading-header-cell">
+                <th
+                  key={column}
+                  data-adapttable-part="loading-header-cell"
+                  className={classNames.loadingHeaderCell}
+                >
                   <span
                     data-adapttable-part="loading-line"
+                    className={classNames.loadingLine}
                     style={{ width: loadingLineWidth(column, columnCount) }}
                   />
                 </th>
@@ -343,11 +378,20 @@ export function LoadingState({
           </thead>
           <tbody>
             {rowKeys.map((row) => (
-              <tr key={row} data-adapttable-part="loading-row">
+              <tr
+                key={row}
+                data-adapttable-part="loading-row"
+                className={classNames.loadingRow}
+              >
                 {columnKeys.map((column) => (
-                  <td key={column} data-adapttable-part="loading-cell">
+                  <td
+                    key={column}
+                    data-adapttable-part="loading-cell"
+                    className={classNames.loadingCell}
+                  >
                     <span
                       data-adapttable-part="loading-line"
+                      className={classNames.loadingLine}
                       style={{
                         width: loadingLineWidth(column, columnCount),
                       }}
@@ -359,15 +403,23 @@ export function LoadingState({
           </tbody>
         </table>
       ) : (
-        <div data-adapttable-part="loading-cards">
+        <div
+          data-adapttable-part="loading-cards"
+          className={classNames.loadingCards}
+        >
           {rowKeys.map((row) => (
-            <div key={row} data-adapttable-part="loading-card">
+            <div
+              key={row}
+              data-adapttable-part="loading-card"
+              className={classNames.loadingCard}
+            >
               {columnKeys
                 .slice(0, Math.min(4, columnKeys.length))
                 .map((column) => (
                   <span
                     key={column}
                     data-adapttable-part="loading-line"
+                    className={classNames.loadingLine}
                     style={{
                       width: loadingLineWidth(column, columnKeys.length),
                     }}
@@ -377,7 +429,7 @@ export function LoadingState({
           ))}
         </div>
       )}
-      <span className="adapttable-sr-only">{labels.loading}</span>
+      <span style={SR_ONLY}>{labels.loading}</span>
     </div>
   );
 }

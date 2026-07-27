@@ -2,7 +2,7 @@ import {
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import { Box, Button, Flex, Progress, Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
@@ -33,7 +33,8 @@ import type { DataTableProps } from "./types";
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, colorScheme, animate = false } = props;
+  const { slots, animate = false } = props;
+  const accentColor = props.accentColor;
   const { filtersMode = "popover" } = props;
   // Map row density to Chakra's table `size` (independent of column pinning):
   // compact → "sm", comfortable (default) → "md". An explicit `size` prop, if
@@ -46,7 +47,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <AutoFilterForm
       defs={defs}
       source={source}
-      colorScheme={colorScheme}
+      accentColor={accentColor}
       dir={props.dir}
       labels={props.labels}
     />
@@ -66,7 +67,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowActions,
     toolbarProps,
   } = shell;
-  const tableProps = { ...shell.tableProps, size, colorScheme };
+  const tableProps = { ...shell.tableProps, size, accentColor };
   useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
     enabled: animate,
   });
@@ -87,7 +88,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           <Button
             size="sm"
             variant="outline"
-            colorPalette={colorScheme}
+            colorPalette={accentColor}
             onClick={chrome.clearFilters}
           >
             {labels.clearAll}
@@ -131,12 +132,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             props.savedViews ? (
               <SavedViewsMenu
                 options={{
-                  adapter: props.urlAdapter,
+                  // The table's RESOLVED backend — shared so views follow urlSync.
+                  urlAdapter: shell.urlAdapter,
                   urlKey: props.urlKey,
                   ...props.savedViews,
                 }}
                 labels={labels}
-                colorScheme={colorScheme}
+                accentColor={accentColor}
               />
             ) : undefined
           }
@@ -151,7 +153,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               />
             ) : undefined
           }
-          colorScheme={colorScheme}
+          accentColor={accentColor}
         />
         {chrome.isRefreshing && (
           <Progress.Root size="xs" value={null} aria-label={labels.loading}>
@@ -172,7 +174,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             bulkActions={props.bulkActions}
             confirm={chrome.confirm}
             labels={labels}
-            colorScheme={colorScheme}
+            accentColor={accentColor}
           />
         )}
         {source.error ? (
@@ -205,6 +207,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}
+            showRowsPerPage={!chrome.grouping}
           />
         )}
       </Stack>
@@ -216,7 +219,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           activeFilterCount={chrome.activeFilterCount}
           onClearFilters={chrome.clearFilters}
           labels={labels}
-          colorScheme={colorScheme}
+          accentColor={accentColor}
           dir={props.dir}
         />
       )}

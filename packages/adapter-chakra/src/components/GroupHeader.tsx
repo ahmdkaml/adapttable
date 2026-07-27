@@ -1,11 +1,11 @@
 import {
   type Direction,
-  ExpandChevron,
   type GroupedFlatEntry,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
+import { ExpandChevron } from "@adapttable/core/adapter";
 import { Box, Card, HStack, IconButton, Table, Text } from "@chakra-ui/react";
 import type { ReactElement } from "react";
 
@@ -45,7 +45,7 @@ export function GroupHeaderRow<TRow>({
   selection,
   labels,
   dir,
-  colorScheme,
+  accentColor,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
@@ -53,7 +53,7 @@ export function GroupHeaderRow<TRow>({
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   dir?: Direction;
-  colorScheme?: string;
+  accentColor?: string;
   onToggleCollapse: (groupKey: string) => void;
 }>): ReactElement {
   const expanded = !entry.collapsed;
@@ -81,7 +81,7 @@ export function GroupHeaderRow<TRow>({
                 aria-label={labels.selectAll}
                 checked={groupState === "all"}
                 indeterminate={groupState === "some"}
-                colorPalette={colorScheme}
+                colorPalette={accentColor}
                 onToggle={() => selection.toggleGroupLeaves(entry.leafIds)}
               />
             </Box>
@@ -115,14 +115,14 @@ export function GroupHeaderCard<TRow>({
   selection,
   labels,
   dir,
-  colorScheme,
+  accentColor,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   dir?: Direction;
-  colorScheme?: string;
+  accentColor?: string;
   onToggleCollapse: (groupKey: string) => void;
 }>): ReactElement {
   const expanded = !entry.collapsed;
@@ -151,7 +151,7 @@ export function GroupHeaderCard<TRow>({
                 aria-label={labels.selectAll}
                 checked={groupState === "all"}
                 indeterminate={groupState === "some"}
-                colorPalette={colorScheme}
+                colorPalette={accentColor}
                 onToggle={() => selection.toggleGroupLeaves(entry.leafIds)}
               />
             </Box>

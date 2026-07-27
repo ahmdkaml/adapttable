@@ -26,6 +26,7 @@ import {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+import { useEventCallback } from "./hooks/useEventCallback";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
@@ -35,6 +36,7 @@ import {
   useRowExpansion,
 } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
+import type { TableSource } from "./source/TableSource";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
@@ -59,14 +61,14 @@ import {
 export interface ToolbarChromeProps<TRow> {
   /** The headless table state + prop-getters. */
   table: UseDataTableResult<TRow>;
-  /** Hide the search input. */
-  hideSearch?: boolean;
+  /** Render the search input (default `true`). */
+  searchable?: boolean;
   /** Placeholder for the search input. */
   searchPlaceholder?: string;
   /** Options for an explicit sort-by control. */
   sortByOptions?: SortByOption[];
   /** Extra caller-supplied toolbar content. */
-  customToolbar?: ReactNode;
+  toolbar?: ReactNode;
   /** Whether a filters affordance should render. */
   hasFilters: boolean;
   /** Number shown on the filters badge. */
@@ -124,6 +126,14 @@ export type TableBodyRegion = "skeleton" | "empty" | "mobile" | "desktop";
 
 /** The shared, UI-agnostic orchestration result for an adapter table. */
 export interface TableChrome<TRow> {
+  /**
+   * The source as the VIEW sees it. Identical to the caller's source —
+   * except with grouping armed, where the table renders the full filtered
+   * set and this facade presents that set (full rows, one page, matching
+   * total) so footer numbers, select-all scope and page-scope CSV export
+   * agree with the screen. Adapters read THIS, never the raw source.
+   */
+  source: TableSource<TRow>;
   /** The headless table state + prop-getters. */
   table: UseDataTableResult<TRow>;
   /** Resolved mobile layout flag. */
@@ -229,7 +239,7 @@ export function useTableChrome<TRow>(
     tableLabel,
     labels,
     dir,
-    isMobile: isMobileProp,
+    forceMobile,
     mobileIdentityColumns,
     onRowsChange,
     bulkActions,
@@ -247,7 +257,7 @@ export function useTableChrome<TRow>(
   } = props;
 
   const autoMobile = useIsMobile();
-  const isMobile = isMobileProp ?? autoMobile;
+  const isMobile = forceMobile ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
   // Declarative defaults (auto headers, dot-path accessors) resolve once
@@ -263,17 +273,47 @@ export function useTableChrome<TRow>(
     columns: resolvedColumns,
     layout: columnLayoutProp,
     onLayoutChange: onColumnLayoutChange,
-    defaultLayout: defaultColumnLayout,
+    defaultColumnLayout,
   });
 
+  // Effective groupBy: prop wins when provided (including `null` to force
+  // off); otherwise the URL/source value. Empty string is treated as unset.
+  //
+  // With grouping armed the table is a FULL-SET view: grouped mode renders
+  // every filtered row, so the source the chrome reasons about presents
+  // that same set — footer numbers, select-all scope and page-scope CSV
+  // export all describe exactly what is on screen instead of the page
+  // slice. Mutators pass through untouched; the overlay disappears (and
+  // real pagination resumes) the moment grouping is cleared.
+  const requestedGroupBy =
+    props.groupBy === undefined ? source.groupBy : (props.groupBy ?? undefined);
+  const effectiveGroupBy =
+    requestedGroupBy && requestedGroupBy.length > 0
+      ? requestedGroupBy
+      : undefined;
+  const groupingArmed = Boolean(effectiveGroupBy && source.allFilteredRows);
+  const viewSource = useMemo<TableSource<TRow>>(() => {
+    if (!groupingArmed || !source.allFilteredRows) return source;
+    const all = source.allFilteredRows;
+    return {
+      ...source,
+      rows: all,
+      page: 1,
+      limit: Math.max(all.length, 1),
+      total: all.length,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    };
+  }, [groupingArmed, source]);
+
   const table = useDataTable<TRow>({
-    source,
+    source: viewSource,
     columns: columnLayout.visibleColumns,
     rowKey,
     tableLabel,
     labels,
     dir,
-    isMobile,
+    forceMobile: isMobile,
     mobileIdentityColumns,
     bulkActions,
     selectionGetId,
@@ -281,6 +321,8 @@ export function useTableChrome<TRow>(
     onSelectedIdsChange: onSelectionChange,
     filterLabels,
     multiSort: props.multiSort,
+    searchDebounceMs: props.searchDebounceMs,
+    locale: props.locale,
   });
 
   useEffect(() => {
@@ -289,16 +331,23 @@ export function useTableChrome<TRow>(
 
   // Selection observer (uncontrolled only): the Set identity only changes
   // when the selection does, so this fires exactly once per user-visible
-  // change (including automatic resets). In the CONTROLLED mode the parent
-  // already receives change requests synchronously through useSelection's
-  // onChange — echoing them here would double-fire (and feed loops).
+  // change (including automatic resets and the documented mount fire with
+  // the empty selection). The handler is read through a ref-latch — the
+  // documented inline-arrow usage is a fresh identity every render, and
+  // keying the effect on it loops forever when the handler stores the ids
+  // in state. In the CONTROLLED mode the parent already receives change
+  // requests synchronously through useSelection's onChange — echoing them
+  // here would double-fire (and feed loops).
   const controlledSelection = selectedIdsProp !== undefined;
   const selectedIds = table.selection?.selectedIds;
+  const notifySelectionChange = useEventCallback((ids: string[]) => {
+    onSelectionChange?.(ids);
+  });
   useEffect(() => {
     if (!controlledSelection && selectedIds) {
-      onSelectionChange?.([...selectedIds]);
+      notifySelectionChange([...selectedIds]);
     }
-  }, [controlledSelection, onSelectionChange, selectedIds]);
+  }, [controlledSelection, selectedIds, notifySelectionChange]);
 
   const mergedChips = useMemo<readonly ActiveFilterChip[]>(
     () => mergeFilterChips(table.filterChips, extraChips),
@@ -313,7 +362,7 @@ export function useTableChrome<TRow>(
   const isPaged = source.paginationMode === "paged";
 
   let body: TableBodyRegion;
-  if (source.isLoading && source.rows.length === 0) body = "skeleton";
+  if (viewSource.isLoading && viewSource.rows.length === 0) body = "skeleton";
   else if (table.isEmpty) body = "empty";
   else if (isMobile) body = "mobile";
   else body = "desktop";
@@ -328,9 +377,13 @@ export function useTableChrome<TRow>(
     source.isFetching && !source.isLoading && !source.isFetchingNextPage
   );
 
+  // `onClearFilters` is a pure NOTIFICATION: the chrome always performs
+  // the clear itself, then tells the host. (It used to REPLACE the clear,
+  // so a logging handler silently broke the button — take full control
+  // via `source.clearExtras` instead.)
   const clearFilters = useCallback(() => {
-    if (onClearFilters) onClearFilters();
-    else source.clearExtras();
+    source.clearExtras();
+    onClearFilters?.();
   }, [onClearFilters, source]);
 
   // Hooks run unconditionally; the state is simply unused (and unexposed)
@@ -353,6 +406,15 @@ export function useTableChrome<TRow>(
     () => (onCellEdit ? { onCellEdit, state: cellEditingState } : undefined),
     [onCellEdit, cellEditingState]
   );
+  // Half-configured editing is a silent trap: `editable: true` on a column
+  // does NOTHING without the table-level change channel. Say so in dev.
+  const hasEditableColumn = resolvedColumns.some((column) => column.editable);
+  useEffect(() => {
+    if (!hasEditableColumn || onCellEdit) return;
+    devWarn(
+      "columns declare `editable` but no `onCellEdit` handler is set — cell editing stays inert. Pass `onCellEdit` on the table to enable it."
+    );
+  }, [hasEditableColumn, onCellEdit]);
 
   // If the active row leaves the rendered set, drop the draft without
   // committing — the host never receives a stale edit. The check runs
@@ -362,18 +424,9 @@ export function useTableChrome<TRow>(
   // rows beyond page 1 froze as display-only).
 
   const groupCollapse = useGroupCollapse({
-    collapsedIds: props.collapsedGroupIds,
-    onCollapsedIdsChange: props.onCollapsedGroupIdsChange,
+    collapsedGroupIds: props.collapsedGroupIds,
+    onCollapsedGroupIdsChange: props.onCollapsedGroupIdsChange,
   });
-
-  // Effective groupBy: prop wins when provided (including `null` to force off);
-  // otherwise the URL/source value. Empty string is treated as unset.
-  const requestedGroupBy =
-    props.groupBy === undefined ? source.groupBy : (props.groupBy ?? undefined);
-  const effectiveGroupBy =
-    requestedGroupBy && requestedGroupBy.length > 0
-      ? requestedGroupBy
-      : undefined;
 
   useEffect(() => {
     if (!effectiveGroupBy) return;
@@ -383,12 +436,22 @@ export function useTableChrome<TRow>(
     );
   }, [effectiveGroupBy, source.allFilteredRows]);
 
+  // Depend on the two stable members, never the whole props/source objects
+  // (both fresh every render) — keying on them rebuilt the grouping bundle,
+  // and the O(filtered rows) grouped flat model behind it, on every
+  // keystroke.
+  const { onGroupByChange } = props;
+  const { setGroupBy: sourceSetGroupBy } = source;
+  // `onGroupByChange` is a pure NOTIFICATION: the chrome always applies
+  // the grouping change itself, then tells the host. (It used to REPLACE
+  // the mutator, so a logging handler silently broke grouping — take full
+  // control via `source.setGroupBy` instead.)
   const setGroupBy = useCallback(
     (key: string | null) => {
-      if (props.onGroupByChange) props.onGroupByChange(key);
-      else source.setGroupBy(key ?? undefined);
+      sourceSetGroupBy(key ?? undefined);
+      onGroupByChange?.(key);
     },
-    [props, source]
+    [onGroupByChange, sourceSetGroupBy]
   );
 
   const getRowId = selectionGetId ?? rowKey;
@@ -399,7 +462,7 @@ export function useTableChrome<TRow>(
       groupBy: effectiveGroupBy,
       columns: columnLayout.visibleColumns,
       getRowId,
-      collapsedIds: groupCollapse.collapsedIds,
+      collapsedGroupIds: groupCollapse.collapsedGroupIds,
       aggregates: props.groupAggregates,
     });
     return {
@@ -422,13 +485,13 @@ export function useTableChrome<TRow>(
   // See TableChrome.editingRows — the row universe the editing layer
   // validates against must match what the body renders.
   const editingRows = useMemo<readonly TRow[]>(() => {
-    if (!grouping) return source.rows;
+    if (!grouping) return viewSource.rows;
     const leaves: TRow[] = [];
     for (const entry of grouping.entries) {
       if (entry.kind === "row") leaves.push(entry.row);
     }
     return leaves;
-  }, [grouping, source.rows]);
+  }, [grouping, viewSource.rows]);
 
   useEffect(() => {
     if (!editing) return;
@@ -439,10 +502,11 @@ export function useTableChrome<TRow>(
 
   const showFooter =
     isPaged &&
-    !source.error &&
-    (source.total > 0 || source.isLoading || source.isFetching);
+    !viewSource.error &&
+    (viewSource.total > 0 || viewSource.isLoading || viewSource.isFetching);
 
   return {
+    source: viewSource,
     table,
     isMobile,
     confirm,
@@ -501,10 +565,18 @@ export function useChromeBodyData<TRow>(
   chrome: TableChrome<TRow>,
   props: BaseDataTableProps<TRow>
 ): ChromeBodyData<TRow> {
-  const { source, rowKey, virtualize = false } = props;
+  const { rowKey, virtualize = false } = props;
+  // The chrome's view facade, so grouped full-set state (no next page, all
+  // rows present) drives the sentinel and virtualization too.
+  const { source } = chrome;
   if (virtualize && props.renderRowDetail) {
     devWarn(
       "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
+    );
+  }
+  if (virtualize && source.paginationMode === "paged") {
+    devWarn(
+      'virtualize only applies in infinite mode — this paged table renders unvirtualized. Pass paginationMode="infinite" to enable it.'
     );
   }
   const fetchNext = useCallback(() => {

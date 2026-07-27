@@ -1,12 +1,15 @@
 import {
   type ActiveFilterChip,
-  type BulkBarChromeProps,
   type Direction,
   pageSizeOptions,
   type TableLabels,
-  type ToolbarChromeProps,
   useBulkActionRunner,
 } from "@adapttable/core";
+import {
+  bulkActionErrorMessage,
+  type BulkBarChromeProps,
+  type ToolbarChromeProps,
+} from "@adapttable/core/adapter";
 import {
   Alert,
   Badge,
@@ -45,10 +48,10 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
-  hideSearch,
+  searchable,
   searchPlaceholder,
   sortByOptions,
-  customToolbar,
+  toolbar,
   hasFilters,
   activeFilterCount,
   filters,
@@ -88,7 +91,7 @@ export function Toolbar<TRow>({
 
   return (
     <Flex gap="small" wrap align="center" justify="space-between">
-      {!hideSearch && (
+      {searchable !== false && (
         <Input
           type="search"
           allowClear
@@ -118,7 +121,7 @@ export function Toolbar<TRow>({
             }
           />
         )}
-        {customToolbar}
+        {toolbar}
         {hasFilters &&
           (filtersMode === "popover" ? (
             <FilterPopover
@@ -226,9 +229,13 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
   const runner = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
-    onComplete: selection.clear,
+    // Clear only on success — a failed run keeps the selection for retry.
+    onComplete: (outcome) => {
+      if (outcome.status === "success") selection.clear();
+    },
   });
   if (selection.selectedCount === 0) return null;
+  const errorMessage = bulkActionErrorMessage(runner.error);
   const ids = [...selection.selectedIds];
   const busy = runner.pending !== null;
   const crossPage =
@@ -254,9 +261,14 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
   }
   return (
     <Alert
-      type="info"
+      type={errorMessage === null ? "info" : "error"}
       banner
       title={message}
+      description={
+        errorMessage === null ? undefined : (
+          <span role="alert">{`${labels.errorTitle}: ${errorMessage}`}</span>
+        )
+      }
       action={
         <Space size="small" wrap>
           <Button
@@ -345,7 +357,7 @@ export function FilterDrawer({
             {labels.clearAll}
           </Button>
           <Button type="primary" onClick={onClose}>
-            {labels.applyFilters}
+            {labels.filtersDone}
           </Button>
         </Flex>
       }

@@ -53,14 +53,14 @@ beforeEach(async () => {
 });
 
 function mount(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   url = "limit=100"
 ) {
   adapter = createMemoryAdapter(url);
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter,
+      urlAdapter: adapter,
       columns,
       paginationMode: "infinite",
     });
@@ -105,7 +105,7 @@ describe("<DataTable> (Ant Design) mobile card windowing", () => {
       paddingBottom: 2400,
       measureElement,
     });
-    const { container } = mount({ isMobile: true, virtualize: true });
+    const { container } = mount({ forceMobile: true, virtualize: true });
     const list = cardList(container);
     const items = within(list).getAllByRole("listitem");
     // Only the windowed cards render — far fewer than the 50 source rows.
@@ -124,7 +124,7 @@ describe("<DataTable> (Ant Design) mobile card windowing", () => {
   });
 
   it("renders every card when virtualize is off (no windowing)", () => {
-    const { container } = mount({ isMobile: true });
+    const { container } = mount({ forceMobile: true });
     const list = cardList(container);
     // The real hook stays disabled, so all 50 source rows render as cards.
     expect(within(list).getAllByRole("listitem")).toHaveLength(50);

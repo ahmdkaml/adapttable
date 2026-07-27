@@ -43,13 +43,13 @@ interface HarnessProps {
   refetch?: () => void;
   isLoading?: boolean;
   isMobile?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }
 
 function Harness(props: HarnessProps) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter: harnessAdapter,
+    urlAdapter: harnessAdapter,
     columns,
     paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
@@ -61,7 +61,7 @@ function Harness(props: HarnessProps) {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -898,8 +898,14 @@ describe("actions column in the column layout", () => {
   it("round-trips the actions pin through the URL layout state", async () => {
     const adapter = createMemoryAdapter("");
     function UrlHarness() {
-      const { layout, onLayoutChange } = useColumnLayoutUrlState({ adapter });
-      const source = useFrontendData<Row>({ data: ROWS, adapter, columns });
+      const { layout, onLayoutChange } = useColumnLayoutUrlState({
+        urlAdapter: adapter,
+      });
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+      });
       return (
         <DataTable<Row>
           source={source}

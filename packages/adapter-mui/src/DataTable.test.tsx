@@ -32,11 +32,11 @@ function Harness(props: {
   refetch?: () => void;
   isLoading?: boolean;
   isFetching?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
@@ -49,7 +49,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -134,7 +134,7 @@ describe("<DataTable> (MUI)", () => {
 
   it("compact density tightens the mobile cards", () => {
     const { container } = renderHarness({
-      override: { isMobile: true, density: "compact" },
+      override: { forceMobile: true, density: "compact" },
     });
     expect(container.querySelector('[role="list"]')).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
@@ -546,7 +546,7 @@ describe("<DataTable> (MUI)", () => {
       },
     });
     const checks = screen.getAllByLabelText("Select row");
-    expect(checks.length).toBe(2);
+    expect(checks).toHaveLength(2);
     fireEvent.click(checks[0]!);
     expect(screen.getByText("1 selected")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);

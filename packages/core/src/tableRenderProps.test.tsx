@@ -2,7 +2,7 @@ import { act, render, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useFrontendData } from "./source/useFrontendData";
-import { tableRenderModel } from "./tableRenderProps";
+import { tableRenderModel, useSummaryCells } from "./tableRenderProps";
 import type { ColumnDef } from "./types";
 import { createMemoryAdapter } from "./url/adapter";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
@@ -33,7 +33,7 @@ describe("tableRenderModel", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -100,7 +100,7 @@ describe("useChromeScrollReset", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       const props = { source, columns: cols, rowKey: (r: Row) => r.id };
@@ -125,7 +125,7 @@ describe("useChromeScrollReset", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: mode,
         defaults: { limit: 1 },
       });
@@ -169,7 +169,7 @@ describe("onSelectionChange", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -197,7 +197,7 @@ describe("onSelectionChange", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -217,7 +217,7 @@ function chromeWith(over: Record<string, unknown> = {}, initialUrl = "") {
     const source = useFrontendData<Row>({
       data: ROWS,
       columns: cols,
-      adapter,
+      urlAdapter: adapter,
       paginationMode: "paged",
       filterFn: (row, extra) => !extra.team || row.name.includes("li"),
     });
@@ -254,7 +254,7 @@ describe("emptyVariant / isRefreshing / clearFilters", () => {
       const source = useFrontendData<Row>({
         data: [],
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -322,7 +322,7 @@ describe("useChromeBodyData", () => {
       const source = useFrontendData<Row>({
         data: many,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "infinite",
       });
       const props = {
@@ -358,7 +358,7 @@ describe("useChromeBodyData", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       const props = { source, columns: cols, rowKey: (r: Row) => r.id };
@@ -376,7 +376,7 @@ describe("useChromeBodyData", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "infinite",
       });
       const props = { source, columns: cols, rowKey: (r: Row) => r.id };
@@ -393,7 +393,7 @@ describe("useChromeBodyData", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "infinite",
       });
       const props = {
@@ -643,7 +643,7 @@ describe("chrome row expansion", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return {
@@ -678,7 +678,7 @@ describe("chrome row expansion", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "infinite",
       });
       const props = {
@@ -713,7 +713,7 @@ describe("multi-sort headers", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: sortable,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -752,7 +752,7 @@ describe("multi-sort headers", () => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: [{ key: "name", header: "Name" }] as never,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       });
       return useTableChrome<Row>({
@@ -767,5 +767,45 @@ describe("multi-sort headers", () => {
       onClick: (e?: { shiftKey?: boolean }) => void;
     };
     expect(() => props.onClick({ shiftKey: true })).not.toThrow();
+  });
+});
+
+describe("useSummaryCells", () => {
+  interface SummaryRow {
+    id: string;
+    amount: number;
+  }
+  const SUM_ROWS: SummaryRow[] = [
+    { id: "a", amount: 2 },
+    { id: "b", amount: 3 },
+  ];
+
+  it("returns undefined (and computes nothing) without a builder", () => {
+    const { result } = renderHook(() => useSummaryCells(undefined, SUM_ROWS));
+    expect(result.current).toBeUndefined();
+  });
+
+  it("recomputes only when the rows change, even with an inline builder", () => {
+    const spy = vi.fn((rows: readonly SummaryRow[]) => ({
+      amount: rows.reduce((sum, row) => sum + row.amount, 0),
+    }));
+    const { result, rerender } = renderHook(
+      ({ rows }: { rows: readonly SummaryRow[]; tick: number }) =>
+        // A FRESH closure every render — the latch absorbs identity churn.
+        useSummaryCells((r) => spy(r), rows),
+      { initialProps: { rows: SUM_ROWS, tick: 0 } }
+    );
+    expect(result.current).toEqual({ amount: 5 });
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    // Unrelated re-render: no recompute.
+    rerender({ rows: SUM_ROWS, tick: 1 });
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    // New rows: recompute with the LATEST builder.
+    const next = [...SUM_ROWS, { id: "c", amount: 10 }];
+    rerender({ rows: next, tick: 2 });
+    expect(result.current).toEqual({ amount: 15 });
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 });

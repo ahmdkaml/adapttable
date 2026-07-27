@@ -3,8 +3,8 @@ import type {
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
-  UseTableDataOptions,
 } from "@adapttable/core";
+import type { DataModeProps } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 /**
@@ -22,7 +22,7 @@ export interface DataTableClassNames {
   searchIcon?: string;
   sortSelect?: string;
   /** Rows-per-page `<select>` (toolbar in infinite mode, footer when paged). */
-  rowsPerPageSelect?: string;
+  rowsPerPage?: string;
   filtersButton?: string;
   /** The leading funnel icon inside the Filters button. */
   filtersIcon?: string;
@@ -72,6 +72,8 @@ export interface DataTableClassNames {
   /** The separator above the trailing row-actions entry in the menu. */
   columnMenuSeparator?: string;
   columnMenuReset?: string;
+  /** The saved-views menu container (trigger + anchored panel). */
+  viewsMenu?: string;
   /** The saved-views menu trigger button. */
   viewsButton?: string;
   /** The saved-views dropdown panel. */
@@ -84,9 +86,13 @@ export interface DataTableClassNames {
   viewsInput?: string;
   /** The save-view button in the save row. */
   viewsSave?: string;
+  /** The separator between the views list and the save row. */
+  viewsDivider?: string;
   resizeHandle?: string;
   bulkBar?: string;
   bulkButton?: string;
+  /** The failure line shown in the bulk bar after a rejected bulk action. */
+  bulkError?: string;
   /** The cross-page banner inside the bulk bar (full page selected). */
   selectAllBanner?: string;
   /** The banner's status text (page selected / all matching selected). */
@@ -98,9 +104,9 @@ export interface DataTableClassNames {
   headerRow?: string;
   headerCell?: string;
   /** The grouped-header `<tr>` rendered above the column headers. */
-  groupRow?: string;
-  /** One spanning `<th>` (or edge gap) inside the group row. */
-  groupCell?: string;
+  headerGroupRow?: string;
+  /** One spanning `<th>` (or edge gap) inside the header-group row. */
+  headerGroupCell?: string;
   sortButton?: string;
   /** The 1-based multi-sort position badge inside a sorted header. */
   sortIndex?: string;
@@ -119,17 +125,50 @@ export interface DataTableClassNames {
   detailCell?: string;
   /** The detail section inside an expanded mobile card. */
   cardDetail?: string;
+  /** The trailing row-actions header cell. */
+  actionsHeader?: string;
   actionsCell?: string;
   actionButton?: string;
+  /** The leading select-all header cell. */
+  selectionHeader?: string;
   selectionCell?: string;
+  /** A selection checkbox input (header select-all, row, mobile card). */
   checkbox?: string;
   loadMore?: string;
   loadMoreButton?: string;
+  /* ── Row grouping (groupBy) ──────────────────────────────────────── */
+  /** A group-header `<tr>` in the grouped desktop body. */
+  groupRow?: string;
+  /** The single spanning cell inside a group-header row. */
+  groupCell?: string;
+  /** A group-header `<li>` in the grouped mobile card list. */
+  groupCard?: string;
+  /** The group collapse/expand toggle button. */
+  groupToggle?: string;
+  /** The group's tri-state selection checkbox. */
+  groupSelect?: string;
+  /** The group's label text. */
+  groupLabel?: string;
+  /** The group's row-count badge. */
+  groupCount?: string;
+  /** One aggregate value chip in the group header. */
+  groupAggregate?: string;
+  /* ── Cell editing ────────────────────────────────────────────────── */
+  /** The invisible activate button wrapping an editable display cell. */
+  editCellActivate?: string;
+  /** The active inline cell editor (input or select). */
+  editCellEditor?: string;
   cards?: string;
   card?: string;
+  /** The trailing actions strip inside a mobile card. */
+  cardActions?: string;
   cardRow?: string;
   cardLabel?: string;
   cardValue?: string;
+  /** The sideways/bounded scroll wrapper around the desktop table. */
+  scrollBox?: string;
+  /** A virtualization padding spacer (desktop row or mobile card list). */
+  virtualSpacer?: string;
   /** The `<tfoot>` holding the summary row. */
   summary?: string;
   /** The summary `<tr>` inside the footer. */
@@ -142,14 +181,35 @@ export interface DataTableClassNames {
   footer?: string;
   /** The pager group on the footer's trailing edge: page-of label + numbered pages. */
   pager?: string;
-  /** Every pager button: prev/next arrows and each numbered page (the current page carries `aria-current="page"`). */
-  pageButton?: string;
+  /** The pager's previous-page arrow button. */
+  pagePrev?: string;
+  /** The pager's next-page arrow button. */
+  pageNext?: string;
+  /** One numbered page button (the current page carries `aria-current="page"`). */
+  pageNumber?: string;
   /** The "…" gap standing in for elided page numbers. */
   pageEllipsis?: string;
   empty?: string;
   /** The clear-filters button inside the "no results" empty state. */
   emptyClear?: string;
   loading?: string;
+  /* ── Loading skeleton ────────────────────────────────────────────── */
+  /** The skeleton `<table>`. */
+  loadingTable?: string;
+  /** The skeleton header `<tr>`. */
+  loadingHeaderRow?: string;
+  /** One skeleton header `<th>`. */
+  loadingHeaderCell?: string;
+  /** One skeleton body `<tr>`. */
+  loadingRow?: string;
+  /** One skeleton body `<td>`. */
+  loadingCell?: string;
+  /** The shimmering placeholder line inside a skeleton cell. */
+  loadingLine?: string;
+  /** The skeleton mobile card list. */
+  loadingCards?: string;
+  /** One skeleton mobile card. */
+  loadingCard?: string;
   /** The non-blocking background-refresh progress indicator. */
   refreshIndicator?: string;
   error?: string;
@@ -157,25 +217,23 @@ export interface DataTableClassNames {
 }
 
 /**
- * Overridable sub-components — a cross-adapter alias for the top-level
- * `emptyState` / `loadingState` props. When both are supplied the `slots`
- * entry wins (`slots.empty ?? emptyState`, `slots.skeleton ?? loadingState`).
+ * Overridable sub-components: the loading skeleton and the empty state.
  */
 export interface DataTableSlots {
-  /** Replace the empty-state (alias for `emptyState`). */
+  /** Replace the empty-state. */
   empty?: ReactNode;
-  /** Replace the loading skeleton (alias for `loadingState`). */
+  /** Replace the loading skeleton. */
   skeleton?: ReactNode;
 }
 
 /** Props for the unstyled `<DataTable>`. */
-export interface DataTableProps<TRow> extends Omit<
+interface DataTablePropsBase<TRow> extends Omit<
   BaseDataTableProps<TRow>,
   "source"
 > {
   /**
    * Full-control tier: a prebuilt source (`useFrontendData`,
-   * `useBackendData`, …), used as-is. Omit it and pass `data` instead for
+   * `useQuerySource`, …), used as-is. Omit it and pass `data` instead for
    * the managed tiers.
    */
   source?: TableSource<TRow>;
@@ -188,12 +246,8 @@ export interface DataTableProps<TRow> extends Omit<
   total?: number;
   /** Server tier: request in flight. */
   loading?: boolean;
-  /**
-   * Server tier: fired with the consolidated query (page, search, sort,
-   * filters) whenever it changes — including once on mount with the
-   * URL-restored values. The caller fetches and hands back `data` + `total`.
-   */
-  onQueryChange?: UseTableDataOptions<TRow>["onQueryChange"];
+  /** Forwarded error to display in the table's error state. */
+  error?: Error | null;
   /**
    * URL-state adapter for the managed tiers (router integration, memory
    * adapter for tests/SSR). Defaults to the browser History API.
@@ -216,14 +270,7 @@ export interface DataTableProps<TRow> extends Omit<
   savedViews?: UseSavedViewsOptions;
   /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
-  /** Empty-state node override. */
-  emptyState?: ReactNode;
-  /** Loading-state node override (replaces the skeleton on first load). */
-  loadingState?: ReactNode;
-  /**
-   * Cross-adapter alias for `emptyState` / `loadingState`. Takes precedence
-   * over the top-level props when both are provided.
-   */
+  /** Replace sub-components (loading skeleton, empty state). */
   slots?: DataTableSlots;
   /**
    * Animate rows/cards on mount (dependency-free; honors reduced motion).
@@ -231,3 +278,12 @@ export interface DataTableProps<TRow> extends Omit<
    */
   animate?: boolean;
 }
+
+/**
+ * Props for the unstyled `<DataTable>`: the base surface intersected
+ * with core's data-mode union, so `mode="server"` requires
+ * `onQueryChange` at compile time and `mode="frontend"` turns it into a
+ * pure notification.
+ */
+export type DataTableProps<TRow> = DataTablePropsBase<TRow> &
+  DataModeProps<TRow>;

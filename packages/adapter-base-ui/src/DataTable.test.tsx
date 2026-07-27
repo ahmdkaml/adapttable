@@ -50,11 +50,11 @@ function Harness(props: {
   refetch?: () => void;
   isLoading?: boolean;
   isFetching?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
     error: props.error ?? null,
@@ -67,7 +67,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -101,7 +101,7 @@ describe("<DataTable> (Base UI)", () => {
 
   it("applies the card className on mobile", () => {
     const { container } = renderHarness({
-      override: { isMobile: true, classNames: { card: "my-card" } },
+      override: { forceMobile: true, classNames: { card: "my-card" } },
     });
     expect(container.querySelector(".my-card")).toBeInTheDocument();
   });
@@ -205,7 +205,7 @@ describe("<DataTable> (Base UI)", () => {
       },
     });
     const flagged = container.querySelectorAll("tbody tr.row-overdue");
-    expect(flagged.length).toBe(1);
+    expect(flagged).toHaveLength(1);
     expect(within(flagged[0] as HTMLElement).getByText("Alice")).toBeTruthy();
   });
 
@@ -218,9 +218,9 @@ describe("<DataTable> (Base UI)", () => {
       },
     });
     // Both cards keep the static hook; only Alice's gets the row class.
-    expect(container.querySelectorAll(".my-card").length).toBe(2);
+    expect(container.querySelectorAll(".my-card")).toHaveLength(2);
     const flagged = container.querySelectorAll(".my-card.row-overdue");
-    expect(flagged.length).toBe(1);
+    expect(flagged).toHaveLength(1);
     expect(within(flagged[0] as HTMLElement).getByText("Alice")).toBeTruthy();
   });
 
@@ -229,7 +229,7 @@ describe("<DataTable> (Base UI)", () => {
       isMobile: true,
       override: { rowClassName: () => "row-marked" },
     });
-    expect(container.querySelectorAll(".row-marked").length).toBe(2);
+    expect(container.querySelectorAll(".row-marked")).toHaveLength(2);
   });
 
   it("renders loading skeletons", () => {
@@ -465,7 +465,7 @@ describe("<DataTable> (Base UI)", () => {
       },
     });
     const checks = screen.getAllByLabelText("Select row");
-    expect(checks.length).toBe(2);
+    expect(checks).toHaveLength(2);
     fireEvent.click(checks[0]!);
     expect(screen.getByText("1 selected")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);

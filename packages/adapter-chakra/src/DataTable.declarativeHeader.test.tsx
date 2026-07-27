@@ -37,13 +37,15 @@ const GROUPED: ColumnDef<Person>[] = [
 ];
 
 /** Everything that enables the leading/trailing edge columns at once. */
-const EDGES: Partial<DataTableProps<Person>> = {
+const EDGES: Partial<Omit<DataTableProps<Person>, "mode">> = {
   bulkActions: [{ key: "x", label: "Export", onClick: vi.fn() }],
   rowActions: [{ key: "e", label: "Edit", onClick: vi.fn() }],
   renderRowDetail: (row) => <div>Detail {row.id}</div>,
 };
 
-function renderTable(override: Partial<DataTableProps<Person>> = {}) {
+function renderTable(
+  override: Partial<Omit<DataTableProps<Person>, "mode">> = {}
+) {
   return render(
     <ChakraProvider value={defaultSystem}>
       <DataTable<Person>
@@ -103,7 +105,7 @@ describe("summaryRow (Chakra)", () => {
   });
 
   it("mobile: renders the summary as a final card, skipping absent keys", () => {
-    renderTable({ isMobile: true, summaryRow: () => ({ age: "75 total" }) });
+    renderTable({ forceMobile: true, summaryRow: () => ({ age: "75 total" }) });
     const card = screen.getAllByRole("listitem").at(-1)!;
     expect(within(card).getByText("Age")).toBeInTheDocument();
     expect(within(card).getByText("75 total")).toBeInTheDocument();
@@ -112,7 +114,7 @@ describe("summaryRow (Chakra)", () => {
 
   it("mobile compact: the summary card follows the dense card spacing", () => {
     renderTable({
-      isMobile: true,
+      forceMobile: true,
       size: "sm",
       summaryRow: () => ({ age: "75 total" }),
     });
@@ -121,7 +123,7 @@ describe("summaryRow (Chakra)", () => {
   });
 
   it("mobile: renders no summary card without summaryRow", () => {
-    renderTable({ isMobile: true });
+    renderTable({ forceMobile: true });
     expect(screen.getAllByRole("listitem")).toHaveLength(PEOPLE.length);
   });
 });

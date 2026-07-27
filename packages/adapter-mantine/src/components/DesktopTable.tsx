@@ -4,22 +4,25 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
-  headerGroupRow,
   PIN_Z,
-  type PinLeads,
   pinnedCellStyle,
-  pinnedColumnWidth,
-  resolveDisabledReason,
   type RowAction,
-  rowClickProps,
-  rowEditingSignature,
   runRowAction,
-  type SharedTableRenderProps,
   tableMinWidth,
-  tableRenderModel,
   type UseDataTableResult,
   useHorizontalOverflow,
 } from "@adapttable/core";
+import {
+  headerGroupRow,
+  type PinLeads,
+  pinnedColumnWidth,
+  resolveDisabledReason,
+  rowClickProps,
+  rowEditingSignature,
+  type SharedTableRenderProps,
+  tableRenderModel,
+  useSummaryCells,
+} from "@adapttable/core/adapter";
 import {
   ActionIcon,
   Badge,
@@ -401,7 +404,7 @@ function DesktopRowBase<TRow>({
         role="row"
         data-index={index}
         aria-selected={selected}
-        {...rowClickProps(row, onRowClick)}
+        {...rowClickProps(row, onRowClick, index)}
         className={className}
         ref={measureElement}
         data-stagger=""
@@ -522,7 +525,7 @@ export function DesktopTable<TRow>({
   // Grouped header row over the VISIBLE columns (`null` → no extra row) and
   // the per-column footer summary cells (`undefined` → no footer).
   const groupCells = headerGroupRow(columns);
-  const summaryCells = summaryRow?.(rows);
+  const summaryCells = useSummaryCells(summaryRow, rows);
   const hasEndPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "end"
   );

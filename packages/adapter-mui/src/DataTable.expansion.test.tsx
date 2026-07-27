@@ -49,11 +49,11 @@ const theme = createTheme();
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 function Harness(props: {
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: PEOPLE,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: "paged",
   });
@@ -68,7 +68,7 @@ function Harness(props: {
 }
 
 function renderTable(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   url = ""
 ) {
   adapter = createMemoryAdapter(url);
@@ -84,7 +84,11 @@ function PartsHarness(props: {
   mobile?: boolean;
   expansion?: RowExpansionState;
 }) {
-  const source = useFrontendData<Row>({ data: PEOPLE, adapter, columns });
+  const source = useFrontendData<Row>({
+    data: PEOPLE,
+    urlAdapter: adapter,
+    columns,
+  });
   const table = useDataTable<Row>({
     source,
     columns,
@@ -162,7 +166,7 @@ describe("row expansion (MUI)", () => {
   });
 
   it("renders the chevron and detail inside the mobile card", () => {
-    renderTable({ isMobile: true, renderRowDetail: detailFor });
+    renderTable({ forceMobile: true, renderRowDetail: detailFor });
     const card = screen.getAllByRole("listitem")[0]!;
     const btn = within(card).getByRole("button", { name: "Expand row" });
     expect(btn).toHaveAttribute("aria-expanded", "false");

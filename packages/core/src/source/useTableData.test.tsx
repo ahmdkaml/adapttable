@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
 import { resetDevWarnings } from "../utils/devWarn";
-import { useServerData } from "./useServerData";
-import { useTableData } from "./useTableData";
+import { useFrontendData } from "./useFrontendData";
+import { type TableQuery, useServerData } from "./useServerData";
+import { type DataModeProps, useTableData } from "./useTableData";
 
 interface Row {
   id: string;
@@ -35,7 +36,7 @@ describe("useTableData — frontend tier", () => {
         data: ROWS,
         columns,
         filters: [{ key: "budget", type: "numberRange" }],
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       })
     );
@@ -51,7 +52,7 @@ describe("useTableData — frontend tier", () => {
       useTableData<Row>({
         data: ROWS,
         columns,
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
         filterFn: (row) => row.budget < 200,
       })
@@ -62,7 +63,7 @@ describe("useTableData — frontend tier", () => {
   it("exposes the merged runtime (defs, chips) for the adapters", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
-      useTableData<Row>({ data: ROWS, columns, adapter })
+      useTableData<Row>({ data: ROWS, columns, urlAdapter: adapter })
     );
     expect(result.current.runtime.defs.map((d) => d.key)).toEqual(["status"]);
     expect(result.current.runtime.filterLabels.status!("active")).toBe(
@@ -118,12 +119,16 @@ describe("useTableData — tier resolution", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const adapter = createMemoryAdapter("");
     renderHook(() => {
-      const { source } = useTableData<Row>({ data: ROWS, columns, adapter });
+      const { source } = useTableData<Row>({
+        data: ROWS,
+        columns,
+        urlAdapter: adapter,
+      });
       return useTableData<Row>({
         source,
         onQueryChange: vi.fn(),
         columns,
-        adapter,
+        urlAdapter: adapter,
       });
     });
     expect(warn).toHaveBeenCalledWith(
@@ -135,12 +140,123 @@ describe("useTableData — tier resolution", () => {
   it("warns when no tier is provided at all", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     renderHook(() =>
-      useTableData<Row>({ columns, adapter: createMemoryAdapter("") })
+      useTableData<Row>({ columns, urlAdapter: createMemoryAdapter("") })
     );
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("no data tier provided")
     );
     warn.mockRestore();
+  });
+});
+
+describe("useTableData — explicit mode", () => {
+  it("mode='frontend' keeps local processing and notifies without rerouting", async () => {
+    const onQueryChange = vi.fn();
+    // limit=2 → two real pages, so a page change actually commits.
+    const adapter = createMemoryAdapter("limit=2");
+    const { result } = renderHook(() =>
+      useTableData<Row>({
+        data: ROWS,
+        mode: "frontend",
+        onQueryChange,
+        columns,
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      })
+    );
+    // The table still processes data itself (frontend tier)…
+    expect(result.current.source.rows).toHaveLength(2);
+    // …and the notification NEVER fires on mount.
+    expect(onQueryChange).not.toHaveBeenCalled();
+
+    // Sort commit → one notification with the consolidated query.
+    act(() => result.current.source.setSort("name", "asc"));
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalledTimes(1));
+    expect(onQueryChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: "name", sortDir: "asc" }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    // Rows are STILL locally sorted — the handler observed, not rerouted.
+    expect(result.current.source.rows[0]?.name).toBe("Alice");
+
+    // Filter, page and search commits each notify too.
+    act(() => result.current.source.setExtra("status", "active"));
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalledTimes(2));
+    expect(onQueryChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ filters: { status: "active" } }),
+      expect.anything()
+    );
+    act(() => result.current.source.setExtra("status", undefined));
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalledTimes(3));
+    act(() => result.current.source.setPage(2));
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalledTimes(4));
+    expect(onQueryChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 }),
+      expect.anything()
+    );
+    act(() => result.current.source.setSearch("ali"));
+    await waitFor(() => expect(onQueryChange).toHaveBeenCalledTimes(5));
+    expect(onQueryChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "ali" }),
+      expect.anything()
+    );
+  });
+
+  it("mode='server' selects the server tier explicitly", () => {
+    const onQueryChange = vi.fn();
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() =>
+      useTableData<Row>({
+        data: ROWS,
+        total: 30,
+        mode: "server",
+        onQueryChange,
+        columns,
+        urlAdapter: adapter,
+      })
+    );
+    // Server tier: rows pass through untouched, mount fire happens.
+    expect(result.current.source.rows).toHaveLength(3);
+    expect(result.current.source.total).toBe(30);
+    expect(onQueryChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("mode together with source dev-warns and source wins", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    resetDevWarnings();
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const prebuilt = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableData<Row>({
+        source: prebuilt,
+        mode: "frontend",
+        columns,
+        urlAdapter: adapter,
+      });
+    });
+    expect(result.current.source.rows).toHaveLength(3);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("`mode` is ignored when `source` is provided")
+    );
+    warn.mockRestore();
+    resetDevWarnings();
+  });
+
+  it("mode='server' without onQueryChange does not compile", () => {
+    // Compile-time contract: the union's server branch REQUIRES the
+    // handler; the frontend branch forbids mode="server".
+    expectTypeOf<{ mode: "server" }>().not.toExtend<DataModeProps<Row>>();
+    expectTypeOf<{
+      mode: "server";
+      onQueryChange: (q: TableQuery, i: { signal: AbortSignal }) => void;
+    }>().toExtend<DataModeProps<Row>>();
+    expectTypeOf<{ mode: "frontend" }>().toExtend<DataModeProps<Row>>();
+    expectTypeOf<object>().toExtend<DataModeProps<Row>>();
   });
 });
 
@@ -155,8 +271,8 @@ describe("useTableData / useServerData — server tier", () => {
         loading: true,
         onQueryChange,
         columns,
-        adapter,
-        enabled: true,
+        urlAdapter: adapter,
+        urlSync: true,
       })
     );
     expect(result.current.source.rows).toEqual([]);
@@ -174,7 +290,7 @@ describe("useTableData / useServerData — server tier", () => {
         loading: false,
         onQueryChange,
         columns,
-        adapter,
+        urlAdapter: adapter,
       })
     );
     expect(onQueryChange).toHaveBeenCalledTimes(1);
@@ -190,6 +306,41 @@ describe("useTableData / useServerData — server tier", () => {
     expect(onQueryChange).toHaveBeenCalledTimes(1);
   });
 
+  it("clamps a stale out-of-range deep link to the last page", async () => {
+    const onQueryChange = vi.fn();
+    const adapter = createMemoryAdapter("page=999");
+    const { result } = renderHook(() =>
+      useServerData<Row>({
+        rows: ROWS,
+        total: 50, // 5 pages at the default limit of 25 → 2 pages
+        loading: false,
+        onQueryChange,
+        urlAdapter: adapter,
+      })
+    );
+    await waitFor(() => {
+      expect(result.current.page).toBe(2);
+    });
+    // The URL self-heals too, and the corrected query is re-emitted.
+    expect(adapter.getSearch()).toContain("page=2");
+    expect(onQueryChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 }),
+      expect.anything()
+    );
+    // While a request is in flight, no clamping happens (total may be stale).
+    const loadingAdapter = createMemoryAdapter("page=999");
+    const loadingView = renderHook(() =>
+      useServerData<Row>({
+        rows: [],
+        total: 0,
+        loading: true,
+        onQueryChange: vi.fn(),
+        urlAdapter: loadingAdapter,
+      })
+    );
+    expect(loadingView.result.current.page).toBe(999);
+  });
+
   it("aborts the superseded request when the query changes", () => {
     const seen: AbortSignal[] = [];
     const onQueryChange = vi.fn((_q, { signal }: { signal: AbortSignal }) => {
@@ -201,7 +352,7 @@ describe("useTableData / useServerData — server tier", () => {
         rows: ROWS,
         total: 40,
         onQueryChange,
-        adapter,
+        urlAdapter: adapter,
       })
     );
     act(() => result.current.setSearch("bo"));
@@ -213,39 +364,59 @@ describe("useTableData / useServerData — server tier", () => {
   it("rows pass through untouched; pager math comes from total", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
-      useServerData<Row>({ rows: ROWS, total: 40, adapter })
+      useServerData<Row>({ rows: ROWS, total: 40, urlAdapter: adapter })
     );
     expect(result.current.rows).toBe(ROWS);
-    expect(result.current.hasNextPage).toBe(true);
+    // Shared contract: append semantics are infinite-only — in paged mode
+    // more data is reached through setPage, never fetchNextPage.
+    expect(result.current.hasNextPage).toBe(false);
+    expect(result.current.total).toBe(40);
     expect(result.current.paginationMode).toBe("paged");
   });
 
   it("distinguishes first load from background refresh", () => {
     const adapter = createMemoryAdapter("");
     const first = renderHook(() =>
-      useServerData<Row>({ rows: [], total: 0, loading: true, adapter })
+      useServerData<Row>({
+        rows: [],
+        total: 0,
+        loading: true,
+        urlAdapter: adapter,
+      })
     );
     expect(first.result.current.isLoading).toBe(true);
     const refresh = renderHook(() =>
-      useServerData<Row>({ rows: ROWS, total: 3, loading: true, adapter })
+      useServerData<Row>({
+        rows: ROWS,
+        total: 3,
+        loading: true,
+        urlAdapter: adapter,
+      })
     );
     expect(refresh.result.current.isLoading).toBe(false);
     expect(refresh.result.current.isFetching).toBe(true);
   });
 
-  it("refetch re-emits the same query; fetchNextPage advances the page", () => {
+  it("refetch re-emits the same query; paged fetchNextPage no-ops", () => {
     const onQueryChange = vi.fn();
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
-      useServerData<Row>({ rows: ROWS, total: 40, onQueryChange, adapter })
+      useServerData<Row>({
+        rows: ROWS,
+        total: 40,
+        onQueryChange,
+        urlAdapter: adapter,
+      })
     );
     expect(onQueryChange).toHaveBeenCalledTimes(1);
     // `refetch` is optional on TableSource but useServerData always sets it.
     act(() => result.current.refetch!());
     expect(onQueryChange).toHaveBeenCalledTimes(2);
+    expect(onQueryChange.mock.calls.at(-1)![0].page).toBe(1);
+    // Shared contract: fetchNextPage appends in infinite mode only — in
+    // paged mode it never advances the page (that is setPage's job).
     act(() => result.current.fetchNextPage());
-    expect(onQueryChange).toHaveBeenCalledTimes(3);
-    expect(onQueryChange.mock.calls.at(-1)![0].page).toBe(2);
+    expect(onQueryChange).toHaveBeenCalledTimes(2);
   });
 
   it("aborts the in-flight request on unmount", () => {
@@ -258,7 +429,7 @@ describe("useTableData / useServerData — server tier", () => {
         onQueryChange: (_q, { signal }) => {
           seen.push(signal);
         },
-        adapter,
+        urlAdapter: adapter,
       })
     );
     unmount();
@@ -268,7 +439,7 @@ describe("useTableData / useServerData — server tier", () => {
   it("stays silent without an onQueryChange emitter", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
-      useServerData<Row>({ rows: ROWS, total: 3, adapter })
+      useServerData<Row>({ rows: ROWS, total: 3, urlAdapter: adapter })
     );
     expect(result.current.rows).toBe(ROWS);
   });
@@ -292,7 +463,7 @@ describe("async filter options through useTableData", () => {
             options: loader,
           },
         ],
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       })
     );
@@ -330,7 +501,7 @@ describe("async filter options through useTableData", () => {
             options: loader,
           },
         ],
-        adapter,
+        urlAdapter: adapter,
         paginationMode: "paged",
       })
     );
@@ -363,7 +534,7 @@ describe("async filter options through useTableData", () => {
           data,
           columns: [{ key: "name" }],
           filters: filtersDef,
-          adapter,
+          urlAdapter: adapter,
           paginationMode: "paged",
         }),
       { initialProps: { data: ROWS } }

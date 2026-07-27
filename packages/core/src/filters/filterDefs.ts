@@ -157,6 +157,44 @@ function valueText(value: unknown): string {
   }
 }
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const END_OF_DAY_MS = 86_399_999;
+
+/**
+ * One coercion path for everything `dateRange` compares — row values and
+ * bounds alike. The timezone rule: a date-only string (`"2026-01-31"`,
+ * what date pickers and the URL carry) means that day in the USER'S LOCAL
+ * timezone; a `Date`, an epoch-milliseconds number, or a datetime string
+ * is an absolute instant. Comparing local day windows against absolute
+ * row instants keeps boundary days stable in every timezone.
+ *
+ * @returns Epoch milliseconds, or `NaN` for anything unparseable.
+ */
+function dateValueToEpochMs(value: unknown): number {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return Number.NaN;
+  const text = value.trim();
+  if (text === "") return Number.NaN;
+  if (DATE_ONLY_RE.test(text)) {
+    const [year = 0, month = 1, day = 1] = text.split("-").map(Number);
+    return new Date(year, month - 1, day).getTime();
+  }
+  return new Date(text).getTime();
+}
+
+/**
+ * A row value as a number for range filtering, or `NaN` when the row has
+ * no numeric value. `Number(null)` and `Number("")` are `0`, which would
+ * silently include no-value rows in any range spanning zero — so only
+ * real numbers and non-empty numeric strings qualify.
+ */
+function numericRowValue(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim() !== "") return Number(value);
+  return Number.NaN;
+}
+
 function textMatch(rowValue: unknown, term: string): boolean {
   const text = valueText(rowValue).toLowerCase();
   return text !== "" && text.includes(term.toLowerCase());
@@ -186,17 +224,22 @@ export function filterPredicate<TRow>(
     case "dateRange": {
       const [fromKey, toKey] = filterStateKeys(def);
       return (row, extra) => {
-        const raw = value(row);
         if (!has(extra, fromKey!) && !has(extra, toKey!)) return true;
-        const time = new Date(valueText(raw)).getTime();
+        const time = dateValueToEpochMs(value(row));
         if (Number.isNaN(time)) return false;
         if (has(extra, fromKey!)) {
-          const from = new Date(String(extra[fromKey!])).getTime();
+          const from = dateValueToEpochMs(extra[fromKey!]);
           if (time < from) return false;
         }
         if (has(extra, toKey!)) {
-          // Inclusive end-of-day so "to 2026-01-31" keeps that day's rows.
-          const to = new Date(String(extra[toKey!])).getTime() + 86_399_999;
+          const bound = extra[toKey!];
+          // Inclusive: a date-only "to" keeps that whole (local) day's
+          // rows; an exact datetime bound is inclusive as given.
+          const to =
+            dateValueToEpochMs(bound) +
+            (typeof bound === "string" && DATE_ONLY_RE.test(bound.trim())
+              ? END_OF_DAY_MS
+              : 0);
           if (time > to) return false;
         }
         return true;
@@ -206,7 +249,7 @@ export function filterPredicate<TRow>(
       const [minKey, maxKey] = filterStateKeys(def);
       return (row, extra) => {
         if (!has(extra, minKey!) && !has(extra, maxKey!)) return true;
-        const n = Number(value(row));
+        const n = numericRowValue(value(row));
         if (Number.isNaN(n)) return false;
         if (has(extra, minKey!) && n < Number(extra[minKey!])) return false;
         return !(has(extra, maxKey!) && n > Number(extra[maxKey!]));

@@ -13,9 +13,12 @@ import type {
   BulkAction,
   ColumnDef,
   Direction,
+  ExtraFilters,
+  PaginationMode,
   RowAction,
   SortByOption,
   TableLabels,
+  TableQueryParams,
 } from "./types";
 
 /**
@@ -26,7 +29,7 @@ import type {
  * @typeParam TRow - The row type.
  */
 export interface BaseDataTableProps<TRow> {
-  /** Data + state contract from `useFrontendData` / `useBackendData`. */
+  /** Data + state contract from `useFrontendData` / `useQuerySource`. */
   source: TableSource<TRow>;
   /** Column definitions. */
   columns: ColumnDef<TRow>[];
@@ -58,8 +61,29 @@ export interface BaseDataTableProps<TRow> {
    */
   density?: "comfortable" | "compact";
   /** Force the mobile layout (otherwise resolved from the viewport). */
-  isMobile?: boolean;
-  /** Leading desktop-visible columns kept on mobile even if hideOnMobile. */
+  forceMobile?: boolean;
+  /**
+   * Initial state applied while the URL is silent about a key — e.g.
+   * `defaults={{ limit: 10, sortBy: "name" }}`. The user's own changes
+   * (and explicit URL params) always win.
+   */
+  defaults?: Partial<TableQueryParams> & { extra?: ExtraFilters };
+  /**
+   * Debounce for committing the search input to the source, in
+   * milliseconds. Defaults to 300.
+   */
+  searchDebounceMs?: number;
+  /**
+   * Pagination mode: `"paged"`, `"infinite"`, or `"auto"` (the default —
+   * mobile resolves to infinite, desktop to paged). `virtualize` applies
+   * in infinite mode; on a paged desktop table it is inert.
+   */
+  paginationMode?: PaginationMode;
+  /**
+   * How many leading desktop-visible columns anchor the mobile identity
+   * block. Never overrides an explicit `hideOnMobile: true` — the
+   * author's hide always wins.
+   */
   mobileIdentityColumns?: number;
   /** Hover-prefetch callback fired on desktop row mouse-enter. */
   prefetch?: (row: TRow) => void;
@@ -102,7 +126,11 @@ export interface BaseDataTableProps<TRow> {
    * server-paginated sources get a devWarn and grouping is ignored.
    */
   groupBy?: string | null;
-  /** Controlled change channel for {@link groupBy}; falls back to `source.setGroupBy`. */
+  /**
+   * Notification fired AFTER the grouping change is applied — the table
+   * always performs the change itself. Take full control (e.g. a fully
+   * controlled `groupBy`) through `source.setGroupBy` instead.
+   */
   onGroupByChange?: (groupBy: string | null) => void;
   /**
    * Per-group aggregate cells — **same signature as {@link summaryRow}**.
@@ -118,7 +146,11 @@ export interface BaseDataTableProps<TRow> {
   collapsedGroupIds?: readonly string[];
   onCollapsedGroupIdsChange?: (ids: string[]) => void;
   /** Disable the built-in search box. */
-  hideSearch?: boolean;
+  /**
+   * Render the search input. Positive polarity — `false` hides it.
+   * @defaultValue true
+   */
+  searchable?: boolean;
   /**
    * Opt into multi-column sorting: shift-click (or shift-Enter) on a header
    * adds the column to the sort chain (asc → desc → removed); a plain click
@@ -178,7 +210,11 @@ export interface BaseDataTableProps<TRow> {
   extraChips?: readonly ActiveFilterChip[];
   /** Override the active-filter count (defaults to the chip count). */
   activeFilterCount?: number;
-  /** Clear-filters handler used by the drawer + chip strip. */
+  /**
+   * Notification fired AFTER the filters are cleared (drawer, chip strip,
+   * no-results CTA) — the table always performs the clear itself. Take
+   * full control through `source.clearExtras` instead.
+   */
   onClearFilters?: () => void;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
@@ -195,9 +231,11 @@ export interface BaseDataTableProps<TRow> {
   selectedIds?: readonly string[];
   /**
    * Selection change channel. Uncontrolled: an observer that fires with the
-   * selected ids whenever the set changes (toggles, select-all, automatic
-   * resets on search/filter change). Controlled (`selectedIds` provided):
-   * the change-request handler — apply the ids to your state to accept.
+   * selected ids whenever the set changes — once on mount with the initial
+   * (empty) selection, on every toggle/select-all, and on the automatic
+   * reset when the search or a filter changes (the result set changed, so
+   * stale ids never linger). Controlled (`selectedIds` provided): the
+   * change-request handler — apply the ids to your state to accept.
    */
   onSelectionChange?: (selectedIds: string[]) => void;
 
@@ -214,7 +252,12 @@ export interface BaseDataTableProps<TRow> {
   confirm?: ConfirmHandler;
   /** Number of skeleton rows while loading. Defaults to the page size. */
   skeletonRows?: number;
-  /** Sticky toolbar top offset in px. Defaults to 0. */
+  /**
+   * Top inset in px for the sticky header (`stickyHeader`) — e.g. the
+   * height of an app bar it must clear. Identical meaning in every
+   * adapter; Mantine's optional sticky toolbar (`stickyToolbar`) also
+   * parks at this inset. Defaults to 0.
+   */
   stickyTop?: number;
   /** Keep the desktop table header sticky while scrolling. Defaults to false (opt-in). */
   stickyHeader?: boolean;

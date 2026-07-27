@@ -36,13 +36,13 @@ export interface UseTableUrlStateOptions {
    * router-specific adapter (react-router / Next.js) to integrate with an
    * existing navigation stack.
    */
-  adapter?: UrlStateAdapter;
+  urlAdapter?: UrlStateAdapter;
   /**
    * When `false`, state is kept in a component-local memory store instead
    * of the URL — the table still works fully, it just isn't shareable.
    * Defaults to `true`.
    */
-  enabled?: boolean;
+  urlSync?: boolean;
   /** Initial values applied when the URL has no value for a key. */
   defaults?: Partial<TableQueryParams> & { extra?: ExtraFilters };
   /** Extra-filter keys whose values are parsed as numbers. */
@@ -105,8 +105,8 @@ export function useTableUrlState(
   options: UseTableUrlStateOptions = {}
 ): UseTableUrlStateResult {
   const {
-    adapter,
-    enabled = true,
+    urlAdapter,
+    urlSync,
     defaults = {},
     numberExtraKeys = NO_KEYS,
     arrayExtraKeys = NO_KEYS,
@@ -115,7 +115,9 @@ export function useTableUrlState(
   // Per-table namespace, e.g. "left." → left.q / left.page / left.f_status.
   const ns = urlKey ? `${urlKey}.` : "";
 
-  const resolved = useResolvedAdapter(adapter, enabled);
+  const backend = urlAdapter;
+  const syncToUrl = urlSync ?? true;
+  const resolved = useResolvedAdapter(backend, syncToUrl);
   // Server snapshot: with the default (history) adapter the server rendered
   // from an empty memory store, so hydration must read "" too — the real URL
   // applies right after hydration. An EXPLICIT adapter is assumed to be
@@ -123,7 +125,7 @@ export function useTableUrlState(
   const search = useSyncExternalStore(
     (onChange) => resolved.subscribe(onChange),
     () => resolved.getSearch(),
-    () => (adapter ? adapter.getSearch() : "")
+    () => (backend ? backend.getSearch() : "")
   );
   const params = useMemo(() => new URLSearchParams(search), [search]);
 
@@ -161,9 +163,13 @@ export function useTableUrlState(
   ).trim();
   const sortByRaw = params.get(ns + PARAM_SORT_BY);
   const sortBy = sortByRaw === null ? defaults.sortBy : sortByRaw || undefined;
-  // A defaulted sort adopts the defaulted direction; an explicit URL sort
-  // with no direction falls back to ascending.
-  const sortDirFallback = sortByRaw === null ? defaults.sortDir : "asc";
+  // A defaulted sort adopts the defaulted direction — else ascending, so
+  // `defaults: { sortBy }` alone still yields a real sort (data actually
+  // ordered, aria-sort truthful, first header click cycles to descending
+  // instead of clearing). An explicit URL sort with no direction falls
+  // back to ascending too.
+  const sortDirFallback =
+    sortByRaw === null ? (defaults.sortDir ?? "asc") : "asc";
   const sortDir =
     sortBy === undefined
       ? undefined
@@ -352,6 +358,9 @@ export function useTableUrlState(
       commit((p) => {
         if (defaults.search) p.set(ns + PARAM_SEARCH, "");
         else p.delete(ns + PARAM_SEARCH);
+        // The multi-sort chain supersedes the single-sort params, so "clear
+        // all" must drop it too or the rows visibly stay sorted.
+        writeSortLevels(p, [], ns);
         if (defaults.sortBy) p.set(ns + PARAM_SORT_BY, "");
         else p.delete(ns + PARAM_SORT_BY);
         p.delete(ns + PARAM_SORT_DIR);

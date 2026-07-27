@@ -11,8 +11,8 @@ import {
   createMemoryAdapter,
   useChromeBodyData,
   useFrontendData,
-  type VirtualTableRow,
 } from "@adapttable/core";
+import { type VirtualTableRow } from "@adapttable/core/adapter";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -60,11 +60,11 @@ beforeEach(() => {
 function Harness(props: {
   isMobile?: boolean;
   mode?: "paged" | "infinite";
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
   });
@@ -73,7 +73,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -328,7 +328,7 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     const spacers = container.querySelectorAll(
       '[data-adapttable-part="virtual-spacer"]'
     );
-    expect(spacers.length).toBe(1);
+    expect(spacers).toHaveLength(1);
     expect(spacers[0]).toHaveStyle({ height: "120px" });
   });
 
@@ -339,7 +339,7 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     function LoadingHarness() {
       const source = useFrontendData<Row>({
         data: [],
-        adapter,
+        urlAdapter: adapter,
         columns,
         paginationMode: "paged",
         isLoading: true,
@@ -357,8 +357,7 @@ describe("<DataTable> (unstyled) branch coverage", () => {
     // 1 data column + 1 actions column = 2 skeleton header cells.
     expect(
       container.querySelectorAll('[data-adapttable-part="loading-header-cell"]')
-        .length
-    ).toBe(2);
+    ).toHaveLength(2);
   });
 
   // tables.tsx:66 — `if (!disabled) runRowAction(...)`, the true side via an

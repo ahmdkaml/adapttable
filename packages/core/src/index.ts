@@ -2,8 +2,8 @@
  * `@adapttable/core` — the headless engine behind AdaptTable.
  *
  * Zero UI-kit, i18n-library, or router imports. Exposes the unified
- * {@link TableSource} contract, the `useFrontendData` / `useBackendData`
- * source builders, URL-synced state with an injectable adapter, filter
+ * {@link TableSource} contract, the `useFrontendData` / `useServerData` /
+ * `useQuerySource` source builders, URL-synced state with an injectable adapter, filter
  * chips, selection, and the `useDataTable` prop-getter API.
  *
  * @packageDocumentation
@@ -13,6 +13,7 @@
 export type {
   ActionConfirm,
   BulkAction,
+  BulkActionContext,
   CellProps,
   ColorScheme,
   ColumnDef,
@@ -35,23 +36,18 @@ export {
   type ConfirmHandler,
   type ConfirmRequest,
   defaultConfirm,
-  resolveDisabledReason,
   runRowAction,
 } from "./actions/confirm";
 export {
+  type BulkActionOutcome,
   type BulkActionRunner,
   useBulkActionRunner,
   type UseBulkActionRunnerOptions,
 } from "./actions/useBulkActionRunner";
-export {
-  type BulkBarState,
-  useBulkBarState,
-  type UseBulkBarStateOptions,
-} from "./actions/useBulkBarState";
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
-export { resolveColumns } from "./columns/resolveColumns";
+export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
@@ -103,22 +99,15 @@ export {
   type UseTableDataResult,
 } from "./source/useTableData";
 export {
-  type DataTableShellProps,
-  useDataTableShell,
-} from "./useDataTableShell";
-export {
-  type BulkBarChromeProps,
   type ChromeBodyData,
-  type FilterTriggerToggle,
-  type TableBodyRegion,
   type TableChrome,
-  type ToolbarChromeProps,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
 export { humanizeKey } from "./utils/humanizeKey";
+export { normalizeLocaleTag, resolveLocaleTag } from "./utils/localeTag";
 export { getPath } from "./utils/path";
 
 /* ── Labels ────────────────────────────────────────────────────────── */
@@ -126,18 +115,14 @@ export { defaultLabels, resolveLabels } from "./labels";
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 export {
-  DEFAULT_CARD_SIZE_PX,
   DEFAULT_LIMIT,
-  DEFAULT_ROW_SIZE_PX,
-  MOBILE_BREAKPOINT_PX,
   PAGE_SIZE_OPTIONS,
   pageSizeOptions,
   SEARCH_DEBOUNCE_MS,
-  VIRTUAL_OVERSCAN,
 } from "./constants";
 
 /* ── URL state ─────────────────────────────────────────────────────── */
-export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
+
 export {
   createHistoryAdapter,
   createMemoryAdapter,
@@ -162,25 +147,20 @@ export {
 } from "./url/useTableUrlState";
 
 /* ── Shared render contracts ───────────────────────────────────────── */
-export {
-  type SharedTableRenderProps,
-  type TableRenderModel,
-  tableRenderModel,
-} from "./tableRenderProps";
 
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
-export {
-  type InfiniteQueryLike,
-  type PageSelector,
-  useBackendData,
-  type UseBackendDataOptions,
-} from "./source/useBackendData";
 export {
   defaultSearchText,
   useFrontendData,
   type UseFrontendDataOptions,
 } from "./source/useFrontendData";
+export {
+  type InfiniteQueryLike,
+  type PageSelector,
+  useQuerySource,
+  type UseQuerySourceOptions,
+} from "./source/useQuerySource";
 export type { TableStateMutators } from "./tableStateMutators";
 
 /* ── Filters / chips ───────────────────────────────────────────────── */
@@ -199,8 +179,6 @@ export {
 export {
   type ActiveFilterChip,
   type ChipLabelResolver,
-  mergeFilterChips,
-  resolveActiveFilterCount,
   useActiveFilterChips,
   type UseActiveFilterChipsOptions,
 } from "./filters/useActiveFilterChips";
@@ -224,56 +202,31 @@ export {
   sortRows,
   sortRowsMulti,
 } from "./sort/compare";
-export { nextSort, type SortState } from "./sort/cycleSort";
-export { deriveSortByOptions } from "./sort/sortByOptions";
+export { nextSort } from "./sort/cycleSort";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export {
   ACTIONS_COLUMN_KEY,
-  type ColumnMenuChromeProps,
   columnMenuLabel,
-  type ColumnMenuLabels,
-  type ColumnMenuRow,
   columnMenuRows,
-  nextPinSide,
-  pinActionLabel,
-  type PinnedSide,
 } from "./columns/columnMenuModel";
 export {
-  COLUMN_DND_MIME,
-  type ColumnDragRowAttrs,
-  type ColumnDragState,
-  type ColumnDropProps,
   columnDropProps,
-  type ColumnReorderKeyProps,
   columnReorderKeyProps,
-  type ColumnRowDragProps,
   columnRowDragProps,
   useColumnDragState,
 } from "./columns/columnReorder";
+export { columnResizeHandleProps } from "./columns/columnResize";
 export {
-  COLUMN_RESIZE_STEP,
-  type ColumnResizeHandleProps,
-  columnResizeHandleProps,
-  MIN_COLUMN_WIDTH,
-} from "./columns/columnResize";
-export {
-  FALLBACK_PIN_WIDTH,
   parsePxWidth,
-  pinnedColumnWidth,
   resolveColumnWidth,
   tableMinWidth,
 } from "./columns/columnWidths";
-export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
 export {
   type ColumnLayoutState,
   edgePinStyle,
-  EMPTY_COLUMN_LAYOUT,
   PIN_Z,
-  type PinLeads,
-  type PinnedCellStyle,
   pinnedCellStyle,
-  type PinOffset,
   type PinSide,
   useColumnLayout,
   type UseColumnLayoutOptions,
@@ -286,51 +239,24 @@ export {
   type UseColumnLayoutStorageStateResult,
 } from "./columns/useColumnLayoutStorageState";
 export { type TableLayout, visibleColumns } from "./columns/visibleColumns";
-export {
-  logicalAlign,
-  pinnedDataCellStyle,
-  pinnedEdgeCellStyle,
-  shallowEqualByKeys,
-  SHARED_DESKTOP_ROW_KEYS,
-  sortArrow,
-} from "./display";
-export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
-export {
-  type HorizontalOverflow,
-  useHorizontalOverflow,
-} from "./layout/useHorizontalOverflow";
+export { useHorizontalOverflow } from "./layout/useHorizontalOverflow";
 
 /* ── Pagination ────────────────────────────────────────────────────── */
 export {
   computePagination,
   type PaginationInfo,
-  type PaginationItem,
-  paginationItems,
-  type PaginationSlot,
-  paginationSlots,
 } from "./pagination/paginationMath";
 
 /* ── Hooks ─────────────────────────────────────────────────────────── */
-export { DARK_SCHEME_QUERY, useColorScheme } from "./hooks/useColorScheme";
+export { useColorScheme } from "./hooks/useColorScheme";
 export { useDebounce } from "./hooks/useDebounce";
 export {
   useInfiniteScroll,
   type UseInfiniteScrollOptions,
 } from "./hooks/useInfiniteScroll";
-export {
-  MOBILE_MEDIA_QUERY,
-  resolvePaginationMode,
-  useIsMobile,
-} from "./hooks/useIsMobile";
+export { useIsMobile } from "./hooks/useIsMobile";
 export { useMediaQuery } from "./hooks/useMediaQuery";
-export {
-  type MountStaggerOptions,
-  useMountStagger,
-} from "./hooks/useMountStagger";
-export {
-  REDUCED_MOTION_QUERY,
-  usePrefersReducedMotion,
-} from "./hooks/usePrefersReducedMotion";
+export { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 export {
   useScrollToTableTop,
   type UseScrollToTableTopOptions,
@@ -339,6 +265,7 @@ export {
 /* ── Orchestrator ──────────────────────────────────────────────────── */
 export {
   type CellElementProps,
+  type RowElementProps,
   type SearchInputElementProps,
   type SortButtonElementProps,
   type TableElementProps,
@@ -346,21 +273,13 @@ export {
   type UseDataTableOptions,
   type UseDataTableResult,
 } from "./useDataTable/useDataTable";
-export {
-  type SearchInputState,
-  useSearchInput,
-} from "./useDataTable/useSearchInput";
+export { useSearchInput } from "./useDataTable/useSearchInput";
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
-  type KeyedVirtualization,
-  resolveVirtualRows,
   type TableVirtualization,
-  useKeyedVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
-  virtualColumnSpan,
-  type VirtualTableRow,
   windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
 
@@ -369,7 +288,7 @@ export { mergeProps, type Props } from "./utils/mergeProps";
 export { stableKey } from "./utils/stableKey";
 
 /* ── Rows ──────────────────────────────────────────────────────────── */
-export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+
 export {
   type RowExpansionState,
   useRowExpansion,
@@ -377,7 +296,6 @@ export {
 
 /* ── Inline cell editing ───────────────────────────────────────────── */
 export {
-  applyCellEditCommit,
   type CellEditCommit,
   type CellEditor,
   type CellEditorOption,
@@ -385,21 +303,14 @@ export {
   type EditableColumnLike,
   hasEditableColumns,
   isCellEditable,
-  nextEditableCell,
   normalizeEditorOptions,
   parseCellEditValue,
-  readEditableCellValue,
   resolveCellEditor,
-  stepEditableCell,
 } from "./editing/cellEditing";
 export {
   type EditableCellController,
-  editableCellController,
   type EditableCellEditing,
   type EditableCellMode,
-  focusEditorOnMount,
-  rowEditingSignature,
-  stopCellEditKeyboard,
 } from "./editing/editableCellController";
 export {
   type EditableCellEditorCtrl,
@@ -407,7 +318,6 @@ export {
   type EditableCellGateProps,
 } from "./editing/EditableCellGate";
 export {
-  beginCellEdit,
   type CellEditingState,
   type CellEditKeyAction,
   type CellEditKeyOutcome,
@@ -422,14 +332,8 @@ export {
   type GroupAggregatesFn,
   type GroupedFlatEntry,
   groupValueKey,
-  makeGroupRowKey,
-  resolveGroupValue,
 } from "./grouping/groupRows";
-export {
-  applyGroupLeafSelection,
-  groupSelectionState,
-  nextGroupSelection,
-} from "./grouping/groupSelection";
+export { groupSelectionState } from "./grouping/groupSelection";
 export {
   type GroupCollapseState,
   useGroupCollapse,

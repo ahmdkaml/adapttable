@@ -25,7 +25,7 @@ function renderWith(
 ) {
   const adapter = createMemoryAdapter(initial);
   const view = renderHook(() =>
-    useColumnLayoutUrlState({ adapter, ...options })
+    useColumnLayoutUrlState({ urlAdapter: adapter, ...options })
   );
   return { adapter, ...view };
 }
@@ -45,7 +45,7 @@ describe("useColumnLayoutUrlState", () => {
   it("reads the layout via the server snapshot during SSR", () => {
     const adapter = createMemoryAdapter("colHide=email");
     function Probe() {
-      const { layout } = useColumnLayoutUrlState({ adapter });
+      const { layout } = useColumnLayoutUrlState({ urlAdapter: adapter });
       return <span>{layout.hidden.join(",")}</span>;
     }
     expect(renderToString(<Probe />)).toContain("email");
@@ -53,14 +53,14 @@ describe("useColumnLayoutUrlState", () => {
 
   it("falls back to the default layout when the URL is empty", () => {
     const { result } = renderWith("", {
-      defaultLayout: { hidden: ["email", "team"] },
+      defaultColumnLayout: { hidden: ["email", "team"] },
     });
     expect(result.current.layout.hidden).toEqual(["email", "team"]);
   });
 
   it("prefers the URL layout over the default", () => {
     const { result } = renderWith("colHide=status", {
-      defaultLayout: { hidden: ["email", "team"] },
+      defaultColumnLayout: { hidden: ["email", "team"] },
     });
     expect(result.current.layout.hidden).toEqual(["status"]);
   });
@@ -96,7 +96,7 @@ describe("useColumnLayoutUrlState", () => {
 
   it("keeps the layout local when disabled (no adapter)", () => {
     const { result } = renderHook(() =>
-      useColumnLayoutUrlState({ enabled: false })
+      useColumnLayoutUrlState({ urlSync: false })
     );
     act(() => {
       result.current.onLayoutChange({
@@ -113,7 +113,9 @@ describe("useColumnLayoutUrlState", () => {
   it("an explicitly emptied layout sticks instead of snapping back to the default", () => {
     // Unhiding the last default-hidden column empties the layout; deleting
     // every param would re-apply the default and instantly re-hide it.
-    const { result } = renderWith("", { defaultLayout: { hidden: ["email"] } });
+    const { result } = renderWith("", {
+      defaultColumnLayout: { hidden: ["email"] },
+    });
     expect(result.current.layout.hidden).toEqual(["email"]);
     act(() => {
       result.current.onLayoutChange({
@@ -128,7 +130,7 @@ describe("useColumnLayoutUrlState", () => {
 
   it("drops all params when the layout returns to the exact default", () => {
     const { result, adapter } = renderWith("colHide=status", {
-      defaultLayout: { hidden: ["email"] },
+      defaultColumnLayout: { hidden: ["email"] },
     });
     act(() => {
       result.current.onLayoutChange({
@@ -164,7 +166,9 @@ describe("debounced URL persistence", () => {
 
   it("reads optimistically before the URL write lands", () => {
     const adapter = createMemoryAdapter("");
-    const { result } = renderHook(() => useColumnLayoutUrlState({ adapter }));
+    const { result } = renderHook(() =>
+      useColumnLayoutUrlState({ urlAdapter: adapter })
+    );
     act(() => result.current.onLayoutChange(NEXT));
     // Instant for the UI…
     expect(result.current.layout.hidden).toEqual(["email"]);
@@ -185,7 +189,7 @@ describe("debounced URL persistence", () => {
       },
     };
     const { result } = renderHook(() =>
-      useColumnLayoutUrlState({ adapter: spied })
+      useColumnLayoutUrlState({ urlAdapter: spied })
     );
     act(() => {
       // A resize drag: one commit per frame.
@@ -206,7 +210,7 @@ describe("debounced URL persistence", () => {
   it("flushes a pending layout on unmount so the last frame is kept", () => {
     const adapter = createMemoryAdapter("");
     const { result, unmount } = renderHook(() =>
-      useColumnLayoutUrlState({ adapter })
+      useColumnLayoutUrlState({ urlAdapter: adapter })
     );
     act(() => result.current.onLayoutChange(NEXT));
     unmount();

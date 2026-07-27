@@ -12,10 +12,10 @@ import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
-  useMountStagger,
   useTableChrome,
   useTableData,
 } from "@adapttable/core";
+import { useMountStagger, useResolvedAdapter } from "@adapttable/core/adapter";
 import {
   Box,
   Button,
@@ -117,17 +117,28 @@ function resolveActionsColumn<TRow>(
  * runtime's chip-label resolvers merge under any caller overrides.
  */
 function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
+  // so with `urlSync={false}` both share the same in-memory backend instead
+  // of the menu silently reading the real address bar.
+  const urlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : props.urlAdapter,
+    props.urlSync !== false
+  );
   const { source, runtime } = useTableData<TRow>({
     locale: props.locale,
     source: props.source,
     data: props.data,
     total: props.total,
     loading: props.loading,
+    error: props.error,
+    mode: props.mode,
     onQueryChange: props.onQueryChange,
     columns: props.columns,
     filters: props.filters,
-    adapter: props.urlSync === false ? undefined : props.urlAdapter,
-    enabled: props.urlSync,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
+    urlAdapter,
+    urlSync: props.urlSync,
     urlKey: props.urlKey,
   });
   let filtersNode: ReactNode;
@@ -145,8 +156,11 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
   } else {
     filtersNode = props.filters;
   }
+  // `urlAdapter` is the RESOLVED backend from here on — downstream chrome
+  // (the saved-views menu) must share the table's own instance.
   return {
     ...props,
+    urlAdapter,
     source,
     filters: filtersNode,
     filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
@@ -164,12 +178,15 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
  * @typeParam TRow - The row type.
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const { slots, className, animate = false } = props;
+  const { slots, className, classNames, animate = false } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
   const chromeProps = useChromeProps(props);
-  const { source, filters: filtersNode } = chromeProps;
+  const { filters: filtersNode } = chromeProps;
   const c = useTableChrome<TRow>(chromeProps);
+  // Everything rendered below reads the chrome's VIEW facade — identical to
+  // `source` except under grouping, where it presents the full rendered set.
+  const viewSource = c.source;
   const { table, confirm, getRowId } = c;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -184,7 +201,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualScrollRef,
   } = useChromeBodyData(c, chromeProps);
   const grouping = withWindowedGroupingEntries(c.grouping, groupingEntries);
-  useMountStagger(rootRef, [source.rows.length, c.isMobile], {
+  useMountStagger(rootRef, [viewSource.rows.length, c.isMobile], {
     enabled: animate,
   });
   const { hasRowActions, rowActions, actionsPinned } = resolveActionsColumn(
@@ -205,7 +222,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const savedViewsMenu = props.savedViews && (
     <SavedViewsMenu
       options={{
-        adapter: props.urlAdapter,
+        urlAdapter: chromeProps.urlAdapter,
         urlKey: props.urlKey,
         ...props.savedViews,
       }}
@@ -217,7 +234,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   if (c.body === "skeleton") {
     body = slots?.skeleton ?? (
       <LoadingState
-        rows={props.skeletonRows ?? source.limit}
+        rows={props.skeletonRows ?? viewSource.limit}
         columns={table.columns.length}
         loadingLabel={labels.loading}
       />
@@ -239,6 +256,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     body = (
       <MobileCards
         table={table}
+        cardClassName={classNames?.card}
         rows={c.editingRows}
         rowActions={rowActions}
         confirm={confirm}
@@ -260,36 +278,41 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     );
   } else {
     body = (
-      <DesktopTable
-        table={table}
-        rows={c.editingRows}
-        rowActions={rowActions}
-        actionsPinned={actionsPinned}
-        confirm={confirm}
-        getRowId={getRowId}
-        size={size}
-        dir={props.dir}
-        prefetch={props.prefetch}
-        onRowClick={props.onRowClick}
-        rowClassName={props.rowClassName}
-        renderRowDetail={props.renderRowDetail}
-        summaryRow={props.summaryRow}
-        expansion={c.detail?.expansion}
-        editing={c.editing}
-        grouping={grouping}
-        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-        paddingTop={virtualization.paddingTop}
-        paddingBottom={virtualization.paddingBottom}
-        measureElement={virtualization.measureElement}
-        stickyHeader={props.stickyHeader}
-        stickyTop={props.stickyTop}
-        pinOffset={c.columnLayout.pinOffset}
-        maxHeight={props.maxHeight}
-        virtualScrollRef={virtualScrollRef}
-        setWidth={resizeSetter(props.resizableColumns, c.columnLayout.setWidth)}
-        columnWidths={c.columnLayout.state.widths}
-        resizeLabel={labels.resizeColumn}
-      />
+      <Box className={classNames?.table}>
+        <DesktopTable
+          table={table}
+          rows={c.editingRows}
+          rowActions={rowActions}
+          actionsPinned={actionsPinned}
+          confirm={confirm}
+          getRowId={getRowId}
+          size={size}
+          dir={props.dir}
+          prefetch={props.prefetch}
+          onRowClick={props.onRowClick}
+          rowClassName={props.rowClassName}
+          renderRowDetail={props.renderRowDetail}
+          summaryRow={props.summaryRow}
+          expansion={c.detail?.expansion}
+          editing={c.editing}
+          grouping={grouping}
+          rowEntries={virtualization.enabled ? virtualization.rows : undefined}
+          paddingTop={virtualization.paddingTop}
+          paddingBottom={virtualization.paddingBottom}
+          measureElement={virtualization.measureElement}
+          stickyHeader={props.stickyHeader}
+          stickyTop={props.stickyTop}
+          pinOffset={c.columnLayout.pinOffset}
+          maxHeight={props.maxHeight}
+          virtualScrollRef={virtualScrollRef}
+          setWidth={resizeSetter(
+            props.resizableColumns,
+            c.columnLayout.setWidth
+          )}
+          columnWidths={c.columnLayout.state.widths}
+          resizeLabel={labels.resizeColumn}
+        />
+      </Box>
     );
   }
 
@@ -298,40 +321,44 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ref={rootRef}
       variant="outlined"
       dir={props.dir}
-      className={className}
+      className={
+        [className, classNames?.root].filter(Boolean).join(" ") || undefined
+      }
       aria-busy={c.isRefreshing || undefined}
       sx={{ p: 1.5 }}
     >
       <Stack spacing={1.5}>
-        <Toolbar
-          table={table}
-          hideSearch={props.hideSearch}
-          searchPlaceholder={props.searchPlaceholder}
-          sortByOptions={props.sortByOptions}
-          customToolbar={
-            <>
-              {savedViewsMenu}
-              {props.toolbar}
-            </>
-          }
-          hasFilters={Boolean(filtersNode)}
-          activeFilterCount={c.activeFilterCount}
-          showRowsPerPage={canLoadMore}
-          filtersMode={filtersMode}
-          filters={filtersNode}
-          filtersOpen={filtersOpen}
-          onToggleFilters={filtersTrigger.onClick}
-          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
-          onCloseFilters={() => setFiltersOpen(false)}
-          onClearFilters={c.clearFilters}
-          dir={props.dir}
-          columnMenu={columnMenu}
-          onExportCsv={makeExportCsvHandler(
-            props.exportCsv,
-            source,
-            table.columns
-          )}
-        />
+        <Box className={classNames?.toolbar}>
+          <Toolbar
+            table={table}
+            searchable={props.searchable !== false}
+            searchPlaceholder={props.searchPlaceholder}
+            sortByOptions={props.sortByOptions}
+            toolbar={
+              <>
+                {savedViewsMenu}
+                {props.toolbar}
+              </>
+            }
+            hasFilters={Boolean(filtersNode)}
+            activeFilterCount={c.activeFilterCount}
+            showRowsPerPage={canLoadMore}
+            filtersMode={filtersMode}
+            filters={filtersNode}
+            filtersOpen={filtersOpen}
+            onToggleFilters={filtersTrigger.onClick}
+            onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
+            onCloseFilters={() => setFiltersOpen(false)}
+            onClearFilters={c.clearFilters}
+            dir={props.dir}
+            columnMenu={columnMenu}
+            onExportCsv={makeExportCsvHandler(
+              props.exportCsv,
+              viewSource,
+              c.columnLayout.visibleColumns
+            )}
+          />
+        </Box>
         {c.isRefreshing && <LinearProgress aria-label={labels.loading} />}
         <Chips
           chips={c.mergedChips}
@@ -341,22 +368,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}
-            total={source.total}
+            total={viewSource.total}
             bulkActions={props.bulkActions}
             confirm={confirm}
             labels={labels}
           />
         )}
-        {source.error ? (
+        {viewSource.error ? (
           <ErrorState
-            error={source.error}
+            error={viewSource.error}
             labels={labels}
-            onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+            onRetry={
+              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
+            }
           />
         ) : (
           body
         )}
-        {canLoadMore && source.hasNextPage && (
+        {canLoadMore && viewSource.hasNextPage && (
           <Box
             ref={loadMoreRef}
             sx={{ display: "flex", justifyContent: "center", py: 1 }}
@@ -364,22 +393,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             <Button
               variant="outlined"
               size="small"
-              disabled={source.isFetchingNextPage}
-              onClick={() => source.fetchNextPage()}
+              disabled={viewSource.isFetchingNextPage}
+              onClick={() => viewSource.fetchNextPage()}
             >
               {labels.loadMore}
             </Button>
           </Box>
         )}
         {c.showFooter && (
-          <Footer
-            pagination={table.pagination}
-            total={source.total}
-            limit={source.limit}
-            setPage={source.setPage}
-            setLimit={source.setLimit}
-            labels={labels}
-          />
+          <Box className={classNames?.footer}>
+            <Footer
+              pagination={table.pagination}
+              total={viewSource.total}
+              limit={viewSource.limit}
+              setPage={viewSource.setPage}
+              setLimit={viewSource.setLimit}
+              labels={labels}
+              showRowsPerPage={!c.grouping}
+            />
+          </Box>
         )}
       </Stack>
       {filtersNode && filtersMode === "drawer" && (

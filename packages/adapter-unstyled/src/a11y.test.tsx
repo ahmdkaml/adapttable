@@ -21,12 +21,12 @@ const columns: ColumnDef<Row>[] = [
 ];
 
 function renderTable(
-  props: Partial<Parameters<typeof DataTable<Row>>[0]> = {}
+  props: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {}
 ) {
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter: createMemoryAdapter(),
+      urlAdapter: createMemoryAdapter(),
       columns,
       paginationMode: "paged",
     });
@@ -70,7 +70,7 @@ describe("accessibility (axe)", () => {
     function Empty() {
       const source = useFrontendData<Row>({
         data: [],
-        adapter: createMemoryAdapter(),
+        urlAdapter: createMemoryAdapter(),
         columns,
         paginationMode: "paged",
       });

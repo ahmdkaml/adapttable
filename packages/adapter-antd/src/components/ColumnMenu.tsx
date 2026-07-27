@@ -1,22 +1,23 @@
-import type {
-  ColumnMenuChromeProps,
-  ColumnMenuLabels,
-  Direction,
-  UseColumnLayoutResult,
-} from "@adapttable/core";
+import type { Direction, UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  useColumnDragState,
+} from "@adapttable/core";
+import type {
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
+} from "@adapttable/core/adapter";
+import {
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
-  useColumnDragState,
-} from "@adapttable/core";
+} from "@adapttable/core/adapter";
 import { Button, Divider, Flex, Popover, theme } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Menu labels plus the actions-column display name. */
 type MenuLabels = ColumnMenuLabels & { actions: string };
@@ -149,10 +150,14 @@ export function ColumnMenu<TRow>({
   const drag = useColumnDragState();
   const { token } = theme.useToken();
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -240,7 +245,7 @@ export function ColumnMenu<TRow>({
       content={content}
       styles={{ content: { padding: 0 } }}
     >
-      <Button aria-expanded={open} aria-haspopup="true">
+      <Button ref={triggerRef} aria-expanded={open} aria-haspopup="true">
         {labels.columns}
       </Button>
     </Popover>

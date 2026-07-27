@@ -1,11 +1,14 @@
 import {
   type BulkAction,
-  type BulkBarChromeProps,
-  resolveDisabledReason,
   type SelectionState,
   type TableLabels,
   useBulkActionRunner,
 } from "@adapttable/core";
+import {
+  bulkActionErrorMessage,
+  type BulkBarChromeProps,
+  resolveDisabledReason,
+} from "@adapttable/core/adapter";
 import { Button, Group, Stack, Text, Tooltip } from "@mantine/core";
 
 /** Selection toolbar: count, clear, and the configured bulk-action buttons. */
@@ -17,14 +20,18 @@ export function BulkActionBar({
   labels,
 }: Readonly<BulkBarChromeProps>) {
   const { selectedIds, selectedCount, clear, allMatching } = selection;
-  const { pending, run } = useBulkActionRunner({
+  const { pending, error, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
-    onComplete: clear,
+    // Clear only on success — a failed run keeps the selection for retry.
+    onComplete: (outcome) => {
+      if (outcome.status === "success") clear();
+    },
   });
 
   if (selectedCount === 0) return null;
 
+  const errorMessage = bulkActionErrorMessage(error);
   const ids = [...selectedIds];
   return (
     <Stack gap="xs">
@@ -56,6 +63,11 @@ export function BulkActionBar({
         </Group>
       </Group>
       <ScopeBanner selection={selection} total={total} labels={labels} />
+      {errorMessage !== null && (
+        <Text fz="sm" c="red" role="alert">
+          {`${labels.errorTitle}: ${errorMessage}`}
+        </Text>
+      )}
     </Stack>
   );
 }

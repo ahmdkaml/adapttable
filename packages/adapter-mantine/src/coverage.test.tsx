@@ -39,14 +39,14 @@ const columns: ColumnDef<Row>[] = [
 ];
 
 function mount(
-  override: Partial<Parameters<typeof DataTable<Row>>[0]> = {},
+  override: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {},
   opts: { mode?: "paged" | "infinite"; isMobile?: boolean } = {}
 ) {
   const adapter = createMemoryAdapter("");
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter,
+      urlAdapter: adapter,
       columns,
       paginationMode: opts.mode ?? "paged",
     });
@@ -55,7 +55,7 @@ function mount(
         source={source}
         columns={columns}
         rowKey={(r) => r.id}
-        isMobile={opts.isMobile}
+        forceMobile={opts.isMobile}
         {...override}
       />
     );

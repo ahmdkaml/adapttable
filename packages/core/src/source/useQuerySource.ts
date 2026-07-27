@@ -13,7 +13,7 @@ import {
 import type { TableSource } from "./TableSource";
 
 /**
- * The minimal shape `useBackendData` reads from a `useInfiniteQuery`
+ * The minimal shape `useQuerySource` reads from a `useInfiniteQuery`
  * result. Declared structurally so `@tanstack/react-query` stays an
  * optional, type-only peer dependency (no runtime import).
  *
@@ -32,19 +32,19 @@ export interface InfiniteQueryLike<TPage> {
 
 /** Project a fetched page to its rows (and optional total). */
 export type PageSelector<TRow, TPage> = (page: TPage) => {
-  items: readonly TRow[];
+  rows: readonly TRow[];
   total?: number;
 };
 
-/** Options for {@link useBackendData}. */
-export interface UseBackendDataOptions<
+/** Options for {@link useQuerySource}. */
+export interface UseQuerySourceOptions<
   TRow,
   TParams extends TableQueryParams,
   TPage,
 > extends Pick<
   UseTableUrlStateOptions,
-  | "adapter"
-  | "enabled"
+  | "urlAdapter"
+  | "urlSync"
   | "defaults"
   | "numberExtraKeys"
   | "arrayExtraKeys"
@@ -57,7 +57,13 @@ export interface UseBackendDataOptions<
   usePaginatedQuery: (params: Partial<TParams>) => InfiniteQueryLike<TPage>;
   /** Page → `{ items, total }` selector. Defaults to reading {@link PaginatedResponse}. */
   selectPage?: PageSelector<TRow, TPage>;
-  /** Static params merged into every query call (e.g. a parent scope id). */
+  /**
+   * Static params merged into every query call (e.g. a parent scope id).
+   * The live table state always wins on collision: `page`, `limit`,
+   * `search`, `sortBy`, `sortDir`, `groupBy` and `filters` come from the
+   * table itself and can never be overridden here — seed state through
+   * `defaults` instead.
+   */
   baseParams?: Partial<TParams>;
   /** Pagination mode. Defaults to `"auto"` (mobile → infinite). */
   paginationMode?: PaginationMode;
@@ -69,7 +75,7 @@ export interface UseBackendDataOptions<
 
 const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
   page
-) => ({ items: page.items, total: page.total });
+) => ({ rows: page.rows ?? [], total: page.total });
 
 /**
  * Server-paginated {@link TableSource}. Wraps a caller's
@@ -79,11 +85,11 @@ const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
  *
  * @returns A {@link TableSource} backed by the server query.
  */
-export function useBackendData<
+export function useQuerySource<
   TRow,
   TParams extends TableQueryParams = TableQueryParams,
   TPage = PaginatedResponse<TRow>,
->(options: UseBackendDataOptions<TRow, TParams, TPage>): TableSource<TRow> {
+>(options: UseQuerySourceOptions<TRow, TParams, TPage>): TableSource<TRow> {
   const {
     usePaginatedQuery,
     selectPage,
@@ -103,13 +109,18 @@ export function useBackendData<
   const { page, limit, search, sortBy, sortDir, groupBy, extra } = state;
 
   const params = useMemo(() => {
-    const merged: Record<string, unknown> = { ...extra, ...baseParams };
+    // baseParams are DEFAULTS: everything live is written after them, so a
+    // static param can never beat the user's current state. Filter values
+    // travel under their own `filters` key — a user filter named `sortBy`,
+    // `search` or `groupBy` can never collide with a state param.
+    const merged: Record<string, unknown> = { ...baseParams };
     merged.page = page;
     merged.limit = limit;
     merged.search = search || undefined;
     merged.sortBy = sortBy;
     merged.sortDir = sortDir;
     merged.groupBy = groupBy;
+    merged.filters = extra;
     const next = merged as Partial<TParams>;
     return sanitizeParams ? sanitizeParams(next) : next;
   }, [
@@ -144,15 +155,15 @@ export function useBackendData<
       const lastPage = pages.at(-1)!;
       const projected = project(lastPage);
       return {
-        rows: projected.items,
-        total: projected.total ?? projected.items.length,
+        rows: projected.rows,
+        total: projected.total ?? projected.rows.length,
       };
     }
     const acc: TRow[] = [];
     let lastTotal: number | undefined;
     for (const pg of pages) {
       const projected = project(pg);
-      acc.push(...projected.items);
+      acc.push(...projected.rows);
       if (projected.total !== undefined) lastTotal = projected.total;
     }
     // Mirror the paged branch / useFrontendData: when the source reports no
@@ -168,41 +179,100 @@ export function useBackendData<
     if (page > lastPage) state.setPage(lastPage);
   }, [paged, query.isLoading, query.isFetching, total, limit, page, state]);
 
+  // Query libraries hand back a FRESH result object every render — latch
+  // it so these two keep stable identity (they gate the source memo).
+  // Shared contract: append semantics exist only in infinite mode — paged
+  // navigation is `setPage`, so in paged mode `fetchNextPage` no-ops and
+  // the append flags below read false instead of leaking TanStack's values.
+  const queryRef = useRef(query);
+  queryRef.current = query;
   const fetchNextPage = useCallback(() => {
-    if (query.hasNextPage && !query.isFetchingNextPage)
-      void query.fetchNextPage();
-  }, [query]);
+    if (paged) return;
+    const live = queryRef.current;
+    if (live.hasNextPage && !live.isFetchingNextPage) void live.fetchNextPage();
+  }, [paged]);
 
-  const refetch = useCallback(() => query.refetch(), [query]);
+  const refetch = useCallback(() => queryRef.current.refetch(), []);
 
-  return {
-    rows,
-    total,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isFetchingNextPage: query.isFetchingNextPage,
-    hasNextPage: query.hasNextPage,
-    fetchNextPage,
-    error: query.error,
-    refetch,
-    paginationMode: resolvedMode,
-    page,
-    limit,
-    search,
-    sortBy,
-    sortDir,
-    groupBy,
-    extra,
-    setPage: state.setPage,
-    setLimit: state.setLimit,
-    setSort: state.setSort,
-    setGroupBy: state.setGroupBy,
-    sortLevels: state.sortLevels,
-    toggleSortLevel: state.toggleSortLevel,
-    setSearch: state.setSearch,
-    setExtra: state.setExtra,
-    setExtras: state.setExtras,
-    clearExtras: state.clearExtras,
-    clearAll: state.clearAll,
-  };
+  // Memoised so the returned source keeps its identity across unrelated
+  // renders — a fresh object every render defeated downstream memoization
+  // (and the React Compiler bails on this hook, unlike useFrontendData).
+  // The mutators are destructured because the url-state RESULT object is
+  // itself fresh every render; its members are the stable parts.
+  const {
+    setPage,
+    setLimit,
+    setSort,
+    setGroupBy,
+    sortLevels,
+    toggleSortLevel,
+    setSearch,
+    setExtra,
+    setExtras,
+    clearExtras,
+    clearAll,
+  } = state;
+  return useMemo(
+    () => ({
+      rows,
+      total,
+      isLoading: query.isLoading,
+      isFetching: query.isFetching,
+      isFetchingNextPage: paged ? false : query.isFetchingNextPage,
+      hasNextPage: paged ? false : query.hasNextPage,
+      fetchNextPage,
+      error: query.error,
+      refetch,
+      paginationMode: resolvedMode,
+      page,
+      limit,
+      search,
+      sortBy,
+      sortDir,
+      groupBy,
+      extra,
+      setPage,
+      setLimit,
+      setSort,
+      setGroupBy,
+      sortLevels,
+      toggleSortLevel,
+      setSearch,
+      setExtra,
+      setExtras,
+      clearExtras,
+      clearAll,
+    }),
+    [
+      rows,
+      total,
+      paged,
+      query.isLoading,
+      query.isFetching,
+      query.isFetchingNextPage,
+      query.hasNextPage,
+      fetchNextPage,
+      query.error,
+      refetch,
+      resolvedMode,
+      page,
+      limit,
+      search,
+      sortBy,
+      sortDir,
+      groupBy,
+      extra,
+      setPage,
+      setLimit,
+      setSort,
+      setGroupBy,
+      sortLevels,
+      toggleSortLevel,
+      setSearch,
+      setExtra,
+      setExtras,
+      clearExtras,
+      clearAll,
+    ]
+  );
 }

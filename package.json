@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "build": "turbo run build",
@@ -23,13 +23,16 @@
     "clean": "turbo run clean && rimraf node_modules .turbo coverage",
     "sonar:coverage": "turbo run test:coverage --force && node scripts/fix-lcov-paths.mjs",
     "llms": "node scripts/build-llms-full.mjs",
+    "react:matrix": "node scripts/react-matrix.mjs",
+    "peer:floors": "node scripts/peer-floors.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint",
     "prepare": "husky",
-    "check:readmes": "node scripts/check-readme-features.mjs"
+    "check:readmes": "node scripts/check-readme-features.mjs",
+    "check:docsurface": "node scripts/check-doc-surface.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

@@ -38,7 +38,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns,
-        defaultLayout: { order: ["c", "a"] },
+        defaultColumnLayout: { order: ["c", "a"] },
       })
     );
     expect(keys(result.current.visibleColumns)).toEqual(["c", "a", "b"]);
@@ -46,7 +46,7 @@ describe("useColumnLayout", () => {
 
   it("reset restores all columns and declared order", () => {
     const { result } = renderHook(() =>
-      useColumnLayout({ columns, defaultLayout: { hidden: ["a"] } })
+      useColumnLayout({ columns, defaultColumnLayout: { hidden: ["a"] } })
     );
     expect(keys(result.current.visibleColumns)).toEqual(["b", "c"]);
     act(() => result.current.reset());
@@ -73,7 +73,7 @@ describe("useColumnLayout", () => {
 
   it("ignores an unknown key in the order", () => {
     const { result } = renderHook(() =>
-      useColumnLayout({ columns, defaultLayout: { order: ["zzz", "b"] } })
+      useColumnLayout({ columns, defaultColumnLayout: { order: ["zzz", "b"] } })
     );
     expect(keys(result.current.visibleColumns)).toEqual(["b", "a", "c"]);
   });
@@ -88,7 +88,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns,
-        defaultLayout: { widths: { a: 100, b: 120 } },
+        defaultColumnLayout: { widths: { a: 100, b: 120 } },
       })
     );
     act(() => result.current.setPinned("a", "start"));
@@ -108,7 +108,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns,
-        defaultLayout: {
+        defaultColumnLayout: {
           pinned: { b: "end", c: "end" },
           widths: { c: 80 },
         },
@@ -131,7 +131,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns: widthCols,
-        defaultLayout: {
+        defaultColumnLayout: {
           pinned: { a: "start", b: "start", c: "start" },
         },
       })
@@ -155,7 +155,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns: widthCols,
-        defaultLayout: { pinned: { a: "start", b: "start" } },
+        defaultColumnLayout: { pinned: { a: "start", b: "start" } },
       })
     );
     // "auto" parses to NaN → fallback 150, so 'b' is inset by 150.
@@ -213,7 +213,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns,
-        defaultLayout: {
+        defaultColumnLayout: {
           hidden: ["a"],
           pinned: { a: "start", b: "start" },
           widths: { a: 100, b: 90 },
@@ -277,7 +277,7 @@ describe("useColumnLayout", () => {
     const { result } = renderHook(() =>
       useColumnLayout({
         columns: widthCols,
-        defaultLayout: { pinned: { a: "start", b: "start" } },
+        defaultColumnLayout: { pinned: { a: "start", b: "start" } },
       })
     );
     // No state width for 'a', but its declared numeric width (90) is used, so

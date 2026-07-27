@@ -29,11 +29,11 @@ let adapter: ReturnType<typeof createMemoryAdapter>;
 
 function Harness(props: {
   isMobile?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
   });
   return (
@@ -41,7 +41,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );

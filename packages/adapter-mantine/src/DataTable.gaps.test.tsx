@@ -1,14 +1,14 @@
 /**
  * Gap-fill for the Mantine DataTable — Toolbar branches (infinite-mode
- * rows-per-page, sort-by select, custom toolbar, hideSearch) and the
+ * rows-per-page, sort-by select, custom toolbar, searchable off) and the
  * mobile card layout (selection + row actions + confirm).
  */
 import {
   createMemoryAdapter,
   useChromeBodyData,
   useFrontendData,
-  type VirtualTableRow,
 } from "@adapttable/core";
+import { type VirtualTableRow } from "@adapttable/core/adapter";
 import { MantineProvider } from "@mantine/core";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,11 +58,11 @@ function Harness(props: {
   rows?: Row[];
   mode?: "paged" | "infinite";
   isMobile?: boolean;
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: props.rows ?? ROWS,
-    adapter: createMemoryAdapter(),
+    urlAdapter: createMemoryAdapter(),
     columns,
     paginationMode: props.mode ?? "paged",
   });
@@ -72,7 +72,7 @@ function Harness(props: {
         source={source}
         columns={columns}
         rowKey={(r) => r.id}
-        isMobile={props.isMobile}
+        forceMobile={props.isMobile}
         {...props.override}
       />
     </MantineProvider>
@@ -97,12 +97,12 @@ describe("<DataTable> gaps", () => {
     expect(screen.getAllByLabelText("Sort by").length).toBeGreaterThan(0);
   });
 
-  it("renders a custom toolbar node and can hide the search", () => {
+  it("renders a custom toolbar node and searchable={false} hides the search", () => {
     render(
       <Harness
         override={{
           toolbar: <button type="button">view</button>,
-          hideSearch: true,
+          searchable: false,
         }}
       />
     );
@@ -110,8 +110,18 @@ describe("<DataTable> gaps", () => {
     expect(screen.queryByRole("searchbox")).toBeNull();
   });
 
-  it("applies a custom sticky toolbar offset", () => {
-    const { container } = render(<Harness override={{ stickyTop: 42 }} />);
+  it("stickyToolbar parks the toolbar at stickyTop; off by default", () => {
+    // Aligned contract: stickyTop alone is the sticky-header inset (as in
+    // every other adapter) — the toolbar only sticks when asked to.
+    const plain = render(<Harness override={{ stickyTop: 42 }} />);
+    expect(
+      plain.container.querySelector('[style*="position: sticky"]')
+    ).toBeNull();
+    plain.unmount();
+
+    const { container } = render(
+      <Harness override={{ stickyTop: 42, stickyToolbar: true }} />
+    );
     const toolbar = container.querySelector<HTMLElement>(
       '[style*="position: sticky"]'
     );
@@ -142,7 +152,7 @@ describe("<DataTable> gaps", () => {
         }}
       />
     );
-    expect(screen.getAllByLabelText("Select row").length).toBe(2);
+    expect(screen.getAllByLabelText("Select row")).toHaveLength(2);
     fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]!);
     expect(confirm).toHaveBeenCalled();
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
@@ -200,14 +210,14 @@ describe("<DataTable> gaps", () => {
     ];
     render(<Harness isMobile override={{ columns: nodeCols }} />);
     // One "Person" label per card (two rows).
-    expect(screen.getAllByText("Person").length).toBe(2);
+    expect(screen.getAllByText("Person")).toHaveLength(2);
   });
 
   it("renders a slots.skeleton override while loading", () => {
     function LoadingHarness() {
       const source = useFrontendData<Row>({
         data: [],
-        adapter: createMemoryAdapter(),
+        urlAdapter: createMemoryAdapter(),
         columns,
         paginationMode: "paged",
         isLoading: true,

@@ -59,7 +59,7 @@ const adapter = createMemoryAdapter("");
 function Harness() {
   const source = useFrontendData<Row>({
     data: ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: "infinite",
   });
@@ -69,7 +69,7 @@ function Harness() {
         source={source}
         columns={columns}
         rowKey={(r) => r.id}
-        isMobile
+        forceMobile
         virtualize
       />
     </MantineProvider>

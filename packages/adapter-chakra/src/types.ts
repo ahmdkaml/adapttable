@@ -3,8 +3,8 @@ import type {
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
-  UseServerDataOptions,
 } from "@adapttable/core";
+import type { DataModeProps } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 /** Overridable sub-components. */
@@ -25,13 +25,13 @@ export interface DataTableClassNames {
 }
 
 /** Props for the Chakra UI `<DataTable>`. */
-export interface DataTableProps<TRow> extends Omit<
+interface DataTablePropsBase<TRow> extends Omit<
   BaseDataTableProps<TRow>,
   "source"
 > {
   /**
    * Full-control tier: a prebuilt source (`useFrontendData`,
-   * `useBackendData`, `useServerData`, …). Omit it and pass `data` for the
+   * `useQuerySource`, `useServerData`, …). Omit it and pass `data` for the
    * zero-ceremony tiers instead.
    */
   source?: TableSource<TRow>;
@@ -46,11 +46,6 @@ export interface DataTableProps<TRow> extends Omit<
   total?: number;
   /** Server tier: a request is in flight. */
   loading?: boolean;
-  /**
-   * Server tier: fired with the consolidated query whenever it changes —
-   * including once on mount with the URL-restored values.
-   */
-  onQueryChange?: UseServerDataOptions<TRow>["onQueryChange"];
   /**
    * URL-state backend for the built-in tiers. Defaults to the browser
    * History API; pass a router adapter (or a memory adapter) to integrate.
@@ -79,9 +74,12 @@ export interface DataTableProps<TRow> extends Omit<
   slots?: DataTableSlots;
   /** Per-part class hooks (root / toolbar / table / card / footer). */
   classNames?: DataTableClassNames;
-  /** Chakra color scheme for primary accents (buttons, badges). */
-  colorScheme?: string;
-  /** Chakra table size. Defaults to `"md"`. */
+  /** Chakra color token for primary accents (buttons, badges). */
+  accentColor?: string;
+  /**
+   * Explicit Chakra table size override. When omitted, `density` decides:
+   * `"comfortable"` (default) → `"md"`, `"compact"` → `"sm"`.
+   */
   size?: "sm" | "md" | "lg";
   /**
    * Animate rows/cards on mount (dependency-free; honors reduced motion).
@@ -89,3 +87,12 @@ export interface DataTableProps<TRow> extends Omit<
    */
   animate?: boolean;
 }
+
+/**
+ * Props for the Chakra `<DataTable>`: the base surface intersected
+ * with core's data-mode union, so `mode="server"` requires
+ * `onQueryChange` at compile time and `mode="frontend"` turns it into a
+ * pure notification.
+ */
+export type DataTableProps<TRow> = DataTablePropsBase<TRow> &
+  DataModeProps<TRow>;

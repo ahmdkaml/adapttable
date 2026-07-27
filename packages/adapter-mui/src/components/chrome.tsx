@@ -1,14 +1,17 @@
 import {
   type ActiveFilterChip,
-  type BulkBarChromeProps,
   type Direction,
   pageSizeOptions,
   type PaginationInfo,
-  resolveDisabledReason,
   type TableLabels,
-  type ToolbarChromeProps,
   useBulkActionRunner,
 } from "@adapttable/core";
+import {
+  bulkActionErrorMessage,
+  type BulkBarChromeProps,
+  resolveDisabledReason,
+  type ToolbarChromeProps,
+} from "@adapttable/core/adapter";
 import {
   Alert,
   Badge,
@@ -100,10 +103,10 @@ export interface MuiToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
 /** Search field + sort select + filters button + rows-per-page. */
 export function Toolbar<TRow>({
   table,
-  hideSearch,
+  searchable,
   searchPlaceholder,
   sortByOptions,
-  customToolbar,
+  toolbar,
   hasFilters,
   activeFilterCount,
   showRowsPerPage,
@@ -153,7 +156,7 @@ export function Toolbar<TRow>({
         justifyContent: "space-between",
       }}
     >
-      {!hideSearch && (
+      {searchable !== false && (
         <TextField
           size="small"
           value={searchProps.value}
@@ -200,7 +203,7 @@ export function Toolbar<TRow>({
             ))}
           </TextField>
         )}
-        {customToolbar}
+        {toolbar}
         {filtersButton}
         {hasFilters && filtersMode === "popover" && (
           <FilterPopover
@@ -299,12 +302,16 @@ export function BulkBar({
     selectAllMatching,
     clear,
   } = selection;
-  const { pending, run } = useBulkActionRunner({
+  const { pending, error, run } = useBulkActionRunner({
     confirm,
     cancelLabel: labels.cancel,
-    onComplete: clear,
+    // Clear only on success — a failed run keeps the selection for retry.
+    onComplete: (outcome) => {
+      if (outcome.status === "success") clear();
+    },
   });
   if (selectedCount === 0) return null;
+  const errorMessage = bulkActionErrorMessage(error);
   const ids = [...selectedIds];
   // Offer "select all N matching" only when the whole page is selected and
   // more rows match beyond it; once active, show the cross-page scope.
@@ -394,6 +401,11 @@ export function BulkBar({
             </Tooltip>
           );
         })}
+        {errorMessage !== null && (
+          <Typography variant="body2" color="error" role="alert">
+            {`${labels.errorTitle}: ${errorMessage}`}
+          </Typography>
+        )}
       </Stack>
     </Stack>
   );
@@ -407,6 +419,7 @@ export function Footer({
   setPage,
   setLimit,
   labels,
+  showRowsPerPage = true,
 }: Readonly<{
   pagination: PaginationInfo;
   total: number;
@@ -414,6 +427,8 @@ export function Footer({
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
+  /** Hidden in the grouped full-set view, where page size has no effect. */
+  showRowsPerPage?: boolean;
 }>) {
   return (
     <Stack
@@ -432,20 +447,22 @@ export function Footer({
         useFlexGap
         sx={{ alignItems: "center" }}
       >
-        <TextField
-          select
-          size="small"
-          label={labels.rowsPerPage}
-          value={String(limit)}
-          onChange={(e) => setLimit(Number(e.target.value))}
-          sx={{ minWidth: 100 }}
-        >
-          {pageSizeOptions(limit).map((n) => (
-            <MenuItem key={n} value={String(n)}>
-              {n}
-            </MenuItem>
-          ))}
-        </TextField>
+        {showRowsPerPage && (
+          <TextField
+            select
+            size="small"
+            label={labels.rowsPerPage}
+            value={String(limit)}
+            onChange={(e) => setLimit(Number(e.target.value))}
+            sx={{ minWidth: 100 }}
+          >
+            {pageSizeOptions(limit).map((n) => (
+              <MenuItem key={n} value={String(n)}>
+                {n}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
         {total > 0 && (
           <Typography variant="caption" color="text.secondary">
             {labels.showing({
@@ -573,7 +590,7 @@ export function FilterDrawer({
             {labels.clearAll}
           </Button>
           <Button variant="contained" onClick={onClose}>
-            {labels.applyFilters}
+            {labels.filtersDone}
           </Button>
         </Stack>
       </Box>

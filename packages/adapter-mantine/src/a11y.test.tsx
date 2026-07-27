@@ -24,12 +24,12 @@ const columns: ColumnDef<Row>[] = [
 const axeOpts = { rules: { "color-contrast": { enabled: false } } };
 
 function renderTable(
-  props: Partial<Parameters<typeof DataTable<Row>>[0]> = {}
+  props: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {}
 ) {
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter: createMemoryAdapter(),
+      urlAdapter: createMemoryAdapter(),
       columns,
       paginationMode: "paged",
     });
@@ -64,7 +64,7 @@ describe("accessibility (axe) — Mantine", () => {
   });
 
   it("mobile card layout has no violations", async () => {
-    const { container } = renderTable({ isMobile: true });
+    const { container } = renderTable({ forceMobile: true });
     expect(await axe(container, axeOpts)).toHaveNoViolations();
   });
 });

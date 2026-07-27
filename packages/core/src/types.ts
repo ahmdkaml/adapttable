@@ -126,7 +126,10 @@ export interface ColumnDef<TRow> {
   align?: "start" | "center" | "end";
   /** Label used on mobile card layouts; falls back to `header` when a string. */
   mobileLabel?: string;
-  /** Hide this column entirely on mobile layouts. */
+  /**
+   * Hide this column entirely on mobile layouts. Explicit and absolute:
+   * it always wins, including over the `mobileIdentityColumns` default.
+   */
   hideOnMobile?: boolean;
   /** Hide this column entirely on desktop layouts. */
   hideOnDesktop?: boolean;
@@ -224,15 +227,22 @@ export interface TableQueryParams {
   sortDir?: SortDirection;
   /** Single-level row grouping column key (URL-synced; frontend chrome only). */
   groupBy?: string;
+  /**
+   * The active filter values, namespaced so a user filter named like a
+   * state param (`sortBy`, `search`, …) can never collide with one.
+   */
+  filters?: ExtraFilters;
 }
 
 /** Standard paginated response envelope. */
 export interface PaginatedResponse<TRow> {
-  items: TRow[];
+  /** The page of rows. */
+  rows?: TRow[];
   total: number;
   page: number;
   limit: number;
-  hasNext: boolean;
+  /** Whether a page exists after this one. */
+  hasNextPage?: boolean;
 }
 
 /**
@@ -292,8 +302,14 @@ export interface TableLabels {
   loadMore?: string;
   filters?: string;
   clearAll?: string;
-  /** Label for the filter panel action that accepts the current live filters. */
-  applyFilters?: string;
+  /** Accessible name for a single filter chip's remove button. */
+  removeFilter?: (label: string) => string;
+  /**
+   * Label for the filter panel's closing action. Filters apply LIVE — the
+   * button only closes the panel, so the key matches its "Done" wording
+   * (and the `filters-done` part name).
+   */
+  filtersDone?: string;
   sortBy?: string;
   rowsPerPage?: string;
   actions?: string;

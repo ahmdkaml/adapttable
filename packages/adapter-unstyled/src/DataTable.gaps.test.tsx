@@ -7,8 +7,8 @@ import {
   createMemoryAdapter,
   useChromeBodyData,
   useFrontendData,
-  type VirtualTableRow,
 } from "@adapttable/core";
+import { type VirtualTableRow } from "@adapttable/core/adapter";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,11 +56,11 @@ beforeEach(() => {
 function Harness(props: {
   isMobile?: boolean;
   mode?: "paged" | "infinite";
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const source = useFrontendData<Row>({
     data: ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: props.mode ?? "paged",
   });
@@ -69,7 +69,7 @@ function Harness(props: {
       source={source}
       columns={columns}
       rowKey={(r) => r.id}
-      isMobile={props.isMobile}
+      forceMobile={props.isMobile}
       {...props.override}
     />
   );
@@ -87,7 +87,7 @@ describe("<DataTable> (unstyled) gaps", () => {
       override: { bulkActions: [{ key: "x", label: "X", onClick: vi.fn() }] },
     });
     const checkboxes = screen.getAllByLabelText("Select row");
-    expect(checkboxes.length).toBe(2);
+    expect(checkboxes).toHaveLength(2);
     fireEvent.click(checkboxes[0]!);
     expect(screen.getByText("1 selected")).toBeInTheDocument();
   });

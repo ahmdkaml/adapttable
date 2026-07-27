@@ -24,12 +24,12 @@ const axeOpts = { rules: { "color-contrast": { enabled: false } } };
 const AXE_TIMEOUT_MS = 20_000;
 
 function renderTable(
-  props: Partial<Parameters<typeof DataTable<Row>>[0]> = {}
+  props: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">> = {}
 ) {
   function Harness() {
     const source = useFrontendData<Row>({
       data: ROWS,
-      adapter: createMemoryAdapter(),
+      urlAdapter: createMemoryAdapter(),
       columns,
       paginationMode: "paged",
     });
@@ -67,7 +67,7 @@ describe("accessibility (axe) — Ant Design", () => {
     "the mobile card layout has no violations",
     async () => {
       const { container } = renderTable({
-        isMobile: true,
+        forceMobile: true,
         bulkActions: [{ key: "x", label: "Delete", onClick: () => undefined }],
         rowActions: [{ key: "e", label: "Edit", onClick: () => undefined }],
       });

@@ -26,12 +26,12 @@ let adapter: ReturnType<typeof createMemoryAdapter>;
 
 function Harness(props: {
   columns?: ColumnDef<Row>[];
-  override?: Partial<Parameters<typeof DataTable<Row>>[0]>;
+  override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const columns = props.columns ?? baseColumns;
   const source = useFrontendData<Row>({
     data: ROWS,
-    adapter,
+    urlAdapter: adapter,
     columns,
     paginationMode: "paged",
   });
@@ -144,7 +144,7 @@ describe("summaryRow (antd native summary)", () => {
   it("renders a trailing mobile summary card listing only the covered keys", () => {
     const { container } = renderHarness({
       override: {
-        isMobile: true,
+        forceMobile: true,
         summaryRow: (rows) => ({
           age: rows.reduce((sum, r) => sum + r.age, 0),
         }),
@@ -162,7 +162,7 @@ describe("summaryRow (antd native summary)", () => {
   });
 
   it("renders no mobile summary card without the prop", () => {
-    const { container } = renderHarness({ override: { isMobile: true } });
+    const { container } = renderHarness({ override: { forceMobile: true } });
     expect(
       container.querySelector('[data-adapttable-part="summary-card"]')
     ).toBeNull();
@@ -280,6 +280,18 @@ describe("multiSort (shift-click chain on antd headers)", () => {
     fireEvent.click(nameHeader(), { shiftKey: true });
     expect(adapter.getSearch()).toContain("sort=name%3Adesc");
     expect(nameHeader()).toHaveAttribute("aria-sort", "descending");
+  });
+
+  it("Shift+Enter chains a multi-sort level from the keyboard", () => {
+    renderHarness({ columns: sortable, override: { multiSort: true } });
+    // The shift-click chain was mouse-only — the same gesture must work
+    // on the focused header via Shift+Enter.
+    fireEvent.keyDown(nameHeader(), { key: "Enter", shiftKey: true });
+    expect(adapter.getSearch()).toContain("sort=name%3Aasc");
+    expect(nameHeader()).toHaveAttribute("data-sort-index", "1");
+
+    fireEvent.keyDown(cityHeader(), { key: "Enter", shiftKey: true });
+    expect(cityHeader()).toHaveAttribute("data-sort-index", "2");
   });
 
   it("keeps plain clicks on antd's native single-sort path", () => {

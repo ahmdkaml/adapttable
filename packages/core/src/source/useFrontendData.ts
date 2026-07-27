@@ -55,8 +55,8 @@ function warnUnresolvableSort<TRow>(
 /** Options for {@link useFrontendData}. */
 export interface UseFrontendDataOptions<TRow> extends Pick<
   UseTableUrlStateOptions,
-  | "adapter"
-  | "enabled"
+  | "urlAdapter"
+  | "urlSync"
   | "defaults"
   | "numberExtraKeys"
   | "arrayExtraKeys"
@@ -115,7 +115,7 @@ export function defaultSearchText<TRow>(row: TRow): string {
 
 /**
  * In-memory {@link TableSource}: reads URL/local state and filters, sorts,
- * and slices a caller-supplied array. The mirror of `useBackendData` —
+ * and slices a caller-supplied array. The mirror of `useQuerySource` —
  * the table cannot tell which produced it.
  *
  * @typeParam TRow - The row item type.
@@ -180,10 +180,15 @@ export function useFrontendData<TRow>(
           ? getSortValue(row, key)
           : (column?.sortValue?.(row) ?? toSortable(column?.accessor?.(row)));
     };
-    // An active multi-sort chain supersedes the single sort.
+    // An active multi-sort chain supersedes the single sort. Resolvers are
+    // hoisted per LEVEL: resolving inside the comparator cost an O(columns)
+    // `find` plus a fresh closure per row per level.
     if (sortLevels.length > 0) {
+      const resolvers = new Map(
+        sortLevels.map((level) => [level.key, resolveFor(level.key)])
+      );
       return sortRowsMulti(filtered, sortLevels, (row, key) =>
-        resolveFor(key)(row)
+        resolvers.get(key)?.(row)
       );
     }
     if (!sortBy || !sortDir) return filtered;

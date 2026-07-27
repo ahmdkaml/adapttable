@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BulkAction, RowAction } from "../types";
+import { resetDevWarnings } from "../utils/devWarn";
 import {
   type ConfirmHandler,
   defaultConfirm,
@@ -49,8 +50,12 @@ describe("defaultConfirm", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it("runs onConfirm when there is no native confirm (SSR)", () => {
+  it("DENIES the action when no confirm dialog exists (SSR, jsdom, webviews)", () => {
+    // The absence of a dialog must never auto-approve a destructive
+    // action — deny, and tell the integrator to pass a confirm handler.
     vi.stubGlobal("confirm", undefined);
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const onConfirm = vi.fn();
     defaultConfirm({
       title: "t",
@@ -59,7 +64,29 @@ describe("defaultConfirm", () => {
       cancelLabel: "no",
       onConfirm,
     });
-    expect(onConfirm).toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("no confirm dialog is available")
+    );
+    warn.mockRestore();
+    resetDevWarnings();
+  });
+
+  it("with a dialog present, behavior is unchanged either way", () => {
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true)
+    );
+    const onConfirm = vi.fn();
+    const action: RowAction<Row> = {
+      key: "del",
+      label: "Delete",
+      onClick: vi.fn(),
+      confirm: { title: "t", message: () => "m", confirmLabel: "ok" },
+    };
+    runRowAction(action, { id: "x" }, defaultConfirm, "Cancel");
+    expect(action.onClick).toHaveBeenCalledWith({ id: "x" });
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 });
 
@@ -127,7 +154,44 @@ describe("useBulkActionRunner", () => {
       allMatching: false,
       total: 2,
     });
-    expect(onComplete).toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith({ status: "success" });
+    expect(result.current.error).toBeNull();
+  });
+
+  it("catches a rejecting action: no unhandled rejection, outcome + error surfaced", async () => {
+    const boom = new Error("backend said no");
+    const onClick = vi.fn().mockRejectedValue(boom);
+    const onComplete = vi.fn();
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    const { result } = renderHook(() =>
+      useBulkActionRunner({
+        confirm: vi.fn(),
+        cancelLabel: "Cancel",
+        onComplete,
+      })
+    );
+    await act(async () => {
+      result.current.run({ key: "x", label: "X", onClick }, ["a"]);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    // Flush the microtask queue fully so a stray rejection would fire.
+    await act(async () => new Promise((r) => setTimeout(r, 0)));
+    process.off("unhandledRejection", unhandled);
+
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith({ status: "error", error: boom });
+    expect(result.current.error).toBe(boom);
+    expect(result.current.pending).toBeNull();
+
+    // The next run clears the stale error.
+    const okClick = vi.fn().mockResolvedValue(undefined);
+    await act(async () => {
+      result.current.run({ key: "y", label: "Y", onClick: okClick }, ["a"]);
+      await Promise.resolve();
+    });
+    expect(result.current.error).toBeNull();
   });
 
   it("no-ops on an empty id list", () => {
