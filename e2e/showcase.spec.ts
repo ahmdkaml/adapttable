@@ -265,13 +265,13 @@ for (const adapter of ADAPTERS) {
       await enableToggle(page, "grouping");
       // Frontend mode ships onCellEdit; every data column is editable, so
       // scope to Barbara's row (id 6 — OUTSIDE the current page slice while
-      // grouping renders the full filtered set) and take its email cell.
-      // Guards the regression where the page-slice discard froze every
+      // grouping renders the full filtered set) and take its first editable
+      // cell. Guards the regression where the page-slice discard froze every
       // off-page row as display-only (only each group's first row edited).
       const activate = demo(page)
-        .locator("tr", { hasText: "barbara.liskov" })
+        .locator("tr", { hasText: "Barbara Liskov" })
         .locator('[data-adapttable-part="edit-cell-activate"]')
-        .nth(1);
+        .first();
       await expect(activate).toBeVisible();
       await activate.dblclick();
       // Prefer the accessible textbox — kit wrappers may put the data-* on a

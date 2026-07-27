@@ -12,6 +12,8 @@ import {
   BASE_COLUMNS,
   DEMO_FILTER_RUNTIME,
   DEMO_GROUP_AGGREGATES,
+  EDITING_DEFAULT_LAYOUT,
+  LIVE_DEFAULT_LAYOUT,
   PEOPLE,
   type Person,
 } from "./data";
@@ -181,9 +183,16 @@ export function DemoBody({
   grouping?: boolean;
   editing?: boolean;
 }>) {
+  // Demos mounted WITH editing (the /editing page) keep email visible — it
+  // is the column the walkthrough edits. Only the shared live default is
+  // swapped; explicit layouts (the wide showcase's pins) pass through.
+  const resolvedDefaultLayout =
+    editing && defaultColumnLayout === LIVE_DEFAULT_LAYOUT
+      ? EDITING_DEFAULT_LAYOUT
+      : defaultColumnLayout;
   const { layout, onLayoutChange } = useColumnLayoutUrlState({
     urlKey,
-    defaultColumnLayout,
+    defaultColumnLayout: resolvedDefaultLayout,
   });
   const onColumnLayoutChange = useCallback(
     (next: ColumnLayoutState) =>
