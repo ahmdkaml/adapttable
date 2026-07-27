@@ -26,5 +26,5 @@
     "@adapttable/starter-unstyled": "0.0.0",
     "@adapttable/starter-unstyled-tailwind": "0.0.0"
   },
-  "changesets": []
+  "changesets": ["adapttable-v2"]
 }
