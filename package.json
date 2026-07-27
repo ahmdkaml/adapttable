@@ -26,7 +26,7 @@
     "react:matrix": "node scripts/react-matrix.mjs",
     "peer:floors": "node scripts/peer-floors.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && prettier --write \".changeset/*.json\" \"packages/*/CHANGELOG.md\" \"packages/*/package.json\"",
     "release": "turbo run build && changeset publish",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
     "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint",
