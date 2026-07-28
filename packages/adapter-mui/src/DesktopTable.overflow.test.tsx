@@ -13,7 +13,7 @@ import {
 import { act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DesktopTable } from "./components/tables";
+import { DesktopTable } from "./components/DesktopTable";
 import type { ColumnDef } from "./index";
 import { renderMui } from "./test-utils";
 

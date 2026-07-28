@@ -1,5 +1,5 @@
 /**
- * Row grouping smoke: arms the grouping branch in components/tables.tsx via
+ * Row grouping smoke: arms the grouping branch in components/DesktopTable.tsx via
  * frontend data + an opt-in `groupBy` prop.
  */
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";

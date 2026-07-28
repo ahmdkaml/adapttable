@@ -27,19 +27,18 @@ import {
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
+import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
-import {
-  BulkBar,
-  Chips,
-  ErrorState,
-  FilterDrawer,
-  Footer,
-  LoadingState,
-  Toolbar,
-} from "./components/chrome";
+import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { DesktopTable } from "./components/DesktopTable";
+import { ErrorState } from "./components/ErrorState";
+import { FilterDrawer } from "./components/FilterDrawer";
+import { MobileCards } from "./components/MobileCards";
+import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { DesktopTable, MobileCards } from "./components/tables";
+import { LoadingState } from "./components/TableSkeleton";
+import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
 /** Chrome grouping bundle shape (matches SharedTableRenderProps.grouping). */
