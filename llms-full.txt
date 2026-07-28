@@ -3299,7 +3299,7 @@ Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
 
 ## Is AdaptTable production-ready?
 
-Yes — AdaptTable is **stable at 1.0** and follows semantic versioning, so
+Yes — AdaptTable is **stable at 2.0** and follows semantic versioning, so
 breaking changes ship only in a major release. It is strict-TypeScript, dual
 ESM/CJS with `.d.ts` types, axe-audited for accessibility in CI, and holds
 near-100% test coverage across every adapter.
@@ -3338,7 +3338,7 @@ libraries.
 | Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**       |
 | MIT / free                                     | open-core |          ✓           |         ✓         |   open-core    |           **✓**           |
 
-<sub>Comparison as of June 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
+<sub>Comparison as of July 2026, based on each project's public documentation; capabilities evolve, so verify against the latest docs. "Open-core" means a free, MIT/community edition plus paid Enterprise/Pro tiers (AG Grid Enterprise; MUI X DataGrid Pro/Premium); the advanced server-side data and infinite-loading features sit in those paid tiers. Spotted something outdated or wrong? Please open an issue — we will correct it promptly.</sub>
 
 ## Head-to-head
 
@@ -4817,7 +4817,7 @@ surface.
 
 ## Stability
 
-AdaptTable is **stable at `1.0`**. The full SemVer contract above applies:
+AdaptTable is **stable at `2.0`**. The full SemVer contract above applies:
 breaking changes to the public API surface (below) ship only in a major
 release, with a migration note in the relevant package's `CHANGELOG.md`. In
 practice such changes are rare — most releases are additive minors and safe

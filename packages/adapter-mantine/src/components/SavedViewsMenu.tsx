@@ -1,8 +1,5 @@
-import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+import type { TableLabels, UseSavedViewsOptions } from "@adapttable/core";
+import { useSavedViews } from "@adapttable/core";
 import {
   ActionIcon,
   Box,
@@ -10,12 +7,12 @@ import {
   Divider,
   Group,
   Popover,
-  Text,
   TextInput,
 } from "@mantine/core";
 import { useState } from "react";
 
 import { CloseIcon } from "../icons";
+import { useEscapeClose } from "./useEscapeClose";
 
 /** The label strings the saved-views menu renders. */
 export type SavedViewsLabels = Pick<
@@ -32,11 +29,11 @@ export interface SavedViewsMenuProps {
 }
 
 /**
- * Saved-views menu: lists every captured view (click a name to apply it, the
- * trailing ✕ to delete it) above a save row that captures the table's
- * CURRENT URL state under the typed name. Pairs with core's `useSavedViews`
- * and composes into the `toolbar` slot — or let `<DataTable savedViews>`
- * mount it for you next to the Columns menu.
+ * Saved-views menu: lists every captured view (click a name to apply it and
+ * close, the trailing ✕ to delete it) above a save row that captures the
+ * table's CURRENT URL state under the typed name. Pairs with core's
+ * `useSavedViews` and composes into the `toolbar` slot — or let
+ * `<DataTable savedViews>` mount it for you next to the Columns menu.
  */
 export function SavedViewsMenu({
   options,
@@ -46,6 +43,7 @@ export function SavedViewsMenu({
   const [opened, setOpened] = useState(false);
   const [name, setName] = useState("");
   const trimmed = name.trim();
+  useEscapeClose(opened, () => setOpened(false));
   // Saving clears the input but keeps the menu open, so several views can
   // be captured in one sitting.
   const handleSave = () => {
@@ -74,9 +72,6 @@ export function SavedViewsMenu({
       </Popover.Target>
       <Popover.Dropdown>
         <Box p={4} miw={220}>
-          <Text size="xs" c="dimmed" fw={600} tt="uppercase" px={4} pb={6}>
-            {labels.savedViews}
-          </Text>
           {views.views.map((view) => (
             <Group key={view.name} gap={6} px={4} py={2} wrap="nowrap">
               <Button
@@ -84,7 +79,10 @@ export function SavedViewsMenu({
                 size="compact-sm"
                 justify="flex-start"
                 style={{ flex: 1 }}
-                onClick={() => views.apply(view.name)}
+                onClick={() => {
+                  views.apply(view.name);
+                  setOpened(false);
+                }}
               >
                 {view.name}
               </Button>
@@ -104,6 +102,7 @@ export function SavedViewsMenu({
             <TextInput
               size="xs"
               style={{ flex: 1 }}
+              aria-label={labels.viewName}
               placeholder={labels.viewName}
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}

@@ -7,6 +7,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoSavedViews,
   initials,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
@@ -149,6 +150,7 @@ export function UnstyledLike({
             confirm={demoConfirm}
             enableColumnMenu
             exportCsv
+            savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader

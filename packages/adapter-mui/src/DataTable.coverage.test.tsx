@@ -9,7 +9,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LoadingState } from "./components/chrome";
+import { LoadingState } from "./components/TableSkeleton";
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
 

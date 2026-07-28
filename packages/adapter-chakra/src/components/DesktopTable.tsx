@@ -1,3 +1,4 @@
+/** The desktop `<table>`: header, pinned columns, rows and summary. */
 import {
   type ColumnDef,
   columnResizeHandleProps,
@@ -8,14 +9,12 @@ import {
   type PinSide,
   type RowAction,
   type RowExpansionState,
-  runRowAction,
   type SelectionState,
   type TableLabels,
   tableMinWidth,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
-  ExpandChevron,
   headerGroupRow,
   logicalAlign,
   type PinLeads,
@@ -23,8 +22,6 @@ import {
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   type PinOffset,
-  resolveDisabledReason,
-  resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
   shallowEqualByKeys,
@@ -34,17 +31,7 @@ import {
   tableRenderModel,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import {
-  Box,
-  Button,
-  Card,
-  chakra,
-  HStack,
-  IconButton,
-  Stack,
-  Table,
-  Text,
-} from "@chakra-ui/react";
+import { Box, chakra, Table, Text } from "@chakra-ui/react";
 import {
   type CSSProperties,
   memo,
@@ -55,12 +42,12 @@ import {
   useRef,
 } from "react";
 
-import { subtleText } from "../styles";
 import { EditableDataCell } from "./EditableCell";
-import { GroupHeaderCard, GroupHeaderRow } from "./GroupHeader";
-import { Checkbox, Tooltip } from "./primitives";
+import { ExpandToggle } from "./ExpandToggle";
+import { GroupHeaderRow } from "./GroupHeader";
+import { Checkbox } from "./primitives";
+import { RowActionButtons } from "./RowActionButtons";
 
-/** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
   position: "absolute",
   insetInlineEnd: 0,
@@ -83,7 +70,7 @@ const EXPANSION_WIDTH = 32;
  */
 const PIN_BG = "var(--chakra-colors-bg)";
 
-interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
+export interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
   /** Class hook for the table (desktop) / each card (mobile). */
   className?: string;
   size: "sm" | "md" | "lg";
@@ -95,15 +82,6 @@ interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
    * its cells stick to the inline end even with zero data columns pinned.
    */
   actionsPinned?: boolean;
-}
-
-/** Join the static class hook with a conditional per-row class. */
-function joinClasses(
-  base: string | undefined,
-  extra: string | undefined
-): string | undefined {
-  if (base && extra) return `${base} ${extra}`;
-  return base ?? extra;
 }
 
 /**
@@ -119,93 +97,6 @@ const pinCellStyle = (pin: PinOffset | undefined, z: number, leads: PinLeads) =>
 /** Sticky edge-cell style (chevron / selection / actions) over that background. */
 const edgeCellStyle = (side: PinSide, active: boolean, z: number, shift = 0) =>
   pinnedEdgeCellStyle(side, active, z, PIN_BG, shift);
-
-/** Chevron toggle for a row's detail panel. */
-function ExpandToggle({
-  open,
-  dir,
-  labels,
-  onToggle,
-}: Readonly<{
-  open: boolean;
-  dir?: Direction;
-  labels: Pick<Required<TableLabels>, "expandRow" | "collapseRow">;
-  onToggle: () => void;
-}>) {
-  return (
-    <IconButton
-      size="xs"
-      variant="ghost"
-      aria-expanded={open}
-      aria-label={open ? labels.collapseRow : labels.expandRow}
-      onClick={onToggle}
-    >
-      <ExpandChevron open={open} dir={dir} />
-    </IconButton>
-  );
-}
-
-function RowActionButtons<TRow>({
-  row,
-  actions,
-  confirm,
-  cancelLabel,
-  accentColor,
-}: Readonly<{
-  row: TRow;
-  actions: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  cancelLabel: string;
-  accentColor?: string;
-}>) {
-  return (
-    <HStack gap={1} justify="flex-end">
-      {actions.map((action) => {
-        if (action.isHidden?.(row)) return null;
-        const reason = resolveDisabledReason(action.disabledReason?.(row));
-        const disabled =
-          reason !== undefined || (action.isDisabled?.(row) ?? false);
-        // The disabled attribute already blocks activation, so attach the
-        // handler only when the action can run.
-        const handleClick = disabled
-          ? undefined
-          : (e: React.MouseEvent) => {
-              e.stopPropagation();
-              runRowAction(action, row, confirm, cancelLabel);
-            };
-        // Icon-only actions use IconButton (with a tooltip for the name);
-        // text actions use a real Button so the label actually renders
-        // (IconButton renders only the icon child).
-        return action.icon ? (
-          <Tooltip key={action.key} label={reason ?? action.label}>
-            <IconButton
-              size="sm"
-              variant="ghost"
-              colorPalette={action.color ?? accentColor}
-              disabled={disabled}
-              aria-label={action.label}
-              onClick={handleClick}
-            >
-              {action.icon}
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Tooltip key={action.key} label={reason ?? action.label}>
-            <Button
-              size="sm"
-              variant="ghost"
-              colorPalette={action.color ?? accentColor}
-              disabled={disabled}
-              onClick={handleClick}
-            >
-              {action.label}
-            </Button>
-          </Tooltip>
-        );
-      })}
-    </HStack>
-  );
-}
 
 /**
  * Everything a memoized desktop row reads through ONE identity-stable ref:
@@ -911,302 +802,5 @@ export function DesktopTable<TRow>({
         )}
       </Table.Root>
     </Box>
-  );
-}
-
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
-}
-
-/** Per-card inputs for the memoized {@link MobileCardBase}. */
-interface MobileCardProps<TRow> {
-  row: TRow;
-  index: number;
-  /** Stable row id (selection / expansion key). */
-  id: string;
-  columns: ColumnDef<TRow>[];
-  labels: Required<TableLabels>;
-  confirm: ConfirmHandler;
-  rowActions?: RowAction<TRow>[];
-  /** Static list class merged with resolved `rowClassName` output. */
-  className?: string;
-  selected: boolean;
-  expanded: boolean;
-  /** Selection toggle — present only when selection is enabled. */
-  onToggleSelect?: (id: string) => void;
-  /** Expansion toggle — present only when expansion is enabled. */
-  onToggleExpand?: (id: string) => void;
-  renderDetail?: (row: TRow) => ReactNode;
-  onRowClick?: (row: TRow) => void;
-  measureElement?: (node: Element | null) => void;
-  compact: boolean;
-  dir?: "ltr" | "rtl";
-  accentColor?: string;
-  /**
-   * Opt-in editing bundle — uncompared. Its identity changes on every
-   * keystroke anywhere in the table; the per-row visual churn is
-   * fingerprinted by `editingSignature` instead. A held card keeps an
-   * older bundle safely: its handlers read live state through refs.
-   */
-  editing?: EditableCellEditing<TRow>;
-  /** Page rows for Tab advance — uncompared (see `editing`). */
-  rows: readonly TRow[];
-  getRowId: (row: TRow) => string;
-  /** Memo digest from {@link rowEditingSignature}. */
-  editingSignature: string | null;
-}
-
-/** The card props the memo comparator deliberately skips (see `editing`). */
-type UncomparedCardProp = "editing" | "rows" | "getRowId";
-
-/** Every card prop the memo comparator checks with `Object.is`. */
-const COMPARED_CARD_PROPS: readonly Exclude<
-  keyof MobileCardProps<unknown>,
-  UncomparedCardProp
->[] = [
-  "row",
-  "index",
-  "id",
-  "columns",
-  "labels",
-  "confirm",
-  "rowActions",
-  "className",
-  "selected",
-  "expanded",
-  "onToggleSelect",
-  "onToggleExpand",
-  "renderDetail",
-  "onRowClick",
-  "measureElement",
-  "compact",
-  "dir",
-  "accentColor",
-  "editingSignature",
-];
-
-/**
- * `React.memo` comparator: re-render a card only when one of its VISUAL
- * inputs changes — a search keystroke or another card's checkbox re-renders
- * the list shell, but every unchanged card bails out here.
- */
-function mobileCardPropsEqual<TRow>(
-  prev: Readonly<MobileCardProps<TRow>>,
-  next: Readonly<MobileCardProps<TRow>>
-): boolean {
-  return COMPARED_CARD_PROPS.every((key) => Object.is(prev[key], next[key]));
-}
-
-/** One card. Memoized by {@link mobileCardPropsEqual} at the call site. */
-function MobileCardBase<TRow>({
-  row,
-  index,
-  id,
-  columns,
-  labels,
-  confirm,
-  rowActions,
-  className,
-  selected,
-  expanded,
-  onToggleSelect,
-  onToggleExpand,
-  renderDetail,
-  onRowClick,
-  measureElement,
-  compact,
-  dir,
-  accentColor,
-  editing,
-  rows,
-  getRowId,
-}: Readonly<MobileCardProps<TRow>>) {
-  return (
-    <Card.Root
-      ref={measureElement}
-      data-index={index}
-      data-stagger=""
-      variant="outline"
-      role="listitem"
-      className={className}
-      {...rowClickProps(row, onRowClick, index)}
-    >
-      <Card.Body p={compact ? 3 : undefined}>
-        {onToggleSelect && (
-          <Checkbox
-            aria-label={labels.selectRow}
-            checked={selected}
-            onToggle={() => onToggleSelect(id)}
-            mb={2}
-          />
-        )}
-        {onToggleExpand && (
-          <Box mb={2}>
-            <ExpandToggle
-              open={expanded}
-              dir={dir}
-              labels={labels}
-              onToggle={() => onToggleExpand(id)}
-            />
-          </Box>
-        )}
-        {columns.map((column) => (
-          <Box key={column.key} mb={compact ? 1 : 2}>
-            <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-              {mobileLabel(column)}
-            </Text>
-            <Text as="div" fontSize="sm">
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
-            </Text>
-          </Box>
-        ))}
-        {expanded && <Box pt={1}>{renderDetail?.(row)}</Box>}
-        {rowActions && rowActions.length > 0 && (
-          <RowActionButtons
-            row={row}
-            actions={rowActions}
-            confirm={confirm}
-            cancelLabel={labels.cancel}
-            accentColor={accentColor}
-          />
-        )}
-      </Card.Body>
-    </Card.Root>
-  );
-}
-
-/** Mobile Chakra card list. */
-export function MobileCards<TRow>({
-  table,
-  rows,
-  rowActions,
-  confirm,
-  getRowId,
-  size,
-  accentColor,
-  dir,
-  onRowClick,
-  rowClassName,
-  renderRowDetail,
-  summaryRow,
-  expansion,
-  editing,
-  grouping,
-  className,
-  rowEntries,
-  paddingTop = 0,
-  paddingBottom = 0,
-  measureElement,
-}: Readonly<SharedProps<TRow>>) {
-  const { columns, selection, labels } = table;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
-  const compact = size === "sm";
-  const summary = useSummaryCells(summaryRow, rows);
-
-  // `memo` erases generics at module level, so the memoized card is
-  // instantiated here (once — the identity is stable for the list's life).
-  const CardItem = useMemo(
-    () => memo(MobileCardBase<TRow>, mobileCardPropsEqual),
-    []
-  );
-
-  const renderCard = (row: TRow, index: number, key: string) => {
-    const id = getRowId(row);
-    return (
-      <CardItem
-        key={key}
-        row={row}
-        index={index}
-        id={id}
-        columns={columns}
-        labels={labels}
-        confirm={confirm}
-        rowActions={rowActions}
-        className={joinClasses(className, rowClassName?.(row, index))}
-        selected={selection ? selection.isSelected(id) : false}
-        expanded={expansion ? expansion.isExpanded(id) : false}
-        onToggleSelect={selection ? selection.toggle : undefined}
-        onToggleExpand={expansion ? expansion.toggle : undefined}
-        renderDetail={renderRowDetail}
-        onRowClick={onRowClick}
-        measureElement={measureElement}
-        compact={compact}
-        dir={dir}
-        accentColor={accentColor}
-        editing={editing}
-        rows={rows}
-        getRowId={getRowId}
-        editingSignature={rowEditingSignature(editing, id)}
-      />
-    );
-  };
-
-  return (
-    <Stack
-      gap={compact ? 2 : 3}
-      role="list"
-      aria-label={table.getTableProps()["aria-label"]}
-    >
-      {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
-      {grouping
-        ? grouping.entries.map((entry) =>
-            entry.kind === "group" ? (
-              <GroupHeaderCard
-                key={entry.key}
-                entry={entry}
-                selection={selection}
-                labels={labels}
-                dir={dir}
-                accentColor={accentColor}
-                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
-              />
-            ) : (
-              renderCard(entry.row, entry.index, entry.key)
-            )
-          )
-        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
-      {paddingBottom > 0 && <Box aria-hidden h={`${paddingBottom}px`} />}
-      {summary && (
-        <Card.Root variant="outline" role="listitem" className={className}>
-          <Card.Body p={compact ? 3 : undefined}>
-            {columns.map((column) => {
-              const value = summary[column.key];
-              // Columns absent from the summary are skipped — a card has no
-              // grid to keep aligned, so empty entries are just noise.
-              if (value === undefined) return null;
-              return (
-                <Box key={column.key} mb={compact ? 1 : 2}>
-                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-                    {mobileLabel(column)}
-                  </Text>
-                  <Text fontSize="sm" fontWeight="semibold">
-                    {value}
-                  </Text>
-                </Box>
-              );
-            })}
-          </Card.Body>
-        </Card.Root>
-      )}
-    </Stack>
   );
 }

@@ -137,14 +137,18 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   viewsPanel:
     "z-50 min-w-[240px] rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl",
+  viewsRow: "px-1 py-0.5",
   viewsItem:
     "flex-1 truncate rounded-md px-2 py-1.5 text-start text-[13px] font-medium hover:bg-muted/60",
   viewsDelete:
     "inline-grid place-items-center rounded p-[3px] text-muted-foreground hover:bg-muted hover:text-foreground",
+  viewsSaveRow: "px-1 py-0.5",
+  // `flex-1 min-w-0` lets the input give up its intrinsic width so the save
+  // button keeps its place on the row instead of overflowing the panel.
   viewsInput:
-    "h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+    "h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
   viewsSave:
-    "ms-1.5 h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50",
+    "ms-1.5 h-8 shrink-0 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50",
   viewsDivider: "my-1.5 border-border",
   // ── Bulk actions & selection ────────────────────────────────────
   bulkBar:

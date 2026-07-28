@@ -14,6 +14,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoSavedViews,
   initials,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
@@ -139,6 +140,7 @@ export function AntdDemo({
             confirm={demoConfirm}
             enableColumnMenu
             exportCsv
+            savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             filters={demoFilterDefs(locale)}

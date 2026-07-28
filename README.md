@@ -89,25 +89,9 @@ const { getTableProps, getRowProps, rows } = useDataTable({
 
 ## Feature comparison
 
-| Feature                                           |  ag-grid  |     TanStack Table      | mantine-datatable | MUI DataGrid |      **AdaptTable**       |
-| ------------------------------------------------- | :-------: | :---------------------: | :---------------: | :----------: | :-----------------------: |
-| Headless core                                     |     ✗     |            ✓            |         ✗         |      ✗       |           **✓**           |
-| Works across UI kits                              |     ✗     | ✓ _(build UI yourself)_ |   Mantine only    |   MUI only   | **✓ via ready adapters**  |
-| Client **and** server data, same API              |  partial  |    wire it yourself     |         ✗         |   partial    |   **✓ (`TableSource`)**   |
-| URL-synced state (shareable links)                |     ✗     |            ✗            |         ✗         |      ✗       |           **✓**           |
-| Filter drawer + removable chips                   |     ✗     |            ✗            |         ✗         |   partial    |      **✓ built-in**       |
-| Column management (reorder · pin · resize · hide) | open-core |      _(build it)_       |      partial      |  ✓ _(paid)_  |      **✓ built-in**       |
-| Infinite scroll **and** paged (auto by device)    |     ✓     |      ✓ _(manual)_       |    paged only     |  ✓ _(paid)_  |   **✓ auto by device**    |
-| Responsive mobile card layout                     |     ✗     |    build it yourself    |      partial      |   partial    | **✓ automatic + tunable** |
-| Optional row/card virtualization                  |     ✓     |      ✓ _(manual)_       |         ✗         |  ✓ _(paid)_  |   **✓ built-in opt-in**   |
-| Inline cell editing                               |     ✓     |    build it yourself    |         ✗         |      ✓       |   **✓ opt-in built-in**   |
-| Row grouping + per-group aggregates               | open-core |      _(build it)_       |         ✗         |  ✓ _(paid)_  |   **✓ opt-in built-in**   |
-| CSV export                                        |     ✓     |    build it yourself    |         ✗         |      ✓       |      **✓ built-in**       |
-| i18n + **RTL / Arabic** first-class               |  partial  |            ✗            |         ✗         |   partial    |           **✓**           |
-| Dark mode                                         |     ✓     |           n/a           |         ✓         |      ✓       |      **✓ seamless**       |
-| MIT / free                                        | open-core |            ✓            |         ✓         |  open-core   |           **✓**           |
-
-<sub>Comparison as of June 2026, based on each project's public documentation. "Open-core" = a free MIT/community edition plus paid tiers (ag-Grid Enterprise; MUI X DataGrid Pro/Premium), where the advanced server-side and infinite-loading features live.</sub>
+AdaptTable against AG Grid, TanStack Table, mantine-datatable and MUI X
+DataGrid — scoped to what each ships built-in, dated, and kept current in one
+place: **[the comparison page](https://orwa-mahmoud.github.io/adapttable/comparison/)**.
 
 > **The niche:** _TanStack-Table-style headless freedom, but batteries-included for your UI kit — with URL state, RTL, and a real filter UX out of the box._
 
@@ -196,7 +180,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 
 ## Status
 
-**Stable — `v1`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. See the [roadmap](#roadmap) for what's next.
+**Stable — `v2`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. Coming from v1? The [migration guide](https://orwa-mahmoud.github.io/adapttable/migrate-from-v1/) has the full rename table. See the [roadmap](#roadmap) for what's next.
 
 ## Roadmap
 
@@ -215,6 +199,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 - [x] Row grouping — single-level `groupBy` with per-group aggregates
 - [x] CSV export
 - [x] `v1.0` — stable, semver-committed public API
+- [x] `v2.0` — one name per concept across all eight adapters; React 18 & 19 proven in CI
 
 ## Contributing
 

@@ -1,9 +1,21 @@
 import type { TableLabels, UseSavedViewsOptions } from "@adapttable/core";
 import { useSavedViews } from "@adapttable/core";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import type { DataTableClassNames } from "../types";
 import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
+
+/**
+ * Layout for a panel row: the name/input takes the space, the trailing
+ * button keeps its size. The gap is structural — without it the two sit
+ * flush, and no class hook can add space a consumer has not asked for.
+ */
+const ROW_STYLE: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+};
 
 /** The label strings the saved-views menu renders. */
 export type SavedViewsLabels = Pick<
@@ -20,8 +32,8 @@ export interface SavedViewsMenuProps {
 
 /**
  * Saved-views popover: a disclosure button + a panel listing the saved views
- * (click applies one; each has a delete button) above a save row that
- * captures the table's CURRENT state under a typed name. Built on core's
+ * (click applies one and closes; each has a delete button) above a save row
+ * that captures the table's CURRENT state under a typed name. Built on core's
  * `useSavedViews`; closes on outside-click or Escape. Ships no styles —
  * target the `data-adapttable-part` hooks or the `views*` className slots.
  */
@@ -64,7 +76,9 @@ export function SavedViewsMenu({
           {views.map((view) => (
             <div
               key={view.name}
-              style={{ display: "flex", alignItems: "center" }}
+              data-adapttable-part="views-row"
+              className={classNames.viewsRow}
+              style={ROW_STYLE}
             >
               <button
                 type="button"
@@ -92,7 +106,11 @@ export function SavedViewsMenu({
             data-adapttable-part="views-divider"
             className={classNames.viewsDivider}
           />
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div
+            data-adapttable-part="views-save-row"
+            className={classNames.viewsSaveRow}
+            style={ROW_STYLE}
+          >
             <input
               aria-label={labels.viewName}
               placeholder={labels.viewName}

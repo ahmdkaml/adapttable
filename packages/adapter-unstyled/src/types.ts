@@ -78,10 +78,14 @@ export interface DataTableClassNames {
   viewsButton?: string;
   /** The saved-views dropdown panel. */
   viewsPanel?: string;
+  /** One saved view's row — its apply button beside its delete button. */
+  viewsRow?: string;
   /** One saved view's apply button in the list. */
   viewsItem?: string;
   /** A saved view's delete button. */
   viewsDelete?: string;
+  /** The save row — the name input beside the save button. */
+  viewsSaveRow?: string;
   /** The view-name input in the save row. */
   viewsInput?: string;
   /** The save-view button in the save row. */

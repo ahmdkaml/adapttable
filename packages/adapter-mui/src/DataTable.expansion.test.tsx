@@ -21,11 +21,9 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  DesktopTable,
-  MobileCards,
-  useStableToggle,
-} from "./components/tables";
+import { DesktopTable } from "./components/DesktopTable";
+import { useStableToggle } from "./components/DesktopTable";
+import { MobileCards } from "./components/MobileCards";
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
 

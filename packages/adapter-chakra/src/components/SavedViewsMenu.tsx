@@ -1,8 +1,5 @@
-import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+import type { TableLabels, UseSavedViewsOptions } from "@adapttable/core";
+import { useSavedViews } from "@adapttable/core";
 import {
   Button,
   HStack,
@@ -11,7 +8,6 @@ import {
   Popover,
   Portal,
   Separator,
-  Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
 
@@ -35,7 +31,6 @@ function CrossIcon() {
   );
 }
 
-/** Props for {@link SavedViewsMenu}. */
 /** The label strings the saved-views menu renders. */
 export type SavedViewsLabels = Pick<
   Required<TableLabels>,
@@ -53,8 +48,8 @@ export interface SavedViewsMenuProps {
 
 /**
  * Saved-views toolbar menu on core's `useSavedViews`: a popover listing the
- * captured views (click applies; the trailing × deletes) above a save row
- * that snapshots the table's CURRENT URL state under a typed name.
+ * captured views (click applies and closes; the trailing × deletes) above a
+ * save row that snapshots the table's CURRENT URL state under a typed name.
  */
 export function SavedViewsMenu({
   options,
@@ -62,6 +57,7 @@ export function SavedViewsMenu({
   accentColor,
 }: Readonly<SavedViewsMenuProps>) {
   const { views, save, apply, remove } = useSavedViews(options);
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const trimmed = name.trim();
   const saveCurrent = () => {
@@ -69,7 +65,12 @@ export function SavedViewsMenu({
     setName("");
   };
   return (
-    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+    <Popover.Root
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
+      positioning={{ placement: "bottom-end" }}
+      lazyMount
+    >
       <Popover.Trigger asChild>
         <Button size="sm" variant="outline">
           {labels.savedViews}
@@ -79,17 +80,6 @@ export function SavedViewsMenu({
         <Popover.Positioner>
           <Popover.Content minW="240px" w="auto">
             <Popover.Body px={2} py={2}>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                textTransform="uppercase"
-                letterSpacing="0.06em"
-                color="gray.500"
-                px={1}
-                pb={1}
-              >
-                {labels.savedViews}
-              </Text>
               {views.map((view) => (
                 <HStack key={view.name} gap={1} py={0.5}>
                   <Button
@@ -98,7 +88,10 @@ export function SavedViewsMenu({
                     fontWeight="normal"
                     flex={1}
                     justifyContent="flex-start"
-                    onClick={() => apply(view.name)}
+                    onClick={() => {
+                      apply(view.name);
+                      setOpen(false);
+                    }}
                   >
                     {view.name}
                   </Button>

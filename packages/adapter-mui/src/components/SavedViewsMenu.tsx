@@ -1,8 +1,5 @@
-import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+import type { TableLabels, UseSavedViewsOptions } from "@adapttable/core";
+import { useSavedViews } from "@adapttable/core";
 import {
   Box,
   Button,
@@ -30,7 +27,7 @@ export interface SavedViewsMenuProps {
 
 /**
  * MUI saved-views menu: a toolbar button opening a popover that lists the
- * saved views — click applies one to the table, the trailing × deletes it —
+ * saved views — click applies one and closes, the trailing × deletes it —
  * above a save row that captures the table's CURRENT URL state (search,
  * sort, page, filters, column layout) under a typed name.
  */
