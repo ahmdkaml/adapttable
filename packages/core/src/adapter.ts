@@ -68,22 +68,6 @@ export {
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
-export {
-  type SavedViewsMenuState,
-  useSavedViewsMenu,
-  type UseSavedViewsMenuOptions,
-} from "./render/savedViewsMenu";
-export {
-  type SavedViewsApplyButtonProps,
-  type SavedViewsDeleteButtonProps,
-  type SavedViewsLabels,
-  SavedViewsMenuContent,
-  type SavedViewsMenuContentProps,
-  type SavedViewsNameInputProps,
-  type SavedViewsParts,
-  type SavedViewsRowProps,
-  type SavedViewsSaveButtonProps,
-} from "./render/SavedViewsMenuContent";
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";

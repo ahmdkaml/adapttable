@@ -381,22 +381,6 @@ utilities: `logicalAlign` (logical → physical alignment),
 (`FiltersIcon`, `SearchIcon`, `EyeIcon`, `GripIcon`, `PinIcon`,
 `ExpandChevron`, `sortArrow`).
 
-**Saved-views menu.** The menu's behaviour and arrangement are shared, so
-every adapter's panel acts alike; each kit supplies only its own
-primitives. `useSavedViewsMenu(options)` returns a `SavedViewsMenuState` —
-the view list, the pending name, and `applyView` / `saveView` /
-`removeView`. Applying a view calls the `onRequestClose` in
-`UseSavedViewsMenuOptions` (the open state stays with the kit's popover,
-which owns portalling and focus return); saving clears the field and keeps
-the panel open. `SavedViewsMenuContent` renders the panel's insides —
-the view rows, a divider, then the save row — from a `SavedViewsParts`
-bundle of kit components (`SavedViewsRowProps`,
-`SavedViewsApplyButtonProps`, `SavedViewsDeleteButtonProps`,
-`SavedViewsNameInputProps`, `SavedViewsSaveButtonProps` type each one;
-`divider` is a plain node). `SavedViewsMenuContentProps` is its prop
-surface and `SavedViewsLabels` the four strings it needs. The trigger
-label belongs on the popover's trigger — the panel does not repeat it.
-
 **Bulk actions.** `useBulkBarState` / `BulkBarState` /
 `BulkBarChromeProps` derive everything a bulk-action toolbar renders
 (selected ids, in-flight action, the "select all matching" banner);
