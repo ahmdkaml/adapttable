@@ -7,6 +7,7 @@ import type {
   FilterDef,
   GroupAggregatesFn,
   RowAction,
+  UseSavedViewsOptions,
 } from "@adapttable/core";
 import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
@@ -167,6 +168,18 @@ export const demoConfirm: ConfirmHandler = (request: ConfirmRequest) => {
     new CustomEvent<ConfirmRequest>(DEMO_CONFIRM_EVENT, { detail: request })
   );
 };
+
+/**
+ * Saved-views wiring for the demos. `urlKey` is passed explicitly because the
+ * demos own their URL state in {@link DemoBody} rather than on the table, so
+ * the menu has no table `urlKey` to inherit its namespace from. The storage
+ * key is scoped the same way, so each demo keeps its own views — and every
+ * adapter on a page shares one key, so a view saved under Mantine is there
+ * when you switch to MUI.
+ */
+export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
+  return { storageKey: `adapttable-demo-views-${urlKey ?? "live"}`, urlKey };
+}
 
 /**
  * Stable columns (keys + accessors) for the data hooks — locale-independent,

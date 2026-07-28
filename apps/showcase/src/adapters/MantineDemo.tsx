@@ -14,6 +14,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
@@ -102,6 +103,7 @@ export function MantineDemo({
             confirm={demoConfirm}
             enableColumnMenu
             exportCsv
+            savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader

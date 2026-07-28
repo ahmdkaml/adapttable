@@ -104,11 +104,126 @@ const TAILWIND: DataTableClassNames = {
     "inline-grid place-items-center rounded p-[3px] text-gray-400 hover:bg-gray-100 data-[active]:text-indigo-600 dark:hover:bg-zinc-800 dark:data-[active]:text-indigo-400",
   columnMenuReset:
     "mt-1.5 w-full border-t border-gray-100 px-2 pb-1 pt-2 text-start text-[13px] font-medium text-indigo-600 hover:text-indigo-700 dark:border-zinc-800 dark:text-indigo-400",
+  // ── Saved views popover ─────────────────────────────────────────
+  viewsMenu: "relative",
+  viewsButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 data-[active]:border-indigo-400 data-[active]:bg-indigo-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-[active]:bg-indigo-500/15",
+  viewsPanel:
+    "z-50 min-w-[264px] rounded-lg border border-gray-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
+  viewsRow: "px-1 py-0.5",
+  viewsItem:
+    "flex-1 truncate rounded-md px-2 py-1.5 text-start text-[13px] font-medium text-gray-700 hover:bg-gray-50 dark:text-zinc-300 dark:hover:bg-zinc-800",
+  viewsDelete:
+    "inline-grid place-items-center rounded p-[3px] text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+  viewsDivider: "my-1.5 border-gray-100 dark:border-zinc-800",
+  viewsSaveRow: "px-1 py-0.5",
+  // `flex-1 min-w-0` lets the input give up its intrinsic width so the save
+  // button keeps its place on the row instead of overflowing the panel.
+  viewsInput:
+    "h-8 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
+  viewsSave:
+    "h-8 shrink-0 rounded-md bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600",
   resizeHandle: "hover:bg-indigo-300",
   card: "mb-2 rounded-lg border border-gray-200 p-3 dark:border-zinc-700",
   cardRow: "flex justify-between gap-3 py-0.5 text-sm",
   cardLabel: "text-gray-500 dark:text-zinc-400",
   cardValue: "font-medium",
+  cardActions:
+    "mt-2 flex justify-end gap-1 border-t border-gray-200 pt-2 dark:border-zinc-700",
+  cardDetail: "mt-2 border-t border-gray-200 pt-2 text-sm dark:border-zinc-700",
+  cards: "p-3",
+  // ── Table scaffolding ───────────────────────────────────────────
+  scrollBox: "overscroll-x-contain",
+  thead: "bg-white dark:bg-zinc-900",
+  tbody: "align-middle",
+  headerRow: "align-middle",
+  virtualSpacer: "block",
+  filtersAnchor: "relative",
+  filtersIcon: "text-gray-400",
+  columnMenu: "relative",
+  columnMenuSeparator: "my-1.5 border-gray-100 dark:border-zinc-800",
+  exportCsvButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
+  // ── Selection, actions & expansion ──────────────────────────────
+  checkbox: "h-4 w-4 accent-indigo-600",
+  selectionHeader:
+    "w-11 border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800/60",
+  selectionCell:
+    "w-11 px-3 py-2.5 [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
+  actionsHeader:
+    "w-[120px] border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 text-end font-semibold text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+  actionsCell:
+    "px-3 py-2.5 text-end [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
+  expandHeader:
+    "w-8 border-b border-gray-200 bg-gray-50/60 dark:border-zinc-700 dark:bg-zinc-800/60",
+  expandCell: "w-8 px-2 py-2.5",
+  expandButton:
+    "inline-grid h-6 w-6 place-items-center rounded-md text-gray-400 transition-transform hover:bg-gray-100 data-[expanded]:rotate-90 dark:hover:bg-zinc-800",
+  detailRow:
+    "border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/40",
+  detailCell: "px-3 py-2.5 text-sm",
+  // ── Bulk actions ────────────────────────────────────────────────
+  bulkBar:
+    "flex flex-wrap items-center gap-2 border-b border-gray-200 bg-indigo-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-indigo-500/10",
+  bulkButton:
+    "inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800",
+  bulkError: "text-sm font-medium text-red-600 dark:text-red-400",
+  selectAllBanner: "flex flex-wrap items-center gap-2",
+  selectAllText: "text-xs text-gray-500 dark:text-zinc-400",
+  selectAllButton:
+    "rounded-md px-1.5 py-0.5 text-xs font-medium text-indigo-600 hover:bg-gray-100 dark:text-indigo-400 dark:hover:bg-zinc-800",
+  // ── Sorting, grouping & summary ─────────────────────────────────
+  sortIndex:
+    "ms-1 inline-grid h-4 min-w-4 place-items-center rounded-full bg-indigo-100 px-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
+  headerGroupRow: "border-b border-gray-200 dark:border-zinc-700",
+  headerGroupCell:
+    "border-b border-gray-200 bg-gray-50/60 px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+  groupRow:
+    "border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/50",
+  groupCell: "px-3 py-2 font-medium",
+  groupCard:
+    "mb-1 rounded-lg bg-gray-50 px-3 py-2 font-medium dark:bg-zinc-800/50",
+  groupToggle:
+    "inline-grid h-6 w-6 place-items-center rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800",
+  groupSelect: "h-4 w-4 accent-indigo-600",
+  groupLabel: "text-sm font-semibold",
+  groupCount: "text-xs text-gray-500 dark:text-zinc-400",
+  groupAggregate: "ms-auto text-xs text-gray-500 dark:text-zinc-400",
+  summary:
+    "border-t border-gray-200 bg-gray-50 font-medium dark:border-zinc-700 dark:bg-zinc-800/50",
+  summaryRow: "align-middle",
+  summaryCell: "px-3 py-2.5",
+  summaryCard:
+    "mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm font-medium dark:border-zinc-700 dark:bg-zinc-800/50",
+  // ── Inline editing ──────────────────────────────────────────────
+  editCellActivate: "w-full cursor-text text-start",
+  editCellEditor:
+    "h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
+  // ── Filter form extras ──────────────────────────────────────────
+  filterOperator:
+    "h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
+  filterOptionsLoading: "text-xs text-gray-500 dark:text-zinc-400",
+  // ── Loading, error & load-more ──────────────────────────────────
+  loading: "p-3",
+  loadingTable: "w-full border-collapse",
+  loadingHeaderRow: "border-b border-gray-200 dark:border-zinc-700",
+  loadingHeaderCell: "px-3 py-2.5 text-start",
+  loadingRow: "border-b border-gray-100 last:border-0 dark:border-zinc-800",
+  loadingCell: "px-3 py-2.5",
+  loadingLine:
+    "inline-block h-3 animate-pulse rounded bg-gray-200 dark:bg-zinc-700",
+  loadingCards: "flex flex-col gap-2 p-3",
+  loadingCard:
+    "flex flex-col gap-2 rounded-lg border border-gray-200 p-3 dark:border-zinc-700 [&>span]:inline-block [&>span]:h-3 [&>span]:animate-pulse [&>span]:rounded [&>span]:bg-gray-200 dark:[&>span]:bg-zinc-700",
+  refreshIndicator:
+    "h-0.5 w-full [&::-webkit-progress-bar]:bg-transparent [&::-webkit-progress-value]:bg-indigo-600",
+  error:
+    "flex flex-col items-center gap-1.5 px-4 py-10 text-center text-sm text-gray-600 dark:text-zinc-400",
+  retryButton:
+    "rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800",
+  loadMore: "flex justify-center p-3",
+  loadMoreButton:
+    "inline-flex h-9 items-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800",
 };
 
 export function UnstyledDemo({

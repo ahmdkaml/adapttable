@@ -6,6 +6,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
   type Locale,
@@ -138,6 +139,7 @@ export function BaseUiDemo({
           confirm={demoConfirm}
           enableColumnMenu
           exportCsv
+          savedViews={demoSavedViews(urlKey)}
           animate={animate}
           resizableColumns
           stickyHeader
