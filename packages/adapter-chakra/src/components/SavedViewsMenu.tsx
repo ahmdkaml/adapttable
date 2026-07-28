@@ -1,8 +1,15 @@
+import type { UseSavedViewsOptions } from "@adapttable/core";
 import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+  type SavedViewsApplyButtonProps,
+  type SavedViewsDeleteButtonProps,
+  type SavedViewsLabels,
+  SavedViewsMenuContent,
+  type SavedViewsNameInputProps,
+  type SavedViewsParts,
+  type SavedViewsRowProps,
+  type SavedViewsSaveButtonProps,
+  useSavedViewsMenu,
+} from "@adapttable/core/adapter";
 import {
   Button,
   HStack,
@@ -11,9 +18,10 @@ import {
   Popover,
   Portal,
   Separator,
-  Text,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+export type { SavedViewsLabels };
 
 /** Small × glyph for the per-view delete button. */
 function CrossIcon() {
@@ -35,13 +43,6 @@ function CrossIcon() {
   );
 }
 
-/** Props for {@link SavedViewsMenu}. */
-/** The label strings the saved-views menu renders. */
-export type SavedViewsLabels = Pick<
-  Required<TableLabels>,
-  "savedViews" | "saveView" | "viewName" | "deleteView"
->;
-
 export interface SavedViewsMenuProps {
   /** Forwarded to core's `useSavedViews` (storage key, adapter, urlKey, …). */
   options: UseSavedViewsOptions;
@@ -52,24 +53,97 @@ export interface SavedViewsMenuProps {
 }
 
 /**
- * Saved-views toolbar menu on core's `useSavedViews`: a popover listing the
- * captured views (click applies; the trailing × deletes) above a save row
- * that snapshots the table's CURRENT URL state under a typed name.
+ * Saved-views toolbar menu: a popover listing the captured views (click
+ * applies and closes; the trailing × deletes) above a save row that snapshots
+ * the table's CURRENT URL state under a typed name. Arrangement and behaviour
+ * come from core's shared menu; this adapter supplies Chakra's components.
  */
 export function SavedViewsMenu({
   options,
   labels,
   accentColor,
 }: Readonly<SavedViewsMenuProps>) {
-  const { views, save, apply, remove } = useSavedViews(options);
-  const [name, setName] = useState("");
-  const trimmed = name.trim();
-  const saveCurrent = () => {
-    save(trimmed);
-    setName("");
-  };
+  const [open, setOpen] = useState(false);
+  const state = useSavedViewsMenu({
+    ...options,
+    onRequestClose: () => setOpen(false),
+  });
+
+  // Memoised so the shared content does not see a new component identity —
+  // and remount every node — on each keystroke.
+  const parts = useMemo<SavedViewsParts>(
+    () => ({
+      Row: ({ children }: SavedViewsRowProps) => (
+        <HStack gap={1} py={0.5}>
+          {children}
+        </HStack>
+      ),
+      ApplyButton: ({ onClick, children }: SavedViewsApplyButtonProps) => (
+        <Button
+          size="xs"
+          variant="ghost"
+          fontWeight="normal"
+          flex={1}
+          justifyContent="flex-start"
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      ),
+      DeleteButton: ({ label, onClick }: SavedViewsDeleteButtonProps) => (
+        <IconButton
+          size="xs"
+          variant="ghost"
+          aria-label={label}
+          onClick={onClick}
+        >
+          <CrossIcon />
+        </IconButton>
+      ),
+      divider: <Separator my={1} />,
+      SaveRow: ({ children }: SavedViewsRowProps) => (
+        <HStack gap={1}>{children}</HStack>
+      ),
+      NameInput: ({
+        value,
+        placeholder,
+        label,
+        onChange,
+      }: SavedViewsNameInputProps) => (
+        <Input
+          size="xs"
+          aria-label={label}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ),
+      SaveButton: ({
+        disabled,
+        onClick,
+        children,
+      }: SavedViewsSaveButtonProps) => (
+        <Button
+          size="xs"
+          flexShrink={0}
+          colorPalette={accentColor}
+          disabled={disabled}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      ),
+    }),
+    [accentColor]
+  );
+
   return (
-    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+    <Popover.Root
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
+      positioning={{ placement: "bottom-end" }}
+      lazyMount
+    >
       <Popover.Trigger asChild>
         <Button size="sm" variant="outline">
           {labels.savedViews}
@@ -79,58 +153,11 @@ export function SavedViewsMenu({
         <Popover.Positioner>
           <Popover.Content minW="240px" w="auto">
             <Popover.Body px={2} py={2}>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                textTransform="uppercase"
-                letterSpacing="0.06em"
-                color="gray.500"
-                px={1}
-                pb={1}
-              >
-                {labels.savedViews}
-              </Text>
-              {views.map((view) => (
-                <HStack key={view.name} gap={1} py={0.5}>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    fontWeight="normal"
-                    flex={1}
-                    justifyContent="flex-start"
-                    onClick={() => apply(view.name)}
-                  >
-                    {view.name}
-                  </Button>
-                  <IconButton
-                    size="xs"
-                    variant="ghost"
-                    aria-label={`${labels.deleteView}: ${view.name}`}
-                    onClick={() => remove(view.name)}
-                  >
-                    <CrossIcon />
-                  </IconButton>
-                </HStack>
-              ))}
-              <Separator my={1} />
-              <HStack gap={1}>
-                <Input
-                  size="xs"
-                  aria-label={labels.viewName}
-                  placeholder={labels.viewName}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <Button
-                  size="xs"
-                  flexShrink={0}
-                  colorPalette={accentColor}
-                  disabled={trimmed === ""}
-                  onClick={saveCurrent}
-                >
-                  {labels.saveView}
-                </Button>
-              </HStack>
+              <SavedViewsMenuContent
+                state={state}
+                labels={labels}
+                parts={parts}
+              />
             </Popover.Body>
           </Popover.Content>
         </Popover.Positioner>

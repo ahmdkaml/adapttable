@@ -1,8 +1,15 @@
+import type { UseSavedViewsOptions } from "@adapttable/core";
 import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+  type SavedViewsApplyButtonProps,
+  type SavedViewsDeleteButtonProps,
+  type SavedViewsLabels,
+  SavedViewsMenuContent,
+  type SavedViewsNameInputProps,
+  type SavedViewsParts,
+  type SavedViewsRowProps,
+  type SavedViewsSaveButtonProps,
+  useSavedViewsMenu,
+} from "@adapttable/core/adapter";
 import {
   ActionIcon,
   Box,
@@ -10,18 +17,13 @@ import {
   Divider,
   Group,
   Popover,
-  Text,
   TextInput,
 } from "@mantine/core";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CloseIcon } from "../icons";
 
-/** The label strings the saved-views menu renders. */
-export type SavedViewsLabels = Pick<
-  Required<TableLabels>,
-  "savedViews" | "saveView" | "viewName" | "deleteView"
->;
+export type { SavedViewsLabels };
 
 /** Props for {@link SavedViewsMenu}. */
 export interface SavedViewsMenuProps {
@@ -32,26 +34,88 @@ export interface SavedViewsMenuProps {
 }
 
 /**
- * Saved-views menu: lists every captured view (click a name to apply it, the
- * trailing ✕ to delete it) above a save row that captures the table's
- * CURRENT URL state under the typed name. Pairs with core's `useSavedViews`
- * and composes into the `toolbar` slot — or let `<DataTable savedViews>`
- * mount it for you next to the Columns menu.
+ * Saved-views menu: lists every captured view (click a name to apply it and
+ * close, the trailing ✕ to delete it) above a save row that captures the
+ * table's CURRENT URL state under the typed name. Arrangement and behaviour
+ * come from core's shared menu; this adapter supplies Mantine's components.
+ * Composes into the `toolbar` slot — or let `<DataTable savedViews>` mount it
+ * for you next to the Columns menu.
  */
 export function SavedViewsMenu({
   options,
   labels,
 }: Readonly<SavedViewsMenuProps>) {
-  const views = useSavedViews(options);
   const [opened, setOpened] = useState(false);
-  const [name, setName] = useState("");
-  const trimmed = name.trim();
-  // Saving clears the input but keeps the menu open, so several views can
-  // be captured in one sitting.
-  const handleSave = () => {
-    views.save(trimmed);
-    setName("");
-  };
+  const state = useSavedViewsMenu({
+    ...options,
+    onRequestClose: () => setOpened(false),
+  });
+
+  // Memoised so the shared content does not see a new component identity —
+  // and remount every node — on each keystroke.
+  const parts = useMemo<SavedViewsParts>(
+    () => ({
+      Row: ({ children }: SavedViewsRowProps) => (
+        <Group gap={6} px={4} py={2} wrap="nowrap">
+          {children}
+        </Group>
+      ),
+      ApplyButton: ({ onClick, children }: SavedViewsApplyButtonProps) => (
+        <Button
+          variant="subtle"
+          size="compact-sm"
+          justify="flex-start"
+          style={{ flex: 1 }}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      ),
+      DeleteButton: ({ label, onClick }: SavedViewsDeleteButtonProps) => (
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          aria-label={label}
+          onClick={onClick}
+        >
+          <CloseIcon size={12} />
+        </ActionIcon>
+      ),
+      divider: <Divider my={4} />,
+      SaveRow: ({ children }: SavedViewsRowProps) => (
+        <Group gap={6} p={4} wrap="nowrap">
+          {children}
+        </Group>
+      ),
+      NameInput: ({
+        value,
+        placeholder,
+        label,
+        onChange,
+      }: SavedViewsNameInputProps) => (
+        <TextInput
+          size="xs"
+          style={{ flex: 1 }}
+          aria-label={label}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.currentTarget.value)}
+        />
+      ),
+      SaveButton: ({
+        disabled,
+        onClick,
+        children,
+      }: SavedViewsSaveButtonProps) => (
+        <Button size="xs" disabled={disabled} onClick={onClick}>
+          {children}
+        </Button>
+      ),
+    }),
+    []
+  );
+
   // A Popover, not a Menu: the panel holds buttons and a text input, so
   // `role="menu"` semantics (menuitem children, typeahead) would be a lie.
   return (
@@ -74,44 +138,7 @@ export function SavedViewsMenu({
       </Popover.Target>
       <Popover.Dropdown>
         <Box p={4} miw={220}>
-          <Text size="xs" c="dimmed" fw={600} tt="uppercase" px={4} pb={6}>
-            {labels.savedViews}
-          </Text>
-          {views.views.map((view) => (
-            <Group key={view.name} gap={6} px={4} py={2} wrap="nowrap">
-              <Button
-                variant="subtle"
-                size="compact-sm"
-                justify="flex-start"
-                style={{ flex: 1 }}
-                onClick={() => views.apply(view.name)}
-              >
-                {view.name}
-              </Button>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                aria-label={`${labels.deleteView}: ${view.name}`}
-                onClick={() => views.remove(view.name)}
-              >
-                <CloseIcon size={12} />
-              </ActionIcon>
-            </Group>
-          ))}
-          <Divider my={4} />
-          <Group gap={6} p={4} wrap="nowrap">
-            <TextInput
-              size="xs"
-              style={{ flex: 1 }}
-              placeholder={labels.viewName}
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-            />
-            <Button size="xs" disabled={trimmed === ""} onClick={handleSave}>
-              {labels.saveView}
-            </Button>
-          </Group>
+          <SavedViewsMenuContent state={state} labels={labels} parts={parts} />
         </Box>
       </Popover.Dropdown>
     </Popover>

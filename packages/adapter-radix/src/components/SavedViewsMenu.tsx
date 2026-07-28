@@ -1,20 +1,28 @@
+import type { UseSavedViewsOptions } from "@adapttable/core";
 import {
-  type TableLabels,
-  useSavedViews,
-  type UseSavedViewsOptions,
-} from "@adapttable/core";
+  type SavedViewsApplyButtonProps,
+  type SavedViewsDeleteButtonProps,
+  type SavedViewsLabels,
+  SavedViewsMenuContent,
+  type SavedViewsNameInputProps,
+  type SavedViewsParts,
+  type SavedViewsRowProps,
+  type SavedViewsSaveButtonProps,
+  useSavedViewsMenu,
+} from "@adapttable/core/adapter";
 import {
   Button,
   Flex,
   IconButton,
   Popover,
   Separator,
-  Text,
   TextField,
 } from "@radix-ui/themes";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { RadixAccentColor } from "../types";
+
+export type { SavedViewsLabels };
 
 /** Small × glyph for the per-view delete button. */
 function CrossIcon() {
@@ -36,13 +44,6 @@ function CrossIcon() {
   );
 }
 
-/** Props for {@link SavedViewsMenu}. */
-/** The label strings the saved-views menu renders. */
-export type SavedViewsLabels = Pick<
-  Required<TableLabels>,
-  "savedViews" | "saveView" | "viewName" | "deleteView"
->;
-
 export interface SavedViewsMenuProps {
   /** Forwarded to core's `useSavedViews` (storage key, adapter, urlKey, …). */
   options: UseSavedViewsOptions;
@@ -53,24 +54,95 @@ export interface SavedViewsMenuProps {
 }
 
 /**
- * Saved-views toolbar menu on core's `useSavedViews`: a popover listing the
- * captured views (click applies; the trailing × deletes) above a save row
- * that snapshots the table's CURRENT URL state under a typed name.
+ * Saved-views toolbar menu: a popover listing the captured views (click
+ * applies and closes; the trailing × deletes) above a save row that snapshots
+ * the table's CURRENT URL state under a typed name. Arrangement and behaviour
+ * come from core's shared menu; this adapter supplies Radix Themes'
+ * components.
  */
 export function SavedViewsMenu({
   options,
   labels,
   accentColor,
 }: Readonly<SavedViewsMenuProps>) {
-  const { views, save, apply, remove } = useSavedViews(options);
-  const [name, setName] = useState("");
-  const trimmed = name.trim();
-  const saveCurrent = () => {
-    save(trimmed);
-    setName("");
-  };
+  const [open, setOpen] = useState(false);
+  const state = useSavedViewsMenu({
+    ...options,
+    onRequestClose: () => setOpen(false),
+  });
+
+  // Memoised so the shared content does not see a new component identity —
+  // and remount every node — on each keystroke.
+  const parts = useMemo<SavedViewsParts>(
+    () => ({
+      Row: ({ children }: SavedViewsRowProps) => (
+        <Flex gap="1" align="center">
+          {children}
+        </Flex>
+      ),
+      ApplyButton: ({ onClick, children }: SavedViewsApplyButtonProps) => (
+        <Button
+          size="1"
+          variant="ghost"
+          style={{ flex: 1, justifyContent: "flex-start" }}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      ),
+      DeleteButton: ({ label, onClick }: SavedViewsDeleteButtonProps) => (
+        <IconButton
+          size="1"
+          variant="ghost"
+          color="gray"
+          aria-label={label}
+          onClick={onClick}
+        >
+          <CrossIcon />
+        </IconButton>
+      ),
+      divider: <Separator my="1" size="4" />,
+      SaveRow: ({ children }: SavedViewsRowProps) => (
+        <Flex gap="1" align="center">
+          {children}
+        </Flex>
+      ),
+      NameInput: ({
+        value,
+        placeholder,
+        label,
+        onChange,
+      }: SavedViewsNameInputProps) => (
+        <TextField.Root
+          size="1"
+          aria-label={label}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ flex: 1 }}
+        />
+      ),
+      SaveButton: ({
+        disabled,
+        onClick,
+        children,
+      }: SavedViewsSaveButtonProps) => (
+        <Button
+          size="1"
+          color={accentColor}
+          disabled={disabled}
+          onClick={onClick}
+          style={{ flexShrink: 0 }}
+        >
+          {children}
+        </Button>
+      ),
+    }),
+    [accentColor]
+  );
+
   return (
-    <Popover.Root>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger>
         <Button size="2" variant="outline">
           {labels.savedViews}
@@ -78,55 +150,7 @@ export function SavedViewsMenu({
       </Popover.Trigger>
       <Popover.Content align="end" side="bottom" minWidth="240px">
         <Flex direction="column" gap="1">
-          <Text
-            size="1"
-            weight="bold"
-            color="gray"
-            style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}
-          >
-            {labels.savedViews}
-          </Text>
-          {views.map((view) => (
-            <Flex key={view.name} gap="1" align="center">
-              <Button
-                size="1"
-                variant="ghost"
-                style={{ flex: 1, justifyContent: "flex-start" }}
-                onClick={() => apply(view.name)}
-              >
-                {view.name}
-              </Button>
-              <IconButton
-                size="1"
-                variant="ghost"
-                color="gray"
-                aria-label={`${labels.deleteView}: ${view.name}`}
-                onClick={() => remove(view.name)}
-              >
-                <CrossIcon />
-              </IconButton>
-            </Flex>
-          ))}
-          <Separator my="1" size="4" />
-          <Flex gap="1" align="center">
-            <TextField.Root
-              size="1"
-              aria-label={labels.viewName}
-              placeholder={labels.viewName}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <Button
-              size="1"
-              color={accentColor}
-              disabled={trimmed === ""}
-              onClick={saveCurrent}
-              style={{ flexShrink: 0 }}
-            >
-              {labels.saveView}
-            </Button>
-          </Flex>
+          <SavedViewsMenuContent state={state} labels={labels} parts={parts} />
         </Flex>
       </Popover.Content>
     </Popover.Root>
