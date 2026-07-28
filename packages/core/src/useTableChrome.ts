@@ -85,6 +85,12 @@ export interface ToolbarChromeProps<TRow> {
   onFiltersTriggerPointerDown?: () => void;
   /** Whether to show the rows-per-page control (infinite mode). */
   showRowsPerPage: boolean;
+  /**
+   * Built saved-views menu node, when the `savedViews` prop opts in. Renders
+   * ahead of {@link columnMenu} so every adapter's toolbar reads
+   * Filters · Saved views · Columns · Export CSV.
+   */
+  savedViewsMenu?: ReactNode;
   /** Built column-menu node, when `enableColumnMenu` is set. */
   columnMenu?: ReactNode;
   /**

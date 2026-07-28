@@ -38,6 +38,7 @@ export function Toolbar<TRow>({
   filters,
   onClearFilters,
   dir,
+  savedViewsMenu,
   columnMenu,
   onExportCsv,
   showRowsPerPage,
@@ -121,6 +122,7 @@ export function Toolbar<TRow>({
           ) : (
             filtersButton
           ))}
+        {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
           <Button variant="default" size="sm" onClick={onExportCsv}>

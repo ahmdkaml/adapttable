@@ -52,8 +52,6 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   onCloseFilters: () => void;
   /** Clear-filters handler for the popover header. */
   onClearFilters: () => void;
-  /** Built saved-views menu node, when the `savedViews` prop is set. */
-  savedViewsMenu?: ReactNode;
   /** Accent color for primary accents. */
   accentColor?: BaseUiAccentColor;
   /** Class hook for the toolbar row. */

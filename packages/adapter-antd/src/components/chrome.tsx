@@ -33,8 +33,6 @@ import { FilterPopover } from "./FilterPopover";
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Filter content (anchored popover or drawer). */
   filters?: ReactNode;
-  /** The saved-views menu trigger, when the `savedViews` prop opts in. */
-  savedViewsMenu?: ReactNode;
   /** Whether to anchor a popover or open the drawer. */
   filtersMode: "popover" | "drawer";
   /** Close the filter container. */
@@ -138,11 +136,11 @@ export function Toolbar<TRow>({
           ) : (
             filtersButton
           ))}
+        {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
           <Button onClick={onExportCsv}>{labels.exportCsv}</Button>
         )}
-        {savedViewsMenu}
         {showRowsPerPage && (
           <Select
             style={{ minWidth: 110 }}

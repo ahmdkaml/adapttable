@@ -118,6 +118,7 @@ export function Toolbar<TRow>({
   onCloseFilters,
   onClearFilters,
   dir,
+  savedViewsMenu,
   columnMenu,
   onExportCsv,
 }: Readonly<MuiToolbarProps<TRow>>) {
@@ -217,6 +218,7 @@ export function Toolbar<TRow>({
             dir={dir}
           />
         )}
+        {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
           <Button variant="outlined" size="small" onClick={onExportCsv}>

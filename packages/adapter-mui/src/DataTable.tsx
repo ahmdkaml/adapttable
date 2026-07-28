@@ -334,12 +334,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             searchable={props.searchable !== false}
             searchPlaceholder={props.searchPlaceholder}
             sortByOptions={props.sortByOptions}
-            toolbar={
-              <>
-                {savedViewsMenu}
-                {props.toolbar}
-              </>
-            }
+            toolbar={props.toolbar}
+            savedViewsMenu={savedViewsMenu}
             hasFilters={Boolean(filtersNode)}
             activeFilterCount={c.activeFilterCount}
             showRowsPerPage={canLoadMore}

@@ -356,29 +356,29 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               onCloseFilters={() => setDrawerOpened(false)}
               onClearFilters={chrome.clearFilters}
               dir={dir}
-              columnMenu={
-                <>
-                  {savedViews && (
-                    <SavedViewsSlot
-                      // The table's own URL backend/namespace are the
-                      // defaults — an explicit option still wins.
-                      options={{
-                        urlAdapter: chromeProps.urlAdapter,
-                        urlKey: chromeProps.urlKey,
-                        ...savedViews,
-                      }}
-                      labels={table.labels}
-                    />
-                  )}
-                  <ColumnMenuSlot
-                    enabled={enableColumnMenu && !isMobile}
-                    allColumns={chrome.allColumns}
-                    layout={chrome.columnLayout}
+              savedViewsMenu={
+                savedViews && (
+                  <SavedViewsSlot
+                    // The table's own URL backend/namespace are the
+                    // defaults — an explicit option still wins.
+                    options={{
+                      urlAdapter: chromeProps.urlAdapter,
+                      urlKey: chromeProps.urlKey,
+                      ...savedViews,
+                    }}
                     labels={table.labels}
-                    hasRowActions={hasRowActions}
-                    dir={dir}
                   />
-                </>
+                )
+              }
+              columnMenu={
+                <ColumnMenuSlot
+                  enabled={enableColumnMenu && !isMobile}
+                  allColumns={chrome.allColumns}
+                  layout={chrome.columnLayout}
+                  labels={table.labels}
+                  hasRowActions={hasRowActions}
+                  dir={dir}
+                />
               }
               onExportCsv={makeExportCsvHandler(
                 exportCsv,

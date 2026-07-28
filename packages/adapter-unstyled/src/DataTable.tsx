@@ -397,6 +397,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           ) : (
             filtersButton
           ))}
+        {props.savedViews && (
+          // The menu must capture/apply through the SAME URL backend and
+          // namespace the table reads, so those default from the table's
+          // own props (explicit option values still win).
+          <SavedViewsMenu
+            options={{
+              urlAdapter: resolvedUrlAdapter,
+              urlKey,
+              ...props.savedViews,
+            }}
+            labels={labels}
+            classNames={classNames}
+          />
+        )}
         {props.enableColumnMenu && !chrome.isMobile && (
           <ColumnMenu
             allColumns={chrome.allColumns}
@@ -416,20 +430,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           >
             {labels.exportCsv}
           </button>
-        )}
-        {props.savedViews && (
-          // The menu must capture/apply through the SAME URL backend and
-          // namespace the table reads, so those default from the table's
-          // own props (explicit option values still win).
-          <SavedViewsMenu
-            options={{
-              urlAdapter: resolvedUrlAdapter,
-              urlKey,
-              ...props.savedViews,
-            }}
-            labels={labels}
-            classNames={classNames}
-          />
         )}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
