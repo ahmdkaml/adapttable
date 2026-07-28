@@ -22,6 +22,7 @@ import {
 import { useMemo, useState } from "react";
 
 import { CloseIcon } from "../icons";
+import { useEscapeClose } from "./useEscapeClose";
 
 export type { SavedViewsLabels };
 
@@ -50,6 +51,7 @@ export function SavedViewsMenu({
     ...options,
     onRequestClose: () => setOpened(false),
   });
+  useEscapeClose(opened, () => setOpened(false));
 
   // Memoised so the shared content does not see a new component identity —
   // and remount every node — on each keystroke.

@@ -27,6 +27,8 @@ import {
 } from "@mantine/core";
 import { useState } from "react";
 
+import { useEscapeClose } from "./useEscapeClose";
+
 /**
  * Props for the column menu — the shared core contract, plus the injected
  * actions column: when the table has row actions, the menu lists it too
@@ -145,6 +147,7 @@ export function ColumnMenu<TRow>({
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const [opened, setOpened] = useState(false);
+  useEscapeClose(opened, () => setOpened(false));
   // A Popover, not a Menu: the panel holds checkboxes, drag handles and
   // buttons, so `role="menu"` semantics (menuitem children) would be a lie.
   return (
