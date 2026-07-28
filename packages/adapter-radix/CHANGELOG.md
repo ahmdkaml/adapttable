@@ -1,5 +1,44 @@
 # @adapttable/radix
 
+## 2.1.0
+
+### Minor Changes
+
+- 4b4baa5: The saved-views menu behaves the same in every adapter.
+
+  Two behaviours were split across kits and are now uniform: **applying a view
+  closes the panel** (mantine, chakra, radix and base-ui kept it open), and the
+  panel no longer repeats the trigger's "Saved views" label as an inner title
+  (those same four printed it twice). Saving still clears the field and keeps
+  the panel open, so several views can be captured in one sitting. chakra, radix
+  and base-ui move to controlled popovers, which is what let their panels ignore
+  the close.
+
+  `@adapttable/unstyled` adds `viewsRow` and `viewsSaveRow` class hooks with
+  matching `data-adapttable-part` names — its two panel rows carried neither, so
+  their spacing could not be styled at all — plus a structural gap so they are
+  not flush with no classes set. In the `@adapttable/shadcn` preset the name
+  field now takes the row's free space, so the save button no longer overflows
+  the panel.
+
+- 4b4baa5: The toolbar reads **Filters · Saved views · Columns · Export CSV** in every
+  adapter.
+
+  `ToolbarChromeProps` gains a `savedViewsMenu` slot beside `columnMenu`, so the
+  menu has one named place to mount. Previously core offered no slot for it and
+  each adapter improvised: four declared the same local prop, mantine passed it
+  inside the `columnMenu` slot, and mui injected it into the caller's `toolbar` —
+  so a custom `toolbar` no longer has the saved-views node mixed into it.
+
+  The button moves for antd, mui, mantine and the unstyled/shadcn pair. An
+  order test now runs in each adapter.
+
+### Patch Changes
+
+- Updated dependencies [4b4baa5]
+- Updated dependencies [4b4baa5]
+  - @adapttable/core@2.1.0
+
 ## 2.0.0
 
 ### Major Changes

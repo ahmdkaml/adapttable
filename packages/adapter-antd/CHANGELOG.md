@@ -1,5 +1,27 @@
 # @adapttable/antd
 
+## 2.1.0
+
+### Minor Changes
+
+- 4b4baa5: The toolbar reads **Filters · Saved views · Columns · Export CSV** in every
+  adapter.
+
+  `ToolbarChromeProps` gains a `savedViewsMenu` slot beside `columnMenu`, so the
+  menu has one named place to mount. Previously core offered no slot for it and
+  each adapter improvised: four declared the same local prop, mantine passed it
+  inside the `columnMenu` slot, and mui injected it into the caller's `toolbar` —
+  so a custom `toolbar` no longer has the saved-views node mixed into it.
+
+  The button moves for antd, mui, mantine and the unstyled/shadcn pair. An
+  order test now runs in each adapter.
+
+### Patch Changes
+
+- Updated dependencies [4b4baa5]
+- Updated dependencies [4b4baa5]
+  - @adapttable/core@2.1.0
+
 ## 2.0.0
 
 ### Major Changes
