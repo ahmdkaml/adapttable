@@ -1,0 +1,330 @@
+/** The card list rendered in place of the table on narrow screens. */
+import {
+  type ColumnDef,
+  type ConfirmHandler,
+  type EditableCellEditing,
+  type RowAction,
+  type TableLabels,
+} from "@adapttable/core";
+import {
+  resolveVirtualRows,
+  rowClickProps,
+  rowEditingSignature,
+  useSummaryCells,
+} from "@adapttable/core/adapter";
+import { Box, Card, Stack, Text } from "@chakra-ui/react";
+import { memo, type ReactNode, useMemo } from "react";
+
+import { subtleText } from "../styles";
+import { type SharedProps } from "./DesktopTable";
+import { EditableDataCell } from "./EditableCell";
+import { ExpandToggle } from "./ExpandToggle";
+import { GroupHeaderCard } from "./GroupHeader";
+import { Checkbox } from "./primitives";
+import { RowActionButtons } from "./RowActionButtons";
+
+/** Join the static class hook with a conditional per-row class. */
+function joinClasses(
+  base: string | undefined,
+  extra: string | undefined
+): string | undefined {
+  if (base && extra) return `${base} ${extra}`;
+  return base ?? extra;
+}
+
+function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
+  return (
+    column.mobileLabel ??
+    (typeof column.header === "string" ? column.header : column.key)
+  );
+}
+
+/** Per-card inputs for the memoized {@link MobileCardBase}. */
+interface MobileCardProps<TRow> {
+  row: TRow;
+  index: number;
+  /** Stable row id (selection / expansion key). */
+  id: string;
+  columns: ColumnDef<TRow>[];
+  labels: Required<TableLabels>;
+  confirm: ConfirmHandler;
+  rowActions?: RowAction<TRow>[];
+  /** Static list class merged with resolved `rowClassName` output. */
+  className?: string;
+  selected: boolean;
+  expanded: boolean;
+  /** Selection toggle — present only when selection is enabled. */
+  onToggleSelect?: (id: string) => void;
+  /** Expansion toggle — present only when expansion is enabled. */
+  onToggleExpand?: (id: string) => void;
+  renderDetail?: (row: TRow) => ReactNode;
+  onRowClick?: (row: TRow) => void;
+  measureElement?: (node: Element | null) => void;
+  compact: boolean;
+  dir?: "ltr" | "rtl";
+  accentColor?: string;
+  /**
+   * Opt-in editing bundle — uncompared. Its identity changes on every
+   * keystroke anywhere in the table; the per-row visual churn is
+   * fingerprinted by `editingSignature` instead. A held card keeps an
+   * older bundle safely: its handlers read live state through refs.
+   */
+  editing?: EditableCellEditing<TRow>;
+  /** Page rows for Tab advance — uncompared (see `editing`). */
+  rows: readonly TRow[];
+  getRowId: (row: TRow) => string;
+  /** Memo digest from {@link rowEditingSignature}. */
+  editingSignature: string | null;
+}
+
+/** The card props the memo comparator deliberately skips (see `editing`). */
+type UncomparedCardProp = "editing" | "rows" | "getRowId";
+
+/** Every card prop the memo comparator checks with `Object.is`. */
+const COMPARED_CARD_PROPS: readonly Exclude<
+  keyof MobileCardProps<unknown>,
+  UncomparedCardProp
+>[] = [
+  "row",
+  "index",
+  "id",
+  "columns",
+  "labels",
+  "confirm",
+  "rowActions",
+  "className",
+  "selected",
+  "expanded",
+  "onToggleSelect",
+  "onToggleExpand",
+  "renderDetail",
+  "onRowClick",
+  "measureElement",
+  "compact",
+  "dir",
+  "accentColor",
+  "editingSignature",
+];
+
+/**
+ * `React.memo` comparator: re-render a card only when one of its VISUAL
+ * inputs changes — a search keystroke or another card's checkbox re-renders
+ * the list shell, but every unchanged card bails out here.
+ */
+function mobileCardPropsEqual<TRow>(
+  prev: Readonly<MobileCardProps<TRow>>,
+  next: Readonly<MobileCardProps<TRow>>
+): boolean {
+  return COMPARED_CARD_PROPS.every((key) => Object.is(prev[key], next[key]));
+}
+
+/** One card. Memoized by {@link mobileCardPropsEqual} at the call site. */
+function MobileCardBase<TRow>({
+  row,
+  index,
+  id,
+  columns,
+  labels,
+  confirm,
+  rowActions,
+  className,
+  selected,
+  expanded,
+  onToggleSelect,
+  onToggleExpand,
+  renderDetail,
+  onRowClick,
+  measureElement,
+  compact,
+  dir,
+  accentColor,
+  editing,
+  rows,
+  getRowId,
+}: Readonly<MobileCardProps<TRow>>) {
+  return (
+    <Card.Root
+      ref={measureElement}
+      data-index={index}
+      data-stagger=""
+      variant="outline"
+      role="listitem"
+      className={className}
+      {...rowClickProps(row, onRowClick, index)}
+    >
+      <Card.Body p={compact ? 3 : undefined}>
+        {onToggleSelect && (
+          <Checkbox
+            aria-label={labels.selectRow}
+            checked={selected}
+            onToggle={() => onToggleSelect(id)}
+            mb={2}
+          />
+        )}
+        {onToggleExpand && (
+          <Box mb={2}>
+            <ExpandToggle
+              open={expanded}
+              dir={dir}
+              labels={labels}
+              onToggle={() => onToggleExpand(id)}
+            />
+          </Box>
+        )}
+        {columns.map((column) => (
+          <Box key={column.key} mb={compact ? 1 : 2}>
+            <Text fontSize="xs" {...subtleText} textTransform="uppercase">
+              {mobileLabel(column)}
+            </Text>
+            <Text as="div" fontSize="sm">
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+                display={
+                  column.Cell ? (
+                    <column.Cell row={row} rowIndex={index} />
+                  ) : (
+                    column.accessor?.(row)
+                  )
+                }
+              />
+            </Text>
+          </Box>
+        ))}
+        {expanded && <Box pt={1}>{renderDetail?.(row)}</Box>}
+        {rowActions && rowActions.length > 0 && (
+          <RowActionButtons
+            row={row}
+            actions={rowActions}
+            confirm={confirm}
+            cancelLabel={labels.cancel}
+            accentColor={accentColor}
+          />
+        )}
+      </Card.Body>
+    </Card.Root>
+  );
+}
+
+/** Mobile Chakra card list. */
+export function MobileCards<TRow>({
+  table,
+  rows,
+  rowActions,
+  confirm,
+  getRowId,
+  size,
+  accentColor,
+  dir,
+  onRowClick,
+  rowClassName,
+  renderRowDetail,
+  summaryRow,
+  expansion,
+  editing,
+  grouping,
+  className,
+  rowEntries,
+  paddingTop = 0,
+  paddingBottom = 0,
+  measureElement,
+}: Readonly<SharedProps<TRow>>) {
+  const { columns, selection, labels } = table;
+  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const compact = size === "sm";
+  const summary = useSummaryCells(summaryRow, rows);
+
+  // `memo` erases generics at module level, so the memoized card is
+  // instantiated here (once — the identity is stable for the list's life).
+  const CardItem = useMemo(
+    () => memo(MobileCardBase<TRow>, mobileCardPropsEqual),
+    []
+  );
+
+  const renderCard = (row: TRow, index: number, key: string) => {
+    const id = getRowId(row);
+    return (
+      <CardItem
+        key={key}
+        row={row}
+        index={index}
+        id={id}
+        columns={columns}
+        labels={labels}
+        confirm={confirm}
+        rowActions={rowActions}
+        className={joinClasses(className, rowClassName?.(row, index))}
+        selected={selection ? selection.isSelected(id) : false}
+        expanded={expansion ? expansion.isExpanded(id) : false}
+        onToggleSelect={selection ? selection.toggle : undefined}
+        onToggleExpand={expansion ? expansion.toggle : undefined}
+        renderDetail={renderRowDetail}
+        onRowClick={onRowClick}
+        measureElement={measureElement}
+        compact={compact}
+        dir={dir}
+        accentColor={accentColor}
+        editing={editing}
+        rows={rows}
+        getRowId={getRowId}
+        editingSignature={rowEditingSignature(editing, id)}
+      />
+    );
+  };
+
+  return (
+    <Stack
+      gap={compact ? 2 : 3}
+      role="list"
+      aria-label={table.getTableProps()["aria-label"]}
+    >
+      {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
+      {grouping
+        ? grouping.entries.map((entry) =>
+            entry.kind === "group" ? (
+              <GroupHeaderCard
+                key={entry.key}
+                entry={entry}
+                selection={selection}
+                labels={labels}
+                dir={dir}
+                accentColor={accentColor}
+                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+              />
+            ) : (
+              renderCard(entry.row, entry.index, entry.key)
+            )
+          )
+        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
+      {paddingBottom > 0 && <Box aria-hidden h={`${paddingBottom}px`} />}
+      {summary && (
+        <Card.Root variant="outline" role="listitem" className={className}>
+          <Card.Body p={compact ? 3 : undefined}>
+            {columns.map((column) => {
+              const value = summary[column.key];
+              // Columns absent from the summary are skipped — a card has no
+              // grid to keep aligned, so empty entries are just noise.
+              if (value === undefined) return null;
+              return (
+                <Box key={column.key} mb={compact ? 1 : 2}>
+                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
+                    {mobileLabel(column)}
+                  </Text>
+                  <Text fontSize="sm" fontWeight="semibold">
+                    {value}
+                  </Text>
+                </Box>
+              );
+            })}
+          </Card.Body>
+        </Card.Root>
+      )}
+    </Stack>
+  );
+}
