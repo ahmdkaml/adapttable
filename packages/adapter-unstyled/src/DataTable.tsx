@@ -14,21 +14,19 @@ import { useMountStagger, useResolvedAdapter } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 
+import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
-import {
-  BulkBar,
-  Chips,
-  ErrorState,
-  Footer,
-  LoadingState,
-  RowsPerPageSelect,
-} from "./components/chrome";
+import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { DesktopTable } from "./components/DesktopTable";
+import { ErrorState } from "./components/ErrorState";
 import { FilterPanel } from "./components/FilterPanel";
 import { FilterPopover } from "./components/FilterPopover";
 import { FiltersIcon, SearchIcon } from "./components/icons";
+import { MobileCards } from "./components/MobileCards";
+import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { DesktopTable, MobileCards } from "./components/tables";
+import { LoadingState } from "./components/TableSkeleton";
 import { cx } from "./cx";
 import type { DataTableClassNames, DataTableProps } from "./types";
 
