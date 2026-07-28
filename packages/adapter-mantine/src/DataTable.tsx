@@ -19,19 +19,19 @@ import { useElementSize } from "@mantine/hooks";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
+import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
-import { ActiveFilterChips } from "./components/chrome";
-import { BulkActionBar } from "./components/chrome";
-import { EmptyState } from "./components/chrome";
-import { ErrorState } from "./components/chrome";
-import { FilterDrawer } from "./components/chrome";
-import { PaginationFooter } from "./components/chrome";
-import { TableSkeleton } from "./components/chrome";
-import { Toolbar } from "./components/chrome";
+import { BulkActionBar } from "./components/BulkActionBar";
 import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
+import { DesktopTable } from "./components/DesktopTable";
+import { EmptyState } from "./components/EmptyState";
+import { ErrorState } from "./components/ErrorState";
+import { FilterDrawer } from "./components/FilterDrawer";
+import { MobileCards } from "./components/MobileCards";
+import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { DesktopTable } from "./components/tables";
-import { MobileCards } from "./components/tables";
+import { TableSkeleton } from "./components/TableSkeleton";
+import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
 /** Chrome grouping bundle shape (matches `useTableChrome` / SharedTableRenderProps). */

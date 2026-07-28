@@ -17,25 +17,28 @@ export type {
 
 /* Styled sub-components (also overridable / reusable on their own). */
 export {
+  ActiveFilterChips,
+  type ActiveFilterChipsProps,
+} from "./components/ActiveFilterChips";
+export {
   AutoFilterForm,
   type AutoFilterFormProps,
 } from "./components/AutoFilterForm";
-export {
-  ActiveFilterChips,
-  type ActiveFilterChipsProps,
-} from "./components/chrome";
-export { EmptyState, type EmptyStateProps } from "./components/chrome";
-export { ErrorState, type ErrorStateProps } from "./components/chrome";
+export { EmptyState, type EmptyStateProps } from "./components/EmptyState";
+export { ErrorState, type ErrorStateProps } from "./components/ErrorState";
 export {
   PaginationFooter,
   type PaginationFooterProps,
-} from "./components/chrome";
-export { TableSkeleton, type TableSkeletonProps } from "./components/chrome";
+} from "./components/PaginationFooter";
 export {
   type SavedViewsLabels,
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export {
+  TableSkeleton,
+  type TableSkeletonProps,
+} from "./components/TableSkeleton";
 
 /* Animation helper. */
 export {
