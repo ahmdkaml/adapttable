@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { defaultLabels } from "../index";
 import { renderMantine } from "../test-utils";
-import { ActiveFilterChips } from "./ActiveFilterChips";
-import { BulkActionBar } from "./BulkActionBar";
-import { EmptyState } from "./EmptyState";
+import { ActiveFilterChips } from "./chrome";
+import { BulkActionBar } from "./chrome";
+import { EmptyState } from "./chrome";
+import { PaginationFooter } from "./chrome";
+import { TableSkeleton } from "./chrome";
 import { FilterPopover } from "./FilterPopover";
-import { PaginationFooter } from "./PaginationFooter";
-import { TableSkeleton } from "./TableSkeleton";
 
 const labels = defaultLabels;
 

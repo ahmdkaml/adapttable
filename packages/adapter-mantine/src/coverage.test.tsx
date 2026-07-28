@@ -20,9 +20,9 @@ import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useMountStagger } from "./animation/useMountStagger";
+import { FilterDrawer } from "./components/chrome";
+import { PaginationFooter } from "./components/chrome";
 import { ColumnMenu } from "./components/ColumnMenu";
-import { FilterDrawer } from "./components/FilterDrawer";
-import { PaginationFooter } from "./components/PaginationFooter";
 import { DataTable } from "./DataTable";
 import { defaultLabels } from "./index";
 

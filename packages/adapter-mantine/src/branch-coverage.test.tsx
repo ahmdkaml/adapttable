@@ -15,7 +15,7 @@ import { MantineProvider } from "@mantine/core";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { FilterDrawer } from "./components/FilterDrawer";
+import { FilterDrawer } from "./components/chrome";
 import { DataTable } from "./DataTable";
 import { defaultLabels } from "./index";
 
