@@ -1,0 +1,86 @@
+/** Selection bar with the bulk actions and cross-page banner. */
+import {
+  type BulkBarChromeProps,
+  resolveDisabledReason,
+  useBulkBarState,
+} from "@adapttable/core/adapter";
+import { Button, Flex, Text } from "@radix-ui/themes";
+import { isValidElement } from "react";
+
+import type { RadixAccentColor } from "../types";
+import { Tooltip } from "./primitives";
+
+/** Selection toolbar. */
+export function BulkBar({
+  selection,
+  total,
+  bulkActions,
+  confirm,
+  labels,
+  accentColor,
+}: Readonly<BulkBarChromeProps & { accentColor?: RadixAccentColor }>) {
+  const {
+    selectedCount,
+    ids,
+    pending,
+    errorMessage,
+    run,
+    clear,
+    expandable,
+    scope,
+    banner,
+  } = useBulkBarState({ selection, total, confirm, labels });
+  if (selectedCount === 0) return null;
+  return (
+    <Flex gap="2" justify="between" wrap="wrap" align="center">
+      {expandable ? (
+        <Flex gap="2" wrap="wrap" align="center">
+          <Text size="2">{banner.text}</Text>
+          <Button
+            size="1"
+            variant="ghost"
+            color={accentColor}
+            disabled={pending !== null}
+            onClick={banner.onClick}
+          >
+            {banner.action}
+          </Button>
+        </Flex>
+      ) : (
+        <Text size="2">{labels.selectedCount(selectedCount)}</Text>
+      )}
+      <Flex gap="2" wrap="wrap" align="center">
+        <Button
+          size="1"
+          variant="ghost"
+          color="gray"
+          onClick={clear}
+          disabled={pending !== null}
+        >
+          {labels.clearAll}
+        </Button>
+        {bulkActions.map((action) => {
+          const reason = resolveDisabledReason(action.disabledReason?.(ids));
+          return (
+            <Tooltip key={action.key} label={reason ?? ""} disabled={!reason}>
+              <Button
+                size="1"
+                color={(action.color as RadixAccentColor) ?? accentColor}
+                disabled={reason !== undefined || pending !== null}
+                onClick={() => run(action, ids, scope)}
+              >
+                {isValidElement(action.icon) ? action.icon : null}
+                {action.label}
+              </Button>
+            </Tooltip>
+          );
+        })}
+        {errorMessage !== null && (
+          <Text size="2" color="red" role="alert">
+            {`${labels.errorTitle}: ${errorMessage}`}
+          </Text>
+        )}
+      </Flex>
+    </Flex>
+  );
+}
