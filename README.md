@@ -196,7 +196,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 
 ## Status
 
-**Stable — `v1`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. See the [roadmap](#roadmap) for what's next.
+**Stable — `v2`.** The public API follows [semantic versioning](./docs/versioning.md): breaking changes ship only in a major release. Coming from v1? The [migration guide](https://orwa-mahmoud.github.io/adapttable/migrate-from-v1/) has the full rename table. See the [roadmap](#roadmap) for what's next.
 
 ## Roadmap
 
@@ -215,6 +215,7 @@ Hosted at **[orwa-mahmoud.github.io/adapttable](https://orwa-mahmoud.github.io/a
 - [x] Row grouping — single-level `groupBy` with per-group aggregates
 - [x] CSV export
 - [x] `v1.0` — stable, semver-committed public API
+- [x] `v2.0` — one name per concept across all eight adapters; React 18 & 19 proven in CI
 
 ## Contributing
 

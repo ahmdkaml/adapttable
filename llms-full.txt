@@ -3299,7 +3299,7 @@ Or install an adapter directly, e.g. `pnpm add @adapttable/mantine`. See
 
 ## Is AdaptTable production-ready?
 
-Yes — AdaptTable is **stable at 1.0** and follows semantic versioning, so
+Yes — AdaptTable is **stable at 2.0** and follows semantic versioning, so
 breaking changes ship only in a major release. It is strict-TypeScript, dual
 ESM/CJS with `.d.ts` types, axe-audited for accessibility in CI, and holds
 near-100% test coverage across every adapter.
@@ -4817,7 +4817,7 @@ surface.
 
 ## Stability
 
-AdaptTable is **stable at `1.0`**. The full SemVer contract above applies:
+AdaptTable is **stable at `2.0`**. The full SemVer contract above applies:
 breaking changes to the public API surface (below) ship only in a major
 release, with a migration note in the relevant package's `CHANGELOG.md`. In
 practice such changes are rare — most releases are additive minors and safe

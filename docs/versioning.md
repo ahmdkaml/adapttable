@@ -26,7 +26,7 @@ surface.
 
 ## Stability
 
-AdaptTable is **stable at `1.0`**. The full SemVer contract above applies:
+AdaptTable is **stable at `2.0`**. The full SemVer contract above applies:
 breaking changes to the public API surface (below) ship only in a major
 release, with a migration note in the relevant package's `CHANGELOG.md`. In
 practice such changes are rare — most releases are additive minors and safe
