@@ -59,16 +59,13 @@ import {
 } from "react";
 
 import { buildColumns, logicalAlign } from "./columns";
+import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
-import {
-  BulkBar,
-  Chips,
-  ErrorState,
-  FilterDrawer,
-  Toolbar,
-} from "./components/chrome";
+import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
+import { FilterDrawer } from "./components/FilterDrawer";
 import {
   buildGroupedDataSource,
   type GroupedDataRecord,
@@ -79,6 +76,7 @@ import {
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { SkeletonTable } from "./components/SkeletonTable";
+import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
 /**
