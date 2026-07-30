@@ -1,5 +1,13 @@
 # @adapttable/core
 
+## 2.1.1
+
+### Patch Changes
+
+- 6934219: The automatic mobile card layout leads each package's Features list, with
+  links to the live mobile demo and the responsive-table guide. Docs only —
+  no runtime changes.
+
 ## 2.1.0
 
 ### Minor Changes
