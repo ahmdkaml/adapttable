@@ -39,6 +39,7 @@ const FEATURES = {
   selection: /selection/i,
   sorting: /sorting/i,
   virtualization: /virtuali/i,
+  mobile: /mobile card/i,
   // Not its own page — documented under customization.
   "csv-export": /csv/i,
 };

@@ -38,6 +38,7 @@ const TITLES = {
     "React table column management — show/hide, reorder, pin, resize",
   "saved-views.md": "React table saved views — shareable named layouts",
   "virtualization.md": "React table virtualization — 10k rows, ~24 DOM nodes",
+  "mobile.md": "Responsive React table — automatic mobile card layout",
   "data-tiers.md": "Client & server React table data — one TableSource API",
   "customization.md":
     "Customize AdaptTable — slots, classNames, headless prop-getters",
@@ -91,6 +92,8 @@ const DESCRIPTIONS = {
     "Save filters, sort and column layout as named React table views users can restore and share by URL — built into AdaptTable across every adapter.",
   "virtualization.md":
     "React table virtualization measured: 10,000 rows mount ~24 DOM nodes. Opt-in row and card windowing for large lists — free under MIT.",
+  "mobile.md":
+    "A React table that becomes a card list on phones automatically — same filters, search, selection and URL state. Tunable per column, no second layout to build.",
   "data-tiers.md":
     "One React table API for in-memory rows and server-paginated APIs. Swap client data for a fetch function without rewriting the UI — TableSource is the contract.",
   "customization.md":

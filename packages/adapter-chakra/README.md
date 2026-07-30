@@ -40,6 +40,7 @@ server-paginated query.
 
 ## Features
 
+- **Automatic mobile cards** — below the mobile breakpoint every row renders as a Chakra card (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via sortable headers.
@@ -55,7 +56,6 @@ server-paginated query.
 - **CSV export** (`exportCsv`) — current page or the full filtered set.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — prev/next pagination, or infinite scroll (auto by device).
-- **Responsive** — desktop table ↔ mobile cards by viewport (or force `forceMobile`).
 - **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** via Chakra's color mode.
 - **Customisation** — `slots`, `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

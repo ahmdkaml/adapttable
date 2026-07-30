@@ -10,11 +10,11 @@ libraries.
 | ---------------------------------------------- | :-------: | :------------------: | :---------------: | :------------: | :-----------------------: |
 | Headless core                                  |     ✗     |          ✓           |         ✗         |       ✗        |           **✓**           |
 | Works across UI kits                           |     ✗     | ✓ (you build the UI) |   Mantine only    |    MUI only    | **✓ via ready adapters**  |
+| Responsive mobile card layout                  |  partial  |  build it yourself   |      partial      |    partial     | **✓ automatic + tunable** |
 | Client **and** server data, same API           |  partial  |   wire it yourself   |         ✗         |    partial     |   **✓ (`TableSource`)**   |
 | URL-synced state (shareable links)             |     ✗     |          ✗           |         ✗         |       ✗        |           **✓**           |
 | Filter drawer + removable chips                |     ✗     |          ✗           |         ✗         |    partial     |      **✓ built-in**       |
 | Infinite scroll **and** paged (auto by device) |     ✓     |      ✓ (manual)      |      partial      |    ✓ (paid)    |   **✓ auto by device**    |
-| Responsive mobile card layout                  |  partial  |  build it yourself   |      partial      |    partial     | **✓ automatic + tunable** |
 | Optional row/card virtualization               |     ✓     |      ✓ (manual)      |         ✗         |    ✓ (paid)    |   **✓ built-in opt-in**   |
 | i18n + **RTL / Arabic** first-class            |  partial  |          ✗           |         ✗         |    partial     |           **✓**           |
 | Dark mode                                      |     ✓     |         n/a          |         ✓         |       ✓        |      **✓ seamless**       |
@@ -137,6 +137,6 @@ matches unstyled feature-for-feature.
 - [mui-datatables alternative](./migrate-from-mui-datatables.md)
 - [material-table alternative](./migrate-from-material-table.md)
 
-Also: [URL state](./url-state.md) · [Virtualization](./virtualization.md) ·
-[i18n & RTL](./i18n-rtl.md) ·
+Also: [Mobile cards](./mobile.md) · [URL state](./url-state.md) ·
+[Virtualization](./virtualization.md) · [i18n & RTL](./i18n-rtl.md) ·
 [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)

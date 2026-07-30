@@ -52,6 +52,7 @@ server-paginated `useInfiniteQuery` — nothing else changes.
 
 ## Features
 
+- **Automatic mobile cards** — below the mobile breakpoint every row renders as a Mantine `Card` (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via accessible header controls.
@@ -67,7 +68,6 @@ server-paginated `useInfiniteQuery` — nothing else changes.
 - **CSV export** (`exportCsv`) — current page or the full filtered set.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — numbered `Pagination`, or infinite scroll (auto by device).
-- **Responsive** — desktop table ↔ mobile cards by viewport (or force `forceMobile`).
 - **States** — `Skeleton` loading, error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** via Mantine's color scheme.
 - **Customisation** — `slots`, `classNames`, custom `toolbar`, injectable `confirm`, optional entrance animation (`animate`, honours `prefers-reduced-motion`), and the full headless escape hatch via `@adapttable/core`.

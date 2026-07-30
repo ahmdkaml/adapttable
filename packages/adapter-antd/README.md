@@ -43,6 +43,7 @@ component doesn't change.
 
 ## Features
 
+- **Automatic mobile cards** — a horizontally-scrollable `<Table>` on desktop becomes a `Card` + `Descriptions` list below the mobile breakpoint (same filters, search, selection and URL state); tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via native antd `<Table>` header sort carets.
@@ -58,7 +59,6 @@ component doesn't change.
 - **CSV export** (`exportCsv`) — current page or the full filtered set.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — antd `Pagination` with page-size changer, or infinite scroll (IntersectionObserver auto-load plus a "Load more" fallback).
-- **Responsive** — a horizontally-scrollable `<Table>` on desktop, `Card` + `Descriptions` on mobile.
 - **States** — antd `Skeleton` (honouring `skeletonRows`), `Alert` error with retry, and `Empty`.
 - **RTL** via `dir`-aware logical column alignment; **dark mode** via antd's algorithm.
 - **Customisation** — `slots` (skeleton, empty), `className`, `size`, `bordered`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

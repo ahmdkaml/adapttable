@@ -70,6 +70,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [AdaptTable concepts — headless core, TableSource, adapters](https://orwa-mahmoud.github.io/adapttable/concepts/): architecture, TableSource contract
 - [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit, CSV export (exportCsv)
 - [React table URL state — shareable filters, sort, and page](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out
+- [Responsive React table — automatic mobile card layout](https://orwa-mahmoud.github.io/adapttable/mobile/): rows become cards below the mobile breakpoint automatically — same filters, search, selection and URL state; sort-by select, infinite scroll via paginationMode auto, per-column mobileLabel/hideOnMobile, forceMobile to pin either layout.
 - [React table i18n & RTL — Arabic, Hebrew, 17 locales](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/): 17 locales, per-locale data paths, logical layout
 - [AdaptTable API reference — DataTable, columns, hooks](https://orwa-mahmoud.github.io/adapttable/api/): every prop in tables
 - [AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR](https://orwa-mahmoud.github.io/adapttable/faq/): direct answers to "best headless React table", "free MUI DataGrid / ag-Grid alternative", "React table with RTL/Arabic", "same table for client and server data"
