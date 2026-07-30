@@ -64,6 +64,7 @@ export function MantineDemo({
   animate,
   grouping,
   editing,
+  forceMobile,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -75,6 +76,7 @@ export function MantineDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  forceMobile?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -109,6 +111,7 @@ export function MantineDemo({
             stickyHeader
             stickyTop={8}
             filters={demoFilterDefs(locale)}
+            forceMobile={forceMobile}
           />
         )}
       />

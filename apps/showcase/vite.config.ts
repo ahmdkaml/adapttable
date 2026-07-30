@@ -26,6 +26,7 @@ export default defineConfig({
         columns: page("./columns/index.html"),
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
+        mobile: page("./mobile/index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),
       },
