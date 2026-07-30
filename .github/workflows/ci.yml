@@ -348,10 +348,14 @@ jobs:
   # Every package promises `react: ^18 || ^19`, but the workspace develops on
   # one React version — this job proves the packed build actually runs (render,
   # sort, page, search, server-tier fetch) on each supported release line.
+  # No job-level `if` here, deliberately: a skipped MATRIX job reports one
+  # check under the unexpanded name `React ${{ matrix.react }} compatibility`,
+  # so the three expanded names required by the ruleset would wait forever.
+  # The job always runs and skips its STEPS instead — each leg reports
+  # success under its real name in seconds when there is nothing to verify.
   react-matrix:
     name: React ${{ matrix.react }} compatibility
     needs: changes
-    if: needs.changes.outputs.run-packages == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -359,19 +363,25 @@ jobs:
         react: ["18.3.1", "19.0.0", "19.2.7"]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: needs.changes.outputs.run-packages == 'true'
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        if: needs.changes.outputs.run-packages == 'true'
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: needs.changes.outputs.run-packages == 'true'
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build the probed packages
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm turbo run build --filter=@adapttable/unstyled...
 
       - name: Smoke-test against React ${{ matrix.react }}
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm react:matrix ${{ matrix.react }}
