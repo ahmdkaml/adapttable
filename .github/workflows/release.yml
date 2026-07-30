@@ -56,7 +56,10 @@ jobs:
           # `changeset publish` around a failed gate. Version-PR creation
           # (the other path of this action) stays fast — CI runs the same
           # gate on that PR anyway.
-          publish: pnpm verify:release && pnpm release
+          # ONE command: the action execs its publish input without a shell,
+          # so a `&&` here would be passed to pnpm as a literal argument. The
+          # gate-then-publish chain lives inside the release:gated script.
+          publish: pnpm release:gated
           version: pnpm version-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
