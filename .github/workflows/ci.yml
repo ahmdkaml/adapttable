@@ -12,50 +12,37 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Turborepo Remote Cache (optional): with the secrets set, local green
+  # gates pre-warm CI. Absent secrets are a silent no-op.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
-  verify:
-    name: Format · Lint · Typecheck · Test · Build
+  # One cheap job decides what the parallel jobs below actually do:
+  #   full         — the diff touches package code, so the package gate must run
+  #   dedupe       — a main push whose tree an earlier PR run already verified
+  #   run-packages — full && !dedupe, the single condition heavy jobs key on
+  # Every decision fails open: any error → full gate.
+  changes:
+    name: Changes
     runs-on: ubuntu-latest
-    env:
-      # Turborepo Remote Cache (optional): with the secrets set, local green
-      # gates pre-warm CI. Absent secrets are a silent no-op.
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    outputs:
+      full: ${{ steps.diff.outputs.full }}
+      dedupe: ${{ steps.dedupe.outputs.dedupe }}
+      run-packages: ${{ steps.combine.outputs.run }}
     steps:
       # Full history: the three-dot diff below needs a merge base.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Turborepo's task cache, persisted across CI runs: tasks whose
-      # inputs (and dependencies' outputs) are unchanged restore instantly
-      # instead of re-linting/re-testing untouched packages. Changing core
-      # still re-verifies every adapter — the hash includes dependency
-      # outputs, so "new code breaks an old test" is always caught.
-      - name: Restore Turborepo cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
       # Docs-only / workflow-only diffs skip the package gate but ALWAYS
       # report (required checks must never sit "expected"). The doc guards
       # and format check still run in light mode — docs edits can break
       # check:readmes / check:docsurface. Fail-open: no diff → full gate.
       - name: Detect relevant changes
-        id: changes
+        id: diff
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
@@ -77,45 +64,168 @@ jobs:
             echo "Docs/workflow-only diff — running format + doc guards only."
           fi
 
+      # A push to main whose TREE matches a commit already verified by a
+      # successful PR run is the same code under a new SHA (squash merge of
+      # an up-to-date branch). Re-running the suite proves nothing — report
+      # green instantly. Any drift in the tree (branch behind main, manual
+      # push) misses the match and the full gate runs. workflow_dispatch
+      # always runs for real: it exists to recover from dropped events.
+      - name: Dedupe against PR-verified trees
+        id: dedupe
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "dedupe=false" >> "$GITHUB_OUTPUT"
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          shas="$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?status=success&event=pull_request&per_page=30" \
+            --jq '.workflow_runs[].head_sha' 2>/dev/null)" || exit 0
+          for sha in $shas; do
+            t="$(gh api "repos/${{ github.repository }}/git/commits/$sha" --jq '.tree.sha' 2>/dev/null)" || continue
+            if [ "$t" = "$tree" ]; then
+              echo "Tree $tree already verified by PR run at $sha — reporting green without re-running."
+              # Overwrite: last write wins in GITHUB_OUTPUT.
+              echo "dedupe=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No verified tree match — full gate."
+
+      - name: Combine
+        id: combine
+        run: |
+          if [ "${{ steps.diff.outputs.full }}" = "true" ] && [ "${{ steps.dedupe.outputs.dedupe }}" != "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Formatting, the doc guards, lint and types — no build products needed,
+  # so this runs alongside tests and packaging instead of ahead of them.
+  quality:
+    name: Quality (format · doc guards · lint · types)
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: needs.changes.outputs.dedupe != 'true'
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        if: needs.changes.outputs.dedupe != 'true'
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: needs.changes.outputs.dedupe != 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: needs.changes.outputs.dedupe != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Turborepo cache
+        if: needs.changes.outputs.dedupe != 'true'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .turbo
+          key: turbo-quality-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-quality-${{ runner.os }}-
+            turbo-${{ runner.os }}-
+
       - name: Format check
+        if: needs.changes.outputs.dedupe != 'true'
         run: pnpm format:check
 
       - name: Check adapter READMEs advertise every feature
+        if: needs.changes.outputs.dedupe != 'true'
         run: pnpm check:readmes
 
       - name: Check every export is documented
+        if: needs.changes.outputs.dedupe != 'true'
         run: pnpm check:docsurface
 
       - name: Lint
-        if: steps.changes.outputs.full == 'true'
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint
 
       - name: Lint root tooling
-        if: steps.changes.outputs.full == 'true'
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint:root
 
       - name: Typecheck
-        if: steps.changes.outputs.full == 'true'
+        if: needs.changes.outputs.run-packages == 'true'
         run: pnpm typecheck
 
+  # The slowest lane gets its own runner instead of queueing behind lint.
+  tests:
+    name: Tests (coverage)
+    needs: changes
+    if: needs.changes.outputs.run-packages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .turbo
+          key: turbo-tests-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-tests-${{ runner.os }}-
+            turbo-${{ runner.os }}-
+
       - name: Test with coverage
-        if: steps.changes.outputs.full == 'true'
         # One package's suite at a time: the 2-core runner can't host several
         # vitest processes at once — antd's cssinjs-heavy tests get starved
         # past the 30s per-test budget (same contention class as the local
         # fileParallelism remedy, applied at the turbo level for CI).
         run: pnpm test:coverage --concurrency=1
 
+  package:
+    name: Package (build · publint · smoke)
+    needs: changes
+    if: needs.changes.outputs.run-packages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .turbo
+          key: turbo-package-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-package-${{ runner.os }}-
+            turbo-${{ runner.os }}-
+
       - name: Build
-        if: steps.changes.outputs.full == 'true'
         run: pnpm build
 
       - name: Validate published package configs
-        if: steps.changes.outputs.full == 'true'
         run: pnpm publint
 
       - name: Smoke-check built package artifacts
-        if: steps.changes.outputs.full == 'true'
         run: pnpm smoke:dist
 
   # Every package promises `react: ^18 || ^19`, but the workspace develops on
@@ -123,6 +233,8 @@ jobs:
   # sort, page, search, server-tier fetch) on each supported release line.
   react-matrix:
     name: React ${{ matrix.react }} compatibility
+    needs: changes
+    if: needs.changes.outputs.run-packages == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
