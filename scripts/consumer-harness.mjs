@@ -122,6 +122,17 @@ function main() {
     "@adapttable/base-ui": `file:${tarballs["@adapttable/base-ui"]}`,
   };
 
+  // On a Version Packages PR the bumped versions exist only as tarballs —
+  // the registry doesn't have them yet. Every scratch app therefore pins
+  // ALL @adapttable transitives to the local packs: npm via "overrides",
+  // pnpm via a pnpm-workspace.yaml (its overrides home since v10).
+  const OVERRIDES = Object.fromEntries(
+    Object.entries(tarballs).map(([name, file]) => [name, `file:${file}`])
+  );
+  const PNPM_OVERRIDES = `packages: []\noverrides:\n${Object.entries(tarballs)
+    .map(([name, file]) => `  "${name}": "file:${file}"`)
+    .join("\n")}\n`;
+
   // ── 1–5. Resolution scratch: ESM, CJS, tsc ×3, pnpm, CSS ─────────────
   const resDir = scratch("resolution");
   writeFileSync(
@@ -133,6 +144,7 @@ function main() {
         private: true,
         type: "module",
         dependencies: { ...CORE, ...UNSTYLED, ...BASE_UI, ...REACT },
+        overrides: OVERRIDES,
         devDependencies: {
           typescript: "^6.0.0",
           "@types/react": "^19.0.0",
@@ -248,6 +260,7 @@ export type Probe<T> = { columns: ColumnDef<T>[]; source?: TableSource<T> };
     join(pnpmDir, "package.json"),
     readFileSync(join(resDir, "package.json"))
   );
+  writeFileSync(join(pnpmDir, "pnpm-workspace.yaml"), PNPM_OVERRIDES);
   writeFileSync(
     join(pnpmDir, "esm.mjs"),
     readFileSync(join(resDir, "esm.mjs"))
@@ -255,7 +268,7 @@ export type Probe<T> = { columns: ColumnDef<T>[]; source?: TableSource<T> };
   process.stdout.write("pnpm install + ESM import … ");
   run(
     process.execPath,
-    [PNPM_CLI, "install", "--ignore-workspace", "--no-frozen-lockfile"],
+    [PNPM_CLI, "install", "--no-frozen-lockfile"],
     pnpmDir,
     "pnpm install"
   );
@@ -274,6 +287,7 @@ export type Probe<T> = { columns: ColumnDef<T>[]; source?: TableSource<T> };
         private: true,
         type: "module",
         dependencies: { ...CORE, ...UNSTYLED, ...REACT },
+        overrides: OVERRIDES,
         devDependencies: {
           typescript: "^6.0.0",
           "@types/react": "^19.0.0",
@@ -331,6 +345,7 @@ createRoot(document.getElementById("root")!).render(
         version: "0.0.0",
         private: true,
         dependencies: { ...CORE, ...UNSTYLED, ...REACT, next: "latest" },
+        overrides: OVERRIDES,
         devDependencies: {
           typescript: "^6.0.0",
           // Next's build-time TS check hard-requires @types/node alongside
