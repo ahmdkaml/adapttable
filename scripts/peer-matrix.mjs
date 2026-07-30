@@ -5,14 +5,15 @@
  * Every adapter advertises a WIDE kit peer range (Mantine 7–9, MUI 5–9, …) but
  * the normal CI installs only one version of each. A claimed-but-broken major
  * would then be discovered by a user, not by us. This probe installs the
- * OLDEST and NEWEST supported major of each adapter's kit into a throwaway dir
- * and `tsc --noEmit`s a tiny file that imports the adapter — surfacing a public
- * API / type mismatch against that major.
+ * OLDEST and NEWEST supported major of each adapter's kit into a throwaway
+ * dir, `tsc --noEmit`s a tiny file that imports the adapter, then mounts the
+ * table in jsdom and clicks the sort control — a type mismatch AND a runtime
+ * break both surface, each attributed to its phase (install/resolve/tsc/render).
  *
- * It NEVER narrows a range or fails the build: a failing cell is a finding,
- * written to `ai_docs/peer-matrix-findings.md` (private) for a human to triage.
- * Run standalone (`node scripts/peer-matrix.mjs`) or from the scheduled
- * `peer-matrix` workflow.
+ * It NEVER narrows a range or fails the build: a failing cell is a finding —
+ * `ai_docs/peer-matrix-findings.md` for humans, `peer-matrix-summary.json` for
+ * the workflow, which drives one tracking issue from it. Run standalone
+ * (`node scripts/peer-matrix.mjs`) or from the scheduled `peer-matrix` workflow.
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -51,6 +52,11 @@ const TSC_REL = join(
   ".bin",
   process.platform === "win32" ? "tsc.cmd" : "tsc"
 );
+const VITEST_REL = join(
+  "node_modules",
+  ".bin",
+  process.platform === "win32" ? "vitest.cmd" : "vitest"
+);
 const TYPESCRIPT = "^6.0.0";
 const REACT = {
   react: "^19.0.0",
@@ -75,6 +81,9 @@ const MATRIX = [
       "@mantine/core": m === 7 ? "^7.2.0" : `^${m}.0.0`,
       "@mantine/hooks": m === 7 ? "^7.2.0" : `^${m}.0.0`,
     }),
+    providerImport:
+      'import { MantineProvider } from "@mantine/core";\nimport "@mantine/core/styles.css";',
+    wrap: (children) => `<MantineProvider>${children}</MantineProvider>`,
   },
   {
     adapter: "mui",
@@ -84,6 +93,8 @@ const MATRIX = [
       "@emotion/react": "^11.0.0",
       "@emotion/styled": "^11.0.0",
     }),
+    providerImport: "",
+    wrap: (children) => children,
   },
   {
     adapter: "chakra",
@@ -93,18 +104,32 @@ const MATRIX = [
       "@chakra-ui/react": "^3.13.0",
       "@emotion/react": "^11.0.0",
     }),
+    providerImport:
+      'import { ChakraProvider, defaultSystem } from "@chakra-ui/react";',
+    wrap: (children) =>
+      `<ChakraProvider value={defaultSystem}>${children}</ChakraProvider>`,
   },
-  { adapter: "antd", majors: [6], deps: () => ({ antd: "^6.0.0" }) },
+  {
+    adapter: "antd",
+    majors: [6],
+    deps: () => ({ antd: "^6.0.0" }),
+    providerImport: "",
+    wrap: (children) => children,
+  },
   {
     adapter: "radix",
     majors: [3],
     deps: () => ({ "@radix-ui/themes": "^3.0.0" }),
+    providerImport: 'import { Theme } from "@radix-ui/themes";',
+    wrap: (children) => `<Theme>${children}</Theme>`,
   },
   {
     adapter: "base-ui",
     majors: [1],
     // The declared floor is 1.6, not 1.0.
     deps: () => ({ "@base-ui/react": "^1.6.0" }),
+    providerImport: "",
+    wrap: (children) => children,
   },
 ];
 
@@ -119,6 +144,84 @@ const columns: ColumnDef<Row>[] = [{ key: "name", sortable: true }];
 export function Probe({ data }: { data: Row[] }) {
   return <DataTable data={data} columns={columns} rowKey={(r) => r.id} />;
 }
+`;
+
+/**
+ * The render probe: mount the published adapter against the installed kit
+ * major and click the sort control. Types passing while render throws is
+ * exactly the blind spot a tsc-only cell leaves open.
+ */
+const renderTest = (adapter, providerImport, wrapped) => `import {
+  DataTable,
+  type ColumnDef,
+} from "@adapttable/${adapter}";
+${providerImport}
+import { fireEvent, render, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
+interface Row {
+  id: string;
+  name: string;
+}
+const ROWS: Row[] = [
+  { id: "1", name: "Probe Alpha" },
+  { id: "2", name: "Probe Beta" },
+];
+const columns: ColumnDef<Row>[] = [{ key: "name", sortable: true }];
+
+describe("@adapttable/${adapter} against this kit major", () => {
+  it("renders rows and survives a sort click", () => {
+    const view = render(
+      ${wrapped}
+    );
+    expect(within(view.container).getByText("Probe Alpha")).toBeTruthy();
+    expect(view.container.textContent).toContain("Probe Beta");
+    const sortControl =
+      view.container.querySelector("thead button") ??
+      view.container.querySelector("th[aria-sort]") ??
+      view.container.querySelector("th");
+    expect(sortControl).toBeTruthy();
+    fireEvent.click(sortControl as Element);
+    expect(view.container.textContent).toContain("Probe Alpha");
+    expect(view.container.textContent).toContain("Probe Beta");
+  });
+});
+`;
+
+const VITEST_CONFIG = `import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    include: ["probe.test.tsx"],
+    setupFiles: ["./setup.ts"],
+  },
+});
+`;
+
+// The browser APIs kit providers touch that jsdom lacks — the same stubs
+// the workspace's own vitest setups install.
+const SETUP = `if (typeof window !== "undefined") {
+  window.matchMedia ??= ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+  window.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+  window.scrollTo ??= (() => undefined) as typeof window.scrollTo;
+}
+export {};
 `;
 
 const TSCONFIG = {
@@ -136,24 +239,37 @@ const TSCONFIG = {
 };
 
 /** Install one adapter against one kit major and typecheck the probe. */
-function runCell(adapter, major, kitDeps) {
+function runCell(row, major, kitDeps) {
+  const { adapter } = row;
   const dir = mkdtempSync(join(tmpdir(), `peer-${adapter}-${major}-`));
   const expectedMajors = {
     core: CORE_MAJOR,
     [adapter]: workspaceMajor(`adapter-${adapter}`),
   };
+  // `phase` narrows a failure to the stage that produced it, for the JSON
+  // summary and the tracking issue: install | resolve | tsc | render.
+  let phase = "install";
   try {
     const pkg = {
       name: `probe-${adapter}-${major}`,
       version: "0.0.0",
       private: true,
+      type: "module",
       dependencies: {
         "@adapttable/core": `^${expectedMajors.core}.0.0`,
         [`@adapttable/${adapter}`]: `^${expectedMajors[adapter]}.0.0`,
         ...kitDeps,
         ...REACT,
       },
-      devDependencies: { typescript: TYPESCRIPT, ...REACT_TYPES },
+      devDependencies: {
+        typescript: TYPESCRIPT,
+        ...REACT_TYPES,
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/react": "^16.3.0",
+        "@vitejs/plugin-react": "^5.0.0",
+        jsdom: "^26.0.0",
+        vitest: "^4.0.0",
+      },
     };
     writeFileSync(join(dir, "package.json"), JSON.stringify(pkg, null, 2));
     writeFileSync(
@@ -164,6 +280,13 @@ function runCell(adapter, major, kitDeps) {
       join(dir, "probe.tsx"),
       PROBE.replace("__PKG__", `@adapttable/${adapter}`)
     );
+    writeFileSync(join(dir, "vitest.config.ts"), VITEST_CONFIG);
+    writeFileSync(join(dir, "setup.ts"), SETUP);
+    const table = `<DataTable data={ROWS} columns={columns} rowKey={(r) => r.id} />`;
+    writeFileSync(
+      join(dir, "probe.test.tsx"),
+      renderTest(adapter, row.providerImport, row.wrap(table))
+    );
     // `--legacy-peer-deps` so a strict npm peer clash never blocks the install —
     // `tsc` is the real signal we want, not npm's own peer resolver.
     execFileSync(
@@ -173,6 +296,7 @@ function runCell(adapter, major, kitDeps) {
     );
     // A cell only proves anything if npm actually resolved the major under
     // test — a silently substituted older major would pass tsc and lie.
+    phase = "resolve";
     for (const [name, expected] of Object.entries(expectedMajors)) {
       const resolved = JSON.parse(
         readFileSync(
@@ -183,18 +307,22 @@ function runCell(adapter, major, kitDeps) {
       if (Number(resolved.split(".")[0]) !== expected) {
         return {
           ok: false,
+          phase,
           output: `@adapttable/${name} resolved to ${resolved}, expected major ${expected}`,
         };
       }
     }
+    phase = "tsc";
     execFileSync(join(dir, TSC_REL), ["--noEmit"], { cwd: dir, stdio: "pipe" });
-    return { ok: true, output: "" };
+    phase = "render";
+    execFileSync(join(dir, VITEST_REL), ["run"], { cwd: dir, stdio: "pipe" });
+    return { ok: true, phase: "done", output: "" };
   } catch (error) {
     const out =
       error.stdout?.toString() ||
       error.stderr?.toString() ||
       String(error.message ?? error);
-    return { ok: false, output: out.slice(0, 4000) };
+    return { ok: false, phase, output: out.slice(0, 4000) };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -202,18 +330,43 @@ function runCell(adapter, major, kitDeps) {
 
 function main() {
   const results = [];
-  for (const { adapter, majors, deps } of MATRIX) {
-    for (const major of majors) {
-      process.stdout.write(`• @adapttable/${adapter} × kit v${major} … `);
-      const { ok, output } = runCell(adapter, major, deps(major));
-      process.stdout.write(ok ? "ok\n" : "FAIL\n");
-      results.push({ adapter, major, ok, output });
+  for (const row of MATRIX) {
+    for (const major of row.majors) {
+      process.stdout.write(`• @adapttable/${row.adapter} × kit v${major} … `);
+      const { ok, phase, output } = runCell(row, major, row.deps(major));
+      process.stdout.write(ok ? "ok\n" : `FAIL (${phase})\n`);
+      results.push({ adapter: row.adapter, major, ok, phase, output });
     }
   }
 
   const failures = results.filter((r) => !r.ok);
   console.log(
     `\nPeer matrix: ${results.length - failures.length}/${results.length} cells passed.`
+  );
+
+  // Machine-readable summary, written on EVERY run (green included) — the
+  // workflow uploads it and drives the tracking issue from it.
+  const summaryDir = join(REPO_ROOT, "ai_docs");
+  mkdirSync(summaryDir, { recursive: true });
+  writeFileSync(
+    join(summaryDir, "peer-matrix-summary.json"),
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        coreMajor: CORE_MAJOR,
+        passed: results.length - failures.length,
+        failed: failures.length,
+        cells: results.map(({ adapter, major, ok, phase, output }) => ({
+          adapter,
+          major,
+          ok,
+          phase,
+          ...(ok ? {} : { output: output.slice(0, 1500) }),
+        })),
+      },
+      null,
+      2
+    )}\n`
   );
 
   if (failures.length > 0) {
@@ -223,9 +376,10 @@ function main() {
       "# Peer-matrix findings (private — triage, do not narrow ranges reflexively)",
       "",
       "A cell below installs the named kit major with the current published",
-      "adapter and typechecks a table that imports it. A failure means the",
-      "adapter's advertised peer range may be broken for that major — verify,",
-      "then either fix the adapter or tighten the peer range in a follow-up.",
+      "adapter, typechecks a table that imports it, then mounts it in jsdom",
+      "and clicks the sort control. A failure means the adapter's advertised",
+      "peer range may be broken for that major — verify, then either fix the",
+      "adapter or tighten the peer range in a follow-up.",
       "",
       ...failures.flatMap((f) => [
         `## @adapttable/${f.adapter} × kit v${f.major}`,
