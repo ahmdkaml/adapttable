@@ -28,13 +28,14 @@
     "changeset": "changeset",
     "version-packages": "changeset version && prettier --write \".changeset/*.json\" \"packages/*/CHANGELOG.md\" \"packages/*/package.json\"",
     "release": "turbo run build && changeset publish",
-    "verify:release": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage --concurrency=1 && pnpm run build && pnpm run publint && pnpm run smoke:dist && pnpm run peer:floors",
+    "verify:release": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage --concurrency=1 && pnpm run build && pnpm run publint && pnpm run smoke:dist && pnpm run consumer:harness && pnpm run peer:floors",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
     "smoke:dist": "node scripts/smoke-dist.mjs",
     "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint && pnpm run smoke:dist",
     "prepare": "husky",
     "check:readmes": "node scripts/check-readme-features.mjs",
-    "check:docsurface": "node scripts/check-doc-surface.mjs"
+    "check:docsurface": "node scripts/check-doc-surface.mjs",
+    "consumer:harness": "node scripts/consumer-harness.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

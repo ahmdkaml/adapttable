@@ -31,6 +31,7 @@ jobs:
       full: ${{ steps.diff.outputs.full }}
       dedupe: ${{ steps.dedupe.outputs.dedupe }}
       run-packages: ${{ steps.combine.outputs.run }}
+      packages-changed: ${{ steps.combine.outputs.packages }}
     steps:
       # Full history: the three-dot diff below needs a merge base.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -62,6 +63,14 @@ jobs:
           else
             echo "full=false" >> "$GITHUB_OUTPUT"
             echo "Docs/workflow-only diff — running format + doc guards only."
+          fi
+          # Narrower than `full`: only diffs that can change what a consumer
+          # installs make the packed-tarball harness worth its minutes.
+          if printf '%s\n' "$diff_files" \
+            | grep -qE '^(packages/|pnpm-lock\.yaml$|scripts/consumer-harness\.mjs$)'; then
+            echo "packages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "packages=false" >> "$GITHUB_OUTPUT"
           fi
 
       # A push to main whose TREE matches a commit already verified by a
@@ -96,8 +105,17 @@ jobs:
         run: |
           if [ "${{ steps.diff.outputs.full }}" = "true" ] && [ "${{ steps.dedupe.outputs.dedupe }}" != "true" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
+            run=true
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
+            run=false
+          fi
+          # PR events measured the packages diff directly; push/dispatch have
+          # no base to diff against, so the harness follows the package gate.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "packages=${{ steps.diff.outputs.packages }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "packages=$run" >> "$GITHUB_OUTPUT"
           fi
 
   # Formatting, the doc guards, lint and types — no build products needed,
@@ -227,6 +245,43 @@ jobs:
 
       - name: Smoke-check built package artifacts
         run: pnpm smoke:dist
+
+  # Consumers install tarballs, not workspace source — this job packs every
+  # package and proves ESM/CJS entry, three TypeScript resolution modes, pnpm
+  # + npm installs, shipped CSS, a Vite production build and a Next.js App
+  # Router prerender, all from the tarballs alone.
+  consumer:
+    name: Packed-consumer harness
+    needs: changes
+    if: needs.changes.outputs.packages-changed == 'true' && needs.changes.outputs.run-packages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Turborepo cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .turbo
+          key: turbo-consumer-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-consumer-${{ runner.os }}-
+            turbo-${{ runner.os }}-
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run the packed-consumer harness
+        run: pnpm consumer:harness
 
   # Every package promises `react: ^18 || ^19`, but the workspace develops on
   # one React version — this job proves the packed build actually runs (render,
