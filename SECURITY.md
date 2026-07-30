@@ -2,8 +2,9 @@
 
 ## Supported versions
 
-Security fixes are applied to the latest `1.x` release. We recommend staying on
-the latest published version of each `@adapttable/*` package.
+Security fixes are applied to the latest release of the current major. We
+recommend staying on the latest published version of each `@adapttable/*`
+package.
 
 ## Reporting a vulnerability
 

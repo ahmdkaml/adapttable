@@ -67,7 +67,7 @@ the older MUI table generation instead? →
 ### AdaptTable vs mantine-datatable
 
 mantine-datatable is a polished, popular table — but it's Mantine-only.
-AdaptTable renders natively in Mantine and five other kits from one API, and
+AdaptTable renders natively in Mantine and six other kits from one API, and
 adds client/server data behind a single contract, shareable URL state, saved
 views, and first-class RTL. If you're on Mantine and staying there, either
 works; if you want the same table across kits (or those extra batteries),
@@ -124,7 +124,7 @@ matches unstyled feature-for-feature.
 - You need a heavyweight enterprise grid with pivoting, range selection, and
   Excel-style editing today → **AG Grid** / **MUI X DataGrid (paid)**.
 - You're on a framework other than React → **TanStack Table** (multi-
-  framework). AdaptTable is React-only for v1.
+  framework). AdaptTable is React-only.
 - You need a spreadsheet-like editing surface today, not a responsive data
   table for application lists.
 

@@ -6,7 +6,7 @@ high-coverage codebase — a great place for a first open-source contribution.
 ## Getting started
 
 ```bash
-git clone https://github.com/<owner>/adapttable.git
+git clone https://github.com/orwa-mahmoud/adapttable.git
 cd adapttable
 pnpm install
 pnpm check   # lint + typecheck + test (coverage) + build

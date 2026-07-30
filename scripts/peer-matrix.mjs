@@ -15,12 +15,30 @@
  * `peer-matrix` workflow.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+// The probe must test the major users currently install, so ranges are
+// derived from the workspace versions — a hardcoded range silently kept
+// testing v1 after the 2.0.0 release. Versioning is independent per
+// package, so each one gets its own major.
+function workspaceMajor(pkgDir) {
+  return Number(
+    JSON.parse(
+      readFileSync(join(REPO_ROOT, "packages", pkgDir, "package.json"), "utf8")
+    ).version.split(".")[0]
+  );
+}
+const CORE_MAJOR = workspaceMajor("core");
 // Absolute executable paths — never a bare name resolved off a (possibly
 // writable) PATH: npm ships beside the running node, and each scratch dir's
 // tsc is installed locally under node_modules/.bin.
@@ -82,6 +100,12 @@ const MATRIX = [
     majors: [3],
     deps: () => ({ "@radix-ui/themes": "^3.0.0" }),
   },
+  {
+    adapter: "base-ui",
+    majors: [1],
+    // The declared floor is 1.6, not 1.0.
+    deps: () => ({ "@base-ui/react": "^1.6.0" }),
+  },
 ];
 
 const PROBE = `import { DataTable, type ColumnDef } from "__PKG__";
@@ -114,14 +138,18 @@ const TSCONFIG = {
 /** Install one adapter against one kit major and typecheck the probe. */
 function runCell(adapter, major, kitDeps) {
   const dir = mkdtempSync(join(tmpdir(), `peer-${adapter}-${major}-`));
+  const expectedMajors = {
+    core: CORE_MAJOR,
+    [adapter]: workspaceMajor(`adapter-${adapter}`),
+  };
   try {
     const pkg = {
       name: `probe-${adapter}-${major}`,
       version: "0.0.0",
       private: true,
       dependencies: {
-        "@adapttable/core": "^1.0.0",
-        [`@adapttable/${adapter}`]: "^1.0.0",
+        "@adapttable/core": `^${expectedMajors.core}.0.0`,
+        [`@adapttable/${adapter}`]: `^${expectedMajors[adapter]}.0.0`,
         ...kitDeps,
         ...REACT,
       },
@@ -143,6 +171,22 @@ function runCell(adapter, major, kitDeps) {
       ["install", "--no-audit", "--no-fund", "--legacy-peer-deps"],
       { cwd: dir, stdio: "pipe" }
     );
+    // A cell only proves anything if npm actually resolved the major under
+    // test — a silently substituted older major would pass tsc and lie.
+    for (const [name, expected] of Object.entries(expectedMajors)) {
+      const resolved = JSON.parse(
+        readFileSync(
+          join(dir, "node_modules", "@adapttable", name, "package.json"),
+          "utf8"
+        )
+      ).version;
+      if (Number(resolved.split(".")[0]) !== expected) {
+        return {
+          ok: false,
+          output: `@adapttable/${name} resolved to ${resolved}, expected major ${expected}`,
+        };
+      }
+    }
     execFileSync(join(dir, TSC_REL), ["--noEmit"], { cwd: dir, stdio: "pipe" });
     return { ok: true, output: "" };
   } catch (error) {

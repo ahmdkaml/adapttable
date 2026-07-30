@@ -1,0 +1,12 @@
+# Keeps the SHA-pinned actions current: workflows reference immutable
+# commits, so version bumps only ever arrive as reviewable PRs from here.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
