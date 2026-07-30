@@ -35,8 +35,8 @@ Every one of these works in **all eight adapters** — the same props, whichever
 | **Shaping** | [Row grouping](https://orwa-mahmoud.github.io/adapttable/row-grouping/) with per-group aggregates · [column management](https://orwa-mahmoud.github.io/adapttable/column-management/) — show/hide, reorder, pin, resize · [saved views](https://orwa-mahmoud.github.io/adapttable/saved-views/) · [CSV export](https://orwa-mahmoud.github.io/adapttable/customization/#csv-export) |
 | **Reach**   | First-class [RTL and i18n](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/) · dark mode · responsive mobile cards · full [customization](https://orwa-mahmoud.github.io/adapttable/customization/) down to a headless escape hatch                                                                                                                                              |
 
-Every feature above is **opt-in**: omit the prop and it stays dormant — no bundle
-cost, no UI, no keyboard handlers. (A few table-stakes conveniences default
+Every feature above is **opt-in**: omit the prop and it stays dormant — no UI
+rendered, no keyboard handlers attached. (A few table-stakes conveniences default
 ON instead: URL sync (`urlSync={false}` to keep state in memory), the search
 box (`searchable={false}`), pagination, and scroll-to-top on page change.)
 See each one running per kit on its

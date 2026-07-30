@@ -65,7 +65,7 @@ const FLOORS = [
     kit: "mui",
     pkg: "adapter-mui",
     deps: {
-      "@mui/material": "6.0.0",
+      "@mui/material": "6.1.2",
       "@emotion/react": "^11.0.0",
       "@emotion/styled": "^11.0.0",
     },
@@ -98,6 +98,14 @@ const FLOORS = [
     providerImport: 'import { Theme } from "@radix-ui/themes";',
     wrap: (children) => `<Theme>${children}</Theme>`,
   },
+  {
+    kit: "base-ui",
+    pkg: "adapter-base-ui",
+    // The declared floor is 1.6 (exact), and the adapter needs no provider.
+    deps: { "@base-ui/react": "1.6.0" },
+    providerImport: "",
+    wrap: (children) => children,
+  },
 ];
 
 const smokeTest = (kit, providerImport, wrapped) => `import {
@@ -105,7 +113,7 @@ const smokeTest = (kit, providerImport, wrapped) => `import {
   type ColumnDef,
 } from "@adapttable/${kit}";
 ${providerImport}
-import { render, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 interface Row {
@@ -116,15 +124,46 @@ const ROWS: Row[] = [
   { id: "1", name: "Floor Alpha" },
   { id: "2", name: "Floor Beta" },
 ];
-const columns: ColumnDef<Row>[] = [{ key: "name", sortable: true }];
+const columns: ColumnDef<Row>[] = [
+  { key: "name", label: "Name", filter: "text", sortable: true },
+];
 
+// Interactions run against document.body via screen — every kit portals
+// its overlays differently, and the floor version's portal target is
+// exactly what this probe must tolerate.
 describe("@adapttable/${kit} at its kit floor", () => {
-  it("renders rows and a sortable header", () => {
+  it("renders, sorts, opens filters, selects a row, opens the column menu", async () => {
     const view = render(
       ${wrapped}
     );
     expect(within(view.container).getByText("Floor Alpha")).toBeTruthy();
     expect(view.container.textContent).toContain("Floor Beta");
+
+    // Sort: the header control must exist and a click must not lose rows.
+    const sortControl =
+      view.container.querySelector("thead button") ??
+      view.container.querySelector("th[aria-sort]") ??
+      view.container.querySelector("th");
+    expect(sortControl).toBeTruthy();
+    fireEvent.click(sortControl as Element);
+    expect(view.container.textContent).toContain("Floor Alpha");
+
+    // Filters: the toolbar button opens the kit's native popover with the
+    // declared text filter inside.
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(await screen.findAllByRole("textbox")).not.toHaveLength(0);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+
+    // Selection: bulkActions turns checkboxes on; ticking one row must
+    // surface the bulk bar with the action's label.
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes.length).toBeGreaterThan(1);
+    fireEvent.click(checkboxes[1]);
+    expect(await screen.findByRole("button", { name: /zap/i })).toBeTruthy();
+
+    // Column menu: opens and lists the column by label.
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    expect((await screen.findAllByText("Name")).length).toBeGreaterThan(0);
   });
 });
 `;
@@ -195,7 +234,7 @@ function runCell(cell, coreTarball, packDir) {
         "@testing-library/react": "^16.3.0",
         "@types/react": "^18.3.0",
         "@vitejs/plugin-react": "^5.0.0",
-        jsdom: "^26.0.0",
+        jsdom: "^29.0.0",
         vitest: "^4.0.0",
       },
       // The adapter's ^-ranged core dependency must resolve to the LOCAL
@@ -205,7 +244,13 @@ function runCell(cell, coreTarball, packDir) {
     writeFileSync(join(dir, "package.json"), JSON.stringify(pkg, null, 2));
     writeFileSync(join(dir, "vitest.config.ts"), VITEST_CONFIG);
     writeFileSync(join(dir, "setup.ts"), SETUP);
-    const table = `<DataTable data={ROWS} columns={columns} rowKey={(r) => r.id} />`;
+    const table = `<DataTable
+        data={ROWS}
+        columns={columns}
+        rowKey={(r) => r.id}
+        enableColumnMenu
+        bulkActions={[{ key: "zap", label: "Zap", onClick: () => undefined }]}
+      />`;
     writeFileSync(
       join(dir, "floor.test.tsx"),
       smokeTest(cell.kit, cell.providerImport, cell.wrap(table))
