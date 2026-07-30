@@ -246,6 +246,11 @@ jobs:
       - name: Smoke-check built package artifacts
         run: pnpm smoke:dist
 
+      # Every public-surface change must arrive as a committed etc/*.api.md
+      # diff — an export added or changed without regenerating fails here.
+      - name: Check extracted API reports
+        run: pnpm api:check
+
   # Each adapter promises a kit FLOOR (Mantine 7.2, MUI 6, …). This job runs
   # the packed-tarball floor probe — render, sort, filter popover, row
   # selection, column menu, on React 18 — but ONLY for adapters the PR
