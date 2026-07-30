@@ -333,6 +333,9 @@ createRoot(document.getElementById("root")!).render(
         dependencies: { ...CORE, ...UNSTYLED, ...REACT, next: "latest" },
         devDependencies: {
           typescript: "^6.0.0",
+          // Next's build-time TS check hard-requires @types/node alongside
+          // the react types whenever a tsconfig is present.
+          "@types/node": "^24.0.0",
           "@types/react": "^19.0.0",
           "@types/react-dom": "^19.0.0",
         },
