@@ -102,6 +102,7 @@ export default defineConfig({
             { label: "Column management", slug: "column-management" },
             { label: "Saved views", slug: "saved-views" },
             { label: "Virtualization", slug: "virtualization" },
+            { label: "Mobile cards", slug: "mobile" },
           ],
         },
         {

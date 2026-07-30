@@ -584,3 +584,36 @@ a {
     transition: none !important;
   }
 }
+
+/* ---------- mobile demo: the phone frame ---------- */
+/* A desktop visitor sees the phone experience without resizing: the table
+   renders inside a phone-sized bezel while `forceMobile` pins the card
+   layout. Width matches a common modern phone viewport. */
+.phone-frame {
+  width: min(400px, 100%);
+  margin: 0 auto;
+  padding: 14px 10px 18px;
+  border: 1px solid var(--page-border);
+  border-radius: 28px;
+  background: var(--page-surface);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.phone-frame::before {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 5px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: var(--page-border);
+}
+.phone-frame::after {
+  content: "";
+  display: block;
+  width: 96px;
+  height: 4px;
+  margin: 12px auto 0;
+  border-radius: 999px;
+  background: var(--page-border);
+}

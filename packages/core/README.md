@@ -21,6 +21,7 @@ control via prop-getters.
 
 ## Features
 
+- **Automatic mobile cards** — the engine resolves the layout by viewport and every adapter renders rows as cards below the mobile breakpoint, state intact; `forceMobile`, `mobileLabel` and `hideOnMobile` tune it. [Docs](https://orwa-mahmoud.github.io/adapttable/mobile/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Pagination** — paged or infinite scroll via `paginationMode`; server sources

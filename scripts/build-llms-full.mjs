@@ -32,6 +32,7 @@ const DOCS = [
   "column-management.md",
   "saved-views.md",
   "virtualization.md",
+  "mobile.md",
   "url-state.md",
   "customization.md",
   "i18n-rtl.md",

@@ -51,6 +51,8 @@ export const Pin = make(["M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z", "M12 15v5"]);
 export const Resize = make(["M9 3H5v4", "M15 21h4v-4", "M5 7l14 10"]);
 export const Columns = make(["M4 5h16v14H4z", "M12 5v14", "M16 5v14"]);
 export const Layers = make(["M12 3l9 5-9 5-9-5 9-5z", "M3 13l9 5 9-5"]);
+export const Phone = make(["M7 2h10v20H7z", "M10.5 19h3"]);
+export const Monitor = make(["M3 4h18v12H3z", "M8 20h8", "M12 16v4"]);
 export const Database = make([
   "M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3z",
   "M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6",

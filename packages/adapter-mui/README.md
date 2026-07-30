@@ -43,6 +43,7 @@ from a server-paginated query — the component doesn't change.
 
 ## Features
 
+- **Automatic mobile cards** — below the mobile breakpoint every row renders as a MUI `Card` (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via `TableSortLabel` headers.
@@ -58,7 +59,6 @@ from a server-paginated query — the component doesn't change.
 - **CSV export** (`exportCsv`) — current page or the full filtered set.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — `Pagination` footer, or infinite scroll (auto by device).
-- **Responsive** — desktop table ↔ mobile `Card`s by viewport (or force `forceMobile`).
 - **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** follows the MUI theme.
 - **Customisation** — `slots` (skeleton, empty), `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

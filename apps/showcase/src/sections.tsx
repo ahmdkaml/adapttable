@@ -96,6 +96,7 @@ export type DemoPage =
   | "columns"
   | "editing"
   | "grouping"
+  | "mobile"
   | "scale"
   | "rtl";
 
@@ -105,6 +106,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "columns", label: "Columns", path: "columns" },
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
+  { key: "mobile", label: "Mobile", path: "mobile" },
   { key: "rtl", label: "RTL", path: "rtl" },
   { key: "scale", label: "Scale", path: "scale" },
 ];
