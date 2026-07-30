@@ -4832,7 +4832,7 @@ supported major — so a claimed-but-broken version is caught before you hit it:
 | Adapter                                       | Kit peer range                         |
 | --------------------------------------------- | -------------------------------------- |
 | `@adapttable/mantine`                         | `@mantine/core` + `@mantine/hooks` 7–9 |
-| `@adapttable/mui`                             | `@mui/material` 5–9                    |
+| `@adapttable/mui`                             | `@mui/material` 6.1.2+ – 9             |
 | `@adapttable/chakra`                          | `@chakra-ui/react` 3                   |
 | `@adapttable/antd`                            | `antd` 6                               |
 | `@adapttable/radix`                           | `@radix-ui/themes` 3                   |

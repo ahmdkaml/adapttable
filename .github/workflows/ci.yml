@@ -246,6 +246,67 @@ jobs:
       - name: Smoke-check built package artifacts
         run: pnpm smoke:dist
 
+  # Each adapter promises a kit FLOOR (Mantine 7.2, MUI 6, …). This job runs
+  # the packed-tarball floor probe — render, sort, filter popover, row
+  # selection, column menu, on React 18 — but ONLY for adapters the PR
+  # actually touches; the full matrix guards every publish in verify:release.
+  floors:
+    name: Peer floors (changed adapters)
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.packages-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Detect changed adapters with kit floors
+        id: kits
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          floored="mantine mui chakra antd radix base-ui"
+          changed="$(git diff --name-only "origin/$BASE_REF"...HEAD \
+            | grep -oE '^packages/adapter-[a-z-]+/' | sort -u \
+            | sed -e 's|packages/adapter-||' -e 's|/$||')" || true
+          kits=""
+          for kit in $changed; do
+            case " $floored " in *" $kit "*) kits="$kits $kit" ;; esac
+          done
+          kits="${kits# }"
+          echo "kits=$kits" >> "$GITHUB_OUTPUT"
+          if [ -n "$kits" ]; then
+            echo "Floors to run: $kits"
+          else
+            echo "No floored adapter changed — nothing to probe."
+          fi
+
+      - name: Install dependencies
+        if: steps.kits.outputs.kits != ''
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the changed adapters
+        if: steps.kits.outputs.kits != ''
+        run: |
+          for kit in ${{ steps.kits.outputs.kits }}; do
+            pnpm turbo run build --filter="@adapttable/$kit..."
+          done
+
+      - name: Run the floor probes
+        if: steps.kits.outputs.kits != ''
+        run: |
+          for kit in ${{ steps.kits.outputs.kits }}; do
+            pnpm peer:floors "$kit"
+          done
+
   # Consumers install tarballs, not workspace source — this job packs every
   # package and proves ESM/CJS entry, three TypeScript resolution modes, pnpm
   # + npm installs, shipped CSS, a Vite production build and a Next.js App

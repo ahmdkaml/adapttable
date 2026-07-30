@@ -89,7 +89,10 @@ const MATRIX = [
     adapter: "mui",
     majors: [6, 9],
     deps: (m) => ({
-      "@mui/material": `^${m}.0.0`,
+      // The declared v6 floor is 6.1.2: below it a fresh install resolves
+      // the latest @mui/utils against an older ModalManager and the filter
+      // popover crashes in getScrollbarSize.
+      "@mui/material": m === 6 ? "^6.1.2" : `^${m}.0.0`,
       "@emotion/react": "^11.0.0",
       "@emotion/styled": "^11.0.0",
     }),
@@ -267,7 +270,7 @@ function runCell(row, major, kitDeps) {
         "@testing-library/dom": "^10.4.1",
         "@testing-library/react": "^16.3.0",
         "@vitejs/plugin-react": "^5.0.0",
-        jsdom: "^26.0.0",
+        jsdom: "^29.0.0",
         vitest: "^4.0.0",
       },
     };
