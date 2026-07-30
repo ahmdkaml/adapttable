@@ -28,7 +28,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version && prettier --write \".changeset/*.json\" \"packages/*/CHANGELOG.md\" \"packages/*/package.json\"",
     "release": "turbo run build && changeset publish",
-    "verify:release": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage --concurrency=1 && pnpm run build && pnpm run publint && pnpm run smoke:dist && pnpm run api:check && pnpm run consumer:harness && pnpm run peer:floors",
+    "verify:release": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage --concurrency=1 && pnpm run build && pnpm run publint && pnpm run smoke:dist && pnpm run consumer:harness && pnpm run peer:floors",
     "publint": "pnpm --filter \"./packages/*\" exec publint --strict",
     "smoke:dist": "node scripts/smoke-dist.mjs",
     "check": "pnpm run format:check && pnpm run lint && pnpm run lint:root && pnpm run check:readmes && pnpm run check:docsurface && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run publint && pnpm run smoke:dist",

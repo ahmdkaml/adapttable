@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * Extracted API reports (blocking in CI): every public-surface change must
- * appear as a reviewable diff.
+ * Extracted API reports — an on-demand review artifact.
  *
  * API Extractor rolls each package entry's d.ts into a committed report
- * under `etc/`. Locally, `pnpm api:reports` regenerates them; in CI,
- * `pnpm api:check` fails when a report no longer matches the built types —
- * so adding, removing or changing any export forces the regenerated report
- * into the PR diff, where the API change is visible and reviewable.
+ * under `etc/`. Run `pnpm api:reports` after an intentional API change and
+ * commit the diff: the report shows the change as reviewable signatures.
+ * `pnpm api:check` byte-compares fresh extractions against the committed
+ * reports — useful locally, but NOT wired into CI: the d.ts chunk split is
+ * not byte-stable across builds, so identical sources can extract reports
+ * that differ in layout. Gate-grade comparison needs a deterministic build
+ * first (tracked for a future cycle).
  *
  * Entries: every library package's main entry, plus core's `/adapter`
  * subpath (the builder-tier surface). The cli scaffolder has no importable

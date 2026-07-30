@@ -79,11 +79,11 @@ function run(cmd, args, cwd, label) {
   try {
     execFileSync(cmd, args, { cwd, stdio: "pipe" });
   } catch (error) {
-    const out =
-      error.stdout?.toString() ||
-      error.stderr?.toString() ||
-      String(error.message ?? error);
-    console.error(`\n✗ ${label}\n${out.slice(0, 6000)}`);
+    const out = [error.stdout, error.stderr, error.message]
+      .map((part) => part?.toString().trim() ?? "")
+      .filter(Boolean)
+      .join("\n");
+    console.error(`\n✗ ${label}\n${out.slice(-6000)}`);
     process.exit(1);
   }
 }
