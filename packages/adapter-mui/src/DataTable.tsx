@@ -137,7 +137,10 @@ function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
     defaults: props.defaults,
     paginationMode: props.paginationMode,
     urlAdapter,
-    urlSync: props.urlSync,
+    // No `urlSync` here on purpose: the decision is already baked into WHICH
+    // adapter was resolved above (memory when off, the real one when on), and
+    // the tier hooks would otherwise apply it a second time — routing the
+    // active tier to a private store that saved views cannot see.
     urlKey: props.urlKey,
   });
   let filtersNode: ReactNode;

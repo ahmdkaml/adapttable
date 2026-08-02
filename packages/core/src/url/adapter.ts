@@ -143,8 +143,13 @@ export function useResolvedAdapter(
   const memoryRef = useRef<UrlStateAdapter | null>(null);
   memoryRef.current ??= createMemoryAdapter();
 
-  if (adapter) return adapter;
+  // `enabled` is checked FIRST and beats an explicit adapter: "not syncing"
+  // has to mean writes land in memory, whoever supplied the adapter. With the
+  // checks the other way round a disabled hook kept writing to the caller's
+  // real adapter, and every disabled hook sharing one adapter also collided
+  // in the namespace registry — which made a single table warn about itself.
   if (!enabled) return memoryRef.current;
+  if (adapter) return adapter;
   if (!isBrowser()) return memoryRef.current;
   return getHistoryAdapter();
 }

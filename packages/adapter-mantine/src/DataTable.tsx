@@ -126,7 +126,10 @@ function useResolvedTableProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
     paginationMode: props.paginationMode,
     urlKey: props.urlKey,
     urlAdapter,
-    urlSync: props.urlSync,
+    // No `urlSync` here on purpose: the decision is already baked into WHICH
+    // adapter was resolved above (memory when off, the real one when on), and
+    // the tier hooks would otherwise apply it a second time — routing the
+    // active tier to a private store that saved views cannot see.
   });
 
   // The same resolution `useTableChrome` applies — the auto form needs the
