@@ -93,7 +93,10 @@ export function useDataTableShell<TRow>(
     mode: props.mode,
     onQueryChange: props.onQueryChange,
     urlAdapter,
-    urlSync: props.urlSync,
+    // No `urlSync` here on purpose: the decision is already baked into WHICH
+    // adapter was resolved above (memory when off, the real one when on), and
+    // the tier hooks would otherwise apply it a second time — routing the
+    // active tier to a private store that saved views cannot see.
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,

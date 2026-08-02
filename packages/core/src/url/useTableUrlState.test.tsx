@@ -213,6 +213,39 @@ describe("useTableUrlState", () => {
       expect(warn).not.toHaveBeenCalled();
       vi.restoreAllMocks();
     });
+
+    // A table mounts both data tiers on one adapter and disables the inactive
+    // one. While `urlSync: false` was ignored for an explicit adapter, both
+    // tiers claimed the same namespace and every single table warned about
+    // itself — the warning could not be silenced by any prop.
+    it("stays silent when a disabled second hook shares the adapter", () => {
+      const warn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const adapter = createMemoryAdapter("");
+      renderHook(() => {
+        useTableUrlState({ urlAdapter: adapter });
+        useTableUrlState({ urlAdapter: adapter, urlSync: false });
+      });
+      expect(warn).not.toHaveBeenCalled();
+      vi.restoreAllMocks();
+    });
+
+    it("still warns when both sharers are actually syncing", () => {
+      const warn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const adapter = createMemoryAdapter("");
+      renderHook(() => {
+        useTableUrlState({ urlAdapter: adapter, urlSync: true });
+        useTableUrlState({ urlAdapter: adapter, urlSync: true });
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("share the URL namespace")
+      );
+      resetDevWarnings();
+      vi.restoreAllMocks();
+    });
   });
 
   describe("urlKey namespacing", () => {

@@ -1,21 +1,5 @@
-import type {
-  GroupCollapseState,
-  GroupedFlatEntry,
-  RowAction,
-  UseColumnLayoutResult,
-} from "@adapttable/core";
-import {
-  ACTIONS_COLUMN_KEY,
-  isDeclarativeFilters,
-  makeExportCsvHandler,
-  resolveLabels,
-  useChromeBodyData,
-  useChromeScrollReset,
-  useFilterTriggerToggle,
-  useTableChrome,
-  useTableData,
-} from "@adapttable/core";
-import { useMountStagger, useResolvedAdapter } from "@adapttable/core/adapter";
+import { resolveLabels } from "@adapttable/core";
+import { useDataTableShell, useMountStagger } from "@adapttable/core/adapter";
 import {
   Box,
   Button,
@@ -24,8 +8,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { ReactNode } from "react";
-import { useRef, useState } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -41,26 +23,6 @@ import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
-/** Chrome grouping bundle shape (matches SharedTableRenderProps.grouping). */
-interface GroupingBundle<TRow> {
-  groupBy: string;
-  collapsed: GroupCollapseState;
-  entries: readonly GroupedFlatEntry<TRow>[];
-  setGroupBy: (key: string | null) => void;
-}
-
-/**
- * Prefer the (possibly virtual-windowed) flat entries from chrome body data
- * when grouping is armed; otherwise leave the bundle untouched / dormant.
- */
-function withWindowedGroupingEntries<TRow>(
-  grouping: GroupingBundle<TRow> | undefined,
-  groupingEntries: readonly GroupedFlatEntry<TRow>[] | undefined
-): GroupingBundle<TRow> | undefined {
-  if (!(grouping && groupingEntries)) return grouping;
-  return { ...grouping, entries: groupingEntries };
-}
-
 /**
  * Map row density to MUI's table `size`, independent of column pinning. An
  * explicit `size` prop still wins for backward compatibility.
@@ -71,99 +33,6 @@ function tableSize(
 ): "small" | "medium" {
   if (size) return size;
   return density === "compact" ? "small" : "medium";
-}
-
-/** The width setter only when column resize is enabled (opt-in). */
-function resizeSetter(
-  enabled: boolean | undefined,
-  setWidth: (key: string, width: number) => void
-): ((key: string, width: number) => void) | undefined {
-  return enabled ? setWidth : undefined;
-}
-
-/**
- * The injected actions column is first-class in column management: the
- * layout state treats keys opaquely, so the reserved "actions" key hides and
- * end-pins like any data column. Hiding strips `rowActions` BEFORE the
- * renderers, so the column, its pin lead, and the colSpans all disappear
- * consistently (desktop and mobile alike). `actionsPinned` reports the
- * Columns-menu end pin — only meaningful while the column renders.
- */
-function resolveActionsColumn<TRow>(
-  declared: RowAction<TRow>[] | undefined,
-  layout: UseColumnLayoutResult<TRow>
-): {
-  hasRowActions: boolean;
-  rowActions: RowAction<TRow>[] | undefined;
-  actionsPinned: boolean;
-} {
-  const hasRowActions = (declared?.length ?? 0) > 0;
-  const rowActions =
-    hasRowActions && !layout.isHidden(ACTIONS_COLUMN_KEY)
-      ? declared
-      : undefined;
-  const actionsPinned =
-    rowActions !== undefined &&
-    layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
-  return { hasRowActions, rowActions, actionsPinned };
-}
-
-/**
- * Resolve the data tier (`source` > `data` + `onQueryChange` > `data`) and
- * the filter content, then overlay them on the caller's props: caller JSX
- * filters pass through; the declarative array becomes the auto-built
- * {@link AutoFilterForm} (or nothing, when no definitions resolved); the
- * runtime's chip-label resolvers merge under any caller overrides.
- */
-function useChromeProps<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
-  // so with `urlSync={false}` both share the same in-memory backend instead
-  // of the menu silently reading the real address bar.
-  const urlAdapter = useResolvedAdapter(
-    props.urlSync === false ? undefined : props.urlAdapter,
-    props.urlSync !== false
-  );
-  const { source, runtime } = useTableData<TRow>({
-    locale: props.locale,
-    source: props.source,
-    data: props.data,
-    total: props.total,
-    loading: props.loading,
-    error: props.error,
-    mode: props.mode,
-    onQueryChange: props.onQueryChange,
-    columns: props.columns,
-    filters: props.filters,
-    defaults: props.defaults,
-    paginationMode: props.paginationMode,
-    urlAdapter,
-    urlSync: props.urlSync,
-    urlKey: props.urlKey,
-  });
-  let filtersNode: ReactNode;
-  // Column-level `filter` shorthands alone must still render the auto form —
-  // only explicit JSX takes over the drawing.
-  if (isDeclarativeFilters(props.filters) || props.filters === undefined) {
-    filtersNode =
-      runtime.defs.length > 0 ? (
-        <AutoFilterForm
-          defs={runtime.defs}
-          source={source}
-          labels={resolveLabels(props.labels)}
-        />
-      ) : undefined;
-  } else {
-    filtersNode = props.filters;
-  }
-  // `urlAdapter` is the RESOLVED backend from here on — downstream chrome
-  // (the saved-views menu) must share the table's own instance.
-  return {
-    ...props,
-    urlAdapter,
-    source,
-    filters: filtersNode,
-    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
-  };
 }
 
 /**
@@ -180,33 +49,37 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { slots, className, classNames, animate = false } = props;
   const size = tableSize(props.size, props.density);
   const { filtersMode = "popover" } = props;
-  const chromeProps = useChromeProps(props);
-  const { filters: filtersNode } = chromeProps;
-  const c = useTableChrome<TRow>(chromeProps);
-  // Everything rendered below reads the chrome's VIEW facade — identical to
-  // `source` except under grouping, where it presents the full rendered set.
-  const viewSource = c.source;
-  const { table, confirm, getRowId } = c;
-  const { labels } = table;
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
-  const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, c, chromeProps);
+  // The whole shared orchestration lives in core's shell; MUI adds only its
+  // kit's row `size` over the returned bundles.
+  const shell = useDataTableShell<TRow>(props, (defs, source) => (
+    <AutoFilterForm
+      defs={defs}
+      source={source}
+      labels={resolveLabels(props.labels)}
+    />
+  ));
   const {
-    virtualization,
-    groupingEntries,
+    chrome: c,
+    table,
+    labels,
+    filtersNode,
+    filtersOpen,
+    setFiltersOpen,
+    filtersTrigger,
+    rootRef,
     loadMoreRef,
     canLoadMore,
-    virtualScrollRef,
-  } = useChromeBodyData(c, chromeProps);
-  const grouping = withWindowedGroupingEntries(c.grouping, groupingEntries);
+    hasRowActions,
+    toolbarProps,
+  } = shell;
+  // Everything rendered below reads the chrome's VIEW facade — identical to
+  // the raw source except under grouping, where it presents the full set.
+  const viewSource = shell.source;
+  const { confirm } = c;
+  const tableProps = { ...shell.tableProps, size };
   useMountStagger(rootRef, [viewSource.rows.length, c.isMobile], {
     enabled: animate,
   });
-  const { hasRowActions, rowActions, actionsPinned } = resolveActionsColumn(
-    props.rowActions,
-    c.columnLayout
-  );
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
@@ -221,7 +94,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const savedViewsMenu = props.savedViews && (
     <SavedViewsMenu
       options={{
-        urlAdapter: chromeProps.urlAdapter,
+        urlAdapter: shell.urlAdapter,
         urlKey: props.urlKey,
         ...props.savedViews,
       }}
@@ -252,65 +125,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       </Stack>
     );
   } else if (c.body === "mobile") {
-    body = (
-      <MobileCards
-        table={table}
-        cardClassName={classNames?.card}
-        rows={c.editingRows}
-        rowActions={rowActions}
-        confirm={confirm}
-        getRowId={getRowId}
-        size={size}
-        dir={props.dir}
-        onRowClick={props.onRowClick}
-        rowClassName={props.rowClassName}
-        renderRowDetail={props.renderRowDetail}
-        summaryRow={props.summaryRow}
-        expansion={c.detail?.expansion}
-        editing={c.editing}
-        grouping={grouping}
-        rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-        paddingTop={virtualization.paddingTop}
-        paddingBottom={virtualization.paddingBottom}
-        measureElement={virtualization.measureElement}
-      />
-    );
+    body = <MobileCards {...tableProps} cardClassName={classNames?.card} />;
   } else {
     body = (
       <Box className={classNames?.table}>
-        <DesktopTable
-          table={table}
-          rows={c.editingRows}
-          rowActions={rowActions}
-          actionsPinned={actionsPinned}
-          confirm={confirm}
-          getRowId={getRowId}
-          size={size}
-          dir={props.dir}
-          prefetch={props.prefetch}
-          onRowClick={props.onRowClick}
-          rowClassName={props.rowClassName}
-          renderRowDetail={props.renderRowDetail}
-          summaryRow={props.summaryRow}
-          expansion={c.detail?.expansion}
-          editing={c.editing}
-          grouping={grouping}
-          rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-          paddingTop={virtualization.paddingTop}
-          paddingBottom={virtualization.paddingBottom}
-          measureElement={virtualization.measureElement}
-          stickyHeader={props.stickyHeader}
-          stickyTop={props.stickyTop}
-          pinOffset={c.columnLayout.pinOffset}
-          maxHeight={props.maxHeight}
-          virtualScrollRef={virtualScrollRef}
-          setWidth={resizeSetter(
-            props.resizableColumns,
-            c.columnLayout.setWidth
-          )}
-          columnWidths={c.columnLayout.state.widths}
-          resizeLabel={labels.resizeColumn}
-        />
+        <DesktopTable {...tableProps} prefetch={props.prefetch} />
       </Box>
     );
   }
@@ -329,29 +148,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <Stack spacing={1.5}>
         <Box className={classNames?.toolbar}>
           <Toolbar
-            table={table}
-            searchable={props.searchable !== false}
-            searchPlaceholder={props.searchPlaceholder}
-            sortByOptions={props.sortByOptions}
-            toolbar={props.toolbar}
+            {...toolbarProps}
             savedViewsMenu={savedViewsMenu}
-            hasFilters={Boolean(filtersNode)}
-            activeFilterCount={c.activeFilterCount}
-            showRowsPerPage={canLoadMore}
             filtersMode={filtersMode}
-            filters={filtersNode}
             filtersOpen={filtersOpen}
             onToggleFilters={filtersTrigger.onClick}
             onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
             onCloseFilters={() => setFiltersOpen(false)}
-            onClearFilters={c.clearFilters}
-            dir={props.dir}
             columnMenu={columnMenu}
-            onExportCsv={makeExportCsvHandler(
-              props.exportCsv,
-              viewSource,
-              c.columnLayout.visibleColumns
-            )}
           />
         </Box>
         {c.isRefreshing && <LinearProgress aria-label={labels.loading} />}

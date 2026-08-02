@@ -1,11 +1,10 @@
 /** Gap-fill: MUI select onChange handlers and chip delete. */
-import type * as AdaptTableCore from "@adapttable/core";
+import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import type * as AdapterModule from "@adapttable/core/adapter";
 import {
-  createMemoryAdapter,
-  useChromeBodyData,
-  useFrontendData,
-} from "@adapttable/core";
-import { type VirtualTableRow } from "@adapttable/core/adapter";
+  useDataTableShell,
+  type VirtualTableRow,
+} from "@adapttable/core/adapter";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,20 +25,46 @@ const columns: ColumnDef<Row>[] = [
 ];
 const theme = createTheme();
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    useChromeBodyData: vi.fn(),
-  };
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
+  return { ...actual, useDataTableShell: vi.fn(actual.useDataTableShell) };
 });
+
+const actualAdapter = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
+
+/**
+ * Force a controlled virtual window by overriding the shell's `tableProps` —
+ * the body renderers read `rowEntries` exactly as from a real virtualizer.
+ */
+function mockBodyData(
+  rows: VirtualTableRow<Row>[],
+  top: number,
+  bottom: number
+) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualAdapter.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: rows,
+        paddingTop: top,
+        paddingBottom: bottom,
+        measureElement: vi.fn(),
+      },
+    };
+  });
+}
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
-beforeEach(async () => {
-  const actual =
-    await vi.importActual<typeof AdaptTableCore>("@adapttable/core");
-  vi.mocked(useChromeBodyData).mockImplementation(actual.useChromeBodyData);
+beforeEach(() => {
+  // Default: the real shell, so non-virtual tests run untouched.
+  vi.mocked(useDataTableShell).mockImplementation(
+    actualAdapter.useDataTableShell
+  );
 });
 
 function mount(
@@ -150,48 +175,22 @@ describe("MUI gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "b", name: "Bob" },
-            index: 1,
-            key: "b",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 40,
-        paddingBottom: 40,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockBodyData(
+      [{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }],
+      40,
+      40
+    );
     mount({ virtualize: true, estimateRowSize: 40 }, "infinite");
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "b", name: "Bob" },
-            index: 1,
-            key: "b",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 132,
-        paddingBottom: 0,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: false,
-      virtualScrollRef: () => undefined,
-    });
+    mockBodyData(
+      [{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }],
+      132,
+      0
+    );
     mount({ forceMobile: true, virtualize: true, estimateCardSize: 132 });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeInTheDocument();

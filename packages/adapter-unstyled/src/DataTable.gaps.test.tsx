@@ -1,14 +1,9 @@
 /**
  * Gap-fill: mobile selection + row actions, footer interactions, and the
  * bulk disabled-reason path. Virtual-window rendering is driven through a
- * mocked `useChromeBodyData` (the loader wiring itself lives in core).
+ * an overridden shell window (the loader wiring itself lives in core).
  */
-import {
-  createMemoryAdapter,
-  useChromeBodyData,
-  useFrontendData,
-} from "@adapttable/core";
-import { type VirtualTableRow } from "@adapttable/core/adapter";
+import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,30 +22,55 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name },
 ];
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    useChromeBodyData: vi.fn(),
-  };
+import type * as AdapterModule from "@adapttable/core/adapter";
+import { useDataTableShell } from "@adapttable/core/adapter";
+
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
+  return { ...actual, useDataTableShell: vi.fn(actual.useDataTableShell) };
 });
+
+const actualAdapter = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
+
+/**
+ * Force a controlled virtual window by overriding the shell's `tableProps` —
+ * the renderers read `rowEntries` exactly as from a real virtualizer.
+ */
+function mockVirtualWindow(top: number, bottom: number, indices = [0, 1]) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualAdapter.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: indices
+          .filter((index) => index < real.tableProps.rows.length)
+          .map((index) => ({
+            row: real.tableProps.rows[index]!,
+            index,
+            key: String(real.tableProps.getRowId(real.tableProps.rows[index])),
+          })),
+        paddingTop: top,
+        paddingBottom: bottom,
+        measureElement: () => undefined,
+      },
+    };
+  });
+}
+
+function restoreRealShell() {
+  vi.mocked(useDataTableShell).mockImplementation(
+    actualAdapter.useDataTableShell
+  );
+}
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 beforeEach(() => {
-  // Mirror the real hook's disabled state so non-virtual tests render the
-  // full row set with a working load-more gate.
-  vi.mocked(useChromeBodyData).mockImplementation((chrome, props) => ({
-    virtualization: {
-      enabled: false,
-      rows: [],
-      paddingTop: 0,
-      paddingBottom: 0,
-    },
-    loadMoreRef: { current: null },
-    canLoadMore: !chrome.isPaged && !props.source.error,
-    virtualScrollRef: () => undefined,
-  }));
+  // Default: the real shell, so non-virtual tests run untouched.
+  restoreRealShell();
 });
 
 function Harness(props: {
@@ -242,24 +262,7 @@ describe("<DataTable> (unstyled) gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "b", name: "Bob" },
-            index: 1,
-            key: "b",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 40,
-        paddingBottom: 40,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockVirtualWindow(40, 40, [1]);
     renderHarness({
       mode: "infinite",
       override: { virtualize: true, estimateRowSize: 40 },
@@ -269,24 +272,7 @@ describe("<DataTable> (unstyled) gaps", () => {
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "b", name: "Bob" },
-            index: 1,
-            key: "b",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 132,
-        paddingBottom: 0,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockVirtualWindow(132, 0, [1]);
     renderHarness({
       isMobile: true,
       mode: "infinite",
