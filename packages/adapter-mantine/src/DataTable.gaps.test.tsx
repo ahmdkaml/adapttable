@@ -3,12 +3,12 @@
  * rows-per-page, sort-by select, custom toolbar, searchable off) and the
  * mobile card layout (selection + row actions + confirm).
  */
+import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import type * as AdapterModule from "@adapttable/core/adapter";
 import {
-  createMemoryAdapter,
-  useChromeBodyData,
-  useFrontendData,
-} from "@adapttable/core";
-import { type VirtualTableRow } from "@adapttable/core/adapter";
+  useDataTableShell,
+  type VirtualTableRow,
+} from "@adapttable/core/adapter";
 import { MantineProvider } from "@mantine/core";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,30 +28,43 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name, sortable: true },
 ];
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    useChromeBodyData: vi.fn(),
-  };
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
+  return { ...actual, useDataTableShell: vi.fn(actual.useDataTableShell) };
 });
 
+const actualCore = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
+
+/**
+ * Force a controlled virtual window by overriding the shell's `tableProps` —
+ * the body renderers read `rowEntries` exactly as they would from a real
+ * virtualizer.
+ */
+function mockBodyData(
+  rows: VirtualTableRow<Row>[],
+  top: number,
+  bottom: number
+) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualCore.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: rows,
+        paddingTop: top,
+        paddingBottom: bottom,
+        measureElement: vi.fn(),
+      },
+    };
+  });
+}
+
 beforeEach(() => {
-  vi.mocked(useChromeBodyData).mockImplementation((chrome, props) => ({
-    virtualization: {
-      enabled: false,
-      rows: props.source.rows.map((row, index) => ({
-        row,
-        index,
-        key: props.rowKey(row),
-      })),
-      paddingTop: 0,
-      paddingBottom: 0,
-    },
-    loadMoreRef: { current: null },
-    canLoadMore: !chrome.isPaged && !props.source.error,
-    virtualScrollRef: () => undefined,
-  }));
+  // Default: the real shell, so every non-virtual test runs untouched.
+  vi.mocked(useDataTableShell).mockImplementation(actualCore.useDataTableShell);
 });
 
 function Harness(props: {
@@ -238,24 +251,11 @@ describe("<DataTable> gaps", () => {
   });
 
   it("virtualizes desktop rows when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "b", name: "Bob" },
-            index: 1,
-            key: "b",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 48,
-        paddingBottom: 48,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockBodyData(
+      [{ row: { id: "b", name: "Bob" }, index: 1, key: "b" }],
+      48,
+      48
+    );
 
     render(
       <Harness
@@ -275,24 +275,11 @@ describe("<DataTable> gaps", () => {
   });
 
   it("virtualizes mobile cards when enabled", () => {
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [
-          {
-            row: { id: "c", name: "Charlie" },
-            index: 2,
-            key: "c",
-          } satisfies VirtualTableRow<Row>,
-        ],
-        paddingTop: 264,
-        paddingBottom: 0,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockBodyData(
+      [{ row: { id: "c", name: "Charlie" }, index: 2, key: "c" }],
+      264,
+      0
+    );
 
     render(
       <Harness

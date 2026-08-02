@@ -1,10 +1,5 @@
 /** Coverage gap-fill: drawer close, footer limit, page label, virtual rows, row select. */
-import type * as AdaptTableCore from "@adapttable/core";
-import {
-  createMemoryAdapter,
-  useChromeBodyData,
-  useFrontendData,
-} from "@adapttable/core";
+import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,20 +22,52 @@ const columns: ColumnDef<Row>[] = [
 ];
 const theme = createTheme();
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    useChromeBodyData: vi.fn(),
-  };
+import type * as AdapterModule from "@adapttable/core/adapter";
+import {
+  useDataTableShell,
+  type VirtualTableRow,
+} from "@adapttable/core/adapter";
+
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
+  return { ...actual, useDataTableShell: vi.fn(actual.useDataTableShell) };
 });
+
+const actualAdapter = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
+
+/**
+ * Force a controlled virtual window by overriding the shell's `tableProps` —
+ * the body renderers read `rowEntries` exactly as from a real virtualizer.
+ */
+function mockBodyData(
+  rows: VirtualTableRow<Row>[],
+  top: number,
+  bottom: number
+) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualAdapter.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: rows,
+        paddingTop: top,
+        paddingBottom: bottom,
+        measureElement: vi.fn(),
+      },
+    };
+  });
+}
 
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
-beforeEach(async () => {
-  const actual =
-    await vi.importActual<typeof AdaptTableCore>("@adapttable/core");
-  vi.mocked(useChromeBodyData).mockImplementation(actual.useChromeBodyData);
+beforeEach(() => {
+  // Default: the real shell, so non-virtual tests run untouched.
+  vi.mocked(useDataTableShell).mockImplementation(
+    actualAdapter.useDataTableShell
+  );
 });
 
 function mount(
@@ -378,18 +405,7 @@ describe("MUI coverage gaps", () => {
   it("virtualizes mobile cards with a trailing bottom-pad spacer", () => {
     // paddingBottom > 0 → the trailing `paddingBottom > 0 &&` spacer renders
     // (MobileCards true branch). paddingTop is 0 so only the bottom spacer.
-    vi.mocked(useChromeBodyData).mockReturnValue({
-      virtualization: {
-        enabled: true,
-        rows: [{ row: ROWS[1]!, index: 1, key: "b" }],
-        paddingTop: 0,
-        paddingBottom: 80,
-        measureElement: vi.fn(),
-      },
-      loadMoreRef: { current: null },
-      canLoadMore: true,
-      virtualScrollRef: () => undefined,
-    });
+    mockBodyData([{ row: ROWS[1]!, index: 1, key: "b" }], 0, 80);
     mount({ forceMobile: true, virtualize: true }, "infinite");
     const list = screen.getByRole("list");
     expect(within(list).getByText("Bob")).toBeInTheDocument();

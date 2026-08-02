@@ -1,18 +1,6 @@
-import {
-  ACTIONS_COLUMN_KEY,
-  isDeclarativeFilters,
-  makeExportCsvHandler,
-  type TableSource,
-  type TableVirtualization,
-  useChromeBodyData,
-  useChromeScrollReset,
-  useFilterTriggerToggle,
-  useTableChrome,
-  useTableData,
-} from "@adapttable/core";
-import { useMountStagger, useResolvedAdapter } from "@adapttable/core/adapter";
+import { makeExportCsvHandler, type TableSource } from "@adapttable/core";
+import { useDataTableShell, useMountStagger } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
-import { useRef, useState } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -47,38 +35,29 @@ type ResolvedDataTableProps<TRow> = Omit<
   filters?: ReactNode;
 };
 
+/** The shell's return shape, derived so no extra public type is needed. */
+type ShellResult<TRow> = ReturnType<typeof useDataTableShell<TRow>>;
+
 interface DataTableBodyProps<TRow> {
-  chrome: ReturnType<typeof useTableChrome<TRow>>;
+  chrome: ShellResult<TRow>["chrome"];
   props: Readonly<ResolvedDataTableProps<TRow>>;
   classNames: NonNullable<DataTableProps<TRow>["classNames"]>;
-  confirm: ReturnType<typeof useTableChrome<TRow>>["confirm"];
-  getRowId: ReturnType<typeof useTableChrome<TRow>>["getRowId"];
-  virtualization: TableVirtualization<TRow>;
-  virtualScrollRef: (node: HTMLElement | null) => void;
-  labels: ReturnType<typeof useTableChrome<TRow>>["table"]["labels"];
-  grouping: ReturnType<typeof useTableChrome<TRow>>["grouping"];
+  labels: ShellResult<TRow>["labels"];
+  /** The shell's kit-agnostic render bundle, spread straight onto the renderer. */
+  tableProps: ShellResult<TRow>["tableProps"];
 }
 
 function DataTableBody<TRow>({
   chrome,
   props,
   classNames,
-  confirm,
-  getRowId,
-  virtualization,
-  virtualScrollRef,
   labels,
-  grouping,
+  tableProps,
 }: Readonly<DataTableBodyProps<TRow>>): ReactElement {
-  // The injected actions column obeys the user column layout like any data
-  // column: hiding it strips `rowActions` before the renderers (desktop and
-  // cards alike), and an end-pin sticks it without needing a data pin.
-  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
-  const actionsPinned =
-    (rowActions?.length ?? 0) > 0 &&
-    chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] !== undefined;
+  // The shell already applied the column layout to the injected actions
+  // column: hidden strips `rowActions` before the renderers, an end pin sets
+  // `actionsPinned`.
+  const rowActions = tableProps.rowActions;
   if (chrome.body === "skeleton") {
     return (
       <>
@@ -120,39 +99,7 @@ function DataTableBody<TRow>({
     );
   }
   const Renderer = chrome.isMobile ? MobileCards : DesktopTable;
-  return (
-    <Renderer
-      table={chrome.table}
-      rows={chrome.editingRows}
-      rowActions={rowActions}
-      actionsPinned={actionsPinned}
-      confirm={confirm}
-      getRowId={getRowId}
-      classNames={classNames}
-      prefetch={props.prefetch}
-      onRowClick={props.onRowClick}
-      rowClassName={props.rowClassName}
-      renderRowDetail={props.renderRowDetail}
-      summaryRow={props.summaryRow}
-      expansion={chrome.detail?.expansion}
-      editing={chrome.editing}
-      grouping={grouping}
-      rowEntries={virtualization.enabled ? virtualization.rows : undefined}
-      paddingTop={virtualization.paddingTop}
-      paddingBottom={virtualization.paddingBottom}
-      measureElement={virtualization.measureElement}
-      stickyHeader={props.stickyHeader}
-      stickyTop={props.stickyTop}
-      pinOffset={chrome.columnLayout.pinOffset}
-      maxHeight={props.maxHeight}
-      virtualScrollRef={virtualScrollRef}
-      setWidth={
-        props.resizableColumns ? chrome.columnLayout.setWidth : undefined
-      }
-      columnWidths={chrome.columnLayout.state.widths}
-      resizeLabel={labels.resizeColumn}
-    />
-  );
+  return <Renderer {...tableProps} classNames={classNames} />;
 }
 
 /**
@@ -164,12 +111,6 @@ function DataTableBody<TRow>({
  */
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
-    data,
-    total,
-    loading,
-    onQueryChange,
-    urlAdapter,
-    urlKey,
     searchPlaceholder,
     sortByOptions,
     dir,
@@ -182,85 +123,44 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const density = props.density ?? "comfortable";
 
-  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
-  // so with `urlSync={false}` both share the same in-memory backend instead
-  // of the menu silently reading the real address bar.
-  const resolvedUrlAdapter = useResolvedAdapter(
-    props.urlSync === false ? undefined : urlAdapter,
-    props.urlSync !== false
-  );
-  // Resolve the data tier (prebuilt source > server > frontend) and the
-  // declarative-filter runtime (URL keys, chip labels, predicate).
-  const { source, runtime } = useTableData<TRow>({
-    locale: props.locale,
-    source: props.source,
-    data,
-    total,
-    loading,
-    error: props.error,
-    mode: props.mode,
-    onQueryChange,
-    urlAdapter: resolvedUrlAdapter,
-    // No `urlSync` here on purpose: the decision is already baked into WHICH
-    // adapter was resolved above (memory when off, the real one when on), and
-    // the tier hooks would otherwise apply it a second time — routing the
-    // active tier to a private store that saved views cannot see.
-    urlKey,
-    columns: props.columns,
-    filters: props.filters,
-    defaults: props.defaults,
-    paginationMode: props.paginationMode,
-  });
-
-  // The declarative array becomes the auto-built form; JSX passes through.
-  const autoForm =
-    runtime.defs.length > 0 ? (
-      <AutoFilterForm
-        defs={runtime.defs}
-        source={source}
-        classNames={classNames}
-        labels={props.labels}
-      />
-    ) : undefined;
-  // Column-level `filter` shorthands alone must still render the auto form —
-  // only explicit JSX takes over the drawing.
-  const filters =
-    isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoForm
-      : props.filters;
-
-  // Everything downstream sees the RESOLVED source and plain-JSX filters,
-  // with the runtime's chip labels under the caller's overrides.
+  // The whole shared orchestration — data tier, filter runtime, chrome,
+  // scroll reset, body windowing — lives in core's shell; this file renders
+  // only semantic markup with class hooks over it.
+  const shell = useDataTableShell<TRow>(props, (defs, source) => (
+    <AutoFilterForm
+      defs={defs}
+      source={source}
+      classNames={classNames}
+      labels={props.labels}
+    />
+  ));
+  const {
+    chrome,
+    table,
+    labels,
+    filtersNode: filters,
+    filtersOpen,
+    setFiltersOpen,
+    filtersTrigger,
+    rootRef,
+    canLoadMore,
+    tableProps,
+  } = shell;
+  // Everything rendered below reads the chrome's VIEW facade — identical to
+  // the raw source except under grouping, where it presents the full set.
+  const viewSource = shell.source;
   const chromeProps: ResolvedDataTableProps<TRow> = {
     ...props,
-    source,
+    source: viewSource,
     filters,
-    filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
   };
-
-  const chrome = useTableChrome<TRow>(chromeProps);
-  const { table, confirm, getRowId } = chrome;
-  // Everything rendered below reads the chrome's VIEW facade — identical to
-  // `source` except under grouping, where it presents the full rendered set.
-  const viewSource = chrome.source;
-  const { labels } = table;
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
-  const rootRef = useRef<HTMLDivElement>(null);
-  useChromeScrollReset(rootRef, chrome, chromeProps);
   useMountStagger(rootRef, [viewSource.rows.length, chrome.isMobile], {
     enabled: animate,
   });
-  const bodyData = useChromeBodyData(chrome, chromeProps);
-  const { virtualization, groupingEntries, canLoadMore } = bodyData;
-  const grouping =
-    chrome.grouping && groupingEntries
-      ? { ...chrome.grouping, entries: groupingEntries }
-      : chrome.grouping;
   // React 18's `ref` attribute rejects core's `RefObject<HTMLDivElement |
   // null>` through interface variance; the same object viewed through its
   // structural shape attaches fine.
-  const loadMoreRef: RefObject<HTMLDivElement | null> = bodyData.loadMoreRef;
+  const loadMoreRef: RefObject<HTMLDivElement | null> = shell.loadMoreRef;
   const searchProps = table.getSearchInputProps(
     searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
@@ -363,11 +263,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               aria-label={labels.sortBy}
               data-adapttable-part="sort-select"
               className={classNames.sortSelect}
-              value={source.sortBy ?? ""}
+              value={viewSource.sortBy ?? ""}
               onChange={(e) =>
-                source.setSort(
+                viewSource.setSort(
                   e.currentTarget.value || undefined,
-                  source.sortDir ?? "asc"
+                  viewSource.sortDir ?? "asc"
                 )
               }
             >
@@ -404,8 +304,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           // own props (explicit option values still win).
           <SavedViewsMenu
             options={{
-              urlAdapter: resolvedUrlAdapter,
-              urlKey,
+              urlAdapter: shell.urlAdapter,
+              urlKey: props.urlKey,
               ...props.savedViews,
             }}
             labels={labels}
@@ -466,7 +366,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           selection={table.selection}
           total={viewSource.total}
           bulkActions={bulkActions}
-          confirm={confirm}
+          confirm={chrome.confirm}
           labels={labels}
           classNames={classNames}
         />
@@ -496,12 +396,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           chrome={chrome}
           props={chromeProps}
           classNames={classNames}
-          confirm={confirm}
-          getRowId={getRowId}
-          virtualization={virtualization}
-          virtualScrollRef={bodyData.virtualScrollRef}
           labels={labels}
-          grouping={grouping}
+          tableProps={tableProps}
         />
       )}
 

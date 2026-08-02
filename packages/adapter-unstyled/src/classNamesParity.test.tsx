@@ -3,28 +3,62 @@
  * class of its camelCased key, and every key's class shows up in at least
  * one rendered state — the two surfaces can never drift apart again.
  */
-import type * as CoreModule from "@adapttable/core";
 import {
   createMemoryAdapter,
   type FilterDef,
-  useChromeBodyData,
   useFrontendData,
 } from "@adapttable/core";
+import type * as AdapterModule from "@adapttable/core/adapter";
+import { useDataTableShell } from "@adapttable/core/adapter";
 import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef, DataTableClassNames } from "./index";
 
-vi.mock("@adapttable/core", async (importOriginal) => {
-  const actual = await importOriginal<typeof CoreModule>();
-  return { ...actual, useChromeBodyData: vi.fn(actual.useChromeBodyData) };
+vi.mock("@adapttable/core/adapter", async (importOriginal) => {
+  const actual = await importOriginal<typeof AdapterModule>();
+  return { ...actual, useDataTableShell: vi.fn(actual.useDataTableShell) };
 });
 
-const actualCore = await vi.importActual<typeof CoreModule>("@adapttable/core");
+const actualAdapter = await vi.importActual<typeof AdapterModule>(
+  "@adapttable/core/adapter"
+);
+
+/**
+ * Force a controlled virtual window by overriding the shell's `tableProps` —
+ * the renderers read `rowEntries` exactly as from a real virtualizer.
+ */
+function mockVirtualWindow(top: number, bottom: number, indices = [0, 1]) {
+  vi.mocked(useDataTableShell).mockImplementation((props, render) => {
+    const real = actualAdapter.useDataTableShell(props, render);
+    return {
+      ...real,
+      tableProps: {
+        ...real.tableProps,
+        rowEntries: indices
+          .filter((index) => index < real.tableProps.rows.length)
+          .map((index) => ({
+            row: real.tableProps.rows[index]!,
+            index,
+            key: String(real.tableProps.getRowId(real.tableProps.rows[index])),
+          })),
+        paddingTop: top,
+        paddingBottom: bottom,
+        measureElement: () => undefined,
+      },
+    };
+  });
+}
+
+function restoreRealShell() {
+  vi.mocked(useDataTableShell).mockImplementation(
+    actualAdapter.useDataTableShell
+  );
+}
 
 beforeEach(() => {
-  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
+  restoreRealShell();
 });
 
 interface Row {
@@ -263,27 +297,14 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   mount({ data: [], url: "q=zzz" }).unmount();
 
   // Virtualized window → spacers (desktop rows and mobile cards).
-  vi.mocked(useChromeBodyData).mockImplementation((chrome) => ({
-    virtualization: {
-      enabled: true,
-      rows: chrome.editingRows
-        .slice(0, 2)
-        .map((row, index) => ({ row, index, key: String(index) })),
-      paddingTop: 40,
-      paddingBottom: 40,
-      measureElement: () => undefined,
-    },
-    loadMoreRef: { current: null },
-    canLoadMore: false,
-    virtualScrollRef: () => undefined,
-  }));
+  mockVirtualWindow(40, 40);
   mount({ mode: "infinite", override: { virtualize: true } }).unmount();
   mount({
     mode: "infinite",
     isMobile: true,
     override: { virtualize: true },
   }).unmount();
-  vi.mocked(useChromeBodyData).mockImplementation(actualCore.useChromeBodyData);
+  restoreRealShell();
 
   return seen;
 }
