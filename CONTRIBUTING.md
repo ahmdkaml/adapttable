@@ -22,12 +22,53 @@ packages/
   adapter-chakra/   @adapttable/chakra
   adapter-antd/     @adapttable/antd       Ant Design
   adapter-radix/    @adapttable/radix      Radix Themes
+  adapter-base-ui/  @adapttable/base-ui    Base UI
   adapter-shadcn/   @adapttable/shadcn     shadcn/ui (unstyled + shadcn preset)
   adapter-unstyled/ @adapttable/unstyled   Tailwind / bring your own CSS
   i18n/             @adapttable/i18n
   cli/              @adapttable/cli
 examples/           one runnable example per adapter
 ```
+
+## Your first PR
+
+**Every check runs in CI on your pull request** — quality, tests with
+coverage, packaging, Playwright end-to-end, peer-dependency floors, a
+packed-consumer harness, a React version matrix, and CodeQL. Nothing here is
+advisory.
+
+Most of that is reproducible locally, so you can catch failures before you
+push rather than in review:
+
+```bash
+pnpm check
+```
+
+That runs, in order: `format:check → lint → lint:root → check:readmes →
+check:docsurface → typecheck → test:coverage → build → publint → smoke:dist`.
+
+**Green locally is not automatically green in CI.** CI also runs the e2e
+suite, the peer floors, the consumer harness, the React matrix and CodeQL,
+which are not part of the local command. Those are the ones most likely to
+surprise you — if CI fails on something you could not run locally, that is
+expected, and it is fine to ask for help on the PR.
+
+A few things that trip people up the first time:
+
+- **`pnpm format` fixes formatting failures.** `format:check` only reports
+  them; it never rewrites your files.
+- **Coverage thresholds are enforced per package** (lines ≥ 95%, functions
+  ≥ 85%). A new branch of logic needs a test in the same PR — the build fails
+  otherwise, and that is intentional, not a reviewer preference.
+- **We do not merge suppressions.** No `eslint-disable`, `@ts-ignore`,
+  `@ts-expect-error`, or coverage exclusions to get a check green. If a rule
+  looks wrong for your case, say so in the PR and we will sort it out together.
+- **User-facing changes need a changeset** (`pnpm changeset`). See
+  [Changesets](#changesets) below — if you are unsure, add one; a `patch` is
+  always a safe default.
+
+Small, focused PRs get reviewed fastest. If you are unsure whether an idea
+fits before you build it, open an issue first and ask.
 
 ## Ground rules
 
