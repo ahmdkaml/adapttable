@@ -2,7 +2,7 @@
 
 # AdaptTable
 
-### The headless React data table that works with **any** UI kit — batteries-included adapters for Mantine, MUI, Chakra, Ant Design, Radix, and Base UI, plus an unstyled path for Tailwind & shadcn/ui.
+### The headless React data table that works with **any** UI kit — batteries-included adapters for Mantine, MUI, Chakra, Ant Design, Radix, Base UI, and shadcn/ui, plus an unstyled path for Tailwind & your own CSS.
 
 [![CI](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml/badge.svg)](https://github.com/orwa-mahmoud/adapttable/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@adapttable/core.svg)](https://www.npmjs.com/package/@adapttable/core)
