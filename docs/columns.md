@@ -1,4 +1,4 @@
-# React table columns — ColumnDef, sort, pin, custom cells
+# React table columns — ColumnDef, accessors, sorting, pinning & custom cells
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is the starter's whole `columns` array in `src/App.tsx`; edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
