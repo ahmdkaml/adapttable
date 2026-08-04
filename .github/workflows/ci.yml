@@ -57,8 +57,16 @@ jobs:
             echo "full=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if printf '%s\n' "$diff_files" \
-            | grep -qvE '^(docs/|llms.*\.txt$|README\.md$|packages/[^/]+/README\.md$|\.github/|\.changeset/|ai_docs/)'; then
+          # The root README is a TEST INPUT: packages/cli/src/kits-docs.test.ts
+          # reads it and asserts every scaffoldable kit appears in the table.
+          # That guard lives in test:coverage, so a README-only diff must run
+          # the full gate — allowlisting it would skip the check that exists to
+          # catch exactly that drift.
+          if printf '%s\n' "$diff_files" | grep -qxE 'README\.md'; then
+            echo "Root README changed — it is a test input, running the full gate."
+            echo "full=true" >> "$GITHUB_OUTPUT"
+          elif printf '%s\n' "$diff_files" \
+            | grep -qvE '^(docs/|.*\.md$|llms.*\.txt$|.*/robots\.txt$|\.github/|\.changeset/|ai_docs/)'; then
             echo "full=true" >> "$GITHUB_OUTPUT"
           else
             echo "full=false" >> "$GITHUB_OUTPUT"
