@@ -1,4 +1,4 @@
-# React table filters — chips, operators, URL-synced state
+# React table filtering — multi-condition, chips, operators & URL-synced
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (declarative `filter` widgets on four columns); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 

@@ -1,4 +1,4 @@
-# mantine-datatable alternative — same Mantine, more built-in
+# Migrate from mantine-datatable to AdaptTable — more features, same Mantine look
 
 ▶ **See it before you install:** [the live demo running on real Mantine](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mantine) — same components you already use, nothing to set up.
 

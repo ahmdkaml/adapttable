@@ -1,4 +1,4 @@
-# MUI X DataGrid alternative — v8 breaking changes, Pro free
+# Migrate from MUI X DataGrid to AdaptTable — v8 breaking changes mapped, Pro features free (MIT)
 
 ▶ **See it before you install:** [the live demo running on real Material UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) — same components you already use, nothing to set up.
 
