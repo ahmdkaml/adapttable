@@ -3,3 +3,38 @@ packages:
   - "apps/*"
   - "examples"
   - "starters/*"
+
+# pnpm reads these here, NOT from the "pnpm" field in package.json — that field
+# is ignored and pnpm warns about it on every command.
+onlyBuiltDependencies:
+  - esbuild
+
+peerDependencyRules:
+  allowedVersions:
+    react: "18 || 19"
+    react-dom: "18 || 19"
+
+# Transitive dependencies pinned by their parents' ranges, forced to patched
+# versions. None reach a published package — every @adapttable/* package ships
+# only @adapttable/* deps plus react-compiler-runtime and
+# @tanstack/react-virtual — so these are build/dev tooling only.
+overrides:
+  "eslint-plugin-sonarjs>minimatch": "^10.2.3"
+  # CRLF injection, cache-control disclosure, cookie injection, response
+  # desync, private-cache crash
+  undici: "^7.29.0"
+  # host confusion via backslash authority introducer
+  fast-uri: "^3.1.5"
+  # sourceMappingURL path traversal → arbitrary .map disclosure
+  postcss: "^8.5.23"
+  # removeScripts plugin left executable scripts intact
+  svgo: "^4.0.2"
+  # inherited libvips CVEs (2026-33327/33328/35590/35591)
+  sharp: "^0.35.0"
+  # merge-key chains force quadratic CPU; both majors are in the tree
+  "js-yaml@3": "^3.15.0"
+  "js-yaml@4": "^4.3.0"
+  # DoS via exponential-time expansion of consecutive non-expanding {} groups;
+  # both majors are in the tree (glob/minimatch transitives)
+  "brace-expansion@1": "^1.1.16"
+  "brace-expansion@5": "^5.0.7"

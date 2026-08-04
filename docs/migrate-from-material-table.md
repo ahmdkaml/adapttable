@@ -1,4 +1,4 @@
-# material-table alternative — modern MUI, still MIT
+# Migrate from material-table to AdaptTable — maintained drop-in for MUI
 
 ▶ **See it before you install:** [the live demo running on real Material UI](https://orwa-mahmoud.github.io/adapttable/demo/?kit=mui) — same components material-table wraps, nothing to set up.
 
