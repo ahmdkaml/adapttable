@@ -2,7 +2,41 @@ import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+const GA_MEASUREMENT_ID = "G-FT8LY7Z15Y";
+
+/**
+ * Inject Google Analytics (GA4) into every HTML entry.
+ *
+ * The showcase is a multi-page app, so this lives here rather than being
+ * pasted into each `index.html` — one definition covers all seven pages and
+ * any page added later. The docs site injects the same tag through Starlight's
+ * `head` config.
+ */
+const googleAnalytics = (): Plugin => ({
+  name: "adapttable-google-analytics",
+  transformIndexHtml: () => [
+    {
+      tag: "script",
+      attrs: {
+        async: true,
+        src: `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`,
+      },
+      injectTo: "head",
+    },
+    {
+      tag: "script",
+      children: [
+        "window.dataLayer = window.dataLayer || [];",
+        "function gtag(){dataLayer.push(arguments);}",
+        "gtag('js', new Date());",
+        `gtag('config', '${GA_MEASUREMENT_ID}');`,
+      ].join("\n"),
+      injectTo: "head",
+    },
+  ],
+});
 
 // Resolve each @adapttable/* package to its TypeScript source so the showcase
 // always reflects the current library (and hot-reloads). The adapters are still
@@ -16,7 +50,7 @@ const page = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), googleAnalytics()],
   // Multi-page app: each demo page is its own static HTML entry, linked
   // with plain anchors — no client router, no GitHub Pages 404 tricks.
   build: {

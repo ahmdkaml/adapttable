@@ -55,6 +55,25 @@ export default defineConfig({
             "data-cf-beacon": '{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}',
           },
         },
+        // Google Analytics (GA4). Runs alongside the Cloudflare beacon: the
+        // beacon stays the cookieless baseline, GA4 adds funnel and event
+        // reporting.
+        {
+          tag: "script",
+          attrs: {
+            async: true,
+            src: "https://www.googletagmanager.com/gtag/js?id=G-FT8LY7Z15Y",
+          },
+        },
+        {
+          tag: "script",
+          content: [
+            "window.dataLayer = window.dataLayer || [];",
+            "function gtag(){dataLayer.push(arguments);}",
+            "gtag('js', new Date());",
+            "gtag('config', 'G-FT8LY7Z15Y');",
+          ].join("\n"),
+        },
       ],
       customCss: ["./src/styles/custom.css"],
       social: [
