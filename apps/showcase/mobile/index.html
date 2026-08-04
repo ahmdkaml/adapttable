@@ -38,9 +38,96 @@
           document.documentElement.dataset.theme = "dark";
       } catch {}
     </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.01em;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Replaced by React on mount — see the note in the showcase root
+         index.html for why the served HTML carries content at all. -->
+    <div id="root">
+      <main class="at-fallback">
+        <h1>AdaptTable demo — automatic mobile card layout</h1>
+        <p>
+          Below a breakpoint the same table stops being a table. Rows become
+          cards, the pager becomes infinite scroll, and every other behaviour
+          carries over untouched: the same filters, the same selection and
+          bulk actions, the same URL-synced state. There is no second
+          component to build and no mobile-only prop tree to maintain.
+        </p>
+        <h2>What changes, and what does not</h2>
+        <ul>
+          <li>
+            Each row renders as a card with a title, subtitle and the fields
+            you mark as summary columns; the rest collapse behind a details
+            toggle.
+          </li>
+          <li>
+            Selection, bulk actions and row expansion work exactly as they do
+            in the table layout.
+          </li>
+          <li>
+            Pagination becomes infinite scroll, so a thumb never has to find a
+            page control.
+          </li>
+          <li>
+            The switch is automatic by viewport, and can be forced either way
+            with <code>forceMobile</code> for testing.
+          </li>
+        </ul>
+        <p>
+          Documentation: <a href="/adapttable/mobile/">mobile cards</a>,
+          <a href="/adapttable/selection/">selection</a>,
+          <a href="/adapttable/row-expansion/">row expansion</a>,
+          <a href="/adapttable/pagination/">pagination</a>. Other demos:
+          <a href="/adapttable/demo/">the main showcase</a>,
+          <a href="/adapttable/demo/scale/">virtualization</a>.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/entry-mobile.tsx"></script>
   </body>
 </html>

@@ -38,9 +38,92 @@
           document.documentElement.dataset.theme = "dark";
       } catch {}
     </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.01em;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Replaced by React on mount — see the note in the showcase root
+         index.html for why the served HTML carries content at all. -->
+    <div id="root">
+      <main class="at-fallback">
+        <h1>AdaptTable demo — inline cell editing</h1>
+        <p>
+          Edit in place, with the editor each kit would use natively: a text
+          input, a number field, a select, a date picker. Editing composes
+          with everything else rather than replacing it — an edited row stays
+          selected, stays filtered, and stays where sorting put it until the
+          value actually changes.
+        </p>
+        <h2>What you can drive here</h2>
+        <ul>
+          <li>
+            Click or keyboard into a cell, commit with Enter, abandon with
+            Escape.
+          </li>
+          <li>
+            Per-column editors and validation, with the invalid state rendered
+            by the kit's own field components.
+          </li>
+          <li>Editing inside grouped rows, including rows off the current page.</li>
+          <li>
+            Async commits, so a save can fail and roll the cell back without
+            losing the rest of the edit session.
+          </li>
+        </ul>
+        <p>
+          Documentation:
+          <a href="/adapttable/cell-editing/">inline cell editing</a>,
+          <a href="/adapttable/row-grouping/">row grouping</a>,
+          <a href="/adapttable/api/">API reference</a>. Other demos:
+          <a href="/adapttable/demo/">the main showcase</a>,
+          <a href="/adapttable/demo/grouping/">row grouping</a>.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/entry-editing.tsx"></script>
   </body>
 </html>

@@ -89,9 +89,105 @@
           document.documentElement.dataset.theme = "dark";
       } catch {}
     </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.01em;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      `createRoot` replaces these children on mount, so nobody with
+      JavaScript ever sees them. They exist because the showcase is
+      client-rendered: without them the served HTML is an empty shell, which
+      is what a crawler indexes and what anyone without JavaScript gets.
+    -->
+    <div id="root">
+      <main class="at-fallback">
+        <h1>AdaptTable — live demo, every UI kit</h1>
+        <p>
+          One dataset, one API, eight renderings. This demo flips the same
+          table between Mantine, MUI, Chakra UI, Ant Design, Radix, Base UI,
+          Tailwind/shadcn and an unstyled build without changing a line of
+          table code — every kit mounts its own native components, never a
+          themed imitation of another.
+        </p>
+        <h2>What you can drive here</h2>
+        <ul>
+          <li>
+            Declarative filters in a popover or drawer, with active-filter
+            chips and numeric, date and status editors.
+          </li>
+          <li>Multi-column sorting, pagination, and row selection with bulk actions.</li>
+          <li>
+            Column management — show and hide, reorder, pin left or right,
+            resize, and switch density.
+          </li>
+          <li>State synced to the URL, so any view can be copied and shared.</li>
+          <li>Dark mode, and a responsive card layout on narrow screens.</li>
+        </ul>
+        <h2>The other demos</h2>
+        <ul>
+          <li><a href="/adapttable/demo/columns/">Column management</a></li>
+          <li><a href="/adapttable/demo/editing/">Inline cell editing</a></li>
+          <li><a href="/adapttable/demo/grouping/">Row grouping</a></li>
+          <li><a href="/adapttable/demo/mobile/">Mobile cards</a></li>
+          <li><a href="/adapttable/demo/rtl/">Arabic and RTL</a></li>
+          <li><a href="/adapttable/demo/scale/">50,000-row virtualization</a></li>
+        </ul>
+        <p>
+          Documentation:
+          <a href="/adapttable/getting-started/">getting started</a>,
+          <a href="/adapttable/concepts/">concepts</a>,
+          <a href="/adapttable/columns/">columns</a>,
+          <a href="/adapttable/filtering/">filtering</a>,
+          <a href="/adapttable/sorting/">sorting</a>,
+          <a href="/adapttable/selection/">selection</a>,
+          <a href="/adapttable/api/">API reference</a>.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
