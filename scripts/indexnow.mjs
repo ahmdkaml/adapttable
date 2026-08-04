@@ -24,9 +24,14 @@ const KEY = "b2947bf41182ff1cb20adfc0232069e3";
 const HOST = "orwa-mahmoud.github.io";
 
 /**
- * The key lives at the host root rather than under /adapttable/, so it
- * authorises every project served from this domain. IndexNow requires the
- * key file to sit at or above every submitted URL.
+ * The key lives at the host root so it authorises every project served from
+ * this domain — IndexNow requires the key file to sit at or above every
+ * submitted URL.
+ *
+ * An identical copy ships at /adapttable/ via apps/docs/public/. The site is
+ * registered in Bing Webmaster Tools as that subdirectory, and its per-site
+ * views look for the key at the registered root. The protocol allows many key
+ * files per host, so both locations serve the same value.
  */
 const KEY_LOCATION = `https://${HOST}/${KEY}.txt`;
 
