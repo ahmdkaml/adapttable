@@ -1,4 +1,4 @@
-# AdaptTable vs TanStack, ag-Grid & MUI X DataGrid
+# React data table comparison 2026 — AdaptTable vs AG Grid, TanStack Table & MUI X
 
 How AdaptTable compares to popular React table libraries — scoped to what
 each ships **built-in**. Every one of these projects is excellent at what it

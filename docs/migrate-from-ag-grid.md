@@ -1,4 +1,4 @@
-# ag-Grid alternative for CRUD — 300 kB lighter, MIT
+# Migrate from AG Grid to AdaptTable — CRUD tables, 300 kB lighter, MIT
 
 ▶ **See it before you install:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — flip between Mantine, MUI, Chakra, Ant Design, Radix, Base UI, shadcn and Tailwind on the same data.
 
