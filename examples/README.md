@@ -12,7 +12,7 @@ complete, copy-pasteable React component — wrap it in your kit's provider
 | [mantine-columns.tsx](./mantine-columns.tsx)               | `@adapttable/mantine`  | Column menu, reorder, pin, resize              |
 | [mantine-server.tsx](./mantine-server.tsx)                 | `@adapttable/mantine`  | Server data via `onQueryChange` (no library)   |
 | [mantine-power.tsx](./mantine-power.tsx)                   | `@adapttable/mantine`  | Groups, row details, summary, multi-sort       |
-| [mui-backend.tsx](./mui-backend.tsx)                       | `@adapttable/mui`      | Server pagination with TanStack Query          |
+| [mui-query-source.tsx](./mui-query-source.tsx)             | `@adapttable/mui`      | Server pagination with TanStack Query          |
 | [chakra-selection.tsx](./chakra-selection.tsx)             | `@adapttable/chakra`   | Selection + bulk actions                       |
 | [antd-basic.tsx](./antd-basic.tsx)                         | `@adapttable/antd`     | AntD table, dark mode, row actions             |
 | [radix-basic.tsx](./radix-basic.tsx)                       | `@adapttable/radix`    | Radix Themes: theme-driven appearance          |
