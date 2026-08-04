@@ -16,6 +16,12 @@ const GA_MEASUREMENT_ID = "G-FT8LY7Z15Y";
  */
 const googleAnalytics = (): Plugin => ({
   name: "adapttable-google-analytics",
+  // Production builds only. `transformIndexHtml` runs in dev too, and the
+  // Playwright suite drives the dev server — every e2e run reported real
+  // sessions against `localhost`, 332 of them in one day. Cloudflare drops
+  // those because its beacon is bound to a hostname; GA4 accepts any host, so
+  // it counted CI as traffic.
+  apply: "build",
   transformIndexHtml: () => [
     {
       tag: "script",

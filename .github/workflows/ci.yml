@@ -22,7 +22,13 @@ jobs:
   # One cheap job decides what the parallel jobs below actually do:
   #   full         — the diff touches package code, so the package gate must run
   #   dedupe       — a main push whose tree an earlier PR run already verified
-  #   run-packages — full && !dedupe, the single condition heavy jobs key on
+  #   run-packages — full && !dedupe. Gates work that ANY code change can
+  #     break: lint, lint:root, typecheck.
+  #   packages-changed — packages/, the lockfile or the harness script. Gates
+  #     work only a PACKAGE change can break: unit tests, the packed build,
+  #     publint, the dist smoke test and the React matrix. `apps/` imports
+  #     from `packages/` and never the reverse, so an app-only diff cannot
+  #     affect them — running them there tests nothing and costs four runners.
   # Every decision fails open: any error → full gate.
   changes:
     name: Changes
@@ -187,7 +193,7 @@ jobs:
   tests:
     name: Tests (coverage)
     needs: changes
-    if: needs.changes.outputs.run-packages == 'true'
+    if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -221,7 +227,7 @@ jobs:
   package:
     name: Package (build · publint · smoke)
     needs: changes
-    if: needs.changes.outputs.run-packages == 'true'
+    if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -379,25 +385,25 @@ jobs:
         react: ["18.3.1", "19.0.0", "19.2.7"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build the probed packages
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
         run: pnpm turbo run build --filter=@adapttable/unstyled...
 
       - name: Smoke-test against React ${{ matrix.react }}
-        if: needs.changes.outputs.run-packages == 'true'
+        if: needs.changes.outputs.packages-changed == 'true'
         run: pnpm react:matrix ${{ matrix.react }}

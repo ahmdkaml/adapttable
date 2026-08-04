@@ -1,6 +1,11 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
+// Starlight injects `head` entries in dev as well as build, so analytics must
+// be gated or local work reports itself as real traffic. `import.meta.env.PROD`
+// is not available while this config is evaluated, so read the CLI command.
+const IS_BUILD = process.argv.includes("build");
+
 // https://astro.build/config
 export default defineConfig({
   site: "https://orwa-mahmoud.github.io",
@@ -55,25 +60,31 @@ export default defineConfig({
             "data-cf-beacon": '{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}',
           },
         },
-        // Google Analytics (GA4). Runs alongside the Cloudflare beacon: the
-        // beacon stays the cookieless baseline, GA4 adds funnel and event
-        // reporting.
-        {
-          tag: "script",
-          attrs: {
-            async: true,
-            src: "https://www.googletagmanager.com/gtag/js?id=G-FT8LY7Z15Y",
-          },
-        },
-        {
-          tag: "script",
-          content: [
-            "window.dataLayer = window.dataLayer || [];",
-            "function gtag(){dataLayer.push(arguments);}",
-            "gtag('js', new Date());",
-            "gtag('config', 'G-FT8LY7Z15Y');",
-          ].join("\n"),
-        },
+        // Google Analytics (GA4), production builds only. Runs alongside the
+        // Cloudflare beacon: the beacon stays the cookieless baseline, GA4
+        // adds funnel and event reporting. Unlike the beacon — which is bound
+        // to a hostname and drops anything that is not the real site — GA4
+        // accepts hits from any host, so a dev server would report itself.
+        ...(IS_BUILD
+          ? [
+              {
+                tag: "script",
+                attrs: {
+                  async: true,
+                  src: "https://www.googletagmanager.com/gtag/js?id=G-FT8LY7Z15Y",
+                },
+              },
+              {
+                tag: "script",
+                content: [
+                  "window.dataLayer = window.dataLayer || [];",
+                  "function gtag(){dataLayer.push(arguments);}",
+                  "gtag('js', new Date());",
+                  "gtag('config', 'G-FT8LY7Z15Y');",
+                ].join("\n"),
+              },
+            ]
+          : []),
       ],
       customCss: ["./src/styles/custom.css"],
       social: [
