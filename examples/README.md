@@ -16,6 +16,7 @@ complete, copy-pasteable React component — wrap it in your kit's provider
 | [chakra-selection.tsx](./chakra-selection.tsx)             | `@adapttable/chakra`   | Selection + bulk actions                       |
 | [antd-basic.tsx](./antd-basic.tsx)                         | `@adapttable/antd`     | AntD table, dark mode, row actions             |
 | [radix-basic.tsx](./radix-basic.tsx)                       | `@adapttable/radix`    | Radix Themes: theme-driven appearance          |
+| [base-ui-basic.tsx](./base-ui-basic.tsx)                   | `@adapttable/base-ui`  | Base UI primitives, self-injected styles       |
 | [shadcn-basic.tsx](./shadcn-basic.tsx)                     | `@adapttable/shadcn`   | shadcn/ui tokens, no provider                  |
 | [unstyled-tailwind.tsx](./unstyled-tailwind.tsx)           | `@adapttable/unstyled` | Tailwind classes + RTL/i18n                    |
 | [headless.tsx](./headless.tsx)                             | `@adapttable/core`     | Fully custom markup via prop-getters           |
