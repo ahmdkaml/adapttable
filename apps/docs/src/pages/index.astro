@@ -154,6 +154,22 @@ const JSON_LD = JSON.stringify({
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
     ></script>
+    <!--
+      Google Analytics (GA4). This landing page is a standalone Astro page, so
+      Starlight's `head` config in astro.config.mjs does not reach it — the tag
+      is repeated here on purpose. Change the measurement ID in both places.
+    -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-FT8LY7Z15Y"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-FT8LY7Z15Y");
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
