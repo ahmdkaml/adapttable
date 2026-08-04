@@ -24,20 +24,26 @@ const TITLES = {
   "getting-started.md":
     "Get started with AdaptTable — React table for your UI kit",
   "concepts.md": "AdaptTable concepts — headless core, TableSource, adapters",
-  "columns.md": "React table columns — ColumnDef, sort, pin, custom cells",
-  "sorting.md": "React table sorting — single, multi-column, server-side",
-  "filtering.md": "React table filters — chips, operators, URL-synced state",
+  "columns.md":
+    "React table columns — ColumnDef, accessors, sorting, pinning & custom cells",
+  "sorting.md": "React table sorting — multi-column, server-side & URL-synced",
+  "filtering.md":
+    "React table filtering — multi-condition, chips, operators & URL-synced",
   "pagination.md":
-    "React table pagination — paged, infinite scroll, auto by device",
-  "selection.md": "React table row selection & bulk actions",
-  "row-expansion.md": "React table expandable rows & detail panels",
-  "cell-editing.md": "React table inline cell editing — opt-in onCellEdit",
+    "React table pagination — paged, infinite scroll & auto by device",
+  "selection.md":
+    "React table row selection & bulk actions — checkbox, keyboard, URL-synced",
+  "row-expansion.md":
+    "React table expandable rows — detail panels with keyboard support",
+  "cell-editing.md":
+    "React table inline cell editing — edit rows in place, validate & commit",
   "row-grouping.md":
-    "React table row grouping — single-level groupBy, per-group aggregates",
+    "React table row grouping — group rows with aggregates & expand/collapse",
   "column-management.md":
-    "React table column management — show/hide, reorder, pin, resize",
+    "React table column management — show, hide, reorder, pin & resize",
   "saved-views.md": "React table saved views — shareable named layouts",
-  "virtualization.md": "React table virtualization — 10k rows, ~24 DOM nodes",
+  "virtualization.md":
+    "React table virtualization — 50,000 rows, ~24 DOM nodes",
   "mobile.md": "Responsive React table — automatic mobile card layout",
   "data-tiers.md": "Client & server React table data — one TableSource API",
   "customization.md":
@@ -46,19 +52,20 @@ const TITLES = {
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew, 17 locales",
   "api.md": "AdaptTable API reference — DataTable, columns, hooks",
   "faq.md": "AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR",
-  "comparison.md": "AdaptTable vs TanStack, ag-Grid & MUI X DataGrid",
+  "comparison.md":
+    "React data table comparison 2026 — AdaptTable vs AG Grid, TanStack Table & MUI X",
   "migrate-from-mantine-datatable.md":
-    "mantine-datatable alternative — same Mantine, more built-in",
+    "Migrate from mantine-datatable to AdaptTable — more features, same Mantine look",
   "migrate-from-mui-x-datagrid.md":
-    "MUI X DataGrid alternative — v8 breaking changes, Pro free",
+    "Migrate from MUI X DataGrid to AdaptTable — v8 breaking changes mapped, Pro features free (MIT)",
   "migrate-from-tanstack-table.md":
-    "TanStack Table alternative — headless + ready UI kits",
+    "Migrate from TanStack Table to AdaptTable — built-in UI, same headless control",
   "migrate-from-mui-datatables.md":
-    "mui-datatables alternative — maintained, MUI v6+, React 19",
+    "Migrate from mui-datatables to AdaptTable — maintained, MUI v6+, React 19 ready",
   "migrate-from-material-table.md":
-    "material-table alternative — modern MUI, still MIT",
+    "Migrate from material-table to AdaptTable — maintained drop-in for MUI",
   "migrate-from-ag-grid.md":
-    "ag-Grid alternative for CRUD — 300 kB lighter, MIT",
+    "Migrate from AG Grid to AdaptTable — CRUD tables, 300 kB lighter, MIT",
   "versioning.md": "AdaptTable versioning & stability policy",
 };
 
