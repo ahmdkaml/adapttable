@@ -34,3 +34,7 @@ overrides:
   # merge-key chains force quadratic CPU; both majors are in the tree
   "js-yaml@3": "^3.15.0"
   "js-yaml@4": "^4.3.0"
+  # DoS via exponential-time expansion of consecutive non-expanding {} groups;
+  # both majors are in the tree (glob/minimatch transitives)
+  "brace-expansion@1": "^1.1.16"
+  "brace-expansion@5": "^5.0.7"
