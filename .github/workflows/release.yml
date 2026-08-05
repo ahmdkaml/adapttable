@@ -8,10 +8,9 @@ on:
 
 concurrency: release-${{ github.ref }}
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+# Nothing at this level: a token declared here reaches every job, including
+# ones that only read. Each job below asks for what it needs.
+permissions: {}
 
 jobs:
   # Skip cleanly until an NPM_TOKEN secret is configured, so pushes don't fail
@@ -19,6 +18,9 @@ jobs:
   # Secrets → Actions → NPM_TOKEN) and this activates automatically.
   guard:
     runs-on: ubuntu-latest
+    # Reads one secret's presence and writes a boolean to an output. It needs
+    # no access to the repository at all.
+    permissions: {}
     outputs:
       enabled: ${{ steps.check.outputs.enabled }}
     steps:
@@ -30,6 +32,12 @@ jobs:
     if: ${{ needs.guard.outputs.enabled == 'true' }}
     name: Version or Publish
     runs-on: ubuntu-latest
+    # contents: tag and commit the version bump · pull-requests: open the
+    # "Version Packages" PR · id-token: npm provenance on publish.
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
