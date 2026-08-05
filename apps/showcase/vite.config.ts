@@ -6,13 +6,15 @@ import { defineConfig, type Plugin } from "vite";
 
 const GA_MEASUREMENT_ID = "G-FT8LY7Z15Y";
 
+const CLARITY_PROJECT_ID = "xxq9dbsjnj";
+
 /**
  * Inject Google Analytics (GA4) into every HTML entry.
  *
  * The showcase is a multi-page app, so this lives here rather than being
  * pasted into each `index.html` — one definition covers all seven pages and
  * any page added later. The docs site injects the same tag through Starlight's
- * `head` config.
+ * `head` config. Microsoft Clarity below follows the identical pattern.
  */
 const googleAnalytics = (): Plugin => ({
   name: "adapttable-google-analytics",
@@ -44,6 +46,38 @@ const googleAnalytics = (): Plugin => ({
   ],
 });
 
+/**
+ * Inject Microsoft Clarity session recording into every HTML entry.
+ *
+ * Same shape and the same build-only gate as GA4 above, for the same reason:
+ * the Playwright suite drives the dev server, and a recorder that loads there
+ * would file every e2e run as a real visitor session. The stub queues
+ * `clarity()` calls until the tag loads.
+ */
+const microsoftClarity = (): Plugin => ({
+  name: "adapttable-microsoft-clarity",
+  apply: "build",
+  transformIndexHtml: () => [
+    {
+      tag: "script",
+      children: [
+        "window.clarity = window.clarity || function () {",
+        "  (window.clarity.q = window.clarity.q || []).push(arguments);",
+        "};",
+      ].join("\n"),
+      injectTo: "head",
+    },
+    {
+      tag: "script",
+      attrs: {
+        async: true,
+        src: `https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}`,
+      },
+      injectTo: "head",
+    },
+  ],
+});
+
 // Resolve each @adapttable/* package to its TypeScript source so the showcase
 // always reflects the current library (and hot-reloads). The adapters are still
 // the REAL ones — each section mounts a genuine kit component, never a mock.
@@ -56,7 +90,7 @@ const page = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), googleAnalytics()],
+  plugins: [react(), tailwindcss(), googleAnalytics(), microsoftClarity()],
   // Multi-page app: each demo page is its own static HTML entry, linked
   // with plain anchors — no client router, no GitHub Pages 404 tricks.
   build: {
