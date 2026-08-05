@@ -21,51 +21,34 @@ const source = join(here, "../../docs");
 const target = join(here, "src/content/docs");
 
 const TITLES = {
-  "getting-started.md":
-    "Get started with AdaptTable — React table for your UI kit",
-  "concepts.md": "AdaptTable concepts — headless core, TableSource, adapters",
-  "columns.md":
-    "React table columns — ColumnDef, accessors, sorting, pinning & custom cells",
-  "sorting.md": "React table sorting — multi-column, server-side & URL-synced",
-  "filtering.md":
-    "React table filtering — multi-condition, chips, operators & URL-synced",
-  "pagination.md":
-    "React table pagination — paged, infinite scroll & auto by device",
-  "selection.md":
-    "React table row selection & bulk actions — checkbox, keyboard, URL-synced",
-  "row-expansion.md":
-    "React table expandable rows — detail panels with keyboard support",
-  "cell-editing.md":
-    "React table inline cell editing — edit rows in place, validate & commit",
-  "row-grouping.md":
-    "React table row grouping — group rows with aggregates & expand/collapse",
-  "column-management.md":
-    "React table column management — show, hide, reorder, pin & resize",
-  "saved-views.md": "React table saved views — shareable named layouts",
-  "virtualization.md":
-    "React table virtualization — 50,000 rows, ~24 DOM nodes",
-  "mobile.md": "Responsive React table — automatic mobile card layout",
-  "data-tiers.md": "Client & server React table data — one TableSource API",
-  "customization.md":
-    "Customize AdaptTable — slots, classNames, headless prop-getters",
-  "url-state.md": "React table URL state — shareable filters, sort, and page",
-  "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew, 17 locales",
-  "api.md": "AdaptTable API reference — DataTable, columns, hooks",
-  "faq.md": "AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR",
-  "comparison.md":
-    "React data table comparison 2026 — AdaptTable vs AG Grid, TanStack Table & MUI X",
-  "migrate-from-mantine-datatable.md":
-    "Migrate from mantine-datatable to AdaptTable — more features, same Mantine look",
+  "getting-started.md": "Get started — a React table for your UI kit",
+  "concepts.md": "AdaptTable concepts — headless core & source",
+  "columns.md": "React table columns — ColumnDef & custom cells",
+  "sorting.md": "React table sorting — multi-column, URL-synced",
+  "filtering.md": "React table filtering — chips & URL-synced",
+  "pagination.md": "React table pagination — paged or infinite",
+  "selection.md": "React table row selection & bulk actions",
+  "row-expansion.md": "React table expandable rows — detail panels",
+  "cell-editing.md": "React table inline cell editing",
+  "row-grouping.md": "React table row grouping with subtotals",
+  "column-management.md": "React table column management — pin, resize",
+  "saved-views.md": "React table saved views, shareable by URL",
+  "virtualization.md": "React table virtualization — 50,000 rows",
+  "mobile.md": "Responsive React table — mobile card layout",
+  "data-tiers.md": "React table data — client, server, one API",
+  "customization.md": "Customize AdaptTable — classNames & slots",
+  "url-state.md": "React table URL state — filters, sort, page",
+  "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew",
+  "api.md": "AdaptTable API reference — every export",
+  "faq.md": "FAQ — the free MUI X & ag-Grid alternative",
+  "comparison.md": "React table comparison — AG Grid, TanStack, MUI",
+  "migrate-from-mantine-datatable.md": "Migrate from mantine-datatable",
   "migrate-from-mui-x-datagrid.md":
-    "Migrate from MUI X DataGrid to AdaptTable — v8 breaking changes mapped, Pro features free (MIT)",
-  "migrate-from-tanstack-table.md":
-    "Migrate from TanStack Table to AdaptTable — built-in UI, same headless control",
-  "migrate-from-mui-datatables.md":
-    "Migrate from mui-datatables to AdaptTable — maintained, MUI v6+, React 19 ready",
-  "migrate-from-material-table.md":
-    "Migrate from material-table to AdaptTable — maintained drop-in for MUI",
-  "migrate-from-ag-grid.md":
-    "Migrate from AG Grid to AdaptTable — CRUD tables, 300 kB lighter, MIT",
+    "Migrate from MUI X DataGrid — Pro free (MIT)",
+  "migrate-from-tanstack-table.md": "Migrate from TanStack Table — built-in UI",
+  "migrate-from-mui-datatables.md": "Migrate from mui-datatables — MUI v6+",
+  "migrate-from-material-table.md": "Migrate from material-table — maintained",
+  "migrate-from-ag-grid.md": "Migrate from AG Grid — 300 kB lighter, MIT",
   "versioning.md": "AdaptTable versioning & stability policy",
 };
 
@@ -74,17 +57,17 @@ const TITLES = {
 // answer engines have something better than a generic site default.
 const DESCRIPTIONS = {
   "getting-started.md":
-    "Install AdaptTable for Mantine, MUI, Chakra, Ant, Radix, Base UI or shadcn — npx @adapttable/cli init, or open a StackBlitz starter and ship a full React data table in minutes.",
+    "Install AdaptTable for Mantine, MUI, Chakra, Ant, Radix, Base UI or shadcn — one CLI command, or a StackBlitz starter with no install.",
   "concepts.md":
-    "How AdaptTable works: one headless core, a TableSource data contract, and adapters that mount real Mantine/MUI/Chakra/Ant/Radix/Base UI/shadcn components — not a re-skin.",
+    "One headless core, a TableSource data contract, and adapters that mount real Mantine, MUI, Chakra, Ant, Radix and shadcn components.",
   "columns.md":
     "Define React table columns once with ColumnDef — accessors, sorting, per-column filters, alignment, pinning and custom cells — same API across every UI kit.",
   "sorting.md":
     "React table sorting with single or multi-column sort, custom comparators, server-side sortBy and accessible aria-sort headers — URL-synced when you want it.",
   "filtering.md":
-    "Need real React table filters without wiring every widget? AdaptTable ships text, select, number and date-range operators with removable chips and URL-synced state — native per UI kit.",
+    "Declare a filter once and AdaptTable derives the kit-native widget, the URL param, the removable chip and the row predicate.",
   "pagination.md":
-    "React table pagination that matches the device: numbered pages on desktop, infinite scroll on mobile (or force either). Server-side paging and shareable URL state included.",
+    "Numbered pages on desktop, infinite scroll on mobile, or force either. Server-side paging and shareable URL state included.",
   "selection.md":
     "Row selection and bulk actions for React CRUD tables — select a page or every match across pages, with an injectable confirm dialog and kit-native checkboxes.",
   "row-expansion.md":
@@ -94,7 +77,7 @@ const DESCRIPTIONS = {
   "row-grouping.md":
     "Single-level React table row grouping — opt-in groupBy, per-group aggregates sharing the summaryRow mapper, expand/collapse, frontend tier only.",
   "column-management.md":
-    "Show/hide, reorder, pin and resize React table columns with a built-in Columns menu and URL-persisted layout — MIT, no Pro tier.",
+    "Let users show, hide, reorder, pin and resize columns — one prop per capability, persisted to the URL or localStorage.",
   "saved-views.md":
     "Save filters, sort and column layout as named React table views users can restore and share by URL — built into AdaptTable across every adapter.",
   "virtualization.md":
@@ -104,7 +87,7 @@ const DESCRIPTIONS = {
   "data-tiers.md":
     "One React table API for in-memory rows and server-paginated APIs. Swap client data for a fetch function without rewriting the UI — TableSource is the contract.",
   "customization.md":
-    "Customize AdaptTable from props to fully headless: slots, classNames, data-* hooks, custom toolbars and TanStack-style prop-getters — no ejecting from the engine.",
+    "Restyle parts with classNames, replace them with slots, tune the chrome with props, or theme through your kit provider. All opt-in.",
   "url-state.md":
     "Want shareable React table links? Search, filters, sort and page sync to the URL (History, Next.js, react-router). Refresh-safe and SSR-friendly.",
   "i18n-rtl.md":
@@ -114,21 +97,21 @@ const DESCRIPTIONS = {
   "faq.md":
     "AdaptTable FAQ: free MIT alternative to MUI X DataGrid and ag-Grid, URL state, RTL/Arabic, client+server data, bundle size, and when to stay on TanStack.",
   "comparison.md":
-    "React data table comparison — AdaptTable head-to-head with TanStack Table, ag-Grid and MUI X DataGrid: licence, bundle size, UI-kit rendering, URL state, and when each one fits.",
+    "AdaptTable against TanStack Table, ag-Grid and MUI X DataGrid, scoped to what each ships built-in: licence, size, URL state, fit.",
   "migrate-from-mantine-datatable.md":
-    "Need more than mantine-datatable? @adapttable/mantine keeps real Mantine components and adds URL-synced state, filter chips, column management, saved views and virtualization. Prop-by-prop migration map.",
+    "@adapttable/mantine renders the same Mantine primitives, so the look barely changes — what changes is how much you wire by hand.",
   "migrate-from-mui-x-datagrid.md":
     "MUI X v6→v8 renamed disableSelectionOnClick and rewrote valueGetter. Every breaking change mapped to a stable API — plus Pro features free under MIT.",
   "migrate-from-tanstack-table.md":
-    "Love TanStack's headless model but tired of rebuilding filters, toolbars, pagination and URL sync? AdaptTable keeps prop-getters and ships native adapters for eight React UI kits. Migration map inside.",
+    "TanStack Table renders nothing — no toolbar, filter inputs, pagination or URL sync. AdaptTable keeps the headless model, ships the UI.",
   "migrate-from-mui-datatables.md":
-    "mui-datatables is unmaintained since Jan 2023 and stuck on MUI v5. @adapttable/mui maps columns and onTableChange to one query callback — MUI v6+ and React 19 ready. Migration guide inside.",
+    "mui-datatables has had no releases since January 2023 and stops at MUI v5. @adapttable/mui is MUI v6+ and React 19 ready.",
   "migrate-from-material-table.md":
-    "material-table is MUI v4-era and dormant. @adapttable/mui maps columns, remote data, actions and filters to a maintained Material UI table — plus what genuinely doesn't map.",
+    "material-table has been dormant since 2020. @adapttable/mui maps its columns, remote data, actions and filters onto a live MUI table.",
   "migrate-from-ag-grid.md":
-    "Shipping CRUD tables, not analytics grids? AdaptTable is ~300 kB lighter, renders your kit's real components, and includes URL state and filter UI under MIT — plus when to stay on AG Grid.",
+    "When to stay on AG Grid, and when not to. For CRUD tables AdaptTable is ~300 kB lighter and ships URL state and filter UI under MIT.",
   "versioning.md":
-    "AdaptTable's versioning and stability policy — semantic versioning, the committed-stable public API surface, deprecation policy and independent per-package releases.",
+    "Semantic versioning in practice: the committed-stable public API surface, how deprecations are handled, per-package releases.",
 };
 
 const SITE = "https://orwa-mahmoud.github.io/adapttable";
