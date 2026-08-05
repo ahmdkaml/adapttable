@@ -83,6 +83,24 @@ export default defineConfig({
                   "gtag('config', 'G-FT8LY7Z15Y');",
                 ].join("\n"),
               },
+              // Microsoft Clarity session recording, behind the same gate:
+              // a dev server or an e2e run must never record itself as a
+              // session. The stub queues clarity() calls until the tag loads.
+              {
+                tag: "script",
+                content: [
+                  "window.clarity = window.clarity || function () {",
+                  "  (window.clarity.q = window.clarity.q || []).push(arguments);",
+                  "};",
+                ].join("\n"),
+              },
+              {
+                tag: "script",
+                attrs: {
+                  async: true,
+                  src: "https://www.clarity.ms/tag/xxq9dbsjnj",
+                },
+              },
             ]
           : []),
       ],
