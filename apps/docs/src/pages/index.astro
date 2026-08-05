@@ -155,14 +155,16 @@ const JSON_LD = JSON.stringify({
       data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
     ></script>
     <!--
-      Google Analytics (GA4), production builds only. This landing page is a
-      standalone Astro page, so Starlight's `head` config in astro.config.mjs
-      does not reach it — the tag is repeated here on purpose. Change the
-      measurement ID in both places.
+      Google Analytics (GA4) and Microsoft Clarity, production builds only.
+      This landing page is a standalone Astro page, so Starlight's `head`
+      config in astro.config.mjs does not reach it — both tags are repeated
+      here on purpose. Change the GA4 measurement ID or the Clarity project
+      ID in both places.
 
       The dev guard matters: unlike the Cloudflare beacon, which is bound to a
-      hostname and drops anything that is not the real site, GA4 accepts hits
-      from any host — so an unguarded tag makes `localhost` look like traffic.
+      hostname and drops anything that is not the real site, GA4 and Clarity
+      accept hits from any host — so an unguarded tag makes `localhost` look
+      like traffic.
     -->
     {
       import.meta.env.PROD && (
@@ -178,6 +180,13 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-FT8LY7Z15Y');`}
           />
+          <script
+            is:inline
+            set:html={`window.clarity = window.clarity || function () {
+  (window.clarity.q = window.clarity.q || []).push(arguments);
+};`}
+          />
+          <script async src="https://www.clarity.ms/tag/xxq9dbsjnj" />
         </>
       )
     }
