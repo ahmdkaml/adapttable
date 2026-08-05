@@ -1,3 +1,10 @@
 # Run the full quality gate before every commit so nothing that would fail
 # CI gets committed. Turbo caches keep re-runs fast when nothing changed.
-pnpm check
+# Hooks inherit the committing tool's PATH; GUI clients and non-interactive
+# shells may not carry pnpm there — corepack ships with Node and resolves
+# the pinned pnpm either way.
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm check
+else
+  corepack pnpm check
+fi

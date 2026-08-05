@@ -8,6 +8,8 @@ high-coverage codebase — a great place for a first open-source contribution.
 ```bash
 git clone https://github.com/orwa-mahmoud/adapttable.git
 cd adapttable
+nvm use          # Node 24, read from the committed .nvmrc
+corepack enable  # provides the pinned pnpm
 pnpm install
 pnpm check   # lint + typecheck + test (coverage) + build
 ```
