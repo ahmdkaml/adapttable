@@ -242,14 +242,21 @@ export function TrialCta() {
 }
 
 /** One small title + one helper line — the active nav tab already says
- * which page this is, so no kicker. */
+ * which page this is, so no kicker.
+ *
+ * The heading is an `h1`: every showcase page renders exactly one of these
+ * and it is that page's title, so it is the document heading. Screen readers
+ * and crawlers both read a page with no `h1` as having no subject — Bing
+ * reports "H1 tag missing" for a client-rendered page whose markup carries
+ * one only before React mounts. `sec__title` still carries the styling, so
+ * this changes semantics and nothing visual. */
 export function SectionHead({
   title,
   children,
 }: Readonly<{ title: string; children?: ReactNode }>) {
   return (
     <div className="sec__head">
-      <h2 className="sec__title">{title}</h2>
+      <h1 className="sec__title">{title}</h1>
       {children ? <p className="sec__lead">{children}</p> : null}
     </div>
   );
