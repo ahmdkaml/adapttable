@@ -83,6 +83,37 @@ fits before you build it, open an issue first and ask.
 - **Conventional commits** are appreciated; the title should read as an
   imperative ("Add X", "Fix Y").
 
+## How features are built here
+
+AdaptTable keeps one brain and eight faces. These boundaries are what make a
+feature PR mergeable:
+
+- **Core owns behavior; adapters own appearance.** State machines, keyboard
+  handling, queries and accessibility semantics live in `@adapttable/core` as
+  headless hooks and the render-model contracts under
+  `@adapttable/core/adapter`. An adapter maps those contracts to its kit's
+  components and adds no logic. If a feature seems to need logic inside an
+  adapter, the core contract needs extending instead.
+- **Everything is opt-in.** Omitting a feature's prop renders no UI, attaches
+  no handlers, and costs nothing for anyone not using it.
+- **Heavy capabilities stay out of the base bundle.** Anything sizable ships
+  as an optional package or subpath entry, so a simple CRUD table never pays
+  for what it doesn't use.
+- **The API is declarative.** Table state is a function of props; there is no
+  imperative grid API to command. One-shot view actions (scroll to a row,
+  focus a cell) are the only imperative helpers.
+- **The table never mutates rows.** Editing and mutation features emit commits
+  through callbacks; persistence belongs to the host application.
+- **One word per concept.** Reuse the existing vocabulary (`server` for the
+  remote tier, `useQuerySource` for query libraries) rather than introducing
+  synonyms.
+- **A feature ships everywhere or it isn't done:** all eight adapters, the
+  mobile card layout, RTL, keyboard and screen-reader accessibility, and
+  localizable labels.
+- **A new docs page registers twice:** in the `DOCS` array of
+  `scripts/build-llms-full.mjs` and as a link in `llms.txt` — the build only
+  warns on a miss, it does not fail, so this is easy to overlook.
+
 ## Definition of done (per package)
 
 `builds + typechecks + lints + tests pass` with coverage thresholds met.
