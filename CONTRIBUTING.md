@@ -69,8 +69,11 @@ A few things that trip people up the first time:
   [Changesets](#changesets) below — if you are unsure, add one; a `patch` is
   always a safe default.
 
-Small, focused PRs get reviewed fastest. If you are unsure whether an idea
-fits before you build it, open an issue first and ask.
+Small, focused PRs get reviewed fastest. If you are unsure whether an idea fits
+before you build it, ask in
+[Discussions](https://github.com/orwa-mahmoud/adapttable/discussions) — that is
+where questions and ideas belong. Issues are for bug reports and concrete
+feature proposals, each with its own template.
 
 ## Ground rules
 
