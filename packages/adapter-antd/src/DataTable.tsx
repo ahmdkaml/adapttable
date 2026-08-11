@@ -831,7 +831,7 @@ function DataTableBodyRegion<TRow>(
       />
     );
   } else if (chromeBody === "empty") {
-    body = slots?.empty ?? <output>{emptyNode}</output>;
+    body = <output>{emptyNode}</output>;
   } else if (chromeBody === "mobile") {
     body = (
       <MobileCards
@@ -1091,7 +1091,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
     ? { offsetHeader: props.stickyTop ?? 0 }
     : undefined;
-  const emptyNode = (
+  // The filtered empty-state may carry its own slot: `noResults` wins there,
+  // and falls through to `empty` so passing only `empty` still covers both.
+  const emptySlot =
+    (c.emptyVariant === "noResults" ? props.slots?.noResults : undefined) ??
+    props.slots?.empty;
+  const emptyNode = emptySlot ?? (
     <EmptyState
       variant={c.emptyVariant}
       labels={labels}

@@ -80,21 +80,22 @@ function DataTableBody<TRow>({
     const noResults = chrome.emptyVariant === "noResults";
     return (
       <>
-        {props.slots?.empty ?? (
-          <output data-adapttable-part="empty" className={classNames.empty}>
-            {noResults ? labels.noResults : labels.noData}
-            {noResults && (
-              <button
-                type="button"
-                data-adapttable-part="empty-clear"
-                className={classNames.emptyClear}
-                onClick={chrome.clearFilters}
-              >
-                {labels.clearAll}
-              </button>
-            )}
-          </output>
-        )}
+        {(noResults ? props.slots?.noResults : undefined) ??
+          props.slots?.empty ?? (
+            <output data-adapttable-part="empty" className={classNames.empty}>
+              {noResults ? labels.noResults : labels.noData}
+              {noResults && (
+                <button
+                  type="button"
+                  data-adapttable-part="empty-clear"
+                  className={classNames.emptyClear}
+                  onClick={chrome.clearFilters}
+                >
+                  {labels.clearAll}
+                </button>
+              )}
+            </output>
+          )}
       </>
     );
   }

@@ -191,6 +191,31 @@ Replace whole sub-components on any adapter:
 empty-state. The error state is built-in (retry button included) — translate it
 via the `errorTitle` / `errorMessage` / `retry` labels.
 
+### Two empty states, one optional slot
+
+A table is empty for two different reasons, and they deserve different words:
+there is no data at all, or a search and filters matched nothing. The built-in
+filtered state says so and offers a **clear all filters** action.
+
+`empty` covers both. Add `noResults` when the filtered case needs its own
+message — including its own way back:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  slots={{
+    empty: <NoInvoicesYet />,
+    noResults: <NothingMatched onClear={clearFilters} />,
+  }}
+/>
+```
+
+Set only `empty` and it still covers both states, exactly as before — but the
+built-in clear-filters action goes with it, so give your replacement a way to
+reset the query.
+
 ## Density
 
 ```tsx
@@ -274,6 +299,23 @@ the header and pinned columns stick within it, which is what makes column
 pinning visibly stick. `scrollToTopOnChange` (default `true`) scrolls back
 to the table when search/filter/page changes, with `scrollTopGap` (default
 `8`) of breathing room below sticky chrome.
+
+### The surface behind sticky and pinned cells (Mantine)
+
+A sticky header and pinned columns need an opaque background, or scrolled rows
+show through them. That colour and the hairline under the header come from two
+CSS variables, so a panel whose surface is not the page background can say so:
+
+```css
+.my-dark-panel {
+  --adapttable-surface: #101418;
+  --adapttable-header-border: #2b3238;
+}
+```
+
+They default to `--mantine-color-body` and `--mantine-color-default-border`,
+so tables look the same until you set them. Declare them on any ancestor of
+the table.
 
 ## Theming per kit
 

@@ -80,6 +80,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     ),
     empty:
+      (chrome.emptyVariant === "noResults" ? slots?.noResults : undefined) ??
       slots?.empty ??
       (chrome.emptyVariant === "noResults" ? (
         <output

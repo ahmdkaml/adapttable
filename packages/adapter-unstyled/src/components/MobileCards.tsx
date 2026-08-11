@@ -158,12 +158,14 @@ function MobileCardBase<TRow>({
           data-adapttable-part="card-row"
           className={classNames.cardRow}
         >
-          <span
-            data-adapttable-part="card-label"
-            className={classNames.cardLabel}
-          >
-            {cardLabel(column)}
-          </span>
+          {cardLabel(column) && (
+            <span
+              data-adapttable-part="card-label"
+              className={classNames.cardLabel}
+            >
+              {cardLabel(column)}
+            </span>
+          )}
           <span
             data-adapttable-part="card-value"
             className={classNames.cardValue}
@@ -331,12 +333,14 @@ export function MobileCards<TRow>({
                 data-adapttable-part="card-row"
                 className={classNames.cardRow}
               >
-                <span
-                  data-adapttable-part="card-label"
-                  className={classNames.cardLabel}
-                >
-                  {cardLabel(column)}
-                </span>
+                {cardLabel(column) && (
+                  <span
+                    data-adapttable-part="card-label"
+                    className={classNames.cardLabel}
+                  >
+                    {cardLabel(column)}
+                  </span>
+                )}
                 <span
                   data-adapttable-part="card-value"
                   className={classNames.cardValue}
@@ -352,9 +356,15 @@ export function MobileCards<TRow>({
   );
 }
 
-function cardLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
+/**
+ * The label above a field in a mobile card, or `undefined` for no label.
+ *
+ * An explicit `mobileLabel: ""` means the consumer wants the value with no
+ * label at all — so it resolves to nothing and the element is skipped, rather
+ * than rendering an empty line that still takes vertical space. The header
+ * fallback applies only when the column says nothing about a mobile label.
+ */
+function cardLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
+  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
+  return typeof column.header === "string" ? column.header : column.key;
 }

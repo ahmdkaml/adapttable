@@ -22,13 +22,14 @@ import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
+import { SURFACE } from "./surface";
 import type { DataTableProps } from "./types";
 
 const stickyToolbarStyle = (top: number) => ({
   position: "sticky" as const,
   top,
   zIndex: 3,
-  background: "var(--mantine-color-body)",
+  background: SURFACE,
   paddingBottom: "var(--mantine-spacing-xs)",
 });
 
@@ -147,6 +148,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // "noResults" means an active search/filter matched nothing — say so and
     // offer a working clear, instead of the misleading "no data".
     body =
+      (chrome.emptyVariant === "noResults" ? slots?.noResults : undefined) ??
       slots?.empty ??
       (chrome.emptyVariant === "noResults" ? (
         <EmptyState

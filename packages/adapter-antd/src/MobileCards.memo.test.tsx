@@ -101,3 +101,33 @@ describe("summary aggregation (antd)", () => {
     expect(summaryRow.mock.calls).toHaveLength(before);
   });
 });
+
+describe("selected state on mobile cards (Ant Design)", () => {
+  it("marks the selected card with data-selected", () => {
+    const { container } = mount();
+    // antd wraps each card in the list item, so the attribute sits on the
+    // Card itself — the element a consumer actually styles
+    expect(container.querySelectorAll("[data-selected]")).toHaveLength(0);
+
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+
+    // a consumer styles the selected card from CSS through this attribute;
+    // the checkbox already carries the state for assistive tech
+    expect(container.querySelectorAll("[data-selected]")).toHaveLength(1);
+  });
+});
+
+describe("an empty mobileLabel (Ant Design)", () => {
+  it("renders no label at all rather than substituting the header", () => {
+    const { container } = mount({
+      columns: [
+        { key: "name", header: "Name", accessor, mobileLabel: "" },
+        { key: "city", header: "City", accessor },
+      ],
+    });
+    // Descriptions lays the label beside the value, so an omitted label
+    // leaves an empty label cell — never the header pushed back in
+    expect(screen.queryByText("Name")).toBeNull();
+    expect(container.textContent).toContain("City");
+  });
+});

@@ -65,11 +65,17 @@ export interface MobileCardsProps<TRow> extends Pick<
   density?: Density;
 }
 
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
+/**
+ * The label above a field in a mobile card, or `undefined` for no label.
+ *
+ * An explicit `mobileLabel: ""` means the consumer wants the value with no
+ * label at all — so it resolves to nothing and the element is skipped, rather
+ * than rendering an empty line that still takes vertical space. The header
+ * fallback applies only when the column says nothing about a mobile label.
+ */
+function mobileLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
+  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
+  return typeof column.header === "string" ? column.header : column.key;
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -184,6 +190,7 @@ function MobileCardBase<TRow>({
       padding={cardPadding}
       role="listitem"
       data-stagger=""
+      data-selected={selected ? "" : undefined}
     >
       <Stack gap={cardGap}>
         {onToggleSelect && (
@@ -205,9 +212,11 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <div key={column.key}>
-            <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-              {mobileLabel(column)}
-            </Text>
+            {mobileLabel(column) && (
+              <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                {mobileLabel(column)}
+              </Text>
+            )}
             {/* Cells are arbitrary ReactNode (often block elements) —
                 a <p> wrapper would be invalid HTML. */}
             <Text component="div" fz="sm">
@@ -395,9 +404,11 @@ export function MobileCards<TRow>({
               .filter((column) => summaryCells[column.key] !== undefined)
               .map((column) => (
                 <div key={column.key}>
-                  <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                    {mobileLabel(column)}
-                  </Text>
+                  {mobileLabel(column) && (
+                    <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                      {mobileLabel(column)}
+                    </Text>
+                  )}
                   <Text component="div" fz="sm" fw={600}>
                     {summaryCells[column.key]}
                   </Text>

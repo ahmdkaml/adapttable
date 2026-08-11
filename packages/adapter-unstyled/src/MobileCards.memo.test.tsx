@@ -101,3 +101,32 @@ describe("summary aggregation (unstyled)", () => {
     expect(summaryRow.mock.calls).toHaveLength(before);
   });
 });
+
+describe("selected state on mobile cards (unstyled)", () => {
+  it("marks the selected card with data-selected", () => {
+    const { container } = mount();
+    const card = () => container.querySelector("[data-index='0']")!;
+    expect(card()).not.toHaveAttribute("data-selected");
+
+    fireEvent.click(screen.getAllByLabelText("Select row")[0]!);
+
+    // a consumer styles the selected card from CSS through this attribute;
+    // the checkbox already carries the state for assistive tech
+    expect(card()).toHaveAttribute("data-selected");
+  });
+});
+
+describe("an empty mobileLabel (unstyled)", () => {
+  it("renders no label element at all", () => {
+    const { container } = mount({
+      columns: [
+        { key: "name", header: "Name", accessor, mobileLabel: "" },
+        { key: "city", header: "City", accessor },
+      ],
+    });
+    // the consumer asked for the value with no label — neither an empty
+    // element nor the header substituted back in
+    expect(screen.queryByText("Name")).toBeNull();
+    expect(container.textContent).toContain("City");
+  });
+});

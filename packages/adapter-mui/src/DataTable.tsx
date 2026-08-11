@@ -112,18 +112,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     );
   } else if (c.body === "empty") {
-    body = slots?.empty ?? (
-      <Stack role="status" spacing={1.5} sx={{ py: 6, alignItems: "center" }}>
-        <Typography color="text.secondary" align="center">
-          {c.emptyVariant === "noResults" ? labels.noResults : labels.noData}
-        </Typography>
-        {c.emptyVariant === "noResults" && (
-          <Button variant="outlined" size="small" onClick={c.clearFilters}>
-            {labels.clearAll}
-          </Button>
-        )}
-      </Stack>
-    );
+    body = (c.emptyVariant === "noResults" ? slots?.noResults : undefined) ??
+      slots?.empty ?? (
+        <Stack role="status" spacing={1.5} sx={{ py: 6, alignItems: "center" }}>
+          <Typography color="text.secondary" align="center">
+            {c.emptyVariant === "noResults" ? labels.noResults : labels.noData}
+          </Typography>
+          {c.emptyVariant === "noResults" && (
+            <Button variant="outlined" size="small" onClick={c.clearFilters}>
+              {labels.clearAll}
+            </Button>
+          )}
+        </Stack>
+      );
   } else if (c.body === "mobile") {
     body = <MobileCards {...tableProps} cardClassName={classNames?.card} />;
   } else {

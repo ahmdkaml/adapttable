@@ -13,6 +13,15 @@ export interface DataTableSlots {
   skeleton?: ReactNode;
   /** Replace the empty-state. */
   empty?: ReactNode;
+  /**
+   * Replace the empty-state shown when a search or filter matched nothing.
+   *
+   * Falls back to `empty` when unset, so passing only `empty` keeps covering
+   * both states. Set this when the filtered case needs its own message — the
+   * built-in one carries a working "clear all filters" action that a custom
+   * `empty` would otherwise replace in both situations.
+   */
+  noResults?: ReactNode;
 }
 
 /** Per-part class hooks — restyle without replacing components. */

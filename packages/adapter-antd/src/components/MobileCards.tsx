@@ -29,10 +29,17 @@ import {
   GroupHeaderCard,
 } from "./grouping";
 
-/** The mobile-card label for a column: explicit `mobileLabel`, else a string
- * `header`, else the column key. */
-function cardLabel<TRow>(column: ColumnDef<TRow>): string {
-  if (column.mobileLabel) return column.mobileLabel;
+/**
+ * The mobile-card label for a column, or `undefined` for no label.
+ *
+ * An explicit `mobileLabel: ""` means the consumer wants the value with no
+ * label — `Descriptions.Item` then renders the value against an empty label
+ * cell instead of substituting the header, which is what they asked for. The
+ * header fallback applies only when the column says nothing about a mobile
+ * label.
+ */
+function cardLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
+  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
   return typeof column.header === "string" ? column.header : column.key;
 }
 
@@ -210,6 +217,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
       size="small"
       className={className}
       data-stagger=""
+      data-selected={selected ? "" : undefined}
       {...rowClickProps(row, onRowClick, rowIndex)}
       onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       title={

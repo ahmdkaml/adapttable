@@ -29,11 +29,17 @@ import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
 import { RowActionButtons } from "./RowActionButtons";
 
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
+/**
+ * The label above a field in a mobile card, or `undefined` for no label.
+ *
+ * An explicit `mobileLabel: ""` means the consumer wants the value with no
+ * label at all — so it resolves to nothing and the element is skipped, rather
+ * than rendering an empty line that still takes vertical space. The header
+ * fallback applies only when the column says nothing about a mobile label.
+ */
+function mobileLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
+  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
+  return typeof column.header === "string" ? column.header : column.key;
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -141,6 +147,7 @@ function MobileCardBase<TRow>({
       ref={measureElement}
       data-index={index}
       data-stagger=""
+      data-selected={selected ? "" : undefined}
       variant="outlined"
       role="listitem"
       className={className}
@@ -168,13 +175,15 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: "block" }}
-            >
-              {mobileLabel(column)}
-            </Typography>
+            {mobileLabel(column) && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block" }}
+              >
+                {mobileLabel(column)}
+              </Typography>
+            )}
             {/* Cells are arbitrary ReactNode (often block elements) —
                 a <p> wrapper would be invalid HTML. */}
             <Typography component="div" variant="body2">
@@ -319,13 +328,15 @@ export function MobileCards<TRow>({
               if (value === undefined) return null;
               return (
                 <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block" }}
-                  >
-                    {mobileLabel(column)}
-                  </Typography>
+                  {mobileLabel(column) && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block" }}
+                    >
+                      {mobileLabel(column)}
+                    </Typography>
+                  )}
                   <Typography component="div" variant="body2">
                     {value}
                   </Typography>
