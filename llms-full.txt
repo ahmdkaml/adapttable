@@ -1256,6 +1256,58 @@ export function People() {
   `TableQuery` (`{ page, limit, … }`) passed to `onQueryChange` — forward both
   to your API and return `rows` + `total`; `total` drives the pager.
 
+## Cursor pagination
+
+Offset paging asks for "rows 100–125". If a row is inserted or deleted while
+someone is reading, every later page shifts by one, and they see an entry twice
+or never see it at all. Cursor pagination asks for "the 25 rows after _this_
+one", which cannot drift.
+
+Declare the capability and hand back the token your API returned:
+
+```tsx
+const [data, setData] = useState({ rows: [], nextCursor: null });
+
+const source = useServerData({
+  rows: data.rows,
+  total: 0, // cursor APIs usually have no count to give
+  nextCursor: data.nextCursor,
+  supports: { cursor: true },
+  onQueryChange: async ({ cursor, limit, search }, { signal }) => {
+    const res = await fetch(
+      `/api/rows?limit=${limit}&search=${search}` +
+        (cursor ? `&cursor=${cursor}` : ""),
+      { signal }
+    );
+    setData(await res.json()); // { rows, nextCursor }
+  },
+});
+```
+
+Return `nextCursor: null` when there are no more rows — that is what ends the
+list, since there is no total to count against.
+
+What the table guarantees:
+
+- **It only ever sends a token your server issued.** The first page carries no
+  `cursor` field at all, so the query is byte-for-byte the one an offset
+  endpoint already receives.
+- **Back works.** Tokens are kept as a trail, so paging back through what the
+  user has already seen replays their own cursors.
+- **A jump to an unvisited page does nothing.** Page 7 has no token, and
+  sending none would silently re-serve page 1. This is the honest shape of
+  cursor pagination rather than a limitation to route around — use infinite
+  scroll (`paginationMode="infinite"`) where arbitrary jumps matter.
+- **A new sort, filter, search, or page size resets to the first page.** Those
+  tokens describe a position in a result set that no longer exists.
+- **The URL keeps everything except the cursor.** Sort, filters, search and
+  page size stay shareable; an opaque token would be meaningless to whoever
+  opened the link, and stale by the time they did.
+
+Using a query library instead? `useQuerySource` already supports cursors
+through your own `getNextPageParam` — the table reads `hasNextPage` and calls
+`fetchNextPage`, and never needs to see the token.
+
 ## Options
 
 | Prop             | Type                                   | Default                  | Description                                                            |
@@ -1271,6 +1323,9 @@ export function People() {
   `defaults` or a hand-edited URL.
 - Sources built with `useServerData` (the `onQueryChange` tier) are always
   paged; `paginationMode` applies to the frontend tier and `useQuerySource`.
+- `nextCursor` is read only when the source declares `supports: { cursor: true }`.
+  Without that declaration the field is ignored and no `cursor` is ever sent,
+  so an endpoint written before cursors existed keeps its exact query.
 - In infinite mode the table slices `page × limit` rows, so "page" really
   means "how much is loaded" — `fetchNextPage` just bumps it.
 - The infinite-scroll sentinel is exported as a headless hook,

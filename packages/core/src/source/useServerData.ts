@@ -56,6 +56,21 @@ export interface UseServerDataOptions<TRow> extends Pick<
   rows: readonly TRow[];
   /** Total row count across all pages (drives the pager). */
   total: number;
+  /**
+   * Cursor pagination: the token the last response returned for the page
+   * after the one on screen, or `null` when that was the last page.
+   *
+   * Only read when the source declares `supports.cursor`. With it, position
+   * comes from the token rather than an offset, so rows that shift while the
+   * user reads never duplicate or skip an entry — the failure mode
+   * offset-based paging cannot avoid.
+   *
+   * A cursor is opaque, so the table only ever hands back one the server
+   * gave it. That makes "next" always possible, "back" possible for pages
+   * already visited, and a jump to an arbitrary unvisited page impossible —
+   * the honest shape of cursor pagination, not a limitation to work around.
+   */
+  nextCursor?: string | null;
   /** Whether a request is currently in flight. */
   loading?: boolean;
   /** Forwarded error to display. */
@@ -104,6 +119,7 @@ export function useServerData<TRow>(
   const {
     rows,
     total,
+    nextCursor = null,
     loading = false,
     error = null,
     paginationMode = "auto",
@@ -121,6 +137,17 @@ export function useServerData<TRow>(
   const { page, limit, search, sortBy, sortDir, groupBy, sortLevels, extra } =
     state;
 
+  // Cursor mode keeps every token the server has handed out, indexed by the
+  // page it opens: `cursors[0]` is always `undefined` (page 1 needs no token)
+  // and `cursors[n]` is the token for page n+1. Keeping the trail rather than
+  // just the latest token is what lets the user page back through what they
+  // have already seen, which a single "next cursor" cannot do.
+  const cursorMode = supports?.cursor === true;
+  const [cursors, setCursors] = useState<readonly (string | undefined)[]>([
+    undefined,
+  ]);
+  const cursor = cursorMode ? cursors[page - 1] : undefined;
+
   const query = useMemo<TableQuery>(
     () => ({
       page,
@@ -133,11 +160,22 @@ export function useServerData<TRow>(
       // Everything past the baseline is gated on what the source declared —
       // an undeclared capability is dropped here, never sent and ignored.
       ...applyQuerySupport(
-        { groupBy: groupBy ? [groupBy] : undefined },
+        { groupBy: groupBy ? [groupBy] : undefined, cursor },
         supports
       ),
     }),
-    [page, limit, search, sortBy, sortDir, sortLevels, extra, groupBy, supports]
+    [
+      page,
+      limit,
+      search,
+      sortBy,
+      sortDir,
+      sortLevels,
+      extra,
+      groupBy,
+      cursor,
+      supports,
+    ]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire
   // an identical query; `refetch` bumps the generation to force one.
@@ -182,10 +220,25 @@ export function useServerData<TRow>(
   // rewritten) instead of showing an empty state the pager disagrees with.
   const { setPage } = state;
   useEffect(() => {
-    if (loading || total <= 0) return;
+    // Cursor mode has no offset arithmetic to clamp against — a page is
+    // reachable only if its token is already in hand, which the trail below
+    // enforces directly.
+    if (cursorMode || loading || total <= 0) return;
     const lastPage = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
     if (page > lastPage) setPage(lastPage);
-  }, [loading, total, limit, page, setPage]);
+  }, [cursorMode, loading, total, limit, page, setPage]);
+
+  // Record the token for the page after the one on screen, so "next" has
+  // something to send and a later "back" can retrace the trail.
+  useEffect(() => {
+    if (!cursorMode || loading || nextCursor === null) return;
+    setCursors((prev) => {
+      if (prev[page] === nextCursor) return prev;
+      const next = prev.slice();
+      next[page] = nextCursor;
+      return next;
+    });
+  }, [cursorMode, loading, nextCursor, page]);
 
   // Infinite-append accumulation: `fetchNextPage` stashes the rows already
   // on screen (plus the CURRENT `rows` prop identity) and advances the
@@ -220,12 +273,37 @@ export function useServerData<TRow>(
     }
   }, [stash, baseKey, error]);
 
+  // A new sort, filter, search or page size makes every token the server
+  // issued meaningless — they describe a position in a result set that no
+  // longer exists. Drop the trail and start again from page 1.
+  const cursorBaseRef = useRef(baseKey);
+  useEffect(() => {
+    if (!cursorMode || cursorBaseRef.current === baseKey) return;
+    cursorBaseRef.current = baseKey;
+    setCursors([undefined]);
+    setPage(1);
+  }, [cursorMode, baseKey, setPage]);
+
   const displayRows = useMemo<readonly TRow[]>(() => {
     if (!appending) return rows;
     return appendPending ? stash.rows : [...stash.rows, ...rows];
   }, [appending, appendPending, stash, rows]);
 
-  const hasNextPage = !paged && page * limit < total;
+  // Offset mode knows the end from the count; cursor mode only knows there
+  // is more because the server said so by returning another token.
+  const moreToLoad = cursorMode
+    ? cursors[page] !== undefined
+    : page * limit < total;
+  const hasNextPage = !paged && moreToLoad;
+  // Without a token a page cannot be requested at all, so in cursor mode
+  // navigation is limited to pages already visited plus the next one. A pager
+  // click beyond that is ignored rather than silently re-serving page 1,
+  // which is what sending an absent cursor would do.
+  const setPageSafely = useEventCallback((next: number) => {
+    if (cursorMode && next > cursors.length) return;
+    setPage(next);
+  });
+
   const fetchNextPage = useEventCallback(() => {
     if (paged || loading || appendPending || !hasNextPage) return;
     setStash({
@@ -253,7 +331,7 @@ export function useServerData<TRow>(
     hasNextPage,
     error,
     paginationMode: resolvedMode,
-    setPage: state.setPage,
+    setPage: setPageSafely,
     setLimit: state.setLimit,
     setSort: state.setSort,
     setGroupBy: state.setGroupBy,
