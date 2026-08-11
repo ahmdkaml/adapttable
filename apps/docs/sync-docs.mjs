@@ -46,8 +46,10 @@ const TITLES = {
     "Migrate from mantine-datatable — more built-in",
   "migrate-from-mui-x-datagrid.md":
     "Migrate from MUI X DataGrid — Pro free (MIT)",
-  "migrate-from-tanstack-table.md": "Migrate from TanStack Table — built-in UI",
-  "migrate-from-mui-datatables.md": "Migrate from mui-datatables — MUI v6+",
+  "migrate-from-tanstack-table.md":
+    "Migrate from TanStack Table — headless + UI kits",
+  "migrate-from-mui-datatables.md":
+    "Migrate from mui-datatables — maintained, v6+",
   "migrate-from-material-table.md": "Migrate from material-table — maintained",
   "migrate-from-ag-grid.md": "Migrate from AG Grid — 300 kB lighter, MIT",
   "versioning.md": "AdaptTable versioning & stability policy",
