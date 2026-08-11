@@ -47,6 +47,14 @@ export {
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
+export {
+  aggregate,
+  AGGREGATE_NAMES,
+  type AggregateName,
+  type AggregateOptions,
+  type AggregateSpec,
+  type Aggregator,
+} from "./aggregate/aggregate";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
   AUTO_OPTIONS_LIMIT,

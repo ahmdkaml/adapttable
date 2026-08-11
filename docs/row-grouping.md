@@ -62,12 +62,56 @@ export function People() {
   ignore grouping — see [Data tiers](./data-tiers.md).
 - **Shared mapper.** `groupAggregates(rows)` uses the same
   `(rows) => Partial<Record<string, ReactNode>>` shape as `summaryRow`; reuse
-  one function for both if the math is identical.
+  one function for both if the math is identical — or build both with
+  `aggregate()` (below).
 - **Expand / collapse.** Groups start expanded. Collapse state is ephemeral
   (not URL-synced). `groupBy` itself serializes to the URL like sort and
   filters.
 - **Selection.** When row checkboxes are enabled, each group header exposes a
   tri-state checkbox over its leaf rows.
+
+## Aggregate without writing the maths
+
+The mapper above is a function you write. When the sums are ordinary, declare
+them instead and `aggregate()` returns that same mapper:
+
+```tsx
+import { aggregate } from "@adapttable/core";
+
+<DataTable
+  groupBy="role"
+  groupAggregates={aggregate({ budget: "sum", team: "count" }, { columns })}
+  summaryRow={aggregate({ budget: "sum" }, { columns })}
+  columns={columns}
+  // …
+/>;
+```
+
+Built in: `sum`, `avg`, `count`, `min`, `max`. Pass your own function for
+anything else — it receives the values found for that column and returns the
+cell:
+
+```tsx
+const distinct = (values) => new Set(values).size;
+groupAggregates={aggregate({ team: distinct })}
+```
+
+Passing `columns` lets values resolve through a column's `sortValue`, exactly
+as sorting and grouping do, so a formatted cell still aggregates on its
+underlying number. Add `format` to shape the result for display:
+
+```tsx
+aggregate(
+  { budget: "sum" },
+  { columns, format: (v) => (typeof v === "number" ? money.format(v) : v) }
+);
+```
+
+Two behaviours worth knowing, because they are choices rather than accidents:
+a missing value is skipped rather than counted as zero, so `count` reports the
+values a column actually has; and while `sum` of nothing is `0`, `avg`, `min`
+and `max` of nothing are `undefined` — an average of no numbers is
+unanswerable, not zero.
 
 ## Options
 

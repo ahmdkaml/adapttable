@@ -272,6 +272,9 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `QuerySupport`                                                      | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.               |
 | `QueryExtensions`                                                   | The optional query fields those capabilities unlock, carried on `TableQuery`.                                |
 | `QueryAggregate`                                                    | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.            |
+| `aggregate`                                                         | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md). |
+| `AggregateName` / `AGGREGATE_NAMES`                                 | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                 | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).  |
 | `AggregateFn`                                                       | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
 | `QueryCondition` / `QueryFilterGroup`                               | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                 |
 | `isFilterGroup`                                                     | Narrows a filter-tree child to a nested group while walking the tree.                                        |
