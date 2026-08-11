@@ -55,6 +55,7 @@ export {
   type AggregateSpec,
   type Aggregator,
 } from "./aggregate/aggregate";
+export { computed, type ComputedColumnSpec } from "./columns/computed";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
   AUTO_OPTIONS_LIMIT,
