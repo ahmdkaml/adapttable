@@ -115,9 +115,41 @@ export function People() {
 | `mobileLabel`   | `string`                         | `header` (when a string)     | Label on mobile card layouts.                                              |
 | `hideOnMobile`  | `boolean`                        | `false`                      | Hide the column entirely on mobile.                                        |
 | `hideOnDesktop` | `boolean`                        | `false`                      | Hide the column entirely on desktop.                                       |
+| `group`         | `string`                         | —                            | Spanning header above adjacent columns sharing the name. See below.        |
 | `i18n`          | `Record<string, string>`         | —                            | Per-locale data paths for the column's value.                              |
 | `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                 |
 | `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.      |
+
+## Grouped headers
+
+Give adjacent columns the same `group` and they render under one spanning
+header cell:
+
+```tsx
+const columns: ColumnDef<Person>[] = [
+  { key: "firstName", header: "First", group: "Name" },
+  { key: "lastName", header: "Last", group: "Name" },
+  { key: "city", header: "City", group: "Location" },
+  { key: "country", header: "Country", group: "Location" },
+  { key: "hiredAt", header: "Hired" },
+];
+```
+
+```text
+|      Name      |     Location      |        |
+| First |  Last  |  City  | Country  | Hired  |
+```
+
+Columns without a `group` sit under a blank spanning cell, so the header row
+always lines up. The grouping is **presentational and adjacency-based**: the
+span is computed from the columns as they are currently ordered, so dragging a
+column out of the middle of a group splits it into two spans rather than
+pretending the layout is something it is not. Reorder them back together and
+the group closes up again.
+
+Groups are one level deep and carry no behaviour of their own — they do not
+collapse, pin, or reorder as a unit. On mobile the card layout has no header
+row, so `group` has no effect there.
 
 ## Notes
 

@@ -188,8 +188,23 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   (including `options: "auto"`); `FilterRuntime` is everything the engine
   derives from the resolved definitions (defs, chip labels, URL keys,
   predicate).
-- **Search**: `defaultSearchText` is the default searchable-text projector
-  (flattens a row's own values) — replace per column with `searchValue`.
+- **Search**: `defaultSearchText` is the default searchable-text projector —
+  it flattens a row's own values into the string the search box matches
+  against. Replace it per source with `getSearchText`:
+
+  ```tsx
+  const source = useFrontendData({
+    data: people,
+    columns,
+    // search the full name and the city, and nothing else
+    getSearchText: (row) => `${row.firstName} ${row.lastName} ${row.city}`,
+  });
+  ```
+
+  It is one projector for the whole row, not a per-column setting: search
+  asks "does this row match?", so the row is what gets projected. Include a
+  computed value here to make it searchable, or leave a field out to exclude
+  it — an id column nobody searches by, say.
 
 ## Notes
 
