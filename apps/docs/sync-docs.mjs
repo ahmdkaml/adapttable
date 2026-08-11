@@ -47,7 +47,7 @@ const TITLES = {
   "migrate-from-mui-x-datagrid.md":
     "Migrate from MUI X DataGrid — Pro free (MIT)",
   "migrate-from-tanstack-table.md":
-    "Migrate from TanStack Table — headless + UI kits",
+    "Migrate from TanStack Table — headless, UI kits",
   "migrate-from-mui-datatables.md":
     "Migrate from mui-datatables — maintained, v6+",
   "migrate-from-material-table.md": "Migrate from material-table — maintained",
