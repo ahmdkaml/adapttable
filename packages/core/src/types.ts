@@ -118,6 +118,19 @@ export interface ColumnDef<TRow> {
    * (`useFrontendData`). Unused for server-sorted data.
    */
   sortValue?: (row: TRow) => SortableValue;
+  /**
+   * The value this column contributes to an export, when the file should not
+   * carry what the screen shows.
+   *
+   * A cell formatted for reading — `"$1,240.00"`, `"3 days ago"`, a status
+   * badge — is worse than useless in a spreadsheet, because it cannot be
+   * summed or sorted. Return the underlying value here and the export writes
+   * it while the table keeps rendering the friendly version.
+   *
+   * Without it an export falls back to the display value, so this is only
+   * needed where the two genuinely differ.
+   */
+  exportValue?: (row: TRow) => unknown;
   /** Enable sorting for this column. Off by default. */
   sortable?: boolean;
   /** Column width passed through to the rendered header/cell. */

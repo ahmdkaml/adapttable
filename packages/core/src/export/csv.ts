@@ -60,7 +60,17 @@ function escapeCell(
   return text;
 }
 
-function defaultValue<TRow>(row: TRow, column: ColumnDef<TRow>): unknown {
+/**
+ * How a cell resolves when nothing overrides it: the display value, since a
+ * CSV with no other instruction should carry what the table shows.
+ *
+ * Internal to the export module — exported so the table-level export can fall
+ * back to it after checking a column's `exportValue`.
+ */
+export function defaultCsvValue<TRow>(
+  row: TRow,
+  column: ColumnDef<TRow>
+): unknown {
   const fromAccessor = column.accessor?.(row);
   if (
     typeof fromAccessor === "string" ||
@@ -90,7 +100,7 @@ export function rowsToCsv<TRow>(
   options: RowsToCsvOptions<TRow> = {}
 ): string {
   const {
-    getValue = defaultValue,
+    getValue = defaultCsvValue,
     delimiter = ",",
     escapeFormulas = true,
   } = options;

@@ -245,7 +245,7 @@ export interface BaseDataTableProps<TRow> {
    * (`export.csv`, current page) or an options object for filename/scope.
    * Omit or `false` to hide the button.
    */
-  exportCsv?: boolean | ExportCsvOptions;
+  exportCsv?: boolean | ExportCsvOptions<TRow>;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
   /** Confirmation handler for actions; defaults to `window.confirm`. */

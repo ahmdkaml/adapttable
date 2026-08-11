@@ -362,7 +362,12 @@ export {
   buildTableCsv,
   downloadTableCsv,
   exportableColumns,
+  type ExportColumnScope,
+  type ExportContext,
   type ExportCsvOptions,
+  type ExportInfo,
+  type ExportRowScope,
   makeExportCsvHandler,
+  resolveExportColumns,
   resolveExportCsv,
 } from "./export/tableCsv";

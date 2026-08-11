@@ -267,6 +267,56 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "all"` — the full filtered+sorted set when the source exposes it
   (frontend does); server-backed sources fall back to the current page unless
   you wire your own download against an export endpoint via `toolbar`.
+- `scope: "selected"` — the ticked rows, in table order. Selection is a set of
+  ids, so a row checked on page 1 is still in the file while page 3 is on
+  screen. Nothing ticked writes a header-only file.
+
+`columns` chooses the file's shape independently of the rows:
+
+- `columns: "visible"` (default) — what the user can see, so the file matches
+  the screen.
+- `columns: "all"` — every defined column, including ones hidden through the
+  column menu, for a complete extract.
+- `columns: ["name", "email"]` — exactly these, in this order. A key matching
+  no column is ignored, so a stale saved config cannot break the button.
+
+The synthetic actions column is never exported under any of them.
+
+### Exporting a different value than the screen shows
+
+A cell formatted for reading is worse than useless in a spreadsheet: `"$1,240.00"`
+cannot be summed and `"3 days ago"` cannot be sorted. Give the column an
+`exportValue` and the file carries the value underneath while the table keeps
+rendering the friendly version:
+
+```tsx
+{
+  key: "budget",
+  accessor: (row) => money.format(row.budget),  // what the user reads
+  exportValue: (row) => row.budget,             // what the spreadsheet gets
+}
+```
+
+Columns without one export what the table shows, so this is only needed where
+the two genuinely differ. Formula escaping still applies to whatever is
+returned.
+
+### Before and after the file is written
+
+```tsx
+exportCsv={{
+  onBeforeExport: ({ rows, columns, filename }) => {
+    if (rows.length > 50_000) return false;          // cancel
+    return { filename: `people-${rows.length}.csv` }; // or rename
+  },
+  onAfterExport: ({ csv, filename }) => track("export", { filename }),
+}}
+```
+
+`onBeforeExport` runs once the rows and columns are resolved and before
+anything is written — the only moment where the file's contents are known and
+nothing has happened yet. Return `false` to cancel, `{ filename }` to rename,
+or nothing to continue. `onAfterExport` receives the text that was written.
 
 Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 `downloadTableCsv` from `@adapttable/core`.
@@ -274,12 +324,18 @@ Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 ### The CSV pipeline (headless)
 
 The export path is exported end to end: `exportableColumns` filters the
-visible layout to columns with exportable values, `buildTableCsv` turns
-rows + columns into CSV text (`RowsToCsvOptions` controls delimiter,
-BOM and `escapeFormulas`), `resolveExportCsv` normalizes the `exportCsv`
-prop (`ExportCsvOptions`), and `makeExportCsvHandler` wires all of it to
-a download handler the toolbar button calls. Custom toolbars can reuse
-any stage.
+visible layout to columns with exportable values, `resolveExportColumns`
+applies a column scope to them, `buildTableCsv` turns rows + columns into CSV
+text (`RowsToCsvOptions` controls delimiter, BOM and `escapeFormulas`),
+`resolveExportCsv` normalizes the `exportCsv` prop (`ExportCsvOptions`), and
+`makeExportCsvHandler` wires all of it to a download handler the toolbar button
+calls. Custom toolbars can reuse any stage.
+
+Four supporting types: `ExportRowScope` and `ExportColumnScope` name the two
+scope unions, `ExportInfo` is what the lifecycle hooks receive, and
+`ExportContext` carries the selection and full column set that `scope:
+"selected"` and `columns: "all"` need — the adapters pass it automatically, and
+only a hand-built `downloadTableCsv` call has to supply it.
 
 ## Sticky header, offset & scroll box
 

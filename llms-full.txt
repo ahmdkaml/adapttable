@@ -2796,6 +2796,56 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "all"` — the full filtered+sorted set when the source exposes it
   (frontend does); server-backed sources fall back to the current page unless
   you wire your own download against an export endpoint via `toolbar`.
+- `scope: "selected"` — the ticked rows, in table order. Selection is a set of
+  ids, so a row checked on page 1 is still in the file while page 3 is on
+  screen. Nothing ticked writes a header-only file.
+
+`columns` chooses the file's shape independently of the rows:
+
+- `columns: "visible"` (default) — what the user can see, so the file matches
+  the screen.
+- `columns: "all"` — every defined column, including ones hidden through the
+  column menu, for a complete extract.
+- `columns: ["name", "email"]` — exactly these, in this order. A key matching
+  no column is ignored, so a stale saved config cannot break the button.
+
+The synthetic actions column is never exported under any of them.
+
+### Exporting a different value than the screen shows
+
+A cell formatted for reading is worse than useless in a spreadsheet: `"$1,240.00"`
+cannot be summed and `"3 days ago"` cannot be sorted. Give the column an
+`exportValue` and the file carries the value underneath while the table keeps
+rendering the friendly version:
+
+```tsx
+{
+  key: "budget",
+  accessor: (row) => money.format(row.budget),  // what the user reads
+  exportValue: (row) => row.budget,             // what the spreadsheet gets
+}
+```
+
+Columns without one export what the table shows, so this is only needed where
+the two genuinely differ. Formula escaping still applies to whatever is
+returned.
+
+### Before and after the file is written
+
+```tsx
+exportCsv={{
+  onBeforeExport: ({ rows, columns, filename }) => {
+    if (rows.length > 50_000) return false;          // cancel
+    return { filename: `people-${rows.length}.csv` }; // or rename
+  },
+  onAfterExport: ({ csv, filename }) => track("export", { filename }),
+}}
+```
+
+`onBeforeExport` runs once the rows and columns are resolved and before
+anything is written — the only moment where the file's contents are known and
+nothing has happened yet. Return `false` to cancel, `{ filename }` to rename,
+or nothing to continue. `onAfterExport` receives the text that was written.
 
 Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 `downloadTableCsv` from `@adapttable/core`.
@@ -2803,12 +2853,18 @@ Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 ### The CSV pipeline (headless)
 
 The export path is exported end to end: `exportableColumns` filters the
-visible layout to columns with exportable values, `buildTableCsv` turns
-rows + columns into CSV text (`RowsToCsvOptions` controls delimiter,
-BOM and `escapeFormulas`), `resolveExportCsv` normalizes the `exportCsv`
-prop (`ExportCsvOptions`), and `makeExportCsvHandler` wires all of it to
-a download handler the toolbar button calls. Custom toolbars can reuse
-any stage.
+visible layout to columns with exportable values, `resolveExportColumns`
+applies a column scope to them, `buildTableCsv` turns rows + columns into CSV
+text (`RowsToCsvOptions` controls delimiter, BOM and `escapeFormulas`),
+`resolveExportCsv` normalizes the `exportCsv` prop (`ExportCsvOptions`), and
+`makeExportCsvHandler` wires all of it to a download handler the toolbar button
+calls. Custom toolbars can reuse any stage.
+
+Four supporting types: `ExportRowScope` and `ExportColumnScope` name the two
+scope unions, `ExportInfo` is what the lifecycle hooks receive, and
+`ExportContext` carries the selection and full column set that `scope:
+"selected"` and `columns: "all"` need — the adapters pass it automatically, and
+only a hand-built `downloadTableCsv` call has to supply it.
 
 ## Sticky header, offset & scroll box
 
@@ -3110,31 +3166,31 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Appearance & chrome
 
-| Prop                        | Type                                                            | Default         | Description                                                                                                                                                                                                                                |
-| --------------------------- | --------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tableLabel`                | `string`                                                        | —               | Accessible label for the table.                                                                                                                                                                                                            |
-| `labels`                    | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                                                                                                                |
-| `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                            |
-| `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                 |
-| `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                 |
-| `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                            |
-| `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                              |
-| `exportCsv`                 | `boolean \| { filename?: string; scope?: "page" \| "all" }`     | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page; `scope: "all"` uses the full filtered set when the source provides it — server sources without `allFilteredRows` fall back to the current page with a dev warning. |
-| `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                  |
-| `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                     |
-| `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                      |
-| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                         |
-| `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                  |
-| `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                         |
-| `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                |
-| `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                        |
-| `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                              |
-| `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                            |
-| `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                          |
-| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                |
-| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                        |
-| `collapsedGroupIds`         | `readonly string[]`                                             | —               | Controlled collapsed group keys (ephemeral — not URL-synced).                                                                                                                                                                              |
-| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —               | Controlled collapse channel; uncontrolled mode uses internal state.                                                                                                                                                                        |
+| Prop                        | Type                                                            | Default         | Description                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tableLabel`                | `string`                                                        | —               | Accessible label for the table.                                                                                                                                                                                                                                                                                                                                                  |
+| `labels`                    | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                                                                                                                                                                                                                                                      |
+| `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                                                                                                                                                                  |
+| `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                                                                                                                                                       |
+| `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                                                                                                                                                       |
+| `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                                                                                                                                                                  |
+| `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                                                                                                                                                                    |
+| `exportCsv`                 | `boolean \| ExportCsvOptions<TRow>`                             | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page. `scope` picks the rows (`"page"`, `"all"`, `"selected"`), `columns` picks the fields (`"visible"`, `"all"`, or an explicit key list), and `onBeforeExport` / `onAfterExport` can rename, cancel or observe. A server source without `allFilteredRows` falls back to the current page with a dev warning. |
+| `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                                                                                                                                                        |
+| `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                                                                                                                                                           |
+| `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                                                                                                                                                            |
+| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                                                                                                                                                               |
+| `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
+| `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
+| `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
+| `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                                                                                                                                                              |
+| `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                                                                                                                                                                    |
+| `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
+| `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
+| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
+| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                                                                                                                                                              |
+| `collapsedGroupIds`         | `readonly string[]`                                             | —               | Controlled collapsed group keys (ephemeral — not URL-synced).                                                                                                                                                                                                                                                                                                                    |
+| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —               | Controlled collapse channel; uncontrolled mode uses internal state.                                                                                                                                                                                                                                                                                                              |
 
 ### Virtualization
 
@@ -3173,6 +3229,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
 | `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
 | `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
+| `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
 | `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
 | `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
 | `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |

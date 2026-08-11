@@ -198,7 +198,14 @@ export function useDataTableShell<TRow>(
     onExportCsv: makeExportCsvHandler(
       props.exportCsv,
       chrome.source,
-      chrome.columnLayout.visibleColumns
+      chrome.columnLayout.visibleColumns,
+      // The selection and the full column set, so `scope: "selected"` and
+      // `columns: "all"` work without the host wiring anything up.
+      {
+        selectedIds: table.selection?.selectedIds,
+        getRowId,
+        allColumns: chrome.allColumns,
+      }
     ),
     dir: props.dir,
   };
