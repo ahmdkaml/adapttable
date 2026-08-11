@@ -131,27 +131,58 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
 ];
 
 /** Scale-demo knobs from the URL — `?rows=N` (default 50,000), `?virtualize=0`
- *  to turn windowing OFF, and `?all=1` to load the whole list up front. The
- *  three drive the documented virtualized-vs-not A/B benchmark target. */
-function scaleParams(): { total: number; virtual: boolean; all: boolean } {
+ *  to turn windowing OFF, `?all=1` to load the whole list up front, and
+ *  `?cols=N` to pad the table out to N columns. They drive the benchmark
+ *  suite (`scripts/bench.mjs`); every default is the demo a visitor sees. */
+function scaleParams(): {
+  total: number;
+  virtual: boolean;
+  all: boolean;
+  cols: number;
+} {
   if (typeof window === "undefined")
-    return { total: 50000, virtual: true, all: false };
+    return { total: 50000, virtual: true, all: false, cols: 0 };
   const p = new URLSearchParams(window.location.search);
   const n = Number(p.get("rows"));
+  const c = Number(p.get("cols"));
   return {
     total: Number.isInteger(n) && n > 0 ? n : 50000,
     virtual: p.get("virtualize") !== "0",
     all: p.get("all") === "1",
+    cols: Number.isInteger(c) && c > 0 ? c : 0,
   };
+}
+
+/**
+ * Pad the column set out to `cols` for the wide-table benchmark: the real
+ * columns first, then synthetic ones reading a rotating field. Returns the
+ * untouched set when the knob is absent, so the demo is unaffected.
+ */
+function widen(
+  columns: ColumnDef<BigPerson>[],
+  cols: number
+): ColumnDef<BigPerson>[] {
+  if (cols <= columns.length) return columns;
+  const extra: ColumnDef<BigPerson>[] = [];
+  for (let i = columns.length; i < cols; i++) {
+    extra.push({
+      key: `synthetic${i}`,
+      header: `Col ${i}`,
+      accessor: (r) => (i % 2 === 0 ? r.role : r.status),
+      width: 120,
+    });
+  }
+  return [...columns, ...extra];
 }
 
 /** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const { total, virtual, all } = scaleParams();
+  const { total, virtual, all, cols } = scaleParams();
   const rows = useMemo(() => makeBigList(total), [total]);
+  const columns = useMemo(() => widen(COLUMNS, cols), [cols]);
   const source = useFrontendData<BigPerson>({
     data: rows,
-    columns: COLUMNS,
+    columns,
     urlKey: "scale",
     // Virtualization needs a continuous list, not pages: infinite mode keeps
     // ONE growing window that the virtualizer extends automatically whenever
@@ -164,7 +195,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
       <DataTable
         source={source}
-        columns={COLUMNS}
+        columns={columns}
         rowKey={(r) => String(r.id)}
         labels={getLabels("en")}
         searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}

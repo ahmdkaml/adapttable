@@ -97,9 +97,19 @@ And it stays flat: the rendered row count holds at **~24 whether the dataset is
 |     Rows in the DOM | **24** | **24** | **24** |  **24** |
 
 Reproduce both with
-[`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
-against a running showcase. (Numbers are from one dev laptop; the **shape** —
-constant DOM, about half the memory — does not change with hardware.)
+[`scripts/bench.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench.mjs)
+against a running showcase — it drives this demo through the whole scenario
+set (wide tables, grouping, pinned columns, sorted data) and prints the DOM
+rows, cells, heap and time-to-interactive for each:
+
+```bash
+pnpm --filter @adapttable/showcase dev   # in one terminal
+node scripts/bench.mjs                   # every scenario
+node scripts/bench.mjs --smoke           # the fast subset CI runs
+```
+
+(Numbers are from one dev laptop; the **shape** — constant DOM, about half the
+memory — does not change with hardware.)
 
 ## Notes
 
