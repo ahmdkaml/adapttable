@@ -88,6 +88,15 @@ export {
 } from "./filters/useFilterOptions";
 export type { BaseDataTableProps } from "./props";
 export {
+  type AggregateFn,
+  isFilterGroup,
+  type QueryAggregate,
+  type QueryCondition,
+  type QueryExtensions,
+  type QueryFilterGroup,
+  type QuerySupport,
+} from "./source/queryContract";
+export {
   type TableQuery,
   useServerData,
   type UseServerDataOptions,

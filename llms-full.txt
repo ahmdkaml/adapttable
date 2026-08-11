@@ -507,6 +507,55 @@ export function PeopleTable() {
 }
 ```
 
+#### What the query carries, and how it grows
+
+Every server tier receives one consolidated `TableQuery`:
+
+```ts
+{
+  (page, limit, search, sortBy, sortDir, sortLevels, filters);
+}
+```
+
+That is the whole baseline, and it will not change. Capabilities beyond it —
+grouping, aggregates, nested filter trees, facet counts, cursor pagination —
+ride as **optional** fields that a source opts into by declaring what its
+endpoint can answer:
+
+```tsx
+useServerData({
+  rows,
+  total,
+  // this endpoint can group and count; it cannot do the rest yet
+  supports: { grouping: true, facets: true },
+  onQueryChange: async (query, { signal }) => {
+    // query.groupBy → ["team"] when the user is grouping
+    // query.facets  → ["status"] when a filter wants distinct-value counts
+  },
+});
+```
+
+Declare nothing and nothing changes: the query arrives with exactly the seven
+baseline fields, so an endpoint written before a capability existed keeps
+working untouched. Declare a capability and its field starts arriving.
+
+If the table wants something the source has not declared, the field is
+**omitted rather than sent and ignored** — a server should never receive a
+field it never agreed to read — and development logs which capability would
+unlock it. That warning is the intended way to discover the next thing your
+backend could do, not an error.
+
+| Field        | Capability   | Carries                                   |
+| ------------ | ------------ | ----------------------------------------- |
+| `groupBy`    | `grouping`   | Grouping keys, outermost first            |
+| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute            |
+| `filterTree` | `filterTree` | Nested AND/OR condition tree              |
+| `facets`     | `facets`     | Column keys needing distinct-value counts |
+| `cursor`     | `cursor`     | Opaque cursor from the previous response  |
+
+The flat `filters` bag is always populated, including when `filterTree` is
+sent, so a server that only reads the simple form keeps working.
+
 ### 3. Full control — `source`
 
 Build a `TableSource` yourself — `useQuerySource` over TanStack Query (shown
@@ -2056,9 +2105,19 @@ And it stays flat: the rendered row count holds at **~24 whether the dataset is
 |     Rows in the DOM | **24** | **24** | **24** |  **24** |
 
 Reproduce both with
-[`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
-against a running showcase. (Numbers are from one dev laptop; the **shape** —
-constant DOM, about half the memory — does not change with hardware.)
+[`scripts/bench.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench.mjs)
+against a running showcase — it drives this demo through the whole scenario
+set (wide tables, grouping, pinned columns, sorted data) and prints the DOM
+rows, cells, heap and time-to-interactive for each:
+
+```bash
+pnpm --filter @adapttable/showcase dev   # in one terminal
+node scripts/bench.mjs                   # every scenario
+node scripts/bench.mjs --smoke           # the fast subset CI runs
+```
+
+(Numbers are from one dev laptop; the **shape** — constant DOM, about half the
+memory — does not change with hardware.)
 
 ## Notes
 
@@ -3139,6 +3198,12 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `TableSource<TRow>`                                                 | The uniform data + state contract a table consumes (rows, total, loading flags, state read/write).           |
 | `TableQuery`                                                        | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`. |
 | `TableQueryParams`                                                  | Baseline query params a backend list endpoint receives.                                                      |
+| `QuerySupport`                                                      | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.               |
+| `QueryExtensions`                                                   | The optional query fields those capabilities unlock, carried on `TableQuery`.                                |
+| `QueryAggregate`                                                    | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.            |
+| `AggregateFn`                                                       | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
+| `QueryCondition` / `QueryFilterGroup`                               | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                 |
+| `isFilterGroup`                                                     | Narrows a filter-tree child to a nested group while walking the tree.                                        |
 | `PaginatedResponse<TRow>`                                           | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                             |
 | `ColumnLayoutState`                                                 | `{ hidden, order, pinned, widths }` — the column-layout shape.                                               |
 | `TableLabels`                                                       | Every string the table renders; all keys optional, English defaults fill gaps.                               |

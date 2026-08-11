@@ -89,6 +89,55 @@ export function PeopleTable() {
 }
 ```
 
+#### What the query carries, and how it grows
+
+Every server tier receives one consolidated `TableQuery`:
+
+```ts
+{
+  (page, limit, search, sortBy, sortDir, sortLevels, filters);
+}
+```
+
+That is the whole baseline, and it will not change. Capabilities beyond it —
+grouping, aggregates, nested filter trees, facet counts, cursor pagination —
+ride as **optional** fields that a source opts into by declaring what its
+endpoint can answer:
+
+```tsx
+useServerData({
+  rows,
+  total,
+  // this endpoint can group and count; it cannot do the rest yet
+  supports: { grouping: true, facets: true },
+  onQueryChange: async (query, { signal }) => {
+    // query.groupBy → ["team"] when the user is grouping
+    // query.facets  → ["status"] when a filter wants distinct-value counts
+  },
+});
+```
+
+Declare nothing and nothing changes: the query arrives with exactly the seven
+baseline fields, so an endpoint written before a capability existed keeps
+working untouched. Declare a capability and its field starts arriving.
+
+If the table wants something the source has not declared, the field is
+**omitted rather than sent and ignored** — a server should never receive a
+field it never agreed to read — and development logs which capability would
+unlock it. That warning is the intended way to discover the next thing your
+backend could do, not an error.
+
+| Field        | Capability   | Carries                                   |
+| ------------ | ------------ | ----------------------------------------- |
+| `groupBy`    | `grouping`   | Grouping keys, outermost first            |
+| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute            |
+| `filterTree` | `filterTree` | Nested AND/OR condition tree              |
+| `facets`     | `facets`     | Column keys needing distinct-value counts |
+| `cursor`     | `cursor`     | Opaque cursor from the previous response  |
+
+The flat `filters` bag is always populated, including when `filterTree` is
+sent, so a server that only reads the simple form keeps working.
+
 ### 3. Full control — `source`
 
 Build a `TableSource` yourself — `useQuerySource` over TanStack Query (shown
