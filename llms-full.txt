@@ -3568,6 +3568,24 @@ Every package sets `sideEffects: false` and ships ESM, so unused code is
 tree-shaken. You only install the one adapter you use; the headless core has
 zero UI-kit dependencies.
 
+Measured on the published builds, with React and your UI kit external because
+your app already ships those:
+
+| What you import                           | min+gzip  |
+| ----------------------------------------- | --------- |
+| `useFrontendData` + `useDataTable` (core) | ~10 kB    |
+| every core export                         | ~34 kB    |
+| `DataTable` from an adapter               | ~51–57 kB |
+
+The first row is the one to read: a headless table costs about a fifth of the
+full core, because the parts you never import never arrive. All eight adapters
+land within a few kB of each other, so switching kits does not change what you
+pay.
+
+These are not estimates. `pnpm budget` bundles each of those imports for real
+and fails the build if one crosses its ceiling, so the numbers on this page
+cannot quietly go stale.
+
 ## How do I get started quickly?
 
 ```bash
@@ -4335,7 +4353,7 @@ All verifiable as of mid-2026:
   Your table shouldn't decide your framework versions.
 - **Weight**: ~102 kB gzipped with 18 runtime dependencies (it bundles
   drag-and-drop, print, and CSV machinery whether you use them or not).
-  AdaptTable core + the MUI adapter is ~45 kB min+gzip, tree-shaken.
+  AdaptTable core + the MUI adapter is ~51 kB min+gzip, tree-shaken.
 - **No bundled types**: TypeScript definitions live in community
   `@types/mui-datatables` and can drift. AdaptTable is TypeScript-first.
 
@@ -4751,7 +4769,7 @@ grids, and pretending otherwise would waste your week.
 This page is for the other — much larger — group: teams running **ordinary
 CRUD tables** on AG Grid Community, paying for spreadsheet power they don't
 use in three currencies: **bundle size** (the full Community setup is ~346 kB
-min+gzip of grid code vs ~45 kB for AdaptTable core + an adapter), **churn**
+min+gzip of grid code vs ~51 kB for AdaptTable core + an adapter), **churn**
 (a new AG Grid major about every 6 months — v32.2 rewrote the selection API,
 v33 made module registration and the Theming API mandatory, v36 overhauled
 the DOM and CSS class names), and **look** (AG Grid renders its own theme;

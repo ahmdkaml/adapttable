@@ -25,7 +25,7 @@ All verifiable as of mid-2026:
   Your table shouldn't decide your framework versions.
 - **Weight**: ~102 kB gzipped with 18 runtime dependencies (it bundles
   drag-and-drop, print, and CSV machinery whether you use them or not).
-  AdaptTable core + the MUI adapter is ~45 kB min+gzip, tree-shaken.
+  AdaptTable core + the MUI adapter is ~51 kB min+gzip, tree-shaken.
 - **No bundled types**: TypeScript definitions live in community
   `@types/mui-datatables` and can drift. AdaptTable is TypeScript-first.
 

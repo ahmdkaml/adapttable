@@ -225,7 +225,7 @@ jobs:
         run: pnpm test:coverage --concurrency=1
 
   package:
-    name: Package (build · publint · smoke)
+    name: Package (build · publint · smoke · budget)
     needs: changes
     if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
@@ -259,6 +259,12 @@ jobs:
 
       - name: Smoke-check built package artifacts
         run: pnpm smoke:dist
+
+      # Features are opt-in, so a simple table must stay small. This bundles
+      # consumer fixtures against the freshly built packages and fails if one
+      # crosses its written ceiling.
+      - name: Bundle-size budget
+        run: pnpm budget
 
 
   # Each adapter promises a kit FLOOR (Mantine 7.2, MUI 6, …). This job runs
