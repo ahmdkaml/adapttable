@@ -235,6 +235,30 @@ with `source` dev-warns and `source` wins.
   and URL parsing in **all three tiers**; only the frontend tier also applies
   the row predicate (the other tiers receive `query.filters` instead).
 
+## Which requests actually fire
+
+`onQueryChange` fires per real change, not per render. Four guarantees, each
+covered by a test:
+
+- **One request per query.** Queries are compared by value, so setting the same
+  search term three times in a tick, an identical re-render, or a StrictMode
+  double-mount all collapse into a single call.
+- **Setting a value it already holds is not a change.** No request fires.
+- **A superseded request aborts.** When a newer query replaces an in-flight
+  one, the previous call's `signal` fires. Forward it to `fetch` and an
+  out-of-order response dies at the source rather than overwriting fresher
+  rows.
+- **Returning to a value re-requests it.** Typing `a` → `ab` → `a` fires three
+  times. The first `a` was aborted the moment `ab` superseded it, so collapsing
+  the third call would leave the table with nothing in flight and nothing to
+  show.
+
+`refetch()` is the one deliberate exception: it asks for fresh data, so it
+fires even though the query has not changed.
+
+Using `useQuerySource` instead? Deduplication is your query library's, keyed
+the way you configured it, and these guarantees do not apply.
+
 ## Options
 
 | Prop            | Type                                                                          | Default | Description                                                                                     |
