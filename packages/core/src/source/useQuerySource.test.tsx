@@ -310,3 +310,102 @@ describe("useQuerySource", () => {
     expect(q.refetch).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * Cursor pagination on the query-library tier.
+ *
+ * The point of a cursor is that it names a position in the result rather than a
+ * distance into it: rows inserted or deleted mid-read shift every offset after
+ * them, which is how an offset pager duplicates or skips rows. So these check
+ * the token round-trip and, above all, that the trail is thrown away the moment
+ * the query means something different.
+ */
+describe("useQuerySource — cursor pagination", () => {
+  const cursorPage = (items: Row[], next: string | null): Page =>
+    ({ items, pagination: { total: 0 }, next }) as Page & {
+      next: string | null;
+    };
+  const nextCursor = (p: Page) => (p as Page & { next: string | null }).next;
+
+  it("sends no cursor until the capability is declared", () => {
+    const query = makeQuery({
+      pages: [cursorPage([{ id: "a", name: "A" }], "t1")],
+    });
+    mount(query, { selectPage, nextCursor });
+    expect(last(query.calls).cursor).toBeUndefined();
+  });
+
+  it("sends nothing for page 1 — the first page needs no token", () => {
+    const query = makeQuery({
+      pages: [cursorPage([{ id: "a", name: "A" }], "t1")],
+    });
+    mount(query, { selectPage, nextCursor, supports: { cursor: true } });
+    expect(last(query.calls).cursor).toBeUndefined();
+  });
+
+  it("sends the token the previous page returned when the user pages forward", async () => {
+    const query = makeQuery({
+      pages: [cursorPage([{ id: "a", name: "A" }], "t1")],
+    });
+    const { result } = mount(query, {
+      selectPage,
+      nextCursor,
+      supports: { cursor: true },
+    });
+    await act(async () => {
+      result.current.setPage(2);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(last(query.calls).cursor).toBe("t1");
+    });
+  });
+
+  it("keeps a trail, so paging back replays the user's own cursors", async () => {
+    const query = makeQuery({
+      pages: [cursorPage([{ id: "a", name: "A" }], "t1")],
+    });
+    const { result } = mount(query, {
+      selectPage,
+      nextCursor,
+      supports: { cursor: true },
+    });
+    await act(async () => {
+      result.current.setPage(2);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(last(query.calls).cursor).toBe("t1"));
+    await act(async () => {
+      result.current.setPage(1);
+      await Promise.resolve();
+    });
+    // Back to the start: page 1 is reachable without a token, and the token for
+    // page 2 is still held rather than refetched.
+    expect(last(query.calls).cursor).toBeUndefined();
+  });
+
+  it("throws the trail away when the query means something else", async () => {
+    const query = makeQuery({
+      pages: [cursorPage([{ id: "a", name: "A" }], "t1")],
+    });
+    const { result } = mount(query, {
+      selectPage,
+      nextCursor,
+      supports: { cursor: true },
+    });
+    await act(async () => {
+      result.current.setPage(2);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(last(query.calls).cursor).toBe("t1"));
+    // A new search makes every held token point into a result that no longer
+    // exists. Paging into one would show rows from the previous query.
+    await act(async () => {
+      result.current.setSearch("ada");
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(last(query.calls).cursor).toBeUndefined();
+    });
+  });
+});

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type {
@@ -10,6 +10,7 @@ import {
   useTableUrlState,
   type UseTableUrlStateOptions,
 } from "../url/useTableUrlState";
+import { applyQuerySupport, type QuerySupport } from "./queryContract";
 import type { TableSource } from "./TableSource";
 
 /**
@@ -71,6 +72,22 @@ export interface UseQuerySourceOptions<
   sanitizeParams?: (params: Partial<TParams>) => Partial<TParams>;
   /** Force the resolved mobile state instead of a media query (test/SSR seam). */
   forceMobile?: boolean;
+  /**
+   * What the endpoint can answer, exactly as {@link useServerData} takes it.
+   * Only a declared capability is ever sent; an undeclared one is dropped
+   * before the request rather than sent and ignored.
+   */
+  supports?: QuerySupport;
+  /**
+   * The token that opens the NEXT page, read from the page the query just
+   * returned — pass it and declare `supports: { cursor: true }` to page by
+   * cursor instead of by offset.
+   *
+   * Rows inserted or deleted mid-read shift every offset after them, which is
+   * how an offset pager duplicates or skips rows; a cursor names a position in
+   * the result rather than a distance into it.
+   */
+  nextCursor?: (page: TPage) => string | null | undefined;
 }
 
 const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
@@ -97,6 +114,8 @@ export function useQuerySource<
     paginationMode = "auto",
     sanitizeParams,
     forceMobile,
+    supports,
+    nextCursor,
     ...urlOptions
   } = options;
 
@@ -107,6 +126,16 @@ export function useQuerySource<
 
   const state = useTableUrlState(urlOptions);
   const { page, limit, search, sortBy, sortDir, groupBy, extra } = state;
+
+  // Cursor mode keeps every token the server has handed out, indexed by the
+  // page it opens: `cursors[0]` is always `undefined` (page 1 needs no token)
+  // and `cursors[n]` opens page n+1. The trail is what lets the user page BACK
+  // through what they have already seen — a single "next cursor" cannot.
+  const cursorMode = supports?.cursor === true;
+  const [cursors, setCursors] = useState<readonly (string | undefined)[]>([
+    undefined,
+  ]);
+  const cursor = cursorMode ? cursors[page - 1] : undefined;
 
   const params = useMemo(() => {
     // baseParams are DEFAULTS: everything live is written after them, so a
@@ -121,6 +150,8 @@ export function useQuerySource<
     merged.sortDir = sortDir;
     merged.groupBy = groupBy;
     merged.filters = extra;
+    // Everything past the baseline is gated on what the source declared.
+    Object.assign(merged, applyQuerySupport({ cursor }, supports));
     const next = merged as Partial<TParams>;
     return sanitizeParams ? sanitizeParams(next) : next;
   }, [
@@ -133,9 +164,37 @@ export function useQuerySource<
     sortDir,
     groupBy,
     sanitizeParams,
+    cursor,
+    supports,
   ]);
 
   const query = usePaginatedQuery(params);
+
+  // Record the token the CURRENT page handed back, so "next" has something to
+  // send and a later "back" can retrace the trail. Read from the last page the
+  // infinite query holds, which is the one the table is showing.
+  const lastPage = query.data?.pages.at(-1);
+  const token = cursorMode && lastPage ? nextCursor?.(lastPage) : undefined;
+  useEffect(() => {
+    if (!cursorMode || token === undefined || token === null) return;
+    setCursors((prev) => {
+      if (prev[page] === token) return prev;
+      const next = [...prev];
+      next[page] = token;
+      return next;
+    });
+  }, [cursorMode, token, page]);
+
+  // A query whose cursor trail is stale must start over rather than page into
+  // a position that no longer exists: any change to what the query MEANS
+  // (search, sort, filters, page size) invalidates every token already held.
+  const trailKey = `${limit}|${search}|${sortBy ?? ""}|${sortDir ?? ""}|${groupBy ?? ""}|${JSON.stringify(extra)}`;
+  const previousTrailKey = useRef(trailKey);
+  useEffect(() => {
+    if (!cursorMode || previousTrailKey.current === trailKey) return;
+    previousTrailKey.current = trailKey;
+    setCursors([undefined]);
+  }, [cursorMode, trailKey]);
 
   // Route the selector through a ref so the rows memo only refires when
   // upstream data changes, not on every parent render (inline selectors

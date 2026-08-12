@@ -273,6 +273,12 @@ export interface TableQueryParams {
    * state param (`sortBy`, `search`, …) can never collide with one.
    */
   filters?: ExtraFilters;
+  /**
+   * The opaque token that opens this page, present only in cursor mode — a
+   * source that never declares `supports: { cursor: true }` never receives it,
+   * and page 1 never carries one.
+   */
+  cursor?: string;
 }
 
 /** Standard paginated response envelope. */
