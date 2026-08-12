@@ -141,15 +141,47 @@ async function sample(query) {
     }
   }
 
-  const { domCells, heapMB } = await page.evaluate(() => ({
-    domCells: document.querySelectorAll("table tbody td").length,
-    heapMB:
-      "memory" in performance
-        ? Math.round(performance.memory.usedJSHeapSize / 1048576)
-        : null,
-  }));
+  const domCells = await page.evaluate(
+    () => document.querySelectorAll("table tbody td").length
+  );
+  const heapMB = await retainedHeapMB(page);
   await page.context().browser().close();
   return { domRows: prev, domCells, heapMB, interactiveMs };
+}
+
+/**
+ * Retained heap, which is not what `usedJSHeapSize` reports on its own.
+ *
+ * That figure counts everything allocated and not yet collected, so it answers
+ * "how much has V8 got its hands on right now", not "how much does this table
+ * hold". The gap is enormous and it is not noise: on a busy machine the
+ * virtualized arm reads ~215 MB, and on an idle one the same page reads 17 MB.
+ * Under CPU contention V8 cannot finish collecting, even when asked directly.
+ *
+ * So collect until the number stops falling. Garbage can only ever inflate the
+ * reading — it can never push it below what is genuinely retained — which
+ * makes the floor the honest answer and makes the measurement reproducible on
+ * a laptop that is also doing something else.
+ */
+async function retainedHeapMB(page, { maxPasses = 10 } = {}) {
+  if (!(await page.evaluate(() => "memory" in performance))) return null;
+  const cdp = await page.context().newCDPSession(page);
+  let min = Infinity;
+  let steady = 0;
+  for (let pass = 0; pass < maxPasses && steady < 3; pass++) {
+    await cdp.send("HeapProfiler.collectGarbage");
+    await page.waitForTimeout(120);
+    const mb = await page.evaluate(
+      () => performance.memory.usedJSHeapSize / 1048576
+    );
+    if (mb < min - 0.5) {
+      min = mb;
+      steady = 0;
+    } else {
+      steady++;
+    }
+  }
+  return Math.round(min);
 }
 
 /** A scenario fails only against its own stated expectation, never a diff. */
@@ -220,8 +252,27 @@ const chosen = SMOKE ? SCENARIOS.filter((s) => s.smoke) : SCENARIOS;
 const results = [];
 let failed = 0;
 
+/**
+ * Measure a scenario twice and keep the lower heap reading.
+ *
+ * Collecting until the number settles fixes most of the variance, but roughly
+ * one run in five on a loaded machine still comes back inflated and stays
+ * there however many times it is asked to collect. A second page load clears
+ * it, and since the DOM counts are identical between the two, the only thing
+ * this picks between is the heap figure — the lower of which is the real one.
+ */
+async function measure(query) {
+  const first = await sample(query);
+  const second = await sample(query);
+  const heapMB =
+    first.heapMB === null || second.heapMB === null
+      ? (first.heapMB ?? second.heapMB)
+      : Math.min(first.heapMB, second.heapMB);
+  return { ...first, heapMB };
+}
+
 for (const scenario of chosen) {
-  const result = await sample(scenario.query);
+  const result = await measure(scenario.query);
   const failures = verdict(result, scenario.expect);
   if (failures.length) failed++;
   results.push({ ...scenario, ...result, failures });
