@@ -303,6 +303,7 @@ export function MobileCards<TRow>({
               <li key={entry.key} style={{ display: "block" }}>
                 <GroupHeaderCard
                   entry={entry}
+                  columns={columns}
                   selection={selection}
                   labels={labels}
                   classNames={classNames}

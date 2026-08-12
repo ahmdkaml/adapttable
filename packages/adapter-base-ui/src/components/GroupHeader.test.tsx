@@ -1,4 +1,8 @@
-import { type GroupedFlatEntry, type SelectionState } from "@adapttable/core";
+import {
+  type ColumnDef,
+  type GroupedFlatEntry,
+  type SelectionState,
+} from "@adapttable/core";
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -14,6 +18,14 @@ interface Row {
 }
 
 type GroupEntry = Extract<GroupedFlatEntry<Row>, { kind: "group" }>;
+
+const LABEL_CELL = '[data-adapttable-part="group-cell"]';
+const CELL_TAG = "td";
+
+const COLUMNS: ColumnDef<Row>[] = [
+  { key: "name", header: "Name" },
+  { key: "team", header: "Team" },
+];
 
 const GROUP_KEY = "group:team:Core";
 const LEAF_IDS = ["1", "2"] as const;
@@ -62,7 +74,10 @@ function renderRow(
       <Table.Body>
         <GroupHeaderRow
           entry={makeGroupEntry()}
-          columnSpan={3}
+          columns={COLUMNS}
+          leadingCells={0}
+          showActions={false}
+          getCellProps={() => ({})}
           selection={null}
           labels={labels}
           onToggleCollapse={onToggleCollapse}
@@ -75,6 +90,26 @@ function renderRow(
 }
 
 describe("GroupHeaderRow (base-ui)", () => {
+  it("puts a subtotal in its own column's cell, not the label's", () => {
+    // The defect this replaced: every aggregate lived inside one spanning cell
+    // and was pushed to the row's end, which on a scrolling table is past the
+    // right edge of what the user can see.
+    renderRow({
+      columns: COLUMNS,
+      entry: makeGroupEntry({ aggregateCells: { team: <span>$99</span> } }),
+    });
+    const label = document.querySelector(LABEL_CELL);
+    const cells = [...document.querySelectorAll(CELL_TAG)];
+    const aggregate = document.querySelector(
+      '[data-adapttable-part="group-aggregate"][data-column="team"]'
+    );
+    // The label spans the columns before it; the number sits in a later cell.
+    expect(label).toHaveAttribute("colspan", "1");
+    expect(aggregate).toHaveTextContent("$99");
+    expect(label?.contains(aggregate ?? null)).toBe(false);
+    expect(cells).toHaveLength(2);
+  });
+
   it("renders label, count, aggregates, and group hooks", () => {
     renderRow({
       entry: makeGroupEntry({
@@ -147,6 +182,7 @@ describe("GroupHeaderCard (base-ui)", () => {
     const selection = makeSelection(LEAF_IDS);
     renderBaseUi(
       <GroupHeaderCard
+        columns={COLUMNS}
         entry={makeGroupEntry({ collapsed: true })}
         selection={selection}
         labels={labels}

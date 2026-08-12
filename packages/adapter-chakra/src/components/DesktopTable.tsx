@@ -310,6 +310,7 @@ function createDesktopRow<TRow>() {
 
 /** Body rows for {@link DesktopTable}: group headers + leaves, or leaf-only. */
 function DesktopTableRows<TRow>({
+  getCellProps,
   gridFocus,
   grouping,
   entries,
@@ -335,6 +336,8 @@ function DesktopTableRows<TRow>({
   Row,
   onToggleGroup,
 }: Readonly<{
+  /** The table's per-column cell props, for the group row's aggregate cells. */
+  getCellProps: (column: ColumnDef<TRow>) => Record<string, unknown>;
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   grouping: SharedTableRenderProps<TRow>["grouping"];
@@ -368,7 +371,10 @@ function DesktopTableRows<TRow>({
           <GroupHeaderRow
             key={entry.key}
             entry={entry}
-            columnSpan={columnSpan}
+            columns={columns}
+            leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+            showActions={showActions}
+            getCellProps={getCellProps}
             selection={selection}
             labels={labels}
             dir={dir}
@@ -766,6 +772,7 @@ export function DesktopTable<TRow>({
             </Table.Row>
           )}
           <DesktopTableRows
+            getCellProps={table.getCellProps}
             gridFocus={gridFocus}
             grouping={grouping}
             entries={entries}

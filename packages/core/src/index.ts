@@ -390,6 +390,12 @@ export {
 
 /* ── Row grouping ──────────────────────────────────────────────────── */
 export {
+  groupAggregateEntries,
+  type GroupRowCell,
+  type GroupRowLayout,
+  groupRowLayout,
+} from "./grouping/groupRowLayout";
+export {
   buildGroupedFlatModel,
   formatGroupLabel,
   type GroupAggregatesFn,

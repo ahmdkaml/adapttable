@@ -293,6 +293,7 @@ export function MobileCards<TRow>({
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}
+                columns={columns}
                 selection={selection}
                 labels={labels}
                 dir={dir}

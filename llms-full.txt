@@ -2058,6 +2058,11 @@ because getting it wrong is invisible on screen.
 
 ▶ **See it working:** [collapse groups and read per-group subtotals in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/grouping/) — a real table you can click, not a recording.
 
+Each subtotal renders in its own column's cell, so it sits under the column it
+totals — on a mobile card, where there are no columns to align to, the same
+numbers appear captioned by their column instead. A custom renderer can place
+them the same way with `groupRowLayout` and `groupAggregateEntries`.
+
 Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
@@ -3999,7 +4004,10 @@ See [cell editing](./cell-editing.md).
 `GroupAggregatesFn` is the per-group mapper, `groupValueKey` buckets a value,
 `formatGroupLabel(value, blankLabel)` renders its header text,
 `groupSelectionState` gives a group checkbox its tri-state over the group's
-leaf ids, `windowGroupedEntries` slices the model to virtual window indices,
+leaf ids, `groupRowLayout` places a group header's cells so each subtotal sits
+under the column it totals (`GroupRowLayout` in, `GroupRowCell`s out) while
+`groupAggregateEntries` lists just the numbers for a mobile card,
+`windowGroupedEntries` slices the model to virtual window indices,
 and `useGroupCollapse` / `GroupCollapseState` hold which groups are collapsed.
 See [row grouping](./row-grouping.md).
 

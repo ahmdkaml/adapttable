@@ -1,9 +1,13 @@
 import {
+  type ColumnDef,
+  groupAggregateEntries,
   type GroupedFlatEntry,
+  groupRowLayout,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
+import { resolveMobileLabel } from "@adapttable/core/adapter";
 import {
   Box,
   Card,
@@ -70,13 +74,23 @@ function GroupToggle({
 /** MUI group header row for the desktop table. */
 export function GroupHeaderRow<TRow>({
   entry,
-  columnSpan,
+  columns,
+  leadingCells,
+  showActions,
+  getCellProps,
   selection,
   labels,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
-  columnSpan: number;
+  /** The data columns as rendered, so a subtotal lands under its own. */
+  columns: readonly ColumnDef<TRow>[];
+  /** Edge cells before the first data column (chevron, checkbox). */
+  leadingCells: number;
+  /** Whether a trailing actions column needs an empty cell. */
+  showActions: boolean;
+  /** The table's per-column cell props, so a number inherits its alignment. */
+  getCellProps: (column: ColumnDef<TRow>) => Record<string, unknown>;
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   onToggleCollapse: (groupKey: string) => void;
@@ -85,13 +99,19 @@ export function GroupHeaderRow<TRow>({
   const groupState = selection
     ? groupSelectionState(entry.leafIds, selection.selectedIds)
     : "none";
+  // One cell per column from the first aggregate onward: a subtotal only reads
+  // as one when it sits under the column it totals.
+  const layout = groupRowLayout(columns, entry.aggregateCells);
 
   return (
     <TableRow
       data-adapttable-part="group-row"
       data-collapsed={entry.collapsed ? "true" : undefined}
     >
-      <TableCell colSpan={columnSpan} sx={{ fontWeight: 600 }}>
+      <TableCell
+        colSpan={leadingCells + layout.labelColumns.length}
+        sx={{ fontWeight: 600 }}
+      >
         <Box
           sx={{
             display: "inline-flex",
@@ -131,20 +151,32 @@ export function GroupHeaderRow<TRow>({
           >
             {labels.groupCount(entry.leafIds.length)}
           </Typography>
-          {entry.aggregateCells &&
-            Object.entries(entry.aggregateCells).map(([key, node]) => (
-              <Box
-                key={key}
-                component="span"
-                data-adapttable-part="group-aggregate"
-                data-column={key}
-                sx={{ marginInlineStart: "auto" }}
-              >
-                {node}
-              </Box>
-            ))}
+          {layout.labelAggregates.map(({ column, node }) => (
+            <Box
+              key={column.key}
+              component="span"
+              data-adapttable-part="group-aggregate"
+              data-column={column.key}
+              sx={{ marginInlineStart: "auto" }}
+            >
+              {node}
+            </Box>
+          ))}
         </Box>
       </TableCell>
+      {layout.cells.map(({ column, node }) => (
+        <TableCell
+          key={column.key}
+          {...getCellProps(column)}
+          data-adapttable-part={
+            node === undefined ? undefined : "group-aggregate"
+          }
+          data-column={node === undefined ? undefined : column.key}
+        >
+          {node}
+        </TableCell>
+      ))}
+      {showActions && <TableCell />}
     </TableRow>
   );
 }
@@ -152,12 +184,15 @@ export function GroupHeaderRow<TRow>({
 /** Group header block for the mobile card list. */
 export function GroupHeaderCard<TRow>({
   entry,
+  columns,
   selection,
   labels,
   onToggleCollapse,
   compact = false,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  /** The card's columns, for captioning each subtotal. */
+  columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   onToggleCollapse: (groupKey: string) => void;
@@ -217,6 +252,28 @@ export function GroupHeaderCard<TRow>({
             {labels.groupCount(entry.leafIds.length)}
           </Typography>
         </Box>
+        {groupAggregateEntries(columns, entry.aggregateCells).map(
+          ({ column, node }) => (
+            <Box key={column.key} sx={{ display: "flex", gap: 1, mt: 0.5 }}>
+              <Typography
+                component="span"
+                variant="body2"
+                color="text.secondary"
+              >
+                {resolveMobileLabel(column)}
+              </Typography>
+              <Typography
+                component="span"
+                data-adapttable-part="group-aggregate"
+                data-column={column.key}
+                variant="body2"
+                sx={{ marginInlineStart: "auto" }}
+              >
+                {node}
+              </Typography>
+            </Box>
+          )
+        )}
       </CardContent>
     </Card>
   );

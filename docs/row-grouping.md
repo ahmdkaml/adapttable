@@ -4,6 +4,11 @@
 
 ▶ **See it working:** [collapse groups and read per-group subtotals in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/grouping/) — a real table you can click, not a recording.
 
+Each subtotal renders in its own column's cell, so it sits under the column it
+totals — on a mobile card, where there are no columns to align to, the same
+numbers appear captioned by their column instead. A custom renderer can place
+them the same way with `groupRowLayout` and `groupAggregateEntries`.
+
 Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).

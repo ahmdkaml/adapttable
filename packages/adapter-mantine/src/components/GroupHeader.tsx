@@ -1,9 +1,13 @@
 import {
+  type ColumnDef,
+  groupAggregateEntries,
   type GroupedFlatEntry,
+  groupRowLayout,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
+import { resolveMobileLabel } from "@adapttable/core/adapter";
 import { ActionIcon, Card, Checkbox, Group, Table, Text } from "@mantine/core";
 import type { ReactElement } from "react";
 
@@ -44,13 +48,23 @@ function GroupToggle({
 /** Mantine group header row for the desktop table. */
 export function GroupHeaderRow<TRow>({
   entry,
-  columnSpan,
+  columns,
+  leadingCells,
+  showActions,
+  getCellProps,
   selection,
   labels,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
-  columnSpan: number;
+  /** The data columns as rendered, so a subtotal lands under its own. */
+  columns: readonly ColumnDef<TRow>[];
+  /** Edge cells before the first data column (chevron, checkbox). */
+  leadingCells: number;
+  /** Whether a trailing actions column needs an empty cell. */
+  showActions: boolean;
+  /** The table's per-column cell props, so a number inherits its alignment. */
+  getCellProps: (column: ColumnDef<TRow>) => Record<string, unknown>;
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   onToggleCollapse: (groupKey: string) => void;
@@ -59,6 +73,9 @@ export function GroupHeaderRow<TRow>({
   const groupState = selection
     ? groupSelectionState(entry.leafIds, selection.selectedIds)
     : "none";
+  // One cell per column from the first aggregate onward: a subtotal only reads
+  // as one when it sits under the column it totals.
+  const layout = groupRowLayout(columns, entry.aggregateCells);
 
   return (
     <Table.Tr
@@ -66,7 +83,7 @@ export function GroupHeaderRow<TRow>({
       data-collapsed={entry.collapsed ? "true" : undefined}
       fw={600}
     >
-      <Table.Td colSpan={columnSpan}>
+      <Table.Td colSpan={leadingCells + layout.labelColumns.length}>
         <Group gap="xs" wrap="nowrap">
           <GroupToggle
             expanded={expanded}
@@ -94,20 +111,32 @@ export function GroupHeaderRow<TRow>({
           >
             {labels.groupCount(entry.leafIds.length)}
           </Text>
-          {entry.aggregateCells &&
-            Object.entries(entry.aggregateCells).map(([key, node]) => (
-              <Text
-                key={key}
-                component="span"
-                data-adapttable-part="group-aggregate"
-                data-column={key}
-                ms="auto"
-              >
-                {node}
-              </Text>
-            ))}
+          {layout.labelAggregates.map(({ column, node }) => (
+            <Text
+              key={column.key}
+              component="span"
+              data-adapttable-part="group-aggregate"
+              data-column={column.key}
+              ms="auto"
+            >
+              {node}
+            </Text>
+          ))}
         </Group>
       </Table.Td>
+      {layout.cells.map(({ column, node }) => (
+        <Table.Td
+          key={column.key}
+          {...getCellProps(column)}
+          data-adapttable-part={
+            node === undefined ? undefined : "group-aggregate"
+          }
+          data-column={node === undefined ? undefined : column.key}
+        >
+          {node}
+        </Table.Td>
+      ))}
+      {showActions && <Table.Td />}
     </Table.Tr>
   );
 }
@@ -115,12 +144,15 @@ export function GroupHeaderRow<TRow>({
 /** Group header block for the mobile card list. */
 export function GroupHeaderCard<TRow>({
   entry,
+  columns,
   selection,
   labels,
   onToggleCollapse,
   padding = "md",
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  /** The card's columns, for captioning each subtotal. */
+  columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   onToggleCollapse: (groupKey: string) => void;
@@ -169,6 +201,26 @@ export function GroupHeaderCard<TRow>({
           {labels.groupCount(entry.leafIds.length)}
         </Text>
       </Group>
+      {/* A card is a list of label/value pairs, not a row of columns, so a
+          subtotal is captioned rather than aligned — the same resolver the data
+          cards use, so the caption reads identically. */}
+      {groupAggregateEntries(columns, entry.aggregateCells).map(
+        ({ column, node }) => (
+          <Group key={column.key} gap="xs" wrap="nowrap" mt="xs">
+            <Text component="span" c="dimmed" fz="sm">
+              {resolveMobileLabel(column)}
+            </Text>
+            <Text
+              component="span"
+              data-adapttable-part="group-aggregate"
+              data-column={column.key}
+              ms="auto"
+            >
+              {node}
+            </Text>
+          </Group>
+        )
+      )}
     </Card>
   );
 }

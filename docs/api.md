@@ -288,7 +288,10 @@ See [cell editing](./cell-editing.md).
 `GroupAggregatesFn` is the per-group mapper, `groupValueKey` buckets a value,
 `formatGroupLabel(value, blankLabel)` renders its header text,
 `groupSelectionState` gives a group checkbox its tri-state over the group's
-leaf ids, `windowGroupedEntries` slices the model to virtual window indices,
+leaf ids, `groupRowLayout` places a group header's cells so each subtotal sits
+under the column it totals (`GroupRowLayout` in, `GroupRowCell`s out) while
+`groupAggregateEntries` lists just the numbers for a mobile card,
+`windowGroupedEntries` slices the model to virtual window indices,
 and `useGroupCollapse` / `GroupCollapseState` hold which groups are collapsed.
 See [row grouping](./row-grouping.md).
 

@@ -828,7 +828,10 @@ export function DesktopTable<TRow>({
                     <GroupHeaderRow
                       key={entry.key}
                       entry={entry}
-                      columnSpan={columnSpan}
+                      columns={columns}
+                      leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+                      showActions={showActions}
+                      getCellProps={table.getCellProps}
                       selection={selection}
                       labels={labels}
                       onToggleCollapse={onToggleGroup}
