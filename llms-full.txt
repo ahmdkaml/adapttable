@@ -875,6 +875,39 @@ export function People() {
 | `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                                        |
 | `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.                             |
 
+## The cell as text
+
+`accessor` returns a `ReactNode`, which is right for rendering and useless
+everywhere else: a status badge is a React element, an avatar cell is a
+component, and neither is a word. Anything that needs the cell as a **string** —
+a screen-reader announcement, an `aria-label`, a tooltip, a clipboard copy —
+has nothing to read.
+
+`formatValue` is that string:
+
+```tsx
+{
+  key: "status",
+  accessor: (row) => <Badge color={tone(row)}>{row.status}</Badge>,
+  formatValue: (row) => row.status,   // what a screen reader says
+}
+```
+
+Text is always available, so `formatValue` only matters where it makes the text
+_accurate_. `columnText(column, row)` resolves it in this order:
+
+1. `formatValue` — the column stating its own text
+2. `exportValue` — the underlying value, minus the formatting
+3. `sortValue` — a primitive by definition
+4. `accessor`, when it happens to return a primitive
+5. the key's data path
+
+with one deliberate restriction on that last step: **a column that renders its
+own cell never falls back to the data path.** A column with
+`accessor: () => null` renders an empty cell, and reading its path would
+announce a value the user cannot see — worse than announcing nothing. Such a
+column resolves to `""`, and giving it a `formatValue` is the fix.
+
 ## Computed columns
 
 A total, a margin, a full name, days-until-due — columns whose value is derived
@@ -3582,6 +3615,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
 | `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
 | `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
+| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                       |
 | `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
 | `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
 | `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
@@ -3779,6 +3813,14 @@ state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
 Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
 `RangeOpLabelKeys`. See [filtering](./filtering.md).
+
+**Reading a cell as text.** `columnText(column, row)` returns a column's cell
+as a string for anything that cannot render JSX. It resolves
+`formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a
+primitive → the key's data path, and never returns `undefined`. The data path
+is used only for a column that renders no cell of its own: a column with
+`accessor: () => null` shows an empty cell, so reading its path would announce
+a value the user cannot see. See [columns](./columns.md).
 
 **Odds and ends.** `ComputedColumnSpec` is the declaration
 [`computed`](./columns.md) takes. `TableQueryKeyOptions` options the cache-key

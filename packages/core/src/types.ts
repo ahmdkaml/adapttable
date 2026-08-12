@@ -144,6 +144,21 @@ export interface ColumnDef<TRow> {
    * needed where the two genuinely differ.
    */
   exportValue?: (row: TRow) => unknown;
+  /**
+   * The cell as plain text, for every context that cannot render JSX.
+   *
+   * {@link ColumnDef.accessor} returns a `ReactNode`, so a screen-reader
+   * announcement, an `aria-label`, a tooltip or the clipboard have nothing to
+   * read: a badge or an avatar is a React element, not a word. Return the text
+   * those places should use.
+   *
+   * Resolution order when this is absent — text is always available, this only
+   * makes it accurate: {@link ColumnDef.formatValue}, then
+   * {@link ColumnDef.exportValue}, then `accessor` when it happens to yield a
+   * primitive, then the key's data path. So only columns whose rendered cell is
+   * not already its own text need one.
+   */
+  formatValue?: (row: TRow) => string;
   /** Enable sorting for this column. Off by default. */
   sortable?: boolean;
   /** Column width passed through to the rendered header/cell. */

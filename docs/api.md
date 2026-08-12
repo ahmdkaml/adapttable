@@ -122,6 +122,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
 | `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
 | `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
+| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                       |
 | `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
 | `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
 | `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
@@ -319,6 +320,14 @@ state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
 Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
 `RangeOpLabelKeys`. See [filtering](./filtering.md).
+
+**Reading a cell as text.** `columnText(column, row)` returns a column's cell
+as a string for anything that cannot render JSX. It resolves
+`formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a
+primitive → the key's data path, and never returns `undefined`. The data path
+is used only for a column that renders no cell of its own: a column with
+`accessor: () => null` shows an empty cell, so reading its path would announce
+a value the user cannot see. See [columns](./columns.md).
 
 **Odds and ends.** `ComputedColumnSpec` is the declaration
 [`computed`](./columns.md) takes. `TableQueryKeyOptions` options the cache-key

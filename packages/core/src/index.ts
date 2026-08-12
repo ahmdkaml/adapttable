@@ -55,6 +55,7 @@ export {
   type AggregateSpec,
   type Aggregator,
 } from "./aggregate/aggregate";
+export { columnText } from "./columns/columnText";
 export { computed, type ComputedColumnSpec } from "./columns/computed";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {

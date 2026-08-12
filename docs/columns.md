@@ -121,6 +121,39 @@ export function People() {
 | `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                                        |
 | `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.                             |
 
+## The cell as text
+
+`accessor` returns a `ReactNode`, which is right for rendering and useless
+everywhere else: a status badge is a React element, an avatar cell is a
+component, and neither is a word. Anything that needs the cell as a **string** —
+a screen-reader announcement, an `aria-label`, a tooltip, a clipboard copy —
+has nothing to read.
+
+`formatValue` is that string:
+
+```tsx
+{
+  key: "status",
+  accessor: (row) => <Badge color={tone(row)}>{row.status}</Badge>,
+  formatValue: (row) => row.status,   // what a screen reader says
+}
+```
+
+Text is always available, so `formatValue` only matters where it makes the text
+_accurate_. `columnText(column, row)` resolves it in this order:
+
+1. `formatValue` — the column stating its own text
+2. `exportValue` — the underlying value, minus the formatting
+3. `sortValue` — a primitive by definition
+4. `accessor`, when it happens to return a primitive
+5. the key's data path
+
+with one deliberate restriction on that last step: **a column that renders its
+own cell never falls back to the data path.** A column with
+`accessor: () => null` renders an empty cell, and reading its path would
+announce a value the user cannot see — worse than announcing nothing. Such a
+column resolves to `""`, and giving it a `formatValue` is the fix.
+
 ## Computed columns
 
 A total, a margin, a full name, days-until-due — columns whose value is derived
