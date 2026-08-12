@@ -54,7 +54,8 @@ pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
 - **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
-- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **CSV export** (`exportCsv`) — current page, the full filtered set, or the
+  selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — numbered pagination, or infinite scroll (auto by device).
 - **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router.

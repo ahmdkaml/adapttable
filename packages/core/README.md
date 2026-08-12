@@ -38,7 +38,8 @@ control via prop-getters.
 - **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
 - **Column management** — show/hide, reorder, pin (sticky) and resize state.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
-- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **CSV export** (`exportCsv`) — current page, the full filtered set, or the
+  selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — row/card windowing for very large lists.
 - **RTL** and i18n-agnostic labels — pass `labels` or a `t` function.
 - **Headless** — hooks and prop-getters only. No components, no styling, no UI-kit imports.
