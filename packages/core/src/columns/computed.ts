@@ -83,6 +83,11 @@ function depsMatch(a: readonly unknown[], b: readonly unknown[]): boolean {
  * dependencies change, and consistent across display, sorting, filtering and
  * export.
  *
+ * Define columns at module level, or memoise them. The cache lives inside the
+ * column this returns, so rebuilding the column on every render throws the
+ * cache away with it — the values stay correct, but nothing is ever reused.
+ * This is the same rule {@link ColumnDef.Cell} already asks for.
+ *
  * @typeParam TRow - The row type.
  * @typeParam TValue - What the derivation produces.
  */

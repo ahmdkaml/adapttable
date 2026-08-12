@@ -918,6 +918,11 @@ The screen shows `$1,240.00`; sorting, filtering and export all see `1240`.
   are derived and cannot be set here, which is what keeps the four surfaces
   from disagreeing.
 
+**Define the columns at module level, or memoise them.** The cache lives
+inside the column `computed` returns, so rebuilding the column on every
+render throws the cache away with it — values stay correct, nothing is
+reused. It is the same rule `Cell` already asks for.
+
 Rows must be objects, since the cache is keyed by row identity. The spec type is exported as `ComputedColumnSpec` for callers that build columns dynamically.
 
 ## Grouped headers
