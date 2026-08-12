@@ -1,4 +1,5 @@
 import {
+  GridFocusAnnouncer,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -80,6 +81,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     ),
     empty:
+      (chrome.emptyVariant === "noResults" ? slots?.noResults : undefined) ??
       slots?.empty ??
       (chrome.emptyVariant === "noResults" ? (
         <Stack role="status" align="center" py={10} gap={3}>
@@ -118,6 +120,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       borderRadius="md"
       p={3}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <Stack gap={3}>
         <Toolbar
           {...toolbarProps}

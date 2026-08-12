@@ -17,6 +17,7 @@ import { type ReactNode, useMemo, useRef } from "react";
 import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
+import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import type { RowExpansionState } from "./rows/useRowExpansion";
@@ -34,6 +35,11 @@ export interface SharedTableRenderProps<TRow> {
   table: UseDataTableResult<TRow>;
   /** The rows to render for the current page/window. */
   rows: readonly TRow[];
+  /**
+   * Cell-navigation getters, from the shell. Inert unless `cellNavigation` is
+   * set, so a renderer spreads them unconditionally.
+   */
+  gridFocus?: GridFocusState;
   /** Per-row actions rendered in a trailing actions column. */
   rowActions?: RowAction<TRow>[];
   /** Confirmation handler used before destructive row actions run. */

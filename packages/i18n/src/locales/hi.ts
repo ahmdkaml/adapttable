@@ -60,8 +60,12 @@ export const hi: Required<TableLabels> = {
   showColumn: "स्तंभ दिखाएँ",
   hideColumn: "स्तंभ छिपाएँ",
   exportCsv: "CSV निर्यात करें",
+  exportFile: (format) => `${format.toUpperCase()} निर्यात करें`,
+  exportDone: "निर्यात पूर्ण",
+  exportFailed: "निर्यात विफल",
   editCell: "सेल संपादित करें",
   expandGroup: "समूह विस्तारित करें",
   collapseGroup: "समूह संक्षिप्त करें",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
 };

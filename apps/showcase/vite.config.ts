@@ -111,6 +111,7 @@ export default defineConfig({
       // Longest key first: the bare "@adapttable/core" alias would otherwise
       // swallow the subpath and resolve ".../index.ts/adapter".
       "@adapttable/core/adapter": pkg("core", "adapter"),
+      "@adapttable/core/xlsx": pkg("core", "xlsx"),
       "@adapttable/core": pkg("core"),
       "@adapttable/mantine": pkg("adapter-mantine"),
       "@adapttable/mui": pkg("adapter-mui"),

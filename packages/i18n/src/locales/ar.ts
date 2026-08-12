@@ -61,8 +61,12 @@ export const ar: Required<TableLabels> = {
   showColumn: "إظهار العمود",
   hideColumn: "إخفاء العمود",
   exportCsv: "تصدير CSV",
+  exportFile: (format) => `تصدير ${format.toUpperCase()}`,
+  exportDone: "تم التصدير",
+  exportFailed: "فشل التصدير",
   editCell: "تعديل الخلية",
   expandGroup: "توسيع المجموعة",
   collapseGroup: "طي المجموعة",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
 };

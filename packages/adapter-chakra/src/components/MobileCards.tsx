@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -30,13 +31,6 @@ function joinClasses(
 ): string | undefined {
   if (base && extra) return `${base} ${extra}`;
   return base ?? extra;
-}
-
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -147,6 +141,7 @@ function MobileCardBase<TRow>({
       ref={measureElement}
       data-index={index}
       data-stagger=""
+      data-selected={selected ? "" : undefined}
       variant="outline"
       role="listitem"
       className={className}
@@ -173,9 +168,11 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <Box key={column.key} mb={compact ? 1 : 2}>
-            <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-              {mobileLabel(column)}
-            </Text>
+            {resolveMobileLabel(column) && (
+              <Text fontSize="xs" {...subtleText} textTransform="uppercase">
+                {resolveMobileLabel(column)}
+              </Text>
+            )}
             <Text as="div" fontSize="sm">
               <EditableDataCell
                 editing={editing}
@@ -291,6 +288,7 @@ export function MobileCards<TRow>({
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}
+                columns={columns}
                 selection={selection}
                 labels={labels}
                 dir={dir}
@@ -313,9 +311,15 @@ export function MobileCards<TRow>({
               if (value === undefined) return null;
               return (
                 <Box key={column.key} mb={compact ? 1 : 2}>
-                  <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-                    {mobileLabel(column)}
-                  </Text>
+                  {resolveMobileLabel(column) && (
+                    <Text
+                      fontSize="xs"
+                      {...subtleText}
+                      textTransform="uppercase"
+                    >
+                      {resolveMobileLabel(column)}
+                    </Text>
+                  )}
                   <Text fontSize="sm" fontWeight="semibold">
                     {value}
                   </Text>

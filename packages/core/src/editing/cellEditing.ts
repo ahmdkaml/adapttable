@@ -33,6 +33,9 @@ export interface EditableColumnLike<TRow = unknown> {
   editable?: boolean | { bivarianceHack(row: TRow): boolean }["bivarianceHack"];
   editor?: CellEditor;
   editValue?: { bivarianceHack(row: TRow): string }["bivarianceHack"];
+  parseValue?: {
+    bivarianceHack(draft: string, row: TRow): unknown;
+  }["bivarianceHack"];
   sortValue?: { bivarianceHack(row: TRow): SortableValue }["bivarianceHack"];
 }
 
@@ -205,7 +208,11 @@ export function applyCellEditCommit<TRow>(options: {
   );
   if (!row || !column) return false;
   const editor = resolveCellEditor(column) ?? "text";
-  const nextValue = parseCellEditValue(editor, options.commit.draft);
+  // A column that states how to read its own drafts owns the conversion; the
+  // editor's built-in parsing is the fallback, not an extra step on top.
+  const nextValue = column.parseValue
+    ? column.parseValue(options.commit.draft, row)
+    : parseCellEditValue(editor, options.commit.draft);
   options.onCellEdit(row, column.key, nextValue);
   return true;
 }

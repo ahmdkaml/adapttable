@@ -53,12 +53,16 @@ from a server-paginated query — the component doesn't change.
 - **Row expansion** — inline detail panels via `renderRowDetail`.
 - **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
   editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
+  ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
 - **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
-- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **CSV export** (`exportCsv`) — current page, the full filtered set, or the
+  selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — `Pagination` footer, or infinite scroll (auto by device).
+- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router. [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
 - **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** follows the MUI theme.
 - **Customisation** — `slots` (skeleton, empty), `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

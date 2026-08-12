@@ -152,6 +152,24 @@ Every package sets `sideEffects: false` and ships ESM, so unused code is
 tree-shaken. You only install the one adapter you use; the headless core has
 zero UI-kit dependencies.
 
+Measured on the published builds, with React and your UI kit external because
+your app already ships those:
+
+| What you import                           | min+gzip  |
+| ----------------------------------------- | --------- |
+| `useFrontendData` + `useDataTable` (core) | ~10 kB    |
+| every core export                         | ~34 kB    |
+| `DataTable` from an adapter               | ~51–57 kB |
+
+The first row is the one to read: a headless table costs about a fifth of the
+full core, because the parts you never import never arrive. All eight adapters
+land within a few kB of each other, so switching kits does not change what you
+pay.
+
+These are not estimates. `pnpm budget` bundles each of those imports for real
+and fails the build if one crosses its ceiling, so the numbers on this page
+cannot quietly go stale.
+
 ## How do I get started quickly?
 
 ```bash

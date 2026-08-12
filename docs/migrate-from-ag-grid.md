@@ -12,7 +12,7 @@ grids, and pretending otherwise would waste your week.
 This page is for the other — much larger — group: teams running **ordinary
 CRUD tables** on AG Grid Community, paying for spreadsheet power they don't
 use in three currencies: **bundle size** (the full Community setup is ~346 kB
-min+gzip of grid code vs ~45 kB for AdaptTable core + an adapter), **churn**
+min+gzip of grid code vs ~51 kB for AdaptTable core + an adapter), **churn**
 (a new AG Grid major about every 6 months — v32.2 rewrote the selection API,
 v33 made module registration and the Theming API mandatory, v36 overhauled
 the DOM and CSS class names), and **look** (AG Grid renders its own theme;

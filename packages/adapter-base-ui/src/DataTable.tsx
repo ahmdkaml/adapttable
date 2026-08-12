@@ -1,4 +1,5 @@
 import {
+  GridFocusAnnouncer,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -80,6 +81,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       />
     ),
     empty:
+      (chrome.emptyVariant === "noResults" ? slots?.noResults : undefined) ??
       slots?.empty ??
       (chrome.emptyVariant === "noResults" ? (
         <output
@@ -131,6 +133,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         .join(" ")}
       aria-busy={chrome.isRefreshing || undefined}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <Flex direction="column" gap="3">
         <Toolbar
           {...toolbarProps}

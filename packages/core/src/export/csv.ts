@@ -60,7 +60,17 @@ function escapeCell(
   return text;
 }
 
-function defaultValue<TRow>(row: TRow, column: ColumnDef<TRow>): unknown {
+/**
+ * How a cell resolves when nothing overrides it: the display value, since a
+ * CSV with no other instruction should carry what the table shows.
+ *
+ * Internal to the export module — exported so the table-level export can fall
+ * back to it after checking a column's `exportValue`.
+ */
+export function defaultCsvValue<TRow>(
+  row: TRow,
+  column: ColumnDef<TRow>
+): unknown {
   const fromAccessor = column.accessor?.(row);
   if (
     typeof fromAccessor === "string" ||
@@ -89,25 +99,44 @@ export function rowsToCsv<TRow>(
   columns: readonly ColumnDef<TRow>[],
   options: RowsToCsvOptions<TRow> = {}
 ): string {
-  const {
-    getValue = defaultValue,
-    delimiter = ",",
-    escapeFormulas = true,
-  } = options;
-  const head = columns
-    .map((c) =>
-      escapeCell(
-        typeof c.header === "string" ? c.header : c.key,
-        delimiter,
-        escapeFormulas
-      )
-    )
+  const { getValue = defaultCsvValue } = options;
+  return matrixToCsv(
+    {
+      headers: columns.map((c) =>
+        typeof c.header === "string" ? c.header : c.key
+      ),
+      rows: rows.map((row) => columns.map((column) => getValue(row, column))),
+    },
+    options
+  );
+}
+
+/**
+ * The same CSV, from values that are already resolved.
+ *
+ * This is the one place that writes CSV. The table-level export resolves its
+ * cells once and hands the result to a writer, so routing `rowsToCsv` through
+ * here is what keeps the two from ever disagreeing about quoting, line endings
+ * or formula escaping.
+ *
+ * @param table - Headers and one array of values per row.
+ * @param options - Delimiter and formula escaping.
+ * @returns The CSV text (no BOM).
+ */
+export function matrixToCsv(
+  table: {
+    headers: readonly string[];
+    rows: readonly (readonly unknown[])[];
+  },
+  options: { delimiter?: string; escapeFormulas?: boolean } = {}
+): string {
+  const { delimiter = ",", escapeFormulas = true } = options;
+  const head = table.headers
+    .map((header) => escapeCell(header, delimiter, escapeFormulas))
     .join(delimiter);
-  const body = rows.map((row) =>
-    columns
-      .map((column) =>
-        escapeCell(getValue(row, column), delimiter, escapeFormulas)
-      )
+  const body = table.rows.map((row) =>
+    row
+      .map((value) => escapeCell(value, delimiter, escapeFormulas))
       .join(delimiter)
   );
   return [head, ...body].join("\r\n");

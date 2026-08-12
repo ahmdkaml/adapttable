@@ -117,6 +117,36 @@ feature PR mergeable:
   `scripts/build-llms-full.mjs` and as a link in `llms.txt` — the build only
   warns on a miss, it does not fail, so this is easy to overlook.
 
+### Where a heavy feature lives
+
+"Opt-in" is a claim about bytes, so it is settled by measurement.
+
+A feature belongs in the main entry when importing it is the normal case and
+its weight is small. Anything sizable — a parser, a formatter, a third-party
+dependency, a whole export pipeline — gets its own subpath entry instead.
+Adding one takes two edits: append the source file to `entry` in the package's
+`tsdown.config.ts`, and add the matching key to `exports` in its
+`package.json`, following the `./adapter` entry already there. Import it as
+`@adapttable/core/<name>`. Shared internals stay in `src/` and are imported
+normally by both entries; the bundler hoists what both use into a chunk, so
+nothing is duplicated and nothing is dragged in by an entry that does not
+reference it.
+
+Keep every package `"sideEffects": false`. A single module with a side effect
+defeats tree-shaking for everything that imports it, and the budget below is
+usually how you find out.
+
+`pnpm budget` (in `pnpm check` and in CI) bundles ten real consumer imports
+against the built packages and fails on two things: a fixture crossing its
+size ceiling, and a name reaching the base import that should have been shaken
+out. It runs against `dist/`, so run `pnpm build` first.
+
+Both failures mean the same thing — a feature is being paid for by people who
+did not ask for it. Move the weight behind a subpath entry. Raising a ceiling
+in `scripts/bundle-budget.mjs` is a legitimate outcome when the growth is
+genuinely in the base path, but it is a decision that belongs in the pull
+request with a reason, never a quiet edit.
+
 ## Definition of done (per package)
 
 `builds + typechecks + lints + tests pass` with coverage thresholds met.

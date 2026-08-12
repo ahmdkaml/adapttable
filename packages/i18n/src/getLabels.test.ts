@@ -138,6 +138,13 @@ const INTERPOLATION_CASES: Record<
     call: (fn) => (fn as (label: string) => string)("STATUS_X"),
     expects: ["STATUS_X"],
   },
+  exportFile: {
+    // The file format, so every locale's button names what it downloads. Upper
+    // case because that is how a format is written on a button in every one of
+    // them — "Export XLSX", never "Export xlsx".
+    call: (fn) => (fn as (format: string) => string)("xlsx"),
+    expects: ["XLSX"],
+  },
 };
 
 const NUMERIC_CASE = {

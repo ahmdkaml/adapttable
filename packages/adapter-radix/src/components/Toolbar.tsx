@@ -1,11 +1,12 @@
 /** Search field, sort select, filters trigger, menus and rows-per-page. */
 import { pageSizeOptions } from "@adapttable/core";
 import {
+  ExportAnnouncer,
   FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
-import { Badge, Box, Button, Flex, TextField } from "@radix-ui/themes";
+import { Badge, Box, Button, Flex, Spinner, TextField } from "@radix-ui/themes";
 import { type ReactNode } from "react";
 
 import type { RadixAccentColor } from "../types";
@@ -54,6 +55,9 @@ export function Toolbar<TRow>({
   savedViewsMenu,
   columnMenu,
   onExportCsv,
+  exportBusy,
+  exportAnnouncement = "",
+  exportLabel,
   showRowsPerPage,
   accentColor,
   dir,
@@ -153,10 +157,16 @@ export function Toolbar<TRow>({
             variant="outline"
             color={accentColor}
             onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
           >
-            {labels.exportCsv}
+            {/* Radix Themes' own pattern for a working button: its Spinner
+                wrapping the label, which reserves the label's width so the
+                toolbar does not reflow when the export starts. */}
+            <Spinner loading={exportBusy}>{exportLabel}</Spinner>
           </Button>
         )}
+        {onExportCsv && <ExportAnnouncer announcement={exportAnnouncement} />}
         {showRowsPerPage && (
           <NativeSelect
             size="2"

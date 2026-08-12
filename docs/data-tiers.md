@@ -89,6 +89,55 @@ export function PeopleTable() {
 }
 ```
 
+#### What the query carries, and how it grows
+
+Every server tier receives one consolidated `TableQuery`:
+
+```ts
+{
+  (page, limit, search, sortBy, sortDir, sortLevels, filters);
+}
+```
+
+That is the whole baseline, and it will not change. Capabilities beyond it —
+grouping, aggregates, nested filter trees, facet counts, cursor pagination —
+ride as **optional** fields that a source opts into by declaring what its
+endpoint can answer:
+
+```tsx
+useServerData({
+  rows,
+  total,
+  // this endpoint can group and count; it cannot do the rest yet
+  supports: { grouping: true, facets: true },
+  onQueryChange: async (query, { signal }) => {
+    // query.groupBy → ["team"] when the user is grouping
+    // query.facets  → ["status"] when a filter wants distinct-value counts
+  },
+});
+```
+
+Declare nothing and nothing changes: the query arrives with exactly the seven
+baseline fields, so an endpoint written before a capability existed keeps
+working untouched. Declare a capability and its field starts arriving.
+
+If the table wants something the source has not declared, the field is
+**omitted rather than sent and ignored** — a server should never receive a
+field it never agreed to read — and development logs which capability would
+unlock it. That warning is the intended way to discover the next thing your
+backend could do, not an error.
+
+| Field        | Capability   | Carries                                   |
+| ------------ | ------------ | ----------------------------------------- |
+| `groupBy`    | `grouping`   | Grouping keys, outermost first            |
+| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute            |
+| `filterTree` | `filterTree` | Nested AND/OR condition tree              |
+| `facets`     | `facets`     | Column keys needing distinct-value counts |
+| `cursor`     | `cursor`     | Opaque cursor from the previous response  |
+
+The flat `filters` bag is always populated, including when `filterTree` is
+sent, so a server that only reads the simple form keeps working.
+
 ### 3. Full control — `source`
 
 Build a `TableSource` yourself — `useQuerySource` over TanStack Query (shown
@@ -185,6 +234,70 @@ with `source` dev-warns and `source` wins.
 - Column `filter` shorthands and the `filters` array drive widgets, chips,
   and URL parsing in **all three tiers**; only the frontend tier also applies
   the row predicate (the other tiers receive `query.filters` instead).
+
+## Cache keys for TanStack Query and SWR
+
+Wiring the table to a query library means turning the emitted `TableQuery` into
+a cache key. Hand-rolling that fails in two ways that are hard to see: a key
+built from an object literal changes whenever `filters` is rebuilt, so the
+cache misses on every keystroke; and invalidation after a save either refetches
+the whole endpoint or only the page on screen.
+
+```tsx
+import { tableQueryKey, tableQueryBaseKey } from "@adapttable/core";
+
+const infinite = useInfiniteQuery({
+  queryKey: tableQueryKey(query, { scope: "people" }),
+  queryFn: ({ signal }) => fetchPeople(query, signal),
+  getNextPageParam: (last) => last.nextCursor,
+});
+
+// after a write — every page of this view, nothing else
+queryClient.invalidateQueries({
+  queryKey: tableQueryBaseKey(query, { scope: "people" }),
+});
+```
+
+- **`tableQueryBaseKey`** covers what decides _which_ rows: search, filters,
+  sort, grouping, page size.
+- **`tableQueryKey`** appends _where_ in them the table is: page and cursor.
+
+The full key starts with the base key, so a library that matches by prefix —
+TanStack Query does — invalidates every page of a view from the base key alone.
+Both are stable across renders and ignore the order a filter object was built
+in, so an identical query always produces an identical key.
+
+Pass `scope` when a page shows more than one table, so they never share an
+entry. For SWR, hand `useSWR` the array directly or join it — the parts are
+strings.
+
+Neither library is imported or depended on here; these are plain arrays that
+happen to be exactly what both expect. The options shape is exported as
+`TableQueryKeyOptions`.
+
+## Which requests actually fire
+
+`onQueryChange` fires per real change, not per render. Four guarantees, each
+covered by a test:
+
+- **One request per query.** Queries are compared by value, so setting the same
+  search term three times in a tick, an identical re-render, or a StrictMode
+  double-mount all collapse into a single call.
+- **Setting a value it already holds is not a change.** No request fires.
+- **A superseded request aborts.** When a newer query replaces an in-flight
+  one, the previous call's `signal` fires. Forward it to `fetch` and an
+  out-of-order response dies at the source rather than overwriting fresher
+  rows.
+- **Returning to a value re-requests it.** Typing `a` → `ab` → `a` fires three
+  times. The first `a` was aborted the moment `ab` superseded it, so collapsing
+  the third call would leave the table with nothing in flight and nothing to
+  show.
+
+`refetch()` is the one deliberate exception: it asks for fresh data, so it
+fires even though the query has not changed.
+
+Using `useQuerySource` instead? Deduplication is your query library's, keyed
+the way you configured it, and these guarantees do not apply.
 
 ## Options
 

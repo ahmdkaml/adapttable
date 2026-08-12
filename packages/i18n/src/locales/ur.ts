@@ -61,8 +61,12 @@ export const ur: Required<TableLabels> = {
   showColumn: "کالم دکھائیں",
   hideColumn: "کالم چھپائیں",
   exportCsv: "CSV برآمد کریں",
+  exportFile: (format) => `${format.toUpperCase()} برآمد کریں`,
+  exportDone: "برآمد مکمل ہو گئی",
+  exportFailed: "برآمد ناکام ہو گئی",
   editCell: "سیل میں ترمیم",
   expandGroup: "گروپ پھیلائیں",
   collapseGroup: "گروپ سکیڑیں",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
 };

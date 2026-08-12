@@ -5,6 +5,7 @@ import {
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   type PinSide,
   type RowAction,
@@ -125,6 +126,8 @@ interface DesktopRowProps<TRow> {
   row: TRow;
   id: string;
   index: number;
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   selected: boolean;
   expanded: boolean;
   size: "sm" | "md" | "lg";
@@ -177,6 +180,7 @@ function DesktopRowBase<TRow>({
   row,
   id,
   index,
+  gridFocus,
   selected,
   expanded,
   accentColor,
@@ -207,6 +211,7 @@ function DesktopRowBase<TRow>({
         {...rowClickProps(row, hasRowClick ? activateRow : undefined, index)}
         ref={measureRef}
         data-index={index}
+        {...gridFocus?.getRowPropsAt(index)}
         data-stagger=""
         className={className}
         bg={selected ? "blackAlpha.100" : undefined}
@@ -242,9 +247,10 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Cell
             key={column.key}
+            {...gridFocus?.getCellPropsAt(index, colIndex)}
             textAlign={logicalAlign(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
           >
@@ -304,6 +310,8 @@ function createDesktopRow<TRow>() {
 
 /** Body rows for {@link DesktopTable}: group headers + leaves, or leaf-only. */
 function DesktopTableRows<TRow>({
+  getCellProps,
+  gridFocus,
   grouping,
   entries,
   getRowId,
@@ -328,6 +336,10 @@ function DesktopTableRows<TRow>({
   Row,
   onToggleGroup,
 }: Readonly<{
+  /** The table's per-column cell props, for the group row's aggregate cells. */
+  getCellProps: (column: ColumnDef<TRow>) => Record<string, unknown>;
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   grouping: SharedTableRenderProps<TRow>["grouping"];
   entries: ReturnType<typeof tableRenderModel<TRow>>["entries"];
   getRowId: (row: TRow) => string;
@@ -359,7 +371,10 @@ function DesktopTableRows<TRow>({
           <GroupHeaderRow
             key={entry.key}
             entry={entry}
-            columnSpan={columnSpan}
+            columns={columns}
+            leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+            showActions={showActions}
+            getCellProps={getCellProps}
             selection={selection}
             labels={labels}
             dir={dir}
@@ -375,6 +390,7 @@ function DesktopTableRows<TRow>({
           row={entry.row}
           id={id}
           index={entry.index}
+          gridFocus={gridFocus}
           selected={selection?.isSelected(id) ?? false}
           expanded={expansion?.isExpanded(id) ?? false}
           size={size}
@@ -404,6 +420,7 @@ function DesktopTableRows<TRow>({
     const id = getRowId(row);
     return (
       <Row
+        gridFocus={gridFocus}
         key={key}
         row={row}
         id={id}
@@ -436,6 +453,7 @@ function DesktopTableRows<TRow>({
 
 /** Desktop Chakra table. */
 export function DesktopTable<TRow>({
+  gridFocus,
   table,
   rows,
   rowActions,
@@ -621,6 +639,7 @@ export function DesktopTable<TRow>({
         className={className}
         minW={minWidth > 0 ? `${minWidth}px` : undefined}
         aria-label={table.getTableProps()["aria-label"]}
+        {...gridFocus?.getGridProps()}
       >
         <Table.Header>
           {groups && (
@@ -753,6 +772,8 @@ export function DesktopTable<TRow>({
             </Table.Row>
           )}
           <DesktopTableRows
+            getCellProps={table.getCellProps}
+            gridFocus={gridFocus}
             grouping={grouping}
             entries={entries}
             getRowId={getRowId}

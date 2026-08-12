@@ -69,6 +69,7 @@ export function RadixDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -80,6 +81,7 @@ export function RadixDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -105,6 +107,7 @@ export function RadixDemo({
             source={source}
             columns={makeColumns(locale, RADIX_CELLS)}
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}

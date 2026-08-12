@@ -25,6 +25,7 @@ export function ShadcnDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -35,6 +36,7 @@ export function ShadcnDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -47,6 +49,7 @@ export function ShadcnDemo({
       animate={animate}
       grouping={grouping}
       editing={editing}
+      cellNavigation={cellNavigation}
       classNames={shadcnClassNames}
     />
   );

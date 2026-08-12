@@ -245,7 +245,20 @@ export interface BaseDataTableProps<TRow> {
    * (`export.csv`, current page) or an options object for filename/scope.
    * Omit or `false` to hide the button.
    */
-  exportCsv?: boolean | ExportCsvOptions;
+  exportCsv?: boolean | ExportCsvOptions<TRow>;
+  /**
+   * Opt into keyboard cell navigation.
+   *
+   * The table becomes ONE tab stop whose interior is reachable by arrow keys,
+   * Home/End, Ctrl+Home/End and PageUp/PageDown, with `role="grid"`, absolute
+   * `aria-rowindex` / `aria-colindex`, and a live region naming the focused
+   * cell. Enter or F2 opens the editor when `onCellEdit` is set.
+   *
+   * Off by default, and off means absent: no role change, no `tabIndex`, no key
+   * handler, no live region. Applies to the desktop table layout — mobile cards
+   * are a list, not a grid, and keep their list semantics.
+   */
+  cellNavigation?: boolean;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
   /** Confirmation handler for actions; defaults to `window.confirm`. */

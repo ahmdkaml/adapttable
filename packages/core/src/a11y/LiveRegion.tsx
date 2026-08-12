@@ -1,0 +1,62 @@
+/**
+ * A polite live region — the one way this library says something out loud.
+ *
+ * The details are easy to get subtly wrong and invisible when they are:
+ * `aria-live="polite"` so it waits for a gap rather than interrupting,
+ * `aria-atomic` so the whole phrase is read rather than the diff, and visually
+ * hidden by clip rather than `display: none` — a hidden element is not
+ * announced at all, which is the classic way this ships broken.
+ *
+ * The region must also be in the DOM **before** it has anything to say. A
+ * region that appears at the same moment as its text is frequently missed
+ * entirely, so callers render it empty from the first paint rather than
+ * conditionally when a message exists.
+ */
+import type { ReactElement } from "react";
+
+/** Props for {@link LiveRegion}. */
+export interface LiveRegionProps {
+  /** What to announce. Empty until there is something. */
+  children: string;
+  /** `data-adapttable-part`, so a test or a style can find this one. */
+  part: string;
+}
+
+/**
+ * Clipped rather than hidden: a screen reader ignores `display: none` and
+ * `visibility: hidden`, so the region has to remain in the layout while taking
+ * no visible space.
+ */
+const VISUALLY_HIDDEN = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  margin: "-1px",
+  padding: 0,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+} as const;
+
+/**
+ * Announce a message politely, showing nothing.
+ *
+ * @param props - See {@link LiveRegionProps}.
+ */
+export function LiveRegion({
+  children,
+  part,
+}: Readonly<LiveRegionProps>): ReactElement {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      data-adapttable-part={part}
+      style={VISUALLY_HIDDEN}
+    >
+      {children}
+    </div>
+  );
+}

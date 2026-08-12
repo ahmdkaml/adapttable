@@ -507,6 +507,55 @@ export function PeopleTable() {
 }
 ```
 
+#### What the query carries, and how it grows
+
+Every server tier receives one consolidated `TableQuery`:
+
+```ts
+{
+  (page, limit, search, sortBy, sortDir, sortLevels, filters);
+}
+```
+
+That is the whole baseline, and it will not change. Capabilities beyond it —
+grouping, aggregates, nested filter trees, facet counts, cursor pagination —
+ride as **optional** fields that a source opts into by declaring what its
+endpoint can answer:
+
+```tsx
+useServerData({
+  rows,
+  total,
+  // this endpoint can group and count; it cannot do the rest yet
+  supports: { grouping: true, facets: true },
+  onQueryChange: async (query, { signal }) => {
+    // query.groupBy → ["team"] when the user is grouping
+    // query.facets  → ["status"] when a filter wants distinct-value counts
+  },
+});
+```
+
+Declare nothing and nothing changes: the query arrives with exactly the seven
+baseline fields, so an endpoint written before a capability existed keeps
+working untouched. Declare a capability and its field starts arriving.
+
+If the table wants something the source has not declared, the field is
+**omitted rather than sent and ignored** — a server should never receive a
+field it never agreed to read — and development logs which capability would
+unlock it. That warning is the intended way to discover the next thing your
+backend could do, not an error.
+
+| Field        | Capability   | Carries                                   |
+| ------------ | ------------ | ----------------------------------------- |
+| `groupBy`    | `grouping`   | Grouping keys, outermost first            |
+| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute            |
+| `filterTree` | `filterTree` | Nested AND/OR condition tree              |
+| `facets`     | `facets`     | Column keys needing distinct-value counts |
+| `cursor`     | `cursor`     | Opaque cursor from the previous response  |
+
+The flat `filters` bag is always populated, including when `filterTree` is
+sent, so a server that only reads the simple form keeps working.
+
 ### 3. Full control — `source`
 
 Build a `TableSource` yourself — `useQuerySource` over TanStack Query (shown
@@ -603,6 +652,70 @@ with `source` dev-warns and `source` wins.
 - Column `filter` shorthands and the `filters` array drive widgets, chips,
   and URL parsing in **all three tiers**; only the frontend tier also applies
   the row predicate (the other tiers receive `query.filters` instead).
+
+## Cache keys for TanStack Query and SWR
+
+Wiring the table to a query library means turning the emitted `TableQuery` into
+a cache key. Hand-rolling that fails in two ways that are hard to see: a key
+built from an object literal changes whenever `filters` is rebuilt, so the
+cache misses on every keystroke; and invalidation after a save either refetches
+the whole endpoint or only the page on screen.
+
+```tsx
+import { tableQueryKey, tableQueryBaseKey } from "@adapttable/core";
+
+const infinite = useInfiniteQuery({
+  queryKey: tableQueryKey(query, { scope: "people" }),
+  queryFn: ({ signal }) => fetchPeople(query, signal),
+  getNextPageParam: (last) => last.nextCursor,
+});
+
+// after a write — every page of this view, nothing else
+queryClient.invalidateQueries({
+  queryKey: tableQueryBaseKey(query, { scope: "people" }),
+});
+```
+
+- **`tableQueryBaseKey`** covers what decides _which_ rows: search, filters,
+  sort, grouping, page size.
+- **`tableQueryKey`** appends _where_ in them the table is: page and cursor.
+
+The full key starts with the base key, so a library that matches by prefix —
+TanStack Query does — invalidates every page of a view from the base key alone.
+Both are stable across renders and ignore the order a filter object was built
+in, so an identical query always produces an identical key.
+
+Pass `scope` when a page shows more than one table, so they never share an
+entry. For SWR, hand `useSWR` the array directly or join it — the parts are
+strings.
+
+Neither library is imported or depended on here; these are plain arrays that
+happen to be exactly what both expect. The options shape is exported as
+`TableQueryKeyOptions`.
+
+## Which requests actually fire
+
+`onQueryChange` fires per real change, not per render. Four guarantees, each
+covered by a test:
+
+- **One request per query.** Queries are compared by value, so setting the same
+  search term three times in a tick, an identical re-render, or a StrictMode
+  double-mount all collapse into a single call.
+- **Setting a value it already holds is not a change.** No request fires.
+- **A superseded request aborts.** When a newer query replaces an in-flight
+  one, the previous call's `signal` fires. Forward it to `fetch` and an
+  out-of-order response dies at the source rather than overwriting fresher
+  rows.
+- **Returning to a value re-requests it.** Typing `a` → `ab` → `a` fires three
+  times. The first `a` was aborted the moment `ab` superseded it, so collapsing
+  the third call would leave the table with nothing in flight and nothing to
+  show.
+
+`refetch()` is the one deliberate exception: it asks for fresh data, so it
+fires even though the query has not changed.
+
+Using `useQuerySource` instead? Deduplication is your query library's, keyed
+the way you configured it, and these guarantees do not apply.
 
 ## Options
 
@@ -743,22 +856,138 @@ export function People() {
 
 ## Options
 
-| Prop            | Type                             | Default                      | Description                                                                |
-| --------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------- |
-| `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.       |
-| `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                              |
-| `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                 |
-| `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.     |
-| `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                            |
-| `sortValue`     | `(row) => SortableValue`         | the generated accessor value | Primitive extractor for the client-side sort. See [sorting](./sorting.md). |
-| `align`         | `"start" \| "center" \| "end"`   | `"start"`                    | Text alignment within the cell.                                            |
-| `width`         | `number \| string`               | —                            | Width passed through to the rendered header/cell.                          |
-| `mobileLabel`   | `string`                         | `header` (when a string)     | Label on mobile card layouts.                                              |
-| `hideOnMobile`  | `boolean`                        | `false`                      | Hide the column entirely on mobile.                                        |
-| `hideOnDesktop` | `boolean`                        | `false`                      | Hide the column entirely on desktop.                                       |
-| `i18n`          | `Record<string, string>`         | —                            | Per-locale data paths for the column's value.                              |
-| `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                 |
-| `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.      |
+| Prop            | Type                             | Default                      | Description                                                                                       |
+| --------------- | -------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.                              |
+| `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                                                     |
+| `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                                        |
+| `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.                            |
+| `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                                                   |
+| `sortValue`     | `(row) => SortableValue`         | the generated accessor value | Primitive extractor for the client-side sort. See [sorting](./sorting.md).                        |
+| `exportValue`   | `(row) => unknown`               | the display value            | Value written to a CSV export when the file should carry something other than the formatted cell. |
+| `align`         | `"start" \| "center" \| "end"`   | `"start"`                    | Text alignment within the cell.                                                                   |
+| `width`         | `number \| string`               | —                            | Width passed through to the rendered header/cell.                                                 |
+| `mobileLabel`   | `string`                         | `header` (when a string)     | Label on mobile card layouts.                                                                     |
+| `hideOnMobile`  | `boolean`                        | `false`                      | Hide the column entirely on mobile.                                                               |
+| `hideOnDesktop` | `boolean`                        | `false`                      | Hide the column entirely on desktop.                                                              |
+| `group`         | `string`                         | —                            | Spanning header above adjacent columns sharing the name. See below.                               |
+| `i18n`          | `Record<string, string>`         | —                            | Per-locale data paths for the column's value.                                                     |
+| `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                                        |
+| `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.                             |
+
+## The cell as text
+
+`accessor` returns a `ReactNode`, which is right for rendering and useless
+everywhere else: a status badge is a React element, an avatar cell is a
+component, and neither is a word. Anything that needs the cell as a **string** —
+a screen-reader announcement, an `aria-label`, a tooltip, a clipboard copy —
+has nothing to read.
+
+`formatValue` is that string:
+
+```tsx
+{
+  key: "status",
+  accessor: (row) => <Badge color={tone(row)}>{row.status}</Badge>,
+  formatValue: (row) => row.status,   // what a screen reader says
+}
+```
+
+Text is always available, so `formatValue` only matters where it makes the text
+_accurate_. `columnText(column, row)` resolves it in this order:
+
+1. `formatValue` — the column stating its own text
+2. `exportValue` — the underlying value, minus the formatting
+3. `sortValue` — a primitive by definition
+4. `accessor`, when it happens to return a primitive
+5. the key's data path
+
+with one deliberate restriction on that last step: **a column that renders its
+own cell never falls back to the data path.** A column with
+`accessor: () => null` renders an empty cell, and reading its path would
+announce a value the user cannot see — worse than announcing nothing. Such a
+column resolves to `""`, and giving it a `formatValue` is the fix.
+
+## Computed columns
+
+A total, a margin, a full name, days-until-due — columns whose value is derived
+rather than stored. Writing the derivation into `accessor` works until the
+column has to do anything else: sorting then compares the formatted string, so
+`"$1,240.00"` sorts before `"$90.00"`; filtering has nothing to match; the
+export carries the formatting; and the function runs again for every cell on
+every render.
+
+`computed` declares the derivation once and wires all four surfaces from it:
+
+```tsx
+import { computed } from "@adapttable/core";
+
+const columns = [
+  { key: "quantity" },
+  { key: "unitPrice" },
+  computed<Order, number>({
+    key: "total",
+    header: "Total",
+    deps: (row) => [row.quantity, row.unitPrice],
+    value: (row) => row.quantity * row.unitPrice,
+    format: (total) => money.format(total),
+    column: { sortable: true, align: "end" },
+  }),
+];
+```
+
+The screen shows `$1,240.00`; sorting, filtering and export all see `1240`.
+
+- **`deps` is required, and listing them is the whole contract.** The value is
+  recomputed when any dependency changes and reused when none do. A field the
+  derivation reads but does not declare becomes a stale cell the moment the
+  data changes underneath it.
+- **The result is cached per row**, in a `WeakMap` keyed by the row object — a
+  row that leaves the page takes its cached value with it, so a long-lived
+  table cannot grow a cache it never releases.
+- **`format` is display only.** Leave it out and primitives and dates render as text; any other value renders empty, since an object has no useful reading in a cell.
+- **`column` carries everything else** a column can be — `sortable`, `align`,
+  `width`, `filter`, `hideOnMobile`. `accessor`, `sortValue` and `exportValue`
+  are derived and cannot be set here, which is what keeps the four surfaces
+  from disagreeing.
+
+**Define the columns at module level, or memoise them.** The cache lives
+inside the column `computed` returns, so rebuilding the column on every
+render throws the cache away with it — values stay correct, nothing is
+reused. It is the same rule `Cell` already asks for.
+
+Rows must be objects, since the cache is keyed by row identity. The spec type is exported as `ComputedColumnSpec` for callers that build columns dynamically.
+
+## Grouped headers
+
+Give adjacent columns the same `group` and they render under one spanning
+header cell:
+
+```tsx
+const columns: ColumnDef<Person>[] = [
+  { key: "firstName", header: "First", group: "Name" },
+  { key: "lastName", header: "Last", group: "Name" },
+  { key: "city", header: "City", group: "Location" },
+  { key: "country", header: "Country", group: "Location" },
+  { key: "hiredAt", header: "Hired" },
+];
+```
+
+```text
+|      Name      |     Location      |        |
+| First |  Last  |  City  | Country  | Hired  |
+```
+
+Columns without a `group` sit under a blank spanning cell, so the header row
+always lines up. The grouping is **presentational and adjacency-based**: the
+span is computed from the columns as they are currently ordered, so dragging a
+column out of the middle of a group splits it into two spans rather than
+pretending the layout is something it is not. Reorder them back together and
+the group closes up again.
+
+Groups are one level deep and carry no behaviour of their own — they do not
+collapse, pin, or reorder as a unit. On mobile the card layout has no header
+row, so `group` has no effect there.
 
 ## Notes
 
@@ -1079,8 +1308,23 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   (including `options: "auto"`); `FilterRuntime` is everything the engine
   derives from the resolved definitions (defs, chip labels, URL keys,
   predicate).
-- **Search**: `defaultSearchText` is the default searchable-text projector
-  (flattens a row's own values) — replace per column with `searchValue`.
+- **Search**: `defaultSearchText` is the default searchable-text projector —
+  it flattens a row's own values into the string the search box matches
+  against. Replace it per source with `getSearchText`:
+
+  ```tsx
+  const source = useFrontendData({
+    data: people,
+    columns,
+    // search the full name and the city, and nothing else
+    getSearchText: (row) => `${row.firstName} ${row.lastName} ${row.city}`,
+  });
+  ```
+
+  It is one projector for the whole row, not a per-column setting: search
+  asks "does this row match?", so the row is what gets projected. Include a
+  computed value here to make it searchable, or leave a field out to exclude
+  it — an id column nobody searches by, say.
 
 ## Notes
 
@@ -1160,6 +1404,58 @@ export function People() {
   `TableQuery` (`{ page, limit, … }`) passed to `onQueryChange` — forward both
   to your API and return `rows` + `total`; `total` drives the pager.
 
+## Cursor pagination
+
+Offset paging asks for "rows 100–125". If a row is inserted or deleted while
+someone is reading, every later page shifts by one, and they see an entry twice
+or never see it at all. Cursor pagination asks for "the 25 rows after _this_
+one", which cannot drift.
+
+Declare the capability and hand back the token your API returned:
+
+```tsx
+const [data, setData] = useState({ rows: [], nextCursor: null });
+
+const source = useServerData({
+  rows: data.rows,
+  total: 0, // cursor APIs usually have no count to give
+  nextCursor: data.nextCursor,
+  supports: { cursor: true },
+  onQueryChange: async ({ cursor, limit, search }, { signal }) => {
+    const res = await fetch(
+      `/api/rows?limit=${limit}&search=${search}` +
+        (cursor ? `&cursor=${cursor}` : ""),
+      { signal }
+    );
+    setData(await res.json()); // { rows, nextCursor }
+  },
+});
+```
+
+Return `nextCursor: null` when there are no more rows — that is what ends the
+list, since there is no total to count against.
+
+What the table guarantees:
+
+- **It only ever sends a token your server issued.** The first page carries no
+  `cursor` field at all, so the query is byte-for-byte the one an offset
+  endpoint already receives.
+- **Back works.** Tokens are kept as a trail, so paging back through what the
+  user has already seen replays their own cursors.
+- **A jump to an unvisited page does nothing.** Page 7 has no token, and
+  sending none would silently re-serve page 1. This is the honest shape of
+  cursor pagination rather than a limitation to route around — use infinite
+  scroll (`paginationMode="infinite"`) where arbitrary jumps matter.
+- **A new sort, filter, search, or page size resets to the first page.** Those
+  tokens describe a position in a result set that no longer exists.
+- **The URL keeps everything except the cursor.** Sort, filters, search and
+  page size stay shareable; an opaque token would be meaningless to whoever
+  opened the link, and stale by the time they did.
+
+Using a query library instead? `useQuerySource` already supports cursors
+through your own `getNextPageParam` — the table reads `hasNextPage` and calls
+`fetchNextPage`, and never needs to see the token.
+
 ## Options
 
 | Prop             | Type                                   | Default                  | Description                                                            |
@@ -1175,6 +1471,9 @@ export function People() {
   `defaults` or a hand-edited URL.
 - Sources built with `useServerData` (the `onQueryChange` tier) are always
   paged; `paginationMode` applies to the frontend tier and `useQuerySource`.
+- `nextCursor` is read only when the source declares `supports: { cursor: true }`.
+  Without that declaration the field is ignored and no `cursor` is ever sent,
+  so an endpoint written before cursors existed keeps its exact query.
 - In infinite mode the table slices `page × limit` rows, so "page" really
   means "how much is loaded" — `fetchNextPage` just bumps it.
 - The infinite-scroll sentinel is exported as a headless hook,
@@ -1489,7 +1788,38 @@ export function People() {
 | `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
 | `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
 | `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `parseValue` | `(draft: string, row: TRow) => unknown`                | —        | Turns the edited text into the value committed to `onCellEdit`.            |
 | `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+
+### Display, draft, and committed value
+
+Three moments in a cell's life, and a formatted column needs a different value
+at each:
+
+| Moment    | Field        | For a currency column |
+| --------- | ------------ | --------------------- |
+| Displayed | `accessor`   | `"$1,240.00"`         |
+| Edited    | `editValue`  | `"1240"`              |
+| Committed | `parseValue` | `1240`                |
+
+```tsx
+{
+  key: "budget",
+  editable: true,
+  editor: "number",
+  accessor: (row) => money.format(row.budget),
+  editValue: (row) => String(row.budget),
+  parseValue: (draft) => Number(draft.replace(/[^0-9.-]/g, "")),
+}
+```
+
+`parseValue` receives the draft exactly as typed plus the row, and replaces the
+editor's own parsing rather than running after it — so a column that says how
+to read its drafts is in full control. Return anything `onCellEdit` should
+receive, including a value no built-in editor produces, such as a `Date`.
+
+Without it nothing changes: a `number` editor commits `number | null` and every
+other editor commits the raw string.
 
 ## Headless editing
 
@@ -1512,6 +1842,57 @@ its `title`).
 | `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.    |
 | `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution. |
 
+## Applying changes without a refetch
+
+A commit hands you a change; what you do with your data is yours. Refetching
+the page to reflect it costs a round trip and throws away the user's scroll
+position, open rows, and sometimes their selection.
+
+`applyRowPatches` applies changes to the rows you already hold:
+
+```tsx
+import { applyRowPatches, updateRow, removeRow } from "@adapttable/core";
+
+const [rows, setRows] = useState(initial);
+const byId = (row: Person) => row.id;
+
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={byId}
+  editing
+  onCellEdit={({ row, key, value }) =>
+    setRows((current) =>
+      applyRowPatches(current, [updateRow(byId(row), { [key]: value })], byId)
+    )
+  }
+/>;
+```
+
+Four builders — `insertRow`, `updateRow`, `upsertRow`, `removeRow` — and a
+batch is just an array, applied in order, so a later patch acts on what an
+earlier one did.
+
+Two guarantees make it safe to call on every commit:
+
+- **Untouched rows keep their object identity.** React reconciles them as
+  unchanged, and per-row memos — a [computed column](./columns.md)'s cache, a
+  `memo`'d cell — stay valid instead of recomputing for the whole page.
+- **A patch that changes nothing returns the very same array.** An update whose
+  values already match, an upsert of the row already in place, a removal of an
+  id that is not there, or an empty batch hands back the original reference, so
+  the `setState` does not re-render.
+
+Selection and expansion survive for the same reason: both are keyed by row id,
+and a patch never changes the id of a row it did not touch.
+
+`applyRowPatches` is a pure function over an array — the table does not own
+your data and this does not make it start.
+
+The patch shapes are exported for code that builds them dynamically:
+`RowPatch` is the union, with `InsertPatch`, `UpdatePatch`, `UpsertPatch` and
+`RemovePatch` as its members.
+
 ## Notes
 
 - Works on desktop rows and mobile cards, LTR and RTL.
@@ -1526,11 +1907,161 @@ section.
 
 ---
 
+# React table keyboard navigation — arrow keys, ARIA grid, screen readers
+
+A table with a hundred cells should not be a hundred tab stops. Set
+`cellNavigation` and the table becomes **one** tab stop whose interior is
+reachable by arrow keys, with correct ARIA grid semantics and a screen reader
+that says where you are.
+
+**Related:** [Cell editing](./cell-editing.md) ·
+[Virtualization](./virtualization.md) · [Columns](./columns.md) ·
+[Accessibility in the FAQ](./faq.md)
+
+## Example
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(row) => row.id}
+  cellNavigation
+/>
+```
+
+That is the whole opt-in. Omit it and nothing changes — see
+[Off means absent](#off-means-absent).
+
+## The keys
+
+| Key                          | Where focus goes                                |
+| ---------------------------- | ----------------------------------------------- |
+| `↑` `↓` `←` `→`              | One cell, stopping at the edges                 |
+| `Home` / `End`               | Start / end of the current row                  |
+| `Ctrl`+`Home` / `Ctrl`+`End` | First / last cell of the whole grid             |
+| `PageUp` / `PageDown`        | A viewport's worth of rows                      |
+| `Enter` / `F2`               | Opens the editor, when the column is `editable` |
+| `Tab`                        | Leaves the table — it is one stop, not hundreds |
+
+Edges **stop rather than wrap.** Wrapping off the last column would move the
+user to a different record without saying so; a table is not a spreadsheet.
+
+Under `dir="rtl"` the left and right arrows swap, because arrow keys describe
+the screen rather than the data — in a mirrored table the visually-next column
+is the previous one. `Home` and `End` do not swap: they mean the start and end
+of the row either way.
+
+## What a screen reader hears
+
+Focus alone announces a cell's contents, which is not navigation — "1,240" says
+nothing about which column it belongs to or where it sits in a dataset whose end
+you cannot see. So a live region announces the column, the cell's text, and the
+absolute position:
+
+> Budget, 1,240, row 40,002 of 100,000
+
+The cell's text comes from [`columnText`](./columns.md), so a column whose cell
+renders a badge or an avatar needs a `formatValue` to have anything readable.
+The position phrase is localizable through `labels.gridCellPosition`, and ships
+translated in all seventeen locales.
+
+## Virtualization
+
+This is where a naive implementation is wrong and looks right. With 24 rows of
+100,000 rendered, `aria-rowindex` must number rows **within the dataset**, not
+within the window — otherwise assistive technology reports "row 3 of 24" while
+the user is at row 40,000. AdaptTable carries absolute `aria-rowindex` /
+`aria-colindex` and dataset-wide `aria-rowcount` / `aria-colcount`.
+
+`Ctrl`+`End` on a 100,000-row table also asks for a cell that is not in the DOM
+at all. Focus scrolls it into existence and lands on it once it mounts.
+
+## Selecting a range
+
+Hold **Shift** with any movement key, or shift-click a cell, and the selection
+extends from where it began:
+
+| Gesture                       | Result                          |
+| ----------------------------- | ------------------------------- |
+| `Shift`+`↑` `↓` `←` `→`       | Extend the rectangle one cell   |
+| `Shift`+`Home` / `End`        | Extend to the row's start / end |
+| `Shift`+`PageUp` / `PageDown` | Extend by a viewport of rows    |
+| `Shift`+click                 | Extend to the clicked cell      |
+| Any plain move                | Collapse back to a single cell  |
+
+A range is stored as two corners — the **anchor** where it started and the
+**head** where it reaches — not as a list of cells. That is what makes
+Shift+Down twice then Shift+Up _shrink_ the range instead of starting a new one
+upward, and what makes a 50,000-cell selection cost two numbers.
+
+Selected cells carry `data-cell-selected` for styling. `aria-selected` appears
+only once a real rectangle exists: marking every focused cell as selected would
+tell a screen reader the table is in selection mode when the user has merely
+arrowed around.
+
+`onRangeChange` fires whenever it changes and `table.gridFocus.range` holds the
+current rectangle — which is what `exportCsv` with `scope: "range"` reads.
+
+Headless: `CellRange` and `CellRangeBounds` are the shapes, `cellRangeBounds`
+sorts the corners of a range dragged up or left, `isInCellRange` tests
+membership, `cellRangeSize` multiplies rather than enumerating,
+`extendCellRange` moves the head while keeping the anchor, `singleCellRange`
+and `isSingleCell` handle the one-cell case, and `cellRangeIndices` enumerates
+the rows and columns for an exporter — the one place that does.
+
+## Mobile
+
+Cell navigation applies to the **desktop table layout**. Mobile cards are a
+list, not a grid: they keep list semantics, and arrow keys are not hijacked
+there. This is deliberate — a card is one record's worth of stacked
+label/value pairs, and a two-dimensional focus model does not describe it.
+
+## Off means absent
+
+With `cellNavigation` omitted there is no `role="grid"`, no `tabIndex`, no key
+handler, no live region, and no extra attributes. Not "disabled" — absent. A
+test asserts the rendered markup is byte-identical to a table built without the
+prop at all, in every one of the eight adapters.
+
+Focus position is also deliberately **not** saved to the URL or a Saved View.
+Where the keyboard is sitting is ephemeral UI state, not part of a view someone
+would share.
+
+## Headless
+
+| Export                                                    | Purpose                                                                                                                           |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `useGridFocus` / `UseGridFocusOptions` / `GridFocusState` | The hook, its options, and the state it returns (`getGridProps`, `getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`). |
+| `GridFocusAnnouncer` / `GridFocusAnnouncerProps`          | The live region, from `@adapttable/core/adapter`. Renders nothing when navigation is off.                                         |
+| `moveGridFocus` / `GridFocusMove` / `GridBounds`          | The pure move arithmetic and its vocabulary — no React, no DOM.                                                                   |
+| `gridFocusMoveForKey` / `GridKeyPress`                    | Maps a key press to a move, applying the RTL swap.                                                                                |
+| `GridCell` / `sameGridCell`                               | A cell address, and address equality.                                                                                             |
+| `GRID_CELL_ATTR` / `gridCellAttr`                         | The `data-grid-cell` attribute focus uses to find a cell in the DOM.                                                              |
+
+`getCellPropsAt(windowIndex, col)` and `getRowPropsAt(windowIndex)` take the
+index an adapter already has — its position in the rendered rows — and convert
+to the absolute address internally. That conversion lives in core precisely
+because getting it wrong is invisible on screen.
+
+## Notes
+
+- Works in all eight adapters, verified by the same parity test in each.
+- Enter and F2 are handled by the editing gate on the focused cell, so the two
+  keyboard models never race for one key press.
+- A click moves focus too: state follows the DOM rather than fighting it.
+
+---
+
 # React table row grouping — group rows with aggregates & expand/collapse
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`groupBy="role"` + `groupAggregates`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
 ▶ **See it working:** [collapse groups and read per-group subtotals in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/grouping/) — a real table you can click, not a recording.
+
+Each subtotal renders in its own column's cell, so it sits under the column it
+totals — on a mobile card, where there are no columns to align to, the same
+numbers appear captioned by their column instead. A custom renderer can place
+them the same way with `groupRowLayout` and `groupAggregateEntries`.
 
 Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
@@ -1590,12 +2121,56 @@ export function People() {
   ignore grouping — see [Data tiers](./data-tiers.md).
 - **Shared mapper.** `groupAggregates(rows)` uses the same
   `(rows) => Partial<Record<string, ReactNode>>` shape as `summaryRow`; reuse
-  one function for both if the math is identical.
+  one function for both if the math is identical — or build both with
+  `aggregate()` (below).
 - **Expand / collapse.** Groups start expanded. Collapse state is ephemeral
   (not URL-synced). `groupBy` itself serializes to the URL like sort and
   filters.
 - **Selection.** When row checkboxes are enabled, each group header exposes a
   tri-state checkbox over its leaf rows.
+
+## Aggregate without writing the maths
+
+The mapper above is a function you write. When the sums are ordinary, declare
+them instead and `aggregate()` returns that same mapper:
+
+```tsx
+import { aggregate } from "@adapttable/core";
+
+<DataTable
+  groupBy="role"
+  groupAggregates={aggregate({ budget: "sum", team: "count" }, { columns })}
+  summaryRow={aggregate({ budget: "sum" }, { columns })}
+  columns={columns}
+  // …
+/>;
+```
+
+Built in: `sum`, `avg`, `count`, `min`, `max`. Pass your own function for
+anything else — it receives the values found for that column and returns the
+cell:
+
+```tsx
+const distinct = (values) => new Set(values).size;
+groupAggregates={aggregate({ team: distinct })}
+```
+
+Passing `columns` lets values resolve through a column's `sortValue`, exactly
+as sorting and grouping do, so a formatted cell still aggregates on its
+underlying number. Add `format` to shape the result for display:
+
+```tsx
+aggregate(
+  { budget: "sum" },
+  { columns, format: (v) => (typeof v === "number" ? money.format(v) : v) }
+);
+```
+
+Two behaviours worth knowing, because they are choices rather than accidents:
+a missing value is skipped rather than counted as zero, so `count` reports the
+values a column actually has; and while `sum` of nothing is `0`, `avg`, `min`
+and `max` of nothing are `undefined` — an average of no numbers is
+unanswerable, not zero.
 
 ## Options
 
@@ -1992,14 +2567,19 @@ Virtualization renders only the rows in view, so cost is bounded by the
 viewport — not the dataset. A measured A/B on the scale demo (Mantine adapter,
 the **same 10,000-row dataset fully loaded**, headless Chromium, 1280×900):
 
-|                                | Rows in the DOM |    JS heap |
-| :----------------------------- | --------------: | ---------: |
-| **Virtualized** (`virtualize`) |          **24** | **169 MB** |
-| Plain table — same 10,000 rows |          10,000 |     347 MB |
+|                                | Rows in the DOM | Retained JS heap |
+| :----------------------------- | --------------: | ---------------: |
+| **Virtualized** (`virtualize`) |          **24** |        **17 MB** |
+| Plain table — same 10,000 rows |          10,000 |           368 MB |
 
 Windowing mounts **417× fewer DOM nodes** (24 vs 10,000 — a viewport's worth
-plus overscan) and uses **~178 MB less memory, roughly half** — while the plain
-table blocks the main thread rendering ten thousand `<tr>`s.
+plus overscan) and holds **351 MB less memory, about 95% less** — while the
+plain table blocks the main thread rendering ten thousand `<tr>`s.
+
+The two arms differ in kind, not just degree: the plain table's memory sits in
+10,000 mounted rows, which cannot be released while they are on screen. The
+virtualized one mounts 24 and keeps the rest as a plain array, so what it costs
+is your data, not your table.
 
 And it stays flat: the rendered row count holds at **~24 whether the dataset is
 1,000 or 100,000 rows**. Only your own data array grows — never the table's DOM:
@@ -2009,9 +2589,26 @@ And it stays flat: the rendered row count holds at **~24 whether the dataset is
 |     Rows in the DOM | **24** | **24** | **24** |  **24** |
 
 Reproduce both with
-[`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
-against a running showcase. (Numbers are from one dev laptop; the **shape** —
-constant DOM, about half the memory — does not change with hardware.)
+[`scripts/bench.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench.mjs)
+— it serves this demo itself, drives it through the whole scenario set (wide
+tables, grouping, pinned columns, sorted data) and prints the DOM rows, cells,
+heap and time-to-interactive for each:
+
+```bash
+node scripts/bench.mjs                   # every scenario
+node scripts/bench.mjs --smoke           # the fast subset CI runs
+```
+
+A showcase already running on the port is used as-is, so
+`pnpm --filter @adapttable/showcase dev` in another terminal still works and is
+the faster loop while iterating.
+
+Heap here is **retained** memory — measured after forcing collection and taking
+the floor across repeated runs, because the raw `usedJSHeapSize` figure counts
+whatever the engine has not swept yet and swings by an order of magnitude with
+how busy the machine is. Measured this way the numbers come out the same on a
+loaded laptop as an idle one, which is what makes them worth publishing: run
+`pnpm bench` and you should see them too.
 
 ## Notes
 
@@ -2066,7 +2663,11 @@ layouts.
 ## Tuning the cards
 
 - **`mobileLabel`** (per column) — the label a card shows for that field;
-  falls back to the column's string `header`.
+  falls back to the column's string `header`, then to its key. Set it to `""`
+  for a field with no label at all — a bare avatar or title line — rather than
+  an empty caption taking a line. `resolveMobileLabel` from
+  `@adapttable/core/adapter` is the resolver every adapter uses, for a custom
+  card layout that should match.
 - **`hideOnMobile`** (per column) — drop a column from cards entirely.
 - **`mobileIdentityColumns`** (default `3`) — how many leading desktop-visible
   columns the cards always keep.
@@ -2298,6 +2899,133 @@ when there is no `window`, so nothing crashes under SSR either way.
 
 ---
 
+# React table with SSR, server components & streaming — Next.js App Router
+
+AdaptTable renders on the server, hydrates without mismatches, and sits inside
+Suspense and streaming boundaries — provided the client boundary goes in the
+right place. This page says where that is and why.
+
+**Related:** [Data tiers](./data-tiers.md) · [URL state](./url-state.md) ·
+[Getting started](./getting-started.md)
+
+## The short version
+
+```tsx
+// app/people/page.tsx — a server component
+import { DataTable } from "@adapttable/mantine";
+
+export default async function PeoplePage() {
+  const people = await db.people.findMany(); // runs on the server
+  return <PeopleTable data={people} />; // client component, see below
+}
+```
+
+```tsx
+// app/people/PeopleTable.tsx
+"use client";
+
+import { DataTable } from "@adapttable/mantine";
+
+export function PeopleTable({ data }: { data: Person[] }) {
+  return <DataTable data={data} columns={columns} rowKey={(row) => row.id} />;
+}
+```
+
+Fetch on the server, pass the rows down, render the table in a client
+component. That is the whole pattern.
+
+## Why the table is a client component
+
+A table is interactive: it holds state for sorting, filters, the open editor,
+the selection. React Server Components cannot hold state, so the table has to
+sit on the client side of the boundary. That is a property of what a table is,
+not a limitation of this one.
+
+Every package that ships hooks carries the `"use client"` directive in its
+build, so importing `DataTable` from a server component works without you
+writing a wrapper. A test in the release gate asserts the directive is on every
+built entry — if it were ever dropped, an App Router build would fail on the
+first `useState` with an error pointing at your application rather than at us.
+
+**`@adapttable/i18n` is deliberately the exception.** It is plain data and pure
+functions — no hooks, no directive — so locale labels can be imported and
+resolved in a server component and passed down as props.
+
+## Server rendering without a DOM
+
+During SSR there is no `window`, `document`, `matchMedia` or `localStorage`.
+The engine renders through `renderToString` with none of them present — the
+frontend tier, the server tier, and the table shell are each covered by a test
+that runs in a DOM-free environment.
+
+Two seams matter when you render on a server:
+
+- **`forceMobile`** decides the card/table layout explicitly. The automatic
+  choice comes from a media query, which a server cannot answer; passing the
+  value you want makes the server and the first client render agree.
+- **`urlAdapter`** defaults to the browser History API. On the server, pass
+  `createMemoryAdapter(searchParamsString)` so the table restores state from
+  the request's query string instead of reaching for a `window` that is not
+  there.
+
+```tsx
+import { createMemoryAdapter } from "@adapttable/core";
+
+const urlAdapter =
+  typeof window === "undefined"
+    ? createMemoryAdapter(searchParams.toString())
+    : undefined; // the browser default
+```
+
+## Hydration
+
+The rule is the ordinary React one: the server's markup and the first client
+render must match. Two things in a table can break it, and both have an answer
+above:
+
+- **Layout** — if the server guesses desktop and the client is a phone, the
+  first render disagrees. Pass `forceMobile` when you render on a server.
+- **URL-restored state** — sort, filters and page come from the query string.
+  Give the server the same query string the browser has, through
+  `createMemoryAdapter`, and both renders start from the same state.
+
+Anything read from `localStorage` — saved views, a stored column layout —
+is applied after mount by design, so the first client render matches the
+server and the stored state arrives immediately afterwards.
+
+## Suspense and streaming
+
+The table does not suspend. It renders whatever rows it is given, including
+none, so it never blocks a streaming response by itself.
+
+What suspends is your data. Put the boundary around the component that fetches:
+
+```tsx
+<Suspense fallback={<TableSkeleton />}>
+  <PeopleTable /> {/* awaits its own data */}
+</Suspense>
+```
+
+For a table that fetches on the client instead, `loading` drives the built-in
+skeleton, and `skeletonRows` sets how many rows it shows — a Suspense boundary
+is not needed for that case and adds nothing.
+
+The table's first paint needs no measurement — column widths, sticky offsets
+and virtualization all resolve after mount — so a table inside a late-arriving
+chunk renders from its props alone, exactly as it does on a normal client
+render.
+
+## Notes
+
+- Works the same in **Next.js (App and Pages Router), Remix, and Vite SSR**.
+- Server components can fetch, sort and filter before the table ever sees the
+  data — pass the finished rows and let the table page them, or use the
+  [server tier](./data-tiers.md) and let it drive your endpoint.
+- The `"use client"` directive is in the published build; you never add it to
+  your own imports of AdaptTable.
+
+---
+
 # Customize AdaptTable — slots, classNames, headless prop-getters
 
 ▶ **See it working:** [the unstyled adapter in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/?kit=tailwind) — same engine, your own classes.
@@ -2358,6 +3086,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
 | `filtersCount`                                    | The active-filter count badge.                                                         |
 | `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
+| `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -2491,6 +3220,31 @@ Replace whole sub-components on any adapter:
 empty-state. The error state is built-in (retry button included) — translate it
 via the `errorTitle` / `errorMessage` / `retry` labels.
 
+### Two empty states, one optional slot
+
+A table is empty for two different reasons, and they deserve different words:
+there is no data at all, or a search and filters matched nothing. The built-in
+filtered state says so and offers a **clear all filters** action.
+
+`empty` covers both. Add `noResults` when the filtered case needs its own
+message — including its own way back:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  slots={{
+    empty: <NoInvoicesYet />,
+    noResults: <NothingMatched onClear={clearFilters} />,
+  }}
+/>
+```
+
+Set only `empty` and it still covers both states, exactly as before — but the
+built-in clear-filters action goes with it, so give your replacement a way to
+reset the query.
+
 ## Density
 
 ```tsx
@@ -2509,7 +3263,10 @@ height and padding. Each adapter maps it to its kit's table size — MUI
 explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
 
-## CSV export
+## Export
+
+CSV by default, spreadsheets when you ask for them — one prop, one set of
+scopes, [one button](#spreadsheet-xlsx-export).
 
 Opt in with `exportCsv` to render a kit-native **Export CSV** button next to
 Filters / Columns. The file mirrors the current view's data — the active search, filters,
@@ -2542,19 +3299,186 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "all"` — the full filtered+sorted set when the source exposes it
   (frontend does); server-backed sources fall back to the current page unless
   you wire your own download against an export endpoint via `toolbar`.
+- `scope: "selected"` — the ticked rows, in table order. Selection is a set of
+  ids, so a row checked on page 1 is still in the file while page 3 is on
+  screen. Nothing ticked writes a header-only file.
+- `scope: "range"` — the highlighted cell rectangle from
+  [cell navigation](./cell-navigation.md). A rectangle names its own columns,
+  so it decides them and `columns` is not consulted. With nothing selected the
+  current page is exported instead.
+
+`columns` chooses the file's shape independently of the rows:
+
+- `columns: "visible"` (default) — what the user can see, so the file matches
+  the screen.
+- `columns: "all"` — every defined column, including ones hidden through the
+  column menu, for a complete extract.
+- `columns: ["name", "email"]` — exactly these, in this order. A key matching
+  no column is ignored, so a stale saved config cannot break the button.
+
+The synthetic actions column is never exported under any of them.
+
+### Exporting a different value than the screen shows
+
+A cell formatted for reading is worse than useless in a spreadsheet: `"$1,240.00"`
+cannot be summed and `"3 days ago"` cannot be sorted. Give the column an
+`exportValue` and the file carries the value underneath while the table keeps
+rendering the friendly version:
+
+```tsx
+{
+  key: "budget",
+  accessor: (row) => money.format(row.budget),  // what the user reads
+  exportValue: (row) => row.budget,             // what the spreadsheet gets
+}
+```
+
+Columns without one export what the table shows, so this is only needed where
+the two genuinely differ. Formula escaping still applies to whatever is
+returned.
+
+### Spreadsheet (XLSX) export
+
+The same button writes a real `.xlsx` when you hand it the spreadsheet writer:
+
+```tsx
+import { xlsxWriter } from "@adapttable/core/xlsx";
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv={{ writer: xlsxWriter({ sheetName: "People" }), scope: "all" }}
+/>;
+```
+
+Every scope and column option above works unchanged — which rows and columns
+leave the table is decided before the format is asked for anything.
+
+The button relabels itself: it reads **Export XLSX** here, not "Export CSV",
+from `labels.exportFile(format)` — translated in all seventeen locales, and
+given a caption for a format nobody planned for (a custom writer calling itself
+`tsv` gets "Export TSV"). CSV keeps `labels.exportCsv`, so its existing
+translations and any wording you overrode are untouched.
+
+Two differences from CSV, both in your favour. Numbers and booleans stay
+**typed**, so a spreadsheet can sum a column instead of showing text that looks
+like a number; and text that looks numeric stays text, so a postal code of
+`01730` arrives as `01730` rather than `1730`. Formula escaping is not needed
+and is ignored: XLSX keeps formulas in their own element, so a cell reading
+`=CMD()` is displayed, never executed.
+
+It is a **separate entry point** because a table that exports CSV should not
+ship a ZIP encoder. Import it and you pay for it; do not and none of it reaches
+your bundle. There is no new dependency either way — `buildTableXlsx` writes
+the workbook by hand.
+
+Any format is reachable the same way. An `ExportWriter` is an extension and a
+`build` function over the resolved values (`ExportWriteContext` in,
+`ExportPayload` out); `csvWriter` is the built-in one, and `downloadExportFile`
+hands a built payload to the browser. A writer receives an `ExportTable` —
+headers, keys, and one array of values per row, resolved once by
+`buildExportTable` — rather than rows and columns, so two formats of the same
+table cannot disagree about what a cell contains, and a writer needs no type
+argument.
+
+### Before and after the file is written
+
+```tsx
+exportCsv={{
+  onBeforeExport: ({ rows, columns, filename }) => {
+    if (rows.length > 50_000) return false;          // cancel
+    return { filename: `people-${rows.length}.csv` }; // or rename
+  },
+  onAfterExport: ({ csv, file, filename }) => track("export", { filename }),
+}}
+```
+
+`onBeforeExport` runs once the rows and columns are resolved and before
+anything is written — the only moment where the file's contents are known and
+nothing has happened yet. Return `false` to cancel, `{ filename }` to rename,
+or nothing to continue — a cancelled export builds no file at all.
+`onAfterExport` receives the text that was written as `csv`, and the built file
+as `file`; a binary format leaves `csv` empty and carries its bytes in
+`file.parts`.
 
 Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 `downloadTableCsv` from `@adapttable/core`.
 
-### The CSV pipeline (headless)
+### Exporting from your backend
+
+Past a certain size the browser is the wrong place to build the file: the rows
+are not all loaded, holding them would cost more memory than the tab has, and
+the work blocks the main thread. `request` hands the export to the server
+instead:
+
+```tsx
+exportCsv={{
+  scope: "all",
+  request: async ({ query, scope, format, columns, filename }) => {
+    const res = await fetch("/api/people/export", {
+      method: "POST",
+      body: JSON.stringify({ ...query, scope, columns: columns.map((c) => c.key) }),
+    });
+    window.location.href = (await res.json()).url; // or queue a job and email it
+  },
+}}
+```
+
+`query` carries the user's current view — search, filters, sort, paging — in
+the same shape a [server tier](./data-tiers.md) receives, so an endpoint that
+already answers table queries needs no new vocabulary. `format` is the
+extension the button would have produced (`"csv"`, `"xlsx"`, or whatever a
+custom writer names itself), so the server builds the file the user asked for
+rather than guessing from the filename. `rows` holds whatever the browser has
+of the scope, which is useful for a count or a confirmation even when the
+server does the real work.
+
+With `request` set the table builds no file and downloads nothing, so
+`onBeforeExport` and `onAfterExport` do not run — there is no file for them to
+bracket.
+
+Return a promise and the Export button shows **its own kit's loading
+affordance** until it settles — Mantine's, MUI's, Chakra's and Ant Design's
+loading buttons, Radix's and Base UI's spinners, and a styleable
+`exportSpinner` element in the unstyled and shadcn presets — with `aria-busy`
+throughout, so an impatient second click cannot start the same export twice. A
+rejected promise releases the button rather than leaving it stuck.
+
+Either way the outcome is **announced**: a download is silent and a failed one
+is silent in the same way, so a polite live region beside the button says
+`labels.exportDone` or `labels.exportFailed` (translated in all seventeen
+locales) when the export ends. `exportStatus` — `"idle"`, `"busy"`, `"done"` or
+`"failed"` — is on the same state for a toolbar that wants to show more.
+
+### The export pipeline (headless)
 
 The export path is exported end to end: `exportableColumns` filters the
-visible layout to columns with exportable values, `buildTableCsv` turns
-rows + columns into CSV text (`RowsToCsvOptions` controls delimiter,
-BOM and `escapeFormulas`), `resolveExportCsv` normalizes the `exportCsv`
-prop (`ExportCsvOptions`), and `makeExportCsvHandler` wires all of it to
-a download handler the toolbar button calls. Custom toolbars can reuse
-any stage.
+visible layout to columns with exportable values, `resolveExportColumns`
+applies a column scope to them, `buildTableCsv` turns rows + columns into CSV
+text (`RowsToCsvOptions` controls delimiter, BOM and `escapeFormulas`),
+`resolveExportCsv` normalizes the `exportCsv` prop (`ExportCsvOptions`), and
+`makeExportCsvHandler` wires all of it to a download handler the toolbar button
+calls. Custom toolbars can reuse any stage.
+
+Formats plug in at the last stage only. `csvWriter` and `xlsxWriter` are both
+`ExportWriter`s — given an `ExportWriteContext` (an `ExportTable` of resolved
+values, plus the filename) they return an `ExportPayload`, which
+`downloadExportFile` writes. Nothing earlier in the pipeline knows which format
+is in play, and `matrixToCsv` is the CSV half of it for anyone assembling values
+themselves.
+
+Custom adapters bind the button with `useExportHandler` from
+`@adapttable/core/adapter`: it takes the handler above and returns
+`{ onExportCsv, exportBusy }` (typed `ExportHandlerState`), which is how every
+built-in adapter gets identical single-flight behaviour.
+
+Four supporting types: `ExportRowScope` and `ExportColumnScope` name the two
+scope unions, `ExportInfo` is what the lifecycle hooks receive, and
+`ExportContext` carries the selection, full column set and highlighted range
+that `scope: "selected"`, `columns: "all"` and `scope: "range"` need — the
+adapters pass all of it automatically, and only a hand-built
+`downloadTableCsv` call has to supply it.
 
 ## Sticky header, offset & scroll box
 
@@ -2574,6 +3498,23 @@ the header and pinned columns stick within it, which is what makes column
 pinning visibly stick. `scrollToTopOnChange` (default `true`) scrolls back
 to the table when search/filter/page changes, with `scrollTopGap` (default
 `8`) of breathing room below sticky chrome.
+
+### The surface behind sticky and pinned cells (Mantine)
+
+A sticky header and pinned columns need an opaque background, or scrolled rows
+show through them. That colour and the hairline under the header come from two
+CSS variables, so a panel whose surface is not the page background can say so:
+
+```css
+.my-dark-panel {
+  --adapttable-surface: #101418;
+  --adapttable-header-border: #2b3238;
+}
+```
+
+They default to `--mantine-color-body` and `--mantine-color-default-border`,
+so tables look the same until you set them. Declare them on any ancestor of
+the table.
 
 ## Theming per kit
 
@@ -2839,31 +3780,31 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Appearance & chrome
 
-| Prop                        | Type                                                            | Default         | Description                                                                                                                                                                                                                                |
-| --------------------------- | --------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tableLabel`                | `string`                                                        | —               | Accessible label for the table.                                                                                                                                                                                                            |
-| `labels`                    | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                                                                                                                |
-| `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                            |
-| `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                 |
-| `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                 |
-| `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                            |
-| `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                              |
-| `exportCsv`                 | `boolean \| { filename?: string; scope?: "page" \| "all" }`     | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page; `scope: "all"` uses the full filtered set when the source provides it — server sources without `allFilteredRows` fall back to the current page with a dev warning. |
-| `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                  |
-| `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                     |
-| `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                      |
-| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                         |
-| `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                  |
-| `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                         |
-| `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                |
-| `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                        |
-| `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                              |
-| `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                            |
-| `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                          |
-| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                |
-| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                        |
-| `collapsedGroupIds`         | `readonly string[]`                                             | —               | Controlled collapsed group keys (ephemeral — not URL-synced).                                                                                                                                                                              |
-| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —               | Controlled collapse channel; uncontrolled mode uses internal state.                                                                                                                                                                        |
+| Prop                        | Type                                                            | Default         | Description                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tableLabel`                | `string`                                                        | —               | Accessible label for the table.                                                                                                                                                                                                                                                                                                                                                  |
+| `labels`                    | `TableLabels`                                                   | English         | Pre-translated label overrides; missing keys fall back to English defaults.                                                                                                                                                                                                                                                                                                      |
+| `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                                                                                                                                                                  |
+| `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                                                                                                                                                       |
+| `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                                                                                                                                                       |
+| `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                                                                                                                                                                  |
+| `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                                                                                                                                                                    |
+| `exportCsv`                 | `boolean \| ExportCsvOptions<TRow>`                             | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page. `scope` picks the rows (`"page"`, `"all"`, `"selected"`), `columns` picks the fields (`"visible"`, `"all"`, or an explicit key list), and `onBeforeExport` / `onAfterExport` can rename, cancel or observe. A server source without `allFilteredRows` falls back to the current page with a dev warning. |
+| `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                                                                                                                                                        |
+| `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                                                                                                                                                           |
+| `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                                                                                                                                                            |
+| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                                                                                                                                                               |
+| `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
+| `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
+| `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
+| `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                                                                                                                                                              |
+| `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                                                                                                                                                                    |
+| `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
+| `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
+| `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
+| `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                                                                                                                                                              |
+| `collapsedGroupIds`         | `readonly string[]`                                             | —               | Controlled collapsed group keys (ephemeral — not URL-synced).                                                                                                                                                                                                                                                                                                                    |
+| `onCollapsedGroupIdsChange` | `(ids: string[]) => void`                                       | —               | Controlled collapse channel; uncontrolled mode uses internal state.                                                                                                                                                                                                                                                                                                              |
 
 ### Virtualization
 
@@ -2902,6 +3843,9 @@ surface — see [Adapter extras](#adapter-extras) and
 | `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
 | `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
 | `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
+| `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
+| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                       |
+| `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
 | `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
 | `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
 | `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
@@ -2944,7 +3888,7 @@ Props beyond the core surface, with per-kit availability.
 | `urlAdapter`    | `UrlStateAdapter`                               | History API | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
 | `urlSync`       | `boolean`                                       | `true`      | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
 | `savedViews`    | `UseSavedViewsOptions`                          | —           | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                               |
-| `slots`         | `{ skeleton?, empty? }`                         | —           | all                                       | Replace sub-components (loading skeleton, empty state).                                                                                                                                 |
+| `slots`         | `{ skeleton?, empty?, noResults? }`             | —           | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one (see customization).                                                              |
 | `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                               |
 | `className`     | `string`                                        | —           | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                 |
 | `animate`       | `boolean`                                       | `false`     | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                   |
@@ -3029,6 +3973,142 @@ All from `@adapttable/core`.
 - `useDebounce(value, ms)`, `useMediaQuery(query)`, `useIsMobile()`,
   `usePrefersReducedMotion()`, `useColorScheme(preference)`.
 
+- `useExportHandler(handler)` — binds the Export button: makes a host-handled
+  export single-flight and reports `exportBusy`. From `@adapttable/core/adapter`.
+
+Building blocks for columns, rows and queries:
+
+- `computed({ key, deps, value, format })` — a derived column, cached per row,
+  consistent across display, sorting, filtering and export. See
+  [columns](./columns.md).
+- `aggregate(spec, options)` — builds the `summaryRow` / `groupAggregates`
+  mapper. See [row grouping](./row-grouping.md).
+- `applyRowPatches(rows, patches, getRowId)` with `insertRow` / `updateRow` /
+  `upsertRow` / `removeRow` — apply changes without a refetch, preserving row
+  identity. See [cell editing](./cell-editing.md).
+- `tableQueryKey(query, options)` / `tableQueryBaseKey(query, options)` —
+  stable cache keys for TanStack Query or SWR. See
+  [data tiers](./data-tiers.md).
+
+**Headless cell editing.** `useCellEditing` is the state machine (one active
+cell, a draft string, the Enter/Escape/Tab flow) and returns
+`CellEditingState`; `EditableCellGate` / `EditableCellGateProps` is the
+activation wrapper every adapter renders. A commit arrives as
+`CellEditCommit` and the active address as `CellEditTarget`. The keyboard
+vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
+`CellEditNavigation`. A custom editor receives `EditableCellController` /
+`EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
+the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
+describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
+`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
+`EditableColumnLike` is the minimal column shape editing reads, and
+`isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
+See [cell editing](./cell-editing.md).
+
+**The grouped row model.** `buildGroupedFlatModel` turns rows into the flat
+`GroupedFlatEntry` list adapters render (a group header or a leaf row);
+`GroupAggregatesFn` is the per-group mapper, `groupValueKey` buckets a value,
+`formatGroupLabel(value, blankLabel)` renders its header text,
+`groupSelectionState` gives a group checkbox its tri-state over the group's
+leaf ids, `groupRowLayout` places a group header's cells so each subtotal sits
+under the column it totals (`GroupRowLayout` in, `GroupRowCell`s out) while
+`groupAggregateEntries` lists just the numbers for a mobile card,
+`windowGroupedEntries` slices the model to virtual window indices,
+and `useGroupCollapse` / `GroupCollapseState` hold which groups are collapsed.
+See [row grouping](./row-grouping.md).
+
+**The export pipeline, stage by stage.** `resolveExportCsv` normalizes the
+`exportCsv` prop, `exportableColumns` drops the synthetic actions column,
+`resolveExportColumns` applies a column scope (`ExportColumnScope`),
+`buildTableCsv` renders the text (`RowsToCsvOptions` controls delimiter, BOM
+and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
+button. `ExportRowScope` names the row scopes — including `"range"`, the
+highlighted cell rectangle — `ExportContext` carries the selection, full column
+set and range those scopes need, `ExportInfo` is what the lifecycle hooks
+receive, and `ExportHandlerState` is what `useExportHandler` returns — the
+click handler, `exportBusy`, an `ExportStatus` and the outcome text an
+`ExportAnnouncer` reads out. `LiveRegion` (with `LiveRegionProps`) is the polite
+region underneath it and `GridFocusAnnouncer`'s, and `ExportAnnouncerProps`
+types the announcer itself. See
+[customization](./customization.md#export).
+
+**File formats.** An `ExportWriter` turns an `ExportWriteContext` — an
+`ExportTable` of values resolved once by `buildExportTable`, plus the filename —
+into an `ExportPayload`, which `downloadExportFile` hands to the browser.
+`csvWriter` is the built-in one, and `matrixToCsv` writes CSV from values a
+caller assembled itself. `exportButtonLabel` gives the button a caption naming
+the format it produces — `labels.exportCsv` for CSV, `labels.exportFile(format)`
+for anything else. `@adapttable/core/xlsx`
+adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
+dependency, and a separate entry so a CSV export never ships it —
+with `buildTableXlsx` underneath for building a workbook by hand. See
+[customization](./customization.md#spreadsheet-xlsx-export).
+
+**Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
+`InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
+See [cell editing](./cell-editing.md).
+
+**Filter internals.** `FILTER_TYPES` lists the built-in types, `filterLabel`
+resolves a filter's caption, `filterStateKeys` names the URL keys one filter
+owns, `FilterRuntime` is what `buildFilterRuntime` returns, and
+`ResolvedFilterOptions` is what `useFilterOptions` resolves.
+`isDeclarativeFilters` tells the array form from JSX. A form reads its values
+through `FilterFormSource` with `listFilterValues` and `scalarFilterText`.
+Count filters: `COUNT_OPERATORS` / `COUNT_OPERATOR_SYMBOL` / `CountOperator`,
+state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
+/ `isCountFilterComplete` / `clearCountFilterExtra` /
+`sanitizeCountFilterParams`, and a chip label from `countFilterChipLabel`.
+Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
+`RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
+`RangeOpLabelKeys`. See [filtering](./filtering.md).
+
+**Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
+`UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,
+`getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`, `enabled`), and
+`<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
+and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
+`GridBounds`, with `GridFocusMove` naming the intents and
+`gridFocusMoveForKey(press, dir)` mapping a `GridKeyPress` to one (applying the
+RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
+`gridCellAttr(cell)` are the `data-grid-cell` attribute focus uses to find a
+cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
+live region and come from `@adapttable/core/adapter`. See
+[cell navigation](./cell-navigation.md).
+
+**Cell range selection.** Shift with a movement key or a shift-click extends a
+rectangle from its anchor. `CellRange` is the pair of corners and
+`CellRangeBounds` the sorted edges; `cellRangeBounds` sorts a range dragged up
+or left, `isInCellRange` tests membership, `cellRangeSize` multiplies rather
+than enumerating, `extendCellRange` moves the head while keeping the anchor,
+`singleCellRange` / `isSingleCell` cover the one-cell case, and
+`cellRangeIndices` lists the rows and columns for an exporter. See
+[cell navigation](./cell-navigation.md).
+
+**Reading a cell as text.** `columnText(column, row)` returns a column's cell
+as a string for anything that cannot render JSX. It resolves
+`formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a
+primitive → the key's data path, and never returns `undefined`. The data path
+is used only for a column that renders no cell of its own: a column with
+`accessor: () => null` shows an empty cell, so reading its path would announce
+a value the user cannot see. See [columns](./columns.md).
+
+**Odds and ends.** `ComputedColumnSpec` is the declaration
+[`computed`](./columns.md) takes. `TableQueryKeyOptions` options the cache-key
+builders. `HeaderSelectionState` is the header checkbox's tri-state.
+`defaultSearchText` is the default searchable-text projector (a row's own
+values, flattened). `columnMenuLabel` gives a column its readable name in the
+menu (header string → `mobileLabel` → key). `runRowAction` runs a row action
+through the confirmation handler. `LayoutStorage` is the slice of the `Storage`
+API the column-layout hook needs, injectable for tests. `SavedViewsMenu` /
+`SavedViewsLabels` are the adapters' saved-views control and its strings, and
+`ToolbarChromeProps` is the toolbar's kit-agnostic prop surface. The CLI
+exports `Kit`, the union of UI kits `@adapttable/cli init` can detect.
+
+**Locale exports.** `@adapttable/i18n` exports one label set per locale, named
+by its tag: `ar`, `de`, `en`, `es`, `fa`, `fr`, `he`, `hi`, `it`, `ja`, `ko`,
+`pt`, `ru`, `tr`, `ur`, `zh`, `zhTW` — seventeen in all. See
+[i18n & RTL](./i18n-rtl.md).
+
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
@@ -3050,6 +4130,15 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `TableSource<TRow>`                                                 | The uniform data + state contract a table consumes (rows, total, loading flags, state read/write).           |
 | `TableQuery`                                                        | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`. |
 | `TableQueryParams`                                                  | Baseline query params a backend list endpoint receives.                                                      |
+| `QuerySupport`                                                      | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.               |
+| `QueryExtensions`                                                   | The optional query fields those capabilities unlock, carried on `TableQuery`.                                |
+| `QueryAggregate`                                                    | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.            |
+| `aggregate`                                                         | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md). |
+| `AggregateName` / `AGGREGATE_NAMES`                                 | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                 | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).  |
+| `AggregateFn`                                                       | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
+| `QueryCondition` / `QueryFilterGroup`                               | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                 |
+| `isFilterGroup`                                                     | Narrows a filter-tree child to a nested group while walking the tree.                                        |
 | `PaginatedResponse<TRow>`                                           | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                             |
 | `ColumnLayoutState`                                                 | `{ hidden, order, pinned, widths }` — the column-layout shape.                                               |
 | `TableLabels`                                                       | Every string the table renders; all keys optional, English defaults fill gaps.                               |
@@ -3155,7 +4244,7 @@ search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell` and `headerGroupRow`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
-`shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
+`resolveMobileLabel` (a card field's caption), `shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
 `DEFAULT_CARD_SIZE_PX`, `useKeyedVirtualization` / `KeyedVirtualization`
 (virtualize an opaque keyed list, e.g. grouped entries),
 `useMountStagger` (the `animate` stagger), and the inline icon set
@@ -3366,6 +4455,24 @@ adapter is audited with `axe` in CI, on both desktop and mobile layouts.
 Every package sets `sideEffects: false` and ships ESM, so unused code is
 tree-shaken. You only install the one adapter you use; the headless core has
 zero UI-kit dependencies.
+
+Measured on the published builds, with React and your UI kit external because
+your app already ships those:
+
+| What you import                           | min+gzip  |
+| ----------------------------------------- | --------- |
+| `useFrontendData` + `useDataTable` (core) | ~10 kB    |
+| every core export                         | ~34 kB    |
+| `DataTable` from an adapter               | ~51–57 kB |
+
+The first row is the one to read: a headless table costs about a fifth of the
+full core, because the parts you never import never arrive. All eight adapters
+land within a few kB of each other, so switching kits does not change what you
+pay.
+
+These are not estimates. `pnpm budget` bundles each of those imports for real
+and fails the build if one crosses its ceiling, so the numbers on this page
+cannot quietly go stale.
 
 ## How do I get started quickly?
 
@@ -4134,7 +5241,7 @@ All verifiable as of mid-2026:
   Your table shouldn't decide your framework versions.
 - **Weight**: ~102 kB gzipped with 18 runtime dependencies (it bundles
   drag-and-drop, print, and CSV machinery whether you use them or not).
-  AdaptTable core + the MUI adapter is ~45 kB min+gzip, tree-shaken.
+  AdaptTable core + the MUI adapter is ~51 kB min+gzip, tree-shaken.
 - **No bundled types**: TypeScript definitions live in community
   `@types/mui-datatables` and can drift. AdaptTable is TypeScript-first.
 
@@ -4550,7 +5657,7 @@ grids, and pretending otherwise would waste your week.
 This page is for the other — much larger — group: teams running **ordinary
 CRUD tables** on AG Grid Community, paying for spreadsheet power they don't
 use in three currencies: **bundle size** (the full Community setup is ~346 kB
-min+gzip of grid code vs ~45 kB for AdaptTable core + an adapter), **churn**
+min+gzip of grid code vs ~51 kB for AdaptTable core + an adapter), **churn**
 (a new AG Grid major about every 6 months — v32.2 rewrote the selection API,
 v33 made module registration and the Theming API mandatory, v36 overhauled
 the DOM and CSS class names), and **look** (AG Grid renders its own theme;

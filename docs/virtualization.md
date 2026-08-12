@@ -80,14 +80,19 @@ Virtualization renders only the rows in view, so cost is bounded by the
 viewport — not the dataset. A measured A/B on the scale demo (Mantine adapter,
 the **same 10,000-row dataset fully loaded**, headless Chromium, 1280×900):
 
-|                                | Rows in the DOM |    JS heap |
-| :----------------------------- | --------------: | ---------: |
-| **Virtualized** (`virtualize`) |          **24** | **169 MB** |
-| Plain table — same 10,000 rows |          10,000 |     347 MB |
+|                                | Rows in the DOM | Retained JS heap |
+| :----------------------------- | --------------: | ---------------: |
+| **Virtualized** (`virtualize`) |          **24** |        **17 MB** |
+| Plain table — same 10,000 rows |          10,000 |           368 MB |
 
 Windowing mounts **417× fewer DOM nodes** (24 vs 10,000 — a viewport's worth
-plus overscan) and uses **~178 MB less memory, roughly half** — while the plain
-table blocks the main thread rendering ten thousand `<tr>`s.
+plus overscan) and holds **351 MB less memory, about 95% less** — while the
+plain table blocks the main thread rendering ten thousand `<tr>`s.
+
+The two arms differ in kind, not just degree: the plain table's memory sits in
+10,000 mounted rows, which cannot be released while they are on screen. The
+virtualized one mounts 24 and keeps the rest as a plain array, so what it costs
+is your data, not your table.
 
 And it stays flat: the rendered row count holds at **~24 whether the dataset is
 1,000 or 100,000 rows**. Only your own data array grows — never the table's DOM:
@@ -97,9 +102,26 @@ And it stays flat: the rendered row count holds at **~24 whether the dataset is
 |     Rows in the DOM | **24** | **24** | **24** |  **24** |
 
 Reproduce both with
-[`scripts/bench-virtualization.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench-virtualization.mjs)
-against a running showcase. (Numbers are from one dev laptop; the **shape** —
-constant DOM, about half the memory — does not change with hardware.)
+[`scripts/bench.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench.mjs)
+— it serves this demo itself, drives it through the whole scenario set (wide
+tables, grouping, pinned columns, sorted data) and prints the DOM rows, cells,
+heap and time-to-interactive for each:
+
+```bash
+node scripts/bench.mjs                   # every scenario
+node scripts/bench.mjs --smoke           # the fast subset CI runs
+```
+
+A showcase already running on the port is used as-is, so
+`pnpm --filter @adapttable/showcase dev` in another terminal still works and is
+the faster loop while iterating.
+
+Heap here is **retained** memory — measured after forcing collection and taking
+the floor across repeated runs, because the raw `usedJSHeapSize` figure counts
+whatever the engine has not swept yet and swings by an order of magnitude with
+how busy the machine is. Measured this way the numbers come out the same on a
+loaded laptop as an idle one, which is what makes them worth publishing: run
+`pnpm bench` and you should see them too.
 
 ## Notes
 

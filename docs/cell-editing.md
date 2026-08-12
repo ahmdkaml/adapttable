@@ -81,7 +81,38 @@ export function People() {
 | `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
 | `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
 | `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `parseValue` | `(draft: string, row: TRow) => unknown`                | —        | Turns the edited text into the value committed to `onCellEdit`.            |
 | `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+
+### Display, draft, and committed value
+
+Three moments in a cell's life, and a formatted column needs a different value
+at each:
+
+| Moment    | Field        | For a currency column |
+| --------- | ------------ | --------------------- |
+| Displayed | `accessor`   | `"$1,240.00"`         |
+| Edited    | `editValue`  | `"1240"`              |
+| Committed | `parseValue` | `1240`                |
+
+```tsx
+{
+  key: "budget",
+  editable: true,
+  editor: "number",
+  accessor: (row) => money.format(row.budget),
+  editValue: (row) => String(row.budget),
+  parseValue: (draft) => Number(draft.replace(/[^0-9.-]/g, "")),
+}
+```
+
+`parseValue` receives the draft exactly as typed plus the row, and replaces the
+editor's own parsing rather than running after it — so a column that says how
+to read its drafts is in full control. Return anything `onCellEdit` should
+receive, including a value no built-in editor produces, such as a `Date`.
+
+Without it nothing changes: a `number` editor commits `number | null` and every
+other editor commits the raw string.
 
 ## Headless editing
 
@@ -103,6 +134,57 @@ its `title`).
 | `EditableCellController` / `EditableCellEditorCtrl` / `EditableCellMode` | The controller handed to a custom editor: draft, commit/cancel, mode.               |
 | `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.    |
 | `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution. |
+
+## Applying changes without a refetch
+
+A commit hands you a change; what you do with your data is yours. Refetching
+the page to reflect it costs a round trip and throws away the user's scroll
+position, open rows, and sometimes their selection.
+
+`applyRowPatches` applies changes to the rows you already hold:
+
+```tsx
+import { applyRowPatches, updateRow, removeRow } from "@adapttable/core";
+
+const [rows, setRows] = useState(initial);
+const byId = (row: Person) => row.id;
+
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={byId}
+  editing
+  onCellEdit={({ row, key, value }) =>
+    setRows((current) =>
+      applyRowPatches(current, [updateRow(byId(row), { [key]: value })], byId)
+    )
+  }
+/>;
+```
+
+Four builders — `insertRow`, `updateRow`, `upsertRow`, `removeRow` — and a
+batch is just an array, applied in order, so a later patch acts on what an
+earlier one did.
+
+Two guarantees make it safe to call on every commit:
+
+- **Untouched rows keep their object identity.** React reconciles them as
+  unchanged, and per-row memos — a [computed column](./columns.md)'s cache, a
+  `memo`'d cell — stay valid instead of recomputing for the whole page.
+- **A patch that changes nothing returns the very same array.** An update whose
+  values already match, an upsert of the row already in place, a removal of an
+  id that is not there, or an empty batch hands back the original reference, so
+  the `setState` does not re-render.
+
+Selection and expansion survive for the same reason: both are keyed by row id,
+and a patch never changes the id of a row it did not touch.
+
+`applyRowPatches` is a pure function over an array — the table does not own
+your data and this does not make it start.
+
+The patch shapes are exported for code that builds them dynamically:
+`RowPatch` is the union, with `InsertPatch`, `UpdatePatch`, `UpsertPatch` and
+`RemovePatch` as its members.
 
 ## Notes
 

@@ -8,6 +8,7 @@ import {
 } from "@adapttable/core";
 import {
   resolveDisabledReason,
+  resolveMobileLabel,
   rowClickProps,
   rowEditingSignature,
   type SharedTableRenderProps,
@@ -63,13 +64,6 @@ export interface MobileCardsProps<TRow> extends Pick<
   bodyRef: RefObject<HTMLDivElement | null>;
   className?: string;
   density?: Density;
-}
-
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -184,6 +178,7 @@ function MobileCardBase<TRow>({
       padding={cardPadding}
       role="listitem"
       data-stagger=""
+      data-selected={selected ? "" : undefined}
     >
       <Stack gap={cardGap}>
         {onToggleSelect && (
@@ -205,9 +200,11 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <div key={column.key}>
-            <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-              {mobileLabel(column)}
-            </Text>
+            {resolveMobileLabel(column) && (
+              <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                {resolveMobileLabel(column)}
+              </Text>
+            )}
             {/* Cells are arbitrary ReactNode (often block elements) —
                 a <p> wrapper would be invalid HTML. */}
             <Text component="div" fz="sm">
@@ -375,6 +372,7 @@ export function MobileCards<TRow>({
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}
+                columns={columns}
                 selection={selection}
                 labels={labels}
                 padding={cardPadding}
@@ -395,9 +393,11 @@ export function MobileCards<TRow>({
               .filter((column) => summaryCells[column.key] !== undefined)
               .map((column) => (
                 <div key={column.key}>
-                  <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                    {mobileLabel(column)}
-                  </Text>
+                  {resolveMobileLabel(column) && (
+                    <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                      {resolveMobileLabel(column)}
+                    </Text>
+                  )}
                   <Text component="div" fz="sm" fw={600}>
                     {summaryCells[column.key]}
                   </Text>

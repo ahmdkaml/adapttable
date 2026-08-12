@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -28,13 +29,6 @@ import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
 import { RowActionButtons } from "./RowActionButtons";
-
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
-  );
-}
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
@@ -141,6 +135,7 @@ function MobileCardBase<TRow>({
       ref={measureElement}
       data-index={index}
       data-stagger=""
+      data-selected={selected ? "" : undefined}
       variant="outlined"
       role="listitem"
       className={className}
@@ -168,13 +163,15 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: "block" }}
-            >
-              {mobileLabel(column)}
-            </Typography>
+            {resolveMobileLabel(column) && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block" }}
+              >
+                {resolveMobileLabel(column)}
+              </Typography>
+            )}
             {/* Cells are arbitrary ReactNode (often block elements) —
                 a <p> wrapper would be invalid HTML. */}
             <Typography component="div" variant="body2">
@@ -297,6 +294,7 @@ export function MobileCards<TRow>({
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}
+                columns={columns}
                 selection={selection}
                 labels={labels}
                 compact={compact}
@@ -319,13 +317,15 @@ export function MobileCards<TRow>({
               if (value === undefined) return null;
               return (
                 <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block" }}
-                  >
-                    {mobileLabel(column)}
-                  </Typography>
+                  {resolveMobileLabel(column) && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block" }}
+                    >
+                      {resolveMobileLabel(column)}
+                    </Typography>
+                  )}
                   <Typography component="div" variant="body2">
                     {value}
                   </Typography>

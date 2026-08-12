@@ -1,4 +1,5 @@
 import {
+  type ColumnDef,
   defaultLabels,
   type GroupedFlatEntry,
   type SelectionState,
@@ -15,6 +16,14 @@ interface Row {
 }
 
 type GroupEntry = Extract<GroupedFlatEntry<Row>, { kind: "group" }>;
+
+const LABEL_CELL = '[data-adapttable-part="group-cell"]';
+const CELL_TAG = "td";
+
+const COLUMNS: ColumnDef<Row>[] = [
+  { key: "name", header: "Name" },
+  { key: "team", header: "Team" },
+];
 
 const GROUP_KEY = "group:team:Core";
 const LEAF_IDS = ["1", "2"] as const;
@@ -64,7 +73,10 @@ function renderRow(
       <tbody>
         <GroupHeaderRow
           entry={makeGroupEntry()}
-          columnSpan={3}
+          columns={COLUMNS}
+          leadingCells={0}
+          showActions={false}
+          getCellProps={() => ({})}
           selection={null}
           labels={labels}
           classNames={{}}
@@ -78,6 +90,26 @@ function renderRow(
 }
 
 describe("GroupHeaderRow (unstyled)", () => {
+  it("puts a subtotal in its own column's cell, not the label's", () => {
+    // The defect this replaced: every aggregate lived inside one spanning cell
+    // and was pushed to the row's end, which on a scrolling table is past the
+    // right edge of what the user can see.
+    renderRow({
+      columns: COLUMNS,
+      entry: makeGroupEntry({ aggregateCells: { team: <span>$99</span> } }),
+    });
+    const label = document.querySelector(LABEL_CELL);
+    const cells = [...document.querySelectorAll(CELL_TAG)];
+    const aggregate = document.querySelector(
+      '[data-adapttable-part="group-aggregate"][data-column="team"]'
+    );
+    // The label spans the columns before it; the number sits in a later cell.
+    expect(label).toHaveAttribute("colspan", "1");
+    expect(aggregate).toHaveTextContent("$99");
+    expect(label?.contains(aggregate ?? null)).toBe(false);
+    expect(cells).toHaveLength(2);
+  });
+
   it("renders label, count, and data-adapttable-part hooks", () => {
     renderRow({
       entry: makeGroupEntry({
@@ -87,9 +119,11 @@ describe("GroupHeaderRow (unstyled)", () => {
     expect(
       document.querySelector('[data-adapttable-part="group-row"]')
     ).toBeInTheDocument();
+    // The label cell keeps only the columns before the first aggregate — the
+    // first column here — so every number after it has a cell of its own.
     expect(
       document.querySelector('[data-adapttable-part="group-cell"]')
-    ).toHaveAttribute("colspan", "3");
+    ).toHaveAttribute("colspan", "1");
     expect(screen.getByText("Core")).toHaveAttribute(
       "data-adapttable-part",
       "group-label"
@@ -143,7 +177,10 @@ describe("GroupHeaderRow (unstyled)", () => {
         <tbody>
           <GroupHeaderRow
             entry={makeGroupEntry()}
-            columnSpan={2}
+            columns={COLUMNS}
+            leadingCells={0}
+            showActions={false}
+            getCellProps={() => ({})}
             selection={none}
             labels={labels}
             classNames={{}}
@@ -164,7 +201,10 @@ describe("GroupHeaderRow (unstyled)", () => {
         <tbody>
           <GroupHeaderRow
             entry={makeGroupEntry()}
-            columnSpan={2}
+            columns={COLUMNS}
+            leadingCells={0}
+            showActions={false}
+            getCellProps={() => ({})}
             selection={all}
             labels={labels}
             classNames={{}}
@@ -183,7 +223,10 @@ describe("GroupHeaderRow (unstyled)", () => {
         <tbody>
           <GroupHeaderRow
             entry={makeGroupEntry()}
-            columnSpan={2}
+            columns={COLUMNS}
+            leadingCells={0}
+            showActions={false}
+            getCellProps={() => ({})}
             selection={some}
             labels={labels}
             classNames={{}}
@@ -204,6 +247,7 @@ describe("GroupHeaderCard (unstyled)", () => {
     const selection = makeSelection(LEAF_IDS);
     render(
       <GroupHeaderCard
+        columns={COLUMNS}
         entry={makeGroupEntry({ collapsed: true })}
         selection={selection}
         labels={labels}

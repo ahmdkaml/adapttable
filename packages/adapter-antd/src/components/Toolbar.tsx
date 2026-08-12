@@ -1,6 +1,9 @@
 /** Search field, sort select, filters trigger, menus and rows-per-page. */
 import { pageSizeOptions } from "@adapttable/core";
-import { type ToolbarChromeProps } from "@adapttable/core/adapter";
+import {
+  ExportAnnouncer,
+  type ToolbarChromeProps,
+} from "@adapttable/core/adapter";
 import { Badge, Button, Flex, Input, Select, Spin } from "antd";
 import type { ReactNode } from "react";
 
@@ -40,6 +43,9 @@ export function Toolbar<TRow>({
   dir,
   columnMenu,
   onExportCsv,
+  exportBusy,
+  exportAnnouncement = "",
+  exportLabel,
   savedViewsMenu,
   showRowsPerPage,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -116,7 +122,19 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button onClick={onExportCsv}>{labels.exportCsv}</Button>
+          <>
+            {/* antd's own loading Button: the spinner replaces its icon slot
+                and the button disables itself, which is the kit's language for
+                "working" rather than a bare greyed-out control. */}
+            <Button
+              onClick={onExportCsv}
+              loading={exportBusy}
+              aria-busy={exportBusy}
+            >
+              {exportLabel}
+            </Button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {showRowsPerPage && (
           <Select

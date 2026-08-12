@@ -1,9 +1,13 @@
 import {
+  type ColumnDef,
+  groupAggregateEntries,
   type GroupedFlatEntry,
+  groupRowLayout,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
+import { resolveMobileLabel } from "@adapttable/core/adapter";
 import type { ReactElement } from "react";
 
 import type { DataTableClassNames } from "../types";
@@ -12,14 +16,24 @@ import { ChevronIcon } from "./icons";
 /** Kit-native (unstyled) group header row for the desktop table. */
 export function GroupHeaderRow<TRow>({
   entry,
-  columnSpan,
+  columns,
+  leadingCells,
+  showActions,
+  getCellProps,
   selection,
   labels,
   classNames,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
-  columnSpan: number;
+  /** The data columns as rendered, so a subtotal lands under its own. */
+  columns: readonly ColumnDef<TRow>[];
+  /** Edge cells before the first data column (chevron, checkbox). */
+  leadingCells: number;
+  /** Whether a trailing actions column needs an empty cell. */
+  showActions: boolean;
+  /** The table's per-column cell props, so a number inherits its alignment. */
+  getCellProps: (column: ColumnDef<TRow>) => Record<string, unknown>;
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
@@ -29,6 +43,9 @@ export function GroupHeaderRow<TRow>({
   const groupState = selection
     ? groupSelectionState(entry.leafIds, selection.selectedIds)
     : "none";
+  // One cell per column from the first aggregate onward: a subtotal only reads
+  // as one when it sits under the column it totals.
+  const layout = groupRowLayout(columns, entry.aggregateCells);
 
   return (
     <tr
@@ -37,7 +54,7 @@ export function GroupHeaderRow<TRow>({
       className={classNames.groupRow}
     >
       <td
-        colSpan={columnSpan}
+        colSpan={leadingCells + layout.labelColumns.length}
         data-adapttable-part="group-cell"
         className={classNames.groupCell}
         style={{ fontWeight: 600 }}
@@ -94,20 +111,33 @@ export function GroupHeaderRow<TRow>({
           >
             {labels.groupCount(entry.leafIds.length)}
           </span>
-          {entry.aggregateCells &&
-            Object.entries(entry.aggregateCells).map(([key, node]) => (
-              <span
-                key={key}
-                data-adapttable-part="group-aggregate"
-                data-column={key}
-                className={classNames.groupAggregate}
-                style={{ marginInlineStart: "auto" }}
-              >
-                {node}
-              </span>
-            ))}
+          {layout.labelAggregates.map(({ column, node }) => (
+            <span
+              key={column.key}
+              data-adapttable-part="group-aggregate"
+              data-column={column.key}
+              className={classNames.groupAggregate}
+              style={{ marginInlineStart: "auto" }}
+            >
+              {node}
+            </span>
+          ))}
         </span>
       </td>
+      {layout.cells.map(({ column, node }) => (
+        <td
+          key={column.key}
+          {...getCellProps(column)}
+          data-adapttable-part={
+            node === undefined ? undefined : "group-aggregate"
+          }
+          data-column={node === undefined ? undefined : column.key}
+          className={classNames.groupAggregate}
+        >
+          {node}
+        </td>
+      ))}
+      {showActions && <td />}
     </tr>
   );
 }
@@ -115,12 +145,15 @@ export function GroupHeaderRow<TRow>({
 /** Group header block for the mobile card list. */
 export function GroupHeaderCard<TRow>({
   entry,
+  columns,
   selection,
   labels,
   classNames,
   onToggleCollapse,
 }: Readonly<{
   entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  /** The card's columns, for captioning each subtotal. */
+  columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
@@ -184,6 +217,26 @@ export function GroupHeaderCard<TRow>({
           {labels.groupCount(entry.leafIds.length)}
         </span>
       </span>
+      {groupAggregateEntries(columns, entry.aggregateCells).map(
+        ({ column, node }) => (
+          <span
+            key={column.key}
+            style={{ display: "flex", gap: 8, marginTop: 4 }}
+          >
+            <span className={classNames.groupCount} style={{ opacity: 0.65 }}>
+              {resolveMobileLabel(column)}
+            </span>
+            <span
+              data-adapttable-part="group-aggregate"
+              data-column={column.key}
+              className={classNames.groupAggregate}
+              style={{ marginInlineStart: "auto" }}
+            >
+              {node}
+            </span>
+          </span>
+        )
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   type PinSide,
   type RowAction,
@@ -168,6 +169,8 @@ interface DesktopRowProps<TRow> {
   row: TRow;
   id: string;
   index: number;
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   selected: boolean;
   expanded: boolean;
   size: RadixSize;
@@ -220,6 +223,7 @@ function DesktopRowBase<TRow>({
   row,
   id,
   index,
+  gridFocus,
   selected,
   expanded,
   accentColor,
@@ -250,6 +254,7 @@ function DesktopRowBase<TRow>({
         {...rowClickProps(row, hasRowClick ? activateRow : undefined, index)}
         ref={measureRef}
         data-index={index}
+        {...gridFocus?.getRowPropsAt(index)}
         data-stagger=""
         className={className}
         style={{ background: selected ? "var(--gray-a3)" : undefined }}
@@ -283,9 +288,10 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Cell
             key={column.key}
+            {...gridFocus?.getCellPropsAt(index, colIndex)}
             justify={justifyFor(column.align)}
             style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
           >
@@ -352,6 +358,7 @@ export function DesktopTable<TRow>({
   getRowId,
   size,
   accentColor,
+  gridFocus,
   dir,
   prefetch,
   onRowClick,
@@ -545,6 +552,7 @@ export function DesktopTable<TRow>({
         data-size={size}
         className={className}
         aria-label={table.getTableProps()["aria-label"]}
+        {...gridFocus?.getGridProps()}
       >
         <Table.Header>
           {groups && (
@@ -693,7 +701,10 @@ export function DesktopTable<TRow>({
                     <GroupHeaderRow
                       key={entry.key}
                       entry={entry}
-                      columnSpan={columnSpan}
+                      columns={columns}
+                      leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+                      showActions={showActions}
+                      getCellProps={table.getCellProps}
                       selection={selection}
                       labels={labels}
                       dir={dir}
@@ -709,6 +720,7 @@ export function DesktopTable<TRow>({
                     row={entry.row}
                     id={id}
                     index={entry.index}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id) ?? false}
                     expanded={expansion?.isExpanded(id) ?? false}
                     size={size}
@@ -737,6 +749,7 @@ export function DesktopTable<TRow>({
                 const id = getRowId(row);
                 return (
                   <Row
+                    gridFocus={gridFocus}
                     key={key}
                     row={row}
                     id={id}

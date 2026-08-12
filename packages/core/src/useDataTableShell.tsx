@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
-import { makeExportCsvHandler } from "./export/tableCsv";
+import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
+import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
+import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
 import {
@@ -66,6 +68,7 @@ export type DataTableShellProps<TRow> = Omit<
  * @returns The resolved source, chrome, filter node, refs, and the
  *   `tableProps` / `toolbarProps` bundles (sans kit-specific extras).
  */
+
 export function useDataTableShell<TRow>(
   props: DataTableShellProps<TRow>,
   renderAutoForm: (
@@ -120,7 +123,55 @@ export function useDataTableShell<TRow>(
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Cell navigation is wired HERE rather than in `useDataTable`, so a headless
+  // consumer of the main entry never pays for a grid it did not ask for — the
+  // bundle budget catches that regression, which is how this landed here.
+  //
+  // The row count is the DATASET total and `windowStart` is where the rendered
+  // slice begins, so Ctrl+End reaches the real last row and the ARIA counts stay
+  // truthful under virtualization. Derived here so no adapter has to know: an
+  // off-by-a-page error is invisible on screen and only wrong to a screen reader.
+  const windowStart =
+    chrome.source.paginationMode === "paged"
+      ? Math.max(0, (chrome.source.page - 1) * chrome.source.limit)
+      : 0;
+  const gridFocus = useGridFocus<TRow>({
+    enabled: props.cellNavigation === true,
+    rowCount: Math.max(
+      chrome.source.total,
+      windowStart + chrome.source.rows.length
+    ),
+    columns: chrome.columnLayout.visibleColumns,
+    rows: chrome.source.rows,
+    firstRowIndex: windowStart,
+    dir: props.dir,
+    labels,
+  });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
+  // Layout-visible columns WITHOUT device filtering: the same button must
+  // produce the same file on phone and desktop. The selection, the full column
+  // set and the highlighted range come along so `scope: "selected"`,
+  // `columns: "all"` and `scope: "range"` work without the host wiring anything
+  // up — the columns here are the same list cell navigation addresses, which is
+  // what makes a range's column indices mean the same thing on both sides.
+  const exportHandler = useExportHandler(
+    makeExportCsvHandler(
+      props.exportCsv,
+      chrome.source,
+      chrome.columnLayout.visibleColumns,
+      {
+        selectedIds: table.selection?.selectedIds,
+        getRowId,
+        allColumns: chrome.allColumns,
+        range: gridFocus.range,
+        firstRowIndex: windowStart,
+      }
+    ),
+    labels,
+    // The button names the format it produces, so a spreadsheet writer relabels
+    // it without the host retyping a translated string.
+    resolveExportCsv(props.exportCsv)?.writer?.extension
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
   const {
@@ -151,6 +202,7 @@ export function useDataTableShell<TRow>(
   // this and adds its kit's row `size` and accent colour.
   const tableProps = {
     table,
+    gridFocus,
     rows: chrome.editingRows,
     rowActions,
     actionsPinned,
@@ -193,17 +245,13 @@ export function useDataTableShell<TRow>(
     onClearFilters: chrome.clearFilters,
     // Hidden in the grouped full-set view, where page size has no effect.
     showRowsPerPage: canLoadMore && !chrome.grouping,
-    // Layout-visible columns WITHOUT device filtering: the same button
-    // must produce the same file on phone and desktop.
-    onExportCsv: makeExportCsvHandler(
-      props.exportCsv,
-      chrome.source,
-      chrome.columnLayout.visibleColumns
-    ),
+    ...exportHandler,
     dir: props.dir,
   };
 
   return {
+    /** Cell-navigation state; inert unless `cellNavigation` is set. */
+    gridFocus,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,

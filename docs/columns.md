@@ -102,22 +102,138 @@ export function People() {
 
 ## Options
 
-| Prop            | Type                             | Default                      | Description                                                                |
-| --------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------- |
-| `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.       |
-| `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                              |
-| `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                 |
-| `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.     |
-| `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                            |
-| `sortValue`     | `(row) => SortableValue`         | the generated accessor value | Primitive extractor for the client-side sort. See [sorting](./sorting.md). |
-| `align`         | `"start" \| "center" \| "end"`   | `"start"`                    | Text alignment within the cell.                                            |
-| `width`         | `number \| string`               | —                            | Width passed through to the rendered header/cell.                          |
-| `mobileLabel`   | `string`                         | `header` (when a string)     | Label on mobile card layouts.                                              |
-| `hideOnMobile`  | `boolean`                        | `false`                      | Hide the column entirely on mobile.                                        |
-| `hideOnDesktop` | `boolean`                        | `false`                      | Hide the column entirely on desktop.                                       |
-| `i18n`          | `Record<string, string>`         | —                            | Per-locale data paths for the column's value.                              |
-| `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                 |
-| `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.      |
+| Prop            | Type                             | Default                      | Description                                                                                       |
+| --------------- | -------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.                              |
+| `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                                                     |
+| `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                                        |
+| `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.                            |
+| `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                                                   |
+| `sortValue`     | `(row) => SortableValue`         | the generated accessor value | Primitive extractor for the client-side sort. See [sorting](./sorting.md).                        |
+| `exportValue`   | `(row) => unknown`               | the display value            | Value written to a CSV export when the file should carry something other than the formatted cell. |
+| `align`         | `"start" \| "center" \| "end"`   | `"start"`                    | Text alignment within the cell.                                                                   |
+| `width`         | `number \| string`               | —                            | Width passed through to the rendered header/cell.                                                 |
+| `mobileLabel`   | `string`                         | `header` (when a string)     | Label on mobile card layouts.                                                                     |
+| `hideOnMobile`  | `boolean`                        | `false`                      | Hide the column entirely on mobile.                                                               |
+| `hideOnDesktop` | `boolean`                        | `false`                      | Hide the column entirely on desktop.                                                              |
+| `group`         | `string`                         | —                            | Spanning header above adjacent columns sharing the name. See below.                               |
+| `i18n`          | `Record<string, string>`         | —                            | Per-locale data paths for the column's value.                                                     |
+| `meta`          | `Record<string, unknown>`        | —                            | Free-form bag your own code can read back.                                                        |
+| `locale`        | `string` (table prop)            | —                            | Active locale tag (`"ar"`, `"ar-EG"`); drives `i18n` path resolution.                             |
+
+## The cell as text
+
+`accessor` returns a `ReactNode`, which is right for rendering and useless
+everywhere else: a status badge is a React element, an avatar cell is a
+component, and neither is a word. Anything that needs the cell as a **string** —
+a screen-reader announcement, an `aria-label`, a tooltip, a clipboard copy —
+has nothing to read.
+
+`formatValue` is that string:
+
+```tsx
+{
+  key: "status",
+  accessor: (row) => <Badge color={tone(row)}>{row.status}</Badge>,
+  formatValue: (row) => row.status,   // what a screen reader says
+}
+```
+
+Text is always available, so `formatValue` only matters where it makes the text
+_accurate_. `columnText(column, row)` resolves it in this order:
+
+1. `formatValue` — the column stating its own text
+2. `exportValue` — the underlying value, minus the formatting
+3. `sortValue` — a primitive by definition
+4. `accessor`, when it happens to return a primitive
+5. the key's data path
+
+with one deliberate restriction on that last step: **a column that renders its
+own cell never falls back to the data path.** A column with
+`accessor: () => null` renders an empty cell, and reading its path would
+announce a value the user cannot see — worse than announcing nothing. Such a
+column resolves to `""`, and giving it a `formatValue` is the fix.
+
+## Computed columns
+
+A total, a margin, a full name, days-until-due — columns whose value is derived
+rather than stored. Writing the derivation into `accessor` works until the
+column has to do anything else: sorting then compares the formatted string, so
+`"$1,240.00"` sorts before `"$90.00"`; filtering has nothing to match; the
+export carries the formatting; and the function runs again for every cell on
+every render.
+
+`computed` declares the derivation once and wires all four surfaces from it:
+
+```tsx
+import { computed } from "@adapttable/core";
+
+const columns = [
+  { key: "quantity" },
+  { key: "unitPrice" },
+  computed<Order, number>({
+    key: "total",
+    header: "Total",
+    deps: (row) => [row.quantity, row.unitPrice],
+    value: (row) => row.quantity * row.unitPrice,
+    format: (total) => money.format(total),
+    column: { sortable: true, align: "end" },
+  }),
+];
+```
+
+The screen shows `$1,240.00`; sorting, filtering and export all see `1240`.
+
+- **`deps` is required, and listing them is the whole contract.** The value is
+  recomputed when any dependency changes and reused when none do. A field the
+  derivation reads but does not declare becomes a stale cell the moment the
+  data changes underneath it.
+- **The result is cached per row**, in a `WeakMap` keyed by the row object — a
+  row that leaves the page takes its cached value with it, so a long-lived
+  table cannot grow a cache it never releases.
+- **`format` is display only.** Leave it out and primitives and dates render as text; any other value renders empty, since an object has no useful reading in a cell.
+- **`column` carries everything else** a column can be — `sortable`, `align`,
+  `width`, `filter`, `hideOnMobile`. `accessor`, `sortValue` and `exportValue`
+  are derived and cannot be set here, which is what keeps the four surfaces
+  from disagreeing.
+
+**Define the columns at module level, or memoise them.** The cache lives
+inside the column `computed` returns, so rebuilding the column on every
+render throws the cache away with it — values stay correct, nothing is
+reused. It is the same rule `Cell` already asks for.
+
+Rows must be objects, since the cache is keyed by row identity. The spec type is exported as `ComputedColumnSpec` for callers that build columns dynamically.
+
+## Grouped headers
+
+Give adjacent columns the same `group` and they render under one spanning
+header cell:
+
+```tsx
+const columns: ColumnDef<Person>[] = [
+  { key: "firstName", header: "First", group: "Name" },
+  { key: "lastName", header: "Last", group: "Name" },
+  { key: "city", header: "City", group: "Location" },
+  { key: "country", header: "Country", group: "Location" },
+  { key: "hiredAt", header: "Hired" },
+];
+```
+
+```text
+|      Name      |     Location      |        |
+| First |  Last  |  City  | Country  | Hired  |
+```
+
+Columns without a `group` sit under a blank spanning cell, so the header row
+always lines up. The grouping is **presentational and adjacency-based**: the
+span is computed from the columns as they are currently ordered, so dragging a
+column out of the middle of a group splits it into two spans rather than
+pretending the layout is something it is not. Reorder them back together and
+the group closes up again.
+
+Groups are one level deep and carry no behaviour of their own — they do not
+collapse, pin, or reorder as a unit. On mobile the card layout has no header
+row, so `group` has no effect there.
 
 ## Notes
 

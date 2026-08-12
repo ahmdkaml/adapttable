@@ -947,3 +947,87 @@ describe("actions column in the column layout", () => {
     expect(th.style.insetInlineEnd).toBe("0px");
   });
 });
+
+describe("<DataTable> (Mantine) — adapter defect fixes", () => {
+  // Defect: a sticky header forces `border-collapse: separate`, and that model
+  // makes the browser ignore the border Mantine declares on the <tr> — so every
+  // row divider vanished. The separator is drawn on the cells instead.
+  it("draws row separators on body cells only while the header is sticky", () => {
+    renderHarness({ override: { stickyHeader: true } });
+    const td = screen.getByText("Alice").closest("td")!;
+    expect(td.style.boxShadow).toContain("inset 0 -1px 0");
+  });
+
+  it("leaves body cells unshadowed when the header is not sticky", () => {
+    renderHarness();
+    const td = screen.getByText("Alice").closest("td")!;
+    // the collapsed table still paints the row's own border; a cell shadow
+    // here would draw a second line under every row
+    expect(td.style.boxShadow).not.toContain("inset 0 -1px 0");
+  });
+
+  // Defect: the header surface and hairline were inline literals, so an app
+  // whose surface is not Mantine's body colour had to fight them with
+  // !important. They read from CSS variables now, Mantine's values as fallback.
+  it("reads the sticky header surface and hairline from CSS variables", () => {
+    renderHarness({ override: { stickyHeader: true } });
+    const th = screen.getByText("Name").closest("th")!;
+    expect(th.style.background).toContain("--adapttable-surface");
+    expect(th.style.background).toContain("--mantine-color-body");
+    expect(th.style.boxShadow).toContain("--adapttable-header-border");
+  });
+
+  // Defect: one slot served both empty states, so overriding "no data" also
+  // removed the clear-filters action from the filtered state.
+  it("uses noResults for the filtered state and empty for no data", () => {
+    renderHarness({
+      initialUrl: "q=zzz",
+      override: {
+        slots: {
+          empty: <p>nothing here</p>,
+          noResults: <p>nothing matched</p>,
+        },
+      },
+    });
+    expect(screen.getByText("nothing matched")).toBeInTheDocument();
+    expect(screen.queryByText("nothing here")).not.toBeInTheDocument();
+  });
+
+  it("still lets a lone empty slot cover both states", () => {
+    renderHarness({
+      initialUrl: "q=zzz",
+      override: { slots: { empty: <p>nothing here</p> } },
+    });
+    expect(screen.getByText("nothing here")).toBeInTheDocument();
+  });
+
+  it("keeps the clear-filters action when no slot is given", () => {
+    renderHarness({ initialUrl: "q=zzz" });
+    expect(
+      screen.getByRole("button", { name: "Clear all" })
+    ).toBeInTheDocument();
+  });
+
+  // Defect: `mobileLabel: ""` still rendered an empty label element, costing
+  // ~18px of dead space at the top of every card.
+  it("renders no label element when a column asks for an empty mobile label", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            accessor: (r: Row) => r.name,
+            mobileLabel: "",
+          },
+          { key: "city", header: "City", accessor: (r: Row) => r.city },
+        ],
+      },
+    });
+    // the city label still renders; the name one is gone entirely
+    expect(screen.getAllByText("City").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Name")).not.toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+});

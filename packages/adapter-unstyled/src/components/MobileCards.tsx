@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -158,12 +159,14 @@ function MobileCardBase<TRow>({
           data-adapttable-part="card-row"
           className={classNames.cardRow}
         >
-          <span
-            data-adapttable-part="card-label"
-            className={classNames.cardLabel}
-          >
-            {cardLabel(column)}
-          </span>
+          {resolveMobileLabel(column) && (
+            <span
+              data-adapttable-part="card-label"
+              className={classNames.cardLabel}
+            >
+              {resolveMobileLabel(column)}
+            </span>
+          )}
           <span
             data-adapttable-part="card-value"
             className={classNames.cardValue}
@@ -300,6 +303,7 @@ export function MobileCards<TRow>({
               <li key={entry.key} style={{ display: "block" }}>
                 <GroupHeaderCard
                   entry={entry}
+                  columns={columns}
                   selection={selection}
                   labels={labels}
                   classNames={classNames}
@@ -331,12 +335,14 @@ export function MobileCards<TRow>({
                 data-adapttable-part="card-row"
                 className={classNames.cardRow}
               >
-                <span
-                  data-adapttable-part="card-label"
-                  className={classNames.cardLabel}
-                >
-                  {cardLabel(column)}
-                </span>
+                {resolveMobileLabel(column) && (
+                  <span
+                    data-adapttable-part="card-label"
+                    className={classNames.cardLabel}
+                  >
+                    {resolveMobileLabel(column)}
+                  </span>
+                )}
                 <span
                   data-adapttable-part="card-value"
                   className={classNames.cardValue}
@@ -349,12 +355,5 @@ export function MobileCards<TRow>({
         </li>
       )}
     </ul>
-  );
-}
-
-function cardLabel<TRow>(column: ColumnDef<TRow>): string {
-  return (
-    column.mobileLabel ??
-    (typeof column.header === "string" ? column.header : column.key)
   );
 }

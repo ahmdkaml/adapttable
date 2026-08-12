@@ -26,6 +26,9 @@ control via prop-getters.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Pagination** — paged or infinite scroll via `paginationMode`; server sources
   report their own totals, client sources derive them.
+- **SSR & server components** — renders with no DOM; the client boundary is
+  already in the build, so it drops straight into the Next.js App Router.
+  [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
 - **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
 - **Filtering** — filter model, operators, chips and counts; bring your own predicate.
 - **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.
@@ -33,10 +36,13 @@ control via prop-getters.
 - **Row expansion** — detail-panel state via `renderRowDetail`.
 - **Inline cell editing** — `onCellEdit` plus `editable` columns; text, number and select
   editors, keyboard commit/cancel, Tab advance. Omit the handler and no cell opens.
+- **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
+  ARIA grid semantics and screen-reader announcements.
 - **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
 - **Column management** — show/hide, reorder, pin (sticky) and resize state.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
-- **CSV export** (`exportCsv`) — current page or the full filtered set.
+- **CSV export** (`exportCsv`) — current page, the full filtered set, or the
+  selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — row/card windowing for very large lists.
 - **RTL** and i18n-agnostic labels — pass `labels` or a `t` function.
 - **Headless** — hooks and prop-getters only. No components, no styling, no UI-kit imports.

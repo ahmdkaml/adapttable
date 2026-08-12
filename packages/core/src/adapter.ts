@@ -12,6 +12,7 @@
  * @packageDocumentation
  */
 
+export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
 export { resolveDisabledReason } from "./actions/confirm";
 export { bulkActionErrorMessage } from "./actions/useBulkActionRunner";
 export {
@@ -49,6 +50,7 @@ export {
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
+  resolveMobileLabel,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   sortArrow,
@@ -57,6 +59,20 @@ export {
   focusEditorOnMount,
   rowEditingSignature,
 } from "./editing/editableCellController";
+export {
+  ExportAnnouncer,
+  type ExportAnnouncerProps,
+} from "./export/ExportAnnouncer";
+export { exportButtonLabel } from "./export/exportLabel";
+export {
+  type ExportHandlerState,
+  type ExportStatus,
+  useExportHandler,
+} from "./export/useExportHandler";
+export {
+  GridFocusAnnouncer,
+  type GridFocusAnnouncerProps,
+} from "./focus/GridFocusAnnouncer";
 export {
   type MountStaggerOptions,
   useMountStagger,

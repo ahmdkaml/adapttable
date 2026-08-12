@@ -12,6 +12,7 @@ import {
   type CellEditingState,
   useCellEditing,
 } from "./editing/useCellEditing";
+import type { ExportStatus } from "./export/useExportHandler";
 import {
   type ActiveFilterChip,
   mergeFilterChips,
@@ -98,6 +99,33 @@ export interface ToolbarChromeProps<TRow> {
    * Built by {@link makeExportCsvHandler} from the `exportCsv` prop.
    */
   onExportCsv?: () => void;
+  /**
+   * True while a host-handled export (`exportCsv.request`) is still running.
+   *
+   * Adapters disable the Export button and mark it busy, so the same export
+   * cannot be started twice and the user can see that something is happening.
+   * Always false for the built-in browser export, which is synchronous.
+   */
+  exportBusy?: boolean;
+  /**
+   * What the last export did — `"idle"`, `"busy"`, `"done"` or `"failed"` —
+   * for a kit whose button shows more than a spinner.
+   */
+  exportStatus?: ExportStatus;
+  /**
+   * Live-region text for the last export's outcome, empty until there is one.
+   * Adapters render it through `ExportAnnouncer` beside the button: a download
+   * is silent, so without it a screen-reader user cannot tell a finished export
+   * from a failed one.
+   */
+  exportAnnouncement?: string;
+  /**
+   * The export button's caption, naming the format it produces — CSV by
+   * default, the writer's format otherwise, localized either way. Adapters
+   * render this rather than `labels.exportCsv`, so a button never names a file
+   * the user is not getting.
+   */
+  exportLabel?: string;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }

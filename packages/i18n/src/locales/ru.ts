@@ -62,8 +62,12 @@ export const ru: Required<TableLabels> = {
   showColumn: "Показать столбец",
   hideColumn: "Скрыть столбец",
   exportCsv: "Экспорт CSV",
+  exportFile: (format) => `Экспорт ${format.toUpperCase()}`,
+  exportDone: "Экспорт завершён",
+  exportFailed: "Не удалось выполнить экспорт",
   editCell: "Изменить ячейку",
   expandGroup: "Развернуть группу",
   collapseGroup: "Свернуть группу",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `строка ${row} из ${total}`,
 };

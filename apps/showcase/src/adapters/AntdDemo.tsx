@@ -1,4 +1,4 @@
-import { DataTable } from "@adapttable/antd";
+import { DataTable, type DataTableProps } from "@adapttable/antd";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -24,6 +24,7 @@ import {
   makeColumns,
   makeWideColumns,
   nameHue,
+  type Person,
   type StatusCellProps,
   statusTone,
   strings,
@@ -83,7 +84,9 @@ export function AntdDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
   wide,
+  exportCsv,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -95,8 +98,15 @@ export function AntdDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /**
+   * Export configuration for the toolbar button. Defaults to a plain CSV of
+   * the current page; the columns demo overrides it to write the highlighted
+   * cell range as a spreadsheet.
+   */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
 }>) {
   const s = strings(locale);
   return (
@@ -128,6 +138,7 @@ export function AntdDemo({
                 : makeColumns(locale, ANTD_CELLS)
             }
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}
@@ -139,7 +150,7 @@ export function AntdDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
-            exportCsv
+            exportCsv={exportCsv ?? true}
             savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns

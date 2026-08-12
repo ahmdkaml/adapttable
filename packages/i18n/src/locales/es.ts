@@ -60,8 +60,12 @@ export const es: Required<TableLabels> = {
   showColumn: "Mostrar columna",
   hideColumn: "Ocultar columna",
   exportCsv: "Exportar CSV",
+  exportFile: (format) => `Exportar ${format.toUpperCase()}`,
+  exportDone: "Exportación completada",
+  exportFailed: "Error al exportar",
   editCell: "Editar celda",
   expandGroup: "Expandir grupo",
   collapseGroup: "Contraer grupo",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `fila ${row} de ${total}`,
 };

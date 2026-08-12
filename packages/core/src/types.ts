@@ -107,6 +107,19 @@ export interface ColumnDef<TRow> {
    */
   editValue?: (row: TRow) => string;
   /**
+   * Turn the edited text back into the value to commit.
+   *
+   * A column can show one thing, seed the editor with another, and commit a
+   * third: `accessor` renders `"$1,240.00"`, {@link ColumnDef.editValue} seeds
+   * the editor with `"1240"`, and this parses what the user typed back into a
+   * number. Without it, a `number` editor commits `number | null` and every
+   * other editor commits the raw string.
+   *
+   * Receives the draft exactly as typed, plus the row being edited. Return
+   * whatever `onCellEdit` should receive — a number, a `Date`, a parsed unit.
+   */
+  parseValue?: (draft: string, row: TRow) => unknown;
+  /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.
    */
@@ -118,6 +131,34 @@ export interface ColumnDef<TRow> {
    * (`useFrontendData`). Unused for server-sorted data.
    */
   sortValue?: (row: TRow) => SortableValue;
+  /**
+   * The value this column contributes to an export, when the file should not
+   * carry what the screen shows.
+   *
+   * A cell formatted for reading — `"$1,240.00"`, `"3 days ago"`, a status
+   * badge — is worse than useless in a spreadsheet, because it cannot be
+   * summed or sorted. Return the underlying value here and the export writes
+   * it while the table keeps rendering the friendly version.
+   *
+   * Without it an export falls back to the display value, so this is only
+   * needed where the two genuinely differ.
+   */
+  exportValue?: (row: TRow) => unknown;
+  /**
+   * The cell as plain text, for every context that cannot render JSX.
+   *
+   * {@link ColumnDef.accessor} returns a `ReactNode`, so a screen-reader
+   * announcement, an `aria-label`, a tooltip or the clipboard have nothing to
+   * read: a badge or an avatar is a React element, not a word. Return the text
+   * those places should use.
+   *
+   * Resolution order when this is absent — text is always available, this only
+   * makes it accurate: {@link ColumnDef.formatValue}, then
+   * {@link ColumnDef.exportValue}, then `accessor` when it happens to yield a
+   * primitive, then the key's data path. So only columns whose rendered cell is
+   * not already its own text need one.
+   */
+  formatValue?: (row: TRow) => string;
   /** Enable sorting for this column. Off by default. */
   sortable?: boolean;
   /** Column width passed through to the rendered header/cell. */
@@ -350,8 +391,33 @@ export interface TableLabels {
   hideColumn?: string;
   /** Toolbar CSV export button. */
   exportCsv?: string;
+  /**
+   * Toolbar export button for any other format: given the extension a writer
+   * produces (`"xlsx"`, or whatever a custom one names itself), return the
+   * button's caption. Defaults to `"Export XLSX"` and its translations.
+   *
+   * CSV keeps {@link TableLabels.exportCsv}, so its existing translations stand
+   * and a host that overrode that string keeps their own wording.
+   */
+  exportFile?: (format: string) => string;
+  /**
+   * Announced when an export finishes. A download gives a screen-reader user
+   * no feedback of its own, so without this the button simply goes quiet.
+   */
+  exportDone?: string;
+  /** Announced when an export fails, so a silent failure is never silent. */
+  exportFailed?: string;
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
+  /**
+   * Where keyboard focus is, for the grid's live region: given the 1-based row
+   * and the dataset total, return the phrase a screen reader should append
+   * after the column and the cell's text. Defaults to `"row 41 of 10000"`.
+   *
+   * Takes the total, not the rendered count, because virtualization renders 24
+   * rows of 100,000 and "row 3 of 24" would be a lie.
+   */
+  gridCellPosition?: (row: number, total: number) => string;
   /** Expand-group chevron accessible name. */
   expandGroup?: string;
   /** Collapse-group chevron accessible name. */

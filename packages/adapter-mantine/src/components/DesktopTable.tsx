@@ -4,6 +4,7 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
@@ -37,6 +38,7 @@ import type { CSSProperties, MouseEvent, ReactNode, RefObject } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { type Density, DENSITY_SPACING } from "../density";
+import { HAIRLINE, SURFACE } from "../surface";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderRow } from "./GroupHeader";
@@ -230,6 +232,8 @@ interface DesktopRowProps<TRow> {
   columns: ColumnDef<TRow>[];
   /** Core's cell prop-getter — identity-stable for the table's lifetime. */
   getCellProps: UseDataTableResult<TRow>["getCellProps"];
+  /** Cell-navigation getters; absent unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   /** Selected state; `undefined` when selection is off (no checkbox cell). */
   selected?: boolean;
   selectLabel: string;
@@ -372,6 +376,7 @@ function DesktopRowBase<TRow>({
   id,
   columns,
   getCellProps,
+  gridFocus,
   selected,
   selectLabel,
   onToggleSelect,
@@ -403,6 +408,7 @@ function DesktopRowBase<TRow>({
       <Table.Tr
         role="row"
         data-index={index}
+        {...gridFocus?.getRowPropsAt(index)}
         aria-selected={selected}
         {...rowClickProps(row, onRowClick, index)}
         className={className}
@@ -429,10 +435,11 @@ function DesktopRowBase<TRow>({
             />
           </Table.Td>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Td
             key={column.key}
             {...getCellProps(column)}
+            {...gridFocus?.getCellPropsAt(index, colIndex)}
             style={pinStyleFor(column.key)}
           >
             <EditableDataCell
@@ -476,6 +483,7 @@ function DesktopRowBase<TRow>({
 
 /** Desktop table rendering driven by core prop-getters. */
 export function DesktopTable<TRow>({
+  gridFocus,
   table,
   rows,
   rowActions,
@@ -559,10 +567,10 @@ export function DesktopTable<TRow>({
         position: "sticky",
         top: inScrollBox ? 0 : stickyHeaderOffset,
         zIndex: PIN_Z.header,
-        background: "var(--mantine-color-body)",
-        boxShadow: "0 1px 0 var(--mantine-color-default-border)",
+        background: SURFACE,
+        boxShadow: `0 1px 0 ${HAIRLINE}`,
       }
-    : { background: "var(--mantine-color-body)" };
+    : { background: SURFACE };
 
   // The leading chevron (36px) + checkbox (40px) and trailing actions
   // (120px) columns pin to the edge alongside the data columns, which
@@ -581,7 +589,7 @@ export function DesktopTable<TRow>({
 
   // Pinned cells stick to the left/right edge (corner-sticky in the header,
   // which also sticks to the top). They need an opaque background.
-  const pinBg = "var(--mantine-color-body)";
+  const pinBg = SURFACE;
   const headerStyleFor = (column: ColumnDef<TRow>): CSSProperties => {
     const key = column.key;
     const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
@@ -620,14 +628,6 @@ export function DesktopTable<TRow>({
     const pin = edgePinStyle(side, active, PIN_Z.body);
     return pin ? { ...pin, background: pinBg } : undefined;
   };
-  const expansionCellStyle = leadingPinStyle(hasStartPin, 0, PIN_Z.body, pinBg);
-  const selectionCellStyle = leadingPinStyle(
-    hasStartPin,
-    expansionLead,
-    PIN_Z.body,
-    pinBg
-  );
-  const actionsCellStyle = edgeBodyStyle("end", actionsEdgePinned);
   const columnName = (column: ColumnDef<TRow>): string =>
     typeof column.header === "string" ? column.header : column.key;
   const resizeHandleFor = (column: ColumnDef<TRow>): ReactNode =>
@@ -641,10 +641,43 @@ export function DesktopTable<TRow>({
         style={RESIZE_HANDLE_STYLE}
       />
     ) : undefined;
+  // Row separators, but drawn on the CELLS. A sticky header forces the table
+  // into `border-collapse: separate` (below), and the separated model tells
+  // the browser to ignore borders declared on a `<tr>` — which is exactly
+  // where Mantine's `withRowBorders` puts them, so every row divider silently
+  // disappears. Mantine solves the same problem for its own sticky mode by
+  // shadowing the cell; we do the same here. Collapsed tables keep the row's
+  // real border, so this must stay off in that path or every line doubles.
+  const rowSeparator: CSSProperties | undefined = stickyHeader
+    ? { boxShadow: `inset 0 -1px 0 ${HAIRLINE}` }
+    : undefined;
+  // A pinned cell already carries a `boxShadow`; merging blindly would drop
+  // one of the two, so compose them into a single value.
+  const withRowSeparator = (
+    style: CSSProperties | undefined
+  ): CSSProperties | undefined => {
+    if (!rowSeparator) return style;
+    if (!style) return rowSeparator;
+    return {
+      ...style,
+      boxShadow: style.boxShadow
+        ? `${String(style.boxShadow)}, ${String(rowSeparator.boxShadow)}`
+        : rowSeparator.boxShadow,
+    };
+  };
   const bodyPinStyle = (key: string): CSSProperties | undefined => {
     const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
-    return pin ? { ...pin, background: pinBg } : undefined;
+    return withRowSeparator(pin ? { ...pin, background: pinBg } : undefined);
   };
+  const expansionCellStyle = withRowSeparator(
+    leadingPinStyle(hasStartPin, 0, PIN_Z.body, pinBg)
+  );
+  const selectionCellStyle = withRowSeparator(
+    leadingPinStyle(hasStartPin, expansionLead, PIN_Z.body, pinBg)
+  );
+  const actionsCellStyle = withRowSeparator(
+    edgeBodyStyle("end", actionsEdgePinned)
+  );
 
   const { verticalSpacing, horizontalSpacing } = DENSITY_SPACING[density];
 
@@ -702,21 +735,23 @@ export function DesktopTable<TRow>({
     >
       <Table
         {...table.getTableProps()}
+        {...gridFocus?.getGridProps()}
         className={className}
         highlightOnHover
         verticalSpacing={verticalSpacing}
         horizontalSpacing={horizontalSpacing}
         miw={Math.max(480, minWidth)}
         // Chromium cannot stick a <th> inside a border-collapsed table, so
-        // the sticky header opts into separate borders — visually identical
-        // here because row separators are cell border-bottoms either way.
+        // the sticky header opts into separate borders. That model ignores
+        // borders on a <tr>, which is where the row dividers live — so the
+        // sticky path draws them on the cells instead (`rowSeparator` above).
         style={
           stickyHeader
             ? { borderCollapse: "separate", borderSpacing: 0 }
             : undefined
         }
       >
-        <Table.Thead style={{ background: "var(--mantine-color-body)" }}>
+        <Table.Thead style={{ background: SURFACE }}>
           {groupCells && (
             <Table.Tr>
               {expandable && <Table.Th />}
@@ -728,8 +763,7 @@ export function DesktopTable<TRow>({
                   ta="center"
                   fw={600}
                   style={{
-                    borderBottom:
-                      "1px solid var(--mantine-color-default-border)",
+                    borderBottom: `1px solid ${HAIRLINE}`,
                   }}
                 >
                   {cell.label}
@@ -794,7 +828,10 @@ export function DesktopTable<TRow>({
                     <GroupHeaderRow
                       key={entry.key}
                       entry={entry}
-                      columnSpan={columnSpan}
+                      columns={columns}
+                      leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+                      showActions={showActions}
+                      getCellProps={table.getCellProps}
                       selection={selection}
                       labels={labels}
                       onToggleCollapse={onToggleGroup}
@@ -810,6 +847,7 @@ export function DesktopTable<TRow>({
                     id={id}
                     columns={columns}
                     getCellProps={table.getCellProps}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}
                     onToggleSelect={toggleSelect}
@@ -849,6 +887,7 @@ export function DesktopTable<TRow>({
                     id={id}
                     columns={columns}
                     getCellProps={table.getCellProps}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}
                     onToggleSelect={toggleSelect}

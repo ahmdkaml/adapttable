@@ -59,8 +59,12 @@ export const zh: Required<TableLabels> = {
   showColumn: "显示列",
   hideColumn: "隐藏列",
   exportCsv: "导出 CSV",
+  exportFile: (format) => `导出 ${format.toUpperCase()}`,
+  exportDone: "导出完成",
+  exportFailed: "导出失败",
   editCell: "编辑单元格",
   expandGroup: "展开分组",
   collapseGroup: "折叠分组",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
 };

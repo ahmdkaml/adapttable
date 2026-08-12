@@ -749,3 +749,37 @@ describe("actions column management (MUI)", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 });
+
+describe("the noResults slot (MUI)", () => {
+  it("uses noResults for the filtered state and empty for no data", () => {
+    renderHarness(
+      {
+        rows: [],
+        override: {
+          slots: {
+            empty: <p>nothing here</p>,
+            noResults: <p>nothing matched</p>,
+          },
+        },
+      },
+      "q=zzz"
+    );
+    expect(screen.getByText("nothing matched")).toBeInTheDocument();
+    expect(screen.queryByText("nothing here")).toBeNull();
+  });
+
+  it("still lets a lone empty slot cover both states", () => {
+    renderHarness(
+      { rows: [], override: { slots: { empty: <p>nothing here</p> } } },
+      "q=zzz"
+    );
+    expect(screen.getByText("nothing here")).toBeInTheDocument();
+  });
+
+  it("keeps the clear-filters action when no slot is given", () => {
+    renderHarness({ rows: [] }, "q=zzz");
+    expect(
+      screen.getByRole("button", { name: "Clear all" })
+    ).toBeInTheDocument();
+  });
+});

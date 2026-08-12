@@ -61,8 +61,12 @@ export const he: Required<TableLabels> = {
   showColumn: "הצג עמודה",
   hideColumn: "הסתר עמודה",
   exportCsv: "ייצוא CSV",
+  exportFile: (format) => `ייצוא ${format.toUpperCase()}`,
+  exportDone: "הייצוא הושלם",
+  exportFailed: "הייצוא נכשל",
   editCell: "עריכת תא",
   expandGroup: "הרחב קבוצה",
   collapseGroup: "כווץ קבוצה",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
 };

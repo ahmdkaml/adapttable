@@ -47,6 +47,16 @@ export {
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
+export {
+  aggregate,
+  AGGREGATE_NAMES,
+  type AggregateName,
+  type AggregateOptions,
+  type AggregateSpec,
+  type Aggregator,
+} from "./aggregate/aggregate";
+export { columnText } from "./columns/columnText";
+export { computed, type ComputedColumnSpec } from "./columns/computed";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
   AUTO_OPTIONS_LIMIT,
@@ -86,7 +96,48 @@ export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export {
+  type CellRange,
+  type CellRangeBounds,
+  cellRangeBounds,
+  cellRangeIndices,
+  cellRangeSize,
+  extendCellRange,
+  isInCellRange,
+  isSingleCell,
+  singleCellRange,
+} from "./focus/cellRange";
+export {
+  type GridBounds,
+  type GridCell,
+  type GridFocusMove,
+  gridFocusMoveForKey,
+  type GridKeyPress,
+  moveGridFocus,
+  sameGridCell,
+} from "./focus/gridFocus";
+export {
+  GRID_CELL_ATTR,
+  gridCellAttr,
+  type GridFocusState,
+  useGridFocus,
+  type UseGridFocusOptions,
+} from "./focus/useGridFocus";
 export type { BaseDataTableProps } from "./props";
+export {
+  type AggregateFn,
+  isFilterGroup,
+  type QueryAggregate,
+  type QueryCondition,
+  type QueryExtensions,
+  type QueryFilterGroup,
+  type QuerySupport,
+} from "./source/queryContract";
+export {
+  tableQueryBaseKey,
+  tableQueryKey,
+  type TableQueryKeyOptions,
+} from "./source/queryKey";
 export {
   type TableQuery,
   useServerData,
@@ -290,6 +341,18 @@ export { stableKey } from "./utils/stableKey";
 /* ── Rows ──────────────────────────────────────────────────────────── */
 
 export {
+  applyRowPatches,
+  type InsertPatch,
+  insertRow,
+  type RemovePatch,
+  removeRow,
+  type RowPatch,
+  type UpdatePatch,
+  updateRow,
+  type UpsertPatch,
+  upsertRow,
+} from "./rows/patch";
+export {
   type RowExpansionState,
   useRowExpansion,
 } from "./rows/useRowExpansion";
@@ -327,6 +390,12 @@ export {
 
 /* ── Row grouping ──────────────────────────────────────────────────── */
 export {
+  groupAggregateEntries,
+  type GroupRowCell,
+  type GroupRowLayout,
+  groupRowLayout,
+} from "./grouping/groupRowLayout";
+export {
   buildGroupedFlatModel,
   formatGroupLabel,
   type GroupAggregatesFn,
@@ -339,13 +408,32 @@ export {
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
 
-/* ── Export (CSV) ──────────────────────────────────────────────────── */
-export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
+/* ── Export (CSV, and any format a writer adds) ────────────────────── */
+export {
+  downloadCsv,
+  matrixToCsv,
+  rowsToCsv,
+  type RowsToCsvOptions,
+} from "./export/csv";
+export {
+  buildExportTable,
+  csvWriter,
+  downloadExportFile,
+  type ExportPayload,
+  type ExportTable,
+  type ExportWriteContext,
+  type ExportWriter,
+} from "./export/exportWriter";
 export {
   buildTableCsv,
   downloadTableCsv,
   exportableColumns,
+  type ExportColumnScope,
+  type ExportContext,
   type ExportCsvOptions,
+  type ExportInfo,
+  type ExportRowScope,
   makeExportCsvHandler,
+  resolveExportColumns,
   resolveExportCsv,
 } from "./export/tableCsv";

@@ -5,6 +5,7 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
@@ -159,6 +160,8 @@ interface DesktopRowProps<TRow> {
   /* Visual inputs — compared by the memo (see DESKTOP_ROW_COMPARED). */
   row: TRow;
   index: number;
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   selected: boolean;
   expanded: boolean;
   columns: ColumnDef<TRow>[];
@@ -234,6 +237,7 @@ function desktopRowPropsAreEqual(
 function DesktopRowImpl<TRow>({
   row,
   index,
+  gridFocus,
   selected,
   expanded,
   columns,
@@ -270,6 +274,7 @@ function DesktopRowImpl<TRow>({
         data-stagger=""
         ref={measureElement}
         data-index={index}
+        {...gridFocus?.getRowPropsAt(index)}
         hover
         selected={selected}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -295,8 +300,12 @@ function DesktopRowImpl<TRow>({
             />
           </TableCell>
         )}
-        {columns.map((column) => (
-          <TableCell key={column.key} sx={sx.cells[column.key]}>
+        {columns.map((column, colIndex) => (
+          <TableCell
+            key={column.key}
+            sx={sx.cells[column.key]}
+            {...gridFocus?.getCellPropsAt(index, colIndex)}
+          >
             <EditableDataCell
               editing={editing}
               row={row}
@@ -345,6 +354,7 @@ const DesktopRow = memo(
 
 /** Desktop MUI table. */
 export function DesktopTable<TRow>({
+  gridFocus,
   table,
   rows,
   rowActions,
@@ -546,6 +556,7 @@ export function DesktopTable<TRow>({
       <Table
         size={size}
         aria-label={table.getTableProps()["aria-label"]}
+        {...gridFocus?.getGridProps()}
         sx={minWidth > 0 ? { minWidth } : undefined}
       >
         <TableHead>
@@ -671,7 +682,12 @@ export function DesktopTable<TRow>({
                     <GroupHeaderRow
                       key={entry.key}
                       entry={entry}
-                      columnSpan={columnSpan}
+                      columns={columns}
+                      leadingCells={
+                        (expandActive ? 1 : 0) + (selection ? 1 : 0)
+                      }
+                      showActions={showActions}
+                      getCellProps={table.getCellProps}
                       selection={selection}
                       labels={labels}
                       onToggleCollapse={onToggleGroup}
@@ -684,6 +700,7 @@ export function DesktopTable<TRow>({
                     key={entry.key}
                     row={entry.row}
                     index={entry.index}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id) ?? false}
                     expanded={isExpanded ? isExpanded(id) : false}
                     columns={columns}
@@ -720,6 +737,7 @@ export function DesktopTable<TRow>({
                 const id = getRowId(row);
                 return (
                   <DesktopRow
+                    gridFocus={gridFocus}
                     key={key}
                     row={row}
                     index={index}

@@ -11,6 +11,7 @@ import {
 } from "@adapttable/core";
 import {
   resolveDisabledReason,
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -28,13 +29,6 @@ import {
   type AdaptTableGroupRow,
   GroupHeaderCard,
 } from "./grouping";
-
-/** The mobile-card label for a column: explicit `mobileLabel`, else a string
- * `header`, else the column key. */
-function cardLabel<TRow>(column: ColumnDef<TRow>): string {
-  if (column.mobileLabel) return column.mobileLabel;
-  return typeof column.header === "string" ? column.header : column.key;
-}
 
 /** Row-action buttons for a single card. */
 function CardActions<TRow>({
@@ -101,7 +95,10 @@ function SummaryCard<TRow>({
         {columns
           .filter((column) => cells[column.key] !== undefined)
           .map((column) => (
-            <Descriptions.Item key={column.key} label={cardLabel(column)}>
+            <Descriptions.Item
+              key={column.key}
+              label={resolveMobileLabel(column)}
+            >
               {cells[column.key]}
             </Descriptions.Item>
           ))}
@@ -210,6 +207,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
       size="small"
       className={className}
       data-stagger=""
+      data-selected={selected ? "" : undefined}
       {...rowClickProps(row, onRowClick, rowIndex)}
       onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       title={
@@ -245,7 +243,10 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     >
       <Descriptions column={1} size="small" colon={false}>
         {columns.map((column) => (
-          <Descriptions.Item key={column.key} label={cardLabel(column)}>
+          <Descriptions.Item
+            key={column.key}
+            label={resolveMobileLabel(column)}
+          >
             <EditableDataCell
               editing={editing}
               row={row}

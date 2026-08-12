@@ -9,7 +9,12 @@ import type {
   RowAction,
   UseSavedViewsOptions,
 } from "@adapttable/core";
-import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
+import {
+  aggregate,
+  buildFilterRuntime,
+  computed,
+  resolveFilterDefs,
+} from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -63,6 +68,10 @@ interface Strings {
   budgetFilter: string;
   edit: string;
   remove: string;
+  /** Spanning header over the two assignment columns. */
+  groupAssignment: string;
+  /** Spanning header over the two delivery columns. */
+  groupDelivery: string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
 }
@@ -87,6 +96,8 @@ const STRINGS: Record<Locale, Strings> = {
     budgetFilter: "Budget",
     edit: "Edit",
     remove: "Delete",
+    groupAssignment: "Assignment",
+    groupDelivery: "Delivery",
     confirmTitle: "Delete person?",
     confirmMessage: (name) => `Permanently delete "${name}"?`,
   },
@@ -109,6 +120,8 @@ const STRINGS: Record<Locale, Strings> = {
     budgetFilter: "الميزانية",
     edit: "تعديل",
     remove: "حذف",
+    groupAssignment: "التعيين",
+    groupDelivery: "التسليم",
     confirmTitle: "حذف الشخص؟",
     confirmMessage: (name) => `هل تريد حذف "${name}" نهائيًا؟`,
   },
@@ -215,13 +228,18 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     sortable: true,
     header: "",
   },
-  {
+  // Utilization is derived, not stored — so it is declared once with
+  // `computed` rather than written into `accessor` and repeated in
+  // `sortValue`. The cell shows a percentage; sorting and export see the
+  // number behind it.
+  computed<Person, number>({
     key: "load",
-    accessor: (r) => formatPercent(utilization(r)),
-    sortValue: (r) => utilization(r),
-    sortable: true,
     header: "",
-  },
+    deps: (r) => [r.utilization, r.id],
+    value: (r) => utilization(r),
+    format: (value) => formatPercent(value),
+    column: { sortable: true },
+  }),
 ];
 
 /**
@@ -402,7 +420,11 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
+      group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
+      // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
+      // the file gets the sortable ISO start date.
+      exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
       width: 185,
       accessor: (row) => (
@@ -420,12 +442,16 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
+      group: s.groupDelivery,
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
         </span>
       ),
       sortValue: (r) => budget(r),
+      // The screen shows "$25,300"; a spreadsheet cannot sum that, so the file
+      // carries the number underneath.
+      exportValue: (r) => budget(r),
       sortable: true,
       editable: true,
       editor: "number",
@@ -493,6 +519,9 @@ export function makeWideColumns(
     {
       key: "role",
       header: s.role,
+      // Adjacent columns sharing a `group` render under one spanning header.
+      // Reordering them apart splits it, so the span never lies about layout.
+      group: s.groupAssignment,
       i18n: { ar: "roleAr" },
       editable: true,
       editor: "text",
@@ -501,6 +530,7 @@ export function makeWideColumns(
     {
       key: "team",
       header: s.team,
+      group: s.groupAssignment,
       i18n: { ar: "teamAr" },
       sortable: true,
       editable: true,
@@ -544,7 +574,11 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
+      group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
+      // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
+      // the file gets the sortable ISO start date.
+      exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
       width: 200,
       accessor: (row) => (
@@ -561,12 +595,16 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
+      group: s.groupDelivery,
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
         </span>
       ),
       sortValue: (r) => budget(r),
+      // The screen shows "$25,300"; a spreadsheet cannot sum that, so the file
+      // carries the number underneath.
+      exportValue: (r) => budget(r),
       sortable: true,
       editable: true,
       editor: "number",
@@ -763,16 +801,21 @@ export const matchesDemoFilters = DEMO_FILTER_RUNTIME.filterFn;
 
 /**
  * Per-group budget subtotal for the opt-in grouping demo (frontend path
- * only). Shares the `summaryRow` mapper shape — one function type for
- * footer totals and group headers.
+ * only), built with the `aggregate` helper rather than a hand-rolled reduce.
+ * Shares the `summaryRow` mapper shape — one function type for footer totals
+ * and group headers.
  */
-export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> = (rows) => ({
-  budget: (
-    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-      {formatMoney(
-        rows.reduce((sum, row) => sum + budget(row), 0),
-        "en"
-      )}
-    </span>
-  ),
-});
+export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> =
+  aggregate<Person>(
+    { budget: "sum" },
+    {
+      // The same columns the table sorts by, so the subtotal reads the number
+      // behind the formatted cell rather than parsing "$1,240".
+      columns: BASE_COLUMNS,
+      format: (value) => (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+          {formatMoney(typeof value === "number" ? value : 0, "en")}
+        </span>
+      ),
+    }
+  );

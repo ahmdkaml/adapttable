@@ -30,6 +30,7 @@ const TITLES = {
   "selection.md": "React table row selection & bulk actions",
   "row-expansion.md": "React table expandable rows — detail panels",
   "cell-editing.md": "React table inline cell editing — onCellEdit",
+  "cell-navigation.md": "React table keyboard navigation — ARIA grid",
   "row-grouping.md": "React table row grouping with subtotals",
   "column-management.md": "React table column management — pin, resize",
   "saved-views.md": "React table saved views, shareable by URL",
@@ -38,6 +39,7 @@ const TITLES = {
   "data-tiers.md": "React table data — client, server, one API",
   "customization.md": "Customize AdaptTable — classNames & slots",
   "url-state.md": "React table URL state — filters, sort, page",
+  "ssr-rsc.md": "React table SSR & server components — Next.js",
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew",
   "api.md": "AdaptTable API reference — every export",
   "faq.md": "FAQ — the free MUI X & ag-Grid alternative",
@@ -77,6 +79,8 @@ const DESCRIPTIONS = {
     "Expandable rows for React data tables — per-row detail panels with accessible toggles and keyboard support, on the same API across every UI kit adapter.",
   "cell-editing.md":
     "Inline cell editing for React CRUD tables — opt-in onCellEdit, text/number/select editors, keyboard commit/cancel, kit-native inputs across every adapter.",
+  "cell-navigation.md":
+    "Arrow-key cell navigation for a React table: one tab stop, correct ARIA grid semantics, absolute row indices under virtualization, and spoken announcements.",
   "row-grouping.md":
     "Single-level React table row grouping — opt-in groupBy, per-group aggregates sharing the summaryRow mapper, expand/collapse, frontend tier only.",
   "column-management.md":
@@ -93,6 +97,8 @@ const DESCRIPTIONS = {
     "Restyle parts with classNames, replace them with slots, tune the chrome with props, or theme through your kit provider. All opt-in.",
   "url-state.md":
     "Want shareable React table links? Search, filters, sort and page sync to the URL (History, Next.js, react-router). Refresh-safe and SSR-friendly.",
+  "ssr-rsc.md":
+    "Render AdaptTable on the server: where the client boundary goes in the Next.js App Router, DOM-free SSR, hydration without mismatches, and Suspense.",
   "i18n-rtl.md":
     "React table with first-class RTL/Arabic: locale presets, per-locale column paths, logical pinning and mirrored layout — not just translated strings.",
   "api.md":

@@ -4,6 +4,7 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type EditableCellEditing,
+  type GridFocusState,
   type GroupCollapseState,
   type PinSide,
   type RowAction,
@@ -233,6 +234,8 @@ export interface BuildColumnsGrouping {
 
 /** Options for {@link buildColumns}. */
 export interface BuildColumnsOptions<TRow> {
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   columns: readonly ColumnDef<TRow>[];
   rowActions?: readonly RowAction<TRow>[];
   sortBy: string | undefined;
@@ -285,9 +288,17 @@ function groupedOnCell<TRow>(
   columnIndex: number,
   align: ColumnDef<unknown>["align"],
   grouping: BuildColumnsGrouping | undefined,
-  record: GroupedDataRecord<TRow>
-): { style: { textAlign: LogicalTextAlign }; colSpan?: number } {
-  const base = cellStyle(align);
+  record: GroupedDataRecord<TRow>,
+  rowIndex?: number,
+  gridFocus?: GridFocusState
+): Record<string, unknown> {
+  // Focus props first: antd merges whatever this returns onto the <td>, so
+  // this is the one place per-cell attributes exist in this adapter.
+  const focus =
+    gridFocus && rowIndex !== undefined && !isAdaptTableGroupRow(record)
+      ? gridFocus.getCellPropsAt(rowIndex, columnIndex)
+      : {};
+  const base = { ...cellStyle(align), ...focus };
   if (!grouping || !isAdaptTableGroupRow(record)) return base;
   if (groupSpansAll(record)) {
     if (columnIndex === 0) {
@@ -390,6 +401,7 @@ function renderDataCell<TRow>(
 }
 
 export function buildColumns<TRow>({
+  gridFocus,
   columns,
   rowActions,
   sortBy,
@@ -452,8 +464,15 @@ export function buildColumns<TRow>({
           ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
           : undefined,
         showSorterTooltip: false,
-        onCell: (record: GroupedDataRecord<TRow>) =>
-          groupedOnCell(columnIndex, column.align, grouping, record),
+        onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) =>
+          groupedOnCell(
+            columnIndex,
+            column.align,
+            grouping,
+            record,
+            rowIndex,
+            gridFocus
+          ),
         onHeaderCell: () =>
           headerCellProps(
             column,

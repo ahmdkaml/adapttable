@@ -91,6 +91,7 @@ export function MuiDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -102,6 +103,7 @@ export function MuiDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -119,6 +121,7 @@ export function MuiDemo({
             source={source}
             columns={makeColumns(locale, MUI_CELLS)}
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}

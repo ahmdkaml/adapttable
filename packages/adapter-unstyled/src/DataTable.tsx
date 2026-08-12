@@ -1,5 +1,10 @@
-import { makeExportCsvHandler, type TableSource } from "@adapttable/core";
-import { useDataTableShell, useMountStagger } from "@adapttable/core/adapter";
+import type { TableSource } from "@adapttable/core";
+import {
+  ExportAnnouncer,
+  GridFocusAnnouncer,
+  useDataTableShell,
+  useMountStagger,
+} from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
@@ -80,21 +85,22 @@ function DataTableBody<TRow>({
     const noResults = chrome.emptyVariant === "noResults";
     return (
       <>
-        {props.slots?.empty ?? (
-          <output data-adapttable-part="empty" className={classNames.empty}>
-            {noResults ? labels.noResults : labels.noData}
-            {noResults && (
-              <button
-                type="button"
-                data-adapttable-part="empty-clear"
-                className={classNames.emptyClear}
-                onClick={chrome.clearFilters}
-              >
-                {labels.clearAll}
-              </button>
-            )}
-          </output>
-        )}
+        {(noResults ? props.slots?.noResults : undefined) ??
+          props.slots?.empty ?? (
+            <output data-adapttable-part="empty" className={classNames.empty}>
+              {noResults ? labels.noResults : labels.noData}
+              {noResults && (
+                <button
+                  type="button"
+                  data-adapttable-part="empty-clear"
+                  className={classNames.emptyClear}
+                  onClick={chrome.clearFilters}
+                >
+                  {labels.clearAll}
+                </button>
+              )}
+            </output>
+          )}
       </>
     );
   }
@@ -199,13 +205,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     </button>
   );
 
-  // Layout-visible columns WITHOUT device filtering: the same button must
-  // produce the same file on phone and desktop.
-  const onExportCsv = makeExportCsvHandler(
-    props.exportCsv,
-    viewSource,
-    chrome.columnLayout.visibleColumns
-  );
+  // The export button comes from the shell, already single-flight and already
+  // carrying the selection, the full column set and the highlighted range. It
+  // used to be rebuilt here from the same parts, which is precisely how a new
+  // scope can work in seven kits and silently fall back in the eighth.
+  const { onExportCsv, exportBusy, exportAnnouncement, exportLabel } =
+    shell.toolbarProps;
 
   return (
     <div
@@ -220,6 +225,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={chrome.isRefreshing || undefined}
       className={cx("adapttable", classNames.root)}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <div
         data-adapttable-part="toolbar"
         className={classNames.toolbar}
@@ -322,15 +328,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         {onExportCsv && (
-          <button
-            type="button"
-            data-adapttable-part="export-csv-button"
-            className={classNames.exportCsvButton}
-            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-            onClick={onExportCsv}
-          >
-            {labels.exportCsv}
-          </button>
+          <>
+            <button
+              type="button"
+              data-adapttable-part="export-csv-button"
+              className={classNames.exportCsvButton}
+              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+              onClick={onExportCsv}
+              disabled={exportBusy}
+              aria-busy={exportBusy}
+            >
+              {/* No kit to borrow a loading button from, so the affordance is an
+                  element the host can style — `aria-hidden` because the
+                  announcement below is what a screen reader should hear, not a
+                  decoration. */}
+              {exportBusy && (
+                <span
+                  aria-hidden="true"
+                  data-adapttable-part="export-spinner"
+                  className={classNames.exportSpinner}
+                />
+              )}
+              {exportLabel}
+            </button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
