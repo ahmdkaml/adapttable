@@ -60,6 +60,7 @@ export const tr: Required<TableLabels> = {
   showColumn: "Sütunu göster",
   hideColumn: "Sütunu gizle",
   exportCsv: "CSV olarak dışa aktar",
+  exportFile: (format) => `${format.toUpperCase()} olarak dışa aktar`,
   exportDone: "Dışa aktarma tamamlandı",
   exportFailed: "Dışa aktarma başarısız",
   editCell: "Hücreyi düzenle",

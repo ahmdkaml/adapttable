@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
-import { makeExportCsvHandler } from "./export/tableCsv";
+import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
 import { useGridFocus } from "./focus/useGridFocus";
@@ -167,7 +167,10 @@ export function useDataTableShell<TRow>(
         firstRowIndex: windowStart,
       }
     ),
-    labels
+    labels,
+    // The button names the format it produces, so a spreadsheet writer relabels
+    // it without the host retyping a translated string.
+    resolveExportCsv(props.exportCsv)?.writer?.extension
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);

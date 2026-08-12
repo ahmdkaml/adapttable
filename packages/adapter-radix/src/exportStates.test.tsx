@@ -1,3 +1,4 @@
+import { xlsxWriter } from "@adapttable/core/xlsx";
 import { act, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -81,5 +82,21 @@ describe("export states (Radix)", () => {
       await Promise.resolve();
     });
     expect(screen.getByRole("status")).toHaveTextContent("Export failed");
+  });
+
+  it("names the format it produces, not CSV", () => {
+    renderRadix(
+      <DataTable
+        data={rows}
+        columns={columns}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        exportCsv={{ writer: xlsxWriter() }}
+      />
+    );
+    expect(
+      screen.getByRole("button", { name: "Export XLSX" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Export CSV" })).toBeNull();
   });
 });

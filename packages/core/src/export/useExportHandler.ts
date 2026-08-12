@@ -17,6 +17,7 @@ import { useCallback, useRef, useState } from "react";
 
 import type { TableLabels } from "../types";
 import { devWarn } from "../utils/devWarn";
+import { exportButtonLabel } from "./exportLabel";
 
 /** Where an export is in its life. */
 export type ExportStatus = "idle" | "busy" | "done" | "failed";
@@ -37,6 +38,13 @@ export interface ExportHandlerState {
    * render it in a polite region beside the button.
    */
   exportAnnouncement: string;
+  /**
+   * The button's caption, naming the format it actually produces — "Export CSV"
+   * by default, "Export XLSX" with the spreadsheet writer, and localized either
+   * way. A button that names a file the user is not getting is a lie no adapter
+   * should have to correct.
+   */
+  exportLabel: string;
 }
 
 /**
@@ -44,11 +52,13 @@ export interface ExportHandlerState {
  *
  * @param handler - The handler from `makeExportCsvHandler`, or `undefined`
  *   when the `exportCsv` prop is off.
- * @param labels - Resolved table labels, for the outcome announcements.
+ * @param labels - Resolved table labels, for the caption and the announcements.
+ * @param format - The writer's extension. Defaults to `"csv"`, the built-in.
  */
 export function useExportHandler(
   handler: (() => void | Promise<void>) | undefined,
-  labels?: TableLabels
+  labels?: TableLabels,
+  format = "csv"
 ): ExportHandlerState {
   const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
   // Which run the current status belongs to. Exporting the same table twice
@@ -109,6 +119,7 @@ export function useExportHandler(
     exportBusy: exportStatus === "busy",
     exportStatus,
     exportAnnouncement: announcementFor(exportStatus, run, labels),
+    exportLabel: exportButtonLabel(labels, format),
   };
 }
 

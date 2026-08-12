@@ -9,6 +9,7 @@ import {
   isDeclarativeFilters,
   makeExportCsvHandler,
   pageSizeOptions,
+  resolveExportCsv,
   resolveLabels,
   type RowExpansionState,
   type SelectionState,
@@ -1051,7 +1052,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         firstRowIndex: windowStart,
       }
     ),
-    c.table.labels
+    c.table.labels,
+    // The button names the format it produces, so a spreadsheet writer relabels
+    // it without the host retyping a translated string.
+    resolveExportCsv(props.exportCsv)?.writer?.extension
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);

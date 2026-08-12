@@ -57,6 +57,7 @@ export function Toolbar<TRow>({
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
+  exportLabel,
   showRowsPerPage,
   accentColor,
   dir,
@@ -163,7 +164,7 @@ export function Toolbar<TRow>({
                 while options load, so "working" looks the same everywhere in
                 the kit. */}
             {exportBusy && <Spinner size="1" />}
-            {labels.exportCsv}
+            {exportLabel}
           </Button>
         )}
         {onExportCsv && <ExportAnnouncer announcement={exportAnnouncement} />}

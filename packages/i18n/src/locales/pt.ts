@@ -61,6 +61,7 @@ export const pt: Required<TableLabels> = {
   showColumn: "Mostrar coluna",
   hideColumn: "Ocultar coluna",
   exportCsv: "Exportar CSV",
+  exportFile: (format) => `Exportar ${format.toUpperCase()}`,
   exportDone: "Exportação concluída",
   exportFailed: "Falha na exportação",
   editCell: "Editar célula",

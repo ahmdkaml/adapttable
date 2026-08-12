@@ -57,6 +57,7 @@ export function Toolbar<TRow>({
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
+  exportLabel,
   showRowsPerPage,
   accentColor,
   dir,
@@ -162,7 +163,7 @@ export function Toolbar<TRow>({
             {/* Radix Themes' own pattern for a working button: its Spinner
                 wrapping the label, which reserves the label's width so the
                 toolbar does not reflow when the export starts. */}
-            <Spinner loading={exportBusy}>{labels.exportCsv}</Spinner>
+            <Spinner loading={exportBusy}>{exportLabel}</Spinner>
           </Button>
         )}
         {onExportCsv && <ExportAnnouncer announcement={exportAnnouncement} />}

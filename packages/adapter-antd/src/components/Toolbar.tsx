@@ -45,6 +45,7 @@ export function Toolbar<TRow>({
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
+  exportLabel,
   savedViewsMenu,
   showRowsPerPage,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -130,7 +131,7 @@ export function Toolbar<TRow>({
               loading={exportBusy}
               aria-busy={exportBusy}
             >
-              {labels.exportCsv}
+              {exportLabel}
             </Button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>

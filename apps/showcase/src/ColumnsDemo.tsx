@@ -58,7 +58,6 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             wide
             cellNavigation
             exportCsv={EXPORT_RANGE_AS_XLSX}
-            exportLabel="Export XLSX"
           />
         </div>
       </div>

@@ -209,7 +209,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // carrying the selection, the full column set and the highlighted range. It
   // used to be rebuilt here from the same parts, which is precisely how a new
   // scope can work in seven kits and silently fall back in the eighth.
-  const { onExportCsv, exportBusy, exportAnnouncement } = shell.toolbarProps;
+  const { onExportCsv, exportBusy, exportAnnouncement, exportLabel } =
+    shell.toolbarProps;
 
   return (
     <div
@@ -348,7 +349,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                   className={classNames.exportSpinner}
                 />
               )}
-              {labels.exportCsv}
+              {exportLabel}
             </button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>

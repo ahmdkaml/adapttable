@@ -119,6 +119,13 @@ export interface ToolbarChromeProps<TRow> {
    * from a failed one.
    */
   exportAnnouncement?: string;
+  /**
+   * The export button's caption, naming the format it produces — CSV by
+   * default, the writer's format otherwise, localized either way. Adapters
+   * render this rather than `labels.exportCsv`, so a button never names a file
+   * the user is not getting.
+   */
+  exportLabel?: string;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }

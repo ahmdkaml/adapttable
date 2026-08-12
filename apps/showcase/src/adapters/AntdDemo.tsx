@@ -87,7 +87,6 @@ export function AntdDemo({
   cellNavigation,
   wide,
   exportCsv,
-  exportLabel,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -108,12 +107,6 @@ export function AntdDemo({
    * cell range as a spreadsheet.
    */
   exportCsv?: DataTableProps<Person>["exportCsv"];
-  /**
-   * Toolbar button text. The default label names CSV, so a demo that writes
-   * another format says so — a button that lies about what it downloads is
-   * worse than an unstyled one.
-   */
-  exportLabel?: string;
 }>) {
   const s = strings(locale);
   return (
@@ -149,10 +142,7 @@ export function AntdDemo({
             {...columns}
             density={density}
             filtersMode={filtersUi}
-            labels={{
-              ...getLabels(locale),
-              ...(exportLabel ? { exportCsv: exportLabel } : {}),
-            }}
+            labels={getLabels(locale)}
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}

@@ -60,6 +60,7 @@ export const fa: Required<TableLabels> = {
   showColumn: "نمایش ستون",
   hideColumn: "پنهان‌کردن ستون",
   exportCsv: "خروجی CSV",
+  exportFile: (format) => `خروجی ${format.toUpperCase()}`,
   exportDone: "خروجی گرفتن کامل شد",
   exportFailed: "خروجی گرفتن ناموفق بود",
   editCell: "ویرایش سلول",

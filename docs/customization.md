@@ -327,6 +327,12 @@ import { xlsxWriter } from "@adapttable/core/xlsx";
 Every scope and column option above works unchanged — which rows and columns
 leave the table is decided before the format is asked for anything.
 
+The button relabels itself: it reads **Export XLSX** here, not "Export CSV",
+from `labels.exportFile(format)` — translated in all seventeen locales, and
+given a caption for a format nobody planned for (a custom writer calling itself
+`tsv` gets "Export TSV"). CSV keeps `labels.exportCsv`, so its existing
+translations and any wording you overrode are untouched.
+
 Two differences from CSV, both in your favour. Numbers and booleans stay
 **typed**, so a spreadsheet can sum a column instead of showing text that looks
 like a number; and text that looks numeric stays text, so a postal code of

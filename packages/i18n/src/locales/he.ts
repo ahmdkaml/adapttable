@@ -61,6 +61,7 @@ export const he: Required<TableLabels> = {
   showColumn: "הצג עמודה",
   hideColumn: "הסתר עמודה",
   exportCsv: "ייצוא CSV",
+  exportFile: (format) => `ייצוא ${format.toUpperCase()}`,
   exportDone: "הייצוא הושלם",
   exportFailed: "הייצוא נכשל",
   editCell: "עריכת תא",

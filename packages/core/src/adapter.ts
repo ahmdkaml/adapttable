@@ -63,6 +63,7 @@ export {
   ExportAnnouncer,
   type ExportAnnouncerProps,
 } from "./export/ExportAnnouncer";
+export { exportButtonLabel } from "./export/exportLabel";
 export {
   type ExportHandlerState,
   type ExportStatus,

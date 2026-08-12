@@ -94,6 +94,7 @@ export function Toolbar<TRow>({
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
+  exportLabel,
 }: Readonly<MuiToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
@@ -211,7 +212,7 @@ export function Toolbar<TRow>({
                 ) : undefined
               }
             >
-              {labels.exportCsv}
+              {exportLabel}
             </Button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>

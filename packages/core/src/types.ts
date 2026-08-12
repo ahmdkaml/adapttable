@@ -392,6 +392,15 @@ export interface TableLabels {
   /** Toolbar CSV export button. */
   exportCsv?: string;
   /**
+   * Toolbar export button for any other format: given the extension a writer
+   * produces (`"xlsx"`, or whatever a custom one names itself), return the
+   * button's caption. Defaults to `"Export XLSX"` and its translations.
+   *
+   * CSV keeps {@link TableLabels.exportCsv}, so its existing translations stand
+   * and a host that overrode that string keeps their own wording.
+   */
+  exportFile?: (format: string) => string;
+  /**
    * Announced when an export finishes. A download gives a screen-reader user
    * no feedback of its own, so without this the button simply goes quiet.
    */

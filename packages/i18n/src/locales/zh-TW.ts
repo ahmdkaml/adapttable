@@ -59,6 +59,7 @@ export const zhTW: Required<TableLabels> = {
   showColumn: "顯示欄位",
   hideColumn: "隱藏欄位",
   exportCsv: "匯出 CSV",
+  exportFile: (format) => `匯出 ${format.toUpperCase()}`,
   exportDone: "匯出完成",
   exportFailed: "匯出失敗",
   editCell: "編輯儲存格",

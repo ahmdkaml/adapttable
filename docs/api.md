@@ -314,7 +314,9 @@ types the announcer itself. See
 `ExportTable` of values resolved once by `buildExportTable`, plus the filename —
 into an `ExportPayload`, which `downloadExportFile` hands to the browser.
 `csvWriter` is the built-in one, and `matrixToCsv` writes CSV from values a
-caller assembled itself. `@adapttable/core/xlsx`
+caller assembled itself. `exportButtonLabel` gives the button a caption naming
+the format it produces — `labels.exportCsv` for CSV, `labels.exportFile(format)`
+for anything else. `@adapttable/core/xlsx`
 adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
 dependency, and a separate entry so a CSV export never ships it —
 with `buildTableXlsx` underneath for building a workbook by hand. See
