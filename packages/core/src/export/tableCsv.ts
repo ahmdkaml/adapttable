@@ -198,6 +198,36 @@ function resolveExportRows<TRow>(
 }
 
 /**
+ * What an export resolves to: the rows a scope asks for and the columns a
+ * scope asks for.
+ *
+ * Three call sites need exactly this pair — the pure builder, the download
+ * path (which brackets it with hooks) and the backend-request path (which
+ * sends it instead of writing a file). Resolving it once is what keeps them
+ * from drifting apart.
+ */
+function resolveExport<TRow>(options: {
+  source: TableSource<TRow>;
+  columns: readonly ColumnDef<TRow>[];
+  scope?: ExportRowScope;
+  columnScope?: ExportColumnScope;
+  context?: ExportContext<TRow>;
+}): { rows: readonly TRow[]; columns: ColumnDef<TRow>[] } {
+  return {
+    rows: resolveExportRows(
+      options.scope ?? "page",
+      options.source,
+      options.context
+    ),
+    columns: resolveExportColumns(
+      options.columnScope ?? "visible",
+      options.columns,
+      options.context?.allColumns
+    ),
+  };
+}
+
+/**
  * Build CSV text for the chosen row and column scopes.
  *
  * @typeParam TRow - The row type.
@@ -210,16 +240,7 @@ export function buildTableCsv<TRow>(options: {
   escapeFormulas?: boolean;
   context?: ExportContext<TRow>;
 }): string {
-  const rows = resolveExportRows(
-    options.scope ?? "page",
-    options.source,
-    options.context
-  );
-  const columns = resolveExportColumns(
-    options.columnScope ?? "visible",
-    options.columns,
-    options.context?.allColumns
-  );
+  const { rows, columns } = resolveExport(options);
   return rowsToCsv(rows, columns, {
     escapeFormulas: options.escapeFormulas,
     getValue: exportCellValue,
@@ -253,16 +274,7 @@ export function downloadTableCsv<TRow>(options: {
   onBeforeExport?: ExportCsvOptions<TRow>["onBeforeExport"];
   onAfterExport?: ExportCsvOptions<TRow>["onAfterExport"];
 }): void {
-  const rows = resolveExportRows(
-    options.scope ?? "page",
-    options.source,
-    options.context
-  );
-  const columns = resolveExportColumns(
-    options.columnScope ?? "visible",
-    options.columns,
-    options.context?.allColumns
-  );
+  const { rows, columns } = resolveExport(options);
 
   let filename = options.filename ?? "export.csv";
   const decision = options.onBeforeExport?.({ rows, columns, filename });
@@ -298,20 +310,19 @@ export function makeExportCsvHandler<TRow>(
   // the browser neither assembles a file nor downloads one.
   const { request } = options;
   if (request) {
-    return () => {
-      const scope = options.scope ?? "page";
-      return request({
-        rows: resolveExportRows(scope, source, context),
-        columns: resolveExportColumns(
-          options.columns ?? "visible",
+    return () =>
+      request({
+        ...resolveExport({
+          source,
           columns,
-          context?.allColumns
-        ),
+          scope: options.scope,
+          columnScope: options.columns,
+          context,
+        }),
         filename: options.filename ?? "export.csv",
-        scope,
+        scope: options.scope ?? "page",
         query: exportQueryOf(source),
       });
-    };
   }
 
   return () =>
