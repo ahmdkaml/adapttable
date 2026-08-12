@@ -57,7 +57,7 @@ server-paginated query.
   selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — prev/next pagination, or infinite scroll (auto by device).
-- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router.
+- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router. [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
 - **States** — `Skeleton` loading, `Alert` error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** via Chakra's color mode.
 - **Customisation** — `slots`, `className`, `size`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

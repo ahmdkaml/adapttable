@@ -69,7 +69,7 @@ server-paginated `useInfiniteQuery` — nothing else changes.
   selected rows; choose the columns, or hand the whole thing to your backend.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — numbered `Pagination`, or infinite scroll (auto by device).
-- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router.
+- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router. [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
 - **States** — `Skeleton` loading, error with retry, and an empty state.
 - **RTL** via `dir`; **dark mode** via Mantine's color scheme.
 - **Customisation** — `slots`, `classNames`, custom `toolbar`, injectable `confirm`, optional entrance animation (`animate`, honours `prefers-reduced-motion`), and the full headless escape hatch via `@adapttable/core`.

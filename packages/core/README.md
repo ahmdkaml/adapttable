@@ -28,6 +28,7 @@ control via prop-getters.
   report their own totals, client sources derive them.
 - **SSR & server components** — renders with no DOM; the client boundary is
   already in the build, so it drops straight into the Next.js App Router.
+  [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
 - **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
 - **Filtering** — filter model, operators, chips and counts; bring your own predicate.
 - **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.
