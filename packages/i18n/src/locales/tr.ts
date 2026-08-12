@@ -67,6 +67,8 @@ export const tr: Required<TableLabels> = {
   expandGroup: "Grubu genişlet",
   collapseGroup: "Grubu daralt",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `${cells} hücre kopyalandı`,
+  gridRangeCopyFailed: "Kopyalama başarısız",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

@@ -41,6 +41,7 @@ import {
   isSingleCell,
   singleCellRange,
 } from "./cellRange";
+import { clipboardRangeText, writeClipboardText } from "./clipboardRange";
 import {
   type GridBounds,
   type GridCell,
@@ -95,6 +96,12 @@ export interface UseGridFocusOptions<TRow> {
    * a single cell. `null` means nothing is selected.
    */
   onRangeChange?: (range: CellRange | null) => void;
+  /**
+   * Ctrl/Cmd+X after the copy succeeded. The table never clears data itself —
+   * what "cut" removes is the host's decision, and a cut that emptied cells
+   * before the clipboard accepted them would lose them outright.
+   */
+  onCut?: (range: CellRange) => void;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -169,6 +176,7 @@ export function useGridFocus<TRow>(
     scrollToRow,
     onActivate,
     onRangeChange,
+    onCut,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -285,6 +293,32 @@ export function useGridFocus<TRow>(
       // handles both on the element focus just landed on. This only fires when a
       // host asked for its own activation, and stays out of the way otherwise so
       // the two never race for one key press.
+      // Copy and cut the selection the way a spreadsheet does. Handled before
+      // movement so the modifier never doubles as a navigation key, and only
+      // when a rectangle exists — otherwise the browser's own copy stands.
+      const modifier = event.ctrlKey === true || event.metaKey === true;
+      if (modifier && (event.key === "c" || event.key === "x")) {
+        if (!range) return;
+        event.preventDefault();
+        const text = clipboardRangeText({
+          range,
+          rows,
+          columns,
+          firstRowIndex,
+        });
+        void writeClipboardText(text).then((ok) => {
+          setAnnouncement(
+            ok
+              ? (labels?.gridRangeCopied ?? defaultRangeCopied)(
+                  cellRangeSize(range)
+                )
+              : (labels?.gridRangeCopyFailed ?? "Copy failed")
+          );
+          if (ok && event.key === "x") onCut?.(range);
+        });
+        return;
+      }
+
       if (event.key === "Enter" || event.key === "F2") {
         if (onActivate) {
           event.preventDefault();
@@ -501,6 +535,11 @@ function defaultRangeSelection({
   cells: number;
 }): string {
   return `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`;
+}
+
+/** "12 cells copied" — replaceable through `labels.gridRangeCopied`. */
+function defaultRangeCopied(cells: number): string {
+  return `${cells} cells copied`;
 }
 
 /** "row 41 of 10,000" — replaceable through `labels.gridCellPosition`. */

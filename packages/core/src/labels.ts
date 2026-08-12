@@ -66,6 +66,8 @@ export const defaultLabels: Required<TableLabels> = {
   exportDone: "Export complete",
   exportFailed: "Export failed",
   editCell: "Edit cell",
+  gridRangeCopied: (cells) => `${cells} cells copied`,
+  gridRangeCopyFailed: "Copy failed",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

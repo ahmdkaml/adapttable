@@ -80,14 +80,20 @@ const FIXTURES = [
   },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 57 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 56 },
+  //
+  // These moved together on 2026-08-12 (+~1 KB each) when cell selection became
+  // visible, columns became selectable and Ctrl/Cmd+C learned to copy the
+  // rectangle — all of it on the grid path, which every adapter bundles. The
+  // fixture that carries the actual promise is `core · simple table` above: a
+  // plain table pays 10.6 KB of a 12 KB ceiling and did not move.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 58 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 57 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 57 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 57 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 57 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 58 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 63 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 61 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 58 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 59 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

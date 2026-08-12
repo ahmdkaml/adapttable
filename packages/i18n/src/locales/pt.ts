@@ -68,6 +68,8 @@ export const pt: Required<TableLabels> = {
   expandGroup: "Expandir grupo",
   collapseGroup: "Recolher grupo",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `${cells} células copiadas`,
+  gridRangeCopyFailed: "Falha ao copiar",
   gridCellPosition: (row, total) => `linha ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Linhas ${fromRow} a ${toRow}, colunas ${fromColumn} a ${toColumn} selecionadas, ${cells} células`,

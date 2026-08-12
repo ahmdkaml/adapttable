@@ -9,6 +9,28 @@ that says where you are.
 [Virtualization](./virtualization.md) · [Columns](./columns.md) ·
 [Accessibility in the FAQ](./faq.md)
 
+## Copy and cut, the way a spreadsheet reads it
+
+**Ctrl/Cmd+C** copies the selected rectangle as tab-separated text — the format
+Excel, Google Sheets, Numbers and LibreOffice all read — so a paste lands in
+columns rather than one cell. Cells carrying a tab, a newline or a quote are
+quoted the way those applications quote them.
+
+Values resolve exactly as an export's do, `exportValue` included, so a copy and
+a downloaded file cannot disagree about what a cell contains.
+
+**Ctrl/Cmd+X** copies the same text and then calls `onCut(range)`. The table
+clears nothing itself: what "cut" removes is your decision, and a cut that
+emptied cells before the clipboard accepted them would lose the data outright.
+
+Either way the outcome is announced — `labels.gridRangeCopied` on success,
+`labels.gridRangeCopyFailed` when the browser refuses (the Clipboard API needs a
+secure context and can be denied). With nothing selected, both keys are left to
+the browser.
+
+Headless: `clipboardRangeText` builds the text and `writeClipboardText` writes
+it, reporting whether it landed rather than throwing.
+
 ## Selecting with the pointer, and whole columns
 
 Drag across cells to select a block: the press anchors it, crossing a cell

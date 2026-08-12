@@ -66,6 +66,8 @@ export const ko: Required<TableLabels> = {
   expandGroup: "그룹 펼치기",
   collapseGroup: "그룹 접기",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `${cells}개 셀 복사됨`,
+  gridRangeCopyFailed: "복사 실패",
   gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}행부터 ${toRow}행, ${fromColumn}열부터 ${toColumn}열 선택, ${cells}개 셀`,

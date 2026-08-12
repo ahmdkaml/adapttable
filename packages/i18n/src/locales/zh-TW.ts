@@ -66,6 +66,8 @@ export const zhTW: Required<TableLabels> = {
   expandGroup: "展開群組",
   collapseGroup: "摺疊群組",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `已複製 ${cells} 個儲存格`,
+  gridRangeCopyFailed: "複製失敗",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已選取第 ${fromRow} 至 ${toRow} 列、第 ${fromColumn} 至 ${toColumn} 欄，共 ${cells} 個儲存格`,

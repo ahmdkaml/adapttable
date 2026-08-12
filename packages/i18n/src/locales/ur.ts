@@ -68,6 +68,8 @@ export const ur: Required<TableLabels> = {
   expandGroup: "گروپ پھیلائیں",
   collapseGroup: "گروپ سکیڑیں",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `${cells} خانے کاپی ہو گئے`,
+  gridRangeCopyFailed: "کاپی ناکام",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,

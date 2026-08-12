@@ -69,6 +69,8 @@ export const ru: Required<TableLabels> = {
   expandGroup: "Развернуть группу",
   collapseGroup: "Свернуть группу",
   groupCount: (count) => `(${count})`,
+  gridRangeCopied: (cells) => `Скопировано ячеек: ${cells}`,
+  gridRangeCopyFailed: "Не удалось скопировать",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

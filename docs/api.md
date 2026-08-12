@@ -347,7 +347,10 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
 and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
 `GridBounds`, with `GridFocusMove` naming the intents and
-`gridFocusMoveForKey(press, dir)` mapping a `GridKeyPress` to one (applying the
+`clipboardRangeText` turns the selected rectangle into the tab-separated text a
+spreadsheet reads (`ClipboardRangeOptions` in), and `writeClipboardText` puts it
+on the clipboard, answering whether it landed.
+`gridFocusMoveForKey(press, dir)` maps a `GridKeyPress` to one (applying the
 RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
 `gridCellAttr(cell)` are the `data-grid-cell` attribute focus uses to find a
 cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the

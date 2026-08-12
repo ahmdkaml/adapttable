@@ -7,7 +7,7 @@
  * virtualization, that a cell the virtualizer has not mounted is still
  * reachable, and that omitting the prop leaves the markup untouched.
  */
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
@@ -48,6 +48,7 @@ function Grid(props: {
   renderLimit?: number;
   /** Headers that sort, so a plain click is already claimed. */
   sortableHeaders?: boolean;
+  onCut?: (range: { anchor: GridCell; head: GridCell }) => void;
 }) {
   const rows = props.rows ?? makeRows(3);
   const focus = useGridFocus<Row>({
@@ -60,6 +61,7 @@ function Grid(props: {
     dir: props.dir,
     scrollToRow: props.scrollToRow,
     onActivate: props.onActivate,
+    onCut: props.onCut,
   });
   const first = props.firstRowIndex ?? 0;
   const rendered =
@@ -537,5 +539,75 @@ describe("useGridFocus — the column-select gesture never fights sorting", () =
       ctrlKey: true,
     });
     expect(document.querySelector("data")?.getAttribute("value")).toBe("4");
+  });
+});
+
+describe("useGridFocus — copy and cut the selection", () => {
+  const clipboard = () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    return writeText;
+  };
+
+  it("copies the rectangle as TSV on Ctrl+C", async () => {
+    const writeText = clipboard();
+    render(<Grid rows={makeRows(3)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(cellAt(0, 1)!, { key: "c", ctrlKey: true });
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0]?.[0]).toBe("Name 0\tTeam 0");
+    vi.unstubAllGlobals();
+  });
+
+  it("says how much was copied", async () => {
+    clipboard();
+    render(<Grid rows={makeRows(3)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(cellAt(1, 0)!, { key: "c", metaKey: true });
+    await waitFor(() =>
+      expect(document.querySelector("output")?.textContent).toBe(
+        "2 cells copied"
+      )
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("says so when the clipboard refuses, rather than failing silently", async () => {
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("no")) },
+    });
+    render(<Grid rows={makeRows(3)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(cellAt(0, 1)!, { key: "c", ctrlKey: true });
+    await waitFor(() =>
+      expect(document.querySelector("output")?.textContent).toBe("Copy failed")
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("tells the host what was cut, only after the copy landed", async () => {
+    clipboard();
+    const onCut = vi.fn();
+    render(<Grid rows={makeRows(3)} onCut={onCut} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(cellAt(0, 1)!, { key: "x", ctrlKey: true });
+    await waitFor(() => expect(onCut).toHaveBeenCalledOnce());
+    // The table clears nothing itself: a cut that emptied cells before the
+    // clipboard accepted them would lose the data outright.
+    expect(onCut.mock.calls[0]?.[0]).toMatchObject({ anchor: { row: 0 } });
+    vi.unstubAllGlobals();
+  });
+
+  it("leaves the browser's own copy alone when nothing is selected", () => {
+    const writeText = clipboard();
+    render(<Grid rows={makeRows(3)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "c", ctrlKey: true });
+    expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
