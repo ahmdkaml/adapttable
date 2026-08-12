@@ -38,6 +38,7 @@ const TITLES = {
   "data-tiers.md": "React table data — client, server, one API",
   "customization.md": "Customize AdaptTable — classNames & slots",
   "url-state.md": "React table URL state — filters, sort, page",
+  "ssr-rsc.md": "React table SSR & server components — Next.js",
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew",
   "api.md": "AdaptTable API reference — every export",
   "faq.md": "FAQ — the free MUI X & ag-Grid alternative",
@@ -93,6 +94,8 @@ const DESCRIPTIONS = {
     "Restyle parts with classNames, replace them with slots, tune the chrome with props, or theme through your kit provider. All opt-in.",
   "url-state.md":
     "Want shareable React table links? Search, filters, sort and page sync to the URL (History, Next.js, react-router). Refresh-safe and SSR-friendly.",
+  "ssr-rsc.md":
+    "Render AdaptTable on the server: where the client boundary goes in the Next.js App Router, DOM-free SSR, hydration without mismatches, and Suspense.",
   "i18n-rtl.md":
     "React table with first-class RTL/Arabic: locale presets, per-locale column paths, logical pinning and mirrored layout — not just translated strings.",
   "api.md":
