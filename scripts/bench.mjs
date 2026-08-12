@@ -8,10 +8,14 @@
  * is the fixture on purpose — the benchmark measures the real adapter over the
  * real engine, never a synthetic harness that could drift from what ships.
  *
- *   pnpm --filter @adapttable/showcase dev        # in one terminal
  *   node scripts/bench.mjs                        # all scenarios
  *   node scripts/bench.mjs --smoke                # the CI subset
  *   node scripts/bench.mjs --port 4321 --json     # machine-readable
+ *
+ * It serves the showcase itself when nothing is already on the port, and stops
+ * that server again when it finishes. Running `pnpm --filter
+ * @adapttable/showcase dev` by hand first is still the faster loop while
+ * iterating — an already-running server is used as-is and left alone.
  *
  * Playwright is already a dev dependency here (the e2e suite uses it), so
  * this needs no extra install — only its browser, once:
@@ -23,8 +27,14 @@
  * with the browser build and the machine, so compare arms within one run
  * rather than across days.
  */
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { chromium } from "@playwright/test";
 
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
@@ -154,6 +164,58 @@ function verdict(result, expect = {}) {
   return failures;
 }
 
+/**
+ * The demo has to be served for any of this to mean anything.
+ *
+ * Running the dev server by hand still works and is the faster loop while
+ * iterating. But `pnpm bench` on its own used to die on a raw
+ * ERR_CONNECTION_REFUSED stack trace, which says nothing about what to do —
+ * so when the port is silent this starts the server, waits for it, and shuts
+ * it down again at the end.
+ */
+async function serving() {
+  try {
+    const res = await fetch(`http://localhost:${PORT}/`, {
+      signal: AbortSignal.timeout(1500),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Start the showcase dev server and resolve once it answers. */
+async function startShowcase() {
+  // The showcase's own vite binary, by absolute path — nothing resolves
+  // through PATH, so what runs is the version this repo installed.
+  const vite = join(ROOT, "apps/showcase/node_modules/.bin/vite");
+  if (!existsSync(vite)) {
+    throw new Error(
+      `no vite binary at ${vite} — run \`pnpm install\` first, or start the ` +
+        `showcase by hand and re-run`
+    );
+  }
+  const child = spawn(vite, ["--port", String(PORT), "--strictPort"], {
+    cwd: join(ROOT, "apps/showcase"),
+    stdio: "ignore",
+  });
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    if (await serving()) return child;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  child.kill();
+  throw new Error(
+    `the showcase did not come up on port ${PORT} within 60s — start it by ` +
+      `hand with \`pnpm --filter @adapttable/showcase dev\` and re-run`
+  );
+}
+
+const started = (await serving()) ? null : await startShowcase();
+if (started && !JSON_OUT) {
+  console.log(`started the showcase on :${PORT} for this run\n`);
+}
+
 const chosen = SMOKE ? SCENARIOS.filter((s) => s.smoke) : SCENARIOS;
 const results = [];
 let failed = 0;
@@ -194,5 +256,9 @@ if (JSON_OUT) {
     `\n${chosen.length - failed}/${chosen.length} scenarios within expectations`
   );
 }
+
+// Leave the machine as we found it: a server this script started is this
+// script's to stop, and one that was already running is not.
+started?.kill();
 
 process.exit(failed ? 1 : 0);
