@@ -27,6 +27,12 @@ export interface DataTableClassNames {
   /** The leading funnel icon inside the Filters button. */
   filtersIcon?: string;
   filtersCount?: string;
+  /**
+   * A cell inside the selected range (`cellNavigation` + a range). There is no
+   * kit colour to borrow here, so the fill is yours; `data-cell-selected` is on
+   * the element too, for CSS that prefers attribute selectors.
+   */
+  cellSelected?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

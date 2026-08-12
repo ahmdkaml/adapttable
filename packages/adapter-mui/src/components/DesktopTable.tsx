@@ -14,6 +14,7 @@ import {
 } from "@adapttable/core";
 import {
   headerGroupRow,
+  isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
   rowClickProps,
@@ -209,6 +210,11 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "row",
   "index",
   "selected",
+  // Cell focus and the selected range, or a row never learns that one of its
+  // cells became focused or selected — the live region announced the move
+  // while every row kept its previous output. One reference compare: the
+  // state object is memoized as a whole.
+  "gridFocus",
   "expanded",
   "columns",
   "sx",
@@ -300,25 +306,40 @@ function DesktopRowImpl<TRow>({
             />
           </TableCell>
         )}
-        {columns.map((column, colIndex) => (
-          <TableCell
-            key={column.key}
-            sx={sx.cells[column.key]}
-            {...gridFocus?.getCellPropsAt(index, colIndex)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rowIndex={index}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={editLabel}
-            />
-          </TableCell>
-        ))}
+        {columns.map((column, colIndex) => {
+          const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
+          return (
+            <TableCell
+              key={column.key}
+              sx={sx.cells[column.key]}
+              // MUI's own selected fill, from the palette so it follows the
+              // theme and dark mode. Applied as a style rather than merged into
+              // `sx`, whose per-column value is a union that cannot be combined
+              // without a cast — and a cast here would buy nothing.
+              style={
+                isSelectedCell(focusProps)
+                  ? {
+                      backgroundColor:
+                        "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
+                    }
+                  : undefined
+              }
+              {...focusProps}
+            >
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rowIndex={index}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={editLabel}
+              />
+            </TableCell>
+          );
+        })}
         {showActions && (
           <TableCell sx={sx.actions}>
             <RowActionButtons

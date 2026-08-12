@@ -15,6 +15,7 @@ import {
 } from "@adapttable/core";
 import {
   headerGroupRow,
+  isSelectedCell,
   resolveDisabledReason,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
@@ -298,7 +299,24 @@ function groupedOnCell<TRow>(
     gridFocus && rowIndex !== undefined && !isAdaptTableGroupRow(record)
       ? gridFocus.getCellPropsAt(rowIndex, columnIndex)
       : {};
-  const base = { ...cellStyle(align), ...focus };
+  // antd's own active-item fill for a selected cell, from its design token so
+  // it follows the theme and dark algorithm rather than a hard-coded colour.
+  const selectedStyle = isSelectedCell(focus)
+    ? { background: "var(--ant-control-item-bg-active, rgba(0, 0, 0, 0.06))" }
+    : undefined;
+  const styled = cellStyle(align);
+  const base = {
+    ...styled,
+    ...focus,
+    ...(selectedStyle
+      ? {
+          style: {
+            ...(styled.style as Record<string, unknown> | undefined),
+            ...selectedStyle,
+          },
+        }
+      : {}),
+  };
   if (!grouping || !isAdaptTableGroupRow(record)) return base;
   if (groupSpansAll(record)) {
     if (columnIndex === 0) {

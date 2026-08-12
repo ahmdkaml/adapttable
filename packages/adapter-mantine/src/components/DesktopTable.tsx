@@ -15,6 +15,7 @@ import {
 } from "@adapttable/core";
 import {
   headerGroupRow,
+  isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
   resolveDisabledReason,
@@ -293,6 +294,11 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   "row",
   "index",
   "id",
+  // Cell focus and the selected range, or a row never learns that one of its
+  // cells became focused or selected — the live region announced the move
+  // while every row kept its previous output. One reference compare: the
+  // state object is memoized as a whole.
+  "gridFocus",
   "columns",
   "getCellProps",
   "selected",
@@ -435,32 +441,45 @@ function DesktopRowBase<TRow>({
             />
           </Table.Td>
         )}
-        {columns.map((column, colIndex) => (
-          <Table.Td
-            key={column.key}
-            {...getCellProps(column)}
-            {...gridFocus?.getCellPropsAt(index, colIndex)}
-            style={pinStyleFor(column.key)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={editLabel}
-              display={
-                column.Cell ? (
-                  <column.Cell row={row} rowIndex={index} />
-                ) : (
-                  column.accessor?.(row)
-                )
+        {columns.map((column, colIndex) => {
+          const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
+          return (
+            <Table.Td
+              key={column.key}
+              {...getCellProps(column)}
+              {...focusProps}
+              style={
+                // A selected cell takes Mantine's own primary-light fill, applied
+                // OVER the pinned background so a pinned column still shows the
+                // selection rather than hiding it behind its opaque surface.
+                isSelectedCell(focusProps)
+                  ? {
+                      ...pinStyleFor(column.key),
+                      background: "var(--mantine-primary-color-light)",
+                    }
+                  : pinStyleFor(column.key)
               }
-            />
-          </Table.Td>
-        ))}
+            >
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={editLabel}
+                display={
+                  column.Cell ? (
+                    <column.Cell row={row} rowIndex={index} />
+                  ) : (
+                    column.accessor?.(row)
+                  )
+                }
+              />
+            </Table.Td>
+          );
+        })}
         {showActions && (
           <Table.Td ta="end" style={actionsCellStyle}>
             <RowActions

@@ -141,6 +141,16 @@ const camel = (part: string): string =>
  */
 const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
 
+/**
+ * Class hooks that modify an existing part rather than naming one of their own.
+ * `cellSelected` is a second class on `data-adapttable-part="cell"` when the cell
+ * sits inside the selected range, so direction 2 below — "every key rendered as
+ * a part" — can never see it, and inventing a `cell-selected` part to satisfy
+ * the test would put two parts on one element. It is verified in
+ * `selectedCells.test.tsx`, which drives a real Shift+arrow selection.
+ */
+const STATE_CLASSES = new Set(["cellSelected"]);
+
 function collectParts(): Map<string, Element[]> {
   const map = new Map<string, Element[]>();
   for (const el of document.body.querySelectorAll("[data-adapttable-part]")) {
@@ -413,6 +423,7 @@ const KEYS = [
   "tbody",
   "row",
   "cell",
+  "cellSelected",
   "expandHeader",
   "expandCell",
   "expandButton",
@@ -511,7 +522,9 @@ describe("classNames \u2194 part parity (unstyled)", () => {
     // Direction 2 — key → part: every declared key showed up as a rendered
     // part in at least one state.
     const renderedKeys = new Set([...seen.keys()].map(camel));
-    const neverRendered = KEYS.filter((key) => !renderedKeys.has(key));
+    const neverRendered = KEYS.filter(
+      (key) => !renderedKeys.has(key) && !STATE_CLASSES.has(key)
+    );
     expect(neverRendered).toEqual([]);
   });
 });

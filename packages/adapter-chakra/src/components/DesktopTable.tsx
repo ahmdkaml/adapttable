@@ -17,6 +17,7 @@ import {
 } from "@adapttable/core";
 import {
   headerGroupRow,
+  isSelectedCell,
   logicalAlign,
   type PinLeads,
   pinnedColumnWidth,
@@ -247,32 +248,48 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
-        {columns.map((column, colIndex) => (
-          <Table.Cell
-            key={column.key}
-            {...gridFocus?.getCellPropsAt(index, colIndex)}
-            textAlign={logicalAlign(column.align)}
-            style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={labels.editCell}
-              display={
-                column.Cell ? (
-                  <column.Cell row={row} rowIndex={index} />
-                ) : (
-                  column.accessor?.(row)
-                )
+        {columns.map((column, colIndex) => {
+          const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
+          return (
+            <Table.Cell
+              key={column.key}
+              {...focusProps}
+              textAlign={logicalAlign(column.align)}
+              style={
+                // This kit's own subtle fill for a selected cell, applied over the
+                // pinned background so a pinned column still shows the selection.
+                isSelectedCell(focusProps)
+                  ? {
+                      ...pinCellStyle(
+                        live.pinOffset?.(column.key),
+                        1,
+                        live.leads
+                      ),
+                      background: "var(--chakra-colors-bg-subtle)",
+                    }
+                  : pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)
               }
-            />
-          </Table.Cell>
-        ))}
+            >
+              <EditableDataCell
+                editing={editing}
+                row={row}
+                column={column}
+                rowId={id}
+                rows={rows}
+                columns={columns}
+                rowKey={getRowId}
+                editLabel={labels.editCell}
+                display={
+                  column.Cell ? (
+                    <column.Cell row={row} rowIndex={index} />
+                  ) : (
+                    column.accessor?.(row)
+                  )
+                }
+              />
+            </Table.Cell>
+          );
+        })}
         {showActions && (
           <Table.Cell
             textAlign="end"

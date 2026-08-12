@@ -9,6 +9,18 @@ that says where you are.
 [Virtualization](./virtualization.md) · [Columns](./columns.md) ·
 [Accessibility in the FAQ](./faq.md)
 
+## The selection is visible, in each kit's own colour
+
+Hold Shift while arrowing (or shift-click) and the extended range is filled with
+the kit's own selected-cell token — Mantine's primary-light, MUI's
+`action.selected`, Ant Design's active-item background, Radix's accent, and so
+on. Nothing to configure.
+
+Every selected cell also carries `data-cell-selected`, so CSS can target the
+range directly. In `@adapttable/unstyled` there is no kit colour to borrow, so
+the fill is yours through the `cellSelected` class hook (the shadcn preset sets
+`bg-accent`).
+
 ## Example
 
 ```tsx

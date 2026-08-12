@@ -1918,6 +1918,18 @@ that says where you are.
 [Virtualization](./virtualization.md) · [Columns](./columns.md) ·
 [Accessibility in the FAQ](./faq.md)
 
+## The selection is visible, in each kit's own colour
+
+Hold Shift while arrowing (or shift-click) and the extended range is filled with
+the kit's own selected-cell token — Mantine's primary-light, MUI's
+`action.selected`, Ant Design's active-item background, Radix's accent, and so
+on. Nothing to configure.
+
+Every selected cell also carries `data-cell-selected`, so CSS can target the
+range directly. In `@adapttable/unstyled` there is no kit colour to borrow, so
+the fill is yours through the `cellSelected` class hook (the shadcn preset sets
+`bg-accent`).
+
 ## Example
 
 ```tsx
@@ -3087,6 +3099,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersCount`                                    | The active-filter count badge.                                                         |
 | `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
 | `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
+| `cellSelected`                                    | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -4244,7 +4257,9 @@ search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell` and `headerGroupRow`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
-`resolveMobileLabel` (a card field's caption), `shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
+`resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
+cell's props put it inside the selected range, for a kit applying its own fill),
+`shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
 `DEFAULT_CARD_SIZE_PX`, `useKeyedVirtualization` / `KeyedVirtualization`
 (virtualize an opaque keyed list, e.g. grouped entries),
 `useMountStagger` (the `animate` stagger), and the inline icon set

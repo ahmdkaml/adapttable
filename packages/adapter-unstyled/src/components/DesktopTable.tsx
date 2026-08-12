@@ -16,6 +16,7 @@ import {
 } from "@adapttable/core";
 import {
   headerGroupRow,
+  isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
   type PinOffset,
@@ -173,7 +174,13 @@ function desktopRowPropsEqual<TRow>(
     prev.rowClass === next.rowClass &&
     prev.clickable === next.clickable &&
     prev.hasPrefetch === next.hasPrefetch &&
-    prev.editingSignature === next.editingSignature
+    prev.editingSignature === next.editingSignature &&
+    // Cell focus and the selected range, or a row never learns that one of its
+    // cells became focused or selected: the live region announced the move (it
+    // renders outside this memo) while every row kept its previous output, so
+    // `data-cell-selected` never reached the DOM. The state object is memoized
+    // as a whole, so this is one reference compare.
+    prev.gridFocus === next.gridFocus
   );
 }
 
@@ -265,14 +272,24 @@ function DesktopRowBase<TRow>(
         )}
         {columns.map((column, colIndex) => {
           const pinStyle = bodyPinStyle(column.key);
+          const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
           return (
             <td
               key={column.key}
               {...table.getCellProps(column, pinStyle && { style: pinStyle })}
-              {...gridFocus?.getCellPropsAt(index, colIndex)}
+              {...focusProps}
               data-adapttable-part="cell"
               data-pinned={pinOffset?.(column.key)?.side}
-              className={classNames.cell}
+              className={
+                // The selection has no kit colour to borrow here, so it is a
+                // second class the host styles — `data-cell-selected` is on the
+                // element either way for CSS that prefers attribute selectors.
+                isSelectedCell(focusProps)
+                  ? [classNames.cell, classNames.cellSelected]
+                      .filter(Boolean)
+                      .join(" ")
+                  : classNames.cell
+              }
             >
               <EditableDataCell
                 activateClassName={classNames.editCellActivate}

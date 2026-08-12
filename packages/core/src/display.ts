@@ -76,6 +76,13 @@ export const SHARED_DESKTOP_ROW_KEYS = [
   "showActions",
   "hasRowClick",
   "columnSpan",
+  // Cell focus and the selected range live here too, or a row never learns that
+  // one of its cells became focused or selected. Omitting it is why the range
+  // was invisible after 2.2.0: the live region announced the new cell (it sits
+  // outside the memo) while every row kept its previous render, so no cell ever
+  // showed `data-cell-selected`. The state object is memoized as a whole, so
+  // this compares one reference and changes only when focus or the range does.
+  "gridFocus",
 ] as const;
 
 /** Shallow-equal two objects across a fixed key set (the row-memo guard). */
@@ -109,6 +116,28 @@ export function sortArrow(sort: unknown): string {
   if (sort === "ascending") return " ↑";
   if (sort === "descending") return " ↓";
   return " ↕";
+}
+
+/**
+ * Is this cell inside the selected range?
+ *
+ * Core marks a selected cell with `data-cell-selected` through
+ * `gridFocus.getCellProps`, but it cannot colour it: a selection has to look
+ * like the kit it lives in, and a hard-coded blue would be wrong in seven of
+ * eight. So core answers the question and each adapter answers it with its own
+ * theme token — the same division as {@link pinnedDataCellStyle}, which takes
+ * the kit's surface colour as an argument.
+ *
+ * Without this the range was invisible: the attribute reached the DOM in 2.2.0
+ * and no adapter styled it, so a user extending a selection saw nothing move.
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell should render as selected.
+ */
+export function isSelectedCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-selected"] !== undefined;
 }
 
 /**

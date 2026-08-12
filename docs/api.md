@@ -522,7 +522,9 @@ search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell` and `headerGroupRow`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
-`resolveMobileLabel` (a card field's caption), `shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
+`resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
+cell's props put it inside the selected range, for a kit applying its own fill),
+`shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
 `DEFAULT_CARD_SIZE_PX`, `useKeyedVirtualization` / `KeyedVirtualization`
 (virtualize an opaque keyed list, e.g. grouped entries),
 `useMountStagger` (the `animate` stagger), and the inline icon set

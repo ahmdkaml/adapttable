@@ -59,6 +59,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersCount`                                    | The active-filter count badge.                                                         |
 | `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
 | `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
+| `cellSelected`                                    | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |

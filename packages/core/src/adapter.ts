@@ -47,6 +47,7 @@ export {
 } from "./columns/useColumnLayout";
 export { DEFAULT_CARD_SIZE_PX } from "./constants";
 export {
+  isSelectedCell,
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
