@@ -98,6 +98,14 @@ export interface ToolbarChromeProps<TRow> {
    * Built by {@link makeExportCsvHandler} from the `exportCsv` prop.
    */
   onExportCsv?: () => void;
+  /**
+   * True while a host-handled export (`exportCsv.request`) is still running.
+   *
+   * Adapters disable the Export button and mark it busy, so the same export
+   * cannot be started twice and the user can see that something is happening.
+   * Always false for the built-in browser export, which is synchronous.
+   */
+  exportBusy?: boolean;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }

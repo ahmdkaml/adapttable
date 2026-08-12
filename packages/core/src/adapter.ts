@@ -58,6 +58,10 @@ export {
   rowEditingSignature,
 } from "./editing/editableCellController";
 export {
+  type ExportHandlerState,
+  useExportHandler,
+} from "./export/useExportHandler";
+export {
   type MountStaggerOptions,
   useMountStagger,
 } from "./hooks/useMountStagger";

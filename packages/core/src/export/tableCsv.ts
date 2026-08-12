@@ -1,6 +1,6 @@
 import { ACTIONS_COLUMN_KEY } from "../columns/columnMenuModel";
 import type { TableSource } from "../source/TableSource";
-import type { ColumnDef } from "../types";
+import type { ColumnDef, ExtraFilters, SortDirection } from "../types";
 import { devWarn } from "../utils/devWarn";
 import { defaultCsvValue, downloadCsv, rowsToCsv } from "./csv";
 
@@ -66,6 +66,44 @@ export interface ExportCsvOptions<TRow = unknown> {
    * written. For analytics, a toast, or keeping a copy.
    */
   onAfterExport?: (info: ExportInfo<TRow> & { csv: string }) => void;
+  /**
+   * Hand the export to your backend instead of building the file in the
+   * browser.
+   *
+   * Past a certain size the browser is the wrong place to do this: the rows
+   * are not all loaded, holding them would cost more memory than the tab has,
+   * and the work blocks the main thread. With this set, the button sends the
+   * user's current view — filters, search, sort, the chosen scope — to your
+   * handler, and building the file (or queueing a job and emailing a link)
+   * happens where the data already lives.
+   *
+   * The table builds no file and downloads nothing when this is present.
+   * Return a promise and the button stays busy until it settles, so a second
+   * click cannot start the same export twice.
+   */
+  request?: (info: ExportRequest<TRow>) => void | Promise<void>;
+}
+
+/** The view an export was asked for, as a server needs to hear it. */
+export interface ExportRequest<TRow> extends ExportInfo<TRow> {
+  /**
+   * The query behind the current view: search, filters, sort and paging,
+   * exactly as {@link TableQuery} carries them to a server tier.
+   */
+  query: ExportQuery;
+  /** Which rows were asked for. `rows` holds what the browser has of them. */
+  scope: ExportRowScope;
+}
+
+/** The view-defining half of a table query, for an export request. */
+export interface ExportQuery {
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: string | undefined;
+  sortDir: SortDirection | undefined;
+  filters: ExtraFilters;
+  groupBy: string | undefined;
 }
 
 /** What an export lifecycle hook is told about the file being written. */
@@ -252,9 +290,30 @@ export function makeExportCsvHandler<TRow>(
   source: TableSource<TRow>,
   columns: readonly ColumnDef<TRow>[],
   context?: ExportContext<TRow>
-): (() => void) | undefined {
+): (() => void | Promise<void>) | undefined {
   const options = resolveExportCsv(exportCsv);
   if (!options) return undefined;
+
+  // Handing the export to a backend replaces building it here entirely —
+  // the browser neither assembles a file nor downloads one.
+  const { request } = options;
+  if (request) {
+    return () => {
+      const scope = options.scope ?? "page";
+      return request({
+        rows: resolveExportRows(scope, source, context),
+        columns: resolveExportColumns(
+          options.columns ?? "visible",
+          columns,
+          context?.allColumns
+        ),
+        filename: options.filename ?? "export.csv",
+        scope,
+        query: exportQueryOf(source),
+      });
+    };
+  }
+
   return () =>
     downloadTableCsv({
       source,
@@ -267,4 +326,17 @@ export function makeExportCsvHandler<TRow>(
       onBeforeExport: options.onBeforeExport,
       onAfterExport: options.onAfterExport,
     });
+}
+
+/** The view-defining half of the source's state, for a server export. */
+function exportQueryOf<TRow>(source: TableSource<TRow>): ExportQuery {
+  return {
+    page: source.page,
+    limit: source.limit,
+    search: source.search,
+    sortBy: source.sortBy,
+    sortDir: source.sortDir,
+    filters: source.extra,
+    groupBy: source.groupBy,
+  };
 }

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { makeExportCsvHandler } from "./export/tableCsv";
+import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
@@ -66,6 +67,7 @@ export type DataTableShellProps<TRow> = Omit<
  * @returns The resolved source, chrome, filter node, refs, and the
  *   `tableProps` / `toolbarProps` bundles (sans kit-specific extras).
  */
+
 export function useDataTableShell<TRow>(
   props: DataTableShellProps<TRow>,
   renderAutoForm: (
@@ -121,6 +123,22 @@ export function useDataTableShell<TRow>(
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
+  // Layout-visible columns WITHOUT device filtering: the same button must
+  // produce the same file on phone and desktop. The selection and full column
+  // set come along so `scope: "selected"` and `columns: "all"` work without
+  // the host wiring anything up.
+  const exportHandler = useExportHandler(
+    makeExportCsvHandler(
+      props.exportCsv,
+      chrome.source,
+      chrome.columnLayout.visibleColumns,
+      {
+        selectedIds: table.selection?.selectedIds,
+        getRowId,
+        allColumns: chrome.allColumns,
+      }
+    )
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
   const {
@@ -193,20 +211,7 @@ export function useDataTableShell<TRow>(
     onClearFilters: chrome.clearFilters,
     // Hidden in the grouped full-set view, where page size has no effect.
     showRowsPerPage: canLoadMore && !chrome.grouping,
-    // Layout-visible columns WITHOUT device filtering: the same button
-    // must produce the same file on phone and desktop.
-    onExportCsv: makeExportCsvHandler(
-      props.exportCsv,
-      chrome.source,
-      chrome.columnLayout.visibleColumns,
-      // The selection and the full column set, so `scope: "selected"` and
-      // `columns: "all"` work without the host wiring anything up.
-      {
-        selectedIds: table.selection?.selectedIds,
-        getRowId,
-        allColumns: chrome.allColumns,
-      }
-    ),
+    ...exportHandler,
     dir: props.dir,
   };
 

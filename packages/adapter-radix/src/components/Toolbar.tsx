@@ -54,6 +54,7 @@ export function Toolbar<TRow>({
   savedViewsMenu,
   columnMenu,
   onExportCsv,
+  exportBusy,
   showRowsPerPage,
   accentColor,
   dir,
@@ -153,6 +154,8 @@ export function Toolbar<TRow>({
             variant="outline"
             color={accentColor}
             onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
           >
             {labels.exportCsv}
           </Button>

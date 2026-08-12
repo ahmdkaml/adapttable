@@ -1,5 +1,9 @@
 import { makeExportCsvHandler, type TableSource } from "@adapttable/core";
-import { useDataTableShell, useMountStagger } from "@adapttable/core/adapter";
+import {
+  useDataTableShell,
+  useExportHandler,
+  useMountStagger,
+} from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
@@ -202,10 +206,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop.
-  const onExportCsv = makeExportCsvHandler(
-    props.exportCsv,
-    viewSource,
-    chrome.columnLayout.visibleColumns
+  const { onExportCsv, exportBusy } = useExportHandler(
+    makeExportCsvHandler(
+      props.exportCsv,
+      viewSource,
+      chrome.columnLayout.visibleColumns,
+      // The selection and full column set, so `scope: "selected"` and
+      // `columns: "all"` behave here exactly as they do in every other kit.
+      {
+        selectedIds: chrome.table.selection?.selectedIds,
+        getRowId: chrome.getRowId,
+        allColumns: chrome.allColumns,
+      }
+    )
   );
 
   return (
@@ -329,6 +342,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             className={classNames.exportCsvButton}
             style={{ flexShrink: 0, whiteSpace: "nowrap" }}
             onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
           >
             {labels.exportCsv}
           </button>

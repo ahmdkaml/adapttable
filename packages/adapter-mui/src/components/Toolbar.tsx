@@ -88,6 +88,7 @@ export function Toolbar<TRow>({
   savedViewsMenu,
   columnMenu,
   onExportCsv,
+  exportBusy,
 }: Readonly<MuiToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
@@ -188,7 +189,13 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button variant="outlined" size="small" onClick={onExportCsv}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
+          >
             {labels.exportCsv}
           </Button>
         )}

@@ -29,6 +29,7 @@ import {
 import {
   DEFAULT_CARD_SIZE_PX,
   rowClickProps,
+  useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
   useResolvedAdapter,
@@ -969,6 +970,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const hasRowActions = Boolean(rowActions?.length);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
+  // Layout-visible columns WITHOUT device filtering: the same button must
+  // produce the same file on phone and desktop. The selection and full column
+  // set come along so `scope: "selected"` and `columns: "all"` behave here
+  // exactly as they do in every other kit.
+  const exportHandler = useExportHandler(
+    makeExportCsvHandler(
+      props.exportCsv,
+      source,
+      c.columnLayout.visibleColumns,
+      {
+        selectedIds: selection?.selectedIds,
+        getRowId,
+        allColumns: c.allColumns,
+      }
+    )
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
@@ -1185,13 +1202,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 hasRowActions={Boolean(props.rowActions?.length)}
               />
             }
-            onExportCsv={makeExportCsvHandler(
-              props.exportCsv,
-              source,
-              // Layout-visible columns WITHOUT device filtering: the same
-              // button must produce the same file on phone and desktop.
-              c.columnLayout.visibleColumns
-            )}
+            {...exportHandler}
             savedViewsMenu={
               <SavedViewsSlot
                 options={props.savedViews}

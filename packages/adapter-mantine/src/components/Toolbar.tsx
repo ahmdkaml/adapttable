@@ -41,6 +41,7 @@ export function Toolbar<TRow>({
   savedViewsMenu,
   columnMenu,
   onExportCsv,
+  exportBusy,
   showRowsPerPage,
   className,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -125,7 +126,13 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button variant="default" size="sm" onClick={onExportCsv}>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
+          >
             {labels.exportCsv}
           </Button>
         )}

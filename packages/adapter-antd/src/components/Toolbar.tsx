@@ -40,6 +40,7 @@ export function Toolbar<TRow>({
   dir,
   columnMenu,
   onExportCsv,
+  exportBusy,
   savedViewsMenu,
   showRowsPerPage,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -116,7 +117,13 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button onClick={onExportCsv}>{labels.exportCsv}</Button>
+          <Button
+            onClick={onExportCsv}
+            disabled={exportBusy}
+            aria-busy={exportBusy}
+          >
+            {labels.exportCsv}
+          </Button>
         )}
         {showRowsPerPage && (
           <Select

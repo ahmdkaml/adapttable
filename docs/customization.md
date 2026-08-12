@@ -321,6 +321,41 @@ or nothing to continue. `onAfterExport` receives the text that was written.
 Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 `downloadTableCsv` from `@adapttable/core`.
 
+### Exporting from your backend
+
+Past a certain size the browser is the wrong place to build the file: the rows
+are not all loaded, holding them would cost more memory than the tab has, and
+the work blocks the main thread. `request` hands the export to the server
+instead:
+
+```tsx
+exportCsv={{
+  scope: "all",
+  request: async ({ query, scope, columns, filename }) => {
+    const res = await fetch("/api/people/export", {
+      method: "POST",
+      body: JSON.stringify({ ...query, scope, columns: columns.map((c) => c.key) }),
+    });
+    window.location.href = (await res.json()).url; // or queue a job and email it
+  },
+}}
+```
+
+`query` carries the user's current view — search, filters, sort, paging — in
+the same shape a [server tier](./data-tiers.md) receives, so an endpoint that
+already answers table queries needs no new vocabulary. `rows` holds whatever
+the browser has of the scope, which is useful for a count or a confirmation
+even when the server does the real work.
+
+With `request` set the table builds no file and downloads nothing, so
+`onBeforeExport` and `onAfterExport` do not run — there is no file for them to
+bracket.
+
+Return a promise and the Export button disables itself with `aria-busy` until
+it settles, in every adapter, so an impatient second click cannot start the
+same export twice. A rejected promise releases the button rather than leaving
+it stuck.
+
 ### The CSV pipeline (headless)
 
 The export path is exported end to end: `exportableColumns` filters the
@@ -330,6 +365,11 @@ text (`RowsToCsvOptions` controls delimiter, BOM and `escapeFormulas`),
 `resolveExportCsv` normalizes the `exportCsv` prop (`ExportCsvOptions`), and
 `makeExportCsvHandler` wires all of it to a download handler the toolbar button
 calls. Custom toolbars can reuse any stage.
+
+Custom adapters bind the button with `useExportHandler` from
+`@adapttable/core/adapter`: it takes the handler above and returns
+`{ onExportCsv, exportBusy }` (typed `ExportHandlerState`), which is how every
+built-in adapter gets identical single-flight behaviour.
 
 Four supporting types: `ExportRowScope` and `ExportColumnScope` name the two
 scope unions, `ExportInfo` is what the lifecycle hooks receive, and
