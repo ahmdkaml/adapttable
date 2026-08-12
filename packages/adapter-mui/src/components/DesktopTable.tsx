@@ -620,7 +620,7 @@ export function DesktopTable<TRow>({
                 />
               </TableCell>
             )}
-            {columns.map((column) => {
+            {columns.map((column, headerIndex) => {
               const headerCellProps = table.getHeaderCellProps(column);
               // Core reports aria-sort="none" for sortable-but-inactive
               // columns so screen readers announce them as sortable — and it
@@ -637,6 +637,9 @@ export function DesktopTable<TRow>({
               return (
                 <TableCell
                   key={column.key}
+                  {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+                    sortable: column.sortable,
+                  }) ?? {})}
                   aria-sort={ariaSort}
                   data-sort-index={sortIndex}
                   sx={headCellSx(column)}

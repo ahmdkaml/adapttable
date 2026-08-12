@@ -96,13 +96,16 @@ function HeaderCell<TRow>({
   column,
   stickyStyle,
   resizeHandle,
+  columnProps,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
   stickyStyle: CSSProperties;
   resizeHandle?: ReactNode;
+  /** Cell-navigation props for this header — column selection. */
+  columnProps?: Record<string, unknown>;
 }>) {
-  const cellProps = table.getHeaderCellProps(column);
+  const cellProps = { ...table.getHeaderCellProps(column), ...columnProps };
   const headerStyle = {
     ...cellProps.style,
     ...stickyStyle,
@@ -815,13 +818,16 @@ export function DesktopTable<TRow>({
                 />
               </Table.Th>
             )}
-            {columns.map((column) => (
+            {columns.map((column, headerIndex) => (
               <HeaderCell
                 key={column.key}
                 table={table}
                 column={column}
                 stickyStyle={headerStyleFor(column)}
                 resizeHandle={resizeHandleFor(column)}
+                columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
+                  sortable: column.sortable,
+                })}
               />
             ))}
             {showActions && (

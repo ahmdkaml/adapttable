@@ -342,7 +342,8 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,
-`getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`, `enabled`), and
+`getCellPropsAt`, `getRowPropsAt`, `getColumnHeaderProps`, `selectColumn`,
+`focusCell`, `announcement`, `enabled`), and
 `<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
 and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
 `GridBounds`, with `GridFocusMove` naming the intents and

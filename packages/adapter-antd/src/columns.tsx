@@ -491,8 +491,14 @@ export function buildColumns<TRow>({
             rowIndex,
             gridFocus
           ),
-        onHeaderCell: () =>
-          headerCellProps(
+        onHeaderCell: () => ({
+          // Column selection rides along with the sort/resize/pin props: antd
+          // merges whatever this returns onto the <th>, so this is the one
+          // place a header attribute can exist in this adapter.
+          ...(gridFocus?.getColumnHeaderProps(columnIndex, {
+            sortable: column.sortable,
+          }) ?? {}),
+          ...headerCellProps(
             column,
             effectiveSortBy,
             effectiveSortDir,
@@ -501,6 +507,7 @@ export function buildColumns<TRow>({
             pinned?.[column.key] != null,
             onToggleSortLevel
           ),
+        }),
         render: (
           _value: unknown,
           record: GroupedDataRecord<TRow>,

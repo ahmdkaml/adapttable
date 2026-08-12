@@ -705,7 +705,7 @@ export function DesktopTable<TRow>({
                 />
               </Table.ColumnHeader>
             )}
-            {columns.map((column) => {
+            {columns.map((column, headerIndex) => {
               const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
                 | "ascending"
                 | "descending"
@@ -720,6 +720,9 @@ export function DesktopTable<TRow>({
               return (
                 <Table.ColumnHeader
                   key={column.key}
+                  {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+                    sortable: column.sortable,
+                  }) ?? {})}
                   textAlign={logicalAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}

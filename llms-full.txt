@@ -1941,6 +1941,26 @@ that says where you are.
 [Virtualization](./virtualization.md) · [Columns](./columns.md) ·
 [Accessibility in the FAQ](./faq.md)
 
+## Selecting with the pointer, and whole columns
+
+Drag across cells to select a block: the press anchors it, crossing a cell
+extends it, and releasing anywhere — including outside the table — ends it.
+
+A **column header** selects its whole column. Where the header already sorts,
+sorting keeps the plain click and **Ctrl/Cmd+click** selects instead; on a header
+that does not sort, a plain click selects. Ctrl/Cmd+click also extends an
+existing selection to a second column.
+
+A column selection covers the **loaded** rows. With 500 of 100,000 rows in hand
+that is 500 cells, not 100,000 — the table never claims rows the browser has
+never seen, because a copy or an export would then invent them.
+
+Whenever the rectangle changes, the live region says what it now covers —
+`"selected rows 1 to 2, columns 1 to 2, 4 cells"` — through
+`labels.gridRangeSelection`, translated in all seventeen locales. A single cell
+stays silent: it announces itself already, and repeating "1 cell" on every arrow
+press turns navigation into noise.
+
 ## The selection is visible, in each kit's own colour
 
 Hold Shift while arrowing (or shift-click) and the extended range is filled with
@@ -4100,7 +4120,8 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,
-`getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`, `enabled`), and
+`getCellPropsAt`, `getRowPropsAt`, `getColumnHeaderProps`, `selectColumn`,
+`focusCell`, `announcement`, `enabled`), and
 `<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
 and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
 `GridBounds`, with `GridFocusMove` naming the intents and

@@ -622,7 +622,7 @@ export function DesktopTable<TRow>({
               />
             </th>
           )}
-          {columns.map((column) => {
+          {columns.map((column, headerIndex) => {
             // Route the local sticky/pin/width style THROUGH the prop-getter
             // so it merges with core's alignment + declared width instead of
             // replacing them (a bare `style=` after the spread would).
@@ -648,6 +648,9 @@ export function DesktopTable<TRow>({
             return (
               <th
                 key={column.key}
+                {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+                  sortable: column.sortable,
+                }) ?? {})}
                 {...headerProps}
                 data-adapttable-part="header-cell"
                 data-sorted={effectiveDir}
