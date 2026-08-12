@@ -18,6 +18,8 @@
  * `sortValue` if it has one, else the key's data path — so a formatted cell
  * (`accessor: r => money.format(r.budget)`) still aggregates on its number.
  */
+import type { ReactNode } from "react";
+
 import type { ColumnDef, SortableValue } from "../types";
 import { getPath } from "../utils/path";
 
@@ -30,10 +32,13 @@ export type AggregateName = "sum" | "avg" | "count" | "min" | "max";
  *
  * Return whatever the cell should show — a number, a formatted string, a
  * node. Return `undefined` for "no cell here".
+ *
+ * The return type is `ReactNode` so the built mapper is directly assignable
+ * to `summaryRow` and `groupAggregates`, which is the whole point of it.
  */
 export type Aggregator<TValue = SortableValue> = (
   values: readonly TValue[]
-) => unknown;
+) => ReactNode;
 
 /** What to compute per column: a built-in name, or your own function. */
 export type AggregateSpec = Partial<Record<string, AggregateName | Aggregator>>;
@@ -49,7 +54,7 @@ export interface AggregateOptions<TRow> {
    * Format a computed value for display. Receives the raw result and the
    * column key: `format: (v, key) => key === "budget" ? money.format(v) : v`.
    */
-  format?: (value: unknown, key: string) => unknown;
+  format?: (value: ReactNode, key: string) => ReactNode;
 }
 
 /** Numbers only — everything else is not summable, and silently skipped. */
@@ -118,13 +123,13 @@ function valueOf<TRow>(
 export function aggregate<TRow>(
   spec: AggregateSpec,
   options: AggregateOptions<TRow> = {}
-): (rows: readonly TRow[]) => Partial<Record<string, unknown>> {
+): (rows: readonly TRow[]) => Partial<Record<string, ReactNode>> {
   const { columns, format } = options;
   const byKey = new Map(columns?.map((c) => [c.key, c]));
   const entries = Object.entries(spec);
 
   return (rows) => {
-    const out: Partial<Record<string, unknown>> = {};
+    const out: Partial<Record<string, ReactNode>> = {};
     for (const [key, fn] of entries) {
       if (!fn) continue;
       const aggregator = typeof fn === "string" ? BUILT_INS[fn] : fn;

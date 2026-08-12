@@ -9,7 +9,11 @@ import type {
   RowAction,
   UseSavedViewsOptions,
 } from "@adapttable/core";
-import { buildFilterRuntime, resolveFilterDefs } from "@adapttable/core";
+import {
+  aggregate,
+  buildFilterRuntime,
+  resolveFilterDefs,
+} from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -763,16 +767,21 @@ export const matchesDemoFilters = DEMO_FILTER_RUNTIME.filterFn;
 
 /**
  * Per-group budget subtotal for the opt-in grouping demo (frontend path
- * only). Shares the `summaryRow` mapper shape — one function type for
- * footer totals and group headers.
+ * only), built with the `aggregate` helper rather than a hand-rolled reduce.
+ * Shares the `summaryRow` mapper shape — one function type for footer totals
+ * and group headers.
  */
-export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> = (rows) => ({
-  budget: (
-    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-      {formatMoney(
-        rows.reduce((sum, row) => sum + budget(row), 0),
-        "en"
-      )}
-    </span>
-  ),
-});
+export const DEMO_GROUP_AGGREGATES: GroupAggregatesFn<Person> =
+  aggregate<Person>(
+    { budget: "sum" },
+    {
+      // The same columns the table sorts by, so the subtotal reads the number
+      // behind the formatted cell rather than parsing "$1,240".
+      columns: BASE_COLUMNS,
+      format: (value) => (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+          {formatMoney(typeof value === "number" ? value : 0, "en")}
+        </span>
+      ),
+    }
+  );
