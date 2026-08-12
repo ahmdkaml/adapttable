@@ -1,5 +1,65 @@
 # @adapttable/i18n
 
+## 2.1.0
+
+### Minor Changes
+
+- 33e249b: Keyboard cell navigation. Set `cellNavigation` and the table becomes one tab
+  stop whose interior is reachable by arrow keys, Home/End, Ctrl+Home/End and
+  PageUp/PageDown, with `role="grid"` and a live region announcing the column, the
+  cell's text and the absolute position.
+
+  The ARIA indices are dataset-absolute, so a virtualized table rendering 24 rows
+  of 100,000 reports row 40,002 rather than row 3 of 24 — and Ctrl+End reaches a
+  cell the virtualizer has not mounted by scrolling it into existence first.
+
+  Edges stop rather than wrap, the arrows swap under RTL, and Enter/F2 open the
+  editor through the existing editing gate. The position phrase is localizable via
+  `labels.gridCellPosition` and ships translated in all seventeen locales.
+
+  Off means absent: with the prop omitted there is no role change, no `tabIndex`,
+  no key handler and no live region — asserted as byte-identical markup in every
+  adapter.
+
+- fc6e9cf: The export button names the format it produces. With the spreadsheet writer it
+  reads "Export XLSX", and a custom writer calling itself `tsv` gets "Export TSV" —
+  from a new `labels.exportFile(format)`, translated in all seventeen locales.
+
+  CSV is untouched: it still reads `labels.exportCsv`, so its existing
+  translations, and any wording a host overrode, stand exactly as they were.
+
+- d3568ea: A host-handled export now shows each kit's own loading affordance instead of a
+  greyed-out button — Mantine's, MUI's, Chakra's and Ant Design's loading buttons,
+  Radix's and Base UI's spinners, and a styleable `exportSpinner` element in the
+  unstyled and shadcn presets.
+
+  The outcome is announced. A download is silent and a failed one is silent in the
+  same way, so a polite live region beside the button reads `labels.exportDone` or
+  `labels.exportFailed`, translated in all seventeen locales. `useExportHandler`
+  also returns `exportStatus` — `"idle"`, `"busy"`, `"done"` or `"failed"` — for a
+  toolbar that wants to show more.
+
+### Patch Changes
+
+- Updated dependencies [6cdc2dd]
+- Updated dependencies [5a6f7d9]
+- Updated dependencies [007d9d9]
+- Updated dependencies [453ba05]
+- Updated dependencies [4b0e572]
+- Updated dependencies [33e249b]
+- Updated dependencies [58933b0]
+- Updated dependencies [4c5de79]
+- Updated dependencies [b0681ed]
+- Updated dependencies [265a58f]
+- Updated dependencies [fc6e9cf]
+- Updated dependencies [2e3a6ce]
+- Updated dependencies [d3568ea]
+- Updated dependencies [108b6c4]
+- Updated dependencies [21c680f]
+- Updated dependencies [8507bba]
+- Updated dependencies [65a8949]
+  - @adapttable/core@2.2.0
+
 ## 2.0.0
 
 ### Major Changes

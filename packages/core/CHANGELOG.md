@@ -1,5 +1,177 @@
 # @adapttable/core
 
+## 2.2.0
+
+### Minor Changes
+
+- 6cdc2dd: A per-group subtotal now renders in its own column's cell, so it sits under the
+  column it totals and inherits that column's alignment. It used to share one
+  spanning cell with the group label and settle at the row's end — on a table wide
+  enough to scroll, past the right edge of what the user could see.
+
+  Mobile cards show the same numbers captioned by their column, since a card has
+  no columns to align to.
+
+  `groupRowLayout` and `groupAggregateEntries` place them, for a custom group
+  header that should match.
+
+- 5a6f7d9: Cell range selection. Hold Shift with any movement key, or shift-click a cell,
+  and the selection extends from where it began; a plain move collapses it back to
+  one cell.
+
+  A range is two corners — the anchor where it started and the head where it
+  reaches — not a list of cells. That is why Shift+Down twice then Shift+Up
+  shrinks the range rather than starting a new one upward, and why a 50,000-cell
+  selection costs two numbers.
+
+  Selected cells carry `data-cell-selected` for styling, and `aria-selected` only
+  once a real rectangle exists — marking every focused cell as selected would tell
+  a screen reader the table is in selection mode when the user has merely arrowed
+  around. `onRangeChange` reports every change and `gridFocus.range` holds the
+  current rectangle.
+
+- 007d9d9: Export scopes, per-column export values, and export lifecycle hooks.
+
+  `exportCsv` now chooses its rows with `scope` (`"page"`, `"all"`, or
+  `"selected"` — ticked rows are found across pages, not just the visible one)
+  and its fields with `columns` (`"visible"`, `"all"`, or an explicit key list in
+  file order).
+
+  A column can give the file a different value than the screen through
+  `exportValue`, so a cell reading `"$1,240.00"` exports the number a spreadsheet
+  can actually sum.
+
+  `onBeforeExport` runs once the rows and columns are resolved and before
+  anything is written — return `false` to cancel or `{ filename }` to name the
+  file from the data — and `onAfterExport` receives the text that was written.
+
+  Defaults are unchanged: without any of these, the button produces exactly the
+  file it did before.
+
+- 453ba05: Cursor pagination on the server tier. Pass `nextCursor` from your API response
+  and declare `supports: { cursor: true }`, and the table pages by token instead
+  of offset — so rows inserted or deleted while someone reads never duplicate or
+  skip an entry. Paging back replays the tokens already issued; a new sort,
+  filter or search returns to the first page. Sources that do not declare the
+  capability send no `cursor` and are unchanged.
+- 4b0e572: `resolveMobileLabel` from `@adapttable/core/adapter` resolves a mobile card
+  field's caption — an explicit `mobileLabel`, then a text `header`, then the
+  column's key, with `mobileLabel: ""` meaning no caption at all. Every adapter's
+  card layout now reads it from there, so a custom card can match them exactly.
+- 33e249b: Keyboard cell navigation. Set `cellNavigation` and the table becomes one tab
+  stop whose interior is reachable by arrow keys, Home/End, Ctrl+Home/End and
+  PageUp/PageDown, with `role="grid"` and a live region announcing the column, the
+  cell's text and the absolute position.
+
+  The ARIA indices are dataset-absolute, so a virtualized table rendering 24 rows
+  of 100,000 reports row 40,002 rather than row 3 of 24 — and Ctrl+End reaches a
+  cell the virtualizer has not mounted by scrolling it into existence first.
+
+  Edges stop rather than wrap, the arrows swap under RTL, and Enter/F2 open the
+  editor through the existing editing gate. The position phrase is localizable via
+  `labels.gridCellPosition` and ships translated in all seventeen locales.
+
+  Off means absent: with the prop omitted there is no role change, no `tabIndex`,
+  no key handler and no live region — asserted as byte-identical markup in every
+  adapter.
+
+- 58933b0: Row patches: `applyRowPatches` with `insertRow`, `updateRow`, `upsertRow` and
+  `removeRow` apply changes to the rows you already hold, so a save or a pushed
+  update does not need a refetch. Untouched rows keep their object identity, and
+  a patch that changes nothing returns the very same array — so per-row memos
+  stay valid, selection and expansion survive, and a no-op does not re-render.
+- 4c5de79: Computed columns. `computed({ key, deps, value, format })` declares a derived
+  column once and wires display, sorting, filtering and export from it — so a
+  total rendered as `"$1,240.00"` still sorts and exports as `1240` instead of
+  sorting as text. The value is cached per row and recomputed only when a
+  declared dependency changes.
+- b0681ed: Query cache keys: `tableQueryKey` and `tableQueryBaseKey` turn the emitted
+  `TableQuery` into stable keys for TanStack Query or SWR. The base key covers
+  which rows a view shows, the full key adds page and cursor, and the full key
+  starts with the base one — so invalidating the base key refetches every page of
+  a view and nothing else. Neither library becomes a dependency.
+- 265a58f: The server query gains optional fields for grouping, aggregates, nested filter
+  trees, facet counts and cursor pagination, and a `supports` option for
+  declaring which of them an endpoint can answer.
+
+  Declare nothing and nothing changes — the query arrives with exactly the fields
+  it always has. Declare a capability and its field starts arriving; ask for one
+  the source has not declared and the field is omitted rather than sent and
+  ignored, with a development warning naming what would unlock it.
+
+- fc6e9cf: The export button names the format it produces. With the spreadsheet writer it
+  reads "Export XLSX", and a custom writer calling itself `tsv` gets "Export TSV" —
+  from a new `labels.exportFile(format)`, translated in all seventeen locales.
+
+  CSV is untouched: it still reads `labels.exportCsv`, so its existing
+  translations, and any wording a host overrode, stand exactly as they were.
+
+- 2e3a6ce: `ColumnDef.formatValue` and `columnText(column, row)` give a cell as plain text
+  for the contexts that cannot render JSX — screen-reader announcements,
+  `aria-label`, tooltips, the clipboard. `accessor` returns a `ReactNode`, so a
+  badge or an avatar cell had no readable form at all.
+
+  Text is always available: it resolves `formatValue` → `exportValue` →
+  `sortValue` → `accessor` when that yields a primitive → the key's data path. A
+  column that renders its own cell never falls back to the data path, because a
+  column with `accessor: () => null` shows an empty cell and announcing its
+  underlying value would name something the user cannot see.
+
+- d3568ea: A host-handled export now shows each kit's own loading affordance instead of a
+  greyed-out button — Mantine's, MUI's, Chakra's and Ant Design's loading buttons,
+  Radix's and Base UI's spinners, and a styleable `exportSpinner` element in the
+  unstyled and shadcn presets.
+
+  The outcome is announced. A download is silent and a failed one is silent in the
+  same way, so a polite live region beside the button reads `labels.exportDone` or
+  `labels.exportFailed`, translated in all seventeen locales. `useExportHandler`
+  also returns `exportStatus` — `"idle"`, `"busy"`, `"done"` or `"failed"` — for a
+  toolbar that wants to show more.
+
+- 108b6c4: Per-column `parseValue` turns an edited draft into the value committed to
+  `onCellEdit`, so a currency column can display `"$1,240.00"`, seed its editor
+  with `"1240"`, and commit the number `1240`. It receives the draft as typed
+  plus the row, and replaces the editor's built-in parsing rather than layering
+  on it. Columns without one behave exactly as before.
+- 21c680f: Spreadsheet export and a range scope. `import { xlsxWriter } from
+"@adapttable/core/xlsx"` and pass it as `exportCsv={{ writer: xlsxWriter() }}`
+  to download a real `.xlsx`: numbers and booleans stay typed so a spreadsheet can
+  sum them, text that looks numeric stays text so a postal code of `01730` is not
+  `1730`, and no dependency is added. It is a separate entry point, so a table
+  exporting CSV ships none of it.
+
+  `scope: "range"` exports the highlighted cell rectangle from `cellNavigation`.
+  The rectangle names its own columns, and with nothing selected the current page
+  is exported instead.
+
+  Every scope works with every format: rows and columns are resolved once, and a
+  writer turns the result into bytes. `csvWriter`, `buildExportTable`,
+  `matrixToCsv` and `downloadExportFile` are the pieces, `ExportWriter` the type
+  to implement for a format of your own, and a backend `request` now receives
+  `format` alongside the query.
+
+- 8507bba: Server-side export. `exportCsv.request` hands the user's current view — search,
+  filters, sort, paging and the chosen scope — to your backend instead of
+  building the file in the browser, which stops being viable once the rows no
+  longer fit in a tab. Return a promise and the Export button disables itself
+  with `aria-busy` until it settles, so the same export cannot be started twice.
+
+  Also fixes `scope: "selected"` and `columns: "all"` in the Ant Design and
+  unstyled adapters, which built their export handler without the table's
+  selection and so silently fell back to the current page.
+
+- 65a8949: `aggregate()` builds a `summaryRow` or `groupAggregates` mapper from a
+  declaration instead of a hand-written function: `aggregate({ budget: "sum" })`.
+  Built in are `sum`, `avg`, `count`, `min` and `max`, and any function of your
+  own is accepted for the rest.
+
+  Values resolve through a column's `sortValue` when columns are passed, so a
+  formatted cell still aggregates on its underlying number. Missing values are
+  skipped rather than counted as zero, and while a sum of nothing is `0`, an
+  average of nothing is `undefined`.
+
+  The mapper props are unchanged and still take a plain function.
+
 ## 2.1.2
 
 ### Patch Changes
