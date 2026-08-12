@@ -53,7 +53,7 @@ function mount() {
 describe("server-tier request guarantees", () => {
   it("emits once for a query, however many times the same value is set", async () => {
     const t = mount();
-    await waitFor(() => expect(t.queries.length).toBe(1));
+    await waitFor(() => expect(t.queries).toHaveLength(1));
 
     act(() => {
       t.source.setSearch("widgets");
@@ -63,28 +63,28 @@ describe("server-tier request guarantees", () => {
     await waitFor(() => expect(t.queries.at(-1)?.search).toBe("widgets"));
 
     // One request for one query — the repeats collapse into it.
-    expect(t.queries.length).toBe(2);
+    expect(t.queries).toHaveLength(2);
   });
 
   it("does not re-request when a render changes nothing", async () => {
     const t = mount();
-    await waitFor(() => expect(t.queries.length).toBe(1));
+    await waitFor(() => expect(t.queries).toHaveLength(1));
 
     // Setting the value it already holds is not a change.
     act(() => t.source.setSearch(""));
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(t.queries.length).toBe(1);
+    expect(t.queries).toHaveLength(1);
   });
 
   it("aborts the superseded request when the query really changes", async () => {
     const t = mount();
-    await waitFor(() => expect(t.queries.length).toBe(1));
+    await waitFor(() => expect(t.queries).toHaveLength(1));
 
     act(() => t.source.setSearch("a"));
-    await waitFor(() => expect(t.queries.length).toBe(2));
+    await waitFor(() => expect(t.queries).toHaveLength(2));
     act(() => t.source.setSearch("ab"));
-    await waitFor(() => expect(t.queries.length).toBe(3));
+    await waitFor(() => expect(t.queries).toHaveLength(3));
 
     // Each superseded query's signal fired, so a forwarded fetch dies at the
     // source and out-of-order responses cannot land.
@@ -93,14 +93,14 @@ describe("server-tier request guarantees", () => {
 
   it("re-requests a value the user returns to, because its request was aborted", async () => {
     const t = mount();
-    await waitFor(() => expect(t.queries.length).toBe(1));
+    await waitFor(() => expect(t.queries).toHaveLength(1));
 
     act(() => t.source.setSearch("a"));
-    await waitFor(() => expect(t.queries.length).toBe(2));
+    await waitFor(() => expect(t.queries).toHaveLength(2));
     act(() => t.source.setSearch("ab"));
-    await waitFor(() => expect(t.queries.length).toBe(3));
+    await waitFor(() => expect(t.queries).toHaveLength(3));
     act(() => t.source.setSearch("a"));
-    await waitFor(() => expect(t.queries.length).toBe(4));
+    await waitFor(() => expect(t.queries).toHaveLength(4));
 
     // Collapsing this one would leave the table with no request in flight and
     // no rows to show: the first "a" was aborted the moment "ab" superseded it.
@@ -109,7 +109,7 @@ describe("server-tier request guarantees", () => {
 
   it("refetches on demand even though the query is unchanged", async () => {
     const t = mount();
-    await waitFor(() => expect(t.queries.length).toBe(1));
+    await waitFor(() => expect(t.queries).toHaveLength(1));
 
     const { refetch } = t.source;
     if (!refetch) throw new Error("the server tier should expose refetch");
@@ -117,7 +117,7 @@ describe("server-tier request guarantees", () => {
 
     // The one deliberate exception: `refetch` asks for fresh data, so it is
     // never treated as a duplicate.
-    await waitFor(() => expect(t.queries.length).toBe(2));
+    await waitFor(() => expect(t.queries).toHaveLength(2));
     expect(t.queries[1]?.search).toBe("");
   });
 });

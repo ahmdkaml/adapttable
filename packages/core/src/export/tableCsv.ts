@@ -271,8 +271,8 @@ export function downloadTableCsv<TRow>(options: {
   columnScope?: ExportColumnScope;
   escapeFormulas?: boolean;
   context?: ExportContext<TRow>;
-  onBeforeExport?: ExportCsvOptions<TRow>["onBeforeExport"];
-  onAfterExport?: ExportCsvOptions<TRow>["onAfterExport"];
+  onBeforeExport?: NonNullable<ExportCsvOptions<TRow>["onBeforeExport"]>;
+  onAfterExport?: NonNullable<ExportCsvOptions<TRow>["onAfterExport"]>;
 }): void {
   const { rows, columns } = resolveExport(options);
 

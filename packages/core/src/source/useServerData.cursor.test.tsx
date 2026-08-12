@@ -129,7 +129,7 @@ describe("cursor pagination", () => {
     act(() => t.source.setPage(7));
 
     expect(t.source.page).toBe(1);
-    expect(t.queries.length).toBe(before);
+    expect(t.queries).toHaveLength(before);
   });
 
   it("throws the trail away when the sort changes", async () => {
