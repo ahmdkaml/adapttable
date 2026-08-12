@@ -49,10 +49,10 @@ const JSON_OUT = args.includes("--json");
  * `smoke` marks the fast subset CI runs on every pull request; the rest are
  * the full sweep worth running before a release or when perf work lands.
  *
- * Scenarios that need features which do not exist yet — server-backed
- * millions, tree data, realtime patches — are absent on purpose rather than
- * stubbed: a benchmark that measures nothing is worse than a missing one. Add
- * them in the same change that adds the feature.
+ * A scenario for a feature the library does not have is absent rather than
+ * stubbed — a benchmark that measures nothing is worse than a missing one, so
+ * each arrives with the feature it measures. Tree data is the one still
+ * outstanding, because hierarchical rows do not exist yet.
  */
 const SCENARIOS = [
   {
@@ -109,10 +109,35 @@ const SCENARIOS = [
     smoke: false,
     expect: { maxDomRows: 60 },
   },
+  {
+    // The server tier over a set no browser can hold: rows are answered a page
+    // at a time, so what this measures is the table's cost at a 1,000,000-row
+    // total rather than the cost of building 1,000,000 objects.
+    name: "server tier · 1M rows",
+    query: "tier=server&rows=1000000",
+    smoke: true,
+    expect: { maxDomRows: 60 },
+  },
+  {
+    name: "editing · 20k rows",
+    query: "rows=20000&edit=1",
+    smoke: false,
+    expect: { maxDomRows: 60 },
+  },
+  {
+    // Realtime patches through the patch API, the way a socket feed would
+    // arrive. `awaitPatches` holds the sample open until the burst lands, so
+    // the reported time includes every re-render it caused.
+    name: "realtime patches · 20k rows, 200 updates",
+    query: "rows=20000&patch=200",
+    smoke: false,
+    awaitPatches: 200,
+    expect: { maxDomRows: 60 },
+  },
 ];
 
 /** Mount one scenario and measure it once the rendered row count settles. */
-async function sample(query) {
+async function sample(query, awaitPatches = 0) {
   const browser = await chromium.launch();
   const page = await browser
     .newContext({ viewport: { width: 1280, height: 900 } })
@@ -126,6 +151,22 @@ async function sample(query) {
     timeout: 90000,
   });
   const interactiveMs = Date.now() - started;
+
+  // A patch scenario is not finished when the first row paints: hold until the
+  // burst the demo was asked for has actually been applied, so the sample
+  // covers every re-render it caused rather than the mount alone.
+  if (awaitPatches > 0) {
+    await page.waitForFunction(
+      (n) =>
+        Number(
+          document
+            .querySelector("[data-bench-patches]")
+            ?.getAttribute("data-bench-patches")
+        ) >= n,
+      awaitPatches,
+      { timeout: 90000 }
+    );
+  }
 
   // Settle: the virtualizer measures rows after paint, so the count moves for
   // a few frames. Four identical reads in a row is the table holding still.
@@ -261,9 +302,9 @@ let failed = 0;
  * it, and since the DOM counts are identical between the two, the only thing
  * this picks between is the heap figure — the lower of which is the real one.
  */
-async function measure(query) {
-  const first = await sample(query);
-  const second = await sample(query);
+async function measure(query, awaitPatches = 0) {
+  const first = await sample(query, awaitPatches);
+  const second = await sample(query, awaitPatches);
   const heapMB =
     first.heapMB === null || second.heapMB === null
       ? (first.heapMB ?? second.heapMB)
@@ -272,7 +313,7 @@ async function measure(query) {
 }
 
 for (const scenario of chosen) {
-  const result = await measure(scenario.query);
+  const result = await measure(scenario.query, scenario.awaitPatches ?? 0);
   const failures = verdict(result, scenario.expect);
   if (failures.length) failed++;
   results.push({ ...scenario, ...result, failures });
