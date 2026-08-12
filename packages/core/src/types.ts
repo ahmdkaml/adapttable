@@ -107,6 +107,19 @@ export interface ColumnDef<TRow> {
    */
   editValue?: (row: TRow) => string;
   /**
+   * Turn the edited text back into the value to commit.
+   *
+   * A column can show one thing, seed the editor with another, and commit a
+   * third: `accessor` renders `"$1,240.00"`, {@link ColumnDef.editValue} seeds
+   * the editor with `"1240"`, and this parses what the user typed back into a
+   * number. Without it, a `number` editor commits `number | null` and every
+   * other editor commits the raw string.
+   *
+   * Receives the draft exactly as typed, plus the row being edited. Return
+   * whatever `onCellEdit` should receive — a number, a `Date`, a parsed unit.
+   */
+  parseValue?: (draft: string, row: TRow) => unknown;
+  /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.
    */

@@ -1750,7 +1750,38 @@ export function People() {
 | `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
 | `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
 | `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `parseValue` | `(draft: string, row: TRow) => unknown`                | —        | Turns the edited text into the value committed to `onCellEdit`.            |
 | `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+
+### Display, draft, and committed value
+
+Three moments in a cell's life, and a formatted column needs a different value
+at each:
+
+| Moment    | Field        | For a currency column |
+| --------- | ------------ | --------------------- |
+| Displayed | `accessor`   | `"$1,240.00"`         |
+| Edited    | `editValue`  | `"1240"`              |
+| Committed | `parseValue` | `1240`                |
+
+```tsx
+{
+  key: "budget",
+  editable: true,
+  editor: "number",
+  accessor: (row) => money.format(row.budget),
+  editValue: (row) => String(row.budget),
+  parseValue: (draft) => Number(draft.replace(/[^0-9.-]/g, "")),
+}
+```
+
+`parseValue` receives the draft exactly as typed plus the row, and replaces the
+editor's own parsing rather than running after it — so a column that says how
+to read its drafts is in full control. Return anything `onCellEdit` should
+receive, including a value no built-in editor produces, such as a `Date`.
+
+Without it nothing changes: a `number` editor commits `number | null` and every
+other editor commits the raw string.
 
 ## Headless editing
 
