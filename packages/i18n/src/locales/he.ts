@@ -69,4 +69,6 @@ export const he: Required<TableLabels> = {
   collapseGroup: "כווץ קבוצה",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `נבחרו שורות ${fromRow} עד ${toRow}, עמודות ${fromColumn} עד ${toColumn}, ${cells} תאים`,
 };

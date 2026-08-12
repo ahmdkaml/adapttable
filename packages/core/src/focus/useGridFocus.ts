@@ -34,6 +34,8 @@ import { useEventCallback } from "../hooks/useEventCallback";
 import type { ColumnDef, Direction, TableLabels } from "../types";
 import {
   type CellRange,
+  cellRangeBounds,
+  cellRangeSize,
   extendCellRange,
   isInCellRange,
   isSingleCell,
@@ -130,6 +132,19 @@ export interface GridFocusState {
   range: CellRange | null;
   /** Select a rectangle programmatically — what a Select-all would call. */
   selectRange: (range: CellRange | null) => void;
+  /**
+   * Props for a column header that selects its whole column on click, with
+   * Ctrl/Cmd+click extending the current selection instead of replacing it.
+   */
+  getColumnHeaderProps: (
+    col: number,
+    options?: { sortable?: boolean }
+  ) => Record<string, unknown>;
+  /**
+   * Select a whole column by index — the loaded rows of it, since a column of
+   * 100,000 rows cannot be selected while 500 are in hand.
+   */
+  selectColumn: (col: number, extend?: boolean) => void;
   /** Move focus programmatically — the fill handle and clipboard will need it. */
   focusCell: (cell: GridCell) => void;
 }
@@ -163,6 +178,9 @@ export function useGridFocus<TRow>(
   const pending = useRef<GridCell | null>(null);
   const container = useRef<HTMLElement | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  // A drag in progress. Held in a ref rather than state because it changes on
+  // every pointer move and must not re-render the grid to be read.
+  const dragging = useRef(false);
 
   // Movement is clamped to the LOADED window, not the dataset.
   //
@@ -207,8 +225,22 @@ export function useGridFocus<TRow>(
     (next: CellRange | null) => {
       setRange(next);
       onRangeChange?.(next);
+      // Say what was selected, not just where focus is. A single cell says
+      // nothing: its own announcement already names it, and repeating "1 cell"
+      // on every arrow press turns navigation into noise.
+      if (!next || isSingleCell(next)) return;
+      const b = cellRangeBounds(next);
+      setAnnouncement(
+        (labels?.gridRangeSelection ?? defaultRangeSelection)({
+          fromRow: b.fromRow + 1,
+          toRow: b.toRow + 1,
+          fromColumn: b.fromCol + 1,
+          toColumn: b.toCol + 1,
+          cells: cellRangeSize(next),
+        })
+      );
     },
-    [onRangeChange]
+    [onRangeChange, labels]
   );
 
   const focusCell = useCallback(
@@ -272,6 +304,10 @@ export function useGridFocus<TRow>(
       event.preventDefault();
       if (sameGridCell(next, active)) return;
 
+      // Focus first, then the selection: both write the live region, and for a
+      // Shift move the RANGE is the news while for a plain move the cell is.
+      // Whichever runs last wins, so the order encodes which one matters.
+      focusCell(next);
       if (event.shiftKey === true) {
         // Shift extends from wherever the selection began, so pressing
         // Shift+Down twice then Shift+Up shrinks the range rather than starting
@@ -282,9 +318,19 @@ export function useGridFocus<TRow>(
         // what every grid does and what stops a stale rectangle lingering.
         selectRange(singleCellRange(next));
       }
-      focusCell(next);
     }
   );
+
+  // A pointer released outside the table would otherwise leave the drag armed,
+  // so the next hover over any cell would extend a selection nobody started.
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const end = () => {
+      dragging.current = false;
+    };
+    window.addEventListener("mouseup", end);
+    return () => window.removeEventListener("mouseup", end);
+  }, [enabled]);
 
   const getGridProps = useCallback(() => {
     if (!enabled) return {};
@@ -321,8 +367,21 @@ export function useGridFocus<TRow>(
           if (event.shiftKey === true) {
             selectRange(extendCellRange(range, cell, active ?? cell));
           } else {
+            // A press with no modifier starts a drag AND collapses to this
+            // cell: dragging away extends from here, releasing without moving
+            // leaves the single-cell selection a plain click should give.
+            dragging.current = true;
             selectRange(singleCellRange(cell));
           }
+        },
+        onMouseEnter: () => {
+          // Extending on ENTER rather than on move means one update per cell
+          // crossed instead of one per pixel.
+          if (!dragging.current) return;
+          selectRange(extendCellRange(range, cell, active ?? cell));
+        },
+        onMouseUp: () => {
+          dragging.current = false;
         },
         onFocus: () => {
           // A mouse click or a screen reader can move focus without a key
@@ -332,6 +391,45 @@ export function useGridFocus<TRow>(
       };
     },
     [enabled, active, firstRowIndex, range, selectRange]
+  );
+
+  /**
+   * Select an entire column — what a header click and Ctrl/Cmd+click do.
+   *
+   * The rectangle spans the LOADED rows, the same bound movement obeys: a column
+   * of 100,000 rows cannot be selected when only 500 are in hand, and claiming
+   * otherwise would export or copy rows the browser has never seen.
+   */
+  const selectColumn = useCallback(
+    (col: number, extend = false) => {
+      const top = { row: firstRowIndex, col };
+      const bottom = { row: lastLoadedRow, col };
+      selectRange(
+        extend && range
+          ? extendCellRange(range, bottom, range.anchor)
+          : { anchor: top, head: bottom }
+      );
+      focusCell(top);
+    },
+    [firstRowIndex, lastLoadedRow, range, selectRange, focusCell]
+  );
+
+  /** Props for a column header that selects its column when clicked. */
+  const getColumnHeaderProps = useCallback(
+    (col: number, options?: { sortable?: boolean }) => {
+      if (!enabled) return {};
+      return {
+        onClick: (event: { ctrlKey?: boolean; metaKey?: boolean }) => {
+          const modified = event.ctrlKey === true || event.metaKey === true;
+          // A sortable header's plain click already sorts, and the two cannot
+          // share it without one breaking. Ctrl/Cmd+click selects anywhere; a
+          // plain click selects only where nothing else claims it.
+          if (!modified && options?.sortable === true) return;
+          selectColumn(col, modified);
+        },
+      };
+    },
+    [enabled, selectColumn]
   );
 
   const getRowProps = useCallback(
@@ -366,6 +464,8 @@ export function useGridFocus<TRow>(
       announcement: enabled ? announcement : "",
       range: enabled ? range : null,
       selectRange,
+      selectColumn,
+      getColumnHeaderProps,
       focusCell,
     }),
     [
@@ -379,9 +479,28 @@ export function useGridFocus<TRow>(
       announcement,
       range,
       selectRange,
+      selectColumn,
+      getColumnHeaderProps,
       focusCell,
     ]
   );
+}
+
+/** "selected rows 3 to 7, columns 2 to 4, 15 cells" — replaceable via labels. */
+function defaultRangeSelection({
+  fromRow,
+  toRow,
+  fromColumn,
+  toColumn,
+  cells,
+}: {
+  fromRow: number;
+  toRow: number;
+  fromColumn: number;
+  toColumn: number;
+  cells: number;
+}): string {
+  return `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`;
 }
 
 /** "row 41 of 10,000" — replaceable through `labels.gridCellPosition`. */

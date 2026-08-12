@@ -69,4 +69,6 @@ export const ar: Required<TableLabels> = {
   collapseGroup: "طي المجموعة",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,
 };

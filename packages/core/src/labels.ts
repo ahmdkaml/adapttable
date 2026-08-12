@@ -67,6 +67,8 @@ export const defaultLabels: Required<TableLabels> = {
   exportFailed: "Export failed",
   editCell: "Edit cell",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,
   expandGroup: "Expand group",
   collapseGroup: "Collapse group",
   groupCount: (count) => `(${count})`,

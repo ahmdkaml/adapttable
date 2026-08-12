@@ -68,4 +68,6 @@ export const es: Required<TableLabels> = {
   collapseGroup: "Contraer grupo",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `Filas ${fromRow} a ${toRow}, columnas ${fromColumn} a ${toColumn} seleccionadas, ${cells} celdas`,
 };

@@ -46,6 +46,8 @@ function Grid(props: {
   onActivate?: (cell: GridCell) => void;
   /** Render only the first N loaded rows — what a virtualizer does. */
   renderLimit?: number;
+  /** Headers that sort, so a plain click is already claimed. */
+  sortableHeaders?: boolean;
 }) {
   const rows = props.rows ?? makeRows(3);
   const focus = useGridFocus<Row>({
@@ -65,6 +67,20 @@ function Grid(props: {
   return (
     <>
       <table {...focus.getGridProps()}>
+        <thead>
+          <tr>
+            {COLUMNS.map((column, col) => (
+              <th
+                key={column.key}
+                {...focus.getColumnHeaderProps(col, {
+                  sortable: props.sortableHeaders,
+                })}
+              >
+                {column.key}
+              </th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {rendered.map((row, i) => (
             <tr key={row.id} {...focus.getRowProps(first + i)}>
@@ -153,7 +169,9 @@ describe("useGridFocus", () => {
         firstRowIndex={40000}
       />
     );
-    const rows = screen.getAllByRole("row");
+    // Body rows specifically: the harness renders a header row for column
+    // selection, and `getAllByRole("row")` would hand that one back first.
+    const rows = document.querySelectorAll("tbody tr");
     // Not "1" — that is the bug this exists to prevent.
     expect(rows[0]).toHaveAttribute("aria-rowindex", "40001");
     expect(cellAt(40000, 0)).toHaveAttribute("aria-colindex", "1");
@@ -395,6 +413,16 @@ describe("useGridFocus", () => {
       const rows = makeRows(3);
       return (
         <table>
+          {/* The harness renders a header row so column selection has
+              something to click; the comparison arm needs the same markup, or
+              the test measures the header rather than the focus props. */}
+          <thead>
+            <tr>
+              {COLUMNS.map((column) => (
+                <th key={column.key}>{column.key}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
@@ -417,5 +445,97 @@ describe("useGridFocus", () => {
     // tabbable and pressing a key changes nothing.
     expect(screen.queryByRole("grid")).toBeNull();
     expect(cellAt(0, 0)).toBeNull();
+  });
+});
+
+/**
+ * Range and column selection (#300) — the three halves the keyboard did not
+ * cover: dragging with the pointer, selecting whole columns, and saying out loud
+ * WHAT was selected rather than only where focus is.
+ */
+describe("useGridFocus — drag, columns and the range announcement", () => {
+  const headers = () => document.querySelectorAll<HTMLElement>("th");
+
+  it("extends the selection while the pointer drags across cells", () => {
+    render(<Grid rows={makeRows(4)} />);
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseEnter(cellAt(0, 1)!);
+    fireEvent.mouseEnter(cellAt(1, 1)!);
+    // One update per cell entered, and the rectangle is anchored where the
+    // press landed: rows 0-1 × cols 0-1.
+    expect(selectionSize()).toBe("4");
+  });
+
+  it("stops extending once the pointer is released", () => {
+    render(<Grid rows={makeRows(4)} />);
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseUp(cellAt(0, 0)!);
+    fireEvent.mouseEnter(cellAt(2, 1)!);
+    expect(selectionSize()).toBe("1");
+  });
+
+  it("ends a drag that was released outside the table", () => {
+    // Otherwise the drag stays armed and the next hover anywhere in the grid
+    // extends a selection the user never started.
+    render(<Grid rows={makeRows(4)} />);
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseUp(window);
+    fireEvent.mouseEnter(cellAt(2, 1)!);
+    expect(selectionSize()).toBe("1");
+  });
+
+  it("selects a whole column from its header", () => {
+    render(<Grid rows={makeRows(4)} />);
+    fireEvent.click(headers()[1]!);
+    expect(selectionSize()).toBe("4");
+  });
+
+  it("selects only the LOADED rows of a column", () => {
+    // The dataset says 1,000 rows; four are in hand. Claiming the rest would
+    // copy or export rows the browser has never seen.
+    render(<Grid rows={makeRows(4)} rowCount={1000} />);
+    fireEvent.click(headers()[0]!);
+    expect(selectionSize()).toBe("4");
+  });
+
+  it("extends to a second column with Ctrl+click", () => {
+    render(<Grid rows={makeRows(4)} />);
+    fireEvent.click(headers()[0]!);
+    fireEvent.click(headers()[1]!, { ctrlKey: true });
+    expect(selectionSize()).toBe("8");
+  });
+
+  it("announces the rectangle's edges and size, not just the cell", () => {
+    render(<Grid rows={makeRows(4)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(cellAt(0, 1)!, { key: "ArrowDown", shiftKey: true });
+    expect(document.querySelector("output")?.textContent).toBe(
+      "selected rows 1 to 2, columns 1 to 2, 4 cells"
+    );
+  });
+
+  it("says nothing extra for a single cell — the cell announced itself", () => {
+    render(<Grid rows={makeRows(4)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight" });
+    expect(document.querySelector("output")?.textContent).toContain("row 1 of");
+  });
+});
+
+describe("useGridFocus — the column-select gesture never fights sorting", () => {
+  it("ignores a plain click on a sortable header", () => {
+    // Sorting has always owned that click; selection must not steal it.
+    render(<Grid rows={makeRows(4)} sortableHeaders />);
+    fireEvent.click(document.querySelectorAll<HTMLElement>("th")[0]!);
+    expect(document.querySelector("data")?.textContent).toBe("none");
+  });
+
+  it("still selects a sortable column on Ctrl+click", () => {
+    render(<Grid rows={makeRows(4)} sortableHeaders />);
+    fireEvent.click(document.querySelectorAll<HTMLElement>("th")[0]!, {
+      ctrlKey: true,
+    });
+    expect(document.querySelector("data")?.getAttribute("value")).toBe("4");
   });
 });

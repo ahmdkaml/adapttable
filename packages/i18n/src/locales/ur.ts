@@ -69,4 +69,6 @@ export const ur: Required<TableLabels> = {
   collapseGroup: "گروپ سکیڑیں",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,
 };

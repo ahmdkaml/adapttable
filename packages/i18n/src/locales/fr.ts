@@ -67,4 +67,6 @@ export const fr: Required<TableLabels> = {
   collapseGroup: "Réduire le groupe",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `ligne ${row} sur ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `Lignes ${fromRow} à ${toRow}, colonnes ${fromColumn} à ${toColumn} sélectionnées, ${cells} cellules`,
 };

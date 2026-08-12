@@ -68,4 +68,6 @@ export const fa: Required<TableLabels> = {
   collapseGroup: "بستن گروه",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,
 };

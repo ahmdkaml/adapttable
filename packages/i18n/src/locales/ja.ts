@@ -67,4 +67,6 @@ export const ja: Required<TableLabels> = {
   collapseGroup: "グループを折りたたむ",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `${total} 行中 ${row} 行目`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `${fromRow}行目から${toRow}行目、${fromColumn}列目から${toColumn}列目を選択、${cells}セル`,
 };

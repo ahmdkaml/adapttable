@@ -67,4 +67,6 @@ export const zh: Required<TableLabels> = {
   collapseGroup: "折叠分组",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `已选择第 ${fromRow} 至 ${toRow} 行、第 ${fromColumn} 至 ${toColumn} 列，共 ${cells} 个单元格`,
 };

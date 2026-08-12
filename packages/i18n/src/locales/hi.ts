@@ -68,4 +68,6 @@ export const hi: Required<TableLabels> = {
   collapseGroup: "समूह संक्षिप्त करें",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `पंक्तियाँ ${fromRow} से ${toRow}, स्तंभ ${fromColumn} से ${toColumn} चयनित, ${cells} सेल`,
 };

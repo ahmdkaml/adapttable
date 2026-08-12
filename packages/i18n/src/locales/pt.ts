@@ -69,4 +69,6 @@ export const pt: Required<TableLabels> = {
   collapseGroup: "Recolher grupo",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `linha ${row} de ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `Linhas ${fromRow} a ${toRow}, colunas ${fromColumn} a ${toColumn} selecionadas, ${cells} células`,
 };

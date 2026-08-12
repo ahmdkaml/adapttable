@@ -70,4 +70,6 @@ export const ru: Required<TableLabels> = {
   collapseGroup: "Свернуть группу",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,
 };

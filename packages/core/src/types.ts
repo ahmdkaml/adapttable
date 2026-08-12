@@ -416,6 +416,19 @@ export interface TableLabels {
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
   /**
+   * The selected rectangle, for the grid's live region: given its 1-based edges
+   * and how many cells it covers, return what a screen reader should hear when
+   * the selection changes. Defaults to
+   * `"selected rows 3 to 7, columns 2 to 4, 15 cells"`.
+   */
+  gridRangeSelection?: (range: {
+    fromRow: number;
+    toRow: number;
+    fromColumn: number;
+    toColumn: number;
+    cells: number;
+  }) => string;
+  /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append
    * after the column and the cell's text. Defaults to `"row 41 of 10000"`.

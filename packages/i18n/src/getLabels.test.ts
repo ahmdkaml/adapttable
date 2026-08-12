@@ -138,6 +138,21 @@ const INTERPOLATION_CASES: Record<
     call: (fn) => (fn as (label: string) => string)("STATUS_X"),
     expects: ["STATUS_X"],
   },
+  gridRangeSelection: {
+    // Distinguishable values per edge: a translation that drops any one of them
+    // — easy to do when four numbers read alike — fails here.
+    call: (fn) =>
+      (
+        fn as (a: {
+          fromRow: number;
+          toRow: number;
+          fromColumn: number;
+          toColumn: number;
+          cells: number;
+        }) => string
+      )({ fromRow: 31, toRow: 47, fromColumn: 53, toColumn: 59, cells: 953 }),
+    expects: ["31", "47", "53", "59", "953"],
+  },
   exportFile: {
     // The file format, so every locale's button names what it downloads. Upper
     // case because that is how a format is written on a button in every one of

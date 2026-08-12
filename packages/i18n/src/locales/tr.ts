@@ -68,4 +68,6 @@ export const tr: Required<TableLabels> = {
   collapseGroup: "Grubu daralt",
   groupCount: (count) => `(${count})`,
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
+  gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
+    `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,
 };
