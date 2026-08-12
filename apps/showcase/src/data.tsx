@@ -68,6 +68,10 @@ interface Strings {
   budgetFilter: string;
   edit: string;
   remove: string;
+  /** Spanning header over the two assignment columns. */
+  groupAssignment: string;
+  /** Spanning header over the two delivery columns. */
+  groupDelivery: string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
 }
@@ -92,6 +96,8 @@ const STRINGS: Record<Locale, Strings> = {
     budgetFilter: "Budget",
     edit: "Edit",
     remove: "Delete",
+    groupAssignment: "Assignment",
+    groupDelivery: "Delivery",
     confirmTitle: "Delete person?",
     confirmMessage: (name) => `Permanently delete "${name}"?`,
   },
@@ -114,6 +120,8 @@ const STRINGS: Record<Locale, Strings> = {
     budgetFilter: "الميزانية",
     edit: "تعديل",
     remove: "حذف",
+    groupAssignment: "التعيين",
+    groupDelivery: "التسليم",
     confirmTitle: "حذف الشخص؟",
     confirmMessage: (name) => `هل تريد حذف "${name}" نهائيًا؟`,
   },
@@ -412,6 +420,7 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
+      group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
       sortable: true,
       width: 185,
@@ -430,6 +439,7 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
+      group: s.groupDelivery,
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -503,6 +513,9 @@ export function makeWideColumns(
     {
       key: "role",
       header: s.role,
+      // Adjacent columns sharing a `group` render under one spanning header.
+      // Reordering them apart splits it, so the span never lies about layout.
+      group: s.groupAssignment,
       i18n: { ar: "roleAr" },
       editable: true,
       editor: "text",
@@ -511,6 +524,7 @@ export function makeWideColumns(
     {
       key: "team",
       header: s.team,
+      group: s.groupAssignment,
       i18n: { ar: "teamAr" },
       sortable: true,
       editable: true,
@@ -554,6 +568,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
+      group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
       sortable: true,
       width: 200,
@@ -571,6 +586,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
+      group: s.groupDelivery,
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}

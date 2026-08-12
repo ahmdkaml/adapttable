@@ -29,7 +29,9 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
         on here too: Tab reaches the table once, then the arrow keys walk the
         cells and a screen reader names each one. Hold Shift while arrowing to
         highlight a block, and Export writes exactly that block as a
-        spreadsheet.
+        spreadsheet. Two pairs of columns sit under spanning headers —
+        Assignment and Delivery — and dragging one of a pair away splits its
+        group rather than letting the span lie about the layout.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
