@@ -197,3 +197,35 @@ The patch shapes are exported for code that builds them dynamically:
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/) —
 double-click an editable cell (Person, Email, or Team) in the editing
 section.
+
+## Undo and redo
+
+Set `editHistory` and edits can be taken back:
+
+```tsx
+<DataTable
+  cellNavigation
+  editHistory
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={commit}
+/>
+```
+
+**Ctrl/Cmd+Z** undoes, **Ctrl/Cmd+Shift+Z** and **Ctrl+Y** redo. Both announce
+what moved — `labels.editUndone`, `labels.editRedone`, or
+`labels.editNothingToUndo` when the history is empty.
+
+An undo does not rewrite your data, because the table never owned it. It
+**commits the previous value back through `onCellEdit`**, the same call the
+original edit made — so validation, a mutation, an optimistic update, a toast,
+whatever you wrapped around editing, all run on the way back exactly as they ran
+on the way out.
+
+**One gesture is one entry.** A paste of two hundred cells undoes in a single
+press, as does a fill; an inline edit is a gesture of one. Fifty gestures are
+kept by default — pass `{ depth: 200 }` to keep more.
+
+The keys live on the grid, so they need `cellNavigation`. For your own buttons,
+`table.editHistory` carries `undo()`, `redo()`, `canUndo`, `canRedo` and
+`clear()` — call `clear()` when you replace the data underneath, since a
+history of rows that no longer exist can only put back values nobody wants.

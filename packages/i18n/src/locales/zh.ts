@@ -77,6 +77,9 @@ export const zh: Required<TableLabels> = {
   selectionAverage: "平均值",
   selectionMin: "最小值",
   selectionMax: "最大值",
+  editUndone: (cells) => `已恢复 ${cells} 个单元格`,
+  editRedone: (cells) => `已重做 ${cells} 个单元格`,
+  editNothingToUndo: "没有可撤销的操作",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已选择第 ${fromRow} 至 ${toRow} 行、第 ${fromColumn} 至 ${toColumn} 列，共 ${cells} 个单元格`,

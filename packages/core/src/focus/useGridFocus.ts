@@ -124,6 +124,14 @@ export interface UseGridFocusOptions<TRow> {
    * {@link UseGridFocusOptions.onPaste}: the table proposes, the host writes.
    */
   onFill?: (edits: CellEdit<TRow>[]) => void;
+  /**
+   * Ctrl/Cmd+Z. Returns how many cells came back, so the grid can say — zero
+   * means the history was empty, which is worth announcing rather than
+   * swallowing.
+   */
+  onUndo?: () => number;
+  /** Ctrl/Cmd+Shift+Z and Ctrl+Y. Returns how many cells were rewritten. */
+  onRedo?: () => number;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -216,6 +224,8 @@ export function useGridFocus<TRow>(
     onCut,
     onPaste,
     onFill,
+    onUndo,
+    onRedo,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -423,17 +433,44 @@ export function useGridFocus<TRow>(
    *
    * @returns Whether the table took the key.
    */
+  /** Ctrl/Cmd+Z and its two redo spellings, announced either way. */
+  const handleHistoryKey = useEventCallback(
+    (event: { key: string; shiftKey?: boolean }): boolean => {
+      const redo =
+        (event.key === "z" && event.shiftKey === true) || event.key === "y";
+      const undo = event.key === "z" && event.shiftKey !== true;
+      if (!undo && !redo) return false;
+      const run = redo ? onRedo : onUndo;
+      if (!run) return false;
+      const cells = run();
+      const say = redo
+        ? (labels?.editRedone ?? defaultRedone)
+        : (labels?.editUndone ?? defaultUndone);
+      setAnnouncement(
+        cells === 0
+          ? (labels?.editNothingToUndo ?? "Nothing to undo")
+          : say(cells)
+      );
+      return true;
+    }
+  );
+
   const handleClipboardKey = useEventCallback(
     (
       event: {
         key: string;
         ctrlKey?: boolean;
         metaKey?: boolean;
+        shiftKey?: boolean;
         preventDefault: () => void;
       },
       from: GridCell
     ): boolean => {
       if (event.ctrlKey !== true && event.metaKey !== true) return false;
+      if (handleHistoryKey(event)) {
+        event.preventDefault();
+        return true;
+      }
       if ((event.key === "c" || event.key === "x") && range) {
         event.preventDefault();
         copySelection(range, event.key === "x");
@@ -743,6 +780,16 @@ function defaultRangeSelection({
 function isSingleRowRange(range: CellRange): boolean {
   const bounds = cellRangeBounds(range);
   return bounds.fromRow === bounds.toRow;
+}
+
+/** "12 cells restored" — replaceable through `labels.editUndone`. */
+function defaultUndone(cells: number): string {
+  return `${cells} ${cells === 1 ? "cell" : "cells"} restored`;
+}
+
+/** "12 cells redone" — replaceable through `labels.editRedone`. */
+function defaultRedone(cells: number): string {
+  return `${cells} ${cells === 1 ? "cell" : "cells"} redone`;
 }
 
 /** "12 cells copied" — replaceable through `labels.gridRangeCopied`. */

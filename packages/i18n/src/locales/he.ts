@@ -79,6 +79,9 @@ export const he: Required<TableLabels> = {
   selectionAverage: "ממוצע",
   selectionMin: "מינימום",
   selectionMax: "מקסימום",
+  editUndone: (cells) => `שוחזרו ${cells} תאים`,
+  editRedone: (cells) => `בוצעו מחדש ${cells} תאים`,
+  editNothingToUndo: "אין מה לבטל",
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `נבחרו שורות ${fromRow} עד ${toRow}, עמודות ${fromColumn} עד ${toColumn}, ${cells} תאים`,

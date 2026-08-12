@@ -78,6 +78,9 @@ export const fa: Required<TableLabels> = {
   selectionAverage: "میانگین",
   selectionMin: "کمینه",
   selectionMax: "بیشینه",
+  editUndone: (cells) => `${cells} خانه بازیابی شد`,
+  editRedone: (cells) => `${cells} خانه دوباره انجام شد`,
+  editNothingToUndo: "چیزی برای واگرد نیست",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,

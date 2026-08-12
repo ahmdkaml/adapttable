@@ -77,6 +77,9 @@ export const fr: Required<TableLabels> = {
   selectionAverage: "Moy.",
   selectionMin: "Min",
   selectionMax: "Max",
+  editUndone: (cells) => `${cells} cellules restaurées`,
+  editRedone: (cells) => `${cells} cellules rétablies`,
+  editNothingToUndo: "Rien à annuler",
   gridCellPosition: (row, total) => `ligne ${row} sur ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Lignes ${fromRow} à ${toRow}, colonnes ${fromColumn} à ${toColumn} sélectionnées, ${cells} cellules`,

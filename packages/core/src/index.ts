@@ -409,6 +409,16 @@ export {
   type EditableCellGateProps,
 } from "./editing/EditableCellGate";
 export {
+  asGesture,
+  type EditHistoryEntry,
+  type EditHistoryState,
+  readCellValue,
+  type TableEditHistoryProps,
+  useEditHistory,
+  type UseEditHistoryOptions,
+  useTableEditHistory,
+} from "./editing/editHistory";
+export {
   type CellEditingState,
   type CellEditKeyAction,
   type CellEditKeyOutcome,

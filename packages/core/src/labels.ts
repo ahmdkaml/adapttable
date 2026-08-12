@@ -80,6 +80,9 @@ export const defaultLabels: Required<TableLabels> = {
   selectionAverage: "Avg",
   selectionMin: "Min",
   selectionMax: "Max",
+  editUndone: (cells) => `${cells} ${cells === 1 ? "cell" : "cells"} restored`,
+  editRedone: (cells) => `${cells} ${cells === 1 ? "cell" : "cells"} redone`,
+  editNothingToUndo: "Nothing to undo",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

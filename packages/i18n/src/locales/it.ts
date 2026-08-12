@@ -78,6 +78,9 @@ export const it: Required<TableLabels> = {
   selectionAverage: "Media",
   selectionMin: "Min",
   selectionMax: "Max",
+  editUndone: (cells) => `${cells} celle ripristinate`,
+  editRedone: (cells) => `${cells} celle ripetute`,
+  editNothingToUndo: "Niente da annullare",
   gridCellPosition: (row, total) => `riga ${row} di ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Righe da ${fromRow} a ${toRow}, colonne da ${fromColumn} a ${toColumn} selezionate, ${cells} celle`,

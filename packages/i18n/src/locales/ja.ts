@@ -77,6 +77,9 @@ export const ja: Required<TableLabels> = {
   selectionAverage: "平均",
   selectionMin: "最小",
   selectionMax: "最大",
+  editUndone: (cells) => `${cells} 件のセルを元に戻しました`,
+  editRedone: (cells) => `${cells} 件のセルをやり直しました`,
+  editNothingToUndo: "元に戻す操作はありません",
   gridCellPosition: (row, total) => `${total} 行中 ${row} 行目`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}行目から${toRow}行目、${fromColumn}列目から${toColumn}列目を選択、${cells}セル`,

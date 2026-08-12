@@ -17,7 +17,9 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
         blocks: paste a spreadsheet with Ctrl/Cmd+V, or drag the square on the
         selection&rsquo;s corner to carry its values on. Add{" "}
         <code>selectionStats</code> and the strip under the table counts and
-        totals whatever is selected.
+        totals whatever is selected. <code>editHistory</code> makes Ctrl/Cmd+Z
+        put a whole paste back in one press — through your handler, never behind
+        your back.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -44,6 +46,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             editing
             cellNavigation
             selectionStats
+            editHistory
           />
         </div>
       </div>

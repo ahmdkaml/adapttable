@@ -87,18 +87,20 @@ const FIXTURES = [
   // fixture that carries the actual promise is `core · simple table` above: a
   // plain table pays 10.6 KB of a 12 KB ceiling and did not move.
   //
-  // Two batch gestures joined that path on 2026-08-12: Ctrl/Cmd+V (a clipboard
-  // parser and the edit mapping, ~0.4 KB) and the fill handle (the drag, the
-  // series arithmetic and the square itself, ~1.3 KB). Both belong to cell
-  // navigation, which every adapter bundles.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 61 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 60 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 61 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 60 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 61 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 66 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 64 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 62 },
+  // Four capabilities joined that path on 2026-08-12, each of them chrome the
+  // batteries-included table always carries: Ctrl/Cmd+V (~0.4 KB), the fill
+  // handle (~1.3 KB), the selection statistics strip (~0.5 KB) and the edit
+  // history (~0.6 KB). The fixture that carries the actual promise is
+  // `core · simple table` above — a plain table pays 10.7 KB of a 12 KB
+  // ceiling and did not move through any of it.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 63 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 62 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 63 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 62 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 63 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 68 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 66 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 64 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

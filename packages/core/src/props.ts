@@ -143,6 +143,17 @@ export interface BaseDataTableProps<TRow> {
    */
   selectionStats?: boolean;
   /**
+   * Remember edits so they can be undone — Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z or
+   * Ctrl+Y with `cellNavigation`, and `table.editHistory` for your own buttons.
+   * Pass `{ depth }` to change how many gestures are kept (50 by default).
+   *
+   * An undo does not rewrite your data: it COMMITS the previous value back
+   * through `onCellEdit`, so whatever you wrapped around editing runs on the
+   * way back exactly as it ran on the way out. One gesture is one entry, so a
+   * paste of two hundred cells undoes in a single press.
+   */
+  editHistory?: boolean | { depth?: number };
+  /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */

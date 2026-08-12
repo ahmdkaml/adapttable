@@ -79,6 +79,9 @@ export const ar: Required<TableLabels> = {
   selectionAverage: "المتوسط",
   selectionMin: "الأدنى",
   selectionMax: "الأعلى",
+  editUndone: (cells) => `تمت استعادة ${cells} خلية`,
+  editRedone: (cells) => `تمت إعادة ${cells} خلية`,
+  editNothingToUndo: "لا شيء للتراجع عنه",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,

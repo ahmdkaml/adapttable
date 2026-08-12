@@ -450,6 +450,12 @@ export interface TableLabels {
   selectionMin?: string;
   /** Leads the largest selected number. */
   selectionMax?: string;
+  /** Announced after an undo: given the cell count, what came back. */
+  editUndone?: (cells: number) => string;
+  /** Announced after a redo: given the cell count, what was rewritten. */
+  editRedone?: (cells: number) => string;
+  /** Announced when the key was pressed and the history was empty. */
+  editNothingToUndo?: string;
   /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append

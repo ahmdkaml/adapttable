@@ -66,6 +66,7 @@ export function MantineDemo({
   editing,
   cellNavigation,
   selectionStats,
+  editHistory,
   forceMobile,
 }: Readonly<{
   mode: DataMode;
@@ -80,6 +81,7 @@ export function MantineDemo({
   editing?: boolean;
   cellNavigation?: boolean;
   selectionStats?: boolean;
+  editHistory?: boolean;
   forceMobile?: boolean;
 }>) {
   const s = strings(locale);
@@ -99,6 +101,7 @@ export function MantineDemo({
             rowKey={(r) => r.id}
             cellNavigation={cellNavigation}
             selectionStats={selectionStats}
+            editHistory={editHistory}
             {...columns}
             density={density}
             filtersMode={filtersUi}

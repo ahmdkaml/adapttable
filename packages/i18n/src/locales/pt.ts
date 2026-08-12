@@ -79,6 +79,9 @@ export const pt: Required<TableLabels> = {
   selectionAverage: "Média",
   selectionMin: "Mín",
   selectionMax: "Máx",
+  editUndone: (cells) => `${cells} células restauradas`,
+  editRedone: (cells) => `${cells} células refeitas`,
+  editNothingToUndo: "Nada a desfazer",
   gridCellPosition: (row, total) => `linha ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Linhas ${fromRow} a ${toRow}, colunas ${fromColumn} a ${toColumn} selecionadas, ${cells} células`,

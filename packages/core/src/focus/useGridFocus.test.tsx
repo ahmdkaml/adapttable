@@ -55,6 +55,8 @@ function Grid(props: {
   onCut?: (range: { anchor: GridCell; head: GridCell }) => void;
   onPaste?: (edits: CellEdit<Row>[]) => void;
   onFill?: (edits: CellEdit<Row>[]) => void;
+  onUndo?: () => number;
+  onRedo?: () => number;
   /** Columns a paste is allowed to write into. */
   editable?: boolean;
 }) {
@@ -73,6 +75,8 @@ function Grid(props: {
     onCut: props.onCut,
     onPaste: props.onPaste,
     onFill: props.onFill,
+    onUndo: props.onUndo,
+    onRedo: props.onRedo,
   });
   const first = props.firstRowIndex ?? 0;
   const rendered =
@@ -782,5 +786,48 @@ describe("useGridFocus — the fill handle", () => {
     fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
     fireEvent.keyDown(cellAt(0, 1)!, { key: "d", ctrlKey: true });
     expect(onFill).not.toHaveBeenCalled();
+  });
+});
+
+describe("useGridFocus — undo and redo keys", () => {
+  it("undoes on Ctrl/Cmd+Z and says how much came back", () => {
+    const onUndo = vi.fn().mockReturnValue(3);
+    render(<Grid rows={makeRows(3)} onUndo={onUndo} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "z", metaKey: true });
+    expect(onUndo).toHaveBeenCalledOnce();
+    expect(document.querySelector("output")?.textContent).toBe(
+      "3 cells restored"
+    );
+  });
+
+  it("redoes on both spellings — Ctrl+Shift+Z and Ctrl+Y", () => {
+    const onRedo = vi.fn().mockReturnValue(1);
+    render(<Grid rows={makeRows(3)} onRedo={onRedo} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, {
+      key: "z",
+      ctrlKey: true,
+      shiftKey: true,
+    });
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "y", ctrlKey: true });
+    expect(onRedo).toHaveBeenCalledTimes(2);
+    expect(document.querySelector("output")?.textContent).toBe("1 cell redone");
+  });
+
+  it("says so rather than swallowing an empty history", () => {
+    render(<Grid rows={makeRows(3)} onUndo={() => 0} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "z", ctrlKey: true });
+    expect(document.querySelector("output")?.textContent).toBe(
+      "Nothing to undo"
+    );
+  });
+
+  it("leaves the key to the browser when no history is wired", () => {
+    render(<Grid rows={makeRows(3)} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "z", ctrlKey: true });
+    expect(document.querySelector("output")?.textContent).toBe("");
   });
 });

@@ -79,6 +79,9 @@ export const ur: Required<TableLabels> = {
   selectionAverage: "اوسط",
   selectionMin: "کم سے کم",
   selectionMax: "زیادہ سے زیادہ",
+  editUndone: (cells) => `${cells} خانے بحال ہوئے`,
+  editRedone: (cells) => `${cells} خانے دوبارہ ہوئے`,
+  editNothingToUndo: "کالعدم کرنے کو کچھ نہیں",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,

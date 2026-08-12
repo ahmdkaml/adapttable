@@ -78,6 +78,9 @@ export const de: Required<TableLabels> = {
   selectionAverage: "Ø",
   selectionMin: "Min",
   selectionMax: "Max",
+  editUndone: (cells) => `${cells} Zellen wiederhergestellt`,
+  editRedone: (cells) => `${cells} Zellen wiederholt`,
+  editNothingToUndo: "Nichts rückgängig zu machen",
   gridCellPosition: (row, total) => `Zeile ${row} von ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Zeilen ${fromRow} bis ${toRow}, Spalten ${fromColumn} bis ${toColumn} ausgewählt, ${cells} Zellen`,

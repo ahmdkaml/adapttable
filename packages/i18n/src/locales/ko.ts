@@ -77,6 +77,9 @@ export const ko: Required<TableLabels> = {
   selectionAverage: "평균",
   selectionMin: "최소",
   selectionMax: "최대",
+  editUndone: (cells) => `${cells}개 셀 실행 취소`,
+  editRedone: (cells) => `${cells}개 셀 다시 실행`,
+  editNothingToUndo: "실행 취소할 항목 없음",
   gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}행부터 ${toRow}행, ${fromColumn}열부터 ${toColumn}열 선택, ${cells}개 셀`,

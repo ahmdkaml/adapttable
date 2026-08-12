@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
@@ -108,6 +109,9 @@ export function useDataTableShell<TRow>(
     defaults: props.defaults,
     paginationMode: props.paginationMode,
   });
+  const { history, onCellEdit: recordingCellEdit } =
+    useTableEditHistory<TRow>(props);
+
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
     runtime.defs.length > 0 ? renderAutoForm(runtime.defs, source) : undefined;
@@ -117,6 +121,7 @@ export function useDataTableShell<TRow>(
       : props.filters;
   const chromeProps = {
     ...props,
+    onCellEdit: recordingCellEdit,
     source,
     filters: filtersNode,
     filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
@@ -150,9 +155,12 @@ export function useDataTableShell<TRow>(
     labels,
     onCut: props.onCellCut,
     // With no `onCellPaste`, the ordinary edit channel takes each cell: a table
-    // that can be edited can be pasted into with nothing extra wired.
-    onPaste: cellPasteHandler(props),
-    onFill: cellFillHandler(props),
+    // that can be edited can be pasted into with nothing extra wired. A batch
+    // is ONE undo entry, so it records itself rather than per cell.
+    onPaste: asGesture(cellPasteHandler(props), history.record),
+    onFill: asGesture(cellFillHandler(props), history.record),
+    onUndo: history.undo,
+    onRedo: history.redo,
   });
   // Computed here rather than in eight adapters: the rectangle, the rows and
   // the window offset all live on this side, and an adapter that derived any
@@ -273,6 +281,8 @@ export function useDataTableShell<TRow>(
     gridFocus,
     /** What the selection adds up to; `null` unless `selectionStats` is set. */
     selectionStats: stats,
+    /** Undo/redo controls; inert unless `editHistory` is set. */
+    editHistory: history,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,

@@ -389,6 +389,17 @@ is the rule both it and `cellPasteHandler` follow. The square itself is
 `<DataTable>` the prop is `onCellFill`. See
 [cell navigation](./cell-navigation.md).
 
+**Undo and redo.** `useEditHistory(options)` remembers gestures and replays
+them through `onCellEdit` (`UseEditHistoryOptions` in, `EditHistoryState` out —
+`undo`, `redo`, `canUndo`, `canRedo`, `clear`, `record`), with
+`EditHistoryEntry` the recorded pair. `useTableEditHistory(props)` is the
+table-level wiring — it takes the `editHistory` prop
+(`TableEditHistoryProps`) and returns the history plus the commit channel that
+records each inline edit as a one-cell gesture. `asGesture(apply, record)` makes
+a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
+cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
+`editHistory`. See [cell editing](./cell-editing.md).
+
 **Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
 `cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
 selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /

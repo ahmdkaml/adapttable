@@ -78,6 +78,9 @@ export const tr: Required<TableLabels> = {
   selectionAverage: "Ort.",
   selectionMin: "Min",
   selectionMax: "Maks",
+  editUndone: (cells) => `${cells} hücre geri alındı`,
+  editRedone: (cells) => `${cells} hücre yinelendi`,
+  editNothingToUndo: "Geri alınacak bir şey yok",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

@@ -1,5 +1,6 @@
 import {
   ACTIONS_COLUMN_KEY,
+  asGesture,
   cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
@@ -29,6 +30,7 @@ import {
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
+  useTableEditHistory,
   useTableVirtualization,
   windowGroupedEntries,
 } from "@adapttable/core";
@@ -999,8 +1001,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     () => ({ ...runtime.filterLabels, ...props.filterLabels }),
     [runtime.filterLabels, props.filterLabels]
   );
+  const { history, onCellEdit: recordingCellEdit } =
+    useTableEditHistory<TRow>(props);
   const chromeProps = {
     ...props,
+    onCellEdit: recordingCellEdit,
     source: resolvedSource,
     filters: filtersNode,
     filterLabels,
@@ -1024,8 +1029,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     dir: props.dir,
     labels: c.table.labels,
     onCut: props.onCellCut,
-    onPaste: cellPasteHandler(props),
-    onFill: cellFillHandler(props),
+    onPaste: asGesture(cellPasteHandler(props), history.record),
+    onFill: asGesture(cellFillHandler(props), history.record),
+    onUndo: history.undo,
+    onRedo: history.redo,
   });
   const stats =
     props.selectionStats === true
