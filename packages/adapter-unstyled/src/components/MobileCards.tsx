@@ -299,7 +299,7 @@ export function MobileCards<TRow>({
       )}
       {grouping
         ? grouping.entries.map((entry) =>
-            entry.kind === "group" ? (
+            entry.kind === "group" || entry.kind === "groupFooter" ? (
               <li key={entry.key} style={{ display: "block" }}>
                 <GroupHeaderCard
                   entry={entry}

@@ -23,6 +23,9 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Check size={12} /> per-group subtotals from one mapper
           </span>
           <span className="hint">
+            <Check size={12} /> a footer closes every group with its total
+          </span>
+          <span className="hint">
             <Check size={12} /> double-click a cell to edit it in place
           </span>
         </div>

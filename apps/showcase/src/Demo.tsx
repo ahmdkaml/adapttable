@@ -144,6 +144,7 @@ function Frontend({
           ? {
               groupBy: ["team", "status"],
               groupAggregates: DEMO_GROUP_AGGREGATES,
+              groupFooters: true,
             }
           : { groupBy: null }),
       })}

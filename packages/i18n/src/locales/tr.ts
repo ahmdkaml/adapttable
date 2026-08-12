@@ -64,6 +64,7 @@ export const tr: Required<TableLabels> = {
   exportDone: "Dışa aktarma tamamlandı",
   exportFailed: "Dışa aktarma başarısız",
   editCell: "Hücreyi düzenle",
+  groupTotal: (label) => `${label} toplamı`,
   expandGroup: "Grubu genişlet",
   collapseGroup: "Grubu daralt",
   groupCount: (count) => `(${count})`,

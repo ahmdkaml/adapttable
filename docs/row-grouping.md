@@ -13,6 +13,42 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Footers and grand totals
+
+`groupFooters` closes every group with a row carrying the same aggregates its
+header carries:
+
+```tsx
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy="team"
+  groupAggregates={(rows) => ({ budget: sum(rows) })}
+  groupFooters
+  summaryRow={(rows) => ({ budget: sum(rows) })}
+/>
+```
+
+The totals then read at the bottom of a group as well as the top — which is
+where the reader of a long group is by the time they want them. A footer shows
+no chevron and no checkbox: the header already owns both. Nested groups each get
+their own, innermost first, and a **collapsed** group shows none at all — its
+header is already carrying the numbers, with nothing between them.
+
+`summaryRow` is the table's grand total, and under grouping it totals the whole
+filtered set rather than a page of it. The two compose: per-group footers, one
+grand total.
+
+On mobile the footer is a card of its own after the group's cards, captioned the
+same way. Exports are unaffected — a footer is chrome, not a row, so a CSV
+carries the data and nothing else.
+
+Each footer is captioned through `labels.groupTotal`, translated in all
+seventeen locales, and carries `data-adapttable-part="group-footer-row"` /
+`group-footer-cell` (plus the `groupFooterRow` / `groupFooterCell` class hooks
+in `@adapttable/unstyled`).
+
 ## Nested groups
 
 `groupBy` also takes an ordered list, and each key nests inside the one before

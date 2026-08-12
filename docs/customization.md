@@ -142,16 +142,19 @@ editing is dormant these parts are never mounted.
 Opt-in via `groupBy` — see [Row grouping](./row-grouping.md). When grouping
 is dormant these parts are never mounted.
 
-| Part              | Element                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| `group-row`       | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
-| `group-cell`      | The spanning `<td>` / `<th>` inside a group header (most kits).       |
-| `group-card`      | Group header block in the mobile card list.                           |
-| `group-toggle`    | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
-| `group-label`     | The group's display label (bucket value).                             |
-| `group-count`     | Leaf count beside the label (`labels.groupCount`).                    |
-| `group-select`    | Tri-state checkbox over the group's leaf rows (when selection is on). |
-| `group-aggregate` | One per-group aggregate cell (`data-column` = column key).            |
+| Part                | Element                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| `group-row`         | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
+| `group-cell`        | The spanning `<td>` / `<th>` inside a group header (most kits).       |
+| `group-footer-row`  | The row closing a group when `groupFooters` is set.                   |
+| `group-footer-cell` | The spanning cell inside a group footer.                              |
+| `group-footer-card` | Group footer block in the mobile card list.                           |
+| `group-card`        | Group header block in the mobile card list.                           |
+| `group-toggle`      | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
+| `group-label`       | The group's display label (bucket value).                             |
+| `group-count`       | Leaf count beside the label (`labels.groupCount`).                    |
+| `group-select`      | Tri-state checkbox over the group's leaf rows (when selection is on). |
+| `group-aggregate`   | One per-group aggregate cell (`data-column` = column key).            |
 
 ### Mobile cards & summary
 

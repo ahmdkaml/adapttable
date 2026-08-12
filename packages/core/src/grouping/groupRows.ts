@@ -39,6 +39,28 @@ export type GroupedFlatEntry<TRow> =
       collapsed: boolean;
     }
   | {
+      /**
+       * The closing row of a group, carrying the same aggregates its header
+       * carries. Emitted only when the host asks for footers, and never for a
+       * collapsed group — there is nothing between a closed header and its
+       * footer to total.
+       */
+      kind: "groupFooter";
+      /** Stable id: the group's key with a `:footer` suffix. */
+      key: string;
+      /** The group this closes. */
+      groupKey: string;
+      /** Depth of the group it closes. */
+      level: number;
+      /** Which column that group is grouped by. */
+      groupBy: string;
+      /** The group's display label, for a "Core total" caption. */
+      label: string;
+      leafRows: readonly TRow[];
+      leafIds: readonly string[];
+      aggregateCells?: Partial<Record<string, ReactNode>>;
+    }
+  | {
       kind: "row";
       key: string;
       row: TRow;
@@ -68,6 +90,12 @@ export interface BuildGroupedFlatModelOptions<TRow> {
   aggregates?: GroupAggregatesFn<TRow>;
   /** Override blank-group label (default `"(blank)"`). */
   blankLabel?: string;
+  /**
+   * Close every group with a footer row carrying its aggregates. Off by
+   * default, and pointless without `aggregates` — a footer with nothing to
+   * total is a blank row.
+   */
+  footers?: boolean;
 }
 
 /**
@@ -174,6 +202,7 @@ export function buildGroupedFlatModel<TRow>(
     collapsedGroupIds,
     aggregates,
     blankLabel,
+    footers = false,
   } = options;
   const keys = (typeof groupBy === "string" ? [groupBy] : groupBy).filter(
     (key) => key.length > 0
@@ -211,33 +240,52 @@ export function buildGroupedFlatModel<TRow>(
       const here = [...path, valueKey];
       const groupKey = makeGroupRowKey(keys.slice(0, level + 1), here);
       const collapsed = collapsedGroupIds.has(groupKey);
+      const aggregateCells = aggregates?.(bucket.rows);
+      const label = formatGroupLabel(bucket.value, blankLabel);
 
       flat.push({
         kind: "group",
         key: groupKey,
         value: bucket.value,
-        label: formatGroupLabel(bucket.value, blankLabel),
+        label,
         level,
         groupBy: key,
         path: here,
         leafRows: bucket.rows,
         leafIds: bucket.rows.map((row) => getRowId(row)),
-        aggregateCells: aggregates?.(bucket.rows),
+        aggregateCells,
         collapsed,
       });
       if (collapsed) continue;
 
       if (level + 1 < keys.length) {
         walk(bucket.rows, level + 1, here);
-        continue;
+      } else {
+        for (const row of bucket.rows) {
+          flat.push({
+            kind: "row",
+            key: getRowId(row),
+            row,
+            index: leafIndex++,
+            groupKey,
+          });
+        }
       }
-      for (const row of bucket.rows) {
+
+      // The footer closes the group AFTER everything inside it, including any
+      // nested groups and their own footers — innermost totals first, exactly
+      // as the indentation reads.
+      if (footers) {
         flat.push({
-          kind: "row",
-          key: getRowId(row),
-          row,
-          index: leafIndex++,
+          kind: "groupFooter",
+          key: `${groupKey}:footer`,
           groupKey,
+          level,
+          groupBy: key,
+          label,
+          leafRows: bucket.rows,
+          leafIds: bucket.rows.map((row) => getRowId(row)),
+          aggregateCells,
         });
       }
     }

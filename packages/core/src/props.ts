@@ -202,6 +202,16 @@ export interface BaseDataTableProps<TRow> {
    * Per-group aggregate cells — **same signature as {@link summaryRow}**.
    * Called with each group's leaf rows. Omit for headers without subtotals.
    */
+  /**
+   * Close every group with a footer row carrying its aggregates — the totals
+   * read at the bottom of the group as well as the top, which is where a long
+   * group's reader is by the time they need them.
+   *
+   * Needs `groupAggregates`: a footer with nothing to total is a blank row.
+   * Nested groups each get their own, innermost first. The table's own
+   * grand total is `summaryRow`, which already totals the whole set.
+   */
+  groupFooters?: boolean;
   groupAggregates?: (
     rows: readonly TRow[]
   ) => Partial<Record<string, ReactNode>>;

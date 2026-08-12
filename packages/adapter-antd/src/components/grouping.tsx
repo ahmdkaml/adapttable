@@ -23,6 +23,8 @@ export interface AdaptTableGroupRow {
   label: string;
   /** Depth from zero, so a nested header indents like every other kit's. */
   level: number;
+  /** A closing total rather than a header: no chevron, no checkbox. */
+  footer?: boolean;
   leafIds: readonly string[];
   aggregateCells?: Partial<Record<string, ReactNode>>;
   collapsed: boolean;
@@ -47,17 +49,18 @@ function toGroupedDataRecord<TRow>(
   entry: GroupedFlatEntry<TRow>
 ): GroupedDataRecord<TRow> {
   const record: GroupedDataRecord<TRow> =
-    entry.kind === "group"
-      ? {
+    entry.kind === "row"
+      ? entry.row
+      : {
           [ADAPTTABLE_GROUP]: true,
           key: entry.key,
           label: entry.label,
           level: entry.level,
+          footer: entry.kind === "groupFooter",
           leafIds: entry.leafIds,
           aggregateCells: entry.aggregateCells,
-          collapsed: entry.collapsed,
-        }
-      : entry.row;
+          collapsed: entry.kind === "group" && entry.collapsed,
+        };
   return record;
 }
 
@@ -144,22 +147,28 @@ export function GroupHeaderCell({
     <Space
       size={4}
       style={{ ...GROUP_HEADER_STYLE, ...groupIndentStyle(group.level) }}
-      data-adapttable-part="group-cell"
+      data-adapttable-part={
+        group.footer === true ? "group-footer-cell" : "group-cell"
+      }
     >
-      <GroupToggle
-        collapsed={group.collapsed}
-        labels={labels}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggle();
-        }}
-      />
+      {group.footer !== true && (
+        <GroupToggle
+          collapsed={group.collapsed}
+          labels={labels}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggle();
+          }}
+        />
+      )}
       <Typography.Text strong data-adapttable-part="group-label">
-        {group.label}
+        {group.footer === true ? labels.groupTotal(group.label) : group.label}
       </Typography.Text>
-      <Typography.Text type="secondary" data-adapttable-part="group-count">
-        {labels.groupCount(group.leafIds.length)}
-      </Typography.Text>
+      {group.footer !== true && (
+        <Typography.Text type="secondary" data-adapttable-part="group-count">
+          {labels.groupCount(group.leafIds.length)}
+        </Typography.Text>
+      )}
       {aggregate != null && aggregate !== false ? (
         <Typography.Text type="secondary">{aggregate}</Typography.Text>
       ) : null}

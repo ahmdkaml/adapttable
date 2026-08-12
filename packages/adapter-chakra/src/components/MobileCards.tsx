@@ -284,7 +284,7 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <Box aria-hidden h={`${paddingTop}px`} />}
       {grouping
         ? grouping.entries.map((entry) =>
-            entry.kind === "group" ? (
+            entry.kind === "group" || entry.kind === "groupFooter" ? (
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}

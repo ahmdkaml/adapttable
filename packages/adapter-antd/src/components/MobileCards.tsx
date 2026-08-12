@@ -391,15 +391,16 @@ export function MobileCards<TRow>({
   };
 
   const toGroupRow = (
-    entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>
+    entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" | "groupFooter" }>
   ): AdaptTableGroupRow => ({
     [ADAPTTABLE_GROUP]: true,
     key: entry.key,
     label: entry.label,
     level: entry.level,
+    footer: entry.kind === "groupFooter",
     leafIds: entry.leafIds,
     aggregateCells: entry.aggregateCells,
-    collapsed: entry.collapsed,
+    collapsed: entry.kind === "group" && entry.collapsed,
   });
 
   return (
@@ -418,7 +419,7 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <li aria-hidden style={{ height: paddingTop }} />}
       {grouping
         ? grouping.entries.map((entry) => {
-            if (entry.kind === "group") {
+            if (entry.kind === "group" || entry.kind === "groupFooter") {
               return (
                 <li key={entry.key} ref={measureElement}>
                   <GroupHeaderCard

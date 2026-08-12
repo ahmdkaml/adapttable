@@ -65,6 +65,7 @@ export const ar: Required<TableLabels> = {
   exportDone: "تم التصدير",
   exportFailed: "فشل التصدير",
   editCell: "تعديل الخلية",
+  groupTotal: (label) => `إجمالي ${label}`,
   expandGroup: "توسيع المجموعة",
   collapseGroup: "طي المجموعة",
   groupCount: (count) => `(${count})`,

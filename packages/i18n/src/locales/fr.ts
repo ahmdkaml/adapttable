@@ -63,6 +63,7 @@ export const fr: Required<TableLabels> = {
   exportDone: "Export terminé",
   exportFailed: "Échec de l’export",
   editCell: "Modifier la cellule",
+  groupTotal: (label) => `Total ${label}`,
   expandGroup: "Développer le groupe",
   collapseGroup: "Réduire le groupe",
   groupCount: (count) => `(${count})`,

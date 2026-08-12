@@ -384,7 +384,7 @@ function DesktopTableRows<TRow>({
 }>): ReactNode {
   if (grouping) {
     return grouping.entries.map((entry) => {
-      if (entry.kind === "group") {
+      if (entry.kind === "group" || entry.kind === "groupFooter") {
         return (
           <GroupHeaderRow
             key={entry.key}

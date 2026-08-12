@@ -153,6 +153,8 @@ const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
  */
 const STATE_CLASSES = new Set([
   "cellSelected",
+  "groupFooterRow",
+  "groupFooterCell",
   "cellMatch",
   "cellMatchCurrent",
 ]);
@@ -430,6 +432,8 @@ const KEYS = [
   "row",
   "cell",
   "cellSelected",
+  "groupFooterRow",
+  "groupFooterCell",
   "cellMatch",
   "cellMatchCurrent",
   "expandHeader",

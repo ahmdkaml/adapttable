@@ -56,7 +56,7 @@ export function GroupHeaderRow<TRow>({
   labels,
   onToggleCollapse,
 }: Readonly<{
-  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" | "groupFooter" }>;
   /** The data columns as rendered, so a subtotal lands under its own. */
   columns: readonly ColumnDef<TRow>[];
   /** Edge cells before the first data column (chevron, checkbox). */
@@ -69,33 +69,40 @@ export function GroupHeaderRow<TRow>({
   labels: Required<TableLabels>;
   onToggleCollapse: (groupKey: string) => void;
 }>): ReactElement {
-  const expanded = !entry.collapsed;
-  const groupState = selection
-    ? groupSelectionState(entry.leafIds, selection.selectedIds)
-    : "none";
+  // A footer is the same row with the controls taken away: no chevron
+  // (nothing to collapse from the bottom), no checkbox (the header's own
+  // selects the group), and a caption saying what the numbers are.
+  const footer = entry.kind === "groupFooter";
+  const expanded = footer || !entry.collapsed;
+  const groupState =
+    selection && !footer
+      ? groupSelectionState(entry.leafIds, selection.selectedIds)
+      : "none";
   // One cell per column from the first aggregate onward: a subtotal only reads
   // as one when it sits under the column it totals.
   const layout = groupRowLayout(columns, entry.aggregateCells);
 
   return (
     <Table.Tr
-      data-adapttable-part="group-row"
-      data-collapsed={entry.collapsed ? "true" : undefined}
+      data-adapttable-part={footer ? "group-footer-row" : "group-row"}
+      data-collapsed={!footer && entry.collapsed ? "true" : undefined}
       fw={600}
     >
       <Table.Td
         colSpan={leadingCells + layout.labelColumns.length}
-        data-adapttable-part="group-cell"
+        data-adapttable-part={footer ? "group-footer-cell" : "group-cell"}
         style={groupIndentStyle(entry.level)}
       >
         <Group gap="xs" wrap="nowrap">
-          <GroupToggle
-            expanded={expanded}
-            expandLabel={labels.expandGroup}
-            collapseLabel={labels.collapseGroup}
-            onToggle={() => onToggleCollapse(entry.key)}
-          />
-          {selection && (
+          {!footer && (
+            <GroupToggle
+              expanded={expanded}
+              expandLabel={labels.expandGroup}
+              collapseLabel={labels.collapseGroup}
+              onToggle={() => onToggleCollapse(entry.key)}
+            />
+          )}
+          {selection && !footer && (
             <Checkbox
               data-adapttable-part="group-select"
               aria-label={labels.selectAll}
@@ -105,7 +112,7 @@ export function GroupHeaderRow<TRow>({
             />
           )}
           <Text component="span" data-adapttable-part="group-label" fw={600}>
-            {entry.label}
+            {footer ? labels.groupTotal(entry.label) : entry.label}
           </Text>
           <Text
             component="span"
@@ -113,7 +120,7 @@ export function GroupHeaderRow<TRow>({
             c="dimmed"
             fz="sm"
           >
-            {labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(entry.leafIds.length)}
           </Text>
           {layout.labelAggregates.map(({ column, node }) => (
             <Text
@@ -154,7 +161,7 @@ export function GroupHeaderCard<TRow>({
   onToggleCollapse,
   padding = "md",
 }: Readonly<{
-  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" | "groupFooter" }>;
   /** The card's columns, for captioning each subtotal. */
   columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
@@ -162,15 +169,20 @@ export function GroupHeaderCard<TRow>({
   onToggleCollapse: (groupKey: string) => void;
   padding?: string;
 }>): ReactElement {
-  const expanded = !entry.collapsed;
-  const groupState = selection
-    ? groupSelectionState(entry.leafIds, selection.selectedIds)
-    : "none";
+  // A footer is the same row with the controls taken away: no chevron
+  // (nothing to collapse from the bottom), no checkbox (the header's own
+  // selects the group), and a caption saying what the numbers are.
+  const footer = entry.kind === "groupFooter";
+  const expanded = footer || !entry.collapsed;
+  const groupState =
+    selection && !footer
+      ? groupSelectionState(entry.leafIds, selection.selectedIds)
+      : "none";
 
   return (
     <Card
-      data-adapttable-part="group-card"
-      data-collapsed={entry.collapsed ? "true" : undefined}
+      data-adapttable-part={footer ? "group-footer-card" : "group-card"}
+      data-collapsed={!footer && entry.collapsed ? "true" : undefined}
       role="listitem"
       withBorder
       radius="md"
@@ -178,13 +190,15 @@ export function GroupHeaderCard<TRow>({
       fw={600}
     >
       <Group gap="xs" wrap="nowrap">
-        <GroupToggle
-          expanded={expanded}
-          expandLabel={labels.expandGroup}
-          collapseLabel={labels.collapseGroup}
-          onToggle={() => onToggleCollapse(entry.key)}
-        />
-        {selection && (
+        {!footer && (
+          <GroupToggle
+            expanded={expanded}
+            expandLabel={labels.expandGroup}
+            collapseLabel={labels.collapseGroup}
+            onToggle={() => onToggleCollapse(entry.key)}
+          />
+        )}
+        {selection && !footer && (
           <Checkbox
             data-adapttable-part="group-select"
             aria-label={labels.selectAll}
@@ -194,7 +208,7 @@ export function GroupHeaderCard<TRow>({
           />
         )}
         <Text component="span" data-adapttable-part="group-label" fw={600}>
-          {entry.label}
+          {footer ? labels.groupTotal(entry.label) : entry.label}
         </Text>
         <Text
           component="span"
@@ -202,7 +216,7 @@ export function GroupHeaderCard<TRow>({
           c="dimmed"
           fz="sm"
         >
-          {labels.groupCount(entry.leafIds.length)}
+          {footer ? null : labels.groupCount(entry.leafIds.length)}
         </Text>
       </Group>
       {/* A card is a list of label/value pairs, not a row of columns, so a

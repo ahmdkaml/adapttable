@@ -64,6 +64,7 @@ export const fa: Required<TableLabels> = {
   exportDone: "خروجی گرفتن کامل شد",
   exportFailed: "خروجی گرفتن ناموفق بود",
   editCell: "ویرایش سلول",
+  groupTotal: (label) => `جمع ${label}`,
   expandGroup: "باز کردن گروه",
   collapseGroup: "بستن گروه",
   groupCount: (count) => `(${count})`,

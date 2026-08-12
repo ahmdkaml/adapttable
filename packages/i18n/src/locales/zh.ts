@@ -63,6 +63,7 @@ export const zh: Required<TableLabels> = {
   exportDone: "导出完成",
   exportFailed: "导出失败",
   editCell: "编辑单元格",
+  groupTotal: (label) => `${label} 合计`,
   expandGroup: "展开分组",
   collapseGroup: "折叠分组",
   groupCount: (count) => `(${count})`,

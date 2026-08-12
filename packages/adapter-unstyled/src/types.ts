@@ -37,6 +37,10 @@ export interface DataTableClassNames {
    * A cell the find bar matched (`findInTable`). `data-cell-match` is on the
    * element too, for CSS that prefers attribute selectors.
    */
+  /** The footer row that closes a group (`groupFooters`). */
+  groupFooterRow?: string;
+  /** The spanning cell inside a group footer. */
+  groupFooterCell?: string;
   cellMatch?: string;
   /** The one match the find walk is on — `data-cell-match-current`. */
   cellMatchCurrent?: string;

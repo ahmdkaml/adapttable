@@ -778,7 +778,8 @@ function DesktopTableBody<TRow>({
       onRow={(record, rowIndex) => {
         if (isAdaptTableGroupRow(record)) {
           return {
-            "data-adapttable-part": "group-row",
+            "data-adapttable-part":
+              record.footer === true ? "group-footer-row" : "group-row",
             "data-collapsed": record.collapsed ? "true" : undefined,
           } as HTMLAttributes<HTMLElement>;
         }

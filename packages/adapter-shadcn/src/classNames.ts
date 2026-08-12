@@ -187,6 +187,10 @@ export const shadcnClassNames = {
   // ── Row grouping ────────────────────────────────────────────────
   groupRow: "border-b border-border bg-muted/40",
   groupCell: "px-3 py-2 font-medium",
+  // A footer reads as the group's own closing line: same surface, a top rule
+  // instead of a bottom one, so it belongs to the block above it.
+  groupFooterRow: "border-t border-border bg-muted/30",
+  groupFooterCell: "px-3 py-2 font-medium",
   groupCard: "mb-1 rounded-lg bg-muted/40 px-3 py-2 font-medium",
   groupToggle:
     "inline-grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:bg-accent",
