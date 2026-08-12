@@ -122,6 +122,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
 | `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
 | `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
+| `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
 | `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
 | `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
 | `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
@@ -248,6 +249,23 @@ All from `@adapttable/core`.
 - `useScrollToTableTop(options)` — sticky-chrome-aware scroll restoration.
 - `useDebounce(value, ms)`, `useMediaQuery(query)`, `useIsMobile()`,
   `usePrefersReducedMotion()`, `useColorScheme(preference)`.
+
+- `useExportHandler(handler)` — binds the Export button: makes a host-handled
+  export single-flight and reports `exportBusy`. From `@adapttable/core/adapter`.
+
+Building blocks for columns, rows and queries:
+
+- `computed({ key, deps, value, format })` — a derived column, cached per row,
+  consistent across display, sorting, filtering and export. See
+  [columns](./columns.md).
+- `aggregate(spec, options)` — builds the `summaryRow` / `groupAggregates`
+  mapper. See [row grouping](./row-grouping.md).
+- `applyRowPatches(rows, patches, getRowId)` with `insertRow` / `updateRow` /
+  `upsertRow` / `removeRow` — apply changes without a refetch, preserving row
+  identity. See [cell editing](./cell-editing.md).
+- `tableQueryKey(query, options)` / `tableQueryBaseKey(query, options)` —
+  stable cache keys for TanStack Query or SWR. See
+  [data tiers](./data-tiers.md).
 
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
