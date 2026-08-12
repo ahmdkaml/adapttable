@@ -98,15 +98,18 @@ And it stays flat: the rendered row count holds at **~24 whether the dataset is
 
 Reproduce both with
 [`scripts/bench.mjs`](https://github.com/orwa-mahmoud/adapttable/blob/main/scripts/bench.mjs)
-against a running showcase — it drives this demo through the whole scenario
-set (wide tables, grouping, pinned columns, sorted data) and prints the DOM
-rows, cells, heap and time-to-interactive for each:
+— it serves this demo itself, drives it through the whole scenario set (wide
+tables, grouping, pinned columns, sorted data) and prints the DOM rows, cells,
+heap and time-to-interactive for each:
 
 ```bash
-pnpm --filter @adapttable/showcase dev   # in one terminal
 node scripts/bench.mjs                   # every scenario
 node scripts/bench.mjs --smoke           # the fast subset CI runs
 ```
+
+A showcase already running on the port is used as-is, so
+`pnpm --filter @adapttable/showcase dev` in another terminal still works and is
+the faster loop while iterating.
 
 (Numbers are from one dev laptop; the **shape** — constant DOM, about half the
 memory — does not change with hardware.)
