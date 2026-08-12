@@ -58,6 +58,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
 | `filtersCount`                                    | The active-filter count badge.                                                         |
 | `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
+| `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
 | `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
 | `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
 | `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
@@ -403,10 +404,18 @@ With `request` set the table builds no file and downloads nothing, so
 `onBeforeExport` and `onAfterExport` do not run — there is no file for them to
 bracket.
 
-Return a promise and the Export button disables itself with `aria-busy` until
-it settles, in every adapter, so an impatient second click cannot start the
-same export twice. A rejected promise releases the button rather than leaving
-it stuck.
+Return a promise and the Export button shows **its own kit's loading
+affordance** until it settles — Mantine's, MUI's, Chakra's and Ant Design's
+loading buttons, Radix's and Base UI's spinners, and a styleable
+`exportSpinner` element in the unstyled and shadcn presets — with `aria-busy`
+throughout, so an impatient second click cannot start the same export twice. A
+rejected promise releases the button rather than leaving it stuck.
+
+Either way the outcome is **announced**: a download is silent and a failed one
+is silent in the same way, so a polite live region beside the button says
+`labels.exportDone` or `labels.exportFailed` (translated in all seventeen
+locales) when the export ends. `exportStatus` — `"idle"`, `"busy"`, `"done"` or
+`"failed"` — is on the same state for a toolbar that wants to show more.
 
 ### The export pipeline (headless)
 

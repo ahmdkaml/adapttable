@@ -1050,7 +1050,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         range: gridFocus.range,
         firstRowIndex: windowStart,
       }
-    )
+    ),
+    c.table.labels
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);

@@ -68,9 +68,14 @@ const FIXTURES = [
     absent: ["toCsv", "Blob", "download", "virtual"],
   },
   {
+    // The whole surface at once, which no application imports. It is a canary
+    // for the library's total weight rather than a promise about a user's
+    // bundle — the promise is the fixture above, and it holds independently.
+    // This number therefore moves when the library genuinely gains a feature,
+    // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 38,
+    budgetKB: 40,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and

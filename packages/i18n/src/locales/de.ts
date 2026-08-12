@@ -60,6 +60,8 @@ export const de: Required<TableLabels> = {
   showColumn: "Spalte einblenden",
   hideColumn: "Spalte ausblenden",
   exportCsv: "CSV exportieren",
+  exportDone: "Export abgeschlossen",
+  exportFailed: "Export fehlgeschlagen",
   editCell: "Zelle bearbeiten",
   expandGroup: "Gruppe erweitern",
   collapseGroup: "Gruppe einklappen",

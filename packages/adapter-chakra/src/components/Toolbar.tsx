@@ -1,6 +1,7 @@
 /** Search field, sort select, filters trigger, menus and rows-per-page. */
 import { pageSizeOptions } from "@adapttable/core";
 import {
+  ExportAnnouncer,
   FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
@@ -46,6 +47,7 @@ export function Toolbar<TRow>({
   columnMenu,
   onExportCsv,
   exportBusy,
+  exportAnnouncement = "",
   showRowsPerPage,
   accentColor,
   dir,
@@ -147,16 +149,22 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button
-            size="sm"
-            variant="outline"
-            colorPalette={accentColor}
-            onClick={onExportCsv}
-            disabled={exportBusy}
-            aria-busy={exportBusy}
-          >
-            {labels.exportCsv}
-          </Button>
+          <>
+            {/* Chakra's own loading Button: its Spinner replaces the label and
+                the control blocks itself, which is the kit's own vocabulary for
+                work in progress. */}
+            <Button
+              size="sm"
+              variant="outline"
+              colorPalette={accentColor}
+              onClick={onExportCsv}
+              loading={exportBusy}
+              aria-busy={exportBusy}
+            >
+              {labels.exportCsv}
+            </Button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {showRowsPerPage && (
           <NativeSelect

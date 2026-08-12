@@ -59,6 +59,8 @@ export const zhTW: Required<TableLabels> = {
   showColumn: "顯示欄位",
   hideColumn: "隱藏欄位",
   exportCsv: "匯出 CSV",
+  exportDone: "匯出完成",
+  exportFailed: "匯出失敗",
   editCell: "編輯儲存格",
   expandGroup: "展開群組",
   collapseGroup: "摺疊群組",

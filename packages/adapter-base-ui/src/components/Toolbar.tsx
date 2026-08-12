@@ -1,6 +1,7 @@
 /** Search field, sort select, filters trigger, menus and rows-per-page. */
 import { pageSizeOptions } from "@adapttable/core";
 import {
+  ExportAnnouncer,
   FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
@@ -8,7 +9,7 @@ import {
 import { type ReactNode } from "react";
 
 import type { BaseUiAccentColor } from "../types";
-import { Badge, Box, Button, Flex, TextField } from "../ui";
+import { Badge, Box, Button, Flex, Spinner, TextField } from "../ui";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect, type SelectOption } from "./primitives";
 
@@ -55,6 +56,7 @@ export function Toolbar<TRow>({
   columnMenu,
   onExportCsv,
   exportBusy,
+  exportAnnouncement = "",
   showRowsPerPage,
   accentColor,
   dir,
@@ -157,9 +159,14 @@ export function Toolbar<TRow>({
             disabled={exportBusy}
             aria-busy={exportBusy}
           >
+            {/* This adapter's own Spinner — the same one the filter form uses
+                while options load, so "working" looks the same everywhere in
+                the kit. */}
+            {exportBusy && <Spinner size="1" />}
             {labels.exportCsv}
           </Button>
         )}
+        {onExportCsv && <ExportAnnouncer announcement={exportAnnouncement} />}
         {showRowsPerPage && (
           <NativeSelect
             size="2"

@@ -1,5 +1,8 @@
 import { pageSizeOptions } from "@adapttable/core";
-import { type ToolbarChromeProps } from "@adapttable/core/adapter";
+import {
+  ExportAnnouncer,
+  type ToolbarChromeProps,
+} from "@adapttable/core/adapter";
 import { Badge, Button, Group, Select, Text, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
@@ -42,6 +45,7 @@ export function Toolbar<TRow>({
   columnMenu,
   onExportCsv,
   exportBusy,
+  exportAnnouncement = "",
   showRowsPerPage,
   className,
 }: Readonly<ToolbarProps<TRow>>) {
@@ -126,15 +130,21 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onExportCsv}
-            disabled={exportBusy}
-            aria-busy={exportBusy}
-          >
-            {labels.exportCsv}
-          </Button>
+          <>
+            {/* Mantine's own loading Button: it swaps in the kit's Loader and
+                blocks interaction itself, which reads as "working" rather than
+                as a control that has been switched off. */}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onExportCsv}
+              loading={exportBusy}
+              aria-busy={exportBusy}
+            >
+              {labels.exportCsv}
+            </Button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {showRowsPerPage && (
           <Group gap="xs" align="center">

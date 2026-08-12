@@ -131,10 +131,21 @@ const camel = (part: string): string =>
   part.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
 /** Every data-adapttable-part currently in the DOM (portals included). */
+/**
+ * Parts that are core's, not the kit's: the visually-hidden live regions.
+ *
+ * They carry no class hook on purpose. Their styling is what makes them
+ * announceable — clipped rather than hidden, present in the layout — so handing
+ * it to a host is handing over a way to silence the table. Anything visible
+ * belongs in the contract; these do not.
+ */
+const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
+
 function collectParts(): Map<string, Element[]> {
   const map = new Map<string, Element[]>();
   for (const el of document.body.querySelectorAll("[data-adapttable-part]")) {
     const part = el.getAttribute("data-adapttable-part")!;
+    if (A11Y_PARTS.has(part)) continue;
     map.set(part, [...(map.get(part) ?? []), el]);
   }
   return map;
@@ -254,6 +265,20 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   desktop.unmount();
 
+  // A host-handled export mid-flight → the busy button's spinner. The promise
+  // is left unsettled on purpose: the affordance only exists while it is.
+  const exporting = mount({
+    override: {
+      exportCsv: { request: () => new Promise<void>(() => undefined) },
+    },
+  });
+  await act(async () => {
+    fireEvent.click(part("export-csv-button")!);
+    await Promise.resolve();
+  });
+  absorb();
+  exporting.unmount();
+
   // Drawer filters mode (panel, header, footer, close, done, backdrop) with
   // an active filter (count badge + chips + chip remove).
   const drawer = mount({
@@ -325,6 +350,7 @@ const KEYS = [
   "filtersIcon",
   "filtersCount",
   "exportCsvButton",
+  "exportSpinner",
   "filtersAnchor",
   "filtersBackdrop",
   "filtersPopover",

@@ -6,15 +6,12 @@
  * it sits in a dataset the user cannot see the end of. "1,240" is useless;
  * "Budget, 1,240, row 40,002 of 100,000" is navigation.
  *
- * It lives in core rather than in eight adapters because the details are easy
- * to get subtly wrong and invisible when they are: `aria-live="polite"` so it
- * waits for a gap rather than interrupting, `aria-atomic` so the whole phrase
- * is read rather than the diff, and visually hidden by clip rather than
- * `display: none` — a hidden element is not announced at all, which is the
- * classic way this feature ships broken.
+ * It lives in core rather than in eight adapters because the region's own
+ * details are easy to get wrong — see {@link LiveRegion}, which owns them.
  */
 import type { ReactElement } from "react";
 
+import { LiveRegion } from "../a11y/LiveRegion";
 import type { GridFocusState } from "./useGridFocus";
 
 /** Props for {@link GridFocusAnnouncer}. */
@@ -22,23 +19,6 @@ export interface GridFocusAnnouncerProps {
   /** The grid focus state, straight from `table.gridFocus`. */
   focus: GridFocusState;
 }
-
-/**
- * Clipped rather than hidden: a screen reader ignores `display: none` and
- * `visibility: hidden`, so the region has to remain in the layout while taking
- * no visible space.
- */
-const VISUALLY_HIDDEN = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  margin: "-1px",
-  padding: 0,
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-} as const;
 
 /**
  * Renders the grid's focus announcements, or nothing at all when cell
@@ -50,15 +30,5 @@ export function GridFocusAnnouncer({
   focus,
 }: Readonly<GridFocusAnnouncerProps>): ReactElement | null {
   if (!focus.enabled) return null;
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      data-adapttable-part="grid-announcer"
-      style={VISUALLY_HIDDEN}
-    >
-      {focus.announcement}
-    </div>
-  );
+  return <LiveRegion part="grid-announcer">{focus.announcement}</LiveRegion>;
 }

@@ -300,7 +300,11 @@ and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
 button. `ExportRowScope` names the row scopes — including `"range"`, the
 highlighted cell rectangle — `ExportContext` carries the selection, full column
 set and range those scopes need, `ExportInfo` is what the lifecycle hooks
-receive, and `ExportHandlerState` is what `useExportHandler` returns. See
+receive, and `ExportHandlerState` is what `useExportHandler` returns — the
+click handler, `exportBusy`, an `ExportStatus` and the outcome text an
+`ExportAnnouncer` reads out. `LiveRegion` (with `LiveRegionProps`) is the polite
+region underneath it and `GridFocusAnnouncer`'s, and `ExportAnnouncerProps`
+types the announcer itself. See
 [customization](./customization.md#export).
 
 **File formats.** An `ExportWriter` turns an `ExportWriteContext` — an

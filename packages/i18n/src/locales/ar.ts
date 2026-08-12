@@ -61,6 +61,8 @@ export const ar: Required<TableLabels> = {
   showColumn: "إظهار العمود",
   hideColumn: "إخفاء العمود",
   exportCsv: "تصدير CSV",
+  exportDone: "تم التصدير",
+  exportFailed: "فشل التصدير",
   editCell: "تعديل الخلية",
   expandGroup: "توسيع المجموعة",
   collapseGroup: "طي المجموعة",

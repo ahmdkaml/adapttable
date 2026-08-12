@@ -59,6 +59,8 @@ export const ja: Required<TableLabels> = {
   showColumn: "列を表示",
   hideColumn: "列を非表示",
   exportCsv: "CSVをエクスポート",
+  exportDone: "エクスポートが完了しました",
+  exportFailed: "エクスポートに失敗しました",
   editCell: "セルを編集",
   expandGroup: "グループを展開",
   collapseGroup: "グループを折りたたむ",

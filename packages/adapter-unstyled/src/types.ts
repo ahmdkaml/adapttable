@@ -29,6 +29,12 @@ export interface DataTableClassNames {
   filtersCount?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
+  /**
+   * The spinner inside the Export button while a host-handled export runs.
+   * There is no kit component to borrow here, so the element is yours to
+   * style — the shadcn preset spins it.
+   */
+  exportSpinner?: string;
   filtersAnchor?: string;
   filtersBackdrop?: string;
   filtersPopover?: string;

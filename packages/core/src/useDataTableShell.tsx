@@ -166,7 +166,8 @@ export function useDataTableShell<TRow>(
         range: gridFocus.range,
         firstRowIndex: windowStart,
       }
-    )
+    ),
+    labels
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);

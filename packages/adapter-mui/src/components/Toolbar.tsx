@@ -1,9 +1,13 @@
 /** Search field, sort select, filters trigger, menus and rows-per-page. */
 import { pageSizeOptions } from "@adapttable/core";
-import { type ToolbarChromeProps } from "@adapttable/core/adapter";
+import {
+  ExportAnnouncer,
+  type ToolbarChromeProps,
+} from "@adapttable/core/adapter";
 import {
   Badge,
   Button,
+  CircularProgress,
   InputAdornment,
   MenuItem,
   Stack,
@@ -89,6 +93,7 @@ export function Toolbar<TRow>({
   columnMenu,
   onExportCsv,
   exportBusy,
+  exportAnnouncement = "",
 }: Readonly<MuiToolbarProps<TRow>>) {
   const { labels, source } = table;
   const sortOptions =
@@ -189,15 +194,27 @@ export function Toolbar<TRow>({
         {savedViewsMenu}
         {columnMenu}
         {onExportCsv && (
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={onExportCsv}
-            disabled={exportBusy}
-            aria-busy={exportBusy}
-          >
-            {labels.exportCsv}
-          </Button>
+          <>
+            {/* MUI's own progress indicator in the button's icon slot rather
+                than the Button `loading` prop, which only exists from 6.4 and
+                the supported floor is 6.1 — the affordance is the kit's either
+                way, and it works on every version this adapter claims. */}
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onExportCsv}
+              disabled={exportBusy}
+              aria-busy={exportBusy}
+              startIcon={
+                exportBusy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : undefined
+              }
+            >
+              {labels.exportCsv}
+            </Button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {showRowsPerPage && (
           <TextField

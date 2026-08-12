@@ -1,10 +1,11 @@
 /**
- * Handing an export to the backend.
+ * Handing an export to the backend, and telling the user what happened.
  *
  * Past a certain size the browser is the wrong place to build the file, so the
- * button sends the user's current view somewhere that can. Two things must
- * hold: the table builds and downloads nothing itself, and the same export
- * cannot be started twice by an impatient second click.
+ * button sends the user's current view somewhere that can. Three things must
+ * hold: the table builds and downloads nothing itself, the same export cannot
+ * be started twice by an impatient second click, and the outcome is announced —
+ * a download is silent, and so is a failed one.
  */
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -12,6 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { TableSource } from "../source/TableSource";
 import type { ColumnDef } from "../types";
 import { resetDevWarnings } from "../utils/devWarn";
+import { ExportAnnouncer } from "./ExportAnnouncer";
 import { type ExportRequest, makeExportCsvHandler } from "./tableCsv";
 import { useExportHandler } from "./useExportHandler";
 
@@ -124,30 +126,44 @@ describe("exportCsv.request", () => {
   });
 });
 
+/**
+ * A host export the test settles by hand, so the busy window can be inspected
+ * while it is open.
+ */
+function pendingRequest(): {
+  request: () => Promise<void>;
+  settle: () => void;
+} {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { request: () => promise, settle: () => release() };
+}
+
 describe("useExportHandler", () => {
   /** A button wired exactly the way every adapter wires it. */
   function Harness({ request }: { request: () => void | Promise<void> }) {
-    const { onExportCsv, exportBusy } = useExportHandler(
+    const { onExportCsv, exportBusy, exportAnnouncement } = useExportHandler(
       makeExportCsvHandler<Row>({ request }, source(), COLUMNS)
     );
     return (
-      <button
-        type="button"
-        onClick={onExportCsv}
-        disabled={exportBusy}
-        aria-busy={exportBusy}
-      >
-        Export
-      </button>
+      <>
+        <button
+          type="button"
+          onClick={onExportCsv}
+          disabled={exportBusy}
+          aria-busy={exportBusy}
+        >
+          Export
+        </button>
+        <ExportAnnouncer announcement={exportAnnouncement} />
+      </>
     );
   }
 
   it("marks the button busy while the host is working, then releases it", async () => {
-    let settle!: () => void;
-    const request = () =>
-      new Promise<void>((resolve) => {
-        settle = resolve;
-      });
+    const { request, settle } = pendingRequest();
     render(<Harness request={request} />);
     const button = screen.getByRole("button");
 
@@ -193,6 +209,108 @@ describe("useExportHandler", () => {
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("exportCsv.request rejected")
     );
+  });
+
+  it("announces the outcome, because a download says nothing on its own", async () => {
+    const { request, settle } = pendingRequest();
+    render(<Harness request={request} />);
+
+    // The region exists before it has anything to say: one that appears
+    // together with its message is frequently never announced.
+    const region = screen.getByRole("status");
+    expect(region).toHaveTextContent("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    // Nothing is claimed while the work is still running.
+    expect(region).toHaveTextContent("");
+
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(region).toHaveTextContent("Export complete");
+  });
+
+  it("announces a failure, so a silent failure is not silent", async () => {
+    resetDevWarnings();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<Harness request={() => Promise.reject(new Error("no"))} />);
+
+    await act(async () => {
+      screen.getByRole("button", { name: "Export" }).click();
+      await Promise.resolve();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Export failed");
+  });
+
+  it("says it again when the same export runs twice", async () => {
+    render(<Harness request={() => Promise.resolve()} />);
+    const region = screen.getByRole("status");
+    const button = screen.getByRole("button", { name: "Export" });
+
+    await act(async () => {
+      button.click();
+      await Promise.resolve();
+    });
+    const first = region.textContent ?? "";
+
+    await act(async () => {
+      button.click();
+      await Promise.resolve();
+    });
+    // Identical live-region text is announced once, so the second outcome has
+    // to differ as text while reading identically — an invisible separator.
+    expect(region.textContent).not.toBe(first);
+    expect(region).toHaveTextContent("Export complete");
+  });
+
+  it("uses the table's own labels, so the announcement is localizable", async () => {
+    function Localized() {
+      const state = useExportHandler(
+        makeExportCsvHandler<Row>(
+          { request: () => Promise.resolve() },
+          source(),
+          COLUMNS
+        ),
+        { exportDone: "Exportation terminée" }
+      );
+      return (
+        <>
+          <button type="button" onClick={state.onExportCsv}>
+            Export
+          </button>
+          <ExportAnnouncer announcement={state.exportAnnouncement} />
+        </>
+      );
+    }
+    render(<Localized />);
+    await act(async () => {
+      screen.getByRole("button").click();
+      await Promise.resolve();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Exportation terminée"
+    );
+  });
+
+  it("reports the status for a kit that shows more than a spinner", () => {
+    function Status() {
+      const { exportStatus, onExportCsv } = useExportHandler(
+        makeExportCsvHandler<Row>(true, source(), COLUMNS)
+      );
+      return (
+        <button type="button" onClick={onExportCsv} data-status={exportStatus}>
+          Export
+        </button>
+      );
+    }
+    render(<Status />);
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("data-status", "idle");
+    act(() => {
+      button.click();
+    });
+    expect(button).toHaveAttribute("data-status", "done");
   });
 
   it("stays synchronous, and never busy, for the built-in export", () => {

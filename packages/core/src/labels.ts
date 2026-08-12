@@ -62,6 +62,8 @@ export const defaultLabels: Required<TableLabels> = {
   showColumn: "Show column",
   hideColumn: "Hide column",
   exportCsv: "Export CSV",
+  exportDone: "Export complete",
+  exportFailed: "Export failed",
   editCell: "Edit cell",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   expandGroup: "Expand group",

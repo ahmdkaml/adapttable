@@ -27,6 +27,8 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  exportSpinner:
+    "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
   filtersPanel:
     "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",

@@ -62,6 +62,8 @@ export const ru: Required<TableLabels> = {
   showColumn: "Показать столбец",
   hideColumn: "Скрыть столбец",
   exportCsv: "Экспорт CSV",
+  exportDone: "Экспорт завершён",
+  exportFailed: "Не удалось выполнить экспорт",
   editCell: "Изменить ячейку",
   expandGroup: "Развернуть группу",
   collapseGroup: "Свернуть группу",

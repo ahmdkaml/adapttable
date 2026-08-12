@@ -12,6 +12,7 @@
  * @packageDocumentation
  */
 
+export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
 export { resolveDisabledReason } from "./actions/confirm";
 export { bulkActionErrorMessage } from "./actions/useBulkActionRunner";
 export {
@@ -58,7 +59,12 @@ export {
   rowEditingSignature,
 } from "./editing/editableCellController";
 export {
+  ExportAnnouncer,
+  type ExportAnnouncerProps,
+} from "./export/ExportAnnouncer";
+export {
   type ExportHandlerState,
+  type ExportStatus,
   useExportHandler,
 } from "./export/useExportHandler";
 export {

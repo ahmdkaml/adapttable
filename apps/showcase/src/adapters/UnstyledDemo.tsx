@@ -144,6 +144,8 @@ const TAILWIND: DataTableClassNames = {
   columnMenuSeparator: "my-1.5 border-gray-100 dark:border-zinc-800",
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
+  exportSpinner:
+    "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent",
   // ── Selection, actions & expansion ──────────────────────────────
   checkbox: "h-4 w-4 accent-indigo-600",
   selectionHeader:

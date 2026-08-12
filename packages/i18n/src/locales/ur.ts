@@ -61,6 +61,8 @@ export const ur: Required<TableLabels> = {
   showColumn: "کالم دکھائیں",
   hideColumn: "کالم چھپائیں",
   exportCsv: "CSV برآمد کریں",
+  exportDone: "برآمد مکمل ہو گئی",
+  exportFailed: "برآمد ناکام ہو گئی",
   editCell: "سیل میں ترمیم",
   expandGroup: "گروپ پھیلائیں",
   collapseGroup: "گروپ سکیڑیں",

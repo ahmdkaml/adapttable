@@ -391,6 +391,13 @@ export interface TableLabels {
   hideColumn?: string;
   /** Toolbar CSV export button. */
   exportCsv?: string;
+  /**
+   * Announced when an export finishes. A download gives a screen-reader user
+   * no feedback of its own, so without this the button simply goes quiet.
+   */
+  exportDone?: string;
+  /** Announced when an export fails, so a silent failure is never silent. */
+  exportFailed?: string;
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
   /**

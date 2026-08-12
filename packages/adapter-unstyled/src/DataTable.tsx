@@ -1,5 +1,6 @@
 import type { TableSource } from "@adapttable/core";
 import {
+  ExportAnnouncer,
   GridFocusAnnouncer,
   useDataTableShell,
   useMountStagger,
@@ -208,7 +209,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // carrying the selection, the full column set and the highlighted range. It
   // used to be rebuilt here from the same parts, which is precisely how a new
   // scope can work in seven kits and silently fall back in the eighth.
-  const { onExportCsv, exportBusy } = shell.toolbarProps;
+  const { onExportCsv, exportBusy, exportAnnouncement } = shell.toolbarProps;
 
   return (
     <div
@@ -326,17 +327,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         {onExportCsv && (
-          <button
-            type="button"
-            data-adapttable-part="export-csv-button"
-            className={classNames.exportCsvButton}
-            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-            onClick={onExportCsv}
-            disabled={exportBusy}
-            aria-busy={exportBusy}
-          >
-            {labels.exportCsv}
-          </button>
+          <>
+            <button
+              type="button"
+              data-adapttable-part="export-csv-button"
+              className={classNames.exportCsvButton}
+              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+              onClick={onExportCsv}
+              disabled={exportBusy}
+              aria-busy={exportBusy}
+            >
+              {/* No kit to borrow a loading button from, so the affordance is an
+                  element the host can style — `aria-hidden` because the
+                  announcement below is what a screen reader should hear, not a
+                  decoration. */}
+              {exportBusy && (
+                <span
+                  aria-hidden="true"
+                  data-adapttable-part="export-spinner"
+                  className={classNames.exportSpinner}
+                />
+              )}
+              {labels.exportCsv}
+            </button>
+            <ExportAnnouncer announcement={exportAnnouncement} />
+          </>
         )}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect

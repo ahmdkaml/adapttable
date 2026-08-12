@@ -61,6 +61,8 @@ export const pt: Required<TableLabels> = {
   showColumn: "Mostrar coluna",
   hideColumn: "Ocultar coluna",
   exportCsv: "Exportar CSV",
+  exportDone: "Exportação concluída",
+  exportFailed: "Falha na exportação",
   editCell: "Editar célula",
   expandGroup: "Expandir grupo",
   collapseGroup: "Recolher grupo",

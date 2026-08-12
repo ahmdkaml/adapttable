@@ -59,6 +59,8 @@ export const zh: Required<TableLabels> = {
   showColumn: "显示列",
   hideColumn: "隐藏列",
   exportCsv: "导出 CSV",
+  exportDone: "导出完成",
+  exportFailed: "导出失败",
   editCell: "编辑单元格",
   expandGroup: "展开分组",
   collapseGroup: "折叠分组",
