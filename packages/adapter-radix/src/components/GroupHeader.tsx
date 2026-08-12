@@ -8,7 +8,11 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { ExpandChevron, resolveMobileLabel } from "@adapttable/core/adapter";
+import {
+  ExpandChevron,
+  groupIndentStyle,
+  resolveMobileLabel,
+} from "@adapttable/core/adapter";
 import { Box, Card, Flex, IconButton, Table, Text } from "@radix-ui/themes";
 import type { ReactElement } from "react";
 
@@ -87,6 +91,7 @@ export function GroupHeaderRow<TRow>({
       <Table.Cell
         colSpan={leadingCells + layout.labelColumns.length}
         data-adapttable-part="group-cell"
+        style={groupIndentStyle(entry.level)}
       >
         <Flex gap="2" align="center" width="100%">
           <GroupExpandToggle

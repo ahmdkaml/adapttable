@@ -199,3 +199,133 @@ describe("buildGroupedFlatModel", () => {
     expect(flat[0]).toMatchObject({ kind: "group", label: "(blank)" });
   });
 });
+
+describe("buildGroupedFlatModel — nested grouping", () => {
+  interface Person {
+    id: string;
+    team: string;
+    status: string;
+  }
+  const PEOPLE: Person[] = [
+    { id: "1", team: "Core", status: "active" },
+    { id: "2", team: "Core", status: "blocked" },
+    { id: "3", team: "Core", status: "active" },
+    { id: "4", team: "Web", status: "blocked" },
+  ];
+  const columns = [
+    { key: "team", header: "Team" },
+    { key: "status", header: "Status" },
+  ];
+  const build = (
+    groupBy: string | string[],
+    collapsed: ReadonlySet<string> = new Set()
+  ) =>
+    buildGroupedFlatModel<Person>({
+      rows: PEOPLE,
+      groupBy,
+      columns,
+      getRowId: (row) => row.id,
+      collapsedGroupIds: collapsed,
+    });
+  const shape = (entries: ReturnType<typeof build>) =>
+    entries.map((entry) =>
+      entry.kind === "group"
+        ? `${"  ".repeat(entry.level)}${entry.label} (${entry.leafRows.length})`
+        : `${"  ".repeat(9)}row ${entry.key}`
+    );
+
+  it("nests each level inside the one before it", () => {
+    expect(shape(build(["team", "status"]))).toEqual([
+      "Core (3)",
+      "  active (2)",
+      "                  row 1",
+      "                  row 3",
+      "  blocked (1)",
+      "                  row 2",
+      "Web (1)",
+      "  blocked (1)",
+      "                  row 4",
+    ]);
+  });
+
+  it("counts a parent by its whole subtree, not its direct children", () => {
+    const [core] = build(["team", "status"]);
+    expect(core).toMatchObject({ level: 0, label: "Core" });
+    expect(core?.kind === "group" && core.leafIds).toEqual(["1", "2", "3"]);
+  });
+
+  it("gives nodes on different branches different keys", () => {
+    // "Core > blocked" and "Web > blocked" must collapse independently.
+    const keys = build(["team", "status"])
+      .filter((entry) => entry.kind === "group" && entry.label === "blocked")
+      .map((entry) => entry.key);
+    expect(new Set(keys).size).toBe(2);
+  });
+
+  it("hides a whole subtree when its parent is collapsed", () => {
+    const core = build(["team", "status"])[0]!;
+    expect(shape(build(["team", "status"], new Set([core.key])))).toEqual([
+      "Core (3)",
+      "Web (1)",
+      "  blocked (1)",
+      "                  row 4",
+    ]);
+  });
+
+  it("collapses one branch without touching the other", () => {
+    const nested = build(["team", "status"]);
+    const coreBlocked = nested.find(
+      (entry) =>
+        entry.kind === "group" && entry.level === 1 && entry.label === "blocked"
+    )!;
+    const after = build(["team", "status"], new Set([coreBlocked.key]));
+    expect(shape(after)).toEqual([
+      "Core (3)",
+      "  active (2)",
+      "                  row 1",
+      "                  row 3",
+      "  blocked (1)",
+      "Web (1)",
+      "  blocked (1)",
+      "                  row 4",
+    ]);
+  });
+
+  it("reads a single key exactly as it always did", () => {
+    expect(shape(build("team"))).toEqual([
+      "Core (3)",
+      "                  row 1",
+      "                  row 2",
+      "                  row 3",
+      "Web (1)",
+      "                  row 4",
+    ]);
+  });
+
+  it("numbers the leaves across the whole tree, for selection chrome", () => {
+    const indexes = build(["team", "status"])
+      .filter((entry) => entry.kind === "row")
+      .map((entry) => (entry.kind === "row" ? entry.index : -1));
+    expect(indexes).toEqual([0, 1, 2, 3]);
+  });
+
+  it("groups by nothing when every key is blank", () => {
+    expect(build([""])).toEqual([]);
+    expect(build([])).toEqual([]);
+  });
+
+  it("carries aggregates at every level", () => {
+    const entries = buildGroupedFlatModel<Person>({
+      rows: PEOPLE,
+      groupBy: ["team", "status"],
+      columns,
+      getRowId: (row) => row.id,
+      collapsedGroupIds: new Set(),
+      aggregates: (rows) => ({ status: `${rows.length}` }),
+    });
+    const groups = entries.filter((entry) => entry.kind === "group");
+    expect(
+      groups.map((g) => (g.kind === "group" ? g.aggregateCells?.status : null))
+    ).toEqual(["3", "2", "1", "1", "1"]);
+  });
+});

@@ -7,7 +7,7 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { resolveMobileLabel } from "@adapttable/core/adapter";
+import { groupIndentStyle, resolveMobileLabel } from "@adapttable/core/adapter";
 import { ActionIcon, Card, Checkbox, Group, Table, Text } from "@mantine/core";
 import type { ReactElement } from "react";
 
@@ -83,7 +83,11 @@ export function GroupHeaderRow<TRow>({
       data-collapsed={entry.collapsed ? "true" : undefined}
       fw={600}
     >
-      <Table.Td colSpan={leadingCells + layout.labelColumns.length}>
+      <Table.Td
+        colSpan={leadingCells + layout.labelColumns.length}
+        data-adapttable-part="group-cell"
+        style={groupIndentStyle(entry.level)}
+      >
         <Group gap="xs" wrap="nowrap">
           <GroupToggle
             expanded={expanded}

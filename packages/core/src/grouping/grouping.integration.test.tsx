@@ -163,7 +163,8 @@ describe("useTableChrome grouping bundle", () => {
         groupAggregates: (rows) => ({ name: rows.length }),
       })
     );
-    expect(result.current.grouping?.groupBy).toBe("team");
+    // The bundle carries the keys as a list now, one entry for a flat group.
+    expect(result.current.grouping?.groupBy).toEqual(["team"]);
     expect(result.current.grouping?.entries[0]).toMatchObject({
       kind: "group",
       label: "Core",

@@ -7,7 +7,7 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { resolveMobileLabel } from "@adapttable/core/adapter";
+import { groupIndentStyle, resolveMobileLabel } from "@adapttable/core/adapter";
 import type { ReactElement } from "react";
 
 import type { DataTableClassNames } from "../types";
@@ -57,7 +57,7 @@ export function GroupHeaderRow<TRow>({
         colSpan={leadingCells + layout.labelColumns.length}
         data-adapttable-part="group-cell"
         className={classNames.groupCell}
-        style={{ fontWeight: 600 }}
+        style={{ fontWeight: 600, ...groupIndentStyle(entry.level) }}
       >
         <span
           style={{

@@ -4,6 +4,7 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
+import { groupIndentStyle } from "@adapttable/core/adapter";
 import { Button, Checkbox, Space, Typography } from "antd";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
@@ -20,6 +21,8 @@ export interface AdaptTableGroupRow {
   [ADAPTTABLE_GROUP]: true;
   key: string;
   label: string;
+  /** Depth from zero, so a nested header indents like every other kit's. */
+  level: number;
   leafIds: readonly string[];
   aggregateCells?: Partial<Record<string, ReactNode>>;
   collapsed: boolean;
@@ -49,6 +52,7 @@ function toGroupedDataRecord<TRow>(
           [ADAPTTABLE_GROUP]: true,
           key: entry.key,
           label: entry.label,
+          level: entry.level,
           leafIds: entry.leafIds,
           aggregateCells: entry.aggregateCells,
           collapsed: entry.collapsed,
@@ -137,7 +141,11 @@ export function GroupHeaderCell({
   aggregate?: ReactNode;
 }>) {
   return (
-    <Space size={4} style={GROUP_HEADER_STYLE} data-adapttable-part="group-row">
+    <Space
+      size={4}
+      style={{ ...GROUP_HEADER_STYLE, ...groupIndentStyle(group.level) }}
+      data-adapttable-part="group-cell"
+    >
       <GroupToggle
         collapsed={group.collapsed}
         labels={labels}
@@ -146,8 +154,10 @@ export function GroupHeaderCell({
           onToggle();
         }}
       />
-      <Typography.Text strong>{group.label}</Typography.Text>
-      <Typography.Text type="secondary">
+      <Typography.Text strong data-adapttable-part="group-label">
+        {group.label}
+      </Typography.Text>
+      <Typography.Text type="secondary" data-adapttable-part="group-count">
         {labels.groupCount(group.leafIds.length)}
       </Typography.Text>
       {aggregate != null && aggregate !== false ? (
@@ -222,8 +232,10 @@ export function GroupHeaderCard({
           onToggle();
         }}
       />
-      <Typography.Text strong>{group.label}</Typography.Text>
-      <Typography.Text type="secondary">
+      <Typography.Text strong data-adapttable-part="group-label">
+        {group.label}
+      </Typography.Text>
+      <Typography.Text type="secondary" data-adapttable-part="group-count">
         {labels.groupCount(group.leafIds.length)}
       </Typography.Text>
       {aggregateNodes}

@@ -205,6 +205,21 @@ export function cellHighlightStyle(
 }
 
 /**
+ * How far a nested group header sits in from the one above it.
+ *
+ * Logical padding, so a nested group indents from the right in Arabic and
+ * Hebrew without a second rule. One value in core rather than eight in the
+ * adapters: nesting that steps by 1.5rem in one kit and 8px in another reads
+ * as a bug in whichever the user sees second.
+ *
+ * @param level - The header's depth, from zero.
+ * @returns The style for the header's label cell.
+ */
+export function groupIndentStyle(level: number): CSSProperties {
+  return level > 0 ? { paddingInlineStart: `${level * 1.5}rem` } : {};
+}
+
+/**
  * The caption a mobile card shows beside a cell's value.
  *
  * A card is a list of label/value pairs, not a grid with a header row, so each

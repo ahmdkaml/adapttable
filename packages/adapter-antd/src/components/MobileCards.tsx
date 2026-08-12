@@ -396,6 +396,7 @@ export function MobileCards<TRow>({
     [ADAPTTABLE_GROUP]: true,
     key: entry.key,
     label: entry.label,
+    level: entry.level,
     leafIds: entry.leafIds,
     aggregateCells: entry.aggregateCells,
     collapsed: entry.collapsed,

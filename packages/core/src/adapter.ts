@@ -48,6 +48,7 @@ export {
 export { DEFAULT_CARD_SIZE_PX } from "./constants";
 export {
   cellHighlightStyle,
+  groupIndentStyle,
   isCurrentMatchCell,
   isMatchedCell,
   isSelectedCell,

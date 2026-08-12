@@ -19,6 +19,11 @@ import {
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
 import {
+  formatGroupBy,
+  type GroupByInput,
+  parseGroupBy,
+} from "./grouping/groupKeys";
+import {
   buildGroupedFlatModel,
   type GroupAggregatesFn,
   type GroupedFlatEntry,
@@ -230,12 +235,13 @@ export interface TableChrome<TRow> {
    * `groupBy` and grouping stays fully dormant (package DNA: opt-in).
    */
   grouping?: {
-    groupBy: string;
+    /** The grouping keys in order — one entry for a flat group, more for nested. */
+    groupBy: readonly string[];
     collapsed: GroupCollapseState;
     aggregates?: GroupAggregatesFn<TRow>;
     /** Flat group-header + leaf entries for adapters to render. */
     entries: readonly GroupedFlatEntry<TRow>[];
-    setGroupBy: (key: string | null) => void;
+    setGroupBy: (key: GroupByInput) => void;
   };
   /**
    * The rows the editing layer must treat as present: the grouped leaf set
@@ -320,12 +326,14 @@ export function useTableChrome<TRow>(
   // slice. Mutators pass through untouched; the overlay disappears (and
   // real pagination resumes) the moment grouping is cleared.
   const requestedGroupBy =
-    props.groupBy === undefined ? source.groupBy : (props.groupBy ?? undefined);
-  const effectiveGroupBy =
-    requestedGroupBy && requestedGroupBy.length > 0
-      ? requestedGroupBy
-      : undefined;
-  const groupingArmed = Boolean(effectiveGroupBy && source.allFilteredRows);
+    props.groupBy === undefined ? source.groupBy : props.groupBy;
+  const groupByKeys = useMemo(
+    () => parseGroupBy(requestedGroupBy),
+    [requestedGroupBy]
+  );
+  const groupingArmed = Boolean(
+    groupByKeys.length > 0 && source.allFilteredRows
+  );
   const viewSource = useMemo<TableSource<TRow>>(() => {
     if (!groupingArmed || !source.allFilteredRows) return source;
     const all = source.allFilteredRows;
@@ -463,12 +471,12 @@ export function useTableChrome<TRow>(
   });
 
   useEffect(() => {
-    if (!effectiveGroupBy) return;
+    if (groupByKeys.length === 0) return;
     if (source.allFilteredRows) return;
     devWarn(
       "groupBy is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot regroup a full result set; grouping is ignored."
     );
-  }, [effectiveGroupBy, source.allFilteredRows]);
+  }, [groupByKeys, source.allFilteredRows]);
 
   // Depend on the two stable members, never the whole props/source objects
   // (both fresh every render) — keying on them rebuilt the grouping bundle,
@@ -481,33 +489,33 @@ export function useTableChrome<TRow>(
   // the mutator, so a logging handler silently broke grouping — take full
   // control via `source.setGroupBy` instead.)
   const setGroupBy = useCallback(
-    (key: string | null) => {
-      sourceSetGroupBy(key ?? undefined);
-      onGroupByChange?.(key);
+    (key: GroupByInput) => {
+      sourceSetGroupBy(formatGroupBy(key));
+      onGroupByChange?.(parseGroupBy(key));
     },
     [onGroupByChange, sourceSetGroupBy]
   );
 
   const getRowId = selectionGetId ?? rowKey;
   const grouping = useMemo(() => {
-    if (!effectiveGroupBy || !source.allFilteredRows) return undefined;
+    if (groupByKeys.length === 0 || !source.allFilteredRows) return undefined;
     const entries = buildGroupedFlatModel({
       rows: source.allFilteredRows,
-      groupBy: effectiveGroupBy,
+      groupBy: groupByKeys,
       columns: columnLayout.visibleColumns,
       getRowId,
       collapsedGroupIds: groupCollapse.collapsedGroupIds,
       aggregates: props.groupAggregates,
     });
     return {
-      groupBy: effectiveGroupBy,
+      groupBy: groupByKeys,
       collapsed: groupCollapse,
       aggregates: props.groupAggregates,
       entries,
       setGroupBy,
     };
   }, [
-    effectiveGroupBy,
+    groupByKeys,
     source.allFilteredRows,
     columnLayout.visibleColumns,
     getRowId,

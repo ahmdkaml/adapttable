@@ -181,18 +181,23 @@ export interface BaseDataTableProps<TRow> {
    */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /**
-   * Single-level row grouping by column key. Its presence (or
-   * `source.groupBy`) arms grouping chrome — omit it and the table never
-   * inserts group header rows (package DNA: opt-in). Frontend tier only;
-   * server-paginated sources get a devWarn and grouping is ignored.
+   * Row grouping by column key — one key, or an ordered list for nested
+   * groups: `groupBy={["team", "status"]}` puts each status inside its team,
+   * and every header carries the count and aggregates of its whole subtree.
+   *
+   * Its presence (or `source.groupBy`) arms grouping chrome — omit it and the
+   * table never inserts group header rows (package DNA: opt-in). Frontend tier
+   * only; server-paginated sources get a devWarn and grouping is ignored.
    */
-  groupBy?: string | null;
+  groupBy?: string | readonly string[] | null;
   /**
    * Notification fired AFTER the grouping change is applied — the table
    * always performs the change itself. Take full control (e.g. a fully
    * controlled `groupBy`) through `source.setGroupBy` instead.
+   *
+   * Receives the keys as a list, empty when grouping was cleared.
    */
-  onGroupByChange?: (groupBy: string | null) => void;
+  onGroupByChange?: (groupBy: readonly string[]) => void;
   /**
    * Per-group aggregate cells — **same signature as {@link summaryRow}**.
    * Called with each group's leaf rows. Omit for headers without subtotals.

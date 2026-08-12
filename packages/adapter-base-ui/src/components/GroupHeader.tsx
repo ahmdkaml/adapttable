@@ -8,7 +8,11 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { ExpandChevron, resolveMobileLabel } from "@adapttable/core/adapter";
+import {
+  ExpandChevron,
+  groupIndentStyle,
+  resolveMobileLabel,
+} from "@adapttable/core/adapter";
 import type { ReactElement } from "react";
 
 import type { BaseUiAccentColor } from "../types";
@@ -87,6 +91,7 @@ export function GroupHeaderRow<TRow>({
       <Table.Cell
         colSpan={leadingCells + layout.labelColumns.length}
         data-adapttable-part="group-cell"
+        style={groupIndentStyle(entry.level)}
       >
         <Flex gap="2" align="center" style={{ width: "100%" }}>
           <GroupExpandToggle

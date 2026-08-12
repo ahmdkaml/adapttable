@@ -46,7 +46,7 @@ export interface DemoColumnProps {
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
   /** `null` forces grouping off even if the URL carries a groupBy. */
-  groupBy?: string | null;
+  groupBy?: string | readonly string[] | null;
   groupAggregates?: (
     rows: readonly Person[]
   ) => Partial<Record<string, ReactNode>>;
@@ -138,8 +138,13 @@ function Frontend({
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
         ...(editing ? { onCellEdit } : {}),
+        // Two keys, so the demo shows what nesting looks like: each status
+        // sits inside its team, and every header totals its whole subtree.
         ...(grouping
-          ? { groupBy: "team", groupAggregates: DEMO_GROUP_AGGREGATES }
+          ? {
+              groupBy: ["team", "status"],
+              groupAggregates: DEMO_GROUP_AGGREGATES,
+            }
           : { groupBy: null }),
       })}
     </>

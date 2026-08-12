@@ -8,7 +8,11 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { ExpandChevron, resolveMobileLabel } from "@adapttable/core/adapter";
+import {
+  ExpandChevron,
+  groupIndentStyle,
+  resolveMobileLabel,
+} from "@adapttable/core/adapter";
 import { Box, Card, HStack, IconButton, Table, Text } from "@chakra-ui/react";
 import type { ReactElement } from "react";
 
@@ -86,6 +90,7 @@ export function GroupHeaderRow<TRow>({
       <Table.Cell
         colSpan={leadingCells + layout.labelColumns.length}
         data-adapttable-part="group-cell"
+        style={groupIndentStyle(entry.level)}
       >
         <HStack gap={2} w="full">
           <GroupExpandToggle

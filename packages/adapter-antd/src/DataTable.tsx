@@ -7,6 +7,7 @@ import {
   type ConfirmHandler,
   type FilterRuntime,
   type GridFocusState,
+  type GroupByInput,
   type GroupCollapseState,
   type GroupedFlatEntry,
   isDeclarativeFilters,
@@ -599,10 +600,10 @@ function useCardWindowing<TRow>(options: {
 
 /** Row-grouping bundle from `useTableChrome` (opt-in when `groupBy` is set). */
 interface GroupingBundle<TRow> {
-  groupBy: string;
+  groupBy: readonly string[];
   collapsed: GroupCollapseState;
   entries: readonly GroupedFlatEntry<TRow>[];
-  setGroupBy: (key: string | null) => void;
+  setGroupBy: (key: GroupByInput) => void;
 }
 
 /**

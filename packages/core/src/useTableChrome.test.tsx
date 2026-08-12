@@ -293,7 +293,7 @@ describe("useTableChrome", () => {
     act(() => result.current.grouping!.setGroupBy(null));
     // The change APPLIED (URL cleared → prop groupBy still forces it on,
     // but the mutator ran and the host was notified with the value).
-    expect(onGroupByChange).toHaveBeenCalledWith(null);
+    expect(onGroupByChange).toHaveBeenCalledWith([]);
     expect(adapter.getSearch()).not.toContain("groupBy");
   });
 

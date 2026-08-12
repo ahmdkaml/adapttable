@@ -18,6 +18,7 @@ import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import type { GridFocusState } from "./focus/useGridFocus";
+import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import type { RowExpansionState } from "./rows/useRowExpansion";
@@ -68,10 +69,11 @@ export interface SharedTableRenderProps<TRow> {
    * do not yet render group headers may ignore it; leaf `rows` stay valid.
    */
   grouping?: {
-    groupBy: string;
+    /** The grouping keys in order — one for a flat group, more for nested. */
+    groupBy: readonly string[];
     collapsed: GroupCollapseState;
     entries: readonly GroupedFlatEntry<TRow>[];
-    setGroupBy: (key: string | null) => void;
+    setGroupBy: (key: GroupByInput) => void;
   };
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];

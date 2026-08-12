@@ -441,6 +441,11 @@ export {
 
 /* ── Row grouping ──────────────────────────────────────────────────── */
 export {
+  formatGroupBy,
+  type GroupByInput,
+  parseGroupBy,
+} from "./grouping/groupKeys";
+export {
   groupAggregateEntries,
   type GroupRowCell,
   type GroupRowLayout,

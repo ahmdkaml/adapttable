@@ -13,6 +13,40 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Nested groups
+
+`groupBy` also takes an ordered list, and each key nests inside the one before
+it:
+
+```tsx
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy={["team", "status"]}
+/>
+```
+
+> Core (12)
+> &nbsp;&nbsp;active (7)
+> &nbsp;&nbsp;blocked (5)
+> Platform (9)
+> &nbsp;&nbsp;active (9)
+
+Every header describes its **whole subtree**: the count beside "Core" is all
+twelve of its people, and its `groupAggregates` cells total the same twelve.
+Deeper levels indent by logical padding, so nesting mirrors in Arabic and
+Hebrew without a second rule.
+
+Each node collapses on its own — "Core > blocked" and "Platform > blocked" are
+different groups with different keys, so closing one leaves the other open, and
+closing a parent hides its whole subtree in one step. Collapsed keys serialize
+exactly as they did with one level.
+
+In the URL and in saved views the keys travel as one comma-separated value —
+`?groupBy=team,status` — so a link built before nesting existed still works,
+and `onGroupByChange` reports the keys as a list.
+
 ## Example
 
 ```tsx

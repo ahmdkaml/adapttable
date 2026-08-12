@@ -7,7 +7,7 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { resolveMobileLabel } from "@adapttable/core/adapter";
+import { groupIndentStyle, resolveMobileLabel } from "@adapttable/core/adapter";
 import {
   Box,
   Card,
@@ -110,7 +110,9 @@ export function GroupHeaderRow<TRow>({
     >
       <TableCell
         colSpan={leadingCells + layout.labelColumns.length}
+        data-adapttable-part="group-cell"
         sx={{ fontWeight: 600 }}
+        style={groupIndentStyle(entry.level)}
       >
         <Box
           sx={{

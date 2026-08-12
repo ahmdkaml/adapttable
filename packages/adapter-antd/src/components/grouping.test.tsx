@@ -28,6 +28,7 @@ function makeGroup(
     [ADAPTTABLE_GROUP]: true,
     key: GROUP_KEY,
     label: "Core",
+    level: 0,
     leafIds: LEAF_IDS,
     collapsed: false,
     ...overrides,
@@ -63,6 +64,9 @@ describe("grouping helpers (antd)", () => {
         key: GROUP_KEY,
         value: "Core",
         label: "Core",
+        level: 0,
+        groupBy: "team",
+        path: ["s:Core"],
         leafRows: [],
         leafIds: LEAF_IDS,
         collapsed: false,
@@ -99,7 +103,7 @@ describe("GroupHeaderCell (antd)", () => {
       />
     );
     expect(
-      document.querySelector('[data-adapttable-part="group-row"]')
+      document.querySelector('[data-adapttable-part="group-cell"]')
     ).toBeInTheDocument();
     expect(screen.getByText("Core")).toBeInTheDocument();
     expect(

@@ -400,6 +400,15 @@ a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
 cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
 `editHistory`. See [cell editing](./cell-editing.md).
 
+**Row grouping.** `groupBy` takes a key or an ordered list; `parseGroupBy(value)`
+turns any of its forms (`GroupByInput`) into the key list and `formatGroupBy`
+back into the single comma-separated value state is stored as.
+`buildGroupedFlatModel(options)` walks the tree into the flat `GroupedFlatEntry`
+list adapters render — each group entry carrying its `level`, its `groupBy` key,
+its `path` and the leaves of its whole subtree — and `groupIndentStyle(level)`
+from `@adapttable/core/adapter` is the indent every kit applies. See
+[row grouping](./row-grouping.md).
+
 **Find in table.** `findMatches(options)` returns every cell whose text
 contains the query, in absolute addresses (`FindMatchesOptions` in);
 `matchKey(cell)` / `matchKeySet(matches)` make membership a constant-time
