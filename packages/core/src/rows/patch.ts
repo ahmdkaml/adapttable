@@ -129,8 +129,14 @@ function applyOne<TRow>(
 
   if (patch.type === "upsert") {
     const index = indexOfId(list, getRowId(patch.row), getRowId);
-    if (index === -1) list.push(patch.row);
-    else list[index] = patch.row;
+    if (index === -1) {
+      list.push(patch.row);
+      return true;
+    }
+    // Re-upserting the row already in place is not a change, and replacing it
+    // with itself would invalidate every per-row memo for nothing.
+    if (list[index] === patch.row) return false;
+    list[index] = patch.row;
     return true;
   }
 

@@ -172,9 +172,9 @@ Two guarantees make it safe to call on every commit:
   unchanged, and per-row memos — a [computed column](./columns.md)'s cache, a
   `memo`'d cell — stay valid instead of recomputing for the whole page.
 - **A patch that changes nothing returns the very same array.** An update whose
-  values already match, a removal of an id that is not there, or an empty
-  batch hands back the original reference, so the `setState` does not
-  re-render.
+  values already match, an upsert of the row already in place, a removal of an
+  id that is not there, or an empty batch hands back the original reference, so
+  the `setState` does not re-render.
 
 Selection and expansion survive for the same reason: both are keyed by row id,
 and a patch never changes the id of a row it did not touch.

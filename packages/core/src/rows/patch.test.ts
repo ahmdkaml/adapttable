@@ -95,6 +95,11 @@ describe("applyRowPatches", () => {
     expect(next[1]?.name).toBe("Alan M.");
   });
 
+  it("returns the same array when upserting the row already in place", () => {
+    // Re-emitting a row from a socket that changed nothing must not churn.
+    expect(apply([upsertRow(ALAN)])).toBe(ROWS);
+  });
+
   it("appends an unknown row on upsert", () => {
     const next = apply([upsertRow({ id: "7", name: "New", team: "Web" })]);
     expect(next.map((r) => r.id)).toEqual(["1", "2", "3", "7"]);
