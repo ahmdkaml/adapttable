@@ -109,9 +109,10 @@ For a table that fetches on the client instead, `loading` drives the built-in
 skeleton, and `skeletonRows` sets how many rows it shows — a Suspense boundary
 is not needed for that case and adds nothing.
 
-Streaming works because the table's first paint needs no measurement: column
-widths, sticky offsets and virtualization all resolve after mount, so a chunk
-that arrives late renders correctly rather than reflowing what came before.
+The table's first paint needs no measurement — column widths, sticky offsets
+and virtualization all resolve after mount — so a table inside a late-arriving
+chunk renders from its props alone, exactly as it does on a normal client
+render.
 
 ## Notes
 
