@@ -111,6 +111,37 @@ sideways drag follows the same mirroring the arrow keys do.
 Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
 in `@adapttable/core/adapter` renders the square itself.
 
+## What the selection adds up to
+
+Set `selectionStats` and a strip under the table says what is selected:
+
+```tsx
+<DataTable cellNavigation selectionStats />
+```
+
+> Count 12 · Sum 1,240.5 · Avg 103.4 · Min 12 · Max 900
+
+The count covers every selected cell; the arithmetic covers the numeric ones,
+so a rectangle spanning a name column and a budget column still has a sum.
+Numbers are read the way an export reads them — `exportValue` included — so the
+total here and the total a spreadsheet computes from a paste of the same cells
+cannot disagree. Booleans are not counted as numbers: summing a column of ticks
+to 3 answers a question nobody asked.
+
+A single cell shows nothing — it has no total worth reading, and a strip that
+flickers in on every arrow press is noise. The strip is a status region, so a
+screen reader reads the figures after the range announcement rather than
+interrupting it, and every word is localizable (`labels.selectionCount`,
+`selectionSum`, `selectionAverage`, `selectionMin`, `selectionMax`). Number
+formatting follows the table's `locale`.
+
+Selecting a column covers the LOADED rows, so the figures describe the 500 rows
+in hand rather than the 100,000 in the dataset — the table never totals rows it
+has never seen.
+
+Headless: `selectionStats(options)` returns the figures;
+`SelectionStatsBar` in `@adapttable/core/adapter` renders the strip.
+
 ## Selecting with the pointer, and whole columns
 
 Drag across cells to select a block: the press anchors it, crossing a cell

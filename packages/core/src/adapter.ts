@@ -76,6 +76,10 @@ export {
   type GridFocusAnnouncerProps,
 } from "./focus/GridFocusAnnouncer";
 export {
+  SelectionStatsBar,
+  type SelectionStatsBarProps,
+} from "./focus/SelectionStatsBar";
+export {
   type MountStaggerOptions,
   useMountStagger,
 } from "./hooks/useMountStagger";

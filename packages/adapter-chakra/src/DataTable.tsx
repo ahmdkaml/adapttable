@@ -1,5 +1,6 @@
 import {
   GridFocusAnnouncer,
+  SelectionStatsBar,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -121,6 +122,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       p={3}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
       <Stack gap={3}>
         <Toolbar
           {...toolbarProps}

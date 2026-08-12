@@ -75,6 +75,11 @@ export const defaultLabels: Required<TableLabels> = {
   gridRangeFilled: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} filled`,
   gridFillHandle: "Fill from selection",
+  selectionCount: "Count",
+  selectionSum: "Sum",
+  selectionAverage: "Avg",
+  selectionMin: "Min",
+  selectionMax: "Max",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

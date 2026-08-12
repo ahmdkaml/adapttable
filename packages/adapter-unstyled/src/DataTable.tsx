@@ -2,6 +2,7 @@ import type { TableSource } from "@adapttable/core";
 import {
   ExportAnnouncer,
   GridFocusAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -226,6 +227,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={cx("adapttable", classNames.root)}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
       <div
         data-adapttable-part="toolbar"
         className={classNames.toolbar}

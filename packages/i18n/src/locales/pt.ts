@@ -74,6 +74,11 @@ export const pt: Required<TableLabels> = {
   gridRangePasteFailed: "Falha ao colar",
   gridRangeFilled: (cells) => `${cells} células preenchidas`,
   gridFillHandle: "Preencher a partir da seleção",
+  selectionCount: "Contagem",
+  selectionSum: "Soma",
+  selectionAverage: "Média",
+  selectionMin: "Mín",
+  selectionMax: "Máx",
   gridCellPosition: (row, total) => `linha ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Linhas ${fromRow} a ${toRow}, colunas ${fromColumn} a ${toColumn} selecionadas, ${cells} células`,

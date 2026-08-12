@@ -73,6 +73,11 @@ export const fa: Required<TableLabels> = {
   gridRangePasteFailed: "جای‌گذاری ناموفق بود",
   gridRangeFilled: (cells) => `${cells} خانه پر شد`,
   gridFillHandle: "پر کردن از انتخاب",
+  selectionCount: "تعداد",
+  selectionSum: "مجموع",
+  selectionAverage: "میانگین",
+  selectionMin: "کمینه",
+  selectionMax: "بیشینه",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,

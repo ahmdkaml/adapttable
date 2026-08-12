@@ -73,6 +73,11 @@ export const tr: Required<TableLabels> = {
   gridRangePasteFailed: "Yapıştırma başarısız",
   gridRangeFilled: (cells) => `${cells} hücre dolduruldu`,
   gridFillHandle: "Seçimden doldur",
+  selectionCount: "Sayı",
+  selectionSum: "Toplam",
+  selectionAverage: "Ort.",
+  selectionMin: "Min",
+  selectionMax: "Maks",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

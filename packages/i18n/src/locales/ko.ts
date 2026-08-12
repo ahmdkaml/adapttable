@@ -72,6 +72,11 @@ export const ko: Required<TableLabels> = {
   gridRangePasteFailed: "붙여넣기 실패",
   gridRangeFilled: (cells) => `${cells}개 셀 채우기`,
   gridFillHandle: "선택 영역에서 채우기",
+  selectionCount: "개수",
+  selectionSum: "합계",
+  selectionAverage: "평균",
+  selectionMin: "최소",
+  selectionMax: "최대",
   gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}행부터 ${toRow}행, ${fromColumn}열부터 ${toColumn}열 선택, ${cells}개 셀`,

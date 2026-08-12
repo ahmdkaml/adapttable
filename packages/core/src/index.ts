@@ -140,6 +140,11 @@ export {
   type PasteRangeOptions,
 } from "./focus/pasteRange";
 export {
+  type SelectionStats,
+  selectionStats,
+  type SelectionStatsOptions,
+} from "./focus/selectionStats";
+export {
   GRID_CELL_ATTR,
   gridCellAttr,
   type GridFocusState,

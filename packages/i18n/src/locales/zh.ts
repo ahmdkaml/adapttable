@@ -72,6 +72,11 @@ export const zh: Required<TableLabels> = {
   gridRangePasteFailed: "粘贴失败",
   gridRangeFilled: (cells) => `已填充 ${cells} 个单元格`,
   gridFillHandle: "从选区填充",
+  selectionCount: "计数",
+  selectionSum: "求和",
+  selectionAverage: "平均值",
+  selectionMin: "最小值",
+  selectionMax: "最大值",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已选择第 ${fromRow} 至 ${toRow} 行、第 ${fromColumn} 至 ${toColumn} 列，共 ${cells} 个单元格`,

@@ -74,6 +74,11 @@ export const ar: Required<TableLabels> = {
   gridRangePasteFailed: "تعذّر اللصق",
   gridRangeFilled: (cells) => `تمت تعبئة ${cells} خلية`,
   gridFillHandle: "التعبئة من التحديد",
+  selectionCount: "العدد",
+  selectionSum: "المجموع",
+  selectionAverage: "المتوسط",
+  selectionMin: "الأدنى",
+  selectionMax: "الأعلى",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,

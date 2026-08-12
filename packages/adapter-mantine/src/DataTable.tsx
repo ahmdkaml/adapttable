@@ -5,6 +5,7 @@ import {
 } from "@adapttable/core";
 import {
   GridFocusAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
@@ -201,6 +202,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={classNames?.root}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={table.labels}
+        locale={props.locale}
+      />
       <Stack gap="xs">
         <Box
           ref={toolbarRef}

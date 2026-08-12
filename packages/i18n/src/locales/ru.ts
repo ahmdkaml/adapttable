@@ -75,6 +75,11 @@ export const ru: Required<TableLabels> = {
   gridRangePasteFailed: "Не удалось вставить",
   gridRangeFilled: (cells) => `Заполнено ячеек: ${cells}`,
   gridFillHandle: "Заполнить из выделения",
+  selectionCount: "Количество",
+  selectionSum: "Сумма",
+  selectionAverage: "Среднее",
+  selectionMin: "Мин",
+  selectionMax: "Макс",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

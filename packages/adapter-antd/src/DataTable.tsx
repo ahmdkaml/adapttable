@@ -15,6 +15,7 @@ import {
   resolveLabels,
   type RowExpansionState,
   type SelectionState,
+  selectionStats,
   type TableLabels,
   tableMinWidth,
   type TableSource,
@@ -35,6 +36,7 @@ import {
   DEFAULT_CARD_SIZE_PX,
   GridFocusAnnouncer,
   rowClickProps,
+  SelectionStatsBar,
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
@@ -1025,6 +1027,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onPaste: cellPasteHandler(props),
     onFill: cellFillHandler(props),
   });
+  const stats =
+    props.selectionStats === true
+      ? selectionStats({
+          range: gridFocus.range,
+          rows: c.source.rows,
+          columns: c.columnLayout.visibleColumns,
+          firstRowIndex: windowStart,
+        })
+      : null;
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   // The injected actions column is first-class in column management: it lives
@@ -1252,6 +1263,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={c.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={gridFocus} />
+      <SelectionStatsBar
+        stats={stats}
+        labels={c.table.labels}
+        locale={props.locale}
+      />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <div className={classNames?.toolbar}>
           <Toolbar

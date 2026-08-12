@@ -72,6 +72,11 @@ export const zhTW: Required<TableLabels> = {
   gridRangePasteFailed: "貼上失敗",
   gridRangeFilled: (cells) => `已填滿 ${cells} 個儲存格`,
   gridFillHandle: "從選取範圍填滿",
+  selectionCount: "計數",
+  selectionSum: "總和",
+  selectionAverage: "平均值",
+  selectionMin: "最小值",
+  selectionMax: "最大值",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已選取第 ${fromRow} 至 ${toRow} 列、第 ${fromColumn} 至 ${toColumn} 欄，共 ${cells} 個儲存格`,

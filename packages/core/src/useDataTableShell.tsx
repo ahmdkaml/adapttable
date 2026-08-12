@@ -6,6 +6,7 @@ import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
+import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
@@ -153,6 +154,18 @@ export function useDataTableShell<TRow>(
     onPaste: cellPasteHandler(props),
     onFill: cellFillHandler(props),
   });
+  // Computed here rather than in eight adapters: the rectangle, the rows and
+  // the window offset all live on this side, and an adapter that derived any
+  // of them itself would be the one place the figures could go wrong.
+  const stats =
+    props.selectionStats === true
+      ? selectionStats({
+          range: gridFocus.range,
+          rows: chrome.source.rows,
+          columns: chrome.columnLayout.visibleColumns,
+          firstRowIndex: windowStart,
+        })
+      : null;
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop. The selection, the full column
@@ -258,6 +271,8 @@ export function useDataTableShell<TRow>(
   return {
     /** Cell-navigation state; inert unless `cellNavigation` is set. */
     gridFocus,
+    /** What the selection adds up to; `null` unless `selectionStats` is set. */
+    selectionStats: stats,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,

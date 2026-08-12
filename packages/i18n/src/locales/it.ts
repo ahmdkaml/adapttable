@@ -73,6 +73,11 @@ export const it: Required<TableLabels> = {
   gridRangePasteFailed: "Incolla non riuscito",
   gridRangeFilled: (cells) => `${cells} celle riempite`,
   gridFillHandle: "Riempi dalla selezione",
+  selectionCount: "Conteggio",
+  selectionSum: "Somma",
+  selectionAverage: "Media",
+  selectionMin: "Min",
+  selectionMax: "Max",
   gridCellPosition: (row, total) => `riga ${row} di ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Righe da ${fromRow} a ${toRow}, colonne da ${fromColumn} a ${toColumn} selezionate, ${cells} celle`,

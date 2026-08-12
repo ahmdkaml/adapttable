@@ -134,6 +134,15 @@ export interface BaseDataTableProps<TRow> {
    */
   onCellFill?: (edits: CellEdit<TRow>[]) => void;
   /**
+   * Show what the selected cells add up to — count, sum, average, min and max
+   * — in a strip below the table. Requires `cellNavigation`.
+   *
+   * The count covers every selected cell; the arithmetic covers the numeric
+   * ones, so a rectangle spanning a name and a budget still has a sum. A
+   * single cell shows nothing: it has no total worth reading.
+   */
+  selectionStats?: boolean;
+  /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */

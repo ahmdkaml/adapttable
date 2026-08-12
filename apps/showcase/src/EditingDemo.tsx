@@ -15,7 +15,9 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
         <br />
         With <code>cellNavigation</code> on, that same handler receives whole
         blocks: paste a spreadsheet with Ctrl/Cmd+V, or drag the square on the
-        selection&rsquo;s corner to carry its values on.
+        selection&rsquo;s corner to carry its values on. Add{" "}
+        <code>selectionStats</code> and the strip under the table counts and
+        totals whatever is selected.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -41,6 +43,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             urlKey="edit"
             editing
             cellNavigation
+            selectionStats
           />
         </div>
       </div>

@@ -440,6 +440,16 @@ export interface TableLabels {
   gridRangeFilled?: (cells: number) => string;
   /** Accessible name of the fill handle on the selection's corner. */
   gridFillHandle?: string;
+  /** Leads the selected-cell count in the statistics strip. */
+  selectionCount?: string;
+  /** Leads the sum of the selected numbers. */
+  selectionSum?: string;
+  /** Leads the average of the selected numbers. */
+  selectionAverage?: string;
+  /** Leads the smallest selected number. */
+  selectionMin?: string;
+  /** Leads the largest selected number. */
+  selectionMax?: string;
   /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append

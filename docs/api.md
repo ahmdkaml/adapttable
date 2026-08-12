@@ -389,6 +389,13 @@ is the rule both it and `cellPasteHandler` follow. The square itself is
 `<DataTable>` the prop is `onCellFill`. See
 [cell navigation](./cell-navigation.md).
 
+**Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
+`cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
+selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /
+`SelectionStatsBarProps` from `@adapttable/core/adapter` render the strip, which
+is empty below two cells. On `<DataTable>` the prop is `selectionStats`. See
+[cell navigation](./cell-navigation.md).
+
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves
 `formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a

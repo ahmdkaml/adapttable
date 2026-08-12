@@ -73,6 +73,11 @@ export const es: Required<TableLabels> = {
   gridRangePasteFailed: "Error al pegar",
   gridRangeFilled: (cells) => `${cells} celdas rellenadas`,
   gridFillHandle: "Rellenar desde la selección",
+  selectionCount: "Recuento",
+  selectionSum: "Suma",
+  selectionAverage: "Prom.",
+  selectionMin: "Mín",
+  selectionMax: "Máx",
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Filas ${fromRow} a ${toRow}, columnas ${fromColumn} a ${toColumn} seleccionadas, ${cells} celdas`,

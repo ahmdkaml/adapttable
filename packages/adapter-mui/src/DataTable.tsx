@@ -1,6 +1,7 @@
 import { resolveLabels } from "@adapttable/core";
 import {
   GridFocusAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -151,6 +152,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       sx={{ p: 1.5 }}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
       <Stack spacing={1.5}>
         <Box className={classNames?.toolbar}>
           <Toolbar
