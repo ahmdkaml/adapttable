@@ -3,7 +3,10 @@ import {
   type TableLabels,
   type UseSavedViewsOptions,
 } from "@adapttable/core";
-import { useDataTableShell } from "@adapttable/core/adapter";
+import {
+  GridFocusAnnouncer,
+  useDataTableShell,
+} from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
 import { useRef } from "react";
@@ -197,6 +200,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={chrome.isRefreshing || undefined}
       className={classNames?.root}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <Stack gap="xs">
         <Box
           ref={toolbarRef}

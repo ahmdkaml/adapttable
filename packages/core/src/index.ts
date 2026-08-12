@@ -96,6 +96,22 @@ export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export {
+  type GridBounds,
+  type GridCell,
+  type GridFocusMove,
+  gridFocusMoveForKey,
+  type GridKeyPress,
+  moveGridFocus,
+  sameGridCell,
+} from "./focus/gridFocus";
+export {
+  GRID_CELL_ATTR,
+  gridCellAttr,
+  type GridFocusState,
+  useGridFocus,
+  type UseGridFocusOptions,
+} from "./focus/useGridFocus";
 export type { BaseDataTableProps } from "./props";
 export {
   type AggregateFn,

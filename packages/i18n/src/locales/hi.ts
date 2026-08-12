@@ -64,4 +64,5 @@ export const hi: Required<TableLabels> = {
   expandGroup: "समूह विस्तारित करें",
   collapseGroup: "समूह संक्षिप्त करें",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
 };

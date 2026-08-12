@@ -5,6 +5,7 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
@@ -87,6 +88,8 @@ export interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
  * row, so a fresh identity there must not (and does not) defeat the memo.
  */
 interface DesktopRowProps<TRow> {
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   row: TRow;
   index: number;
   /** Stable row id (selection + expansion key). */
@@ -182,6 +185,7 @@ function DesktopRowBase<TRow>(
     index,
     id,
     table,
+    gridFocus,
     columns,
     labels,
     classNames,
@@ -219,6 +223,7 @@ function DesktopRowBase<TRow>(
     <>
       <tr
         {...table.getRowProps(row, index)}
+        {...gridFocus?.getRowPropsAt(index)}
         {...rowClickProps(row, clickable ? onRowClick : undefined, index)}
         ref={measureElement}
         data-adapttable-part="row"
@@ -258,12 +263,13 @@ function DesktopRowBase<TRow>(
             />
           </td>
         )}
-        {columns.map((column) => {
+        {columns.map((column, colIndex) => {
           const pinStyle = bodyPinStyle(column.key);
           return (
             <td
               key={column.key}
               {...table.getCellProps(column, pinStyle && { style: pinStyle })}
+              {...gridFocus?.getCellPropsAt(index, colIndex)}
               data-adapttable-part="cell"
               data-pinned={pinOffset?.(column.key)?.side}
               className={classNames.cell}
@@ -334,6 +340,7 @@ function createDesktopRow<TRow>() {
 
 /** Desktop semantic `<table>` rendering. */
 export function DesktopTable<TRow>({
+  gridFocus,
   table,
   rows,
   rowActions,
@@ -537,6 +544,7 @@ export function DesktopTable<TRow>({
   const tableEl = (
     <table
       {...table.getTableProps()}
+      {...gridFocus?.getGridProps()}
       data-adapttable-part="table"
       className={classNames.table}
       style={minWidth > 0 ? { minWidth } : undefined}
@@ -708,6 +716,7 @@ export function DesktopTable<TRow>({
               const id = getRowId(entry.row);
               return (
                 <Row
+                  gridFocus={gridFocus}
                   key={entry.key}
                   row={entry.row}
                   index={entry.index}
@@ -750,6 +759,7 @@ export function DesktopTable<TRow>({
               const id = getRowId(row);
               return (
                 <Row
+                  gridFocus={gridFocus}
                   key={key}
                   row={row}
                   index={index}

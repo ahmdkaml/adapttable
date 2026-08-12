@@ -1,5 +1,5 @@
 import { AntdDemo } from "./adapters/AntdDemo";
-import { Columns, Pin, Resize } from "./sectionIcons";
+import { Columns, Keyboard, Pin, Resize } from "./sectionIcons";
 import { SectionHead } from "./sections";
 
 export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
@@ -9,7 +9,9 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
         Show/hide, drag-reorder, pin to the start, and resize by drag or
         keyboard — open the Columns menu, grab a header edge, or tap the pin to
         stick a column to the start, then tap again to unpin. Persist the layout
-        to localStorage, the URL, or your server.
+        to localStorage, the URL, or your server. <code>cellNavigation</code> is
+        on here too: Tab reaches the table once, then the arrow keys walk the
+        cells and a screen reader names each one.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -22,6 +24,9 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
           <span className="hint">
             <Columns size={12} /> Columns menu reorders &amp; hides
           </span>
+          <span className="hint">
+            <Keyboard size={12} /> Tab into the table, then arrow between cells
+          </span>
         </div>
         <div className="pad-surface__body">
           <AntdDemo
@@ -30,6 +35,7 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="cols"
             wide
+            cellNavigation
           />
         </div>
       </div>

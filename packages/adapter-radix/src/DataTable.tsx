@@ -1,4 +1,5 @@
 import {
+  GridFocusAnnouncer,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -124,6 +125,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         borderRadius: "var(--radius-4)",
       }}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <Flex direction="column" gap="3">
         <Toolbar
           {...toolbarProps}

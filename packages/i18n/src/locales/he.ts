@@ -65,4 +65,5 @@ export const he: Required<TableLabels> = {
   expandGroup: "הרחב קבוצה",
   collapseGroup: "כווץ קבוצה",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
 };

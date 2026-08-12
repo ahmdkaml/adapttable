@@ -64,4 +64,5 @@ export const fa: Required<TableLabels> = {
   expandGroup: "باز کردن گروه",
   collapseGroup: "بستن گروه",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
 };

@@ -64,4 +64,5 @@ export const tr: Required<TableLabels> = {
   expandGroup: "Grubu genişlet",
   collapseGroup: "Grubu daralt",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
 };

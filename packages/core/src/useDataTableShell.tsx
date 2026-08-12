@@ -5,6 +5,7 @@ import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { makeExportCsvHandler } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
+import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
 import {
@@ -122,6 +123,30 @@ export function useDataTableShell<TRow>(
   const { table, confirm, getRowId } = chrome;
   const { labels } = table;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Cell navigation is wired HERE rather than in `useDataTable`, so a headless
+  // consumer of the main entry never pays for a grid it did not ask for — the
+  // bundle budget catches that regression, which is how this landed here.
+  //
+  // The row count is the DATASET total and `windowStart` is where the rendered
+  // slice begins, so Ctrl+End reaches the real last row and the ARIA counts stay
+  // truthful under virtualization. Derived here so no adapter has to know: an
+  // off-by-a-page error is invisible on screen and only wrong to a screen reader.
+  const windowStart =
+    chrome.source.paginationMode === "paged"
+      ? Math.max(0, (chrome.source.page - 1) * chrome.source.limit)
+      : 0;
+  const gridFocus = useGridFocus<TRow>({
+    enabled: props.cellNavigation === true,
+    rowCount: Math.max(
+      chrome.source.total,
+      windowStart + chrome.source.rows.length
+    ),
+    columns: chrome.columnLayout.visibleColumns,
+    rows: chrome.source.rows,
+    firstRowIndex: windowStart,
+    dir: props.dir,
+    labels,
+  });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop. The selection and full column
@@ -169,6 +194,7 @@ export function useDataTableShell<TRow>(
   // this and adds its kit's row `size` and accent colour.
   const tableProps = {
     table,
+    gridFocus,
     rows: chrome.editingRows,
     rowActions,
     actionsPinned,
@@ -216,6 +242,8 @@ export function useDataTableShell<TRow>(
   };
 
   return {
+    /** Cell-navigation state; inert unless `cellNavigation` is set. */
+    gridFocus,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,

@@ -63,4 +63,5 @@ export const zhTW: Required<TableLabels> = {
   expandGroup: "展開群組",
   collapseGroup: "摺疊群組",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
 };

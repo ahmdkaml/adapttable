@@ -65,4 +65,5 @@ export const ur: Required<TableLabels> = {
   expandGroup: "گروپ پھیلائیں",
   collapseGroup: "گروپ سکیڑیں",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
 };

@@ -50,6 +50,14 @@ export const Star = make([
 export const Pin = make(["M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z", "M12 15v5"]);
 export const Resize = make(["M9 3H5v4", "M15 21h4v-4", "M5 7l14 10"]);
 export const Columns = make(["M4 5h16v14H4z", "M12 5v14", "M16 5v14"]);
+/** Arrow-key cell navigation: a cell with the four arrows around it. */
+export const Keyboard = make([
+  "M9 9h6v6H9z",
+  "M12 3v3",
+  "M12 18v3",
+  "M3 12h3",
+  "M18 12h3",
+]);
 export const Layers = make(["M12 3l9 5-9 5-9-5 9-5z", "M3 13l9 5 9-5"]);
 export const Phone = make(["M7 2h10v20H7z", "M10.5 19h3"]);
 export const Monitor = make(["M3 4h18v12H3z", "M8 20h8", "M12 16v4"]);

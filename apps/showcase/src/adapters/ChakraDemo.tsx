@@ -77,6 +77,7 @@ export function ChakraDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -88,6 +89,7 @@ export function ChakraDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -107,6 +109,7 @@ export function ChakraDemo({
               source={source}
               columns={makeColumns(locale, CHAKRA_CELLS)}
               rowKey={(r) => r.id}
+              cellNavigation={cellNavigation}
               {...columns}
               density={density}
               filtersMode={filtersUi}

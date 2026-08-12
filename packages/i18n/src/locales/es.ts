@@ -64,4 +64,5 @@ export const es: Required<TableLabels> = {
   expandGroup: "Expandir grupo",
   collapseGroup: "Contraer grupo",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `fila ${row} de ${total}`,
 };

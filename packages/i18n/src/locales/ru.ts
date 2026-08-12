@@ -66,4 +66,5 @@ export const ru: Required<TableLabels> = {
   expandGroup: "Развернуть группу",
   collapseGroup: "Свернуть группу",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `строка ${row} из ${total}`,
 };

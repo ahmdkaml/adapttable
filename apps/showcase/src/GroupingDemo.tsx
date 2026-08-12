@@ -32,6 +32,7 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
             urlKey="grp"
             grouping
             editing
+            cellNavigation
           />
         </div>
       </div>

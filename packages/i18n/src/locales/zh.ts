@@ -63,4 +63,5 @@ export const zh: Required<TableLabels> = {
   expandGroup: "展开分组",
   collapseGroup: "折叠分组",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
 };

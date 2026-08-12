@@ -83,6 +83,7 @@ export function AntdDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
   wide,
 }: Readonly<{
   mode: DataMode;
@@ -95,6 +96,7 @@ export function AntdDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
 }>) {
@@ -128,6 +130,7 @@ export function AntdDemo({
                 : makeColumns(locale, ANTD_CELLS)
             }
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}

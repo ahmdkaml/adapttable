@@ -101,6 +101,7 @@ export function BaseUiDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -112,6 +113,7 @@ export function BaseUiDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -127,6 +129,7 @@ export function BaseUiDemo({
           source={source}
           columns={makeColumns(locale, BASE_UI_CELLS)}
           rowKey={(r) => r.id}
+          cellNavigation={cellNavigation}
           {...columns}
           density={density}
           filtersMode={filtersUi}

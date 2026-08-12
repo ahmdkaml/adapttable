@@ -3,6 +3,7 @@ import {
   type ColumnDef,
   type ConfirmHandler,
   type FilterRuntime,
+  type GridFocusState,
   type GroupCollapseState,
   type GroupedFlatEntry,
   isDeclarativeFilters,
@@ -19,6 +20,7 @@ import {
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useFilterTriggerToggle,
+  useGridFocus,
   useInfiniteScroll,
   type UseSavedViewsOptions,
   useTableChrome,
@@ -28,6 +30,7 @@ import {
 } from "@adapttable/core";
 import {
   DEFAULT_CARD_SIZE_PX,
+  GridFocusAnnouncer,
   rowClickProps,
   useExportHandler,
   useKeyedVirtualization,
@@ -656,6 +659,8 @@ interface DataTableBodyRegionProps<TRow> {
   density: "comfortable" | "compact" | undefined;
   prefetch: DataTableProps<TRow>["prefetch"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   rowClassName: DataTableProps<TRow>["rowClassName"];
   cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
@@ -694,12 +699,15 @@ function DesktopTableBody<TRow>({
   handleChange,
   rowClassName,
   onRowClick,
+  gridFocus,
   prefetch,
   hasPinned,
   maxHeight,
   minWidth,
   emptyNode,
 }: Readonly<{
+  /** Cell-navigation getters; inert unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   tableLabel: string | undefined;
   columns: ReturnType<typeof buildColumns<TRow>>;
   dataSource: readonly GroupedDataRecord<TRow>[];
@@ -722,9 +730,26 @@ function DesktopTableBody<TRow>({
   minWidth: number;
   emptyNode: ReactNode;
 }>) {
+  // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
+  // reach it through the `components` seam. Memoized: a new component identity
+  // here would remount the whole table on every render.
+  const gridEnabled = gridFocus?.enabled ?? false;
+  const getGridProps = gridFocus?.getGridProps;
+  // Depends on the GETTER, not the whole state: the announcement changes on
+  // every focus move, and rebuilding `components` would remount antd's table and
+  // throw away the focus this just placed.
+  const gridComponents = useMemo(
+    () =>
+      gridEnabled && getGridProps
+        ? { table: gridTableComponent(getGridProps()) }
+        : undefined,
+    [gridEnabled, getGridProps]
+  );
+
   return (
     <Table<GroupedDataRecord<TRow>>
       aria-label={tableLabel}
+      components={gridComponents}
       columns={columns}
       dataSource={[...dataSource]}
       rowKey={(record) => groupedRowKey(record, getRowId)}
@@ -748,6 +773,9 @@ function DesktopTableBody<TRow>({
         }
         return {
           ...rowClickProps(record, onRowClick, rowIndex),
+          // antd builds its own <tr>, so the absolute aria-rowindex arrives
+          // here rather than through a spread on the element.
+          ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
           "data-stagger": "",
           onMouseEnter: prefetch ? () => prefetch(record) : undefined,
         };
@@ -764,6 +792,20 @@ function DesktopTableBody<TRow>({
 }
 
 /**
+ * antd owns the `<table>` element, so `role="grid"` and the ARIA dimensions
+ * reach it through the documented `components` seam rather than a spread.
+ *
+ * Built at module scope: a component declared inside another component is a new
+ * type on every render, which remounts everything below it — here that would
+ * mean losing the cell focus on every keystroke.
+ */
+function gridTableComponent(gridProps: Record<string, unknown>) {
+  return function GridTable(tableProps: Record<string, unknown>) {
+    return <table {...tableProps} {...gridProps} />;
+  };
+}
+
+/**
  * The table body region (error, skeleton, empty, mobile cards, desktop table).
  * Extracted outside `DataTable` to keep cognitive complexity within budget.
  */
@@ -771,6 +813,7 @@ function DataTableBodyRegion<TRow>(
   props: Readonly<DataTableBodyRegionProps<TRow>>
 ): ReactNode {
   const {
+    gridFocus,
     chromeBody,
     source,
     editingRows,
@@ -858,6 +901,7 @@ function DataTableBodyRegion<TRow>(
   } else {
     body = (
       <DesktopTableBody
+        gridFocus={gridFocus}
         tableLabel={tableLabel}
         columns={columns}
         dataSource={dataSource}
@@ -957,6 +1001,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     filterLabels,
   };
   const c = useTableChrome<TRow>(chromeProps);
+  // antd builds its own chrome rather than using `useDataTableShell`, so it
+  // calls the focus hook directly. Same derivation as the shell's: the row count
+  // is the DATASET total and `windowStart` is where the rendered slice begins, so
+  // Ctrl+End reaches the real last row and the ARIA counts stay truthful under
+  // virtualization.
+  const windowStart =
+    c.source.paginationMode === "paged"
+      ? Math.max(0, (c.source.page - 1) * c.source.limit)
+      : 0;
+  const gridFocus = useGridFocus<TRow>({
+    enabled: props.cellNavigation === true,
+    rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
+    columns: c.columnLayout.visibleColumns,
+    rows: c.source.rows,
+    firstRowIndex: windowStart,
+    dir: props.dir,
+    labels: c.table.labels,
+  });
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   // The injected actions column is first-class in column management: it lives
@@ -1046,6 +1108,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   });
 
   const columns = buildColumns<TRow>({
+    gridFocus: gridFocus,
     columns: table.columns,
     rowActions,
     sortBy: source.sortBy,
@@ -1123,6 +1186,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const bodyRegion = (
     <DataTableBodyRegion
+      gridFocus={gridFocus}
       chromeBody={c.body}
       source={source}
       editingRows={c.editingRows}
@@ -1173,6 +1237,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       }
       aria-busy={c.isRefreshing || undefined}
     >
+      <GridFocusAnnouncer focus={gridFocus} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <div className={classNames?.toolbar}>
           <Toolbar

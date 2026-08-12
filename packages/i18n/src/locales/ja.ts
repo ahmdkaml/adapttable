@@ -63,4 +63,5 @@ export const ja: Required<TableLabels> = {
   expandGroup: "グループを展開",
   collapseGroup: "グループを折りたたむ",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total} 行中 ${row} 行目`,
 };

@@ -62,6 +62,10 @@ export {
   useExportHandler,
 } from "./export/useExportHandler";
 export {
+  GridFocusAnnouncer,
+  type GridFocusAnnouncerProps,
+} from "./focus/GridFocusAnnouncer";
+export {
   type MountStaggerOptions,
   useMountStagger,
 } from "./hooks/useMountStagger";

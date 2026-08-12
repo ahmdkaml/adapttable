@@ -64,4 +64,5 @@ export const de: Required<TableLabels> = {
   expandGroup: "Gruppe erweitern",
   collapseGroup: "Gruppe einklappen",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `Zeile ${row} von ${total}`,
 };

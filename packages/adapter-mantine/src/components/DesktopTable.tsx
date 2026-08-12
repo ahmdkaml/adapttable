@@ -4,6 +4,7 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
@@ -231,6 +232,8 @@ interface DesktopRowProps<TRow> {
   columns: ColumnDef<TRow>[];
   /** Core's cell prop-getter — identity-stable for the table's lifetime. */
   getCellProps: UseDataTableResult<TRow>["getCellProps"];
+  /** Cell-navigation getters; absent unless `cellNavigation` is on. */
+  gridFocus?: GridFocusState;
   /** Selected state; `undefined` when selection is off (no checkbox cell). */
   selected?: boolean;
   selectLabel: string;
@@ -373,6 +376,7 @@ function DesktopRowBase<TRow>({
   id,
   columns,
   getCellProps,
+  gridFocus,
   selected,
   selectLabel,
   onToggleSelect,
@@ -404,6 +408,7 @@ function DesktopRowBase<TRow>({
       <Table.Tr
         role="row"
         data-index={index}
+        {...gridFocus?.getRowPropsAt(index)}
         aria-selected={selected}
         {...rowClickProps(row, onRowClick, index)}
         className={className}
@@ -430,10 +435,11 @@ function DesktopRowBase<TRow>({
             />
           </Table.Td>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <Table.Td
             key={column.key}
             {...getCellProps(column)}
+            {...gridFocus?.getCellPropsAt(index, colIndex)}
             style={pinStyleFor(column.key)}
           >
             <EditableDataCell
@@ -477,6 +483,7 @@ function DesktopRowBase<TRow>({
 
 /** Desktop table rendering driven by core prop-getters. */
 export function DesktopTable<TRow>({
+  gridFocus,
   table,
   rows,
   rowActions,
@@ -728,6 +735,7 @@ export function DesktopTable<TRow>({
     >
       <Table
         {...table.getTableProps()}
+        {...gridFocus?.getGridProps()}
         className={className}
         highlightOnHover
         verticalSpacing={verticalSpacing}
@@ -836,6 +844,7 @@ export function DesktopTable<TRow>({
                     id={id}
                     columns={columns}
                     getCellProps={table.getCellProps}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}
                     onToggleSelect={toggleSelect}
@@ -875,6 +884,7 @@ export function DesktopTable<TRow>({
                     id={id}
                     columns={columns}
                     getCellProps={table.getCellProps}
+                    gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}
                     onToggleSelect={toggleSelect}

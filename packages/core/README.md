@@ -36,6 +36,8 @@ control via prop-getters.
 - **Row expansion** — detail-panel state via `renderRowDetail`.
 - **Inline cell editing** — `onCellEdit` plus `editable` columns; text, number and select
   editors, keyboard commit/cancel, Tab advance. Omit the handler and no cell opens.
+- **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
+  ARIA grid semantics and screen-reader announcements.
 - **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
 - **Column management** — show/hide, reorder, pin (sticky) and resize state.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.

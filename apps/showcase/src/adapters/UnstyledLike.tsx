@@ -110,6 +110,7 @@ export function UnstyledLike({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -121,6 +122,7 @@ export function UnstyledLike({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   const s = strings(locale);
   const styled = withDensity(classNames, density);
@@ -138,6 +140,7 @@ export function UnstyledLike({
             source={source}
             columns={makeColumns(locale, TAILWIND_CELLS)}
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}

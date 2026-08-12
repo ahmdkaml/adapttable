@@ -62,6 +62,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table row selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/): checkboxes, bulk bar, select-all-matching
 - [React table expandable rows & detail panels](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion
 - [React table inline cell editing — opt-in onCellEdit](https://orwa-mahmoud.github.io/adapttable/cell-editing/): text/number/select editors, keyboard commit/cancel, kit-native inputs
+- [React table keyboard navigation — arrow keys & ARIA grid](https://orwa-mahmoud.github.io/adapttable/cell-navigation/): one tab stop, absolute aria-rowindex under virtualization, screen-reader announcements
 - [React table row grouping — single-level groupBy & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/): per-group subtotals sharing the summaryRow mapper, expand/collapse, frontend tier only
 - [React table column management — show/hide, reorder, pin, resize](https://orwa-mahmoud.github.io/adapttable/column-management/): menu, pin, resize, layout persistence
 - [React table saved views — shareable named layouts](https://orwa-mahmoud.github.io/adapttable/saved-views/): built-in menu, useSavedViews

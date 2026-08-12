@@ -236,6 +236,7 @@ export function UnstyledDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -246,6 +247,7 @@ export function UnstyledDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -258,6 +260,7 @@ export function UnstyledDemo({
       animate={animate}
       grouping={grouping}
       editing={editing}
+      cellNavigation={cellNavigation}
       classNames={TAILWIND}
     />
   );

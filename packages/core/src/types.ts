@@ -393,6 +393,15 @@ export interface TableLabels {
   exportCsv?: string;
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
+  /**
+   * Where keyboard focus is, for the grid's live region: given the 1-based row
+   * and the dataset total, return the phrase a screen reader should append
+   * after the column and the cell's text. Defaults to `"row 41 of 10000"`.
+   *
+   * Takes the total, not the rendered count, because virtualization renders 24
+   * rows of 100,000 and "row 3 of 24" would be a lie.
+   */
+  gridCellPosition?: (row: number, total: number) => string;
   /** Expand-group chevron accessible name. */
   expandGroup?: string;
   /** Collapse-group chevron accessible name. */

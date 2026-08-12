@@ -1,5 +1,6 @@
 import { makeExportCsvHandler, type TableSource } from "@adapttable/core";
 import {
+  GridFocusAnnouncer,
   useDataTableShell,
   useExportHandler,
   useMountStagger,
@@ -234,6 +235,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={chrome.isRefreshing || undefined}
       className={cx("adapttable", classNames.root)}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <div
         data-adapttable-part="toolbar"
         className={classNames.toolbar}

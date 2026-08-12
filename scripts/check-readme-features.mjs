@@ -29,6 +29,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
  */
 const FEATURES = {
   "cell-editing": /cell edit/i,
+  "cell-navigation": /keyboard navigation|cell navigation/i,
   "column-management": /column management/i,
   filtering: /filtering/i,
   "i18n-rtl": /\bRTL\b/i,

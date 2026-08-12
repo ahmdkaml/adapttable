@@ -321,6 +321,19 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
 `RangeOpLabelKeys`. See [filtering](./filtering.md).
 
+**Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
+`UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,
+`getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`, `enabled`), and
+`<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
+and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
+`GridBounds`, with `GridFocusMove` naming the intents and
+`gridFocusMoveForKey(press, dir)` mapping a `GridKeyPress` to one (applying the
+RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
+`gridCellAttr(cell)` are the `data-grid-cell` attribute focus uses to find a
+cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
+live region and come from `@adapttable/core/adapter`. See
+[cell navigation](./cell-navigation.md).
+
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves
 `formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a

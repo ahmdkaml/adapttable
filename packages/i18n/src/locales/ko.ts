@@ -63,4 +63,5 @@ export const ko: Required<TableLabels> = {
   expandGroup: "그룹 펼치기",
   collapseGroup: "그룹 접기",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
 };

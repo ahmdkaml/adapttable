@@ -1,5 +1,9 @@
 import { resolveLabels } from "@adapttable/core";
-import { useDataTableShell, useMountStagger } from "@adapttable/core/adapter";
+import {
+  GridFocusAnnouncer,
+  useDataTableShell,
+  useMountStagger,
+} from "@adapttable/core/adapter";
 import {
   Box,
   Button,
@@ -146,6 +150,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={c.isRefreshing || undefined}
       sx={{ p: 1.5 }}
     >
+      <GridFocusAnnouncer focus={shell.gridFocus} />
       <Stack spacing={1.5}>
         <Box className={classNames?.toolbar}>
           <Toolbar

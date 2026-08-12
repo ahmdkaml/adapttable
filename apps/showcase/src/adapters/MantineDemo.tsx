@@ -64,6 +64,7 @@ export function MantineDemo({
   animate,
   grouping,
   editing,
+  cellNavigation,
   forceMobile,
 }: Readonly<{
   mode: DataMode;
@@ -76,6 +77,7 @@ export function MantineDemo({
   animate?: boolean;
   grouping?: boolean;
   editing?: boolean;
+  cellNavigation?: boolean;
   forceMobile?: boolean;
 }>) {
   const s = strings(locale);
@@ -93,6 +95,7 @@ export function MantineDemo({
             source={source}
             columns={makeColumns(locale, MANTINE_CELLS)}
             rowKey={(r) => r.id}
+            cellNavigation={cellNavigation}
             {...columns}
             density={density}
             filtersMode={filtersUi}

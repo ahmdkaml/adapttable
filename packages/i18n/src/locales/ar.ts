@@ -65,4 +65,5 @@ export const ar: Required<TableLabels> = {
   expandGroup: "توسيع المجموعة",
   collapseGroup: "طي المجموعة",
   groupCount: (count) => `(${count})`,
+  gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
 };
