@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ColumnDef } from "../types";
 import { cellRangeSize } from "./cellRange";
 import { type GridCell } from "./gridFocus";
+import type { PasteEdit } from "./pasteRange";
 import { useGridFocus } from "./useGridFocus";
 
 interface Row {
@@ -25,6 +26,8 @@ const COLUMNS: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (row) => row.name },
   { key: "team", header: "Team", accessor: (row) => row.team },
 ];
+/** The same table, with the cells open for writing. */
+const EDITABLE = COLUMNS.map((column) => ({ ...column, editable: true }));
 
 function makeRows(count: number, from = 0): Row[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -49,12 +52,16 @@ function Grid(props: {
   /** Headers that sort, so a plain click is already claimed. */
   sortableHeaders?: boolean;
   onCut?: (range: { anchor: GridCell; head: GridCell }) => void;
+  onPaste?: (edits: PasteEdit<Row>[]) => void;
+  /** Columns a paste is allowed to write into. */
+  editable?: boolean;
 }) {
   const rows = props.rows ?? makeRows(3);
+  const columns = props.editable === true ? EDITABLE : COLUMNS;
   const focus = useGridFocus<Row>({
     enabled: props.enabled ?? true,
     rowCount: props.rowCount ?? rows.length,
-    columns: COLUMNS,
+    columns,
     rows,
     firstRowIndex: props.firstRowIndex,
     pageSize: props.pageSize,
@@ -62,6 +69,7 @@ function Grid(props: {
     scrollToRow: props.scrollToRow,
     onActivate: props.onActivate,
     onCut: props.onCut,
+    onPaste: props.onPaste,
   });
   const first = props.firstRowIndex ?? 0;
   const rendered =
@@ -608,6 +616,76 @@ describe("useGridFocus — copy and cut the selection", () => {
     cellAt(0, 0)!.focus();
     fireEvent.keyDown(cellAt(0, 0)!, { key: "c", ctrlKey: true });
     expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("useGridFocus — paste from a spreadsheet", () => {
+  const clipboard = (text: string) => {
+    vi.stubGlobal("navigator", {
+      clipboard: { readText: vi.fn().mockResolvedValue(text) },
+    });
+  };
+
+  it("writes the clipboard's block from the focused cell on Ctrl+V", async () => {
+    clipboard("A\tB\nC\tD");
+    const onPaste = vi.fn();
+    render(<Grid rows={makeRows(3)} editable onPaste={onPaste} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
+    await waitFor(() => expect(onPaste).toHaveBeenCalledOnce());
+    const edits = onPaste.mock.calls[0]?.[0] as PasteEdit<Row>[];
+    // The clipboard's 2×2 shape wins over the single selected cell.
+    expect(edits).toHaveLength(4);
+    expect(edits[0]).toMatchObject({ columnKey: "name", value: "A" });
+    expect(edits[3]).toMatchObject({ columnKey: "team", value: "D" });
+    vi.unstubAllGlobals();
+  });
+
+  it("says how much was pasted", async () => {
+    clipboard("A\tB");
+    render(<Grid rows={makeRows(3)} editable onPaste={vi.fn()} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", metaKey: true });
+    await waitFor(() =>
+      expect(document.querySelector("output")?.textContent).toBe(
+        "2 cells pasted"
+      )
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("says so when the browser will not hand over the clipboard", async () => {
+    vi.stubGlobal("navigator", {
+      clipboard: { readText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    render(<Grid rows={makeRows(3)} editable onPaste={vi.fn()} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
+    await waitFor(() =>
+      expect(document.querySelector("output")?.textContent).toBe("Paste failed")
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("writes nothing into read-only columns", async () => {
+    clipboard("A\tB");
+    const onPaste = vi.fn();
+    render(<Grid rows={makeRows(3)} onPaste={onPaste} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
+    await waitFor(() => expect(onPaste).toHaveBeenCalledOnce());
+    expect(onPaste.mock.calls[0]?.[0]).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
+  it("leaves the browser's own paste alone when the host takes no edits", () => {
+    const readText = vi.fn().mockResolvedValue("A");
+    vi.stubGlobal("navigator", { clipboard: { readText } });
+    render(<Grid rows={makeRows(3)} editable />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
+    expect(readText).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });

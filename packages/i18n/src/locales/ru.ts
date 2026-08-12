@@ -71,6 +71,8 @@ export const ru: Required<TableLabels> = {
   groupCount: (count) => `(${count})`,
   gridRangeCopied: (cells) => `Скопировано ячеек: ${cells}`,
   gridRangeCopyFailed: "Не удалось скопировать",
+  gridRangePasted: (cells) => `Вставлено ячеек: ${cells}`,
+  gridRangePasteFailed: "Не удалось вставить",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

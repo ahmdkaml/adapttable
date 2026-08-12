@@ -70,6 +70,8 @@ export const ur: Required<TableLabels> = {
   groupCount: (count) => `(${count})`,
   gridRangeCopied: (cells) => `${cells} خانے کاپی ہو گئے`,
   gridRangeCopyFailed: "کاپی ناکام",
+  gridRangePasted: (cells) => `${cells} خانے چسپاں ہوئے`,
+  gridRangePasteFailed: "چسپاں کرنا ناکام",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,

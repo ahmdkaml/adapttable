@@ -70,6 +70,8 @@ export const he: Required<TableLabels> = {
   groupCount: (count) => `(${count})`,
   gridRangeCopied: (cells) => `${cells} תאים הועתקו`,
   gridRangeCopyFailed: "ההעתקה נכשלה",
+  gridRangePasted: (cells) => `הודבקו ${cells} תאים`,
+  gridRangePasteFailed: "ההדבקה נכשלה",
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `נבחרו שורות ${fromRow} עד ${toRow}, עמודות ${fromColumn} עד ${toColumn}, ${cells} תאים`,

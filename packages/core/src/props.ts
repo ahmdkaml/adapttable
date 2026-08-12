@@ -8,6 +8,8 @@ import type {
   ActiveFilterChip,
   ChipLabelResolver,
 } from "./filters/useActiveFilterChips";
+import type { CellRange } from "./focus/cellRange";
+import type { PasteEdit } from "./focus/pasteRange";
 import type { TableSource } from "./source/TableSource";
 import type {
   BulkAction,
@@ -102,6 +104,26 @@ export interface BaseDataTableProps<TRow> {
    * rows; apply `nextValue` in your own state / mutation.
    */
   onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  /**
+   * Cut — Ctrl/Cmd+X, after the clipboard has accepted the copy. Requires
+   * `cellNavigation`.
+   *
+   * The table clears nothing itself: what a cut removes is your decision, and
+   * emptying cells before the clipboard took them would lose the data outright.
+   */
+  onCellCut?: (range: CellRange) => void;
+  /**
+   * Paste — Ctrl/Cmd+V, with the clipboard already parsed into ordinary cell
+   * edits. Requires `cellNavigation`.
+   *
+   * Omit it and every edit goes through `onCellEdit`, so a table that can be
+   * edited can be pasted into with nothing extra wired. Provide it to take the
+   * batch whole — one server round trip, one undo entry.
+   *
+   * Cells landing outside the loaded rows or the rendered columns are dropped
+   * rather than invented, and a column that is not `editable` is skipped.
+   */
+  onCellPaste?: (edits: PasteEdit<TRow>[]) => void;
   /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.

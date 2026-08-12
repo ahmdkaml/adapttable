@@ -86,12 +86,16 @@ const FIXTURES = [
   // rectangle — all of it on the grid path, which every adapter bundles. The
   // fixture that carries the actual promise is `core · simple table` above: a
   // plain table pays 10.6 KB of a 12 KB ceiling and did not move.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 58 },
+  //
+  // Ctrl/Cmd+V added ~0.4 KB to the same path on 2026-08-12: a clipboard parser
+  // and the edit mapping, which every adapter bundles because paste is part of
+  // cell navigation rather than a separate import.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 59 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 57 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 57 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 58 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 57 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 58 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 63 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 64 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 61 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 59 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));

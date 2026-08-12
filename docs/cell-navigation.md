@@ -19,7 +19,7 @@ quoted the way those applications quote them.
 Values resolve exactly as an export's do, `exportValue` included, so a copy and
 a downloaded file cannot disagree about what a cell contains.
 
-**Ctrl/Cmd+X** copies the same text and then calls `onCut(range)`. The table
+**Ctrl/Cmd+X** copies the same text and then calls `onCellCut(range)`. The table
 clears nothing itself: what "cut" removes is your decision, and a cut that
 emptied cells before the clipboard accepted them would lose the data outright.
 
@@ -30,6 +30,50 @@ the browser.
 
 Headless: `clipboardRangeText` builds the text and `writeClipboardText` writes
 it, reporting whether it landed rather than throwing.
+
+## Pasting a spreadsheet back in
+
+**Ctrl/Cmd+V** parses what a spreadsheet put on the clipboard and commits it as
+ordinary cell edits — through `onCellEdit`, the same channel inline editing
+uses:
+
+```tsx
+<DataTable
+  cellNavigation
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={(row, key, value) => save(row, key, value)}
+/>
+```
+
+That is the whole wiring: a table that can be edited can be pasted into. Each
+edit is the same thing an inline commit produces — same `parseValue`, same
+shape, same handler — so paste is not a second editing route, and whatever you
+wrap around a single-cell commit already covers a paste of two hundred.
+
+To take the batch whole instead — one server round trip, one undo entry — set
+`onCellPaste`, which takes precedence:
+
+```tsx
+<DataTable
+  cellNavigation
+  onCellPaste={(edits) => saveAll(edits)}
+  onCellEdit={commit}
+/>
+```
+
+The **clipboard's shape wins** over the selection's: pasting a 3×2 block into one
+focused cell writes 3×2, as every spreadsheet does. Cells landing outside the
+loaded rows or the rendered columns are dropped rather than invented, and a
+column that is not `editable` is skipped — a paste is an edit, and an edit into a
+read-only column is not one.
+
+The table writes nothing itself. Applying the edits stays yours, which is what
+keeps a paste undoable, validatable and cancellable on your terms. The outcome
+is announced through `labels.gridRangePasted`, or `labels.gridRangePasteFailed`
+when the browser will not hand over the clipboard.
+
+Headless: `readClipboardText` reads it, `parseClipboardTable` parses it, and
+`pasteRangeEdits` maps it onto a range.
 
 ## Selecting with the pointer, and whole columns
 

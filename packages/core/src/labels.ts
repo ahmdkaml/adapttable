@@ -68,6 +68,8 @@ export const defaultLabels: Required<TableLabels> = {
   editCell: "Edit cell",
   gridRangeCopied: (cells) => `${cells} cells copied`,
   gridRangeCopyFailed: "Copy failed",
+  gridRangePasted: (cells) => `${cells} cells pasted`,
+  gridRangePasteFailed: "Paste failed",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

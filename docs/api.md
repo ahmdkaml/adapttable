@@ -347,9 +347,6 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
 and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
 `GridBounds`, with `GridFocusMove` naming the intents and
-`clipboardRangeText` turns the selected rectangle into the tab-separated text a
-spreadsheet reads (`ClipboardRangeOptions` in), and `writeClipboardText` puts it
-on the clipboard, answering whether it landed.
 `gridFocusMoveForKey(press, dir)` maps a `GridKeyPress` to one (applying the
 RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
 `gridCellAttr(cell)` are the `data-grid-cell` attribute focus uses to find a
@@ -365,6 +362,20 @@ than enumerating, `extendCellRange` moves the head while keeping the anchor,
 `singleCellRange` / `isSingleCell` cover the one-cell case, and
 `cellRangeIndices` lists the rows and columns for an exporter. See
 [cell navigation](./cell-navigation.md).
+
+**Clipboard.** `clipboardRangeText(options)` turns the selected rectangle into
+the tab-separated text a spreadsheet reads (`ClipboardRangeOptions` in), and
+`writeClipboardText` puts it on the clipboard, answering whether it landed
+rather than throwing. Coming back the other way, `readClipboardText` returns the
+clipboard's text or `null` when the browser refuses it, `parseClipboardTable`
+parses tab-separated text into a grid of raw strings (quoted tabs and newlines
+intact), and `pasteRangeEdits(options)` maps that grid onto a range
+(`PasteRangeOptions` in) as `PasteEdit` values — one per cell, already through
+the column's `parseValue`, ready for the same handler an inline edit uses. `cellPasteHandler(options)`
+resolves who receives them — `onCellPaste` when given, otherwise `onCellEdit`
+one cell at a time, `undefined` when the table takes no edits at all
+(`CellPasteHandlerOptions` in). On `<DataTable>` the props are `onCellPaste` and
+`onCellCut`. See [cell navigation](./cell-navigation.md).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves

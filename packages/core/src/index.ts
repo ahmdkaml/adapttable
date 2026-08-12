@@ -108,6 +108,12 @@ export {
   singleCellRange,
 } from "./focus/cellRange";
 export {
+  type ClipboardRangeOptions,
+  clipboardRangeText,
+  readClipboardText,
+  writeClipboardText,
+} from "./focus/clipboardRange";
+export {
   type GridBounds,
   type GridCell,
   type GridFocusMove,
@@ -116,6 +122,14 @@ export {
   moveGridFocus,
   sameGridCell,
 } from "./focus/gridFocus";
+export {
+  cellPasteHandler,
+  type CellPasteHandlerOptions,
+  parseClipboardTable,
+  type PasteEdit,
+  pasteRangeEdits,
+  type PasteRangeOptions,
+} from "./focus/pasteRange";
 export {
   GRID_CELL_ATTR,
   gridCellAttr,

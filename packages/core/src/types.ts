@@ -432,6 +432,10 @@ export interface TableLabels {
   gridRangeCopied?: (cells: number) => string;
   /** Announced when the clipboard refused the copy — never a silent failure. */
   gridRangeCopyFailed?: string;
+  /** Announced after a paste: given the cell count, what was written. */
+  gridRangePasted?: (cells: number) => string;
+  /** Announced when the browser refused to hand over the clipboard. */
+  gridRangePasteFailed?: string;
   /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append

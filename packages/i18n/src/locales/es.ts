@@ -69,6 +69,8 @@ export const es: Required<TableLabels> = {
   groupCount: (count) => `(${count})`,
   gridRangeCopied: (cells) => `${cells} celdas copiadas`,
   gridRangeCopyFailed: "Error al copiar",
+  gridRangePasted: (cells) => `${cells} celdas pegadas`,
+  gridRangePasteFailed: "Error al pegar",
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Filas ${fromRow} a ${toRow}, columnas ${fromColumn} a ${toColumn} seleccionadas, ${cells} celdas`,

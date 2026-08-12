@@ -41,7 +41,11 @@ import {
   isSingleCell,
   singleCellRange,
 } from "./cellRange";
-import { clipboardRangeText, writeClipboardText } from "./clipboardRange";
+import {
+  clipboardRangeText,
+  readClipboardText,
+  writeClipboardText,
+} from "./clipboardRange";
 import {
   type GridBounds,
   type GridCell,
@@ -49,6 +53,7 @@ import {
   moveGridFocus,
   sameGridCell,
 } from "./gridFocus";
+import { type PasteEdit, pasteRangeEdits } from "./pasteRange";
 
 /** The attribute a focusable cell carries, so focus can find it in the DOM. */
 export const GRID_CELL_ATTR = "data-grid-cell";
@@ -102,6 +107,15 @@ export interface UseGridFocusOptions<TRow> {
    * before the clipboard accepted them would lose them outright.
    */
   onCut?: (range: CellRange) => void;
+  /**
+   * Ctrl/Cmd+V, with the clipboard already parsed into ordinary cell edits.
+   *
+   * Paste is not a second commit path: these are the same edits an inline edit
+   * produces, so validation or async saving added to that path covers a paste
+   * without paste knowing. Applying them stays the host's job — the table never
+   * writes to data it does not own.
+   */
+  onPaste?: (edits: PasteEdit<TRow>[]) => void;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -177,6 +191,7 @@ export function useGridFocus<TRow>(
     onActivate,
     onRangeChange,
     onCut,
+    onPaste,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -315,6 +330,33 @@ export function useGridFocus<TRow>(
               : (labels?.gridRangeCopyFailed ?? "Copy failed")
           );
           if (ok && event.key === "x") onCut?.(range);
+        });
+        return;
+      }
+
+      // Paste needs a destination, not a rectangle: a spreadsheet pastes into
+      // the focused cell and lets the clipboard's own shape decide the rest, so
+      // this takes the same `from` the movement keys take rather than demanding
+      // a selection first.
+      if (modifier && event.key === "v" && onPaste) {
+        const target = range ?? singleCellRange(from);
+        event.preventDefault();
+        void readClipboardText().then((text) => {
+          if (text === null) {
+            setAnnouncement(labels?.gridRangePasteFailed ?? "Paste failed");
+            return;
+          }
+          const edits = pasteRangeEdits({
+            text,
+            range: target,
+            rows,
+            columns,
+            firstRowIndex,
+          });
+          onPaste(edits);
+          setAnnouncement(
+            (labels?.gridRangePasted ?? defaultRangePasted)(edits.length)
+          );
         });
         return;
       }
@@ -540,6 +582,11 @@ function defaultRangeSelection({
 /** "12 cells copied" — replaceable through `labels.gridRangeCopied`. */
 function defaultRangeCopied(cells: number): string {
   return `${cells} cells copied`;
+}
+
+/** "12 cells pasted" — replaceable through `labels.gridRangePasted`. */
+function defaultRangePasted(cells: number): string {
+  return `${cells} cells pasted`;
 }
 
 /** "row 41 of 10,000" — replaceable through `labels.gridCellPosition`. */

@@ -5,6 +5,7 @@ import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
+import { cellPasteHandler } from "./focus/pasteRange";
 import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
 import type { TableSource } from "./source/TableSource";
@@ -146,6 +147,10 @@ export function useDataTableShell<TRow>(
     firstRowIndex: windowStart,
     dir: props.dir,
     labels,
+    onCut: props.onCellCut,
+    // With no `onCellPaste`, the ordinary edit channel takes each cell: a table
+    // that can be edited can be pasted into with nothing extra wired.
+    onPaste: cellPasteHandler(props),
   });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must

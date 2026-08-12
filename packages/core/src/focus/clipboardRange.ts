@@ -100,3 +100,22 @@ export async function writeClipboardText(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Read text from the clipboard, or `null` when the browser will not give it.
+ *
+ * Reading is the more restricted half: Safari and Firefox gate `readText`
+ * behind a permission or refuse it outside a user gesture. `null` says "no
+ * text", never "empty paste", so a caller can tell the difference and say so.
+ *
+ * @returns The clipboard's text, or `null` when it is unavailable.
+ */
+export async function readClipboardText(): Promise<string | null> {
+  const clipboard = globalThis.navigator?.clipboard;
+  if (!clipboard?.readText) return null;
+  try {
+    return await clipboard.readText();
+  } catch {
+    return null;
+  }
+}

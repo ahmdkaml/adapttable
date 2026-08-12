@@ -69,6 +69,8 @@ export const fa: Required<TableLabels> = {
   groupCount: (count) => `(${count})`,
   gridRangeCopied: (cells) => `${cells} خانه کپی شد`,
   gridRangeCopyFailed: "کپی ناموفق بود",
+  gridRangePasted: (cells) => `${cells} خانه جای‌گذاری شد`,
+  gridRangePasteFailed: "جای‌گذاری ناموفق بود",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,
