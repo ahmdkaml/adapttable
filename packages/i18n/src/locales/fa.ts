@@ -81,6 +81,13 @@ export const fa: Required<TableLabels> = {
   editUndone: (cells) => `${cells} خانه بازیابی شد`,
   editRedone: (cells) => `${cells} خانه دوباره انجام شد`,
   editNothingToUndo: "چیزی برای واگرد نیست",
+  findInTable: "جستجو در جدول",
+  findPlaceholder: "جستجو در جدول",
+  findMatchCount: (current, total) =>
+    total === 0 ? "نتیجه‌ای نیست" : `${current} از ${total}`,
+  findPrevious: "نتیجه قبلی",
+  findNext: "نتیجه بعدی",
+  findClose: "بستن جستجو",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { PIN_Z } from "./columns/useColumnLayout";
 import {
+  cellHighlightStyle,
+  isCurrentMatchCell,
+  isMatchedCell,
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
@@ -87,5 +90,48 @@ describe("resolveMobileLabel", () => {
 
   it("falls back to the key when there is no header", () => {
     expect(resolveMobileLabel({ key: "name" })).toBe("name");
+  });
+});
+
+describe("cellHighlightStyle", () => {
+  const base = { position: "sticky" as const };
+  const selected = { background: "kit-blue" };
+
+  it("leaves an ordinary cell exactly as the kit styled it", () => {
+    expect(cellHighlightStyle({}, base, selected)).toBe(base);
+  });
+
+  it("uses the kit's own fill for a selected cell", () => {
+    expect(
+      cellHighlightStyle({ "data-cell-selected": "" }, base, selected)
+    ).toEqual({ ...base, background: "kit-blue" });
+  });
+
+  it("paints a find hit amber, over the kit's selection fill", () => {
+    // The find walk moves the selection with it, so without this order the one
+    // cell you were sent to would be the one cell not marked as a hit.
+    const style = cellHighlightStyle(
+      { "data-cell-match": "", "data-cell-selected": "" },
+      base,
+      selected
+    );
+    expect(style?.background).toContain("--adapttable-find-match");
+    expect(style?.position).toBe("sticky");
+  });
+
+  it("marks the current hit more strongly than the rest", () => {
+    const style = cellHighlightStyle(
+      { "data-cell-match": "", "data-cell-match-current": "" },
+      base,
+      selected
+    );
+    expect(style?.background).toContain("--adapttable-find-match-current");
+  });
+
+  it("answers the match questions on their own", () => {
+    expect(isMatchedCell({ "data-cell-match": "" })).toBe(true);
+    expect(isMatchedCell(undefined)).toBe(false);
+    expect(isCurrentMatchCell({ "data-cell-match-current": "" })).toBe(true);
+    expect(isCurrentMatchCell({})).toBe(false);
   });
 });

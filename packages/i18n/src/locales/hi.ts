@@ -81,6 +81,13 @@ export const hi: Required<TableLabels> = {
   editUndone: (cells) => `${cells} सेल पूर्ववत किए गए`,
   editRedone: (cells) => `${cells} सेल फिर से किए गए`,
   editNothingToUndo: "पूर्ववत करने के लिए कुछ नहीं",
+  findInTable: "तालिका में खोजें",
+  findPlaceholder: "तालिका में खोजें",
+  findMatchCount: (current, total) =>
+    total === 0 ? "कोई मेल नहीं" : `${total} में से ${current}`,
+  findPrevious: "पिछला मेल",
+  findNext: "अगला मेल",
+  findClose: "खोज बंद करें",
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `पंक्तियाँ ${fromRow} से ${toRow}, स्तंभ ${fromColumn} से ${toColumn} चयनित, ${cells} सेल`,

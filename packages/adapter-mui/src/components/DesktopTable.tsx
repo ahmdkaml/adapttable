@@ -13,9 +13,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  cellHighlightStyle,
   FillHandle,
   headerGroupRow,
-  isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
   rowClickProps,
@@ -317,14 +317,10 @@ function DesktopRowImpl<TRow>({
               // theme and dark mode. Applied as a style rather than merged into
               // `sx`, whose per-column value is a union that cannot be combined
               // without a cast — and a cast here would buy nothing.
-              style={
-                isSelectedCell(focusProps)
-                  ? {
-                      backgroundColor:
-                        "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
-                    }
-                  : undefined
-              }
+              style={cellHighlightStyle(focusProps, undefined, {
+                backgroundColor:
+                  "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
+              })}
               {...focusProps}
             >
               <EditableDataCell

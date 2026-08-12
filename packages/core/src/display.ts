@@ -141,6 +141,70 @@ export function isSelectedCell(
 }
 
 /**
+ * Is this cell one the find bar matched?
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell contains a match.
+ */
+export function isMatchedCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-match"] !== undefined;
+}
+
+/**
+ * Is this the match the find walk is currently on?
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell is the current match.
+ */
+export function isCurrentMatchCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-match-current"] !== undefined;
+}
+
+/**
+ * A cell's background, given everything that might want to colour it.
+ *
+ * A find highlight is the one cell colour that is NOT a kit's to choose. It is
+ * a browser convention — the same amber every browser paints Ctrl+F hits in —
+ * and a table that answered it in eight different accent colours would be
+ * harder to read, not more native. So the kit supplies its selection fill and
+ * core supplies the match fill, both overridable through
+ * `--adapttable-find-match` / `--adapttable-find-match-current`.
+ *
+ * The current match wins over other matches, which win over the selection —
+ * the find walk moves the selection with it, so without that order the cell
+ * you were sent to would be the one cell not marked as a hit.
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @param base - The kit's own cell style (pinning, alignment).
+ * @param selected - The kit's fill for a selected cell.
+ * @returns The merged style, or `base` when nothing highlights this cell.
+ */
+export function cellHighlightStyle(
+  props: Readonly<Record<string, unknown>> | undefined,
+  base: CSSProperties | undefined,
+  selected: CSSProperties
+): CSSProperties | undefined {
+  if (isCurrentMatchCell(props)) {
+    return {
+      ...base,
+      background:
+        "var(--adapttable-find-match-current, rgba(255, 150, 50, 0.75))",
+    };
+  }
+  if (isMatchedCell(props)) {
+    return {
+      ...base,
+      background: "var(--adapttable-find-match, rgba(255, 213, 0, 0.45))",
+    };
+  }
+  return isSelectedCell(props) ? { ...base, ...selected } : base;
+}
+
+/**
  * The caption a mobile card shows beside a cell's value.
  *
  * A card is a list of label/value pairs, not a grid with a header row, so each

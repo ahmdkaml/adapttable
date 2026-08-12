@@ -14,9 +14,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  cellHighlightStyle,
   FillHandle,
   headerGroupRow,
-  isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
   resolveDisabledReason,
@@ -456,12 +456,9 @@ function DesktopRowBase<TRow>({
                 // A selected cell takes Mantine's own primary-light fill, applied
                 // OVER the pinned background so a pinned column still shows the
                 // selection rather than hiding it behind its opaque surface.
-                isSelectedCell(focusProps)
-                  ? {
-                      ...pinStyleFor(column.key),
-                      background: "var(--mantine-primary-color-light)",
-                    }
-                  : pinStyleFor(column.key)
+                cellHighlightStyle(focusProps, pinStyleFor(column.key), {
+                  background: "var(--mantine-primary-color-light)",
+                })
               }
             >
               <EditableDataCell

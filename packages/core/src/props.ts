@@ -154,6 +154,16 @@ export interface BaseDataTableProps<TRow> {
    */
   editHistory?: boolean | { depth?: number };
   /**
+   * Show a find bar over the table — Ctrl/Cmd+F with `cellNavigation`, or
+   * `table.find.setOpen(true)` from a control of your own.
+   *
+   * Find is not search: it leaves every row where it is and walks the cells
+   * whose text contains the query, marking them for the kit to paint. It reads
+   * what a cell SHOWS, and searches the loaded rows only — a hit it cannot take
+   * you to would be a lie.
+   */
+  findInTable?: boolean;
+  /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */

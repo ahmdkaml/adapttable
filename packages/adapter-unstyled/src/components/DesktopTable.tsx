@@ -17,6 +17,8 @@ import {
 import {
   FillHandle,
   headerGroupRow,
+  isCurrentMatchCell,
+  isMatchedCell,
   isSelectedCell,
   type PinLeads,
   pinnedColumnWidth,
@@ -285,11 +287,16 @@ function DesktopRowBase<TRow>(
                 // The selection has no kit colour to borrow here, so it is a
                 // second class the host styles — `data-cell-selected` is on the
                 // element either way for CSS that prefers attribute selectors.
-                isSelectedCell(focusProps)
-                  ? [classNames.cell, classNames.cellSelected]
-                      .filter(Boolean)
-                      .join(" ")
-                  : classNames.cell
+                [
+                  classNames.cell,
+                  isSelectedCell(focusProps) ? classNames.cellSelected : "",
+                  isMatchedCell(focusProps) ? classNames.cellMatch : "",
+                  isCurrentMatchCell(focusProps)
+                    ? classNames.cellMatchCurrent
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")
               }
             >
               <EditableDataCell

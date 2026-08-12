@@ -1,4 +1,5 @@
 import {
+  FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
   type TableBodyRegion,
@@ -135,6 +136,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={chrome.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <FindBar find={shell.find} labels={labels} />
       <SelectionStatsBar
         stats={shell.selectionStats}
         labels={labels}

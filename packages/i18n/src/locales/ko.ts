@@ -80,6 +80,13 @@ export const ko: Required<TableLabels> = {
   editUndone: (cells) => `${cells}개 셀 실행 취소`,
   editRedone: (cells) => `${cells}개 셀 다시 실행`,
   editNothingToUndo: "실행 취소할 항목 없음",
+  findInTable: "표에서 찾기",
+  findPlaceholder: "표에서 찾기",
+  findMatchCount: (current, total) =>
+    total === 0 ? "일치 항목 없음" : `${total}개 중 ${current}번째`,
+  findPrevious: "이전 일치 항목",
+  findNext: "다음 일치 항목",
+  findClose: "찾기 닫기",
   gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}행부터 ${toRow}행, ${fromColumn}열부터 ${toColumn}열 선택, ${cells}개 셀`,

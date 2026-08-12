@@ -80,6 +80,13 @@ export const zhTW: Required<TableLabels> = {
   editUndone: (cells) => `已復原 ${cells} 個儲存格`,
   editRedone: (cells) => `已重做 ${cells} 個儲存格`,
   editNothingToUndo: "沒有可復原的操作",
+  findInTable: "在表格中尋找",
+  findPlaceholder: "在表格中尋找",
+  findMatchCount: (current, total) =>
+    total === 0 ? "無相符項目" : `第 ${current} 項，共 ${total} 項`,
+  findPrevious: "上一個相符項目",
+  findNext: "下一個相符項目",
+  findClose: "關閉尋找",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已選取第 ${fromRow} 至 ${toRow} 列、第 ${fromColumn} 至 ${toColumn} 欄，共 ${cells} 個儲存格`,

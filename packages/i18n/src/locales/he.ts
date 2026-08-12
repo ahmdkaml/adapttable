@@ -82,6 +82,13 @@ export const he: Required<TableLabels> = {
   editUndone: (cells) => `שוחזרו ${cells} תאים`,
   editRedone: (cells) => `בוצעו מחדש ${cells} תאים`,
   editNothingToUndo: "אין מה לבטל",
+  findInTable: "חיפוש בטבלה",
+  findPlaceholder: "חיפוש בטבלה",
+  findMatchCount: (current, total) =>
+    total === 0 ? "אין תוצאות" : `${current} מתוך ${total}`,
+  findPrevious: "התוצאה הקודמת",
+  findNext: "התוצאה הבאה",
+  findClose: "סגירת החיפוש",
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `נבחרו שורות ${fromRow} עד ${toRow}, עמודות ${fromColumn} עד ${toColumn}, ${cells} תאים`,

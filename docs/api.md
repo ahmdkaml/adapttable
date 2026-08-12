@@ -400,6 +400,20 @@ a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
 cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
 `editHistory`. See [cell editing](./cell-editing.md).
 
+**Find in table.** `findMatches(options)` returns every cell whose text
+contains the query, in absolute addresses (`FindMatchesOptions` in);
+`matchKey(cell)` / `matchKeySet(matches)` make membership a constant-time
+question and `stepMatch(index, total, step)` wraps the walk.
+`useFindInTable(options)` is the bar's state — `open`, `query`, `matches`,
+`index`, `current`, `next`, `previous` (`UseFindInTableOptions` in,
+`FindInTableState` out) — and `FindBar` / `FindBarProps` from
+`@adapttable/core/adapter` render it. `useFindFocus(current, focusCell,
+selectRange)` is what takes the table's focus to the match the walk is on. Cells carry `data-cell-match` /
+`data-cell-match-current`, which `isMatchedCell` / `isCurrentMatchCell` read and
+`cellHighlightStyle(props, base, selected)` resolves into one background. On
+`<DataTable>` the prop is `findInTable`. See
+[cell navigation](./cell-navigation.md).
+
 **Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
 `cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
 selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /

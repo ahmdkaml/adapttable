@@ -34,6 +34,11 @@ export interface SelectionStats {
 
 /** What the statistics need: the rectangle, and the data under it. */
 export interface SelectionStatsOptions<TRow> {
+  /**
+   * Off unless the host asked for it. Passed rather than checked at the call
+   * site so the two tables that compute this read identically.
+   */
+  enabled?: boolean;
   /** The selected rectangle, in absolute addresses. */
   range: CellRange | null;
   /** The rows the browser holds, in table order. */
@@ -73,8 +78,8 @@ function numeric(value: unknown): number | null {
 export function selectionStats<TRow>(
   options: SelectionStatsOptions<TRow>
 ): SelectionStats | null {
-  const { range, rows, columns, firstRowIndex = 0 } = options;
-  if (!range) return null;
+  const { enabled = true, range, rows, columns, firstRowIndex = 0 } = options;
+  if (!enabled || !range) return null;
   const indices = cellRangeIndices(range);
   const cols = indices.cols.flatMap((index) => {
     const column = columns[index];

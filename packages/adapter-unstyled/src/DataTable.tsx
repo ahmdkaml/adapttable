@@ -1,6 +1,7 @@
 import type { TableSource } from "@adapttable/core";
 import {
   ExportAnnouncer,
+  FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
   useDataTableShell,
@@ -227,6 +228,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={cx("adapttable", classNames.root)}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <FindBar find={shell.find} labels={labels} />
       <SelectionStatsBar
         stats={shell.selectionStats}
         labels={labels}

@@ -4,6 +4,7 @@ import {
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
+  FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
   useDataTableShell,
@@ -202,6 +203,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={classNames?.root}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <FindBar find={shell.find} labels={table.labels} />
       <SelectionStatsBar
         stats={shell.selectionStats}
         labels={table.labels}

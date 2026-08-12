@@ -82,6 +82,13 @@ export const ar: Required<TableLabels> = {
   editUndone: (cells) => `تمت استعادة ${cells} خلية`,
   editRedone: (cells) => `تمت إعادة ${cells} خلية`,
   editNothingToUndo: "لا شيء للتراجع عنه",
+  findInTable: "البحث في الجدول",
+  findPlaceholder: "البحث في الجدول",
+  findMatchCount: (current, total) =>
+    total === 0 ? "لا نتائج" : `${current} من ${total}`,
+  findPrevious: "النتيجة السابقة",
+  findNext: "النتيجة التالية",
+  findClose: "إغلاق البحث",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,

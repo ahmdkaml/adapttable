@@ -81,6 +81,13 @@ export const de: Required<TableLabels> = {
   editUndone: (cells) => `${cells} Zellen wiederhergestellt`,
   editRedone: (cells) => `${cells} Zellen wiederholt`,
   editNothingToUndo: "Nichts rückgängig zu machen",
+  findInTable: "In Tabelle suchen",
+  findPlaceholder: "In Tabelle suchen",
+  findMatchCount: (current, total) =>
+    total === 0 ? "Keine Treffer" : `${current} von ${total}`,
+  findPrevious: "Vorheriger Treffer",
+  findNext: "Nächster Treffer",
+  findClose: "Suche schließen",
   gridCellPosition: (row, total) => `Zeile ${row} von ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Zeilen ${fromRow} bis ${toRow}, Spalten ${fromColumn} bis ${toColumn} ausgewählt, ${cells} Zellen`,

@@ -36,6 +36,9 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Bolt size={12} /> select cells, then drag the corner or paste with
             Ctrl/Cmd+V
           </span>
+          <span className="hint">
+            <Check size={12} /> Ctrl/Cmd+Z undoes · Ctrl/Cmd+F finds in place
+          </span>
         </div>
         <div className="pad-surface__body">
           <MantineDemo
@@ -47,6 +50,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             cellNavigation
             selectionStats
             editHistory
+            findInTable
           />
         </div>
       </div>

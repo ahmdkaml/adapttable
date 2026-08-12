@@ -82,6 +82,13 @@ export const pt: Required<TableLabels> = {
   editUndone: (cells) => `${cells} células restauradas`,
   editRedone: (cells) => `${cells} células refeitas`,
   editNothingToUndo: "Nada a desfazer",
+  findInTable: "Localizar na tabela",
+  findPlaceholder: "Localizar na tabela",
+  findMatchCount: (current, total) =>
+    total === 0 ? "Sem resultados" : `${current} de ${total}`,
+  findPrevious: "Resultado anterior",
+  findNext: "Próximo resultado",
+  findClose: "Fechar a busca",
   gridCellPosition: (row, total) => `linha ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Linhas ${fromRow} a ${toRow}, colunas ${fromColumn} a ${toColumn} selecionadas, ${cells} células`,

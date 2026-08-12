@@ -456,6 +456,18 @@ export interface TableLabels {
   editRedone?: (cells: number) => string;
   /** Announced when the key was pressed and the history was empty. */
   editNothingToUndo?: string;
+  /** Accessible name of the find input, and the find bar's own name. */
+  findInTable?: string;
+  /** Placeholder inside the find input. */
+  findPlaceholder?: string;
+  /** Given the current hit and the total, the count the bar shows. */
+  findMatchCount?: (current: number, total: number) => string;
+  /** Accessible name of the previous-match button. */
+  findPrevious?: string;
+  /** Accessible name of the next-match button. */
+  findNext?: string;
+  /** Accessible name of the close button. */
+  findClose?: string;
   /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append

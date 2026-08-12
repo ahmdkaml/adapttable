@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 43,
+    budgetKB: 45,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -87,20 +87,20 @@ const FIXTURES = [
   // fixture that carries the actual promise is `core · simple table` above: a
   // plain table pays 10.6 KB of a 12 KB ceiling and did not move.
   //
-  // Four capabilities joined that path on 2026-08-12, each of them chrome the
+  // Five capabilities joined that path on 2026-08-12, each of them chrome the
   // batteries-included table always carries: Ctrl/Cmd+V (~0.4 KB), the fill
-  // handle (~1.3 KB), the selection statistics strip (~0.5 KB) and the edit
-  // history (~0.6 KB). The fixture that carries the actual promise is
-  // `core · simple table` above — a plain table pays 10.7 KB of a 12 KB
-  // ceiling and did not move through any of it.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 63 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 62 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 63 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 62 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 63 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 68 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 66 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 64 },
+  // handle (~1.3 KB), the selection statistics strip (~0.5 KB), the edit
+  // history (~0.6 KB) and find in table (~0.8 KB, bar included). The fixture
+  // that carries the actual promise is `core · simple table` above — a plain
+  // table pays 10.7 KB of a 12 KB ceiling and did not move through any of it.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 65 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 64 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 65 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 64 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 65 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 70 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 68 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 66 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

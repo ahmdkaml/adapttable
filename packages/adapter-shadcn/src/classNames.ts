@@ -28,6 +28,10 @@ export const shadcnClassNames = {
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   cellSelected: "bg-accent",
+  // Find hits keep the browser's convention rather than a theme token: amber
+  // for every match, a stronger amber for the one you are on.
+  cellMatch: "bg-amber-200/60 dark:bg-amber-400/25",
+  cellMatchCurrent: "bg-amber-400/80 dark:bg-amber-400/60",
   exportSpinner:
     "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",

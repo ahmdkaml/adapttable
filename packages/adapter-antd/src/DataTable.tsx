@@ -25,6 +25,8 @@ import {
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useFilterTriggerToggle,
+  useFindFocus,
+  useFindInTable,
   useGridFocus,
   useInfiniteScroll,
   type UseSavedViewsOptions,
@@ -36,6 +38,7 @@ import {
 } from "@adapttable/core";
 import {
   DEFAULT_CARD_SIZE_PX,
+  FindBar,
   GridFocusAnnouncer,
   rowClickProps,
   SelectionStatsBar,
@@ -1020,6 +1023,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     c.source.paginationMode === "paged"
       ? Math.max(0, (c.source.page - 1) * c.source.limit)
       : 0;
+  const find = useFindInTable<TRow>({
+    enabled: props.findInTable === true,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
     rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
@@ -1033,16 +1042,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onFill: asGesture(cellFillHandler(props), history.record),
     onUndo: history.undo,
     onRedo: history.redo,
+    onFind: find.openBar,
+    matchKeys: find.matchKeys,
+    currentMatch: find.current,
   });
-  const stats =
-    props.selectionStats === true
-      ? selectionStats({
-          range: gridFocus.range,
-          rows: c.source.rows,
-          columns: c.columnLayout.visibleColumns,
-          firstRowIndex: windowStart,
-        })
-      : null;
+  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
+  const stats = selectionStats({
+    enabled: props.selectionStats === true,
+    range: gridFocus.range,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   // The injected actions column is first-class in column management: it lives
@@ -1270,6 +1281,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={c.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={gridFocus} />
+      <FindBar find={find} labels={c.table.labels} />
       <SelectionStatsBar
         stats={stats}
         labels={c.table.labels}

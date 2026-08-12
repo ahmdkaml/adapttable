@@ -96,6 +96,19 @@ export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export {
+  findMatches,
+  type FindMatchesOptions,
+  matchKey,
+  matchKeySet,
+  stepMatch,
+} from "./find/findMatches";
+export {
+  type FindInTableState,
+  useFindFocus,
+  useFindInTable,
+  type UseFindInTableOptions,
+} from "./find/useFindInTable";
 export { batchEditHandler, type CellEdit } from "./focus/cellEdits";
 export {
   type CellRange,

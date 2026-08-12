@@ -81,6 +81,13 @@ export const tr: Required<TableLabels> = {
   editUndone: (cells) => `${cells} hücre geri alındı`,
   editRedone: (cells) => `${cells} hücre yinelendi`,
   editNothingToUndo: "Geri alınacak bir şey yok",
+  findInTable: "Tabloda bul",
+  findPlaceholder: "Tabloda bul",
+  findMatchCount: (current, total) =>
+    total === 0 ? "Eşleşme yok" : `${total} içinde ${current}`,
+  findPrevious: "Önceki eşleşme",
+  findNext: "Sonraki eşleşme",
+  findClose: "Aramayı kapat",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

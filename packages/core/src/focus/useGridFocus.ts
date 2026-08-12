@@ -132,6 +132,16 @@ export interface UseGridFocusOptions<TRow> {
   onUndo?: () => number;
   /** Ctrl/Cmd+Shift+Z and Ctrl+Y. Returns how many cells were rewritten. */
   onRedo?: () => number;
+  /** Ctrl/Cmd+F — open the find bar instead of the browser's own. */
+  onFind?: () => void;
+  /**
+   * Cells the find bar matched, keyed `"row:col"`. They carry
+   * `data-cell-match`, and the one the walk is on carries
+   * `data-cell-match-current`, so each kit paints the hits its own way.
+   */
+  matchKeys?: ReadonlySet<string>;
+  /** The match the walk is on, for the stronger mark. */
+  currentMatch?: GridCell | null;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -226,6 +236,9 @@ export function useGridFocus<TRow>(
     onFill,
     onUndo,
     onRedo,
+    onFind,
+    matchKeys,
+    currentMatch,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -471,6 +484,13 @@ export function useGridFocus<TRow>(
         event.preventDefault();
         return true;
       }
+      // Ctrl/Cmd+F belongs to the table only when the table has a find bar to
+      // open; otherwise the browser's own find is the right answer.
+      if (event.key === "f" && onFind) {
+        event.preventDefault();
+        onFind();
+        return true;
+      }
       if ((event.key === "c" || event.key === "x") && range) {
         event.preventDefault();
         copySelection(range, event.key === "x");
@@ -590,6 +610,8 @@ export function useGridFocus<TRow>(
         active === null && cell.row === firstRowIndex && cell.col === 0;
       // While a fill is being dragged the highlight shows what it would write.
       const selected = isInCellRange(fillPreview ?? range, cell);
+      const key = gridCellAttr(cell);
+      const matched = matchKeys?.has(key) === true;
       return {
         [GRID_CELL_ATTR]: gridCellAttr(cell),
         tabIndex: isActive || firstEver ? 0 : -1,
@@ -599,6 +621,9 @@ export function useGridFocus<TRow>(
         // mode when the user has merely arrowed around.
         "aria-selected": range && !isSingleCell(range) ? selected : undefined,
         "data-cell-selected": selected ? "" : undefined,
+        "data-cell-match": matched ? "" : undefined,
+        "data-cell-match-current":
+          matched && sameGridCell(cell, currentMatch ?? null) ? "" : undefined,
         onMouseDown: (event: { shiftKey?: boolean }) => {
           if (event.shiftKey === true) {
             selectRange(extendCellRange(range, cell, active ?? cell));
@@ -630,7 +655,16 @@ export function useGridFocus<TRow>(
         },
       };
     },
-    [enabled, active, firstRowIndex, range, fillPreview, selectRange]
+    [
+      enabled,
+      active,
+      firstRowIndex,
+      range,
+      fillPreview,
+      matchKeys,
+      currentMatch,
+      selectRange,
+    ]
   );
 
   /**

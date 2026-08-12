@@ -67,6 +67,7 @@ export function MantineDemo({
   cellNavigation,
   selectionStats,
   editHistory,
+  findInTable,
   forceMobile,
 }: Readonly<{
   mode: DataMode;
@@ -82,6 +83,7 @@ export function MantineDemo({
   cellNavigation?: boolean;
   selectionStats?: boolean;
   editHistory?: boolean;
+  findInTable?: boolean;
   forceMobile?: boolean;
 }>) {
   const s = strings(locale);
@@ -102,6 +104,7 @@ export function MantineDemo({
             cellNavigation={cellNavigation}
             selectionStats={selectionStats}
             editHistory={editHistory}
+            findInTable={findInTable}
             {...columns}
             density={density}
             filtersMode={filtersUi}

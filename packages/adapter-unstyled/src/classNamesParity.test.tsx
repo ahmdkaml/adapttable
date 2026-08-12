@@ -147,9 +147,15 @@ const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
  * sits inside the selected range, so direction 2 below — "every key rendered as
  * a part" — can never see it, and inventing a `cell-selected` part to satisfy
  * the test would put two parts on one element. It is verified in
- * `selectedCells.test.tsx`, which drives a real Shift+arrow selection.
+ * `selectedCells.test.tsx`, which drives a real Shift+arrow selection;
+ * `cellMatch` / `cellMatchCurrent` are the same shape for find hits and are
+ * verified in `findInTable.test.tsx`.
  */
-const STATE_CLASSES = new Set(["cellSelected"]);
+const STATE_CLASSES = new Set([
+  "cellSelected",
+  "cellMatch",
+  "cellMatchCurrent",
+]);
 
 function collectParts(): Map<string, Element[]> {
   const map = new Map<string, Element[]>();
@@ -424,6 +430,8 @@ const KEYS = [
   "row",
   "cell",
   "cellSelected",
+  "cellMatch",
+  "cellMatchCurrent",
   "expandHeader",
   "expandCell",
   "expandButton",

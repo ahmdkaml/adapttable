@@ -1,5 +1,6 @@
 import { resolveLabels } from "@adapttable/core";
 import {
+  FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
   useDataTableShell,
@@ -152,6 +153,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       sx={{ p: 1.5 }}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      <FindBar find={shell.find} labels={labels} />
       <SelectionStatsBar
         stats={shell.selectionStats}
         labels={labels}

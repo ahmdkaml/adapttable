@@ -83,6 +83,13 @@ export const defaultLabels: Required<TableLabels> = {
   editUndone: (cells) => `${cells} ${cells === 1 ? "cell" : "cells"} restored`,
   editRedone: (cells) => `${cells} ${cells === 1 ? "cell" : "cells"} redone`,
   editNothingToUndo: "Nothing to undo",
+  findInTable: "Find in table",
+  findPlaceholder: "Find in table",
+  findMatchCount: (current, total) =>
+    total === 0 ? "No matches" : `${current} of ${total}`,
+  findPrevious: "Previous match",
+  findNext: "Next match",
+  findClose: "Close find",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

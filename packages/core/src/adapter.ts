@@ -47,6 +47,9 @@ export {
 } from "./columns/useColumnLayout";
 export { DEFAULT_CARD_SIZE_PX } from "./constants";
 export {
+  cellHighlightStyle,
+  isCurrentMatchCell,
+  isMatchedCell,
   isSelectedCell,
   logicalAlign,
   pinnedDataCellStyle,
@@ -70,6 +73,7 @@ export {
   type ExportStatus,
   useExportHandler,
 } from "./export/useExportHandler";
+export { FindBar, type FindBarProps } from "./find/FindBar";
 export { FillHandle, type FillHandleProps } from "./focus/FillHandle";
 export {
   GridFocusAnnouncer,

@@ -82,6 +82,13 @@ export const ur: Required<TableLabels> = {
   editUndone: (cells) => `${cells} خانے بحال ہوئے`,
   editRedone: (cells) => `${cells} خانے دوبارہ ہوئے`,
   editNothingToUndo: "کالعدم کرنے کو کچھ نہیں",
+  findInTable: "ٹیبل میں تلاش",
+  findPlaceholder: "ٹیبل میں تلاش",
+  findMatchCount: (current, total) =>
+    total === 0 ? "کوئی مماثلت نہیں" : `${total} میں سے ${current}`,
+  findPrevious: "پچھلی مماثلت",
+  findNext: "اگلی مماثلت",
+  findClose: "تلاش بند کریں",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,

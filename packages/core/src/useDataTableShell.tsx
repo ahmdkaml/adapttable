@@ -6,6 +6,7 @@ import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FilterDef } from "./filters/filterDefs";
+import { useFindFocus, useFindInTable } from "./find/useFindInTable";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
@@ -142,6 +143,14 @@ export function useDataTableShell<TRow>(
     chrome.source.paginationMode === "paged"
       ? Math.max(0, (chrome.source.page - 1) * chrome.source.limit)
       : 0;
+  // Find state first: the grid marks the cells it matched, and the effect
+  // below walks focus to whichever match the user is on.
+  const find = useFindInTable<TRow>({
+    enabled: props.findInTable === true,
+    rows: chrome.source.rows,
+    columns: chrome.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
     rowCount: Math.max(
@@ -161,19 +170,21 @@ export function useDataTableShell<TRow>(
     onFill: asGesture(cellFillHandler(props), history.record),
     onUndo: history.undo,
     onRedo: history.redo,
+    onFind: find.openBar,
+    matchKeys: find.matchKeys,
+    currentMatch: find.current,
   });
+  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
   // Computed here rather than in eight adapters: the rectangle, the rows and
   // the window offset all live on this side, and an adapter that derived any
   // of them itself would be the one place the figures could go wrong.
-  const stats =
-    props.selectionStats === true
-      ? selectionStats({
-          range: gridFocus.range,
-          rows: chrome.source.rows,
-          columns: chrome.columnLayout.visibleColumns,
-          firstRowIndex: windowStart,
-        })
-      : null;
+  const stats = selectionStats({
+    enabled: props.selectionStats === true,
+    range: gridFocus.range,
+    rows: chrome.source.rows,
+    columns: chrome.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop. The selection, the full column
@@ -283,6 +294,8 @@ export function useDataTableShell<TRow>(
     selectionStats: stats,
     /** Undo/redo controls; inert unless `editHistory` is set. */
     editHistory: history,
+    /** Find-bar state; inert unless `findInTable` is set. */
+    find,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,

@@ -83,6 +83,13 @@ export const ru: Required<TableLabels> = {
   editUndone: (cells) => `Восстановлено ячеек: ${cells}`,
   editRedone: (cells) => `Повторено ячеек: ${cells}`,
   editNothingToUndo: "Отменять нечего",
+  findInTable: "Поиск в таблице",
+  findPlaceholder: "Поиск в таблице",
+  findMatchCount: (current, total) =>
+    total === 0 ? "Совпадений нет" : `${current} из ${total}`,
+  findPrevious: "Предыдущее совпадение",
+  findNext: "Следующее совпадение",
+  findClose: "Закрыть поиск",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

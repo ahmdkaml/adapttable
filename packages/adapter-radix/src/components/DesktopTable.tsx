@@ -16,9 +16,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  cellHighlightStyle,
   FillHandle,
   headerGroupRow,
-  isSelectedCell,
   logicalAlign,
   type PinLeads,
   pinnedColumnWidth,
@@ -300,16 +300,11 @@ function DesktopRowBase<TRow>({
               style={
                 // This kit's own subtle fill for a selected cell, applied over the
                 // pinned background so a pinned column still shows the selection.
-                isSelectedCell(focusProps)
-                  ? {
-                      ...pinCellStyle(
-                        live.pinOffset?.(column.key),
-                        1,
-                        live.leads
-                      ),
-                      background: "var(--accent-a3)",
-                    }
-                  : pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)
+                cellHighlightStyle(
+                  focusProps,
+                  pinCellStyle(live.pinOffset?.(column.key), 1, live.leads),
+                  { background: "var(--accent-a3)" }
+                )
               }
             >
               <EditableDataCell

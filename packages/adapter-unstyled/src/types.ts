@@ -33,6 +33,13 @@ export interface DataTableClassNames {
    * the element too, for CSS that prefers attribute selectors.
    */
   cellSelected?: string;
+  /**
+   * A cell the find bar matched (`findInTable`). `data-cell-match` is on the
+   * element too, for CSS that prefers attribute selectors.
+   */
+  cellMatch?: string;
+  /** The one match the find walk is on — `data-cell-match-current`. */
+  cellMatchCurrent?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

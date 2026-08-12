@@ -111,6 +111,49 @@ sideways drag follows the same mirroring the arrow keys do.
 Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
 in `@adapttable/core/adapter` renders the square itself.
 
+## Find in table
+
+Set `findInTable` and **Ctrl/Cmd+F** opens a find bar over the table:
+
+```tsx
+<DataTable cellNavigation findInTable />
+```
+
+Find is not search. The search box asks "show me only the rows that match", and
+on a server tier it asks the server; find asks "where does this appear in what I
+am looking at", leaves every row where it is, and walks the hits. Both can be on
+at once.
+
+Every hit is marked — `data-cell-match`, and `data-cell-match-current` on the
+one you are standing on — painted in the amber every browser paints its own
+find hits, because a find highlight is a browser convention rather than a
+design-system token. `--adapttable-find-match` and
+`--adapttable-find-match-current` change it; in `@adapttable/unstyled` the
+`cellMatch` / `cellMatchCurrent` class hooks do (the shadcn preset fills them
+in).
+
+**Enter** walks forward, **Shift+Enter** back, **Escape** closes and clears.
+Walking moves the table's focus with it, so the cell is scrolled into view,
+announced, and left selected — a find that highlighted without going there would
+leave you hunting for the highlight. The bar itself is one input, a count and
+three buttons, all named through `labels.findInTable`, `findPlaceholder`,
+`findMatchCount`, `findPrevious`, `findNext` and `findClose`.
+
+Matching reads what a cell **shows**, so a column that renders a formatted date
+is found by that date rather than by the ISO string underneath. Only the loaded
+rows are searched: a hit the table cannot take you to would be a lie, so on a
+paged table find covers the page you are on, and under virtualization it covers
+what has been fetched. The query is deliberately not put in the URL — where you
+are looking is not part of the table's state, and a shared link should not reopen
+someone else's search box.
+
+On mobile the cards are a list rather than a grid, so the bar opens and searches
+but the hits are not marked; the desktop layout is where a cell can be pointed
+at.
+
+Headless: `findMatches`, `matchKeySet`, `stepMatch`, `useFindInTable`, and
+`FindBar` in `@adapttable/core/adapter`.
+
 ## What the selection adds up to
 
 Set `selectionStats` and a strip under the table says what is selected:
