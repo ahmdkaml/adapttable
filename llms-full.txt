@@ -3727,6 +3727,76 @@ Building blocks for columns, rows and queries:
   stable cache keys for TanStack Query or SWR. See
   [data tiers](./data-tiers.md).
 
+**Headless cell editing.** `useCellEditing` is the state machine (one active
+cell, a draft string, the Enter/Escape/Tab flow) and returns
+`CellEditingState`; `EditableCellGate` / `EditableCellGateProps` is the
+activation wrapper every adapter renders. A commit arrives as
+`CellEditCommit` and the active address as `CellEditTarget`. The keyboard
+vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
+`CellEditNavigation`. A custom editor receives `EditableCellController` /
+`EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
+the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
+describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
+`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
+`EditableColumnLike` is the minimal column shape editing reads, and
+`isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
+See [cell editing](./cell-editing.md).
+
+**The grouped row model.** `buildGroupedFlatModel` turns rows into the flat
+`GroupedFlatEntry` list adapters render (a group header or a leaf row);
+`GroupAggregatesFn` is the per-group mapper, `groupValueKey` buckets a value,
+`formatGroupLabel(value, blankLabel)` renders its header text,
+`groupSelectionState` gives a group checkbox its tri-state over the group's
+leaf ids, `windowGroupedEntries` slices the model to virtual window indices,
+and `useGroupCollapse` / `GroupCollapseState` hold which groups are collapsed.
+See [row grouping](./row-grouping.md).
+
+**The CSV pipeline, stage by stage.** `resolveExportCsv` normalizes the
+`exportCsv` prop, `exportableColumns` drops the synthetic actions column,
+`resolveExportColumns` applies a column scope (`ExportColumnScope`),
+`buildTableCsv` renders the text (`RowsToCsvOptions` controls delimiter, BOM
+and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
+button. `ExportRowScope` names the row scopes, `ExportContext` carries the
+selection and full column set the `"selected"` and `"all"` scopes need,
+`ExportInfo` is what the lifecycle hooks receive, and `ExportHandlerState` is
+what `useExportHandler` returns. See
+[customization](./customization.md#csv-export).
+
+**Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
+`InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
+See [cell editing](./cell-editing.md).
+
+**Filter internals.** `FILTER_TYPES` lists the built-in types, `filterLabel`
+resolves a filter's caption, `filterStateKeys` names the URL keys one filter
+owns, `FilterRuntime` is what `buildFilterRuntime` returns, and
+`ResolvedFilterOptions` is what `useFilterOptions` resolves.
+`isDeclarativeFilters` tells the array form from JSX. A form reads its values
+through `FilterFormSource` with `listFilterValues` and `scalarFilterText`.
+Count filters: `COUNT_OPERATORS` / `COUNT_OPERATOR_SYMBOL` / `CountOperator`,
+state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
+/ `isCountFilterComplete` / `clearCountFilterExtra` /
+`sanitizeCountFilterParams`, and a chip label from `countFilterChipLabel`.
+Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
+`RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
+`RangeOpLabelKeys`. See [filtering](./filtering.md).
+
+**Odds and ends.** `ComputedColumnSpec` is the declaration
+[`computed`](./columns.md) takes. `TableQueryKeyOptions` options the cache-key
+builders. `HeaderSelectionState` is the header checkbox's tri-state.
+`defaultSearchText` is the default searchable-text projector (a row's own
+values, flattened). `columnMenuLabel` gives a column its readable name in the
+menu (header string → `mobileLabel` → key). `runRowAction` runs a row action
+through the confirmation handler. `LayoutStorage` is the slice of the `Storage`
+API the column-layout hook needs, injectable for tests. `SavedViewsMenu` /
+`SavedViewsLabels` are the adapters' saved-views control and its strings, and
+`ToolbarChromeProps` is the toolbar's kit-agnostic prop surface. The CLI
+exports `Kit`, the union of UI kits `@adapttable/cli init` can detect.
+
+**Locale exports.** `@adapttable/i18n` exports one label set per locale, named
+by its tag: `ar`, `de`, `en`, `es`, `fa`, `fr`, `he`, `hi`, `it`, `ja`, `ko`,
+`pt`, `ru`, `tr`, `ur`, `zh`, `zhTW` — seventeen in all. See
+[i18n & RTL](./i18n-rtl.md).
+
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,

@@ -25,6 +25,11 @@ import ts from "typescript";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DOCS_DIR = join(REPO_ROOT, "docs");
+/**
+ * The reference page. Its title claims every export, so appearing on some
+ * feature page is not enough — a reader who goes looking for a name goes here.
+ */
+const REFERENCE_PAGE = "api.md";
 
 /**
  * Every published package's export surface. Core has two entries — the
@@ -50,10 +55,28 @@ const corpus = readdirSync(DOCS_DIR)
   .map((name) => readFileSync(join(DOCS_DIR, name), "utf8"))
   .join("\n");
 
+const reference = readFileSync(join(DOCS_DIR, REFERENCE_PAGE), "utf8");
+
 /** Word-boundary presence: `SortLevel` must not match inside `SortLevels`. */
-function isDocumented(name) {
+function mentions(text, name) {
   const escaped = name.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(corpus);
+  return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(text);
+}
+
+/** Somewhere under docs/ — a name shown working on its feature page. */
+function isDocumented(name) {
+  return mentions(corpus, name);
+}
+
+/**
+ * In the reference specifically. Kept SEPARATE from the check above, because
+ * the two failures want different fixes: a name in neither place needs
+ * explaining, while a name documented on its feature page but absent here just
+ * needs a line in the reference. Five exports shipped in exactly that state on
+ * 2026-08-12 and a person caught them, which is this guard's job.
+ */
+function isInReference(name) {
+  return mentions(reference, name);
 }
 
 function exportsOf(program, checker, entryPath) {
@@ -87,22 +110,59 @@ function auditPackages() {
   });
 }
 
-function printReport(audits) {
+/** One name's audit result, as the report column shows it. */
+function stateOf(name, undocumented, missingFromReference) {
+  if (undocumented.has(name)) return "MISSING";
+  if (missingFromReference.has(name)) return "no-ref ";
+  return "ok     ";
+}
+
+function printReport(audits, missingFromReference) {
   for (const { pkg, names, undocumented } of audits) {
     console.log(`\n## ${pkg} — ${names.length} exports`);
     for (const name of names) {
-      console.log(`${undocumented.has(name) ? "MISSING" : "ok     "} ${name}`);
+      console.log(
+        `${stateOf(name, undocumented, missingFromReference)} ${name}`
+      );
     }
   }
 }
 
-function printFailures(audits) {
+/**
+ * Names the reference page never mentions, deduplicated across packages.
+ *
+ * The reference documents names, not per-package copies: `CellEditor` is a core
+ * type all eight adapters re-export, so requiring it once is the whole
+ * requirement. Counting it per surface turned 89 real gaps into 123 lines and
+ * made the list look like busywork.
+ *
+ * Only documented names can be listed here — a name in no page at all is the
+ * other failure, and reporting it twice under two headings helps nobody.
+ */
+function referenceGaps(audits) {
+  const gaps = new Set();
+  for (const { names, undocumented } of audits) {
+    for (const name of names) {
+      if (!undocumented.has(name) && !isInReference(name)) gaps.add(name);
+    }
+  }
+  return new Set([...gaps].sort((a, b) => a.localeCompare(b)));
+}
+
+function printFailures(audits, missingFromReference) {
   for (const { pkg, undocumented } of audits) {
     if (undocumented.size === 0) continue;
     console.error(
       `\n${pkg}: ${undocumented.size} exported name(s) appear in no docs/*.md page:`
     );
     for (const name of undocumented) console.error(`  - ${name}`);
+  }
+  if (missingFromReference.size > 0) {
+    console.error(
+      `\n${missingFromReference.size} exported name(s) are documented on a feature page but ` +
+        `missing from docs/${REFERENCE_PAGE}:`
+    );
+    for (const name of missingFromReference) console.error(`  - ${name}`);
   }
 }
 
@@ -113,19 +173,30 @@ function main() {
     (sum, a) => sum + a.undocumented.size,
     0
   );
+  const missingFromReference = referenceGaps(audits);
+  const missingRefTotal = missingFromReference.size;
 
   if (process.argv.includes("--report")) {
-    printReport(audits);
+    printReport(audits, missingFromReference);
     console.log(
-      `\nTotal: ${exportTotal} exports, ${undocumentedTotal} undocumented.`
+      `\nTotal: ${exportTotal} exports, ${undocumentedTotal} undocumented, ` +
+        `${missingRefTotal} missing from docs/${REFERENCE_PAGE}.`
     );
     return;
   }
-  if (undocumentedTotal > 0) {
-    printFailures(audits);
-    console.error(
-      `\n${undocumentedTotal} undocumented export(s). Document each name in docs/ or stop exporting it.`
-    );
+  if (undocumentedTotal > 0 || missingRefTotal > 0) {
+    printFailures(audits, missingFromReference);
+    if (undocumentedTotal > 0) {
+      console.error(
+        `\n${undocumentedTotal} undocumented export(s). Document each name in docs/ or stop exporting it.`
+      );
+    }
+    if (missingRefTotal > 0) {
+      console.error(
+        `${missingRefTotal} export(s) missing from docs/${REFERENCE_PAGE}. The reference page ` +
+          `claims every export; add a line for each, or stop exporting it.`
+      );
+    }
     process.exit(1);
   }
   console.log(`doc-surface: all ${exportTotal} exports documented.`);
