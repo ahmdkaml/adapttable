@@ -334,6 +334,15 @@ cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
 live region and come from `@adapttable/core/adapter`. See
 [cell navigation](./cell-navigation.md).
 
+**Cell range selection.** Shift with a movement key or a shift-click extends a
+rectangle from its anchor. `CellRange` is the pair of corners and
+`CellRangeBounds` the sorted edges; `cellRangeBounds` sorts a range dragged up
+or left, `isInCellRange` tests membership, `cellRangeSize` multiplies rather
+than enumerating, `extendCellRange` moves the head while keeping the anchor,
+`singleCellRange` / `isSingleCell` cover the one-cell case, and
+`cellRangeIndices` lists the rows and columns for an exporter. See
+[cell navigation](./cell-navigation.md).
+
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves
 `formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a

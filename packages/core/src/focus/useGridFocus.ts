@@ -33,6 +33,13 @@ import { columnText } from "../columns/columnText";
 import { useEventCallback } from "../hooks/useEventCallback";
 import type { ColumnDef, Direction, TableLabels } from "../types";
 import {
+  type CellRange,
+  extendCellRange,
+  isInCellRange,
+  isSingleCell,
+  singleCellRange,
+} from "./cellRange";
+import {
   type GridBounds,
   type GridCell,
   gridFocusMoveForKey,
@@ -81,6 +88,11 @@ export interface UseGridFocusOptions<TRow> {
   scrollToRow?: (rowIndex: number) => void;
   /** Enter or F2 on a cell — the editing model's entry point. */
   onActivate?: (cell: GridCell) => void;
+  /**
+   * Fired whenever the selected range changes, including when it collapses to
+   * a single cell. `null` means nothing is selected.
+   */
+  onRangeChange?: (range: CellRange | null) => void;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -114,6 +126,10 @@ export interface GridFocusState {
   getRowPropsAt: (windowIndex: number) => Record<string, unknown>;
   /** Live-region text naming where focus is. Empty until focus moves. */
   announcement: string;
+  /** The selected rectangle, or `null` when nothing is selected. */
+  range: CellRange | null;
+  /** Select a rectangle programmatically — what a Select-all would call. */
+  selectRange: (range: CellRange | null) => void;
   /** Move focus programmatically — the fill handle and clipboard will need it. */
   focusCell: (cell: GridCell) => void;
 }
@@ -137,9 +153,11 @@ export function useGridFocus<TRow>(
     labels,
     scrollToRow,
     onActivate,
+    onRangeChange,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
+  const [range, setRange] = useState<CellRange | null>(null);
   // A move can outrun the DOM: the target row may not be mounted yet. This
   // holds the address until a render produces its element.
   const pending = useRef<GridCell | null>(null);
@@ -185,6 +203,14 @@ export function useGridFocus<TRow>(
     [columns, rows, firstRowIndex, labels, rowCount]
   );
 
+  const selectRange = useCallback(
+    (next: CellRange | null) => {
+      setRange(next);
+      onRangeChange?.(next);
+    },
+    [onRangeChange]
+  );
+
   const focusCell = useCallback(
     (cell: GridCell) => {
       setActive(cell);
@@ -217,6 +243,7 @@ export function useGridFocus<TRow>(
       key: string;
       ctrlKey?: boolean;
       metaKey?: boolean;
+      shiftKey?: boolean;
       preventDefault: () => void;
     }) => {
       if (!enabled) return;
@@ -244,6 +271,17 @@ export function useGridFocus<TRow>(
       // does not scroll, but say nothing — nothing changed.
       event.preventDefault();
       if (sameGridCell(next, active)) return;
+
+      if (event.shiftKey === true) {
+        // Shift extends from wherever the selection began, so pressing
+        // Shift+Down twice then Shift+Up shrinks the range rather than starting
+        // a new one upward. `from` is the fallback anchor for the first press.
+        selectRange(extendCellRange(range, next, from));
+      } else {
+        // A plain move collapses any selection to the cell landed on, which is
+        // what every grid does and what stops a stale rectangle lingering.
+        selectRange(singleCellRange(next));
+      }
       focusCell(next);
     }
   );
@@ -269,10 +307,23 @@ export function useGridFocus<TRow>(
       // that is its first cell, so Tab reaches the table at all.
       const firstEver =
         active === null && cell.row === firstRowIndex && cell.col === 0;
+      const selected = isInCellRange(range, cell);
       return {
         [GRID_CELL_ATTR]: gridCellAttr(cell),
         tabIndex: isActive || firstEver ? 0 : -1,
         "aria-colindex": cell.col + 1,
+        // Only meaningful once a real rectangle exists: marking every focused
+        // cell as selected would tell a screen reader the table is in selection
+        // mode when the user has merely arrowed around.
+        "aria-selected": range && !isSingleCell(range) ? selected : undefined,
+        "data-cell-selected": selected ? "" : undefined,
+        onMouseDown: (event: { shiftKey?: boolean }) => {
+          if (event.shiftKey === true) {
+            selectRange(extendCellRange(range, cell, active ?? cell));
+          } else {
+            selectRange(singleCellRange(cell));
+          }
+        },
         onFocus: () => {
           // A mouse click or a screen reader can move focus without a key
           // press; keep state in step rather than fighting it.
@@ -280,7 +331,7 @@ export function useGridFocus<TRow>(
         },
       };
     },
-    [enabled, active, firstRowIndex]
+    [enabled, active, firstRowIndex, range, selectRange]
   );
 
   const getRowProps = useCallback(
@@ -313,6 +364,8 @@ export function useGridFocus<TRow>(
       getCellPropsAt,
       getRowPropsAt,
       announcement: enabled ? announcement : "",
+      range: enabled ? range : null,
+      selectRange,
       focusCell,
     }),
     [
@@ -324,6 +377,8 @@ export function useGridFocus<TRow>(
       getCellPropsAt,
       getRowPropsAt,
       announcement,
+      range,
+      selectRange,
       focusCell,
     ]
   );

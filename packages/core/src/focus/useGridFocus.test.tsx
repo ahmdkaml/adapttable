@@ -11,6 +11,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
+import { cellRangeSize } from "./cellRange";
 import { type GridCell } from "./gridFocus";
 import { useGridFocus } from "./useGridFocus";
 
@@ -80,9 +81,19 @@ function Grid(props: {
         </tbody>
       </table>
       <output>{focus.announcement}</output>
+      <data value={String(focus.range ? cellRangeSize(focus.range) : 0)}>
+        {focus.range
+          ? `${focus.range.anchor.row}:${focus.range.anchor.col}-${focus.range.head.row}:${focus.range.head.col}`
+          : "none"}
+      </data>
     </>
   );
 }
+
+/** What the harness is currently reporting as selected. */
+const selection = () => document.querySelector("data")?.textContent;
+const selectionSize = () =>
+  document.querySelector("data")?.getAttribute("value");
 
 const cellAt = (row: number, col: number) =>
   document.querySelector<HTMLElement>(`[data-grid-cell="${row}:${col}"]`);
@@ -311,33 +322,93 @@ describe("useGridFocus", () => {
     expect(cellAt(0, 0)).toBeNull();
   });
 
+  it("extends a selection with Shift and an arrow", () => {
+    render(<Grid />);
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown" });
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    // Anchored where focus was, head where it moved to.
+    expect(selection()).toBe("1:0-2:0");
+    expect(selectionSize()).toBe("2");
+  });
+
+  it("shrinks back toward the anchor rather than reversing", () => {
+    render(<Grid />);
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    expect(selectionSize()).toBe("3");
+    fireEvent.keyDown(grid, { key: "ArrowUp", shiftKey: true });
+    expect(selectionSize()).toBe("2");
+    expect(selection()).toBe("0:0-1:0");
+  });
+
+  it("collapses the selection on a plain move", () => {
+    render(<Grid />);
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    expect(selectionSize()).toBe("2");
+    fireEvent.keyDown(grid, { key: "ArrowDown" });
+    // A stale rectangle must not linger once the user simply moves.
+    expect(selectionSize()).toBe("1");
+  });
+
+  it("selects a rectangle across rows and columns", () => {
+    render(<Grid />);
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "ArrowRight", shiftKey: true });
+    expect(selectionSize()).toBe("4");
+    expect(cellAt(0, 0)).toHaveAttribute("data-cell-selected");
+    expect(cellAt(1, 1)).toHaveAttribute("data-cell-selected");
+    expect(cellAt(2, 0)).not.toHaveAttribute("data-cell-selected");
+  });
+
+  it("extends to a shift-clicked cell", () => {
+    render(<Grid />);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "ArrowDown" });
+    const target = cellAt(2, 1);
+    if (!target) throw new Error("cell 2:1 should be rendered");
+    fireEvent.mouseDown(target, { shiftKey: true });
+    expect(selection()).toBe("1:0-2:1");
+  });
+
+  it("marks a real rectangle with aria-selected, a lone cell with nothing", () => {
+    render(<Grid />);
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(grid, { key: "ArrowDown" });
+    // Arrowing around is not selection mode; saying so would mislead.
+    expect(cellAt(1, 0)).not.toHaveAttribute("aria-selected");
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    expect(cellAt(1, 0)).toHaveAttribute("aria-selected", "true");
+    expect(cellAt(0, 1)).toHaveAttribute("aria-selected", "false");
+  });
+
   it("costs nothing when it is off — byte-identical markup", () => {
     const on = render(<Grid enabled={false} />);
-    const off = on.container.innerHTML;
+    const off = on.container.querySelector("table")?.outerHTML;
     on.unmount();
 
-    // A plain table rendered with no focus props at all.
+    // A plain table rendered with no focus props at all. Comparing the TABLE
+    // rather than the container keeps the harness's own scaffolding out of it.
     function Plain() {
       const rows = makeRows(3);
       return (
-        <>
-          <table>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  {COLUMNS.map((column) => (
-                    <td key={column.key}>{column.accessor?.(row)}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <output />
-        </>
+        <table>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                {COLUMNS.map((column) => (
+                  <td key={column.key}>{column.accessor?.(row)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       );
     }
     const plain = render(<Plain />);
-    expect(off).toBe(plain.container.innerHTML);
+    expect(off).toBe(plain.container.querySelector("table")?.outerHTML);
   });
 
   it("ignores the keyboard entirely when it is off", () => {

@@ -97,6 +97,17 @@ export {
   useFilterOptions,
 } from "./filters/useFilterOptions";
 export {
+  type CellRange,
+  type CellRangeBounds,
+  cellRangeBounds,
+  cellRangeIndices,
+  cellRangeSize,
+  extendCellRange,
+  isInCellRange,
+  isSingleCell,
+  singleCellRange,
+} from "./focus/cellRange";
+export {
   type GridBounds,
   type GridCell,
   type GridFocusMove,

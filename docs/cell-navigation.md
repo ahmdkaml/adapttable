@@ -67,6 +67,39 @@ the user is at row 40,000. AdaptTable carries absolute `aria-rowindex` /
 `Ctrl`+`End` on a 100,000-row table also asks for a cell that is not in the DOM
 at all. Focus scrolls it into existence and lands on it once it mounts.
 
+## Selecting a range
+
+Hold **Shift** with any movement key, or shift-click a cell, and the selection
+extends from where it began:
+
+| Gesture                       | Result                          |
+| ----------------------------- | ------------------------------- |
+| `Shift`+`↑` `↓` `←` `→`       | Extend the rectangle one cell   |
+| `Shift`+`Home` / `End`        | Extend to the row's start / end |
+| `Shift`+`PageUp` / `PageDown` | Extend by a viewport of rows    |
+| `Shift`+click                 | Extend to the clicked cell      |
+| Any plain move                | Collapse back to a single cell  |
+
+A range is stored as two corners — the **anchor** where it started and the
+**head** where it reaches — not as a list of cells. That is what makes
+Shift+Down twice then Shift+Up _shrink_ the range instead of starting a new one
+upward, and what makes a 50,000-cell selection cost two numbers.
+
+Selected cells carry `data-cell-selected` for styling. `aria-selected` appears
+only once a real rectangle exists: marking every focused cell as selected would
+tell a screen reader the table is in selection mode when the user has merely
+arrowed around.
+
+`onRangeChange` fires whenever it changes and `table.gridFocus.range` holds the
+current rectangle — which is what `exportCsv` with `scope: "range"` reads.
+
+Headless: `CellRange` and `CellRangeBounds` are the shapes, `cellRangeBounds`
+sorts the corners of a range dragged up or left, `isInCellRange` tests
+membership, `cellRangeSize` multiplies rather than enumerating,
+`extendCellRange` moves the head while keeping the anchor, `singleCellRange`
+and `isSingleCell` handle the one-cell case, and `cellRangeIndices` enumerates
+the rows and columns for an exporter — the one place that does.
+
 ## Mobile
 
 Cell navigation applies to the **desktop table layout**. Mobile cards are a
