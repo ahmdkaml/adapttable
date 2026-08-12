@@ -12,6 +12,7 @@ import type {
 import {
   aggregate,
   buildFilterRuntime,
+  computed,
   resolveFilterDefs,
 } from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
@@ -219,13 +220,18 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     sortable: true,
     header: "",
   },
-  {
+  // Utilization is derived, not stored — so it is declared once with
+  // `computed` rather than written into `accessor` and repeated in
+  // `sortValue`. The cell shows a percentage; sorting and export see the
+  // number behind it.
+  computed<Person, number>({
     key: "load",
-    accessor: (r) => formatPercent(utilization(r)),
-    sortValue: (r) => utilization(r),
-    sortable: true,
     header: "",
-  },
+    deps: (r) => [r.utilization, r.id],
+    value: (r) => utilization(r),
+    format: (value) => formatPercent(value),
+    column: { sortable: true },
+  }),
 ];
 
 /**
