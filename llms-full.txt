@@ -653,6 +653,46 @@ with `source` dev-warns and `source` wins.
   and URL parsing in **all three tiers**; only the frontend tier also applies
   the row predicate (the other tiers receive `query.filters` instead).
 
+## Cache keys for TanStack Query and SWR
+
+Wiring the table to a query library means turning the emitted `TableQuery` into
+a cache key. Hand-rolling that fails in two ways that are hard to see: a key
+built from an object literal changes whenever `filters` is rebuilt, so the
+cache misses on every keystroke; and invalidation after a save either refetches
+the whole endpoint or only the page on screen.
+
+```tsx
+import { tableQueryKey, tableQueryBaseKey } from "@adapttable/core";
+
+const infinite = useInfiniteQuery({
+  queryKey: tableQueryKey(query, { scope: "people" }),
+  queryFn: ({ signal }) => fetchPeople(query, signal),
+  getNextPageParam: (last) => last.nextCursor,
+});
+
+// after a write — every page of this view, nothing else
+queryClient.invalidateQueries({
+  queryKey: tableQueryBaseKey(query, { scope: "people" }),
+});
+```
+
+- **`tableQueryBaseKey`** covers what decides _which_ rows: search, filters,
+  sort, grouping, page size.
+- **`tableQueryKey`** appends _where_ in them the table is: page and cursor.
+
+The full key starts with the base key, so a library that matches by prefix —
+TanStack Query does — invalidates every page of a view from the base key alone.
+Both are stable across renders and ignore the order a filter object was built
+in, so an identical query always produces an identical key.
+
+Pass `scope` when a page shows more than one table, so they never share an
+entry. For SWR, hand `useSWR` the array directly or join it — the parts are
+strings.
+
+Neither library is imported or depended on here; these are plain arrays that
+happen to be exactly what both expect. The options shape is exported as
+`TableQueryKeyOptions`.
+
 ## Which requests actually fire
 
 `onQueryChange` fires per real change, not per render. Four guarantees, each

@@ -106,6 +106,11 @@ export {
   type QuerySupport,
 } from "./source/queryContract";
 export {
+  tableQueryBaseKey,
+  tableQueryKey,
+  type TableQueryKeyOptions,
+} from "./source/queryKey";
+export {
   type TableQuery,
   useServerData,
   type UseServerDataOptions,
