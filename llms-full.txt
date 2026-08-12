@@ -2007,6 +2007,42 @@ when the browser will not hand over the clipboard.
 Headless: `readClipboardText` reads it, `parseClipboardTable` parses it, and
 `pasteRangeEdits` maps it onto a range.
 
+## The fill handle
+
+Select a cell or a block and a small square appears on its bottom corner. Drag
+it and the selection's values carry on — down, up, or sideways, whichever way
+the drag mostly goes. The cells it would write are highlighted before anything
+is committed, so the preview and the result cannot disagree.
+
+**Two or more numbers a constant step apart continue the series** (1, 2 → 3, 4);
+anything else repeats in order (Mon, Tue → Mon, Tue). A single number repeats
+rather than counting — one value carries no step, and guessing `+1` there is the
+behaviour spreadsheets are cursed for.
+
+**Ctrl/Cmd+D** is the keyboard route: the selection's top row carries into the
+rest of it. The handle itself is not a tab stop, because the grid is one tab
+stop and a focusable square inside it would break that; the key press announces
+what it wrote through `labels.gridRangeFilled`.
+
+The edits arrive exactly as a paste's do — `onCellEdit` per cell, or
+`onCellFill` for the batch — so the handle appears as soon as a table can be
+edited, and never when it cannot:
+
+```tsx
+<DataTable
+  cellNavigation
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={commit}
+/>
+```
+
+The square paints in the cell's own text colour; `--adapttable-fill-handle`
+changes it. In RTL it sits on the row's inline end, which is the left, and a
+sideways drag follows the same mirroring the arrow keys do.
+
+Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
+in `@adapttable/core/adapter` renders the square itself.
+
 ## Selecting with the pointer, and whole columns
 
 Drag across cells to select a block: the press anchors it, crossing a cell
@@ -2062,6 +2098,8 @@ That is the whole opt-in. Omit it and nothing changes — see
 | `Ctrl`+`Home` / `Ctrl`+`End` | First / last cell of the whole grid             |
 | `PageUp` / `PageDown`        | A viewport's worth of rows                      |
 | `Enter` / `F2`               | Opens the editor, when the column is `editable` |
+| `Ctrl`/`Cmd`+`C` / `X` / `V` | Copy, cut, paste the selected rectangle         |
+| `Ctrl`/`Cmd`+`D`             | Fill the selection down from its top row        |
 | `Tab`                        | Leaves the table — it is one stop, not hundreds |
 
 Edges **stop rather than wrap.** Wrapping off the last column would move the
@@ -4220,6 +4258,18 @@ resolves who receives them — `onCellPaste` when given, otherwise `onCellEdit`
 one cell at a time, `undefined` when the table takes no edits at all
 (`CellPasteHandlerOptions` in). On `<DataTable>` the props are `onCellPaste` and
 `onCellCut`. See [cell navigation](./cell-navigation.md).
+
+**Fill handle.** `fillDirection(source, to)` says which way a drag from the
+selection's corner is filling (`FillDirection`, or `null` inside the selection),
+`fillTargetRange(source, to)` is the rectangle it would cover — what the preview
+highlights — and `fillRangeEdits(options)` turns the gesture into `CellEdit`
+values (`FillRangeOptions` in), continuing an arithmetic series when the source
+is one and repeating otherwise. `cellFillHandler(options)` resolves the
+recipient (`CellFillHandlerOptions`), and `batchEditHandler(batch, onCellEdit)`
+is the rule both it and `cellPasteHandler` follow. The square itself is
+`FillHandle` / `FillHandleProps` from `@adapttable/core/adapter`; on
+`<DataTable>` the prop is `onCellFill`. See
+[cell navigation](./cell-navigation.md).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves

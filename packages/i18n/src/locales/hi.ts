@@ -71,6 +71,8 @@ export const hi: Required<TableLabels> = {
   gridRangeCopyFailed: "कॉपी विफल",
   gridRangePasted: (cells) => `${cells} सेल चिपकाए गए`,
   gridRangePasteFailed: "पेस्ट विफल",
+  gridRangeFilled: (cells) => `${cells} सेल भरे गए`,
+  gridFillHandle: "चयन से भरें",
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `पंक्तियाँ ${fromRow} से ${toRow}, स्तंभ ${fromColumn} से ${toColumn} चयनित, ${cells} सेल`,

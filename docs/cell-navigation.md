@@ -75,6 +75,42 @@ when the browser will not hand over the clipboard.
 Headless: `readClipboardText` reads it, `parseClipboardTable` parses it, and
 `pasteRangeEdits` maps it onto a range.
 
+## The fill handle
+
+Select a cell or a block and a small square appears on its bottom corner. Drag
+it and the selection's values carry on — down, up, or sideways, whichever way
+the drag mostly goes. The cells it would write are highlighted before anything
+is committed, so the preview and the result cannot disagree.
+
+**Two or more numbers a constant step apart continue the series** (1, 2 → 3, 4);
+anything else repeats in order (Mon, Tue → Mon, Tue). A single number repeats
+rather than counting — one value carries no step, and guessing `+1` there is the
+behaviour spreadsheets are cursed for.
+
+**Ctrl/Cmd+D** is the keyboard route: the selection's top row carries into the
+rest of it. The handle itself is not a tab stop, because the grid is one tab
+stop and a focusable square inside it would break that; the key press announces
+what it wrote through `labels.gridRangeFilled`.
+
+The edits arrive exactly as a paste's do — `onCellEdit` per cell, or
+`onCellFill` for the batch — so the handle appears as soon as a table can be
+edited, and never when it cannot:
+
+```tsx
+<DataTable
+  cellNavigation
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={commit}
+/>
+```
+
+The square paints in the cell's own text colour; `--adapttable-fill-handle`
+changes it. In RTL it sits on the row's inline end, which is the left, and a
+sideways drag follows the same mirroring the arrow keys do.
+
+Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
+in `@adapttable/core/adapter` renders the square itself.
+
 ## Selecting with the pointer, and whole columns
 
 Drag across cells to select a block: the press anchors it, crossing a cell
@@ -130,6 +166,8 @@ That is the whole opt-in. Omit it and nothing changes — see
 | `Ctrl`+`Home` / `Ctrl`+`End` | First / last cell of the whole grid             |
 | `PageUp` / `PageDown`        | A viewport's worth of rows                      |
 | `Enter` / `F2`               | Opens the editor, when the column is `editable` |
+| `Ctrl`/`Cmd`+`C` / `X` / `V` | Copy, cut, paste the selected rectangle         |
+| `Ctrl`/`Cmd`+`D`             | Fill the selection down from its top row        |
 | `Tab`                        | Leaves the table — it is one stop, not hundreds |
 
 Edges **stop rather than wrap.** Wrapping off the last column would move the

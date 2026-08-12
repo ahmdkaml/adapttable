@@ -70,6 +70,7 @@ export {
   type ExportStatus,
   useExportHandler,
 } from "./export/useExportHandler";
+export { FillHandle, type FillHandleProps } from "./focus/FillHandle";
 export {
   GridFocusAnnouncer,
   type GridFocusAnnouncerProps,

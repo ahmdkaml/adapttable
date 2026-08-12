@@ -16,6 +16,7 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  FillHandle,
   headerGroupRow,
   isSelectedCell,
   logicalAlign,
@@ -300,6 +301,11 @@ function DesktopRowBase<TRow>({
                     column.accessor?.(row)
                   )
                 }
+              />
+              <FillHandle
+                focus={gridFocus}
+                windowIndex={index}
+                col={colIndex}
               />
             </Table.Cell>
           );

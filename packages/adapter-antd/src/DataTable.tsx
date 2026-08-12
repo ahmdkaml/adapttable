@@ -1,5 +1,6 @@
 import {
   ACTIONS_COLUMN_KEY,
+  cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
   type ConfirmHandler,
@@ -1022,6 +1023,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     labels: c.table.labels,
     onCut: props.onCellCut,
     onPaste: cellPasteHandler(props),
+    onFill: cellFillHandler(props),
   });
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;

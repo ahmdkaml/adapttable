@@ -96,6 +96,7 @@ export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export { batchEditHandler, type CellEdit } from "./focus/cellEdits";
 export {
   type CellRange,
   type CellRangeBounds,
@@ -114,6 +115,13 @@ export {
   writeClipboardText,
 } from "./focus/clipboardRange";
 export {
+  type FillDirection,
+  fillDirection,
+  fillRangeEdits,
+  type FillRangeOptions,
+  fillTargetRange,
+} from "./focus/fillRange";
+export {
   type GridBounds,
   type GridCell,
   type GridFocusMove,
@@ -123,10 +131,11 @@ export {
   sameGridCell,
 } from "./focus/gridFocus";
 export {
+  cellFillHandler,
+  type CellFillHandlerOptions,
   cellPasteHandler,
   type CellPasteHandlerOptions,
   parseClipboardTable,
-  type PasteEdit,
   pasteRangeEdits,
   type PasteRangeOptions,
 } from "./focus/pasteRange";

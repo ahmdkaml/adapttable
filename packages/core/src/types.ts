@@ -436,6 +436,10 @@ export interface TableLabels {
   gridRangePasted?: (cells: number) => string;
   /** Announced when the browser refused to hand over the clipboard. */
   gridRangePasteFailed?: string;
+  /** Announced after a fill: given the cell count, what was written. */
+  gridRangeFilled?: (cells: number) => string;
+  /** Accessible name of the fill handle on the selection's corner. */
+  gridFillHandle?: string;
   /**
    * Where keyboard focus is, for the grid's live region: given the 1-based row
    * and the dataset total, return the phrase a screen reader should append

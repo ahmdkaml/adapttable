@@ -13,6 +13,7 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  FillHandle,
   headerGroupRow,
   isSelectedCell,
   type PinLeads,
@@ -336,6 +337,11 @@ function DesktopRowImpl<TRow>({
                 columns={columns}
                 rowKey={getRowId}
                 editLabel={editLabel}
+              />
+              <FillHandle
+                focus={gridFocus}
+                windowIndex={index}
+                col={colIndex}
               />
             </TableCell>
           );

@@ -65,6 +65,12 @@ describe("parseClipboardTable", () => {
     expect(parseClipboardTable("a\r\nb")).toEqual([["a"], ["b"]]);
   });
 
+  it("keeps what an unterminated quote carries", () => {
+    // A clipboard truncated mid-cell is still worth its content; throwing it
+    // away would lose the whole paste over one missing character.
+    expect(parseClipboardTable('"a\tb')).toEqual([["a\tb"]]);
+  });
+
   it("has nothing to say about empty text", () => {
     expect(parseClipboardTable("")).toEqual([]);
   });

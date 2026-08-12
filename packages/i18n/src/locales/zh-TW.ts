@@ -70,6 +70,8 @@ export const zhTW: Required<TableLabels> = {
   gridRangeCopyFailed: "複製失敗",
   gridRangePasted: (cells) => `已貼上 ${cells} 個儲存格`,
   gridRangePasteFailed: "貼上失敗",
+  gridRangeFilled: (cells) => `已填滿 ${cells} 個儲存格`,
+  gridFillHandle: "從選取範圍填滿",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已選取第 ${fromRow} 至 ${toRow} 列、第 ${fromColumn} 至 ${toColumn} 欄，共 ${cells} 個儲存格`,

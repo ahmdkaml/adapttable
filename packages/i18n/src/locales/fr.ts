@@ -70,6 +70,8 @@ export const fr: Required<TableLabels> = {
   gridRangeCopyFailed: "Échec de la copie",
   gridRangePasted: (cells) => `${cells} cellules collées`,
   gridRangePasteFailed: "Échec du collage",
+  gridRangeFilled: (cells) => `${cells} cellules remplies`,
+  gridFillHandle: "Remplir depuis la sélection",
   gridCellPosition: (row, total) => `ligne ${row} sur ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Lignes ${fromRow} à ${toRow}, colonnes ${fromColumn} à ${toColumn} sélectionnées, ${cells} cellules`,

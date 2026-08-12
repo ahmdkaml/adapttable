@@ -14,6 +14,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  FillHandle,
   headerGroupRow,
   isSelectedCell,
   resolveDisabledReason,
@@ -380,20 +381,29 @@ function renderLeafDataCell<TRow>(
     columns: readonly ColumnDef<TRow>[];
     getRowId: (row: TRow) => string;
     labels: Required<TableLabels>;
-  }
+    gridFocus?: GridFocusState;
+  },
+  columnIndex: number
 ): ReactNode {
   return (
-    <EditableDataCell
-      editing={options.editing}
-      row={record}
-      column={column}
-      rowId={options.getRowId(record)}
-      rowIndex={index}
-      rows={options.rows}
-      columns={options.columns}
-      rowKey={options.getRowId}
-      editLabel={options.labels.editCell}
-    />
+    <>
+      <EditableDataCell
+        editing={options.editing}
+        row={record}
+        column={column}
+        rowId={options.getRowId(record)}
+        rowIndex={index}
+        rows={options.rows}
+        columns={options.columns}
+        rowKey={options.getRowId}
+        editLabel={options.labels.editCell}
+      />
+      <FillHandle
+        focus={options.gridFocus}
+        windowIndex={index}
+        col={columnIndex}
+      />
+    </>
   );
 }
 
@@ -410,12 +420,13 @@ function renderDataCell<TRow>(
     getRowId: (row: TRow) => string;
     labels: Required<TableLabels>;
     grouping?: BuildColumnsGrouping;
+    gridFocus?: GridFocusState;
   }
 ): ReactNode {
   if (isAdaptTableGroupRow(record)) {
     return renderGroupDataCell(column, columnIndex, record, options);
   }
-  return renderLeafDataCell(column, record, index, options);
+  return renderLeafDataCell(column, record, index, options, columnIndex);
 }
 
 export function buildColumns<TRow>({
@@ -444,6 +455,7 @@ export function buildColumns<TRow>({
     getRowId,
     labels,
     grouping,
+    gridFocus,
   };
   const leaves: TableColumnsType<GroupedDataRecord<TRow>> = columns.map(
     (column, columnIndex) => {

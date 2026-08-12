@@ -11,9 +11,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
+import type { CellEdit } from "./cellEdits";
 import { cellRangeSize } from "./cellRange";
+import { FillHandle } from "./FillHandle";
 import { type GridCell } from "./gridFocus";
-import type { PasteEdit } from "./pasteRange";
 import { useGridFocus } from "./useGridFocus";
 
 interface Row {
@@ -52,7 +53,8 @@ function Grid(props: {
   /** Headers that sort, so a plain click is already claimed. */
   sortableHeaders?: boolean;
   onCut?: (range: { anchor: GridCell; head: GridCell }) => void;
-  onPaste?: (edits: PasteEdit<Row>[]) => void;
+  onPaste?: (edits: CellEdit<Row>[]) => void;
+  onFill?: (edits: CellEdit<Row>[]) => void;
   /** Columns a paste is allowed to write into. */
   editable?: boolean;
 }) {
@@ -70,6 +72,7 @@ function Grid(props: {
     onActivate: props.onActivate,
     onCut: props.onCut,
     onPaste: props.onPaste,
+    onFill: props.onFill,
   });
   const first = props.firstRowIndex ?? 0;
   const rendered =
@@ -100,6 +103,12 @@ function Grid(props: {
                   {...focus.getCellProps({ row: first + i, col })}
                 >
                   {column.accessor?.(row)}
+                  <FillHandle
+                    focus={focus}
+                    windowIndex={i}
+                    col={col}
+                    firstRowIndex={first}
+                  />
                 </td>
               ))}
             </tr>
@@ -634,7 +643,7 @@ describe("useGridFocus — paste from a spreadsheet", () => {
     cellAt(0, 0)!.focus();
     fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
     await waitFor(() => expect(onPaste).toHaveBeenCalledOnce());
-    const edits = onPaste.mock.calls[0]?.[0] as PasteEdit<Row>[];
+    const edits = onPaste.mock.calls[0]?.[0] as CellEdit<Row>[];
     // The clipboard's 2×2 shape wins over the single selected cell.
     expect(edits).toHaveLength(4);
     expect(edits[0]).toMatchObject({ columnKey: "name", value: "A" });
@@ -687,5 +696,91 @@ describe("useGridFocus — paste from a spreadsheet", () => {
     fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
     expect(readText).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("useGridFocus — the fill handle", () => {
+  const handle = () =>
+    document.querySelector<HTMLElement>(
+      '[data-adapttable-part="fill-handle"]'
+    )!;
+
+  it("carries the selection's values to where the drag ended", () => {
+    const onFill = vi.fn();
+    render(<Grid rows={makeRows(4)} editable onFill={onFill} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseUp(cellAt(0, 0)!);
+    fireEvent.mouseDown(handle());
+    fireEvent.mouseEnter(cellAt(2, 0)!);
+    fireEvent.mouseUp(window);
+    expect(onFill).toHaveBeenCalledOnce();
+    expect(onFill.mock.calls[0]?.[0]).toEqual([
+      {
+        row: expect.objectContaining({ id: "1" }),
+        columnKey: "name",
+        value: "Name 0",
+      },
+      {
+        row: expect.objectContaining({ id: "2" }),
+        columnKey: "name",
+        value: "Name 0",
+      },
+    ]);
+    expect(document.querySelector("output")?.textContent).toBe(
+      "2 cells filled"
+    );
+  });
+
+  it("leaves the filled rectangle selected, ready for the next one", () => {
+    render(<Grid rows={makeRows(4)} editable onFill={vi.fn()} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseUp(cellAt(0, 0)!);
+    fireEvent.mouseDown(handle());
+    fireEvent.mouseEnter(cellAt(2, 0)!);
+    fireEvent.mouseUp(window);
+    expect(selectionSize()).toBe("3");
+  });
+
+  it("writes nothing when the drag never left the selection", () => {
+    const onFill = vi.fn();
+    render(<Grid rows={makeRows(4)} editable onFill={onFill} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.mouseDown(cellAt(0, 0)!);
+    fireEvent.mouseUp(cellAt(0, 0)!);
+    fireEvent.mouseDown(handle());
+    fireEvent.mouseEnter(cellAt(0, 0)!);
+    fireEvent.mouseUp(window);
+    expect(onFill).not.toHaveBeenCalled();
+  });
+
+  it("does not start a selection drag from the handle itself", () => {
+    // The cell's own press collapses the selection; the handle's must not.
+    render(<Grid rows={makeRows(4)} editable onFill={vi.fn()} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowDown", shiftKey: true });
+    expect(selectionSize()).toBe("2");
+    fireEvent.mouseDown(handle());
+    expect(selectionSize()).toBe("2");
+  });
+
+  it("fills the selection down on Ctrl+D", () => {
+    const onFill = vi.fn();
+    render(<Grid rows={makeRows(4)} editable onFill={onFill} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(cellAt(1, 0)!, { key: "d", ctrlKey: true });
+    expect(onFill.mock.calls[0]?.[0]).toHaveLength(1);
+    expect(document.querySelector("output")?.textContent).toBe("1 cell filled");
+  });
+
+  it("leaves Ctrl+D to the browser on a one-row selection", () => {
+    const onFill = vi.fn();
+    render(<Grid rows={makeRows(4)} editable onFill={onFill} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowRight", shiftKey: true });
+    fireEvent.keyDown(cellAt(0, 1)!, { key: "d", ctrlKey: true });
+    expect(onFill).not.toHaveBeenCalled();
   });
 });

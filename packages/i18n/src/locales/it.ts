@@ -71,6 +71,8 @@ export const it: Required<TableLabels> = {
   gridRangeCopyFailed: "Copia non riuscita",
   gridRangePasted: (cells) => `${cells} celle incollate`,
   gridRangePasteFailed: "Incolla non riuscito",
+  gridRangeFilled: (cells) => `${cells} celle riempite`,
+  gridFillHandle: "Riempi dalla selezione",
   gridCellPosition: (row, total) => `riga ${row} di ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Righe da ${fromRow} a ${toRow}, colonne da ${fromColumn} a ${toColumn} selezionate, ${cells} celle`,

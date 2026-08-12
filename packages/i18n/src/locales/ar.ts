@@ -72,6 +72,8 @@ export const ar: Required<TableLabels> = {
   gridRangeCopyFailed: "تعذّر النسخ",
   gridRangePasted: (cells) => `تم لصق ${cells} خلية`,
   gridRangePasteFailed: "تعذّر اللصق",
+  gridRangeFilled: (cells) => `تمت تعبئة ${cells} خلية`,
+  gridFillHandle: "التعبئة من التحديد",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,

@@ -8,8 +8,8 @@ import type {
   ActiveFilterChip,
   ChipLabelResolver,
 } from "./filters/useActiveFilterChips";
+import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
-import type { PasteEdit } from "./focus/pasteRange";
 import type { TableSource } from "./source/TableSource";
 import type {
   BulkAction,
@@ -123,7 +123,16 @@ export interface BaseDataTableProps<TRow> {
    * Cells landing outside the loaded rows or the rendered columns are dropped
    * rather than invented, and a column that is not `editable` is skipped.
    */
-  onCellPaste?: (edits: PasteEdit<TRow>[]) => void;
+  onCellPaste?: (edits: CellEdit<TRow>[]) => void;
+  /**
+   * Fill — the handle dragged from the selection's corner, or Ctrl/Cmd+D.
+   * Requires `cellNavigation`.
+   *
+   * Same contract as `onCellPaste`: omit it and every edit goes through
+   * `onCellEdit`, so the handle appears as soon as the table can be edited.
+   * Provide it to take the batch whole.
+   */
+  onCellFill?: (edits: CellEdit<TRow>[]) => void;
   /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.

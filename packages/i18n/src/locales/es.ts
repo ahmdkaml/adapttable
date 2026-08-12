@@ -71,6 +71,8 @@ export const es: Required<TableLabels> = {
   gridRangeCopyFailed: "Error al copiar",
   gridRangePasted: (cells) => `${cells} celdas pegadas`,
   gridRangePasteFailed: "Error al pegar",
+  gridRangeFilled: (cells) => `${cells} celdas rellenadas`,
+  gridFillHandle: "Rellenar desde la selección",
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Filas ${fromRow} a ${toRow}, columnas ${fromColumn} a ${toColumn} seleccionadas, ${cells} celdas`,

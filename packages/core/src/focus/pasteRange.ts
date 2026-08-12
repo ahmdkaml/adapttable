@@ -12,18 +12,10 @@
  * tab-separated fields, newline-separated rows, and RFC-4180 quoting when a
  * field carries a tab, a newline or a quote.
  */
+import { isCellEditable } from "../editing/cellEditing";
 import type { ColumnDef } from "../types";
+import { batchEditHandler, type CellEdit } from "./cellEdits";
 import { type CellRange, cellRangeBounds } from "./cellRange";
-
-/** One edit a paste produces — exactly what an inline commit produces. */
-export interface PasteEdit<TRow> {
-  /** The row being written. */
-  row: TRow;
-  /** Which column, by key. */
-  columnKey: string;
-  /** The value to commit, already through the column's `parseValue`. */
-  value: unknown;
-}
 
 /**
  * Parse clipboard text into a grid of raw strings.
@@ -130,25 +122,20 @@ export interface PasteRangeOptions<TRow> {
  */
 export function pasteRangeEdits<TRow>(
   options: PasteRangeOptions<TRow>
-): PasteEdit<TRow>[] {
+): CellEdit<TRow>[] {
   const { text, range, rows, columns, firstRowIndex = 0 } = options;
   const grid = parseClipboardTable(text);
   if (grid.length === 0) return [];
 
   const start = cellRangeBounds(range);
-  const edits: PasteEdit<TRow>[] = [];
+  const edits: CellEdit<TRow>[] = [];
 
   grid.forEach((line, r) => {
     const row = rows[start.fromRow + r - firstRowIndex];
     if (row === undefined) return;
     line.forEach((raw, c) => {
       const column = columns[start.fromCol + c];
-      if (!column) return;
-      const editable =
-        typeof column.editable === "function"
-          ? column.editable(row)
-          : column.editable === true;
-      if (!editable) return;
+      if (!column || !isCellEditable(column, row)) return;
       edits.push({
         row,
         columnKey: column.key,
@@ -163,18 +150,14 @@ export function pasteRangeEdits<TRow>(
 /** The two ways a table can receive a paste. */
 export interface CellPasteHandlerOptions<TRow> {
   /** Takes the batch whole — one transaction, one undo entry. */
-  onCellPaste?: (edits: PasteEdit<TRow>[]) => void;
+  onCellPaste?: (edits: CellEdit<TRow>[]) => void;
   /** The ordinary inline-edit channel, used one edit at a time. */
   onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
 }
 
 /**
- * Resolve who receives a paste.
- *
- * A table that can already be edited can already be pasted into: with no
- * `onCellPaste`, each edit goes through `onCellEdit`, the exact call an inline
- * commit makes. `onCellPaste` exists for hosts that want the batch whole —
- * one server round trip, one undo entry — and takes precedence when given.
+ * Resolve who receives a paste — `onCellPaste`, or `onCellEdit` one cell at a
+ * time. See {@link batchEditHandler} for why the default is the edit channel.
  *
  * @typeParam TRow - The row type.
  * @param options - See {@link CellPasteHandlerOptions}.
@@ -183,11 +166,29 @@ export interface CellPasteHandlerOptions<TRow> {
  */
 export function cellPasteHandler<TRow>(
   options: CellPasteHandlerOptions<TRow>
-): ((edits: PasteEdit<TRow>[]) => void) | undefined {
-  const { onCellPaste, onCellEdit } = options;
-  if (onCellPaste) return onCellPaste;
-  if (!onCellEdit) return undefined;
-  return (edits) => {
-    for (const edit of edits) onCellEdit(edit.row, edit.columnKey, edit.value);
-  };
+): ((edits: CellEdit<TRow>[]) => void) | undefined {
+  return batchEditHandler(options.onCellPaste, options.onCellEdit);
+}
+
+/** The two ways a table can receive a fill. */
+export interface CellFillHandlerOptions<TRow> {
+  /** Takes the batch whole — one transaction, one undo entry. */
+  onCellFill?: (edits: CellEdit<TRow>[]) => void;
+  /** The ordinary inline-edit channel, used one edit at a time. */
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+}
+
+/**
+ * Resolve who receives a fill — `onCellFill`, or `onCellEdit` one cell at a
+ * time. See {@link batchEditHandler} for why the default is the edit channel.
+ *
+ * @typeParam TRow - The row type.
+ * @param options - See {@link CellFillHandlerOptions}.
+ * @returns The handler, or `undefined` when the table takes no edits at all —
+ *   which is also when the fill handle is not rendered.
+ */
+export function cellFillHandler<TRow>(
+  options: CellFillHandlerOptions<TRow>
+): ((edits: CellEdit<TRow>[]) => void) | undefined {
+  return batchEditHandler(options.onCellFill, options.onCellEdit);
 }

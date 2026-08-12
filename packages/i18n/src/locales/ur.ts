@@ -72,6 +72,8 @@ export const ur: Required<TableLabels> = {
   gridRangeCopyFailed: "کاپی ناکام",
   gridRangePasted: (cells) => `${cells} خانے چسپاں ہوئے`,
   gridRangePasteFailed: "چسپاں کرنا ناکام",
+  gridRangeFilled: (cells) => `${cells} خانے بھرے گئے`,
+  gridFillHandle: "انتخاب سے بھریں",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطریں ${fromRow} تا ${toRow}، کالم ${fromColumn} تا ${toColumn} منتخب، ${cells} خانے`,

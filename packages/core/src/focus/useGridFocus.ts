@@ -32,6 +32,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { columnText } from "../columns/columnText";
 import { useEventCallback } from "../hooks/useEventCallback";
 import type { ColumnDef, Direction, TableLabels } from "../types";
+import type { CellEdit } from "./cellEdits";
 import {
   type CellRange,
   cellRangeBounds,
@@ -46,6 +47,7 @@ import {
   readClipboardText,
   writeClipboardText,
 } from "./clipboardRange";
+import { fillRangeEdits, fillTargetRange } from "./fillRange";
 import {
   type GridBounds,
   type GridCell,
@@ -53,7 +55,7 @@ import {
   moveGridFocus,
   sameGridCell,
 } from "./gridFocus";
-import { type PasteEdit, pasteRangeEdits } from "./pasteRange";
+import { pasteRangeEdits } from "./pasteRange";
 
 /** The attribute a focusable cell carries, so focus can find it in the DOM. */
 export const GRID_CELL_ATTR = "data-grid-cell";
@@ -115,7 +117,13 @@ export interface UseGridFocusOptions<TRow> {
    * without paste knowing. Applying them stays the host's job — the table never
    * writes to data it does not own.
    */
-  onPaste?: (edits: PasteEdit<TRow>[]) => void;
+  onPaste?: (edits: CellEdit<TRow>[]) => void;
+  /**
+   * A fill — the handle dragged from the selection's corner, or Ctrl/Cmd+D —
+   * already turned into ordinary cell edits. Same shape and same contract as
+   * {@link UseGridFocusOptions.onPaste}: the table proposes, the host writes.
+   */
+  onFill?: (edits: CellEdit<TRow>[]) => void;
 }
 
 /** What {@link useGridFocus} returns. */
@@ -168,6 +176,21 @@ export interface GridFocusState {
   selectColumn: (col: number, extend?: boolean) => void;
   /** Move focus programmatically — the fill handle and clipboard will need it. */
   focusCell: (cell: GridCell) => void;
+  /**
+   * The cell carrying the fill handle — the selection's bottom inline-end
+   * corner — or `null` when there is nothing to fill from or no host to
+   * receive it.
+   */
+  fillHandleCell: GridCell | null;
+  /** Props for the fill handle element. See `FillHandle` in the adapter entry. */
+  getFillHandleProps: () => Record<string, unknown>;
+  /** The handle's accessible name, already localized. */
+  fillHandleLabel: string;
+  /**
+   * What a fill in progress would cover, for a kit that wants to draw the
+   * preview its own way. `null` unless a fill is being dragged.
+   */
+  fillPreview: CellRange | null;
 }
 
 /**
@@ -192,6 +215,7 @@ export function useGridFocus<TRow>(
     onRangeChange,
     onCut,
     onPaste,
+    onFill,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -204,6 +228,11 @@ export function useGridFocus<TRow>(
   // A drag in progress. Held in a ref rather than state because it changes on
   // every pointer move and must not re-render the grid to be read.
   const dragging = useRef(false);
+  // A fill drag is a different gesture from a selection drag — it carries the
+  // selection's values rather than growing it — so it has its own flag. Where
+  // it has reached IS state: the preview has to render.
+  const filling = useRef(false);
+  const [fillTo, setFillTo] = useState<GridCell | null>(null);
 
   // Movement is clamped to the LOADED window, not the dataset.
   //
@@ -266,6 +295,34 @@ export function useGridFocus<TRow>(
     [onRangeChange, labels]
   );
 
+  // What a fill in progress would cover: the selection plus the cells the drag
+  // has reached. Rendering it as selected is the preview — one highlight, one
+  // meaning, and it cannot disagree with what gets written because both come
+  // from the same rectangle.
+  const fillPreview = useMemo(
+    () => (range && fillTo ? fillTargetRange(range, fillTo) : null),
+    [range, fillTo]
+  );
+
+  const commitFill = useEventCallback((to: GridCell) => {
+    if (!range || !onFill) return;
+    const edits = fillRangeEdits({
+      source: range,
+      to,
+      rows,
+      columns,
+      firstRowIndex,
+    });
+    if (edits.length === 0) return;
+    onFill(edits);
+    // The filled rectangle stays selected, as it does in a spreadsheet: the
+    // next fill continues from what was just written.
+    setRange(fillTargetRange(range, to));
+    setAnnouncement(
+      (labels?.gridRangeFilled ?? defaultRangeFilled)(edits.length)
+    );
+  });
+
   const focusCell = useCallback(
     (cell: GridCell) => {
       setActive(cell);
@@ -293,6 +350,115 @@ export function useGridFocus<TRow>(
     element.focus();
   }, [enabled, active, rows, firstRowIndex]);
 
+  /** Ctrl/Cmd+C and Ctrl/Cmd+X — the rectangle, as a spreadsheet reads it. */
+  const copySelection = useEventCallback(
+    (selection: CellRange, cut: boolean) => {
+      const text = clipboardRangeText({
+        range: selection,
+        rows,
+        columns,
+        firstRowIndex,
+      });
+      void writeClipboardText(text).then((ok) => {
+        setAnnouncement(
+          ok
+            ? (labels?.gridRangeCopied ?? defaultRangeCopied)(
+                cellRangeSize(selection)
+              )
+            : (labels?.gridRangeCopyFailed ?? "Copy failed")
+        );
+        // A cut only tells the host once the clipboard has the data: clearing
+        // cells the clipboard never took would lose them outright.
+        if (ok && cut) onCut?.(selection);
+      });
+    }
+  );
+
+  /** Ctrl/Cmd+D — the selection's top row carries into the rest of it. */
+  const fillDown = useEventCallback((selection: CellRange) => {
+    const b = cellRangeBounds(selection);
+    const edits = fillRangeEdits({
+      source: {
+        anchor: { row: b.fromRow, col: b.fromCol },
+        head: { row: b.fromRow, col: b.toCol },
+      },
+      to: { row: b.toRow, col: b.toCol },
+      rows,
+      columns,
+      firstRowIndex,
+    });
+    onFill?.(edits);
+    setAnnouncement(
+      (labels?.gridRangeFilled ?? defaultRangeFilled)(edits.length)
+    );
+  });
+
+  /** Ctrl/Cmd+V — the clipboard, mapped onto the selection's top-left cell. */
+  const pasteInto = useEventCallback((target: CellRange) => {
+    void readClipboardText().then((text) => {
+      if (text === null) {
+        setAnnouncement(labels?.gridRangePasteFailed ?? "Paste failed");
+        return;
+      }
+      const edits = pasteRangeEdits({
+        text,
+        range: target,
+        rows,
+        columns,
+        firstRowIndex,
+      });
+      onPaste?.(edits);
+      setAnnouncement(
+        (labels?.gridRangePasted ?? defaultRangePasted)(edits.length)
+      );
+    });
+  });
+
+  /**
+   * The Ctrl/Cmd gestures: copy, cut, fill down, paste.
+   *
+   * They live together and run before movement, so a modifier never doubles as
+   * a navigation key. Each stays the BROWSER'S own when the table has nothing
+   * to do with it — no selection, no host handler — which is what `false` says.
+   *
+   * @returns Whether the table took the key.
+   */
+  const handleClipboardKey = useEventCallback(
+    (
+      event: {
+        key: string;
+        ctrlKey?: boolean;
+        metaKey?: boolean;
+        preventDefault: () => void;
+      },
+      from: GridCell
+    ): boolean => {
+      if (event.ctrlKey !== true && event.metaKey !== true) return false;
+      if ((event.key === "c" || event.key === "x") && range) {
+        event.preventDefault();
+        copySelection(range, event.key === "x");
+        return true;
+      }
+      // Nothing to carry into a one-row selection, so the key stays the
+      // browser's there.
+      if (event.key === "d" && onFill && range && !isSingleRowRange(range)) {
+        event.preventDefault();
+        fillDown(range);
+        return true;
+      }
+      // Paste needs a destination, not a rectangle: a spreadsheet pastes into
+      // the focused cell and lets the clipboard's own shape decide the rest, so
+      // this takes the same `from` the movement keys take rather than demanding
+      // a selection first.
+      if (event.key === "v" && onPaste) {
+        event.preventDefault();
+        pasteInto(range ?? singleCellRange(from));
+        return true;
+      }
+      return false;
+    }
+  );
+
   const onKeyDown = useEventCallback(
     (event: {
       key: string;
@@ -303,64 +469,12 @@ export function useGridFocus<TRow>(
     }) => {
       if (!enabled) return;
       const from = active ?? { row: firstRowIndex, col: 0 };
+      if (handleClipboardKey(event, from)) return;
 
       // Enter and F2 belong to whatever is inside the cell — `EditableCellGate`
-      // handles both on the element focus just landed on. This only fires when a
-      // host asked for its own activation, and stays out of the way otherwise so
-      // the two never race for one key press.
-      // Copy and cut the selection the way a spreadsheet does. Handled before
-      // movement so the modifier never doubles as a navigation key, and only
-      // when a rectangle exists — otherwise the browser's own copy stands.
-      const modifier = event.ctrlKey === true || event.metaKey === true;
-      if (modifier && (event.key === "c" || event.key === "x")) {
-        if (!range) return;
-        event.preventDefault();
-        const text = clipboardRangeText({
-          range,
-          rows,
-          columns,
-          firstRowIndex,
-        });
-        void writeClipboardText(text).then((ok) => {
-          setAnnouncement(
-            ok
-              ? (labels?.gridRangeCopied ?? defaultRangeCopied)(
-                  cellRangeSize(range)
-                )
-              : (labels?.gridRangeCopyFailed ?? "Copy failed")
-          );
-          if (ok && event.key === "x") onCut?.(range);
-        });
-        return;
-      }
-
-      // Paste needs a destination, not a rectangle: a spreadsheet pastes into
-      // the focused cell and lets the clipboard's own shape decide the rest, so
-      // this takes the same `from` the movement keys take rather than demanding
-      // a selection first.
-      if (modifier && event.key === "v" && onPaste) {
-        const target = range ?? singleCellRange(from);
-        event.preventDefault();
-        void readClipboardText().then((text) => {
-          if (text === null) {
-            setAnnouncement(labels?.gridRangePasteFailed ?? "Paste failed");
-            return;
-          }
-          const edits = pasteRangeEdits({
-            text,
-            range: target,
-            rows,
-            columns,
-            firstRowIndex,
-          });
-          onPaste(edits);
-          setAnnouncement(
-            (labels?.gridRangePasted ?? defaultRangePasted)(edits.length)
-          );
-        });
-        return;
-      }
-
+      // handles both on the element focus just landed on. This only fires when
+      // a host asked for its own activation, and stays out of the way otherwise
+      // so the two never race for one key press.
       if (event.key === "Enter" || event.key === "F2") {
         if (onActivate) {
           event.preventDefault();
@@ -403,10 +517,18 @@ export function useGridFocus<TRow>(
     if (!enabled) return undefined;
     const end = () => {
       dragging.current = false;
+      if (!filling.current) return;
+      filling.current = false;
+      // Read the reached cell from state at the moment of release; a fill that
+      // never left the selection writes nothing, which `commitFill` decides.
+      setFillTo((to) => {
+        if (to) commitFill(to);
+        return null;
+      });
     };
     window.addEventListener("mouseup", end);
     return () => window.removeEventListener("mouseup", end);
-  }, [enabled]);
+  }, [enabled, commitFill]);
 
   const getGridProps = useCallback(() => {
     if (!enabled) return {};
@@ -429,7 +551,8 @@ export function useGridFocus<TRow>(
       // that is its first cell, so Tab reaches the table at all.
       const firstEver =
         active === null && cell.row === firstRowIndex && cell.col === 0;
-      const selected = isInCellRange(range, cell);
+      // While a fill is being dragged the highlight shows what it would write.
+      const selected = isInCellRange(fillPreview ?? range, cell);
       return {
         [GRID_CELL_ATTR]: gridCellAttr(cell),
         tabIndex: isActive || firstEver ? 0 : -1,
@@ -453,6 +576,10 @@ export function useGridFocus<TRow>(
         onMouseEnter: () => {
           // Extending on ENTER rather than on move means one update per cell
           // crossed instead of one per pixel.
+          if (filling.current) {
+            setFillTo(cell);
+            return;
+          }
           if (!dragging.current) return;
           selectRange(extendCellRange(range, cell, active ?? cell));
         },
@@ -466,7 +593,7 @@ export function useGridFocus<TRow>(
         },
       };
     },
-    [enabled, active, firstRowIndex, range, selectRange]
+    [enabled, active, firstRowIndex, range, fillPreview, selectRange]
   );
 
   /**
@@ -508,6 +635,31 @@ export function useGridFocus<TRow>(
     [enabled, selectColumn]
   );
 
+  // The handle sits on the selection's bottom inline-end corner — the last row
+  // and last column of the rectangle. Only when a host can receive a fill:
+  // an affordance for a gesture nothing listens to is a lie.
+  const fillHandleCell = useMemo(() => {
+    if (!enabled || !range || !onFill) return null;
+    const b = cellRangeBounds(range);
+    return { row: b.toRow, col: b.toCol };
+  }, [enabled, range, onFill]);
+
+  const getFillHandleProps = useCallback(
+    () => ({
+      onMouseDown: (event: {
+        preventDefault: () => void;
+        stopPropagation: () => void;
+      }) => {
+        // Stop the cell's own press: that one collapses the selection to a
+        // single cell, which is the opposite of what a fill starts from.
+        event.preventDefault();
+        event.stopPropagation();
+        filling.current = true;
+      },
+    }),
+    []
+  );
+
   const getRowProps = useCallback(
     (rowIndex: number) => (enabled ? { "aria-rowindex": rowIndex + 1 } : {}),
     [enabled]
@@ -543,6 +695,10 @@ export function useGridFocus<TRow>(
       selectColumn,
       getColumnHeaderProps,
       focusCell,
+      fillHandleCell,
+      getFillHandleProps,
+      fillHandleLabel: labels?.gridFillHandle ?? "Fill from selection",
+      fillPreview: enabled ? fillPreview : null,
     }),
     [
       enabled,
@@ -558,6 +714,10 @@ export function useGridFocus<TRow>(
       selectColumn,
       getColumnHeaderProps,
       focusCell,
+      fillHandleCell,
+      getFillHandleProps,
+      labels,
+      fillPreview,
     ]
   );
 }
@@ -579,14 +739,25 @@ function defaultRangeSelection({
   return `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`;
 }
 
+/** Whether a rectangle is one row tall — there is nothing to fill down into. */
+function isSingleRowRange(range: CellRange): boolean {
+  const bounds = cellRangeBounds(range);
+  return bounds.fromRow === bounds.toRow;
+}
+
 /** "12 cells copied" — replaceable through `labels.gridRangeCopied`. */
 function defaultRangeCopied(cells: number): string {
-  return `${cells} cells copied`;
+  return `${cells} ${cells === 1 ? "cell" : "cells"} copied`;
+}
+
+/** "12 cells filled" — replaceable through `labels.gridRangeFilled`. */
+function defaultRangeFilled(cells: number): string {
+  return `${cells} ${cells === 1 ? "cell" : "cells"} filled`;
 }
 
 /** "12 cells pasted" — replaceable through `labels.gridRangePasted`. */
 function defaultRangePasted(cells: number): string {
-  return `${cells} cells pasted`;
+  return `${cells} ${cells === 1 ? "cell" : "cells"} pasted`;
 }
 
 /** "row 41 of 10,000" — replaceable through `labels.gridCellPosition`. */

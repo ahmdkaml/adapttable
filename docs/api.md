@@ -377,6 +377,18 @@ one cell at a time, `undefined` when the table takes no edits at all
 (`CellPasteHandlerOptions` in). On `<DataTable>` the props are `onCellPaste` and
 `onCellCut`. See [cell navigation](./cell-navigation.md).
 
+**Fill handle.** `fillDirection(source, to)` says which way a drag from the
+selection's corner is filling (`FillDirection`, or `null` inside the selection),
+`fillTargetRange(source, to)` is the rectangle it would cover — what the preview
+highlights — and `fillRangeEdits(options)` turns the gesture into `CellEdit`
+values (`FillRangeOptions` in), continuing an arithmetic series when the source
+is one and repeating otherwise. `cellFillHandler(options)` resolves the
+recipient (`CellFillHandlerOptions`), and `batchEditHandler(batch, onCellEdit)`
+is the rule both it and `cellPasteHandler` follow. The square itself is
+`FillHandle` / `FillHandleProps` from `@adapttable/core/adapter`; on
+`<DataTable>` the prop is `onCellFill`. See
+[cell navigation](./cell-navigation.md).
+
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves
 `formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a

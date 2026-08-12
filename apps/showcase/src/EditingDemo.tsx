@@ -12,6 +12,10 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
         Enter commits, Escape cancels, Tab moves to the next editable cell. Omit{" "}
         <code>onCellEdit</code> and no cell ever opens, even where columns
         declare <code>editable</code>.
+        <br />
+        With <code>cellNavigation</code> on, that same handler receives whole
+        blocks: paste a spreadsheet with Ctrl/Cmd+V, or drag the square on the
+        selection&rsquo;s corner to carry its values on.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -24,6 +28,10 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
           <span className="hint">
             <Check size={12} /> text, number and select editors
           </span>
+          <span className="hint">
+            <Bolt size={12} /> select cells, then drag the corner or paste with
+            Ctrl/Cmd+V
+          </span>
         </div>
         <div className="pad-surface__body">
           <MantineDemo
@@ -32,6 +40,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="edit"
             editing
+            cellNavigation
           />
         </div>
       </div>
