@@ -308,6 +308,18 @@ export { stableKey } from "./utils/stableKey";
 /* ── Rows ──────────────────────────────────────────────────────────── */
 
 export {
+  applyRowPatches,
+  type InsertPatch,
+  insertRow,
+  type RemovePatch,
+  removeRow,
+  type RowPatch,
+  type UpdatePatch,
+  updateRow,
+  type UpsertPatch,
+  upsertRow,
+} from "./rows/patch";
+export {
   type RowExpansionState,
   useRowExpansion,
 } from "./rows/useRowExpansion";

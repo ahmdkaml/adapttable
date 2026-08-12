@@ -104,6 +104,57 @@ its `title`).
 | `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.    |
 | `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution. |
 
+## Applying changes without a refetch
+
+A commit hands you a change; what you do with your data is yours. Refetching
+the page to reflect it costs a round trip and throws away the user's scroll
+position, open rows, and sometimes their selection.
+
+`applyRowPatches` applies changes to the rows you already hold:
+
+```tsx
+import { applyRowPatches, updateRow, removeRow } from "@adapttable/core";
+
+const [rows, setRows] = useState(initial);
+const byId = (row: Person) => row.id;
+
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={byId}
+  editing
+  onCellEdit={({ row, key, value }) =>
+    setRows((current) =>
+      applyRowPatches(current, [updateRow(byId(row), { [key]: value })], byId)
+    )
+  }
+/>;
+```
+
+Four builders — `insertRow`, `updateRow`, `upsertRow`, `removeRow` — and a
+batch is just an array, applied in order, so a later patch acts on what an
+earlier one did.
+
+Two guarantees make it safe to call on every commit:
+
+- **Untouched rows keep their object identity.** React reconciles them as
+  unchanged, and per-row memos — a [computed column](./columns.md)'s cache, a
+  `memo`'d cell — stay valid instead of recomputing for the whole page.
+- **A patch that changes nothing returns the very same array.** An update whose
+  values already match, a removal of an id that is not there, or an empty
+  batch hands back the original reference, so the `setState` does not
+  re-render.
+
+Selection and expansion survive for the same reason: both are keyed by row id,
+and a patch never changes the id of a row it did not touch.
+
+`applyRowPatches` is a pure function over an array — the table does not own
+your data and this does not make it start.
+
+The patch shapes are exported for code that builds them dynamically:
+`RowPatch` is the union, with `InsertPatch`, `UpdatePatch`, `UpsertPatch` and
+`RemovePatch` as its members.
+
 ## Notes
 
 - Works on desktop rows and mobile cards, LTR and RTL.
