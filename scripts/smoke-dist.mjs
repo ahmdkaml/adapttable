@@ -54,6 +54,27 @@ function exportTargets(pkgJson) {
   return [...targets];
 }
 
+/**
+ * Packages whose built entries must carry the `"use client"` banner, and the
+ * one that must not.
+ *
+ * Every hook-bearing entry needs the directive or a Next.js App Router build
+ * fails on the first `useState` with an error that points at the application
+ * rather than at us. `@adapttable/i18n` is the deliberate exception: it is
+ * plain data and pure functions, so leaving the directive off is what keeps it
+ * importable from a server component.
+ */
+function clientDirectiveExpectation(pkg) {
+  return pkg === "i18n" ? "absent" : "present";
+}
+
+/** Does this built file open with the `"use client"` directive? */
+function hasClientDirective(file) {
+  return /^\s*["']use client["']/.test(
+    readFileSync(file, "utf8").slice(0, 200)
+  );
+}
+
 let failures = 0;
 
 for (const pkg of LIB_PACKAGES) {
@@ -77,6 +98,25 @@ for (const pkg of LIB_PACKAGES) {
   } else {
     console.log(
       `✓ @adapttable/${shortName}: ${targets.length} export target(s) present`
+    );
+  }
+
+  // The client-boundary directive: present on everything that ships hooks,
+  // deliberately absent on the one package meant to run on the server.
+  const expectation = clientDirectiveExpectation(pkg);
+  const runtimeEntries = targets
+    .filter((target) => /\.(js|cjs|mjs)$/.test(target))
+    .map((target) => join(pkgDir, target.replace(/^\.\//, "")))
+    .filter((file) => existsSync(file));
+
+  const wrong = runtimeEntries.filter(
+    (file) => hasClientDirective(file) !== (expectation === "present")
+  );
+  if (wrong.length > 0) {
+    failures += 1;
+    console.error(
+      `✗ @adapttable/${shortName}: "use client" should be ${expectation} on:\n  ` +
+        wrong.map((file) => file.replace(pkgDir + "/", "")).join("\n  ")
     );
   }
 }

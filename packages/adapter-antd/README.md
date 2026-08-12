@@ -59,6 +59,7 @@ component doesn't change.
 - **CSV export** (`exportCsv`) — current page or the full filtered set.
 - **Virtualization** (`virtualize`) — opt-in row/card windowing for very large lists.
 - **Pagination** — antd `Pagination` with page-size changer, or infinite scroll (IntersectionObserver auto-load plus a "Load more" fallback).
+- **SSR & server components** — renders with no DOM; the client boundary is already in the build, so it drops straight into the Next.js App Router.
 - **States** — antd `Skeleton` (honouring `skeletonRows`), `Alert` error with retry, and `Empty`.
 - **RTL** via `dir`-aware logical column alignment; **dark mode** via antd's algorithm.
 - **Customisation** — `slots` (skeleton, empty), `className`, `size`, `bordered`, injectable `confirm`, and the full headless escape hatch via `@adapttable/core`.

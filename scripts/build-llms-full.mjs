@@ -34,6 +34,7 @@ const DOCS = [
   "virtualization.md",
   "mobile.md",
   "url-state.md",
+  "ssr-rsc.md",
   "customization.md",
   "i18n-rtl.md",
   "api.md",

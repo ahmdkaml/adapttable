@@ -40,6 +40,7 @@ const FEATURES = {
   sorting: /sorting/i,
   virtualization: /virtuali/i,
   mobile: /mobile card/i,
+  "ssr-rsc": /server component/i,
   // Not its own page — documented under customization.
   "csv-export": /csv/i,
 };
