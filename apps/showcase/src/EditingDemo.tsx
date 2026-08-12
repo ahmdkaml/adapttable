@@ -47,10 +47,6 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="edit"
             editing
-            cellNavigation
-            selectionStats
-            editHistory
-            findInTable
           />
         </div>
       </div>

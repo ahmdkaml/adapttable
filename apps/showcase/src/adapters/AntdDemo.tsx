@@ -138,7 +138,10 @@ export function AntdDemo({
                 : makeColumns(locale, ANTD_CELLS)
             }
             rowKey={(r) => r.id}
-            cellNavigation={cellNavigation}
+            cellNavigation={cellNavigation ?? editing}
+            selectionStats={editing}
+            editHistory={editing}
+            findInTable={editing}
             {...columns}
             density={density}
             filtersMode={filtersUi}

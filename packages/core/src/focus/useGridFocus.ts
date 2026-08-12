@@ -255,7 +255,12 @@ export function useGridFocus<TRow>(
   // selection's values rather than growing it — so it has its own flag. Where
   // it has reached IS state: the preview has to render.
   const filling = useRef(false);
-  const [fillTo, setFillTo] = useState<GridCell | null>(null);
+  // Where the fill drag has reached, twice over: a ref the release reads
+  // synchronously, and state the preview renders from. The release cannot read
+  // it from state — running the commit inside a state updater would run it
+  // during render, which React rightly warns about and StrictMode runs twice.
+  const fillTo = useRef<GridCell | null>(null);
+  const [fillPreviewTo, setFillPreviewTo] = useState<GridCell | null>(null);
 
   // Movement is clamped to the LOADED window, not the dataset.
   //
@@ -323,8 +328,9 @@ export function useGridFocus<TRow>(
   // meaning, and it cannot disagree with what gets written because both come
   // from the same rectangle.
   const fillPreview = useMemo(
-    () => (range && fillTo ? fillTargetRange(range, fillTo) : null),
-    [range, fillTo]
+    () =>
+      range && fillPreviewTo ? fillTargetRange(range, fillPreviewTo) : null,
+    [range, fillPreviewTo]
   );
 
   const commitFill = useEventCallback((to: GridCell) => {
@@ -576,12 +582,12 @@ export function useGridFocus<TRow>(
       dragging.current = false;
       if (!filling.current) return;
       filling.current = false;
-      // Read the reached cell from state at the moment of release; a fill that
-      // never left the selection writes nothing, which `commitFill` decides.
-      setFillTo((to) => {
-        if (to) commitFill(to);
-        return null;
-      });
+      const to = fillTo.current;
+      fillTo.current = null;
+      setFillPreviewTo(null);
+      // A fill that never left the selection writes nothing, which `commitFill`
+      // decides.
+      if (to) commitFill(to);
     };
     window.addEventListener("mouseup", end);
     return () => window.removeEventListener("mouseup", end);
@@ -639,7 +645,8 @@ export function useGridFocus<TRow>(
           // Extending on ENTER rather than on move means one update per cell
           // crossed instead of one per pixel.
           if (filling.current) {
-            setFillTo(cell);
+            fillTo.current = cell;
+            setFillPreviewTo(cell);
             return;
           }
           if (!dragging.current) return;

@@ -124,11 +124,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
       <FindBar find={shell.find} labels={labels} />
-      <SelectionStatsBar
-        stats={shell.selectionStats}
-        labels={labels}
-        locale={props.locale}
-      />
       <Stack gap={3}>
         <Toolbar
           {...toolbarProps}
@@ -233,6 +228,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
     </Box>
   );
 }

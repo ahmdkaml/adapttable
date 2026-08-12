@@ -109,7 +109,10 @@ export function ChakraDemo({
               source={source}
               columns={makeColumns(locale, CHAKRA_CELLS)}
               rowKey={(r) => r.id}
-              cellNavigation={cellNavigation}
+              cellNavigation={cellNavigation ?? editing}
+              selectionStats={editing}
+              editHistory={editing}
+              findInTable={editing}
               {...columns}
               density={density}
               filtersMode={filtersUi}

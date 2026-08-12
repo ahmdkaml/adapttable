@@ -262,7 +262,7 @@ export function UnstyledDemo({
       animate={animate}
       grouping={grouping}
       editing={editing}
-      cellNavigation={cellNavigation}
+      cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}
     />
   );

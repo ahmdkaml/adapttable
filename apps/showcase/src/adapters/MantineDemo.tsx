@@ -65,9 +65,6 @@ export function MantineDemo({
   grouping,
   editing,
   cellNavigation,
-  selectionStats,
-  editHistory,
-  findInTable,
   forceMobile,
 }: Readonly<{
   mode: DataMode;
@@ -81,9 +78,6 @@ export function MantineDemo({
   grouping?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
-  selectionStats?: boolean;
-  editHistory?: boolean;
-  findInTable?: boolean;
   forceMobile?: boolean;
 }>) {
   const s = strings(locale);
@@ -101,10 +95,10 @@ export function MantineDemo({
             source={source}
             columns={makeColumns(locale, MANTINE_CELLS)}
             rowKey={(r) => r.id}
-            cellNavigation={cellNavigation}
-            selectionStats={selectionStats}
-            editHistory={editHistory}
-            findInTable={findInTable}
+            cellNavigation={cellNavigation ?? editing}
+            selectionStats={editing}
+            editHistory={editing}
+            findInTable={editing}
             {...columns}
             density={density}
             filtersMode={filtersUi}

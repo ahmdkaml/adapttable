@@ -1282,11 +1282,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     >
       <GridFocusAnnouncer focus={gridFocus} />
       <FindBar find={find} labels={c.table.labels} />
-      <SelectionStatsBar
-        stats={stats}
-        labels={c.table.labels}
-        locale={props.locale}
-      />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <div className={classNames?.toolbar}>
           <Toolbar
@@ -1378,6 +1373,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <SelectionStatsBar
+        stats={stats}
+        labels={c.table.labels}
+        locale={props.locale}
+      />
     </div>
   );
 }

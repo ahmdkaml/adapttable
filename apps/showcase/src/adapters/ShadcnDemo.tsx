@@ -49,7 +49,7 @@ export function ShadcnDemo({
       animate={animate}
       grouping={grouping}
       editing={editing}
-      cellNavigation={cellNavigation}
+      cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}
     />
   );
