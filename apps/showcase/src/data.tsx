@@ -422,6 +422,9 @@ export function makeColumns(
       header: s.timeline,
       group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
+      // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
+      // the file gets the sortable ISO start date.
+      exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
       width: 185,
       accessor: (row) => (
@@ -446,6 +449,9 @@ export function makeColumns(
         </span>
       ),
       sortValue: (r) => budget(r),
+      // The screen shows "$25,300"; a spreadsheet cannot sum that, so the file
+      // carries the number underneath.
+      exportValue: (r) => budget(r),
       sortable: true,
       editable: true,
       editor: "number",
@@ -570,6 +576,9 @@ export function makeWideColumns(
       header: s.timeline,
       group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
+      // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
+      // the file gets the sortable ISO start date.
+      exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
       width: 200,
       accessor: (row) => (
@@ -593,6 +602,9 @@ export function makeWideColumns(
         </span>
       ),
       sortValue: (r) => budget(r),
+      // The screen shows "$25,300"; a spreadsheet cannot sum that, so the file
+      // carries the number underneath.
+      exportValue: (r) => budget(r),
       sortable: true,
       editable: true,
       editor: "number",
