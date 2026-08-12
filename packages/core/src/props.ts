@@ -10,6 +10,7 @@ import type {
 } from "./filters/useActiveFilterChips";
 import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
+import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { TableSource } from "./source/TableSource";
 import type {
   BulkAction,
@@ -212,6 +213,26 @@ export interface BaseDataTableProps<TRow> {
    * grand total is `summaryRow`, which already totals the whole set.
    */
   groupFooters?: boolean;
+  /**
+   * Order groups within their parent: `"label"`, `"label-desc"`, `"count"`,
+   * `"count-desc"`, or your own comparator over `{ value, label, level,
+   * groupBy, leafRows }`.
+   *
+   * To sort groups by an aggregate, compare the same rows the aggregate reads
+   * — `(a, b) => total(b.leafRows) - total(a.leafRows)` sorts by total
+   * descending. Without this, groups keep the order the source's own sort
+   * produced.
+   */
+  groupSort?: GroupSort<TRow>;
+  /**
+   * Keep only the groups this answers true for, at every level — the group
+   * equivalent of a filter, working on aggregates rather than cells:
+   * `(g) => total(g.leafRows) > 10_000`.
+   *
+   * A dropped group takes its leaves with it. Row filters still run first, so
+   * this decides which of the SURVIVING rows' groups are worth showing.
+   */
+  groupFilter?: (group: GroupNode<TRow>) => boolean;
   groupAggregates?: (
     rows: readonly TRow[]
   ) => Partial<Record<string, ReactNode>>;

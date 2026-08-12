@@ -456,6 +456,8 @@ export {
   formatGroupLabel,
   type GroupAggregatesFn,
   type GroupedFlatEntry,
+  type GroupNode,
+  type GroupSort,
   groupValueKey,
 } from "./grouping/groupRows";
 export { groupSelectionState } from "./grouping/groupSelection";

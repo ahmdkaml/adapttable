@@ -69,6 +69,35 @@ export type GroupedFlatEntry<TRow> =
       groupKey: string;
     };
 
+/**
+ * One group, as sorting and filtering see it — before it becomes a row.
+ *
+ * The leaves are here because every aggregate is a function of them: sorting
+ * groups "by their total" is `sum(b.leafRows) - sum(a.leafRows)`, computed from
+ * the same rows the aggregate mapper reads. Comparing rendered aggregate cells
+ * instead would mean comparing ReactNodes, which is not an ordering.
+ */
+export interface GroupNode<TRow> {
+  /** The raw bucket value. */
+  value: unknown;
+  /** Its display label. */
+  label: string;
+  /** Depth from zero. */
+  level: number;
+  /** Which column this level groups by. */
+  groupBy: string;
+  /** Every leaf beneath it, including through nested levels. */
+  leafRows: readonly TRow[];
+}
+
+/** How to order groups within their parent. */
+export type GroupSort<TRow> =
+  | "label"
+  | "label-desc"
+  | "count"
+  | "count-desc"
+  | ((a: GroupNode<TRow>, b: GroupNode<TRow>) => number);
+
 /** Same mapper signature as `summaryRow` — one API for page footer + groups. */
 export type GroupAggregatesFn<TRow> = (
   rows: readonly TRow[]
@@ -96,6 +125,13 @@ export interface BuildGroupedFlatModelOptions<TRow> {
    * total is a blank row.
    */
   footers?: boolean;
+  /**
+   * Order groups within their parent. Without it they keep first-seen order,
+   * which is the order the source's own sort produced.
+   */
+  sort?: GroupSort<TRow>;
+  /** Keep only the groups this answers true for, at every level. */
+  filter?: (group: GroupNode<TRow>) => boolean;
 }
 
 /**
@@ -203,6 +239,8 @@ export function buildGroupedFlatModel<TRow>(
     aggregates,
     blankLabel,
     footers = false,
+    sort,
+    filter,
   } = options;
   const keys = (typeof groupBy === "string" ? [groupBy] : groupBy).filter(
     (key) => key.length > 0
@@ -235,13 +273,29 @@ export function buildGroupedFlatModel<TRow>(
       bucket.rows.push(row);
     }
 
-    for (const valueKey of order) {
+    // Filtering and ordering happen on the whole level at once, before any of
+    // it is emitted: a group dropped here takes its leaves with it, and one
+    // moved here moves its whole subtree.
+    const nodes = order.flatMap((valueKey) => {
+      const bucket = buckets.get(valueKey)!;
+      const node: GroupNode<TRow> = {
+        value: bucket.value,
+        label: formatGroupLabel(bucket.value, blankLabel),
+        level,
+        groupBy: key,
+        leafRows: bucket.rows,
+      };
+      return filter && !filter(node) ? [] : [{ valueKey, node }];
+    });
+    if (sort) nodes.sort((a, b) => compareGroups(a.node, b.node, sort));
+
+    for (const { valueKey, node } of nodes) {
       const bucket = buckets.get(valueKey)!;
       const here = [...path, valueKey];
       const groupKey = makeGroupRowKey(keys.slice(0, level + 1), here);
       const collapsed = collapsedGroupIds.has(groupKey);
       const aggregateCells = aggregates?.(bucket.rows);
-      const label = formatGroupLabel(bucket.value, blankLabel);
+      const label = node.label;
 
       flat.push({
         kind: "group",
@@ -293,4 +347,28 @@ export function buildGroupedFlatModel<TRow>(
 
   walk(rows, 0, []);
   return flat;
+}
+
+/**
+ * Order two groups by a {@link GroupSort}.
+ *
+ * Labels compare with `localeCompare`, so "Ärger" lands where a reader expects
+ * rather than after "Zulu"; counts compare numerically.
+ *
+ * @typeParam TRow - The row type.
+ * @param a - The first group.
+ * @param b - The second group.
+ * @param sort - The ordering asked for.
+ * @returns Negative, zero or positive, as a comparator does.
+ */
+function compareGroups<TRow>(
+  a: GroupNode<TRow>,
+  b: GroupNode<TRow>,
+  sort: GroupSort<TRow>
+): number {
+  if (typeof sort === "function") return sort(a, b);
+  if (sort === "label") return a.label.localeCompare(b.label);
+  if (sort === "label-desc") return b.label.localeCompare(a.label);
+  if (sort === "count") return a.leafRows.length - b.leafRows.length;
+  return b.leafRows.length - a.leafRows.length;
 }

@@ -2332,6 +2332,48 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Ordering and filtering groups
+
+`groupSort` orders the groups inside their parent, and `groupFilter` decides
+which of them are worth showing:
+
+```tsx
+<DataTable
+  data={SALES}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy="region"
+  groupAggregates={(rows) => ({ amount: sum(rows) })}
+  // Biggest region first — the same rows the aggregate is computed from.
+  groupSort={(a, b) => sum(b.leafRows) - sum(a.leafRows)}
+  // And only the regions worth a line.
+  groupFilter={(group) => sum(group.leafRows) >= 10_000}
+/>
+```
+
+`groupSort` also takes `"label"`, `"label-desc"`, `"count"` and `"count-desc"`.
+**To sort by an aggregate, compare the leaves** — an aggregate is a function of
+its rows, and comparing the rendered aggregate cell would mean comparing
+ReactNodes, which is not an ordering. Both props apply at every level of a
+nested group.
+
+### The order things happen in
+
+1. **Row filters and search** run on the source, exactly as they do without
+   grouping. Grouping never sees a row a filter removed.
+2. **Grouping** partitions what survived, one level per `groupBy` key.
+3. **`groupFilter`** drops whole groups — a dropped group takes its leaves with
+   it, so the counts and totals that remain describe what is on screen.
+4. **`groupSort`** orders the groups within each parent. Without it they keep
+   the order the source's own sort produced.
+5. **Leaf order inside a group is the source's**, always. Sorting a column sorts
+   the rows within each group; it does not reorder the groups themselves —
+   that is `groupSort`'s job, and keeping them separate is what lets you sort
+   rows by name inside groups ordered by total.
+
+Collapsed state is keyed by the group's path, so reordering or filtering groups
+never opens or closes anything by accident.
+
 ## Footers and grand totals
 
 `groupFooters` closes every group with a row carrying the same aggregates its
@@ -4467,7 +4509,10 @@ back into the single comma-separated value state is stored as.
 `buildGroupedFlatModel(options)` walks the tree into the flat `GroupedFlatEntry`
 list adapters render — each group entry carrying its `level`, its `groupBy` key,
 its `path` and the leaves of its whole subtree — and `groupIndentStyle(level)`
-from `@adapttable/core/adapter` is the indent every kit applies. See
+from `@adapttable/core/adapter` is the indent every kit applies. `GroupSort`
+names the orderings `groupSort` accepts (`"label"`, `"label-desc"`, `"count"`,
+`"count-desc"`, or a comparator) and `GroupNode` is what it and `groupFilter`
+receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`. See
 [row grouping](./row-grouping.md).
 
 **Find in table.** `findMatches(options)` returns every cell whose text

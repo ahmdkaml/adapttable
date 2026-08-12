@@ -1,3 +1,4 @@
+import type { GroupNode } from "@adapttable/core";
 import {
   type ColumnLayoutState,
   type TableSource,
@@ -145,6 +146,9 @@ function Frontend({
               groupBy: ["team", "status"],
               groupAggregates: DEMO_GROUP_AGGREGATES,
               groupFooters: true,
+              // Biggest team first, from the same rows the subtotal reads.
+              groupSort: (a: GroupNode<Person>, b: GroupNode<Person>) =>
+                b.leafRows.length - a.leafRows.length,
             }
           : { groupBy: null }),
       })}

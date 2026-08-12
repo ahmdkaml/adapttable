@@ -507,6 +507,8 @@ export function useTableChrome<TRow>(
       collapsedGroupIds: groupCollapse.collapsedGroupIds,
       aggregates: props.groupAggregates,
       footers: props.groupFooters === true,
+      sort: props.groupSort,
+      filter: props.groupFilter,
     });
     return {
       groupBy: groupByKeys,
@@ -523,6 +525,8 @@ export function useTableChrome<TRow>(
     groupCollapse,
     props.groupAggregates,
     props.groupFooters,
+    props.groupSort,
+    props.groupFilter,
     setGroupBy,
   ]);
 

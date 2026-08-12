@@ -329,3 +329,91 @@ describe("buildGroupedFlatModel — nested grouping", () => {
     ).toEqual(["3", "2", "1", "1", "1"]);
   });
 });
+
+describe("buildGroupedFlatModel — ordering and filtering groups", () => {
+  interface Sale {
+    id: string;
+    region: string;
+    amount: number;
+  }
+  const SALES: Sale[] = [
+    { id: "1", region: "West", amount: 10 },
+    { id: "2", region: "East", amount: 90 },
+    { id: "3", region: "East", amount: 5 },
+    { id: "4", region: "North", amount: 40 },
+  ];
+  const columns = [{ key: "region", header: "Region" }];
+  const total = (rows: readonly Sale[]) =>
+    rows.reduce((sum, row) => sum + row.amount, 0);
+  const build = (
+    extra: Partial<Parameters<typeof buildGroupedFlatModel<Sale>>[0]> = {}
+  ) =>
+    buildGroupedFlatModel<Sale>({
+      rows: SALES,
+      groupBy: "region",
+      columns,
+      getRowId: (row) => row.id,
+      collapsedGroupIds: new Set(),
+      ...extra,
+    });
+  const labels = (entries: ReturnType<typeof build>) =>
+    entries.flatMap((entry) => (entry.kind === "group" ? [entry.label] : []));
+
+  it("keeps the source's own order without a sort", () => {
+    expect(labels(build())).toEqual(["West", "East", "North"]);
+  });
+
+  it("orders by label, both ways", () => {
+    expect(labels(build({ sort: "label" }))).toEqual(["East", "North", "West"]);
+    expect(labels(build({ sort: "label-desc" }))).toEqual([
+      "West",
+      "North",
+      "East",
+    ]);
+  });
+
+  it("orders by how many leaves a group has", () => {
+    expect(labels(build({ sort: "count-desc" }))[0]).toBe("East");
+    expect(labels(build({ sort: "count" }))[0]).not.toBe("East");
+  });
+
+  it("orders by an aggregate through the rows it is computed from", () => {
+    // "Sort by total" is a comparator over the same leaves the aggregate
+    // reads — never over the rendered aggregate cell, which is a ReactNode.
+    const byTotal = build({
+      sort: (a, b) => total(b.leafRows) - total(a.leafRows),
+    });
+    expect(labels(byTotal)).toEqual(["East", "North", "West"]);
+  });
+
+  it("drops a whole group, leaves included, when the filter says no", () => {
+    const big = build({ filter: (group) => total(group.leafRows) >= 40 });
+    expect(labels(big)).toEqual(["East", "North"]);
+    expect(big.filter((entry) => entry.kind === "row")).toHaveLength(3);
+  });
+
+  it("filters and orders every level of a nested group", () => {
+    const nested = buildGroupedFlatModel<Sale>({
+      rows: SALES,
+      groupBy: ["region", "id"],
+      columns: [...columns, { key: "id", header: "Id" }],
+      getRowId: (row) => row.id,
+      collapsedGroupIds: new Set(),
+      sort: "label",
+      filter: (group) => group.level === 0 || total(group.leafRows) > 5,
+    });
+    const shown = nested.flatMap((entry) =>
+      entry.kind === "group" ? [`${entry.level}:${entry.label}`] : []
+    );
+    // Regions in label order; inside East, the 5 is gone.
+    expect(shown).toEqual(["0:East", "1:2", "0:North", "1:4", "0:West", "1:1"]);
+  });
+
+  it("numbers the leaves in the order they end up rendered", () => {
+    const sorted = build({ sort: "label" });
+    const rows = sorted.flatMap((entry) =>
+      entry.kind === "row" ? [entry.row.id] : []
+    );
+    expect(rows).toEqual(["2", "3", "4", "1"]);
+  });
+});
