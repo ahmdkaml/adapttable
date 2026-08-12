@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -30,19 +31,6 @@ function joinClasses(
 ): string | undefined {
   if (base && extra) return `${base} ${extra}`;
   return base ?? extra;
-}
-
-/**
- * The label above a field in a mobile card, or `undefined` for no label.
- *
- * An explicit `mobileLabel: ""` means the consumer wants the value with no
- * label at all — so it resolves to nothing and the element is skipped, rather
- * than rendering an empty line that still takes vertical space. The header
- * fallback applies only when the column says nothing about a mobile label.
- */
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
-  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
-  return typeof column.header === "string" ? column.header : column.key;
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -180,9 +168,9 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <Box key={column.key} mb={compact ? 1 : 2}>
-            {mobileLabel(column) && (
+            {resolveMobileLabel(column) && (
               <Text fontSize="xs" {...subtleText} textTransform="uppercase">
-                {mobileLabel(column)}
+                {resolveMobileLabel(column)}
               </Text>
             )}
             <Text as="div" fontSize="sm">
@@ -322,13 +310,13 @@ export function MobileCards<TRow>({
               if (value === undefined) return null;
               return (
                 <Box key={column.key} mb={compact ? 1 : 2}>
-                  {mobileLabel(column) && (
+                  {resolveMobileLabel(column) && (
                     <Text
                       fontSize="xs"
                       {...subtleText}
                       textTransform="uppercase"
                     >
-                      {mobileLabel(column)}
+                      {resolveMobileLabel(column)}
                     </Text>
                   )}
                   <Text fontSize="sm" fontWeight="semibold">

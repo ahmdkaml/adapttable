@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -158,12 +159,12 @@ function MobileCardBase<TRow>({
           data-adapttable-part="card-row"
           className={classNames.cardRow}
         >
-          {cardLabel(column) && (
+          {resolveMobileLabel(column) && (
             <span
               data-adapttable-part="card-label"
               className={classNames.cardLabel}
             >
-              {cardLabel(column)}
+              {resolveMobileLabel(column)}
             </span>
           )}
           <span
@@ -333,12 +334,12 @@ export function MobileCards<TRow>({
                 data-adapttable-part="card-row"
                 className={classNames.cardRow}
               >
-                {cardLabel(column) && (
+                {resolveMobileLabel(column) && (
                   <span
                     data-adapttable-part="card-label"
                     className={classNames.cardLabel}
                   >
-                    {cardLabel(column)}
+                    {resolveMobileLabel(column)}
                   </span>
                 )}
                 <span
@@ -354,17 +355,4 @@ export function MobileCards<TRow>({
       )}
     </ul>
   );
-}
-
-/**
- * The label above a field in a mobile card, or `undefined` for no label.
- *
- * An explicit `mobileLabel: ""` means the consumer wants the value with no
- * label at all — so it resolves to nothing and the element is skipped, rather
- * than rendering an empty line that still takes vertical space. The header
- * fallback applies only when the column says nothing about a mobile label.
- */
-function cardLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
-  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
-  return typeof column.header === "string" ? column.header : column.key;
 }

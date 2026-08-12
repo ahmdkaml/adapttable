@@ -8,6 +8,7 @@ import {
 } from "@adapttable/core";
 import {
   resolveDisabledReason,
+  resolveMobileLabel,
   rowClickProps,
   rowEditingSignature,
   type SharedTableRenderProps,
@@ -63,19 +64,6 @@ export interface MobileCardsProps<TRow> extends Pick<
   bodyRef: RefObject<HTMLDivElement | null>;
   className?: string;
   density?: Density;
-}
-
-/**
- * The label above a field in a mobile card, or `undefined` for no label.
- *
- * An explicit `mobileLabel: ""` means the consumer wants the value with no
- * label at all — so it resolves to nothing and the element is skipped, rather
- * than rendering an empty line that still takes vertical space. The header
- * fallback applies only when the column says nothing about a mobile label.
- */
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
-  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
-  return typeof column.header === "string" ? column.header : column.key;
 }
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
@@ -212,9 +200,9 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <div key={column.key}>
-            {mobileLabel(column) && (
+            {resolveMobileLabel(column) && (
               <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                {mobileLabel(column)}
+                {resolveMobileLabel(column)}
               </Text>
             )}
             {/* Cells are arbitrary ReactNode (often block elements) —
@@ -404,9 +392,9 @@ export function MobileCards<TRow>({
               .filter((column) => summaryCells[column.key] !== undefined)
               .map((column) => (
                 <div key={column.key}>
-                  {mobileLabel(column) && (
+                  {resolveMobileLabel(column) && (
                     <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                      {mobileLabel(column)}
+                      {resolveMobileLabel(column)}
                     </Text>
                   )}
                   <Text component="div" fz="sm" fw={600}>

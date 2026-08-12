@@ -7,6 +7,7 @@ import {
   type TableLabels,
 } from "@adapttable/core";
 import {
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -28,19 +29,6 @@ import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
 import { RowActionButtons } from "./RowActionButtons";
-
-/**
- * The label above a field in a mobile card, or `undefined` for no label.
- *
- * An explicit `mobileLabel: ""` means the consumer wants the value with no
- * label at all — so it resolves to nothing and the element is skipped, rather
- * than rendering an empty line that still takes vertical space. The header
- * fallback applies only when the column says nothing about a mobile label.
- */
-function mobileLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
-  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
-  return typeof column.header === "string" ? column.header : column.key;
-}
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
@@ -175,13 +163,13 @@ function MobileCardBase<TRow>({
         )}
         {columns.map((column) => (
           <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-            {mobileLabel(column) && (
+            {resolveMobileLabel(column) && (
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ display: "block" }}
               >
-                {mobileLabel(column)}
+                {resolveMobileLabel(column)}
               </Typography>
             )}
             {/* Cells are arbitrary ReactNode (often block elements) —
@@ -328,13 +316,13 @@ export function MobileCards<TRow>({
               if (value === undefined) return null;
               return (
                 <Box key={column.key} sx={{ mb: compact ? 0.5 : 1 }}>
-                  {mobileLabel(column) && (
+                  {resolveMobileLabel(column) && (
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       sx={{ display: "block" }}
                     >
-                      {mobileLabel(column)}
+                      {resolveMobileLabel(column)}
                     </Typography>
                   )}
                   <Typography component="div" variant="body2">

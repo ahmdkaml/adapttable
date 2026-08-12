@@ -110,3 +110,26 @@ export function sortArrow(sort: unknown): string {
   if (sort === "descending") return " ↓";
   return " ↕";
 }
+
+/**
+ * The caption a mobile card shows beside a cell's value.
+ *
+ * A card is a list of label/value pairs, not a grid with a header row, so each
+ * value has to carry its own caption. `mobileLabel` sets it; an **empty string**
+ * deliberately removes it, which is how a card shows a bare value (an avatar, a
+ * title line) with no caption above it. Without one, a string `header` is the
+ * caption and the column's key is the last resort.
+ *
+ * Every adapter's card layout resolves this the same way, and it lives here
+ * because seven of them once each had their own copy under two different names.
+ *
+ * @typeParam TRow - The row type.
+ * @param column - The column being rendered in a card.
+ * @returns The caption, or `undefined` when the card should show none.
+ */
+export function resolveMobileLabel<TRow>(
+  column: ColumnDef<TRow>
+): string | undefined {
+  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
+  return typeof column.header === "string" ? column.header : column.key;
+}

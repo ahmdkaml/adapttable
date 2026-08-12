@@ -5,6 +5,7 @@ import {
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
+  resolveMobileLabel,
   shallowEqualByKeys,
   sortArrow,
 } from "./display";
@@ -57,5 +58,34 @@ describe("shallowEqualByKeys", () => {
     expect(shallowEqualByKeys(["a", "b"], { a: 1, b: 2 }, { a: 1, b: 9 })).toBe(
       false
     );
+  });
+});
+
+describe("resolveMobileLabel", () => {
+  it("uses an explicit mobile label over the header", () => {
+    expect(
+      resolveMobileLabel({ key: "name", header: "Name", mobileLabel: "Who" })
+    ).toBe("Who");
+  });
+
+  it("treats an empty mobile label as no label at all", () => {
+    // The card then shows a bare value — an avatar, a title line — rather than
+    // an empty caption line still taking vertical space.
+    expect(
+      resolveMobileLabel({ key: "name", header: "Name", mobileLabel: "" })
+    ).toBeUndefined();
+  });
+
+  it("falls back to a text header", () => {
+    expect(resolveMobileLabel({ key: "name", header: "Name" })).toBe("Name");
+  });
+
+  it("falls back to the key when the header is not text", () => {
+    // A JSX header cannot be a caption, and the key is at least the truth.
+    expect(resolveMobileLabel({ key: "name", header: 42 })).toBe("name");
+  });
+
+  it("falls back to the key when there is no header", () => {
+    expect(resolveMobileLabel({ key: "name" })).toBe("name");
   });
 });

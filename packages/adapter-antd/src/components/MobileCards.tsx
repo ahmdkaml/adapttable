@@ -11,6 +11,7 @@ import {
 } from "@adapttable/core";
 import {
   resolveDisabledReason,
+  resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
@@ -28,20 +29,6 @@ import {
   type AdaptTableGroupRow,
   GroupHeaderCard,
 } from "./grouping";
-
-/**
- * The mobile-card label for a column, or `undefined` for no label.
- *
- * An explicit `mobileLabel: ""` means the consumer wants the value with no
- * label — `Descriptions.Item` then renders the value against an empty label
- * cell instead of substituting the header, which is what they asked for. The
- * header fallback applies only when the column says nothing about a mobile
- * label.
- */
-function cardLabel<TRow>(column: ColumnDef<TRow>): string | undefined {
-  if (column.mobileLabel !== undefined) return column.mobileLabel || undefined;
-  return typeof column.header === "string" ? column.header : column.key;
-}
 
 /** Row-action buttons for a single card. */
 function CardActions<TRow>({
@@ -108,7 +95,10 @@ function SummaryCard<TRow>({
         {columns
           .filter((column) => cells[column.key] !== undefined)
           .map((column) => (
-            <Descriptions.Item key={column.key} label={cardLabel(column)}>
+            <Descriptions.Item
+              key={column.key}
+              label={resolveMobileLabel(column)}
+            >
               {cells[column.key]}
             </Descriptions.Item>
           ))}
@@ -253,7 +243,10 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     >
       <Descriptions column={1} size="small" colon={false}>
         {columns.map((column) => (
-          <Descriptions.Item key={column.key} label={cardLabel(column)}>
+          <Descriptions.Item
+            key={column.key}
+            label={resolveMobileLabel(column)}
+          >
             <EditableDataCell
               editing={editing}
               row={row}

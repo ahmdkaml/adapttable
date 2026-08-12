@@ -50,6 +50,7 @@ export {
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
+  resolveMobileLabel,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   sortArrow,
