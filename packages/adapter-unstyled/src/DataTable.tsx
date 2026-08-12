@@ -1,8 +1,7 @@
-import { makeExportCsvHandler, type TableSource } from "@adapttable/core";
+import type { TableSource } from "@adapttable/core";
 import {
   GridFocusAnnouncer,
   useDataTableShell,
-  useExportHandler,
   useMountStagger,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
@@ -205,22 +204,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     </button>
   );
 
-  // Layout-visible columns WITHOUT device filtering: the same button must
-  // produce the same file on phone and desktop.
-  const { onExportCsv, exportBusy } = useExportHandler(
-    makeExportCsvHandler(
-      props.exportCsv,
-      viewSource,
-      chrome.columnLayout.visibleColumns,
-      // The selection and full column set, so `scope: "selected"` and
-      // `columns: "all"` behave here exactly as they do in every other kit.
-      {
-        selectedIds: chrome.table.selection?.selectedIds,
-        getRowId: chrome.getRowId,
-        allColumns: chrome.allColumns,
-      }
-    )
-  );
+  // The export button comes from the shell, already single-flight and already
+  // carrying the selection, the full column set and the highlighted range. It
+  // used to be rebuilt here from the same parts, which is precisely how a new
+  // scope can work in seven kits and silently fall back in the eighth.
+  const { onExportCsv, exportBusy } = shell.toolbarProps;
 
   return (
     <div

@@ -149,9 +149,11 @@ export function useDataTableShell<TRow>(
   });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
-  // produce the same file on phone and desktop. The selection and full column
-  // set come along so `scope: "selected"` and `columns: "all"` work without
-  // the host wiring anything up.
+  // produce the same file on phone and desktop. The selection, the full column
+  // set and the highlighted range come along so `scope: "selected"`,
+  // `columns: "all"` and `scope: "range"` work without the host wiring anything
+  // up — the columns here are the same list cell navigation addresses, which is
+  // what makes a range's column indices mean the same thing on both sides.
   const exportHandler = useExportHandler(
     makeExportCsvHandler(
       props.exportCsv,
@@ -161,6 +163,8 @@ export function useDataTableShell<TRow>(
         selectedIds: table.selection?.selectedIds,
         getRowId,
         allColumns: chrome.allColumns,
+        range: gridFocus.range,
+        firstRowIndex: windowStart,
       }
     )
   );

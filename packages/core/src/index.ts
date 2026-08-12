@@ -402,8 +402,22 @@ export {
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
 
-/* ── Export (CSV) ──────────────────────────────────────────────────── */
-export { downloadCsv, rowsToCsv, type RowsToCsvOptions } from "./export/csv";
+/* ── Export (CSV, and any format a writer adds) ────────────────────── */
+export {
+  downloadCsv,
+  matrixToCsv,
+  rowsToCsv,
+  type RowsToCsvOptions,
+} from "./export/csv";
+export {
+  buildExportTable,
+  csvWriter,
+  downloadExportFile,
+  type ExportPayload,
+  type ExportTable,
+  type ExportWriteContext,
+  type ExportWriter,
+} from "./export/exportWriter";
 export {
   buildTableCsv,
   downloadTableCsv,

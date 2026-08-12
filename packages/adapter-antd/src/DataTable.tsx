@@ -1045,6 +1045,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         selectedIds: selection?.selectedIds,
         getRowId,
         allColumns: c.allColumns,
+        // The same columns cell navigation addresses, and the same window
+        // offset, so `scope: "range"` means here what it means everywhere else.
+        range: gridFocus.range,
+        firstRowIndex: windowStart,
       }
     )
   );

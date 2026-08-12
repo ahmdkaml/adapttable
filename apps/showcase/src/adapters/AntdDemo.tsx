@@ -1,4 +1,4 @@
-import { DataTable } from "@adapttable/antd";
+import { DataTable, type DataTableProps } from "@adapttable/antd";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -24,6 +24,7 @@ import {
   makeColumns,
   makeWideColumns,
   nameHue,
+  type Person,
   type StatusCellProps,
   statusTone,
   strings,
@@ -85,6 +86,8 @@ export function AntdDemo({
   editing,
   cellNavigation,
   wide,
+  exportCsv,
+  exportLabel,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -99,6 +102,18 @@ export function AntdDemo({
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /**
+   * Export configuration for the toolbar button. Defaults to a plain CSV of
+   * the current page; the columns demo overrides it to write the highlighted
+   * cell range as a spreadsheet.
+   */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
+  /**
+   * Toolbar button text. The default label names CSV, so a demo that writes
+   * another format says so — a button that lies about what it downloads is
+   * worse than an unstyled one.
+   */
+  exportLabel?: string;
 }>) {
   const s = strings(locale);
   return (
@@ -134,7 +149,10 @@ export function AntdDemo({
             {...columns}
             density={density}
             filtersMode={filtersUi}
-            labels={getLabels(locale)}
+            labels={{
+              ...getLabels(locale),
+              ...(exportLabel ? { exportCsv: exportLabel } : {}),
+            }}
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
@@ -142,7 +160,7 @@ export function AntdDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
-            exportCsv
+            exportCsv={exportCsv ?? true}
             savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns

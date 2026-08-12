@@ -6,7 +6,7 @@ export default defineConfig({
   // their built entries, or every Next.js App Router consumer has to
   // hand-write a client wrapper.
   banner: { js: '"use client";' },
-  entry: ["src/index.ts", "src/adapter.ts"],
+  entry: ["src/index.ts", "src/adapter.ts", "src/xlsx.ts"],
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,

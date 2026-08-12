@@ -91,3 +91,75 @@ test.describe("columns — pinning", () => {
     expect(Math.abs((await headerX(page, "Status")) - stuckX)).toBeLessThan(2);
   });
 });
+
+/**
+ * Export what the user highlighted, as a real spreadsheet.
+ *
+ * This is the one thing no unit test can prove: that arrowing through cells,
+ * holding Shift, and clicking Export produces a file the browser downloads
+ * whose bytes are a valid workbook containing exactly the highlighted block.
+ * The /columns/ demo runs `scope: "range"` with the XLSX writer for this
+ * reason — three unit-passing keyboard bugs reached a browser before it did.
+ */
+test.describe("columns — export the selected range", () => {
+  /** Read a little-endian unsigned integer out of the archive. */
+  const readInt = (bytes: Uint8Array, at: number, size: number) => {
+    let value = 0;
+    for (let i = size - 1; i >= 0; i--) value = value * 256 + bytes[at + i]!;
+    return value;
+  };
+
+  /** The stored entries of a ZIP, by name. Entries are uncompressed. */
+  function unzip(bytes: Uint8Array): Map<string, string> {
+    const decoder = new TextDecoder();
+    const files = new Map<string, string>();
+    let at = 0;
+    while (readInt(bytes, at, 4) === 0x04034b50) {
+      const size = readInt(bytes, at + 18, 4);
+      const nameLength = readInt(bytes, at + 26, 2);
+      const start = at + 30 + nameLength + readInt(bytes, at + 28, 2);
+      files.set(
+        decoder.decode(bytes.slice(at + 30, at + 30 + nameLength)),
+        decoder.decode(bytes.slice(start, start + size))
+      );
+      at = start + size;
+    }
+    return files;
+  }
+
+  test("downloads a workbook holding exactly the highlighted block", async ({
+    page,
+  }) => {
+    await page.goto("/columns/");
+    await expect(headerCell(page, "Person")).toBeVisible();
+
+    // Enter the grid at its first cell, then highlight a 2×2 block.
+    const firstCell = page.locator("[data-grid-cell]").first();
+    await firstCell.focus();
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowDown");
+    await expect(page.locator("[data-cell-selected]")).toHaveCount(4);
+
+    const exportButton = page.getByRole("button", { name: /Export/ });
+    await expect(exportButton).toBeVisible();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      exportButton.click(),
+    ]);
+    expect(download.suggestedFilename()).toBe("people.xlsx");
+
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const files = unzip(new Uint8Array(Buffer.concat(chunks)));
+
+    // A workbook, not just bytes: the parts Excel refuses to open without.
+    expect([...files.keys()]).toContain("xl/worksheets/sheet1.xml");
+    const sheet = files.get("xl/worksheets/sheet1.xml") ?? "";
+
+    // Two selected columns and two selected rows — a header row plus two.
+    const rows = sheet.match(/<row /g) ?? [];
+    expect(rows).toHaveLength(3);
+    expect(sheet).not.toContain('<c r="C1"');
+  });
+});

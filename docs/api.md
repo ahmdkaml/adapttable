@@ -292,16 +292,26 @@ leaf ids, `windowGroupedEntries` slices the model to virtual window indices,
 and `useGroupCollapse` / `GroupCollapseState` hold which groups are collapsed.
 See [row grouping](./row-grouping.md).
 
-**The CSV pipeline, stage by stage.** `resolveExportCsv` normalizes the
+**The export pipeline, stage by stage.** `resolveExportCsv` normalizes the
 `exportCsv` prop, `exportableColumns` drops the synthetic actions column,
 `resolveExportColumns` applies a column scope (`ExportColumnScope`),
 `buildTableCsv` renders the text (`RowsToCsvOptions` controls delimiter, BOM
 and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
-button. `ExportRowScope` names the row scopes, `ExportContext` carries the
-selection and full column set the `"selected"` and `"all"` scopes need,
-`ExportInfo` is what the lifecycle hooks receive, and `ExportHandlerState` is
-what `useExportHandler` returns. See
-[customization](./customization.md#csv-export).
+button. `ExportRowScope` names the row scopes — including `"range"`, the
+highlighted cell rectangle — `ExportContext` carries the selection, full column
+set and range those scopes need, `ExportInfo` is what the lifecycle hooks
+receive, and `ExportHandlerState` is what `useExportHandler` returns. See
+[customization](./customization.md#export).
+
+**File formats.** An `ExportWriter` turns an `ExportWriteContext` — an
+`ExportTable` of values resolved once by `buildExportTable`, plus the filename —
+into an `ExportPayload`, which `downloadExportFile` hands to the browser.
+`csvWriter` is the built-in one, and `matrixToCsv` writes CSV from values a
+caller assembled itself. `@adapttable/core/xlsx`
+adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
+dependency, and a separate entry so a CSV export never ships it —
+with `buildTableXlsx` underneath for building a workbook by hand. See
+[customization](./customization.md#spreadsheet-xlsx-export).
 
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.

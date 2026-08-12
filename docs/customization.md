@@ -234,7 +234,10 @@ height and padding. Each adapter maps it to its kit's table size — MUI
 explicit `size` prop that
 overrides the mapping (e.g. antd `size="large"`).
 
-## CSV export
+## Export
+
+CSV by default, spreadsheets when you ask for them — one prop, one set of
+scopes, [one button](#spreadsheet-xlsx-export).
 
 Opt in with `exportCsv` to render a kit-native **Export CSV** button next to
 Filters / Columns. The file mirrors the current view's data — the active search, filters,
@@ -270,6 +273,10 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "selected"` — the ticked rows, in table order. Selection is a set of
   ids, so a row checked on page 1 is still in the file while page 3 is on
   screen. Nothing ticked writes a header-only file.
+- `scope: "range"` — the highlighted cell rectangle from
+  [cell navigation](./cell-navigation.md). A rectangle names its own columns,
+  so it decides them and `columns` is not consulted. With nothing selected the
+  current page is exported instead.
 
 `columns` chooses the file's shape independently of the rows:
 
@@ -301,6 +308,45 @@ Columns without one export what the table shows, so this is only needed where
 the two genuinely differ. Formula escaping still applies to whatever is
 returned.
 
+### Spreadsheet (XLSX) export
+
+The same button writes a real `.xlsx` when you hand it the spreadsheet writer:
+
+```tsx
+import { xlsxWriter } from "@adapttable/core/xlsx";
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  exportCsv={{ writer: xlsxWriter({ sheetName: "People" }), scope: "all" }}
+/>;
+```
+
+Every scope and column option above works unchanged — which rows and columns
+leave the table is decided before the format is asked for anything.
+
+Two differences from CSV, both in your favour. Numbers and booleans stay
+**typed**, so a spreadsheet can sum a column instead of showing text that looks
+like a number; and text that looks numeric stays text, so a postal code of
+`01730` arrives as `01730` rather than `1730`. Formula escaping is not needed
+and is ignored: XLSX keeps formulas in their own element, so a cell reading
+`=CMD()` is displayed, never executed.
+
+It is a **separate entry point** because a table that exports CSV should not
+ship a ZIP encoder. Import it and you pay for it; do not and none of it reaches
+your bundle. There is no new dependency either way — `buildTableXlsx` writes
+the workbook by hand.
+
+Any format is reachable the same way. An `ExportWriter` is an extension and a
+`build` function over the resolved values (`ExportWriteContext` in,
+`ExportPayload` out); `csvWriter` is the built-in one, and `downloadExportFile`
+hands a built payload to the browser. A writer receives an `ExportTable` —
+headers, keys, and one array of values per row, resolved once by
+`buildExportTable` — rather than rows and columns, so two formats of the same
+table cannot disagree about what a cell contains, and a writer needs no type
+argument.
+
 ### Before and after the file is written
 
 ```tsx
@@ -309,14 +355,17 @@ exportCsv={{
     if (rows.length > 50_000) return false;          // cancel
     return { filename: `people-${rows.length}.csv` }; // or rename
   },
-  onAfterExport: ({ csv, filename }) => track("export", { filename }),
+  onAfterExport: ({ csv, file, filename }) => track("export", { filename }),
 }}
 ```
 
 `onBeforeExport` runs once the rows and columns are resolved and before
 anything is written — the only moment where the file's contents are known and
 nothing has happened yet. Return `false` to cancel, `{ filename }` to rename,
-or nothing to continue. `onAfterExport` receives the text that was written.
+or nothing to continue — a cancelled export builds no file at all.
+`onAfterExport` receives the text that was written as `csv`, and the built file
+as `file`; a binary format leaves `csv` empty and carries its bytes in
+`file.parts`.
 
 Headless helpers remain available: `rowsToCsv`, `downloadCsv`, and
 `downloadTableCsv` from `@adapttable/core`.
@@ -331,7 +380,7 @@ instead:
 ```tsx
 exportCsv={{
   scope: "all",
-  request: async ({ query, scope, columns, filename }) => {
+  request: async ({ query, scope, format, columns, filename }) => {
     const res = await fetch("/api/people/export", {
       method: "POST",
       body: JSON.stringify({ ...query, scope, columns: columns.map((c) => c.key) }),
@@ -343,9 +392,12 @@ exportCsv={{
 
 `query` carries the user's current view — search, filters, sort, paging — in
 the same shape a [server tier](./data-tiers.md) receives, so an endpoint that
-already answers table queries needs no new vocabulary. `rows` holds whatever
-the browser has of the scope, which is useful for a count or a confirmation
-even when the server does the real work.
+already answers table queries needs no new vocabulary. `format` is the
+extension the button would have produced (`"csv"`, `"xlsx"`, or whatever a
+custom writer names itself), so the server builds the file the user asked for
+rather than guessing from the filename. `rows` holds whatever the browser has
+of the scope, which is useful for a count or a confirmation even when the
+server does the real work.
 
 With `request` set the table builds no file and downloads nothing, so
 `onBeforeExport` and `onAfterExport` do not run — there is no file for them to
@@ -356,7 +408,7 @@ it settles, in every adapter, so an impatient second click cannot start the
 same export twice. A rejected promise releases the button rather than leaving
 it stuck.
 
-### The CSV pipeline (headless)
+### The export pipeline (headless)
 
 The export path is exported end to end: `exportableColumns` filters the
 visible layout to columns with exportable values, `resolveExportColumns`
@@ -366,6 +418,13 @@ text (`RowsToCsvOptions` controls delimiter, BOM and `escapeFormulas`),
 `makeExportCsvHandler` wires all of it to a download handler the toolbar button
 calls. Custom toolbars can reuse any stage.
 
+Formats plug in at the last stage only. `csvWriter` and `xlsxWriter` are both
+`ExportWriter`s — given an `ExportWriteContext` (an `ExportTable` of resolved
+values, plus the filename) they return an `ExportPayload`, which
+`downloadExportFile` writes. Nothing earlier in the pipeline knows which format
+is in play, and `matrixToCsv` is the CSV half of it for anyone assembling values
+themselves.
+
 Custom adapters bind the button with `useExportHandler` from
 `@adapttable/core/adapter`: it takes the handler above and returns
 `{ onExportCsv, exportBusy }` (typed `ExportHandlerState`), which is how every
@@ -373,9 +432,10 @@ built-in adapter gets identical single-flight behaviour.
 
 Four supporting types: `ExportRowScope` and `ExportColumnScope` name the two
 scope unions, `ExportInfo` is what the lifecycle hooks receive, and
-`ExportContext` carries the selection and full column set that `scope:
-"selected"` and `columns: "all"` need — the adapters pass it automatically, and
-only a hand-built `downloadTableCsv` call has to supply it.
+`ExportContext` carries the selection, full column set and highlighted range
+that `scope: "selected"`, `columns: "all"` and `scope: "range"` need — the
+adapters pass all of it automatically, and only a hand-built
+`downloadTableCsv` call has to supply it.
 
 ## Sticky header, offset & scroll box
 

@@ -158,6 +158,94 @@ describe("export row scopes", () => {
   });
 });
 
+/**
+ * The range scope, which is the only one whose addresses come from somewhere
+ * else — cell navigation numbers rows within the dataset, so every test here is
+ * really about that number surviving the trip.
+ */
+describe("export range scope", () => {
+  beforeEach(() => {
+    resetDevWarnings();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  /** A source with all three rows loaded, as an unpaged table has. */
+  const loaded = (): TableSource<Row> => ({ ...source(), rows: ALL_ROWS });
+
+  const range = (anchor: [number, number], head: [number, number]) => ({
+    anchor: { row: anchor[0], col: anchor[1] },
+    head: { row: head[0], col: head[1] },
+  });
+
+  it("exports the rectangle and nothing outside it", () => {
+    const csv = buildTableCsv({
+      source: loaded(),
+      columns: VISIBLE,
+      scope: "range",
+      context: { range: range([0, 0], [1, 0]) },
+    });
+    expect(csv).toBe("Name\r\nAda\r\nLinus");
+  });
+
+  it("reads a rectangle dragged upward the same as one dragged down", () => {
+    const csv = buildTableCsv({
+      source: loaded(),
+      columns: VISIBLE,
+      scope: "range",
+      context: { range: range([2, 1], [1, 0]) },
+    });
+    expect(csv).toBe("Name,Team\r\nLinus,Web\r\nGrace,Core");
+  });
+
+  it("offsets a range by where the page starts", () => {
+    // Cell navigation numbers rows within the DATASET, so row 5 of page 3 is
+    // `rows[0]` in the browser. Getting this wrong exports the wrong people.
+    const csv = buildTableCsv({
+      source: { ...source(), rows: [ALL_ROWS[2]!] },
+      columns: VISIBLE,
+      scope: "range",
+      context: { range: range([5, 0], [5, 1]), firstRowIndex: 5 },
+    });
+    expect(csv).toBe("Name,Team\r\nGrace,Core");
+  });
+
+  it("skips rows the browser does not hold rather than exporting blanks", () => {
+    const csv = buildTableCsv({
+      source: loaded(),
+      columns: VISIBLE,
+      scope: "range",
+      context: { range: range([2, 0], [9, 0]) },
+    });
+    expect(csv).toBe("Name\r\nGrace");
+  });
+
+  it("lets the rectangle decide the columns, even when all were asked for", () => {
+    // A user who highlighted one column and then received every column,
+    // including hidden ones, would rightly call that a bug.
+    const csv = buildTableCsv({
+      source: loaded(),
+      columns: VISIBLE,
+      scope: "range",
+      columnScope: "all",
+      context: { range: range([0, 1], [0, 1]), allColumns: ALL_COLUMNS },
+    });
+    expect(csv).toBe("Team\r\nCore");
+  });
+
+  it("falls back to the page, with a warning, when nothing is selected", () => {
+    const csv = buildTableCsv({
+      source: source(),
+      columns: VISIBLE,
+      scope: "range",
+    });
+    expect(csv).toContain("Linus");
+    expect(vi.mocked(console.warn).mock.calls[0]?.[0]).toContain(
+      'scope "range"'
+    );
+  });
+});
+
 describe("export column scopes", () => {
   it("exports what the user can see by default", () => {
     expect(
