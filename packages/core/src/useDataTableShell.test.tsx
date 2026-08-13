@@ -102,6 +102,57 @@ describe("useDataTableShell", () => {
     expect(result.current.tableProps.setWidth).toBeTypeOf("function");
   });
 
+  it("writes uncontrolled pins to the URL and still notifies the host", () => {
+    const adapter = createMemoryAdapter("");
+    const onPinnedRowIdsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlAdapter: adapter,
+          onPinnedRowIdsChange,
+        },
+        noForm
+      )
+    );
+    act(() => {
+      result.current.tableProps.rowPinning?.pin("a", "top");
+    });
+    expect(onPinnedRowIdsChange).toHaveBeenCalledExactlyOnceWith({
+      top: ["a"],
+      bottom: [],
+    });
+    expect(adapter.getSearch()).toContain("rowPin=");
+  });
+
+  it("leaves the URL alone when the host owns the pin lists", () => {
+    const adapter = createMemoryAdapter("");
+    const onPinnedRowIdsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlAdapter: adapter,
+          pinnedRowIds: { top: ["b"], bottom: [] },
+          onPinnedRowIdsChange,
+        },
+        noForm
+      )
+    );
+    act(() => {
+      result.current.tableProps.rowPinning?.pin("a", "bottom");
+    });
+    expect(onPinnedRowIdsChange).toHaveBeenCalledExactlyOnceWith({
+      top: ["b"],
+      bottom: ["a"],
+    });
+    expect(adapter.getSearch()).toBe("");
+  });
+
   it("forwards a virtual window into tableProps", () => {
     vi.mocked(useChromeBodyData).mockReturnValue({
       virtualization: {
@@ -114,6 +165,8 @@ describe("useDataTableShell", () => {
       loadMoreRef: { current: null },
       canLoadMore: true,
       virtualScrollRef: () => undefined,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
     });
     const { result } = renderHook(() =>
       useDataTableShell({ data: ROWS, columns, rowKey, urlSync: false }, noForm)
@@ -289,6 +342,8 @@ describe("useDataTableShell", () => {
       loadMoreRef: { current: null },
       canLoadMore: false,
       virtualScrollRef: () => undefined,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
     });
     const { result } = renderHook(() =>
       useDataTableShell({ data: ROWS, columns, rowKey, urlSync: false }, noForm)

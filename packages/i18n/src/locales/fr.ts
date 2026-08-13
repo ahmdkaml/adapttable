@@ -88,6 +88,9 @@ export const fr: Required<TableLabels> = {
   rowMoved: (from, to) =>
     `Ligne déplacée de ${String(from)} vers ${String(to)}`,
   rowReorderCancelled: "Réorganisation annulée",
+  pinToTop: "Épingler en haut",
+  pinToBottom: "Épingler en bas",
+  unpinRow: "Désépingler la ligne",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

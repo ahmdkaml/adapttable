@@ -133,7 +133,16 @@ export {
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
+export {
+  orderedCardEntries,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
+  useOffsetHeight,
+} from "./rows/pinnedRowChrome";
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+export { rowPinSignature } from "./rows/rowPinning";
 export {
   REORDER_COLUMN_WIDTH,
   ROW_DND_MIME,
@@ -189,6 +198,7 @@ export {
 export {
   type KeyedVirtualization,
   resolveVirtualRows,
+  rowSourceIndex,
   useKeyedVirtualization,
   type VirtualTableRow,
 } from "./virtual/useTableVirtualization";

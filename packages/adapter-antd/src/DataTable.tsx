@@ -13,9 +13,16 @@ import {
   isDeclarativeFilters,
   makeExportCsvHandler,
   pageSizeOptions,
+  partitionPinnedRows,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowStickyStyle,
   resolveExportCsv,
   resolveLabels,
   type RowExpansionState,
+  type RowPinningState,
+  type RowPinSide,
+  type RowPinState,
   type RowReorderState,
   type SelectionState,
   selectionStats,
@@ -32,6 +39,7 @@ import {
   useFindInTable,
   useGridFocus,
   useInfiniteScroll,
+  useRowPinningUrlState,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
@@ -53,6 +61,7 @@ import {
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
+  useOffsetHeight,
   useResolvedAdapter,
 } from "@adapttable/core/adapter";
 import {
@@ -223,6 +232,155 @@ function resolveScroll(
   if (hasPinned) x = "max-content";
   else if (minWidth > 0) x = minWidth;
   return { x, y: maxHeight };
+}
+
+/**
+ * antd owns a single tbody, so pin chrome lives on the row: sticky style,
+ * `data-row-pin`, and the section marker tests query via `part(...)`.
+ */
+type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
+  "data-row-pin"?: RowPinSide;
+  "data-adapttable-part"?: string;
+  "data-stagger"?: string;
+  "data-dirty"?: string;
+  "data-collapsed"?: string;
+};
+
+function antdPinnedRowAttrs(
+  pinSide: RowPinSide | undefined,
+  headerOffset: number
+): AntdRowHtmlAttrs {
+  if (!pinSide) return {};
+  return {
+    style: pinnedRowStickyStyle(pinSide, headerOffset),
+    "data-row-pin": pinSide,
+    "data-adapttable-part":
+      pinSide === "top" ? PINNED_TOP_PART : PINNED_BOTTOM_PART,
+  };
+}
+
+function antdOnRow<TRow>(options: {
+  record: GroupedDataRecord<TRow>;
+  rowIndex: number | undefined;
+  getRowId: (row: TRow) => string;
+  rowPinning: RowPinningState<TRow> | undefined;
+  headerOffset: number;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
+  gridFocus: GridFocusState | undefined;
+  onRowClick: DataTableProps<TRow>["onRowClick"];
+  editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
+  prefetch: DataTableProps<TRow>["prefetch"];
+}): AntdRowHtmlAttrs {
+  const {
+    record,
+    rowIndex,
+    getRowId,
+    rowPinning,
+    headerOffset,
+    rowReorder,
+    windowStart,
+    gridFocus,
+    onRowClick,
+    editing,
+    prefetch,
+  } = options;
+  if (isAdaptTableGroupRow(record)) {
+    return {
+      "data-adapttable-part":
+        record.footer === true ? "group-footer-row" : "group-row",
+      "data-collapsed": record.collapsed ? "true" : undefined,
+    };
+  }
+  const id = getRowId(record);
+  const pin = antdPinnedRowAttrs(rowPinning?.sideOf(id), headerOffset);
+  const reorderStyle =
+    rowReorder && rowIndex !== undefined
+      ? rowReorderDropStyle(rowReorder.rowAttrs(id, rowIndex))
+      : undefined;
+  return {
+    ...rowClickProps(record, onRowClick, rowIndex),
+    ...(rowReorder && rowIndex !== undefined
+      ? {
+          ...rowReorder.dropProps(rowIndex, record, windowStart),
+          ...rowReorder.rowAttrs(id, rowIndex),
+        }
+      : {}),
+    // antd builds its own <tr>, so the absolute aria-rowindex arrives
+    // here rather than through a spread on the element.
+    ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
+    ...pin,
+    style: { ...reorderStyle, ...pin.style },
+    "data-stagger": "",
+    // antd builds its own <tr>, so the dirty mark arrives here too.
+    "data-dirty": rowIsDirty(editing, getRowId(record)) ? "" : undefined,
+    onMouseEnter: prefetch ? () => prefetch(record) : undefined,
+  };
+}
+
+function antdPinnedDataSource<TRow>(
+  grouping: unknown,
+  treeEntries: unknown,
+  rowPinning: RowPinningState<TRow> | undefined,
+  rows: readonly TRow[],
+  getRowId: (row: TRow) => string,
+  dataSourceBase: readonly GroupedDataRecord<TRow>[]
+): {
+  dataSource: readonly GroupedDataRecord<TRow>[];
+  pinnedTopRows: readonly TRow[];
+  pinnedBottomRows: readonly TRow[];
+} {
+  if (grouping || treeEntries || !rowPinning) {
+    return {
+      dataSource: dataSourceBase,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
+    };
+  }
+  const parts = partitionPinnedRows(rows, rowPinning.state, getRowId);
+  return {
+    dataSource: [...parts.top, ...parts.scroll, ...parts.bottom],
+    pinnedTopRows: parts.top,
+    pinnedBottomRows: parts.bottom,
+  };
+}
+
+/** Same URL/controlled pin wiring the batteries-included shell applies. */
+function useAntdPinChrome<TRow>(props: {
+  pinnedRowIds: DataTableProps<TRow>["pinnedRowIds"];
+  onPinnedRowIdsChange: DataTableProps<TRow>["onPinnedRowIdsChange"];
+  urlSync: DataTableProps<TRow>["urlSync"];
+  urlKey: DataTableProps<TRow>["urlKey"];
+  urlAdapter: UrlStateAdapter | undefined;
+}): {
+  pinnedRowIds: RowPinState | undefined;
+  onPinnedRowIdsChange: ((next: RowPinState) => void) | undefined;
+} {
+  const pinningRequested =
+    props.pinnedRowIds !== undefined ||
+    props.onPinnedRowIdsChange !== undefined;
+  const pinUrl = useRowPinningUrlState({
+    urlAdapter: props.urlAdapter,
+    urlSync:
+      props.urlSync !== false &&
+      pinningRequested &&
+      props.pinnedRowIds === undefined,
+    urlKey: props.urlKey,
+  });
+  if (!pinningRequested) {
+    return { pinnedRowIds: undefined, onPinnedRowIdsChange: undefined };
+  }
+  const pinnedRowIds = props.pinnedRowIds ?? pinUrl.pinnedRowIds;
+  const onPinnedRowIdsChange = props.onPinnedRowIdsChange;
+  return {
+    pinnedRowIds,
+    onPinnedRowIdsChange: (next: RowPinState) => {
+      if (props.pinnedRowIds === undefined) {
+        pinUrl.onPinnedRowIdsChange(next);
+      }
+      onPinnedRowIdsChange?.(next);
+    },
+  };
 }
 
 /** Uniform shape for antd row-selection checkbox props. */
@@ -718,6 +876,9 @@ interface DataTableBodyRegionProps<TRow> {
   hasRowActions: boolean;
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
+  rowPinning: RowPinningState<TRow> | undefined;
+  pinnedTopRows: readonly TRow[];
+  pinnedBottomRows: readonly TRow[];
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -747,6 +908,7 @@ function DesktopTableBody<TRow>({
   emptyNode,
   rowReorder,
   windowStart,
+  rowPinning,
 }: Readonly<{
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
@@ -775,7 +937,14 @@ function DesktopTableBody<TRow>({
   emptyNode: ReactNode;
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
+  rowPinning: RowPinningState<TRow> | undefined;
 }>) {
+  const [theadRef, headerHeight] = useOffsetHeight();
+  let stickyHeaderOffset: number | undefined;
+  if (sticky === true) stickyHeaderOffset = 0;
+  else if (sticky) stickyHeaderOffset = sticky.offsetHeader ?? 0;
+  const headerOffset =
+    stickyHeaderOffset === undefined ? 0 : stickyHeaderOffset + headerHeight;
   // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
   // reach it through the `components` seam. Memoized: a new component identity
   // here would remount the whole table on every render.
@@ -784,6 +953,7 @@ function DesktopTableBody<TRow>({
   // Depends on the GETTER, not the whole state: the announcement changes on
   // every focus move, and rebuilding `components` would remount antd's table and
   // throw away the focus this just placed.
+  const pinArmed = rowPinning !== undefined;
   const gridComponents = useMemo(
     () =>
       gridEnabled && getGridProps
@@ -791,11 +961,22 @@ function DesktopTableBody<TRow>({
         : undefined,
     [gridEnabled, getGridProps]
   );
+  const components = useMemo(() => {
+    const header = pinArmed
+      ? {
+          wrapper: (props: HTMLAttributes<HTMLTableSectionElement>) => (
+            <thead ref={theadRef} {...props} />
+          ),
+        }
+      : undefined;
+    if (!gridComponents && !header) return undefined;
+    return { ...gridComponents, ...(header ? { header } : {}) };
+  }, [gridComponents, pinArmed, theadRef]);
 
   return (
     <Table<GroupedDataRecord<TRow>>
       aria-label={tableLabel}
-      components={gridComponents}
+      components={components}
       columns={columns}
       dataSource={[...dataSource]}
       rowKey={(record) => groupedRowKey(record, getRowId)}
@@ -810,33 +991,21 @@ function DesktopTableBody<TRow>({
       pagination={false}
       rowClassName={rowClassName ? buildRowClassName(rowClassName) : undefined}
       onChange={handleChange as TableProps<GroupedDataRecord<TRow>>["onChange"]}
-      onRow={(record, rowIndex) => {
-        if (isAdaptTableGroupRow(record)) {
-          return {
-            "data-adapttable-part":
-              record.footer === true ? "group-footer-row" : "group-row",
-            "data-collapsed": record.collapsed ? "true" : undefined,
-          } as HTMLAttributes<HTMLElement>;
-        }
-        const id = getRowId(record);
-        return {
-          ...rowClickProps(record, onRowClick, rowIndex),
-          ...(rowReorder && rowIndex !== undefined
-            ? {
-                ...rowReorder.dropProps(rowIndex, record, windowStart),
-                ...rowReorder.rowAttrs(id, rowIndex),
-                style: rowReorderDropStyle(rowReorder.rowAttrs(id, rowIndex)),
-              }
-            : {}),
-          // antd builds its own <tr>, so the absolute aria-rowindex arrives
-          // here rather than through a spread on the element.
-          ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
-          "data-stagger": "",
-          // antd builds its own <tr>, so the dirty mark arrives here too.
-          "data-dirty": rowIsDirty(editing, getRowId(record)) ? "" : undefined,
-          onMouseEnter: prefetch ? () => prefetch(record) : undefined,
-        };
-      }}
+      onRow={(record, rowIndex) =>
+        antdOnRow({
+          record,
+          rowIndex,
+          getRowId,
+          rowPinning,
+          headerOffset,
+          rowReorder,
+          windowStart,
+          gridFocus,
+          onRowClick,
+          editing,
+          prefetch,
+        })
+      }
       scroll={resolveScroll(
         virtualize && !grouping,
         hasPinned,
@@ -912,6 +1081,9 @@ function DataTableBodyRegion<TRow>(
     hasRowActions,
     rowReorder,
     windowStart,
+    rowPinning,
+    pinnedTopRows,
+    pinnedBottomRows,
   } = props;
 
   let body: ReactNode;
@@ -959,6 +1131,8 @@ function DataTableBodyRegion<TRow>(
         {...cardWindow}
         rowReorder={rowReorder}
         windowStart={windowStart}
+        pinnedTopRows={pinnedTopRows}
+        pinnedBottomRows={pinnedBottomRows}
       />
     );
   } else {
@@ -989,6 +1163,7 @@ function DataTableBodyRegion<TRow>(
         emptyNode={emptyNode}
         rowReorder={rowReorder}
         windowStart={windowStart}
+        rowPinning={rowPinning}
       />
     );
   }
@@ -1069,12 +1244,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   );
   const { history, onCellEdit: recordingCellEdit } =
     useTableEditHistory<TRow>(props);
+  const pinChrome = useAntdPinChrome({
+    pinnedRowIds: props.pinnedRowIds,
+    onPinnedRowIdsChange: props.onPinnedRowIdsChange,
+    urlSync: props.urlSync,
+    urlKey: props.urlKey,
+    urlAdapter: resolvedUrlAdapter,
+  });
   const chromeProps = {
     ...props,
     onCellEdit: recordingCellEdit,
     source: resolvedSource,
     filters: filtersNode,
     filterLabels,
+    pinnedRowIds: pinChrome.pinnedRowIds,
+    onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,
   };
   const c = useTableChrome<TRow>(chromeProps);
   // antd builds its own chrome rather than using `useDataTableShell`, so it
@@ -1265,9 +1449,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const treeEntryByRow = new Map<TRow, TreeEntry<TRow>>(
     treeEntries?.map((entry) => [entry.row, entry])
   );
-  const dataSource: readonly GroupedDataRecord<TRow>[] = grouping
+  const dataSourceBase: readonly GroupedDataRecord<TRow>[] = grouping
     ? buildGroupedDataSource(grouping.entries)
     : (treeEntries?.map((entry) => entry.row) ?? source.rows);
+  const { dataSource, pinnedTopRows, pinnedBottomRows } = antdPinnedDataSource(
+    grouping,
+    treeEntries,
+    c.rowPinning,
+    source.rows,
+    getRowId,
+    dataSourceBase
+  );
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
   const hasStartPin = pinnedSides.includes("start");
@@ -1361,6 +1553,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       hasRowActions={hasRowActions}
       rowReorder={c.rowReorder}
       windowStart={windowStart}
+      rowPinning={c.rowPinning}
+      pinnedTopRows={pinnedTopRows}
+      pinnedBottomRows={pinnedBottomRows}
     />
   );
 

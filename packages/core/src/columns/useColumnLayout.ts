@@ -94,8 +94,12 @@ export interface PinnedCellStyle {
  */
 export const PIN_Z = {
   body: 1,
-  header: 2,
-  headerPinned: 3,
+  /** Sticky pinned rows — above scrolled body, below the header. */
+  rowPinned: 2,
+  /** A pinned column cell inside a pinned row. */
+  rowPinnedColumn: 3,
+  header: 4,
+  headerPinned: 5,
 } as const;
 
 /**

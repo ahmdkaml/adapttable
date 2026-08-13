@@ -443,6 +443,7 @@ do the list work.
 
 Changing which row sits where is the same one-way write: pass `onRowReorder`
 and a grip appears. See [row reordering](./row-reordering.md).
+Pass `onPinnedRowIdsChange` and pin actions appear. See [row pinning](./row-pinning.md).
 
 **A delete asks first.** It goes through the same confirmation dialog a
 `rowActions` entry with a `confirm` block uses — `labels.deleteRow` as the title,

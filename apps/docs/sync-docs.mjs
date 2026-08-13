@@ -31,6 +31,7 @@ const TITLES = {
   "row-expansion.md": "React table expandable rows — detail panels",
   "cell-editing.md": "React table inline cell editing — onCellEdit",
   "row-reordering.md": "React table row reordering — drag handle",
+  "row-pinning.md": "React table row pinning — sticky top and bottom",
   "cell-navigation.md": "React table keyboard navigation — ARIA grid",
   "row-grouping.md": "React table row grouping with subtotals",
   "column-management.md": "React table column management — pin, resize",
@@ -82,6 +83,8 @@ const DESCRIPTIONS = {
     "Inline cell editing for React CRUD tables — opt-in onCellEdit, text/number/select editors, keyboard commit/cancel, kit-native inputs across every adapter.",
   "row-reordering.md":
     "Row reordering for React data tables — opt-in onRowReorder, a drag handle with Space-lift keyboard, dataset-relative indices, mobile up/down. Grouping and trees refuse it.",
+  "row-pinning.md":
+    "Row pinning for React data tables — sticky top and bottom rows outside the virtual window, { top, bottom } id lists, URL-synced, mobile actions only.",
   "cell-navigation.md":
     "Arrow-key cell navigation for a React table: one tab stop, correct ARIA grid semantics, absolute row indices under virtualization, and spoken announcements.",
   "row-grouping.md":

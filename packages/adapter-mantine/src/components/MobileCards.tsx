@@ -10,6 +10,7 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
   rowClickProps,
@@ -71,6 +72,8 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "measureElement"
   | "rowReorder"
   | "windowStart"
+  | "pinnedTopRows"
+  | "pinnedBottomRows"
 > {
   bodyRef: RefObject<HTMLDivElement | null>;
   className?: string;
@@ -363,18 +366,20 @@ export function MobileCards<TRow>({
   tree,
   rowReorder,
   windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
   const cardPadding = compact ? "sm" : "md";
   const cardGap = compact ? 4 : "xs";
-  const entries =
-    rowEntries ??
-    rows.map((row, index) => ({
-      row,
-      index,
-      key: getRowId(row),
-    }));
+  const entries = orderedCardEntries(
+    rows,
+    getRowId,
+    rowEntries,
+    pinnedTopRows,
+    pinnedBottomRows
+  );
   // Header groups and multi-sort are desktop-only: cards have no column axis
   // to span a group label across or to chain a sort on, so neither renders
   // here. The footer summary still applies — it closes the list as one card.

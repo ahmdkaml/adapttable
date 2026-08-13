@@ -11,6 +11,7 @@
  */
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from "../columns/columnResize";
 import type { ColumnLayoutState } from "../columns/useColumnLayout";
+import { type RowPinSide, type RowPinState } from "../rows/rowPinning";
 import type { ExtraFilters, FilterValue, SortDirection } from "../types";
 
 /** Decode a URI component, tolerating malformed input from hand-edited URLs. */
@@ -49,6 +50,8 @@ export const PARAM_COL_HIDDEN = "colHide";
 export const PARAM_COL_PINNED = "colPin";
 export const PARAM_COL_ORDER = "colOrder";
 export const PARAM_COL_WIDTHS = "colW";
+/** Pinned rows: `rowPin=id1:top,id2:bottom`. */
+export const PARAM_ROW_PIN = "rowPin";
 
 /** Read a 1-based page number, falling back when absent/invalid. */
 export function readPage(
@@ -308,4 +311,53 @@ export function writeCollapsedGroups(
   const value = keys.map((key) => encodeURIComponent(key)).join(",");
   if (value) params.set(prefix + PARAM_GROUP_CLOSED, value);
   else params.delete(prefix + PARAM_GROUP_CLOSED);
+}
+
+/**
+ * Read pinned row ids (`rowPin=id1:top,id2:bottom`).
+ *
+ * @param params - The URL parameters.
+ * @param prefix - The table's namespace, when it has one.
+ * @returns The lists, or `undefined` when the parameter is absent.
+ */
+export function readRowPins(
+  params: URLSearchParams,
+  prefix = ""
+): RowPinState | undefined {
+  const raw = params.get(prefix + PARAM_ROW_PIN);
+  if (raw === null) return undefined;
+  const top: string[] = [];
+  const bottom: string[] = [];
+  for (const pair of splitRaw(raw)) {
+    const colon = pair.lastIndexOf(":");
+    if (colon <= 0) continue;
+    const id = safeDecode(pair.slice(0, colon));
+    const side = pair.slice(colon + 1);
+    if (!id) continue;
+    if (side === "top") top.push(id);
+    else if (side === "bottom") bottom.push(id);
+  }
+  return { top, bottom };
+}
+
+/**
+ * Write pinned row ids, dropping the parameter when both lists are empty.
+ *
+ * @param params - The URL parameters, mutated in place.
+ * @param state - The pin lists.
+ * @param prefix - The table's namespace, when it has one.
+ */
+export function writeRowPins(
+  params: URLSearchParams,
+  state: RowPinState,
+  prefix = ""
+): void {
+  const pairs: string[] = [];
+  const push = (id: string, side: RowPinSide): void => {
+    pairs.push(`${encodeURIComponent(id)}:${side}`);
+  };
+  for (const id of state.top) push(id, "top");
+  for (const id of state.bottom) push(id, "bottom");
+  if (pairs.length > 0) params.set(prefix + PARAM_ROW_PIN, pairs.join(","));
+  else params.delete(prefix + PARAM_ROW_PIN);
 }

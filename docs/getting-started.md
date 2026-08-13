@@ -241,6 +241,7 @@ The source for each lives in
 - [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
   editors, keyboard flow.
 - [Row reordering](./row-reordering.md) — opt-in `onRowReorder`, Space-lift
+- [Row pinning](./row-pinning.md) — sticky top and bottom rows, `{ top, bottom }` ids
   keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.

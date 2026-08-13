@@ -101,6 +101,7 @@ interface DataProps {
   batch?: boolean;
   rowMutations?: boolean;
   rowReorder?: boolean;
+  rowPinning?: boolean;
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -171,6 +172,7 @@ function Frontend({
   batch,
   rowMutations,
   rowReorder,
+  rowPinning,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -291,6 +293,7 @@ function Frontend({
         // Delete on every row.
         ...(rowMutations ? { onAddRow, onDuplicateRow, onDeleteRow } : {}),
         ...(rowReorder ? { onRowReorder } : {}),
+        ...(rowPinning ? { onPinnedRowIdsChange: () => undefined } : {}),
       })}
     </>
   );
@@ -329,6 +332,7 @@ export function DemoBody({
   batch,
   rowMutations,
   rowReorder,
+  rowPinning,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -342,6 +346,7 @@ export function DemoBody({
   batch?: boolean;
   rowMutations?: boolean;
   rowReorder?: boolean;
+  rowPinning?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -384,6 +389,7 @@ export function DemoBody({
       batch={batch}
       rowMutations={rowMutations}
       rowReorder={rowReorder}
+      rowPinning={rowPinning}
     />
   );
 }

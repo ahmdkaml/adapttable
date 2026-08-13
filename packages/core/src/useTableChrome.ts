@@ -48,6 +48,13 @@ import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
 import { type RowMutationsState, useRowMutations } from "./rows/rowMutations";
+import {
+  partitionPinnedRows,
+  type RowPinLabels,
+  type RowPinningState,
+  type RowPinState,
+  useRowPinning,
+} from "./rows/rowPinning";
 import { type RowReorderState, useRowReorder } from "./rows/rowReorder";
 import {
   type RowExpansionState,
@@ -291,6 +298,11 @@ export interface TableChrome<TRow> {
    * grouping/tree are off, and the column is visible. Adapters read THIS.
    */
   rowReorder?: RowReorderState<TRow>;
+  /**
+   * Headless row-pin state. Present iff the host passed `pinnedRowIds` or
+   * `onPinnedRowIdsChange`, and grouping/tree are off.
+   */
+  rowPinning?: RowPinningState<TRow>;
   /**
    * Tree bundle — present iff the host declared a hierarchy (`getChildren` or
    * `getParentId`). A tree and a grouping are different models and can both be
@@ -908,6 +920,21 @@ export function useTableChrome<TRow>(
   });
   const rowReorder = rowReorderEnabled ? rowReorderState : undefined;
 
+  const rowPinning = useChromeRowPinning<TRow>({
+    requested:
+      props.pinnedRowIds !== undefined ||
+      props.onPinnedRowIdsChange !== undefined,
+    blocked: grouping !== undefined || treeShaped,
+    pinnedRowIds: props.pinnedRowIds,
+    onPinnedRowIdsChange: props.onPinnedRowIdsChange,
+    getRowId: (row) => rowKey(row),
+    labels: {
+      pinToTop: table.labels.pinToTop,
+      pinToBottom: table.labels.pinToBottom,
+      unpinRow: table.labels.unpinRow,
+    },
+  });
+
   useEffect(() => {
     if (!editing) return;
     editing.state.discardIfRowMissing(editingRows, (row) =>
@@ -946,6 +973,14 @@ export function useTableChrome<TRow>(
     !viewSource.error &&
     (viewSource.total > 0 || viewSource.isLoading || viewSource.isFetching);
 
+  const hasAnyActions = hasRowActions || rowPinning !== undefined;
+  const visibleRowActions = useMemo(() => {
+    if (actionsHidden || !hasAnyActions) return undefined;
+    const pins = rowPinning?.actions ?? [];
+    if (pins.length === 0) return rowActions;
+    return [...(rowActions ?? []), ...pins];
+  }, [actionsHidden, hasAnyActions, rowActions, rowPinning]);
+
   return {
     source: viewSource,
     table,
@@ -961,10 +996,11 @@ export function useTableChrome<TRow>(
     clearFilters,
     detail,
     rowMutations,
-    rowActions,
-    hasRowActions,
+    rowActions: visibleRowActions,
+    hasRowActions: hasAnyActions,
     hasRowReorder,
     rowReorder,
+    rowPinning,
     editing,
     grouping,
     tree,
@@ -999,6 +1035,10 @@ export interface ChromeBodyData<TRow> {
    * attach when virtualization is off.
    */
   virtualScrollRef: RefCallback<HTMLElement>;
+  /** Top-pinned rows, removed from the virtual window. */
+  pinnedTopRows: readonly TRow[];
+  /** Bottom-pinned rows, removed from the virtual window. */
+  pinnedBottomRows: readonly TRow[];
 }
 
 /**
@@ -1065,8 +1105,16 @@ export function useChromeBodyData<TRow>(
     enabled: virtualize && treeArmed && !groupingArmed && bodyEligible,
     ...scrollOpts,
   });
+  const pinState = chrome.rowPinning?.state;
+  const partitioned = useMemo(() => {
+    if (!pinState) {
+      return { top: [] as TRow[], scroll: source.rows, bottom: [] as TRow[] };
+    }
+    return partitionPinnedRows(source.rows, pinState, rowKey);
+  }, [pinState, rowKey, source.rows]);
+
   const virtualization = useTableVirtualization({
-    rows: source.rows,
+    rows: partitioned.scroll,
     rowKey,
     enabled: virtualize && !groupingArmed && !treeArmed && bodyEligible,
     // Detail panels are separate elements from their rows, so the window
@@ -1097,13 +1145,32 @@ export function useChromeBodyData<TRow>(
     itemCount: bodySentinelCount(chrome, groupingArmed),
     enabled: canLoadMore,
   });
+  const sourceIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    source.rows.forEach((row, index) => map.set(rowKey(row), index));
+    return map;
+  }, [rowKey, source.rows]);
+
+  const pinnedVirtualization = useMemo(() => {
+    if (!pinState) return resolvedVirtualization;
+    return {
+      ...resolvedVirtualization,
+      rows: resolvedVirtualization.rows.map((entry) => ({
+        ...entry,
+        sourceIndex: sourceIndexById.get(entry.key) ?? entry.index,
+      })),
+    };
+  }, [pinState, resolvedVirtualization, sourceIndexById]);
+
   return {
-    virtualization: resolvedVirtualization,
+    virtualization: pinnedVirtualization,
     groupingEntries,
     treeEntries,
     loadMoreRef,
     canLoadMore,
     virtualScrollRef,
+    pinnedTopRows: partitioned.top,
+    pinnedBottomRows: partitioned.bottom,
   };
 }
 
@@ -1227,6 +1294,32 @@ export interface FilterTriggerToggle {
  * otherwise the click toggles normally (kits that exclude the trigger from
  * outside-close keep working unchanged).
  */
+function useChromeRowPinning<TRow>(options: {
+  requested: boolean;
+  blocked: boolean;
+  pinnedRowIds?: RowPinState;
+  onPinnedRowIdsChange?: (next: RowPinState) => void;
+  getRowId: (row: TRow) => string;
+  labels: RowPinLabels;
+}): RowPinningState<TRow> | undefined {
+  const { requested, blocked, labels } = options;
+  useEffect(() => {
+    if (!requested || !blocked) return;
+    devWarn(
+      "row pinning is ignored while grouping or a tree is armed — pin a flat list, not a nested one."
+    );
+  }, [blocked, requested]);
+  const enabled = requested && !blocked;
+  const state = useRowPinning<TRow>({
+    enabled,
+    pinnedRowIds: options.pinnedRowIds,
+    onPinnedRowIdsChange: options.onPinnedRowIdsChange,
+    getRowId: options.getRowId,
+    labels,
+  });
+  return enabled ? state : undefined;
+}
+
 export function useFilterTriggerToggle(
   open: boolean,
   setOpen: (next: boolean | ((current: boolean) => boolean)) => void

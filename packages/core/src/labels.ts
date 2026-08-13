@@ -88,6 +88,9 @@ export const defaultLabels: Required<TableLabels> = {
   rowLifted: (position) => `Row ${String(position)} lifted`,
   rowMoved: (from, to) => `Row moved from ${String(from)} to ${String(to)}`,
   rowReorderCancelled: "Reorder cancelled",
+  pinToTop: "Pin to top",
+  pinToBottom: "Pin to bottom",
+  unpinRow: "Unpin row",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

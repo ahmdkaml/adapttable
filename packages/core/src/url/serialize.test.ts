@@ -8,9 +8,11 @@ import {
   readExtra,
   readLimit,
   readPage,
+  readRowPins,
   readSortDir,
   writeColumnLayout,
   writeExtra,
+  writeRowPins,
 } from "./serialize";
 
 const ps = (s: string) => new URLSearchParams(s);
@@ -255,5 +257,22 @@ describe("writeColumnLayout", () => {
       widths: { person: 240.6 },
     });
     expect(params.get("colW")).toBe("person:241");
+  });
+});
+
+describe("row pins", () => {
+  it("reads top and bottom pairs and skips junk", () => {
+    expect(
+      readRowPins(ps("rowPin=ada:top,alan:bottom,x:sideways,:top"))
+    ).toEqual({ top: ["ada"], bottom: ["alan"] });
+    expect(readRowPins(ps(""))).toBeUndefined();
+  });
+
+  it("writes and clears the parameter", () => {
+    const params = ps("");
+    writeRowPins(params, { top: ["ada"], bottom: ["alan"] });
+    expect(params.get("rowPin")).toBe("ada:top,alan:bottom");
+    writeRowPins(params, { top: [], bottom: [] });
+    expect(params.get("rowPin")).toBeNull();
   });
 });

@@ -238,6 +238,11 @@ export interface BodyRowEntry<TRow> {
   row: TRow;
   /** Its position for `data-index` and cell navigation. */
   index: number;
+  /**
+   * Index in the page dataset when pinned rows left the window.
+   * Equals `index` when pinning is off.
+   */
+  sourceIndex?: number;
   /** Its stable key. */
   key: string;
   /** Its place in the tree, when the table is one. */
@@ -258,7 +263,12 @@ export interface BodyRowEntry<TRow> {
  * @returns What to render, in reading order.
  */
 export function bodyRowEntries<TRow>(
-  rows: readonly { row: TRow; index: number; key: string }[],
+  rows: readonly {
+    row: TRow;
+    index: number;
+    key: string;
+    sourceIndex?: number;
+  }[],
   tree?: { entries: readonly TreeEntry<TRow>[] }
 ): BodyRowEntry<TRow>[] {
   if (tree) {
@@ -272,6 +282,7 @@ export function bodyRowEntries<TRow>(
   return rows.map((entry) => ({
     row: entry.row,
     index: entry.index,
+    sourceIndex: entry.sourceIndex,
     key: entry.key,
   }));
 }

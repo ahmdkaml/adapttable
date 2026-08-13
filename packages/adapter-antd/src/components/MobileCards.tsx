@@ -14,9 +14,9 @@ import {
   type UseDataTableResult,
 } from "@adapttable/core";
 import {
+  orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
-  resolveVirtualRows,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -363,6 +363,8 @@ export function MobileCards<TRow>({
   measureElement,
   rowReorder,
   windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   /** Class applied to every card (merged before `rowClassName`). */
@@ -415,11 +417,20 @@ export function MobileCards<TRow>({
   measureElement?: (node: Element | null) => void;
   rowReorder?: RowReorderState<TRow>;
   windowStart?: number;
+  pinnedTopRows?: readonly TRow[];
+  pinnedBottomRows?: readonly TRow[];
 }>) {
   const { labels, selection, columns } = table;
   // Either the virtual slice or every source row, resolved to render entries
   // with their ORIGINAL index (so cells and classes see the true row index).
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  // Pinned rows lead / trail the list; cards have no sticky chrome.
+  const entries = orderedCardEntries(
+    rows,
+    getRowId,
+    rowEntries,
+    pinnedTopRows,
+    pinnedBottomRows
+  );
 
   // `memo` erases generics at module level, so the memoized card is
   // instantiated here (once — the identity is stable for the list's life).

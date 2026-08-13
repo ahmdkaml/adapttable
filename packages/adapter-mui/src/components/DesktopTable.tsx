@@ -10,6 +10,7 @@ import {
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
+  type RowPinSide,
   type TableLabels,
   tableMinWidth,
   type TreeEntry,
@@ -24,19 +25,25 @@ import {
   fittedTableStyle,
   headerGroupRow,
   type PinLeads,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
   pinnedColumnWidth,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
   REORDER_COLUMN_WIDTH,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
+  rowPinSignature,
   rowReorderDropStyle,
   RowReorderHandle,
   rowReorderSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
+  useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
@@ -217,6 +224,8 @@ interface DesktopRowSx {
   selection?: SxProps<Theme>;
   /** Trailing actions cell (edge-pinned, end-aligned). */
   actions: SxProps<Theme>;
+  /** Column keys that are side-pinned — row-pin z-index depends on this. */
+  pinnedColumns: ReadonlySet<string>;
 }
 
 interface DesktopRowProps<TRow> {
@@ -253,6 +262,14 @@ interface DesktopRowProps<TRow> {
   reorderPinned: boolean;
   /** Memo digest from {@link rowReorderSignature}. */
   reorderSignature: string | null;
+  /** Which edge this row is pinned to, if any. */
+  rowPinSide?: RowPinSide;
+  /** Sticky header offset for a pinned row's cells. */
+  rowPinOffset: number;
+  /** Memo digest from {@link rowPinSignature}. */
+  rowPinSignature: string | null;
+  /** Dataset index for ARIA / focus when pinning remapped the window. */
+  sourceIndex: number;
   labels: Required<TableLabels>;
   selectRowLabel: string;
   cancelLabel: string;
@@ -313,6 +330,10 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "showActions",
   "showReorder",
   "reorderSignature",
+  "rowPinSignature",
+  "rowPinSide",
+  "rowPinOffset",
+  "sourceIndex",
   "reorderPinned",
   "labels",
   "selectRowLabel",
@@ -352,6 +373,9 @@ function DesktopRowImpl<TRow>({
   showActions,
   showReorder,
   rowReorder,
+  rowPinSide,
+  rowPinOffset,
+  sourceIndex,
   windowStart,
   rowCount,
   labels,
@@ -377,25 +401,32 @@ function DesktopRowImpl<TRow>({
   rows,
   getRowId,
 }: Readonly<DesktopRowProps<TRow>>) {
+  const edgeRowPin = pinnedRowCellStyle(rowPinSide, rowPinOffset, true);
+  const focusIndex = sourceIndex;
+  let rowMeasureRef: typeof measureElement | undefined;
+  if (!rowPinSide) {
+    rowMeasureRef = measureRowPair ? measureRowPair.row(index) : measureElement;
+  }
   return (
     <>
       <TableRow
-        {...rowClickProps(row, onRowClick, index)}
+        {...rowClickProps(row, onRowClick, focusIndex)}
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         className={className}
         style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
         data-stagger=""
+        data-row-pin={rowPinSide}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
-        ref={measureRowPair ? measureRowPair.row(index) : measureElement}
+        ref={rowMeasureRef}
         data-index={index}
-        {...gridFocus?.getRowPropsAt(index)}
+        {...gridFocus?.getRowPropsAt(focusIndex)}
         hover
         selected={selected}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       >
         {hasExpansion && (
-          <TableCell padding="checkbox" sx={sx.expand}>
+          <TableCell padding="checkbox" sx={sx.expand} style={edgeRowPin}>
             <ExpandToggle
               id={id}
               expanded={expanded}
@@ -411,6 +442,7 @@ function DesktopRowImpl<TRow>({
             padding="checkbox"
             data-adapttable-part="reorder-cell"
             sx={sx.reorder}
+            style={edgeRowPin}
           >
             <RowReorderHandle
               reorder={rowReorder}
@@ -424,7 +456,7 @@ function DesktopRowImpl<TRow>({
           </TableCell>
         )}
         {hasSelection && (
-          <TableCell padding="checkbox" sx={sx.selection}>
+          <TableCell padding="checkbox" sx={sx.selection} style={edgeRowPin}>
             <Checkbox
               slotProps={{ input: { "aria-label": selectRowLabel } }}
               checked={selected}
@@ -436,7 +468,7 @@ function DesktopRowImpl<TRow>({
           <ColumnSpacer width={columnSpacers.start} side="start" />
         )}
         {columns.map((column, colIndex) => {
-          const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, colIndex);
           return (
             <TableCell
               key={column.key}
@@ -446,10 +478,17 @@ function DesktopRowImpl<TRow>({
               // theme and dark mode. Applied as a style rather than merged into
               // `sx`, whose per-column value is a union that cannot be combined
               // without a cast — and a cast here would buy nothing.
-              style={cellHighlightStyle(focusProps, undefined, {
-                backgroundColor:
-                  "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
-              })}
+              style={{
+                ...pinnedRowCellStyle(
+                  rowPinSide,
+                  rowPinOffset,
+                  sx.pinnedColumns.has(column.key)
+                ),
+                ...cellHighlightStyle(focusProps, undefined, {
+                  backgroundColor:
+                    "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
+                }),
+              }}
               {...focusProps}
             >
               <TreeCell
@@ -464,7 +503,7 @@ function DesktopRowImpl<TRow>({
                   row={row}
                   column={column}
                   rowId={id}
-                  rowIndex={index}
+                  rowIndex={focusIndex}
                   rows={rows}
                   columns={columns}
                   rowKey={getRowId}
@@ -474,7 +513,7 @@ function DesktopRowImpl<TRow>({
               </TreeCell>
               <FillHandle
                 focus={gridFocus}
-                windowIndex={index}
+                windowIndex={focusIndex}
                 col={colIndex}
               />
             </TableCell>
@@ -482,7 +521,7 @@ function DesktopRowImpl<TRow>({
         })}
         {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
-          <TableCell sx={sx.actions}>
+          <TableCell sx={sx.actions} style={edgeRowPin}>
             {editing?.rowEditing && (
               <RowEditActions
                 rowEditing={editing.rowEditing}
@@ -565,6 +604,9 @@ export function DesktopTable<TRow>({
   reorderPinned = false,
   rowReorder,
   windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
+  rowPinning,
   columnWindow,
   fitColumns,
   tree,
@@ -592,7 +634,10 @@ export function DesktopTable<TRow>({
     expansion,
     editing,
     rowReorder,
+    pinnedTopRows,
+    pinnedBottomRows,
   });
+  const [theadRef, headerHeight] = useOffsetHeight();
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
   const groupRow = headerGroupRow(columns);
@@ -635,6 +680,8 @@ export function DesktopTable<TRow>({
   // ANY scroll container (maxHeight, pins, measured overflow) is the sticky
   // context: pin to ITS top, not a viewport offset.
   const inScrollBox = maxHeight != null || hasPinned || overflow.overflowing;
+  const headerPinTop = inScrollBox ? 0 : stickyTop;
+  const rowPinOffset = stickyHeader ? headerPinTop + headerHeight : 0;
   const headSx = stickyHeader
     ? {
         position: "sticky" as const,
@@ -717,6 +764,9 @@ export function DesktopTable<TRow>({
       reorder: edge("start", hasStartPin || reorderPinned, reorderLead),
       selection: edge("start", hasStartPin, selectionLead),
       actions: { ...edge("end", stickActions), textAlign: "end" },
+      pinnedColumns: new Set(
+        columns.filter((c) => pinOffset?.(c.key) != null).map((c) => c.key)
+      ),
     };
   }, [
     columns,
@@ -751,6 +801,62 @@ export function DesktopTable<TRow>({
     extra: leadStart + leadEnd,
   });
 
+  const renderPinnedRow = (row: TRow, side: RowPinSide) => {
+    const id = getRowId(row);
+    const found = rows.findIndex((item) => getRowId(item) === id);
+    const sourceIndex = found < 0 ? 0 : found;
+    return (
+      <DesktopRow
+        key={id}
+        row={row}
+        index={sourceIndex}
+        gridFocus={gridFocus}
+        selected={selection?.isSelected(id) ?? false}
+        expanded={isExpanded ? isExpanded(id) : false}
+        columns={columns}
+        sx={rowSx}
+        columnSpan={columnSpan}
+        size={size}
+        dir={dir}
+        className={rowClassName?.(row, sourceIndex)}
+        hasSelection={Boolean(selection)}
+        hasExpansion={expandActive}
+        showActions={showActions}
+        showReorder={showReorder}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
+        rowCount={rows.length}
+        reorderPinned={reorderPinned}
+        reorderSignature={rowReorderSignature(rowReorder, id, sourceIndex)}
+        rowPinSide={side}
+        rowPinOffset={rowPinOffset}
+        rowPinSignature={rowPinSignature(rowPinning, id)}
+        sourceIndex={sourceIndex}
+        labels={labels}
+        selectRowLabel={labels.selectRow}
+        cancelLabel={labels.cancel}
+        expandLabel={labels.expandRow}
+        collapseLabel={labels.collapseRow}
+        id={id}
+        rowActions={rowActions}
+        confirm={confirm}
+        renderRowDetail={renderRowDetail}
+        onToggleSelect={onToggleSelect}
+        onToggleExpand={onToggleExpand}
+        onRowClick={onRowClick}
+        prefetch={prefetch}
+        editLabel={labels.editCell}
+        undoLabel={labels.undoEdit}
+        editRowLabel={labels.editRow}
+        saveRowLabel={labels.saveRow}
+        editing={editing}
+        rows={rows}
+        getRowId={getRowId}
+        editingSignature={rowEditingSignature(editing, id)}
+      />
+    );
+  };
+
   return (
     <Box
       ref={(node: HTMLDivElement | null) => {
@@ -766,7 +872,7 @@ export function DesktopTable<TRow>({
         sx={minWidth > 0 ? { minWidth } : undefined}
         style={fittedTableStyle(fitColumns)}
       >
-        <TableHead>
+        <TableHead ref={theadRef}>
           {groupRow && (
             // Decorative group row. It deliberately skips the sticky `headSx`
             // treatment: sticking both header rows at the same `top` would
@@ -901,7 +1007,15 @@ export function DesktopTable<TRow>({
             )}
           </TableRow>
         </TableHead>
-        <TableBody>
+        {pinnedTopRows.length > 0 && (
+          <TableBody
+            data-adapttable-part={PINNED_TOP_PART}
+            style={pinnedRowStickyStyle("top", rowPinOffset)}
+          >
+            {pinnedTopRows.map((row) => renderPinnedRow(row, "top"))}
+          </TableBody>
+        )}
+        <TableBody data-adapttable-part="tbody">
           {paddingTop > 0 && (
             <TableRow aria-hidden>
               <TableCell
@@ -960,6 +1074,10 @@ export function DesktopTable<TRow>({
                       id,
                       entry.index
                     )}
+                    rowPinSide={undefined}
+                    rowPinOffset={rowPinOffset}
+                    rowPinSignature={rowPinSignature(rowPinning, id)}
+                    sourceIndex={entry.index}
                     labels={labels}
                     selectRowLabel={labels.selectRow}
                     cancelLabel={labels.cancel}
@@ -989,8 +1107,9 @@ export function DesktopTable<TRow>({
             : // A tree renders its own flattened entries; a flat table renders the
               // (possibly windowed) rows. Both carry a row and a key.
               bodyRowEntries(entries, tree).map(
-                ({ row, index, key, treeEntry }) => {
+                ({ row, index, key, treeEntry, sourceIndex }) => {
                   const id = getRowId(row);
+                  const focusIndex = sourceIndex ?? index;
                   return (
                     <DesktopRow
                       gridFocus={gridFocus}
@@ -1004,7 +1123,7 @@ export function DesktopTable<TRow>({
                       columnSpan={columnSpan}
                       size={size}
                       dir={dir}
-                      className={rowClassName?.(row, index)}
+                      className={rowClassName?.(row, focusIndex)}
                       hasSelection={Boolean(selection)}
                       hasExpansion={expandActive}
                       showActions={showActions}
@@ -1018,6 +1137,10 @@ export function DesktopTable<TRow>({
                         id,
                         index
                       )}
+                      rowPinSide={undefined}
+                      rowPinOffset={rowPinOffset}
+                      rowPinSignature={rowPinSignature(rowPinning, id)}
+                      sourceIndex={focusIndex}
                       labels={labels}
                       selectRowLabel={labels.selectRow}
                       cancelLabel={labels.cancel}
@@ -1057,6 +1180,14 @@ export function DesktopTable<TRow>({
             </TableRow>
           )}
         </TableBody>
+        {pinnedBottomRows.length > 0 && (
+          <TableBody
+            data-adapttable-part={PINNED_BOTTOM_PART}
+            style={pinnedRowStickyStyle("bottom", 0)}
+          >
+            {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
+          </TableBody>
+        )}
         {summaryCells && (
           <TableFooter>
             <TableRow>

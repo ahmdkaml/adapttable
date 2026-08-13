@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 58,
+    budgetKB: 59,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -127,13 +127,18 @@ const FIXTURES = [
   // `onRowReorder` — omit it and nothing renders — but the builders sit on
   // the same path as row actions. `core · simple table` stayed at 11.4 KB
   // of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 85 },
+  //
+  // Row pinning (~0.5 KB) adds the sticky top/bottom sections, the pin
+  // actions, and the URL pair. The host still opts in with `pinnedRowIds`
+  // or `onPinnedRowIdsChange`. `core · simple table` stayed at 11.4 KB of
+  // a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 86 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 85 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 85 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 81 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 85 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 91 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 88 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 86 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 82 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 86 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 92 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 89 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 86 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 

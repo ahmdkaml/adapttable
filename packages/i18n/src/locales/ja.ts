@@ -86,6 +86,9 @@ export const ja: Required<TableLabels> = {
   rowMoved: (from, to) =>
     `行を ${String(from)} から ${String(to)} へ移動しました`,
   rowReorderCancelled: "並び替えを取り消しました",
+  pinToTop: "上に固定",
+  pinToBottom: "下に固定",
+  unpinRow: "行の固定を解除",
   moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
   moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,

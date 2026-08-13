@@ -89,6 +89,9 @@ export const tr: Required<TableLabels> = {
   rowMoved: (from, to) =>
     `Satır ${String(from)} konumundan ${String(to)} konumuna taşındı`,
   rowReorderCancelled: "Yeniden sıralama iptal edildi",
+  pinToTop: "Üste sabitle",
+  pinToBottom: "Alta sabitle",
+  unpinRow: "Satırı bırak",
   moreGroups: (remaining) => `${remaining} grup daha göster`,
   moreRowsInGroup: (remaining) => `Bu grupta ${remaining} tane daha`,
   groupTotal: (label) => `${label} toplamı`,

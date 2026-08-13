@@ -30,6 +30,7 @@ type DemoComponent = ComponentType<
     batch?: boolean;
     rowMutations?: boolean;
     rowReorder?: boolean;
+    rowPinning?: boolean;
     editing?: boolean;
   }>
 >;
@@ -132,6 +133,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [batch, setBatch] = useState<"on" | "off">("off");
   const [rowMutations, setRowMutations] = useState<"on" | "off">("off");
   const [rowReorder, setRowReorder] = useState<"on" | "off">("off");
+  const [rowPinning, setRowPinning] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -318,6 +320,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Pin rows">
+          <Segmented
+            label="pin rows"
+            value={rowPinning}
+            onChange={(v) => {
+              startTransition(() => setRowPinning(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Batch">
           <Segmented
             label="batch"
@@ -369,6 +384,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               batch={batch === "on"}
               rowMutations={rowMutations === "on"}
               rowReorder={rowReorder === "on"}
+              rowPinning={rowPinning === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

@@ -21,6 +21,7 @@ import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
+import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
@@ -75,6 +76,18 @@ export interface SharedTableRenderProps<TRow> {
   windowStart?: number;
   /** Whether the injected reorder column is start-pinned. */
   reorderPinned?: boolean;
+  /**
+   * Top-pinned rows, already removed from {@link SharedTableRenderProps.rows}
+   * / the virtual window. Render in a sticky section above the scroll body.
+   */
+  pinnedTopRows?: readonly TRow[];
+  /**
+   * Bottom-pinned rows, already removed from the scroll body. Render in a
+   * sticky section below it.
+   */
+  pinnedBottomRows?: readonly TRow[];
+  /** Headless pin state — actions live on `rowActions`; this is the lists. */
+  rowPinning?: RowPinningState<TRow>;
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
   /**
@@ -208,6 +221,8 @@ export function tableRenderModel<TRow>(
     | "columnWindow"
     | "editing"
     | "rowReorder"
+    | "pinnedTopRows"
+    | "pinnedBottomRows"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -228,11 +243,22 @@ export function tableRenderModel<TRow>(
   const hasSelection = Boolean(selection);
   const leadingCells =
     (expandable ? 1 : 0) + (showReorder ? 1 : 0) + (hasSelection ? 1 : 0);
-  const entries = resolveVirtualRows(
+  const pinnedIds = new Set<string>();
+  for (const row of props.pinnedTopRows ?? []) {
+    pinnedIds.add(props.getRowId(row));
+  }
+  for (const row of props.pinnedBottomRows ?? []) {
+    pinnedIds.add(props.getRowId(row));
+  }
+  const rawEntries = resolveVirtualRows(
     props.rows,
     props.getRowId,
     props.rowEntries
   );
+  const entries =
+    pinnedIds.size === 0
+      ? rawEntries
+      : rawEntries.filter((entry) => !pinnedIds.has(entry.key));
   return {
     columns,
     selection,

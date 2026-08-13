@@ -91,6 +91,9 @@ export const ru: Required<TableLabels> = {
   rowMoved: (from, to) =>
     `Строка перемещена с ${String(from)} на ${String(to)}`,
   rowReorderCancelled: "Перестановка отменена",
+  pinToTop: "Закрепить сверху",
+  pinToBottom: "Закрепить снизу",
+  unpinRow: "Открепить строку",
   moreGroups: (remaining) => `Показать ещё групп: ${remaining}`,
   moreRowsInGroup: (remaining) => `Показать ещё в этой группе: ${remaining}`,
   groupTotal: (label) => `Итого: ${label}`,

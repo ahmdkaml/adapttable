@@ -371,6 +371,7 @@ export { useSearchInput } from "./useDataTable/useSearchInput";
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
+  rowSourceIndex,
   type TableVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
@@ -396,6 +397,14 @@ export {
   upsertRow,
 } from "./rows/patch";
 export {
+  orderedCardEntries,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
+  useOffsetHeight,
+} from "./rows/pinnedRowChrome";
+export {
   DELETE_ROW_ACTION_KEY,
   DUPLICATE_ROW_ACTION_KEY,
   type RowMutationHandlers,
@@ -403,6 +412,20 @@ export {
   useRowMutations,
   type UseRowMutationsOptions,
 } from "./rows/rowMutations";
+export {
+  applyRowPin,
+  EMPTY_ROW_PIN_STATE,
+  partitionPinnedRows,
+  PIN_BOTTOM_ACTION_KEY,
+  PIN_TOP_ACTION_KEY,
+  type RowPinLabels,
+  type RowPinningState,
+  type RowPinSide,
+  rowPinSignature,
+  type RowPinState,
+  UNPIN_ROW_ACTION_KEY,
+  useRowPinning,
+} from "./rows/rowPinning";
 export {
   applyRowReorder,
   datasetIndex,
@@ -585,6 +608,11 @@ export {
   type UseGroupCollapseUrlStateOptions,
   type UseGroupCollapseUrlStateResult,
 } from "./url/useGroupCollapseUrlState";
+export {
+  useRowPinningUrlState,
+  type UseRowPinningUrlStateOptions,
+  type UseRowPinningUrlStateResult,
+} from "./url/useRowPinningUrlState";
 
 /* ── Export (CSV, and any format a writer adds) ────────────────────── */
 export {

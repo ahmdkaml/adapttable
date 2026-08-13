@@ -126,6 +126,7 @@ export function BaseUiDemo({
   batch,
   rowMutations,
   rowReorder,
+  rowPinning,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -144,6 +145,7 @@ export function BaseUiDemo({
   batch?: boolean;
   rowMutations?: boolean;
   rowReorder?: boolean;
+  rowPinning?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -160,6 +162,7 @@ export function BaseUiDemo({
       batch={batch}
       rowMutations={rowMutations}
       rowReorder={rowReorder}
+      rowPinning={rowPinning}
       editing={editing}
       render={(source, columns) => (
         <DataTable

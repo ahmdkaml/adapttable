@@ -102,6 +102,16 @@ describe("tableRenderModel", () => {
     expect(model.leadingCells).toBe(1);
     expect(model.columnSpan).toBe(2);
   });
+
+  it("drops pinned rows from the scroll entries so they are not drawn twice", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      pinnedTopRows: [ROWS[0]!],
+    });
+    expect(model.entries.map((entry) => entry.key)).toEqual(["b"]);
+  });
 });
 
 describe("useChromeScrollReset", () => {
@@ -324,6 +334,32 @@ describe("controlled selection through the chrome", () => {
 });
 
 describe("useChromeBodyData", () => {
+  it("pulls pinned rows out of the virtual window", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        pinnedRowIds: { top: ["a"], bottom: [] },
+        onPinnedRowIdsChange: () => undefined,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    expect(result.current.pinnedTopRows.map((row) => row.id)).toEqual(["a"]);
+    expect(
+      result.current.virtualization.rows.map((entry) => entry.key)
+    ).toEqual(["b"]);
+    expect(result.current.virtualization.rows[0]?.sourceIndex).toBe(1);
+  });
+
   it("element mode: a maxHeight box scrolls the virtual window (ref wiring)", () => {
     const adapter = createMemoryAdapter("");
     const many = Array.from({ length: 40 }, (_, i) => ({

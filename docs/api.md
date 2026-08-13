@@ -86,6 +86,8 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `editConflictPolicy`        | `"keep" \| "take" \| "ask"`                                     | `"ask"`         | What to do when the host does not choose. `"ask"` surfaces Keep mine / Take theirs.                                                                                                                                                                                                                                                                                              |
 | `rowVersion`                | `(row: TRow) => string \| number`                               | —               | Host version of a row. Any change under an open editor is a conflict, not only the edited column.                                                                                                                                                                                                                                                                                |
 | `onRowReorder`              | `RowReorderHandler<TRow>`                                       | —               | Drag handle in a reserved column. `from` / `to` are dataset-relative; the table never mutates rows. Keyboard: Space lifts, arrows move, Space drops, Escape cancels. Grouping or a tree refuses with a `devWarn`. See [row reordering](./row-reordering.md).                                                                                                                     |
+| `pinnedRowIds`              | `RowPinState`                                                   | —               | Controlled `{ top, bottom }` row-id lists. Pinned rows leave the virtual window and stick above or below the scroll box. See [row pinning](./row-pinning.md).                                                                                                                                                                                                                    |
+| `onPinnedRowIdsChange`      | `(next: RowPinState) => void`                                   | —               | Pin-list channel. Setting this (or `pinnedRowIds`) arms the feature. Uncontrolled lists also write `rowPin` to the URL. Grouping or a tree refuses with a `devWarn`.                                                                                                                                                                                                             |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
 | `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
 | `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
@@ -425,6 +427,8 @@ See [cell editing](./cell-editing.md).
 
 **Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
 
+**Row pinning.** `pinnedRowIds` / `onPinnedRowIdsChange` take a `RowPinState` (`{ top, bottom }` of `RowPinSide`). `applyRowPin(state, rowId, side)` is the in-memory helper; `partitionPinnedRows` splits a list into top / scroll / bottom; `EMPTY_ROW_PIN_STATE` is the empty lists. `useRowPinning` returns `RowPinningState`; `rowPinSignature` is the memo digest. Action keys: `PIN_TOP_ACTION_KEY`, `PIN_BOTTOM_ACTION_KEY`, `UNPIN_ROW_ACTION_KEY`. URL: `useRowPinningUrlState` (`UseRowPinningUrlStateOptions` / `UseRowPinningUrlStateResult`) writes `rowPin=id:top,id:bottom`. Labels: `pinToTop`, `pinToBottom`, `unpinRow` (`RowPinLabels`). `rowSourceIndex(entry)` is the dataset index when pinning remapped the window. From `@adapttable/core/adapter`: `pinnedRowStickyStyle` / `pinnedRowCellStyle`, `orderedCardEntries`, `useOffsetHeight`, `PINNED_TOP_PART` / `PINNED_BOTTOM_PART`. See [row pinning](./row-pinning.md).
+
 **Filter internals.** `FILTER_TYPES` lists the built-in types, `filterLabel`
 resolves a filter's caption, `filterStateKeys` names the URL keys one filter
 owns, `FilterRuntime` is what `buildFilterRuntime` returns, and
@@ -696,6 +700,8 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `FilterValue` / `ExtraFilters`                                      | One URL-round-tripped filter value / the keyed bag of them.                                                  |
 | `SortableValue`                                                     | Comparable primitive returned by a sort-value extractor.                                                     |
 | `SortByOption`                                                      | `{ value, label }` for the mobile sort-by select.                                                            |
+| `RowPinState` / `RowPinSide`                                        | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                       |
+| `RowPinningState` / `RowPinLabels`                                  | Headless pin state and the three action strings.                                                             |
 
 ## Development warnings
 
@@ -721,7 +727,8 @@ full set: `UseDataTableOptions`, `UseFrontendDataOptions`,
 `UseTableUrlStateOptions`, `UseSavedViewsResult`, `UseSelectionOptions`,
 `UseColumnLayoutOptions`, `UseColumnLayoutStorageStateOptions` /
 `UseColumnLayoutStorageStateResult`, `UseColumnLayoutUrlStateOptions` /
-`UseColumnLayoutUrlStateResult`, `UseQuerySourceOptions`,
+`UseColumnLayoutUrlStateResult`, `UseRowPinningUrlStateOptions` /
+`UseRowPinningUrlStateResult`, `UseQuerySourceOptions`,
 `UseActiveFilterChipsOptions`,
 `UseExtraChipsOptions`, `UseBulkActionRunnerOptions`,
 `UseBulkBarStateOptions`, `UseInfiniteScrollOptions`,
@@ -791,7 +798,9 @@ cell's props put it inside the selected range, for a kit applying its own fill),
 `ExpandChevron`, `sortArrow`). Row reorder chrome: `RowReorderHandle`,
 `RowReorderHandleProps`, `RowReorderButtons`, `RowReorderButtonsProps`,
 `RowReorderAnnouncer`, `rowReorderSignature`, `REORDER_COLUMN_WIDTH`,
-`ROW_DND_MIME`.
+`ROW_DND_MIME`. Row pin chrome: `rowPinSignature`, `rowSourceIndex`,
+`pinnedRowStickyStyle`, `pinnedRowCellStyle`, `orderedCardEntries`,
+`useOffsetHeight`, `PINNED_TOP_PART`, `PINNED_BOTTOM_PART`.
 
 **Bulk actions.** `useBulkBarState` / `BulkBarState` /
 `BulkBarChromeProps` derive everything a bulk-action toolbar renders

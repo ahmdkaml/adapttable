@@ -389,6 +389,56 @@ describe("useTableChrome", () => {
     }
   });
 
+  it("arms row pinning when onPinnedRowIdsChange is set, and warns under grouping", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const onPinnedRowIdsChange = vi.fn();
+      const { result } = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          onPinnedRowIdsChange,
+        });
+      });
+      expect(result.current.rowPinning).toBeDefined();
+      expect(result.current.hasRowActions).toBe(true);
+      expect(
+        result.current.rowActions?.some((a) => a.key.includes("pin"))
+      ).toBe(true);
+
+      warn.mockClear();
+      resetDevWarnings();
+      const grouped = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          groupBy: "name",
+          onPinnedRowIdsChange,
+        });
+      });
+      expect(grouped.result.current.rowPinning).toBeUndefined();
+      expect(warn.mock.calls[0]?.[0]).toContain("row pinning");
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
   it("controlled selection: change requests go to the handler, state stays put", () => {
     const onSelectionChange = vi.fn();
     const adapter = createMemoryAdapter("");

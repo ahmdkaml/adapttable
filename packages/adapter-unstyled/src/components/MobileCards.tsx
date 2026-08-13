@@ -10,8 +10,8 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  orderedCardEntries,
   resolveMobileLabel,
-  resolveVirtualRows,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -304,9 +304,17 @@ export function MobileCards<TRow>({
   measureElement,
   rowReorder,
   windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const entries = orderedCardEntries(
+    rows,
+    getRowId,
+    rowEntries,
+    pinnedTopRows,
+    pinnedBottomRows
+  );
   const expansionState = renderRowDetail ? expansion : undefined;
   const summary = useSummaryCells(summaryRow, rows);
 

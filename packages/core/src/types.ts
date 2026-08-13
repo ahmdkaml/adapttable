@@ -491,6 +491,12 @@ export interface TableLabels {
   rowMoved?: (from: number, to: number) => string;
   /** Live region: Escape cancelled a lift. */
   rowReorderCancelled?: string;
+  /** Pin this row above the scroll window. */
+  pinToTop?: string;
+  /** Pin this row below the scroll window. */
+  pinToBottom?: string;
+  /** Release a pinned row back into the scroll window. */
+  unpinRow?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

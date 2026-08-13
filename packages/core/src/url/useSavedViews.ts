@@ -12,6 +12,7 @@ import {
   PARAM_GROUP_BY,
   PARAM_LIMIT,
   PARAM_PAGE,
+  PARAM_ROW_PIN,
   PARAM_SEARCH,
   PARAM_SORT,
   PARAM_SORT_BY,
@@ -71,6 +72,7 @@ const BARE_PARAMS = [
   PARAM_COL_PINNED,
   PARAM_COL_ORDER,
   PARAM_COL_WIDTHS,
+  PARAM_ROW_PIN,
 ];
 
 /** Whether a param key belongs to the table at namespace `ns`. */

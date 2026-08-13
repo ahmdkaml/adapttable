@@ -18,6 +18,7 @@ import type {
 import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
+import type { RowPinState } from "./rows/rowPinning";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
 import type {
@@ -339,6 +340,22 @@ export interface BaseDataTableProps<TRow> {
    * a flat splice. Mobile cards get up/down buttons rather than a grip.
    */
   onRowReorder?: (from: number, to: number, row: TRow) => void;
+  /**
+   * Controlled row pins. `{ top, bottom }` lists of row ids that render
+   * outside the virtual window — sticky above and below the scroll box —
+   * so they are not drawn twice. Omit for the internal (uncontrolled)
+   * lists. Grouping or a tree refuses this with a `devWarn`.
+   *
+   * Mobile cards get the same pin actions but no sticky chrome: a card
+   * list is not a grid.
+   */
+  pinnedRowIds?: RowPinState;
+  /**
+   * Pin-list change channel. Uncontrolled: an observer. Controlled: apply
+   * the next lists to accept. Setting this (or {@link BaseDataTableProps.pinnedRowIds})
+   * is what arms the feature — omit both and nothing renders.
+   */
+  onPinnedRowIdsChange?: (next: RowPinState) => void;
   /**
    * Delete without a confirmation dialog. Off by default — a delete is
    * destructive and the table cannot undo it.

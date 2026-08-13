@@ -90,6 +90,9 @@ export const de: Required<TableLabels> = {
   rowMoved: (from, to) =>
     `Zeile von ${String(from)} nach ${String(to)} verschoben`,
   rowReorderCancelled: "Neuordnung abgebrochen",
+  pinToTop: "Oben anheften",
+  pinToBottom: "Unten anheften",
+  unpinRow: "Zeile lösen",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

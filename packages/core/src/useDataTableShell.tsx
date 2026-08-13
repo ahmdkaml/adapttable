@@ -15,6 +15,7 @@ import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
+import type { RowPinState } from "./rows/rowPinning";
 import type { TableSource } from "./source/TableSource";
 import {
   type DataModeProps,
@@ -22,6 +23,7 @@ import {
   useTableData,
 } from "./source/useTableData";
 import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
+import { useRowPinningUrlState } from "./url/useRowPinningUrlState";
 import {
   useChromeBodyData,
   useChromeScrollReset,
@@ -125,12 +127,14 @@ export function useDataTableShell<TRow>(
     isDeclarativeFilters(props.filters) || props.filters === undefined
       ? autoForm
       : props.filters;
+  const pinProps = useShellRowPins(props, urlAdapter);
   const chromeProps = {
     ...props,
     onCellEdit: recordingCellEdit,
     source,
     filters: filtersNode,
     filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+    ...pinProps,
   };
   const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
@@ -244,6 +248,8 @@ export function useDataTableShell<TRow>(
     loadMoreRef,
     canLoadMore,
     virtualScrollRef: bodyScrollRef,
+    pinnedTopRows,
+    pinnedBottomRows,
   } = useChromeBodyData(chrome, chromeProps);
   // One scroll box, two windows: the rows track its vertical scrolling and the
   // columns its horizontal, so the adapters attach a single ref.
@@ -303,6 +309,9 @@ export function useDataTableShell<TRow>(
     actionsPinned,
     rowReorder,
     reorderPinned,
+    pinnedTopRows,
+    pinnedBottomRows,
+    rowPinning: chrome.rowPinning,
     windowStart,
     confirm,
     getRowId,
@@ -386,5 +395,42 @@ export function useDataTableShell<TRow>(
     hasRowReorder,
     tableProps,
     toolbarProps,
+  };
+}
+
+/**
+ * Uncontrolled pins write the URL; a host that passes `pinnedRowIds` owns
+ * the lists and the URL hook stays a no-op.
+ */
+function useShellRowPins<TRow>(
+  props: Pick<
+    DataTableShellProps<TRow>,
+    "pinnedRowIds" | "onPinnedRowIdsChange" | "urlSync" | "urlKey"
+  >,
+  urlAdapter: UrlStateAdapter
+): {
+  pinnedRowIds: RowPinState | undefined;
+  onPinnedRowIdsChange: ((next: RowPinState) => void) | undefined;
+} {
+  const requested =
+    props.pinnedRowIds !== undefined ||
+    props.onPinnedRowIdsChange !== undefined;
+  const pinUrl = useRowPinningUrlState({
+    urlAdapter,
+    urlSync:
+      props.urlSync !== false && requested && props.pinnedRowIds === undefined,
+    urlKey: props.urlKey,
+  });
+  if (!requested) {
+    return { pinnedRowIds: undefined, onPinnedRowIdsChange: undefined };
+  }
+  return {
+    pinnedRowIds: props.pinnedRowIds ?? pinUrl.pinnedRowIds,
+    onPinnedRowIdsChange: (next: RowPinState) => {
+      if (props.pinnedRowIds === undefined) {
+        pinUrl.onPinnedRowIdsChange(next);
+      }
+      props.onPinnedRowIdsChange?.(next);
+    },
   };
 }

@@ -12,12 +12,28 @@ import { type RowPairMeasurer, useRowPairMeasurer } from "./measureRowPair";
 export interface VirtualTableRow<TRow> {
   /** Row data for this visual slot. */
   row: TRow;
-  /** Original index in the source row array. */
+  /**
+   * Index in the array the virtualizer windows. When pinning is on that is
+   * the unpinned scroll list, not the page — use {@link rowSourceIndex}
+   * for ARIA, focus and `rowClassName`.
+   */
   index: number;
+  /**
+   * Index in the page's full row list. Equals {@link VirtualTableRow.index}
+   * unless pinned rows were pulled out of the window.
+   */
+  sourceIndex?: number;
   /** Stable key resolved from the caller's rowKey. */
   key: string;
   /** Virtualizer item metadata; absent when virtualization is disabled. */
   virtualItem?: VirtualItem;
+}
+
+/** Dataset index for ARIA / focus — the window index when pinning is off. */
+export function rowSourceIndex(
+  entry: Pick<VirtualTableRow<unknown>, "index" | "sourceIndex">
+): number {
+  return entry.sourceIndex ?? entry.index;
 }
 
 /** Result consumed by adapters that opt into virtualized rendering. */
