@@ -208,4 +208,36 @@ describe("useBatchEditing", () => {
     });
     expect(result.current.signature).not.toBe(before);
   });
+
+  it("observes a row becoming pending, a save, and a cancel", () => {
+    const onEditStart = vi.fn();
+    const onEditCommit = vi.fn();
+    const onEditCancel = vi.fn();
+    const onBatchEdit = vi.fn();
+    const { result } = renderHook(() =>
+      useBatchEditing<Task>({
+        enabled: true,
+        columns: COLUMNS,
+        onBatchEdit,
+        onEditStart,
+        onEditCommit,
+        onEditCancel,
+      })
+    );
+    act(() => {
+      result.current.setDraft(ROWS[0]!, "1", "title", "Ship it");
+    });
+    expect(onEditStart).toHaveBeenCalledOnce();
+    act(() => {
+      result.current.saveAll();
+    });
+    expect(onBatchEdit).toHaveBeenCalledOnce();
+    expect(onEditCommit).toHaveBeenCalledOnce();
+
+    act(() => {
+      result.current.setDraft(ROWS[0]!, "1", "title", "again");
+      result.current.cancelAll();
+    });
+    expect(onEditCancel).toHaveBeenCalledOnce();
+  });
 });

@@ -24,24 +24,24 @@ const target = { rowId: "1", columnKey: "title" };
 describe("useEditValidation", () => {
   it("allows a commit when nothing validates it", async () => {
     const { result } = renderHook(() => useEditValidation<Task>());
-    let allowed: boolean | undefined;
+    let verdict: { allowed: boolean; error?: string } | undefined;
     await act(async () => {
-      allowed = await result.current.check({
+      verdict = await result.current.check({
         target,
         value: "Ship",
         row: TASK,
       });
     });
-    expect(allowed).toBe(true);
+    expect(verdict?.allowed).toBe(true);
     expect(result.current.errorFor("1", "title")).toBeUndefined();
     expect(result.current.hasRowValidator).toBe(false);
   });
 
   it("stops a commit a cell validator rejects, and says why", async () => {
     const { result } = renderHook(() => useEditValidation<Task>());
-    let allowed: boolean | undefined;
+    let verdict: { allowed: boolean; error?: string } | undefined;
     await act(async () => {
-      allowed = await result.current.check({
+      verdict = await result.current.check({
         target,
         value: "",
         row: TASK,
@@ -49,7 +49,8 @@ describe("useEditValidation", () => {
           String(value) === "" ? "A title is required" : undefined,
       });
     });
-    expect(allowed).toBe(false);
+    expect(verdict?.allowed).toBe(false);
+    expect(verdict?.error).toBe("A title is required");
     expect(result.current.errorFor("1", "title")).toBe("A title is required");
     expect(result.current.rowHasError("1")).toBe(true);
   });
@@ -80,7 +81,7 @@ describe("useEditValidation", () => {
   it("marks the cell busy while an async check runs", async () => {
     let settle: ((message?: string) => void) | undefined;
     const { result } = renderHook(() => useEditValidation<Task>());
-    let pending: Promise<boolean> | undefined;
+    let pending: Promise<{ allowed: boolean; error?: string }> | undefined;
     act(() => {
       pending = result.current.check({
         target,
@@ -112,8 +113,8 @@ describe("useEditValidation", () => {
         settles.push(resolve);
       });
 
-    let first: Promise<boolean> | undefined;
-    let second: Promise<boolean> | undefined;
+    let first: Promise<{ allowed: boolean; error?: string }> | undefined;
+    let second: Promise<{ allowed: boolean; error?: string }> | undefined;
     act(() => {
       first = result.current.check({
         target,
@@ -134,8 +135,8 @@ describe("useEditValidation", () => {
       await Promise.all([first, second]);
     });
     // The stale rejection is discarded; the newer pass stands.
-    expect(await second).toBe(true);
-    expect(await first).toBe(false);
+    expect(await second).toEqual({ allowed: true });
+    expect(await first).toEqual({ allowed: false });
     expect(result.current.errorFor("1", "title")).toBeUndefined();
   });
 
@@ -146,16 +147,17 @@ describe("useEditValidation", () => {
     const { result } = renderHook(() =>
       useEditValidation<Task>({ validateRow })
     );
-    let allowed: boolean | undefined;
+    let verdict: { allowed: boolean; error?: string } | undefined;
     await act(async () => {
-      allowed = await result.current.check({
+      verdict = await result.current.check({
         target: { rowId: "1", columnKey: "end" },
         value: 1,
         row: TASK,
       });
     });
     expect(validateRow).toHaveBeenCalledWith({ ...TASK, end: 1 });
-    expect(allowed).toBe(false);
+    expect(verdict?.allowed).toBe(false);
+    expect(verdict?.error).toBe("The end must come after the start");
     expect(result.current.rowErrorFor("1")).toBe(
       "The end must come after the start"
     );
@@ -185,15 +187,15 @@ describe("useEditValidation", () => {
     const { result } = renderHook(() =>
       useEditValidation<Task>({ validateRow: () => ({}) })
     );
-    let allowed: boolean | undefined;
+    let verdict: { allowed: boolean; error?: string } | undefined;
     await act(async () => {
-      allowed = await result.current.check({
+      verdict = await result.current.check({
         target,
         value: "Ship",
         row: TASK,
       });
     });
-    expect(allowed).toBe(true);
+    expect(verdict?.allowed).toBe(true);
   });
 
   it("reads a nested field through the host's own applyEdit", async () => {
@@ -208,9 +210,9 @@ describe("useEditValidation", () => {
     const { result } = renderHook(() =>
       useEditValidation<Task>({ validateRow, applyEdit })
     );
-    let allowed: boolean | undefined;
+    let verdict: { allowed: boolean; error?: string } | undefined;
     await act(async () => {
-      allowed = await result.current.check({
+      verdict = await result.current.check({
         target,
         value: "Ship",
         row: TASK,
@@ -218,7 +220,7 @@ describe("useEditValidation", () => {
     });
     expect(applyEdit).toHaveBeenCalledWith(TASK, "title", "Ship");
     expect(validateRow).toHaveBeenCalledWith({ ...TASK, title: "SHIP" });
-    expect(allowed).toBe(true);
+    expect(verdict?.allowed).toBe(true);
   });
 
   it("forgets one cell, and forgets everything", async () => {

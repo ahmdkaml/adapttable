@@ -10,10 +10,13 @@ import {
   isMultiSelectEditor,
   isSelectEditor,
   normalizeEditorOptions,
+  readEditableCellValue,
   resolveCellEditor,
   resolveCommitValue,
 } from "./cellEditing";
 import type { DirtyCellState } from "./dirtyCells";
+import type { EditLifecycle } from "./editingEvents";
+import { observeEdit } from "./editingEvents";
 import type { RowEditingState } from "./rowEditing";
 import type {
   CellSaveState,
@@ -61,6 +64,8 @@ export interface EditableCellEditing<TRow> {
    * and nothing reaches the host until the reader saves them all.
    */
   batch?: BatchEditingState<TRow>;
+  /** Lifecycle observers — fire from the same place the transition happens. */
+  lifecycle?: EditLifecycle<TRow>;
 }
 
 /** Display / edit mode for one cell. */
@@ -182,6 +187,14 @@ export function editableCellController<TRow>(options: {
       resolved.value
     );
     const columnKey = resolved.column.key;
+    observeEdit(editing.lifecycle?.onEditCommit, {
+      row: resolved.row,
+      rowId,
+      columnKey,
+      value: resolved.value,
+      previousValue: readEditableCellValue(resolved.row, resolved.column),
+      unit: "cell",
+    });
     // Changed, and not settled by anything the reader trusts yet.
     dirty?.mark(rowId, columnKey);
     if (!saving) return;
@@ -191,6 +204,7 @@ export function editableCellController<TRow>(options: {
         columnKey,
         previous: resolved.row,
         attempted: resolved.value,
+        previousValue: readEditableCellValue(resolved.row, resolved.column),
         result,
       })
       .then((saved) => {
@@ -228,16 +242,31 @@ export function editableCellController<TRow>(options: {
     // leave nothing on screen to mark busy.
     beginEdit(state, resolved.row, resolved.column, rowKey);
     state.setDraft(commit.draft);
-    const allowed = await validation.check({
+    const verdict = await validation.check({
       target: { rowId: commit.rowId, columnKey: commit.columnKey },
       value: resolved.value,
       row: resolved.row,
       validateCell,
     });
     // A rejection leaves the editor exactly where it is, message attached.
-    if (!allowed) return false;
+    // A superseded check (`allowed: false` with no `error`) is silence: a
+    // newer draft owns the cell and this one must not speak for it.
+    if (!verdict.allowed) {
+      if (verdict.error !== undefined) {
+        observeEdit(editing.lifecycle?.onValidationFail, {
+          row: resolved.row,
+          rowId: commit.rowId,
+          columnKey: commit.columnKey,
+          value: resolved.value,
+          previousValue: readEditableCellValue(resolved.row, resolved.column),
+          unit: "cell",
+          error: verdict.error,
+        });
+      }
+      return false;
+    }
     // Allowed: close the editor, then hand the value over.
-    state.cancel();
+    state.close();
     sendToHost(resolved);
     return true;
   };

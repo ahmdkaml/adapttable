@@ -61,7 +61,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device
 - [React table row selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/): checkboxes, bulk bar, select-all-matching
 - [React table expandable rows & detail panels](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion
-- [React table inline cell editing — opt-in onCellEdit](https://orwa-mahmoud.github.io/adapttable/cell-editing/): text/number/select/date/checkbox editors, validation, row and batch modes, add/duplicate/delete rows, keyboard commit/cancel, kit-native inputs
+- [React table inline cell editing — opt-in onCellEdit](https://orwa-mahmoud.github.io/adapttable/cell-editing/): text/number/select/date/checkbox editors, validation, row and batch modes, add/duplicate/delete rows, lifecycle events, keyboard commit/cancel, kit-native inputs
 - [React table keyboard navigation — arrow keys & ARIA grid](https://orwa-mahmoud.github.io/adapttable/cell-navigation/): one tab stop, absolute aria-rowindex under virtualization, screen-reader announcements
 - [React table row grouping — single-level groupBy & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/): per-group subtotals sharing the summaryRow mapper, expand/collapse, frontend tier only
 - [React table tree data — hierarchical rows with expand/collapse](https://orwa-mahmoud.github.io/adapttable/tree-data/): getChildren or getParentId, per-level indent, mobile cards keep the hierarchy

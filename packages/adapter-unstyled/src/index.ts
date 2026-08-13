@@ -104,6 +104,10 @@ export {
   type ColumnLayoutState,
   type CustomCellEditorCtrl,
   type CustomCellEditorRender,
+  type EditEvent,
+  type EditEventHandler,
+  type EditLifecycle,
+  type EditUnit,
   type ExportCsvOptions,
 } from "@adapttable/core";
 export { type DataModeProps } from "@adapttable/core/adapter";

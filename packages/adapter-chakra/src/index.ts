@@ -87,6 +87,10 @@ export {
   type ColumnLayoutState,
   type CustomCellEditorCtrl,
   type CustomCellEditorRender,
+  type EditEvent,
+  type EditEventHandler,
+  type EditLifecycle,
+  type EditUnit,
   type ExportCsvOptions,
   type UseTableDataOptions,
 } from "@adapttable/core";

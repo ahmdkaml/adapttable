@@ -21,6 +21,8 @@ import {
   readEditableCellValue,
   resolveCellEditor,
 } from "./cellEditing";
+import type { EditEventHandler } from "./editingEvents";
+import { observeEdit } from "./editingEvents";
 
 /** One row's pending changes. */
 export interface BatchRowEdit<TRow> {
@@ -75,6 +77,12 @@ export interface UseBatchEditingOptions<TRow> {
    * whole point of the mode is that this is called once.
    */
   onBatchEdit?: (edits: readonly BatchRowEdit<TRow>[]) => unknown;
+  /** A row became pending. */
+  onEditStart?: EditEventHandler<TRow>;
+  /** Pending changes were thrown away. */
+  onEditCancel?: EditEventHandler<TRow>;
+  /** The host received the batch. */
+  onEditCommit?: EditEventHandler<TRow>;
 }
 
 /** The drafts of one row, by column key. */
@@ -119,10 +127,21 @@ export function useBatchEditing<TRow>(
       // no changes is not pending — otherwise "3 unsaved rows" counts rows the
       // reader has already put back.
       if (value === stored) delete drafts[columnKey];
+      const wasPending = current !== undefined;
       const next = { ...pendingRef.current };
       if (Object.keys(drafts).length === 0) delete next[rowId];
       else next[rowId] = { row: current?.row ?? row, drafts };
       write(next);
+      if (!wasPending && next[rowId]) {
+        observeEdit(options.onEditStart, {
+          row,
+          rowId,
+          columnKey,
+          value,
+          previousValue: stored,
+          unit: "batch",
+        });
+      }
     }
   );
 
@@ -141,16 +160,47 @@ export function useBatchEditing<TRow>(
       }
       edits.push({ row, rowId, patch });
     }
-    if (edits.length > 0) options.onBatchEdit?.(edits);
+    if (edits.length > 0) {
+      options.onBatchEdit?.(edits);
+      for (const edit of edits) {
+        observeEdit(options.onEditCommit, {
+          row: edit.row,
+          rowId: edit.rowId,
+          columnKey: "",
+          value: edit.patch,
+          previousValue: edit.row,
+          unit: "batch",
+        });
+      }
+    }
     write({});
   });
 
   const cancelAll = useEventCallback(() => {
+    for (const [rowId, entry] of Object.entries(pendingRef.current)) {
+      observeEdit(options.onEditCancel, {
+        row: entry.row as TRow,
+        rowId,
+        columnKey: "",
+        value: entry.drafts,
+        previousValue: entry.row,
+        unit: "batch",
+      });
+    }
     write({});
   });
 
   const cancelRow = useEventCallback((rowId: string) => {
-    if (!(rowId in pendingRef.current)) return;
+    const entry = pendingRef.current[rowId];
+    if (!entry) return;
+    observeEdit(options.onEditCancel, {
+      row: entry.row as TRow,
+      rowId,
+      columnKey: "",
+      value: entry.drafts,
+      previousValue: entry.row,
+      unit: "batch",
+    });
     const next = { ...pendingRef.current };
     delete next[rowId];
     write(next);

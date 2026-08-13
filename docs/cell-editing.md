@@ -87,6 +87,32 @@ export function People() {
 | `validateRow` | `(row) => string \| Record<string,string> \| undefined` | —        | Table rule over the row the edit would produce (cross-field).              |
 | `applyEdit`   | `(row, columnKey, value) => TRow`                       | spread   | How an edit lands on a row for `validateRow` to judge.                     |
 
+### Lifecycle events
+
+`onEditStart`, `onEditCancel`, `onEditCommit`, `onValidationFail` and
+`onEditError` observe what the editor does. They cannot change it: a throw is
+swallowed, a return value is ignored. The same events fire for a cell, a row
+and a batch, and on a mobile card — the commit unit does not change with the
+layout.
+
+```tsx
+<DataTable
+  {...props}
+  onCellEdit={save}
+  onEditStart={(e) => analytics.track("edit_start", e.columnKey)}
+  onEditCommit={(e) => analytics.track("edit_commit", e.value)}
+  onEditCancel={(e) => analytics.track("edit_cancel", e.columnKey)}
+  onValidationFail={(e) => toast.error(e.error)}
+  onEditError={(e) => toast.error(e.error)}
+/>
+```
+
+The payload is `EditEvent<TRow>`: `row`, `rowId`, `columnKey` (empty for a row
+or batch), `value`, `previousValue`, `unit` (`"cell"` / `"row"` / `"batch"`)
+and optional `error`. For `onEditError`, `value` is the attempted save and
+`previousValue` is the cell's previous value. Omit every handler and nothing
+is called.
+
 ### The editor set
 
 | `editor`                            | Control           | Commits                         |

@@ -492,6 +492,12 @@ export {
   useTableEditHistory,
 } from "./editing/editHistory";
 export {
+  type EditEvent,
+  type EditEventHandler,
+  type EditLifecycle,
+  type EditUnit,
+} from "./editing/editingEvents";
+export {
   type RowEditDrafts,
   type RowEditingState,
   useRowEditing,
@@ -510,6 +516,7 @@ export {
   type CellEditKeyOutcome,
   type CellEditNavigation,
   useCellEditing,
+  type UseCellEditingOptions,
 } from "./editing/useCellEditing";
 
 /* ── Row grouping ──────────────────────────────────────────────────── */

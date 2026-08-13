@@ -268,4 +268,40 @@ describe("useRowEditing", () => {
     expect(onRowEdit).not.toHaveBeenCalled();
     expect(result.current.activeRowId).toBeNull();
   });
+
+  it("observes start, commit and cancel without letting a throw rewind them", () => {
+    const onEditStart = vi.fn();
+    const onEditCommit = vi.fn(() => {
+      throw new Error("analytics down");
+    });
+    const onEditCancel = vi.fn();
+    const onRowEdit = vi.fn();
+    const { result } = renderHook(() =>
+      useRowEditing<Task>({
+        enabled: true,
+        columns: COLUMNS,
+        onRowEdit,
+        onEditStart,
+        onEditCommit,
+        onEditCancel,
+      })
+    );
+    act(() => {
+      result.current.begin(TASK, "1");
+    });
+    expect(onEditStart).toHaveBeenCalledOnce();
+    act(() => {
+      result.current.setDraft("title", "Ship it");
+      result.current.save();
+    });
+    expect(onRowEdit).toHaveBeenCalledOnce();
+    expect(onEditCommit).toHaveBeenCalledOnce();
+    expect(result.current.activeRowId).toBeNull();
+
+    act(() => {
+      result.current.begin(TASK, "1");
+      result.current.cancel();
+    });
+    expect(onEditCancel).toHaveBeenCalledOnce();
+  });
 });

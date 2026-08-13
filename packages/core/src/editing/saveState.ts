@@ -16,6 +16,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { useEventCallback } from "../hooks/useEventCallback";
+import type { EditEventHandler } from "./editingEvents";
+import { observeEdit } from "./editingEvents";
 
 /** What a cell's last save is doing. */
 export type CellSaveStatus = "saving" | "failed";
@@ -40,6 +42,8 @@ export interface UseCellSaveStateOptions<TRow> {
   onRollback?: (previous: TRow, columnKey: string) => void;
   /** Turn a rejection into the sentence the cell shows. */
   formatError?: (error: unknown) => string;
+  /** Observe a rejected save — never owns the outcome. */
+  onEditError?: EditEventHandler<TRow>;
 }
 
 /** Per-cell save state for the whole table. */
@@ -66,6 +70,11 @@ export interface CellSaveState<TRow> {
     previous: TRow;
     /** The value being saved. */
     attempted: unknown;
+    /**
+     * The cell's previous value, when the caller has it. The error event
+     * reports this as `previousValue`; without it the event uses the row.
+     */
+    previousValue?: unknown;
     /** Whatever `onCellEdit` returned. */
     result: unknown;
   }) => Promise<boolean>;
@@ -147,9 +156,11 @@ export function useCellSaveState<TRow>(
       columnKey: string;
       previous: TRow;
       attempted: unknown;
+      previousValue?: unknown;
       result: unknown;
     }): Promise<boolean> => {
-      const { rowId, columnKey, previous, attempted, result } = input;
+      const { rowId, columnKey, previous, attempted, previousValue, result } =
+        input;
       // A host that saves synchronously has nothing to wait for, and paying a
       // render for a state that lasts no time would be worse than useless.
       if (!isThenable(result)) return true;
@@ -168,10 +179,20 @@ export function useCellSaveState<TRow>(
       } catch (error) {
         // A superseded save says nothing either way: a newer one owns the cell.
         if (!current()) return false;
+        const message = (options.formatError ?? defaultFormatError)(error);
         setFailure(key, {
           previous,
           attempted,
-          message: (options.formatError ?? defaultFormatError)(error),
+          message,
+        });
+        observeEdit(options.onEditError, {
+          row: previous,
+          rowId,
+          columnKey,
+          value: attempted,
+          previousValue: previousValue ?? previous,
+          unit: "cell",
+          error: message,
         });
         return false;
       } finally {

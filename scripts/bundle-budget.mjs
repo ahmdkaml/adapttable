@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 53,
+    budgetKB: 54,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -115,15 +115,17 @@ const FIXTURES = [
   // Row editing adds the second commit unit — the whole-row draft state, the
   // cell that renders a field instead of a value, and the three controls that
   // end the edit — and batch editing the third, holding many rows at once
-  // behind one write.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 78 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 77 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 77 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 74 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 77 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 83 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 80 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 78 },
+  // behind one write. Lifecycle events (~0.5 KB) observe those three units:
+  // start, cancel, commit, validation-fail and save-error, latched so a host
+  // inline arrow never repaints rows. The simple-table fixture did not move.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 79 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 78 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 78 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 75 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 78 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 84 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 81 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 79 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
+import type { EditEventHandler } from "./editing/editingEvents";
 import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
@@ -268,6 +269,31 @@ export interface BaseDataTableProps<TRow> {
    * once per save, which is what lets a host make the whole batch one request.
    */
   onBatchEdit?: (edits: readonly BatchRowEdit<TRow>[]) => unknown;
+  /**
+   * Observe an editor opening. Fires for cell, row and batch units. The
+   * handler cannot change the outcome — throwing is swallowed.
+   */
+  onEditStart?: EditEventHandler<TRow>;
+  /**
+   * Observe a cancel (Escape, Cancel, throwing a batch away). Not fired when
+   * a successful commit merely closes the editor.
+   */
+  onEditCancel?: EditEventHandler<TRow>;
+  /**
+   * Observe a value reaching the host. Fires after parse and validation, at
+   * the same moment as `onCellEdit` / `onRowEdit` / `onBatchEdit`.
+   */
+  onEditCommit?: EditEventHandler<TRow>;
+  /**
+   * Observe a validator refusing a value. The editor stays open with the
+   * message; this is how analytics hears about it.
+   */
+  onValidationFail?: EditEventHandler<TRow>;
+  /**
+   * Observe a save promise rejecting. The cell is already marked failed;
+   * this is the side-effect channel.
+   */
+  onEditError?: EditEventHandler<TRow>;
   /**
    * Add a row — an Add control appears in the toolbar as soon as this is set.
    * The host makes the row and stores it; it reaches the table through the

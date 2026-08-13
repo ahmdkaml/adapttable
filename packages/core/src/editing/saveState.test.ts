@@ -100,6 +100,45 @@ describe("useCellSaveState", () => {
     expect(failure?.attempted).toBe("Augusta");
   });
 
+  it("tells a lifecycle observer why the save rejected", async () => {
+    const onEditError = vi.fn();
+    const { result } = renderHook(() => useCellSaveState<Row>({ onEditError }));
+    await act(async () => {
+      await result.current.track({
+        rowId: "1",
+        columnKey: "name",
+        previous: ADA,
+        attempted: "Augusta",
+        previousValue: "Ada",
+        result: Promise.reject(new Error("Conflict")),
+      });
+    });
+    expect(onEditError).toHaveBeenCalledExactlyOnceWith({
+      row: ADA,
+      rowId: "1",
+      columnKey: "name",
+      value: "Augusta",
+      previousValue: "Ada",
+      unit: "cell",
+      error: "Conflict",
+    });
+  });
+
+  it("falls back to the previous row when the cell's old value is unknown", async () => {
+    const onEditError = vi.fn();
+    const { result } = renderHook(() => useCellSaveState<Row>({ onEditError }));
+    await act(async () => {
+      await result.current.track({
+        rowId: "1",
+        columnKey: "name",
+        previous: ADA,
+        attempted: "Augusta",
+        result: Promise.reject(new Error("Conflict")),
+      });
+    });
+    expect(onEditError.mock.calls[0]?.[0].previousValue).toBe(ADA);
+  });
+
   it("reads a rejection of any shape", async () => {
     const { result } = renderHook(() => useCellSaveState<Row>());
     // A rejection can be anything at all, which is the point: `reject` is not

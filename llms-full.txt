@@ -1819,6 +1819,32 @@ export function People() {
 | `validateRow` | `(row) => string \| Record<string,string> \| undefined` | —        | Table rule over the row the edit would produce (cross-field).              |
 | `applyEdit`   | `(row, columnKey, value) => TRow`                       | spread   | How an edit lands on a row for `validateRow` to judge.                     |
 
+### Lifecycle events
+
+`onEditStart`, `onEditCancel`, `onEditCommit`, `onValidationFail` and
+`onEditError` observe what the editor does. They cannot change it: a throw is
+swallowed, a return value is ignored. The same events fire for a cell, a row
+and a batch, and on a mobile card — the commit unit does not change with the
+layout.
+
+```tsx
+<DataTable
+  {...props}
+  onCellEdit={save}
+  onEditStart={(e) => analytics.track("edit_start", e.columnKey)}
+  onEditCommit={(e) => analytics.track("edit_commit", e.value)}
+  onEditCancel={(e) => analytics.track("edit_cancel", e.columnKey)}
+  onValidationFail={(e) => toast.error(e.error)}
+  onEditError={(e) => toast.error(e.error)}
+/>
+```
+
+The payload is `EditEvent<TRow>`: `row`, `rowId`, `columnKey` (empty for a row
+or batch), `value`, `previousValue`, `unit` (`"cell"` / `"row"` / `"batch"`)
+and optional `error`. For `onEditError`, `value` is the attempted save and
+`previousValue` is the cell's previous value. Omit every handler and nothing
+is called.
+
 ### The editor set
 
 | `editor`                            | Control           | Commits                         |
@@ -4963,6 +4989,11 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
 | `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                                                                                                                                                              |
 | `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                                                                                                                                                                    |
+| `onEditStart`               | `EditEventHandler<TRow>`                                        | —               | Observe an editor opening (cell, row or batch). Cannot change the outcome.                                                                                                                                                                                                                                                                                                       |
+| `onEditCancel`              | `EditEventHandler<TRow>`                                        | —               | Observe a cancel. Not fired when a successful commit merely closes the editor.                                                                                                                                                                                                                                                                                                   |
+| `onEditCommit`              | `EditEventHandler<TRow>`                                        | —               | Observe a value reaching the host, after parse and validation.                                                                                                                                                                                                                                                                                                                   |
+| `onValidationFail`          | `EditEventHandler<TRow>`                                        | —               | Observe a validator refusing a value; the editor stays open.                                                                                                                                                                                                                                                                                                                     |
+| `onEditError`               | `EditEventHandler<TRow>`                                        | —               | Observe a save promise rejecting.                                                                                                                                                                                                                                                                                                                                                |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
 | `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
 | `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
@@ -5203,6 +5234,16 @@ the `BatchRowEdit<TRow>[]` — `{ row, rowId, patch }` — the host receives in 
 single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
 cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
 all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
+
+**Lifecycle events.** `onEditStart`, `onEditCancel`, `onEditCommit`,
+`onValidationFail` and `onEditError` observe a commit; they never own it. The
+shared payload is `EditEvent<TRow>` (`row`, `rowId`, `columnKey`, `value`,
+`previousValue`, `unit` of `EditUnit` `"cell" \| "row" \| "batch"`, optional
+`error`). `EditEventHandler<TRow>` is the callback shape and `EditLifecycle<TRow>`
+the five together. `useCellEditing` accepts `UseCellEditingOptions` for start
+and cancel; a throw from any handler is swallowed so analytics cannot rewind a
+commit. The same events fire on a mobile card — the commit unit does not change
+with the layout.
 
 **Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
 toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on

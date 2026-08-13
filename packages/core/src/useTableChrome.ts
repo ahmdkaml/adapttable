@@ -12,6 +12,7 @@ import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import { useBatchEditing } from "./editing/batchEditing";
 import { useDirtyCells } from "./editing/dirtyCells";
 import type { EditableCellEditing } from "./editing/editableCellController";
+import { useEditLifecycle } from "./editing/editingEvents";
 import { useRowEditing } from "./editing/rowEditing";
 import { useCellSaveState } from "./editing/saveState";
 import { useCellEditing } from "./editing/useCellEditing";
@@ -532,7 +533,17 @@ export function useTableChrome<TRow>(
 
   // Same opt-in pattern as `detail`: the hook always runs (Rules of Hooks),
   // but `editing` is only exposed when the host passes `onCellEdit`.
-  const cellEditingState = useCellEditing();
+  const lifecycle = useEditLifecycle<TRow>({
+    onEditStart: props.onEditStart,
+    onEditCancel: props.onEditCancel,
+    onEditCommit: props.onEditCommit,
+    onValidationFail: props.onValidationFail,
+    onEditError: props.onEditError,
+  });
+  const cellEditingState = useCellEditing<TRow>({
+    onEditStart: lifecycle.onEditStart,
+    onEditCancel: lifecycle.onEditCancel,
+  });
   const onCellEdit = props.onCellEdit;
   // Validation gates the commit and nothing else; it runs whether or not any
   // validator exists, and stays inert until one rejects something.
@@ -545,6 +556,7 @@ export function useTableChrome<TRow>(
   const saving = useCellSaveState<TRow>({
     onRollback: props.onEditRollback,
     formatError: props.formatEditError,
+    onEditError: lifecycle.onEditError,
   });
   // A mark is a claim about what the server has agreed to, so it is the host's
   // to ask for: `dirtyIndicators` on, and `confirmEdits` to say when a value has
@@ -559,6 +571,9 @@ export function useTableChrome<TRow>(
     enabled: rowModeArmed,
     columns: resolvedColumns,
     onRowEdit: props.onRowEdit,
+    onEditStart: lifecycle.onEditStart,
+    onEditCancel: lifecycle.onEditCancel,
+    onEditCommit: lifecycle.onEditCommit,
   });
   // Either channel arms the bundle: a host that wants row-level commits only
   // never passes `onCellEdit`, and its cells stay display-only until a reader
@@ -570,6 +585,9 @@ export function useTableChrome<TRow>(
     enabled: batchArmed,
     columns: resolvedColumns,
     onBatchEdit: props.onBatchEdit,
+    onEditStart: lifecycle.onEditStart,
+    onEditCancel: lifecycle.onEditCancel,
+    onEditCommit: lifecycle.onEditCommit,
   });
   const editingArmed = onCellEdit !== undefined || rowModeArmed || batchArmed;
   const editing = useMemo(
@@ -585,6 +603,7 @@ export function useTableChrome<TRow>(
             // table with cell editing would grow an "Edit row" control.
             rowEditing: rowModeArmed ? rowEditing : undefined,
             batch: batchArmed ? batch : undefined,
+            lifecycle,
           }
         : undefined,
     [
@@ -598,6 +617,7 @@ export function useTableChrome<TRow>(
       rowEditing,
       batchArmed,
       batch,
+      lifecycle,
     ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column

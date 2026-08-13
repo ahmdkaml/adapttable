@@ -6,6 +6,7 @@ import {
   editableCellController,
   rowEditingSignature,
 } from "./editableCellController";
+import type { EditLifecycle } from "./editingEvents";
 import { useCellSaveState } from "./saveState";
 import { useCellEditing } from "./useCellEditing";
 import { useEditValidation } from "./validation";
@@ -297,6 +298,7 @@ describe("editableCellController — validation", () => {
       value: unknown
     ) => string | undefined | Promise<string | undefined>;
     validateRow?: (row: Person) => string | Record<string, string> | undefined;
+    lifecycle?: EditLifecycle<Person>;
   }) => {
     const onCellEdit = vi.fn();
     const columns: ColumnDef<Person>[] = [
@@ -315,6 +317,7 @@ describe("editableCellController — validation", () => {
           onCellEdit,
           state: result.current.state,
           validation: result.current.validation,
+          lifecycle: options?.lifecycle,
         },
         row: ROWS[0]!,
         column: columns[0]!,
@@ -346,6 +349,32 @@ describe("editableCellController — validation", () => {
     // The editor is still the reader's, holding what they typed.
     expect(result.current.state.isActive("1", "name")).toBe(true);
     expect(controller().error).toBe("A name is required");
+  });
+
+  it("tells a lifecycle observer the validator refused, without sending", async () => {
+    const onValidationFail = vi.fn();
+    const { onCellEdit, result, controller } = setup({
+      validate: (value) => (value === "" ? "A name is required" : undefined),
+      lifecycle: { onValidationFail },
+    });
+    act(() => controller().begin());
+    act(() => {
+      result.current.state.setDraft("");
+    });
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(onCellEdit).not.toHaveBeenCalled();
+    expect(onValidationFail).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        rowId: "1",
+        columnKey: "name",
+        value: "",
+        unit: "cell",
+        error: "A name is required",
+      })
+    );
   });
 
   it("lets a passing value through and closes the editor", async () => {

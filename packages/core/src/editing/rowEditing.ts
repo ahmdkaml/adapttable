@@ -19,6 +19,8 @@ import {
   readEditableCellValue,
   resolveCellEditor,
 } from "./cellEditing";
+import type { EditEventHandler } from "./editingEvents";
+import { observeEdit } from "./editingEvents";
 
 /** The drafts a row edit holds, by column key. */
 export type RowEditDrafts = Readonly<Record<string, string>>;
@@ -65,6 +67,12 @@ export interface UseRowEditingOptions<TRow> {
    * column. The table never writes to a row.
    */
   onRowEdit?: (row: TRow, patch: Readonly<Record<string, unknown>>) => unknown;
+  /** An editor opened on this row. */
+  onEditStart?: EditEventHandler<TRow>;
+  /** The reader threw the drafts away. */
+  onEditCancel?: EditEventHandler<TRow>;
+  /** The host received the patch. */
+  onEditCommit?: EditEventHandler<TRow>;
 }
 
 /** Every column a reader may edit on a given row. */
@@ -99,7 +107,11 @@ export function useRowEditing<TRow>(
   // The row and its seeds as they were when the edit opened: what "changed"
   // is measured against, and what the patch is built from. A ref because a
   // save reads them in the same tick a keystroke wrote a draft.
-  const opened = useRef<{ row: TRow; seeds: RowEditDrafts } | null>(null);
+  const opened = useRef<{
+    row: TRow;
+    rowId: string;
+    seeds: RowEditDrafts;
+  } | null>(null);
 
   const begin = useEventCallback((row: TRow, rowId: string) => {
     if (!enabled) return;
@@ -107,10 +119,18 @@ export function useRowEditing<TRow>(
     for (const column of editableColumns(options.columns, row)) {
       seeds[column.key] = readEditableCellValue(row, column);
     }
-    opened.current = { row, seeds };
+    opened.current = { row, rowId, seeds };
     draftsRef.current = seeds;
     setActiveRowId(rowId);
     setDrafts(seeds);
+    observeEdit(options.onEditStart, {
+      row,
+      rowId,
+      columnKey: "",
+      value: seeds,
+      previousValue: row,
+      unit: "row",
+    });
   });
 
   const setDraft = useEventCallback((columnKey: string, value: string) => {
@@ -119,7 +139,18 @@ export function useRowEditing<TRow>(
     setDrafts(draftsRef.current);
   });
 
-  const close = useEventCallback(() => {
+  const close = useEventCallback((kind: "cancel" | "silent" = "silent") => {
+    const open = opened.current;
+    if (kind === "cancel" && open) {
+      observeEdit(options.onEditCancel, {
+        row: open.row,
+        rowId: open.rowId,
+        columnKey: "",
+        value: draftsRef.current,
+        previousValue: open.seeds,
+        unit: "row",
+      });
+    }
     opened.current = null;
     draftsRef.current = {};
     setActiveRowId(null);
@@ -141,8 +172,16 @@ export function useRowEditing<TRow>(
     // Saving an untouched row is a write the host never asked for.
     if (Object.keys(patch).length > 0) {
       options.onRowEdit?.(open.row, patch);
+      observeEdit(options.onEditCommit, {
+        row: open.row,
+        rowId: open.rowId,
+        columnKey: "",
+        value: patch,
+        previousValue: open.row,
+        unit: "row",
+      });
     }
-    close();
+    close("silent");
   });
 
   const isDirty = useMemo(() => {
@@ -182,7 +221,9 @@ export function useRowEditing<TRow>(
       begin,
       setDraft,
       save,
-      cancel: close,
+      cancel: () => {
+        close("cancel");
+      },
       isDirty,
       signature,
     }),
