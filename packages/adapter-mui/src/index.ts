@@ -82,6 +82,8 @@ export {
   type CellEditor,
   type ChipLabelResolver,
   type ColumnLayoutState,
+  type CustomCellEditorCtrl,
+  type CustomCellEditorRender,
   type ExportCsvOptions,
   FILTER_TYPES,
   type UseServerDataOptions,

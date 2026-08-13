@@ -90,6 +90,8 @@ export {
   type CellEditor,
   type ChipLabelResolver,
   type ColumnLayoutState,
+  type CustomCellEditorCtrl,
+  type CustomCellEditorRender,
   type ExportCsvOptions,
   type UseTableDataOptions,
 } from "@adapttable/core";

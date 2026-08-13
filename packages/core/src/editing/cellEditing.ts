@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 import type { SortableValue } from "../types";
 import { getPath } from "../utils/path";
 
@@ -31,7 +33,66 @@ export type CellEditor =
       /** Several of a fixed set. Commits an array of the chosen values. */
       type: "multi-select";
       options: readonly CellEditorOption[] | readonly string[];
+    }
+  | {
+      /**
+       * Your own React editor. The table still owns activation, focus, the
+       * keyboard flow, validation and the commit — the component owns what the
+       * reader looks at and types into.
+       */
+      type: "custom";
+      render: CustomCellEditorRender;
     };
+
+/**
+ * A bring-your-own editor.
+ *
+ * Everything the table already does stays the table's: double-click / Enter /
+ * F2 activates, focus returns to the cell afterwards, Enter commits, Escape
+ * cancels, Tab moves on, validators gate the commit. What arrives here is the
+ * draft and the two calls that change it — so an autocomplete, a rich-text
+ * field or a colour picker becomes an editor without reimplementing any of that.
+ */
+export type CustomCellEditorRender = (
+  ctrl: CustomCellEditorCtrl
+) => ReactElement;
+
+/** What a custom editor is handed. */
+export interface CustomCellEditorCtrl {
+  /** The draft, as the table holds it. */
+  draft: string;
+  /** Replace the draft. Does not commit. */
+  setDraft: (value: string) => void;
+  /**
+   * Commit now, without waiting for Enter or a blur — what a picker calls when
+   * the reader chooses something, since a choice IS the gesture.
+   */
+  commit: () => void;
+  /** Abandon the draft, exactly as Escape does. */
+  cancel: () => void;
+  /**
+   * Wire to the editor's own `onKeyDown` to keep Enter / Escape / Tab working.
+   * An editor that swallows them (a combobox using Enter to choose) simply does
+   * not call this for the keys it owns.
+   */
+  onKeyDown: (event: {
+    key: string;
+    preventDefault: () => void;
+    shiftKey?: boolean;
+  }) => void;
+  /** Commit on click-away. Wire to `onBlur` unless the editor is a popover. */
+  onBlur: () => void;
+  /** Attach to the element that should take focus when the cell opens. */
+  focusRef: (node: { focus: () => void } | null) => void;
+  /** Accessible name for the control — the column's header, resolved. */
+  label: string;
+  /** A validator's message for this cell, if the last commit was rejected. */
+  error?: string;
+  /** Whether an async validator is still deciding. */
+  validating: boolean;
+  /** `id` of the message element, for `aria-describedby`. */
+  errorId: string;
+}
 
 /**
  * Minimal column surface the editing helpers need. {@link ColumnDef}
@@ -70,6 +131,15 @@ export interface CellEditCommit {
   columnKey: string;
   /** Raw draft string from the editor. */
   draft: string;
+}
+
+/** Whether this editor is the host's own component. */
+export function isCustomEditor(
+  editor: CellEditor | null
+): editor is { type: "custom"; render: CustomCellEditorRender } {
+  return (
+    editor !== null && typeof editor === "object" && editor.type === "custom"
+  );
 }
 
 /** Whether this editor is a checkbox. */

@@ -102,6 +102,8 @@ export {
   type CellEditor,
   type ChipLabelResolver,
   type ColumnLayoutState,
+  type CustomCellEditorCtrl,
+  type CustomCellEditorRender,
   type ExportCsvOptions,
 } from "@adapttable/core";
 export { type DataModeProps } from "@adapttable/core/adapter";

@@ -117,6 +117,46 @@ Enter would leave a ticked box that changed nothing.
 a host stores exactly what it gave — no separator to parse, no single-value
 special case. An empty selection commits `[]`, not `""`.
 
+### Bring your own editor
+
+An autocomplete, a rich-text field, a colour picker — anything that is not one
+of the eight. The table keeps everything it already owned; the component owns
+only what the reader looks at:
+
+```tsx
+{
+  key: "colour",
+  editable: true,
+  editor: {
+    type: "custom",
+    render: (ctrl) => (
+      <SwatchPicker
+        value={ctrl.draft}
+        onKeyDown={ctrl.onKeyDown}
+        firstSwatchRef={ctrl.focusRef}
+        onPick={(swatch) => {
+          ctrl.setDraft(swatch);
+          ctrl.commit();
+        }}
+      />
+    ),
+  },
+}
+```
+
+Double-click / Enter / F2 still activates the cell, focus still returns to it
+afterwards, Enter still commits, Escape still cancels, Tab still moves on, and
+validators still gate the commit — none of that is yours to write again. What
+arrives is `draft` and the calls that change it: `setDraft`, `commit` (for a
+picker, where choosing IS the gesture), `cancel`, `onKeyDown` (wire it to keep
+the keyboard flow; an editor that owns Enter simply does not call it for Enter),
+`onBlur`, and `focusRef` to point at what should take focus. `error`,
+`validating` and `errorId` are there so a component can mark itself invalid —
+the table renders the message either way.
+
+The draft is a string, as it is for every editor; `parseValue` is still how a
+column turns it into whatever gets stored.
+
 ### Display, draft, and committed value
 
 Three moments in a cell's life, and a formatted column needs a different value

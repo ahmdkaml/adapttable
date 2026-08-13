@@ -286,7 +286,11 @@ text, number and select it names `boolean`, `date`, `datetime`, `time` and
 (joined by `MULTI_SEPARATOR`) are the draft shapes those two hold, and
 `NativeBooleanEditor` / `NativeMultiSelectEditor` (`NativeEditorProps`) with
 `commitBooleanDraft` / `multiDraftFromSelect` from `@adapttable/core/adapter`
-are the platform controls the kits render for them.
+are the platform controls the kits render for them. A ninth kind,
+`{ type: "custom", render }`, is a host's own component:
+`CustomCellEditorRender` is the callback and `CustomCellEditorCtrl` what it
+receives (`draft`, `setDraft`, `commit`, `cancel`, `onKeyDown`, `onBlur`,
+`focusRef`, plus the validation trio), with `isCustomEditor` telling it apart.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
 

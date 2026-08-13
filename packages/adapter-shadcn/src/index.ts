@@ -20,6 +20,8 @@ export {
   type ChipLabelResolver,
   type ColumnFilter,
   type ColumnLayoutState,
+  type CustomCellEditorCtrl,
+  type CustomCellEditorRender,
   type ExportCsvOptions,
   FILTER_TYPES,
   type TableQuery,

@@ -47,6 +47,10 @@ export interface EditableCellController {
   draft: string;
   begin: () => void;
   setDraft: (value: string) => void;
+  /** Commit the draft now, without waiting for Enter or a blur. */
+  commit: () => void;
+  /** Abandon the draft, exactly as Escape does. */
+  cancel: () => void;
   /** Wire to the editor's keydown — Enter/Tab/Escape. */
   onEditorKeyDown: (event: {
     key: string;
@@ -81,6 +85,8 @@ export function editableCellController<TRow>(options: {
     draft: "",
     begin: () => undefined,
     setDraft: () => undefined,
+    commit: () => undefined,
+    cancel: () => undefined,
     onEditorKeyDown: () => undefined,
     commitOnBlur: () => undefined,
   };
@@ -180,6 +186,16 @@ export function editableCellController<TRow>(options: {
       beginEdit(state, row, column, rowKey);
     },
     setDraft: state.setDraft,
+    commit: () => {
+      if (!state.isActive(rowId, column.key)) return;
+      const pending = state.commit();
+      if (gated) void commitValidated(pending);
+      else commitNow(pending);
+    },
+    cancel: () => {
+      validation?.clear(rowId, column.key);
+      state.cancel();
+    },
     onEditorKeyDown: (event) => {
       const outcome = state.handleKeyDown(event, {
         rows,

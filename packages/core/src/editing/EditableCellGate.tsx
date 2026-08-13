@@ -6,7 +6,8 @@ import {
 } from "react";
 
 import type { ColumnDef } from "../types";
-import { booleanDraft, formatMultiDraft } from "./cellEditing";
+import { booleanDraft, formatMultiDraft, isCustomEditor } from "./cellEditing";
+import { focusEditorOnMount } from "./editableCellController";
 import {
   editableCellController,
   type EditableCellEditing,
@@ -173,21 +174,72 @@ export function EditableCellGate<TRow>(
 
   const errorId = `adapttable-edit-error-${props.rowId}-${props.column.key}`;
 
+  /** Hand the reader's keys to the table, and focus back to the cell after. */
+  const onEditorKeyDown = (event: {
+    key: string;
+    preventDefault: () => void;
+    shiftKey?: boolean;
+  }) => {
+    // Escape cancels, Enter commits — BOTH must hand keyboard focus
+    // back to the activate button, or it falls to <body>. (Tab moves
+    // to the next editable cell, which manages its own focus.)
+    if (event.key === "Escape" || event.key === "Enter") {
+      restoreFocusRef.current = true;
+    }
+    ctrl.onEditorKeyDown(event);
+  };
+
+  // A column that brought its own component renders it here rather than in each
+  // kit: activation, focus, the keyboard flow, validation and the commit are
+  // all the table's either way, so nine copies of this branch would differ only
+  // in which file they sat in.
+  if (ctrl.mode === "editing" && isCustomEditor(ctrl.editor)) {
+    const custom = ctrl.editor.render({
+      draft: ctrl.draft,
+      setDraft: ctrl.setDraft,
+      commit: () => {
+        restoreFocusRef.current = true;
+        ctrl.commit();
+      },
+      cancel: () => {
+        restoreFocusRef.current = true;
+        ctrl.cancel();
+      },
+      onKeyDown: onEditorKeyDown,
+      onBlur: ctrl.commitOnBlur,
+      focusRef: focusEditorOnMount,
+      label: props.editLabel,
+      error: ctrl.error,
+      validating: ctrl.validating,
+      errorId,
+    });
+    return (
+      <>
+        {custom}
+        {/* A kit that renders its own message does so through its own input,
+            and a custom editor has none — so the message is always the gate's
+            here, whatever the kit does for the built-in editors. */}
+        {ctrl.error !== undefined && (
+          <span
+            id={errorId}
+            role="alert"
+            data-adapttable-part="edit-cell-error"
+            className={props.errorClassName}
+          >
+            {ctrl.error}
+          </span>
+        )}
+      </>
+    );
+  }
+
   if (ctrl.mode === "editing" && ctrl.editor) {
     return (
       <>
         {props.renderEditor({
           draft: ctrl.draft,
           setDraft: ctrl.setDraft,
-          onEditorKeyDown: (event) => {
-            // Escape cancels, Enter commits — BOTH must hand keyboard focus
-            // back to the activate button, or it falls to <body>. (Tab moves
-            // to the next editable cell, which manages its own focus.)
-            if (event.key === "Escape" || event.key === "Enter") {
-              restoreFocusRef.current = true;
-            }
-            ctrl.onEditorKeyDown(event);
-          },
+          onEditorKeyDown,
           commitOnBlur: ctrl.commitOnBlur,
           editor: ctrl.editor,
           selectOptions: ctrl.selectOptions,
