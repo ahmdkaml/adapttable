@@ -289,6 +289,10 @@ export function EditableCellGate<TRow>(
         // that looks settled while a request is out is a lie the reader only
         // finds out about when it fails.
         data-save={ctrl.saveStatus}
+        // Changed, and not yet settled by anything the reader trusts. A table
+        // that looks identical before and after a save leaves them no way to
+        // tell what is still at risk.
+        data-dirty={ctrl.isDirty ? "" : undefined}
         aria-busy={ctrl.saveStatus === "saving" ? true : undefined}
         data-adapttable-part="edit-cell-activate"
         onDoubleClick={(event) => {

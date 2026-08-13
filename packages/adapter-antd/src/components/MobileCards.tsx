@@ -18,6 +18,7 @@ import {
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   TreeToggle,
   useSummaryCells,
   type VirtualTableRow,
@@ -220,6 +221,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
       className={className}
       data-stagger=""
       data-selected={selected ? "" : undefined}
+      data-dirty={rowIsDirty(editing, id) ? "" : undefined}
       {...rowClickProps(row, onRowClick, rowIndex)}
       onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       title={

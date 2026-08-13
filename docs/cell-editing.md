@@ -276,6 +276,31 @@ Headless: `useCellSaveState` (`CellSaveState`, `CellSaveStatus`,
 `FailedCellSave`, `UseCellSaveStateOptions`); the controller carries
 `saveStatus`, `saveFailure`, `canRollback`, `rollback` and `dismissFailure`.
 
+## Dirty marks
+
+A table that looks identical before and after a save leaves the reader no way to
+tell what is still at risk. Pass `dirtyIndicators` and a changed cell carries
+`data-dirty` until its value settles — and so does its row, so a long table can
+be scanned without hunting for the cell inside it.
+
+```tsx
+<DataTable {...props} dirtyIndicators onCellEdit={save} />
+```
+
+A mark clears when the save **resolves**, and stays when it fails: the value is
+still at risk until the reader undoes it or tries again. A rollback clears it too,
+since the value it belonged to is gone. Nothing clears on a timer — a mark that
+fades on its own says the change is safe when nobody checked.
+
+Off by default, because a mark is a claim about what the server has agreed to and
+a table whose host never says would be guessing. For a table that confirms its
+own state another way — a refetch that agrees, a websocket echoing the value back
+— `table.editing?.dirty` exposes `confirm`, `confirmRow` and `confirmAll`, plus a
+`count` for an "unsaved changes" line.
+
+Headless: `useDirtyCells` (`DirtyCellState`, `UseDirtyCellsOptions`) and
+`rowIsDirty(editing, rowId)` from `@adapttable/core/adapter`.
+
 ## Headless editing
 
 The editing engine is exported for custom adapters and fully custom tables.

@@ -8,6 +8,7 @@ import {
   type UseColumnLayoutResult,
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
+import { useDirtyCells } from "./editing/dirtyCells";
 import { useCellSaveState } from "./editing/saveState";
 import {
   type CellEditingState,
@@ -515,12 +516,16 @@ export function useTableChrome<TRow>(
     onRollback: props.onEditRollback,
     formatError: props.formatEditError,
   });
+  // A mark is a claim about what the server has agreed to, so it is the host's
+  // to ask for: `dirtyIndicators` on, and `confirmEdits` to say when a value has
+  // settled (a refetch agreed, a websocket echoed it back).
+  const dirty = useDirtyCells({ enabled: props.dirtyIndicators === true });
   const editing = useMemo(
     () =>
       onCellEdit
-        ? { onCellEdit, state: cellEditingState, validation, saving }
+        ? { onCellEdit, state: cellEditingState, validation, saving, dirty }
         : undefined,
-    [onCellEdit, cellEditingState, validation, saving]
+    [onCellEdit, cellEditingState, validation, saving, dirty]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
   // does NOTHING without the table-level change channel. Say so in dev.

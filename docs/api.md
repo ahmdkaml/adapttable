@@ -301,6 +301,12 @@ the previous row, the attempted value and the message — for one that rejected.
 `onEditRollback` puts the row back and `formatEditError` words the failure;
 `labels.undoEdit` names the control the failed cell offers.
 
+**Dirty marks.** `dirtyIndicators` turns them on;
+`useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds
+which cells hold an unconfirmed change, with `isDirty` / `isRowDirty`, a `count`,
+and `confirm` / `confirmRow` / `confirmAll` for a host that settles its own state.
+`rowIsDirty(editing, rowId)` from `@adapttable/core/adapter` is what a row reads.
+
 **Validation gates the commit.** A column's `validate` (`CellValidator`) judges
 one value; the table's `validateRow` (`RowValidator`) judges the row an edit
 would produce, with `applyEdit` saying how the edit lands on it.

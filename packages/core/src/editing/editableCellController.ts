@@ -12,6 +12,7 @@ import {
   resolveCellEditor,
   resolveCommitValue,
 } from "./cellEditing";
+import type { DirtyCellState } from "./dirtyCells";
 import type {
   CellSaveState,
   CellSaveStatus,
@@ -42,6 +43,8 @@ export interface EditableCellEditing<TRow> {
    * host that saves synchronously.
    */
   saving?: CellSaveState<TRow>;
+  /** Dirty marks, when the host asked for them (`dirtyIndicators`). */
+  dirty?: DirtyCellState;
 }
 
 /** Display / edit mode for one cell. */
@@ -58,6 +61,8 @@ export interface EditableCellController<TRow = unknown> {
   saveStatus?: CellSaveStatus;
   /** Why this cell's last save failed, and what it takes to undo it. */
   saveFailure?: FailedCellSave<TRow>;
+  /** Whether this cell holds a change nobody has confirmed yet. */
+  isDirty: boolean;
   /** Whether an undo can be offered — the host said how to perform one. */
   canRollback: boolean;
   /** Put the previous value back after a failed save. */
@@ -104,6 +109,7 @@ export function editableCellController<TRow>(options: {
   const idle: EditableCellController<TRow> = {
     mode: "display",
     validating: false,
+    isDirty: false,
     canRollback: false,
     rollback: () => undefined,
     dismissFailure: () => undefined,
@@ -129,7 +135,7 @@ export function editableCellController<TRow>(options: {
       ? normalizeEditorOptions(editor.options)
       : [];
 
-  const { state, onCellEdit, validation, saving } = editing;
+  const { state, onCellEdit, validation, saving, dirty } = editing;
   const isEditing = state.isActive(rowId, column.key);
 
   const validateCell = asCellValidator<TRow>(column);
@@ -155,13 +161,24 @@ export function editableCellController<TRow>(options: {
       resolved.column.key,
       resolved.value
     );
-    void saving?.track({
-      rowId,
-      columnKey: resolved.column.key,
-      previous: resolved.row,
-      attempted: resolved.value,
-      result,
-    });
+    const columnKey = resolved.column.key;
+    // Changed, and not settled by anything the reader trusts yet.
+    dirty?.mark(rowId, columnKey);
+    if (!saving) return;
+    void saving
+      .track({
+        rowId,
+        columnKey,
+        previous: resolved.row,
+        attempted: resolved.value,
+        result,
+      })
+      .then((saved) => {
+        // The host agreeing is what settles a value, so the mark clears here and
+        // nowhere else. A failed save keeps it: the value is still at risk until
+        // the reader undoes it or tries again.
+        if (saved) dirty?.confirm(rowId, columnKey);
+      });
   };
 
   /** Send a commit straight through — the path for an ungated column. */
@@ -223,9 +240,12 @@ export function editableCellController<TRow>(options: {
     validating: validation?.isValidating(rowId, column.key) ?? false,
     saveStatus: saving?.statusFor(rowId, column.key),
     saveFailure: saving?.failureFor(rowId, column.key),
+    isDirty: dirty?.isDirty(rowId, column.key) ?? false,
     canRollback: saving?.canRollback ?? false,
     rollback: () => {
       saving?.rollback(rowId, column.key);
+      // The value the reader typed is gone, so nothing is waiting on it.
+      dirty?.confirm(rowId, column.key);
     },
     dismissFailure: () => {
       saving?.clear(rowId, column.key);
@@ -311,6 +331,25 @@ export function focusEditorOnMount(node: { focus: () => void } | null): void {
 }
 
 /**
+ * Whether any cell in a row holds a change nobody has confirmed.
+ *
+ * Read by every adapter's row so the mark exists at both scales: a reader
+ * scanning a long table sees which rows are unsettled without hunting for the
+ * cell inside them.
+ *
+ * @typeParam TRow - The row type.
+ * @param editing - The editing bundle from the chrome.
+ * @param rowId - The row's stable id.
+ * @returns Whether to mark the row.
+ */
+export function rowIsDirty<TRow>(
+  editing: EditableCellEditing<TRow> | undefined,
+  rowId: string
+): boolean {
+  return editing?.dirty?.isRowDirty(rowId) ?? false;
+}
+
+/**
  * Memo digest for one desktop/card row: `null` when editing is off (host
  * never passed `onCellEdit`); empty string when this row is idle; otherwise
  * `columnKey:draft` so only the active edit row re-renders on keystrokes.
@@ -330,9 +369,12 @@ export function rowEditingSignature<TRow>(
   // editor at all by then — the reader closed it and moved on.
   const save = editing.saving?.signature ?? "";
   const rowSave = save.includes(`${rowId} `) ? save : "";
+  // A dirty mark belongs to the row too, and outlives the editor that made it.
+  const marks = editing.dirty?.signature ?? "";
+  const rowMarks = marks.includes(`${rowId} `) ? marks : "";
   if (active?.rowId !== rowId) {
-    return marked ? `invalid${rowSave}` : rowSave;
+    return marked ? `invalid${rowSave}${rowMarks}` : `${rowSave}${rowMarks}`;
   }
   const message = editing.validation?.errorFor(rowId, active.columnKey) ?? "";
-  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}`;
+  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}`;
 }

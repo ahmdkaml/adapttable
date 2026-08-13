@@ -228,6 +228,16 @@ export interface BaseDataTableProps<TRow> {
   /** Turn a rejected save into the sentence its cell shows. */
   formatEditError?: (error: unknown) => string;
   /**
+   * Mark cells whose change nobody has confirmed yet — `data-dirty` on the cell
+   * and on its row, so a reader can see what is still at risk. A cell clears
+   * when its save resolves, when a rollback undoes it, or when the table is told
+   * the value settled (`table.editing.dirty.confirm`).
+   *
+   * Off by default: a mark is a claim about what the server has agreed to, and a
+   * table whose host never says would be guessing.
+   */
+  dirtyIndicators?: boolean;
+  /**
    * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
    * to judge. Defaults to a shallow spread keyed by the column key, which is
    * right when a column key IS the field; pass this when a column reads a

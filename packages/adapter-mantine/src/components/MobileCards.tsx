@@ -14,6 +14,7 @@ import {
   resolveMobileLabel,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type SharedTableRenderProps,
   TreeToggle,
   useSummaryCells,
@@ -193,6 +194,7 @@ function MobileCardBase<TRow>({
       role="listitem"
       data-stagger=""
       data-selected={selected ? "" : undefined}
+      data-dirty={rowIsDirty(editing, id) ? "" : undefined}
     >
       <Stack gap={cardGap}>
         {treeEntry && (

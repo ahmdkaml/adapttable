@@ -37,8 +37,9 @@ function rejectingThenable(reason: unknown): PromiseLike<never> {
 describe("useCellSaveState", () => {
   it("says nothing for a host that saves synchronously", async () => {
     const { result } = renderHook(() => useCellSaveState<Row>());
+    let saved: boolean | undefined;
     await act(async () => {
-      await result.current.track({
+      saved = await result.current.track({
         rowId: "1",
         columnKey: "name",
         previous: ADA,
@@ -46,7 +47,9 @@ describe("useCellSaveState", () => {
         result: undefined,
       });
     });
-    // No render paid for a state that would last no time at all.
+    // Nothing to wait for is a save that already happened, and no render is
+    // paid for a state that would last no time at all.
+    expect(saved).toBe(true);
     expect(result.current.statusFor("1", "name")).toBeUndefined();
     expect(result.current.signature).toBe("");
   });
@@ -54,7 +57,7 @@ describe("useCellSaveState", () => {
   it("marks a cell saving until the promise settles", async () => {
     let settle: (() => void) | undefined;
     const { result } = renderHook(() => useCellSaveState<Row>());
-    let tracked: Promise<void> | undefined;
+    let tracked: Promise<boolean> | undefined;
     act(() => {
       tracked = result.current.track({
         rowId: "1",
@@ -77,8 +80,9 @@ describe("useCellSaveState", () => {
 
   it("marks a cell failed, with the reason and what it takes to undo", async () => {
     const { result } = renderHook(() => useCellSaveState<Row>());
+    let saved: boolean | undefined;
     await act(async () => {
-      await result.current.track({
+      saved = await result.current.track({
         rowId: "1",
         columnKey: "name",
         previous: ADA,
@@ -86,6 +90,9 @@ describe("useCellSaveState", () => {
         result: Promise.reject(new Error("Conflict")),
       });
     });
+    // Reported, not read off the state: a caller holding a render-old closure
+    // would otherwise read the state as it was BEFORE the failure.
+    expect(saved).toBe(false);
     expect(result.current.statusFor("1", "name")).toBe("failed");
     const failure = result.current.failureFor("1", "name");
     expect(failure?.message).toBe("Conflict");
@@ -187,8 +194,8 @@ describe("useCellSaveState", () => {
         settles.push({ resolve, reject });
       });
 
-    let first: Promise<void> | undefined;
-    let second: Promise<void> | undefined;
+    let first: Promise<boolean> | undefined;
+    let second: Promise<boolean> | undefined;
     act(() => {
       first = result.current.track({
         rowId: "1",

@@ -26,6 +26,7 @@ import {
   resolveDisabledReason,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
@@ -451,6 +452,7 @@ function DesktopRowBase<TRow>({
         className={className}
         ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-stagger=""
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       >
         {expanded !== undefined && (

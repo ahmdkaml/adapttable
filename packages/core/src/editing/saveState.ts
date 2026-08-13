@@ -52,9 +52,12 @@ export interface CellSaveState<TRow> {
     columnKey: string
   ) => FailedCellSave<TRow> | undefined;
   /**
-   * Watch one commit. Returns the promise the host gave back (or a resolved one
-   * when it gave nothing), so a caller can await the save without knowing
-   * whether the host is async.
+   * Watch one commit, and report how it went: `true` when the value reached
+   * wherever it was going, `false` when it did not.
+   *
+   * The outcome comes back from here rather than being read off the state
+   * afterwards, because a caller holding a render-old closure would read the
+   * state as it was BEFORE the failure and conclude the save succeeded.
    */
   track: (options: {
     rowId: string;
@@ -65,7 +68,7 @@ export interface CellSaveState<TRow> {
     attempted: unknown;
     /** Whatever `onCellEdit` returned. */
     result: unknown;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   /** Put a failed cell's previous row back, and forget the failure. */
   rollback: (rowId: string, columnKey: string) => void;
   /** Forget a cell's failure without restoring anything — what a retry does. */
@@ -145,11 +148,11 @@ export function useCellSaveState<TRow>(
       previous: TRow;
       attempted: unknown;
       result: unknown;
-    }): Promise<void> => {
+    }): Promise<boolean> => {
       const { rowId, columnKey, previous, attempted, result } = input;
       // A host that saves synchronously has nothing to wait for, and paying a
       // render for a state that lasts no time would be worse than useless.
-      if (!isThenable(result)) return;
+      if (!isThenable(result)) return true;
 
       const key = cellKey(rowId, columnKey);
       const token = (tokens.current.get(key) ?? 0) + 1;
@@ -161,13 +164,16 @@ export function useCellSaveState<TRow>(
       try {
         await result;
         if (current()) setFailure(key, undefined);
+        return true;
       } catch (error) {
-        if (!current()) return;
+        // A superseded save says nothing either way: a newer one owns the cell.
+        if (!current()) return false;
         setFailure(key, {
           previous,
           attempted,
           message: (options.formatError ?? defaultFormatError)(error),
         });
+        return false;
       } finally {
         if (current()) markSaving(key, false);
       }

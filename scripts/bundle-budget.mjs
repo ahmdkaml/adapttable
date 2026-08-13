@@ -111,15 +111,15 @@ const FIXTURES = [
   // set — boolean, date, datetime, time, multi-select — adds the platform
   // controls two of them render and the draft shapes they hold. Async saves add
   // the per-cell in-flight state, the rollback it offers, and a bring-your-own
-  // editor's contract.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 73 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 72 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 73 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 70 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 73 },
+  // editor's contract; dirty marks add the per-cell change set every row reads.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 74 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 73 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 74 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 71 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 74 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 79 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 76 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 74 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 77 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 75 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

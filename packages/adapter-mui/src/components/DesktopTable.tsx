@@ -26,6 +26,7 @@ import {
   pinnedColumnWidth,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
@@ -307,6 +308,7 @@ function DesktopRowImpl<TRow>({
         {...rowClickProps(row, onRowClick, index)}
         className={className}
         data-stagger=""
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-index={index}
         {...gridFocus?.getRowPropsAt(index)}

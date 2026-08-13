@@ -14,6 +14,7 @@ import {
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
@@ -145,6 +146,7 @@ function MobileCardBase<TRow>({
       data-adapttable-part="card"
       data-stagger=""
       data-selected={selected ? "" : undefined}
+      data-dirty={rowIsDirty(editing, id) ? "" : undefined}
       data-clickable={clickable ? "" : undefined}
       className={cx(classNames.card, className)}
     >

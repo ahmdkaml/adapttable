@@ -44,6 +44,7 @@ import {
   FindBar,
   GridFocusAnnouncer,
   rowClickProps,
+  rowIsDirty,
   SelectionStatsBar,
   useExportHandler,
   useKeyedVirtualization,
@@ -719,6 +720,7 @@ function DesktopTableBody<TRow>({
   summary,
   handleChange,
   rowClassName,
+  editing,
   onRowClick,
   gridFocus,
   prefetch,
@@ -744,6 +746,8 @@ function DesktopTableBody<TRow>({
   summary: TableProps<GroupedDataRecord<TRow>>["summary"];
   handleChange: TableProps<TRow>["onChange"];
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  /** The editing bundle, so a row can carry its dirty mark. */
+  editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
   prefetch: DataTableProps<TRow>["prefetch"];
   hasPinned: boolean;
@@ -799,6 +803,8 @@ function DesktopTableBody<TRow>({
           // here rather than through a spread on the element.
           ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
           "data-stagger": "",
+          // antd builds its own <tr>, so the dirty mark arrives here too.
+          "data-dirty": rowIsDirty(editing, getRowId(record)) ? "" : undefined,
           onMouseEnter: prefetch ? () => prefetch(record) : undefined,
         };
       }}
@@ -941,6 +947,7 @@ function DataTableBodyRegion<TRow>(
         summary={summary}
         handleChange={handleChange}
         rowClassName={rowClassName}
+        editing={editing}
         onRowClick={onRowClick}
         prefetch={prefetch}
         hasPinned={hasPinned}

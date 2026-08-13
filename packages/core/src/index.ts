@@ -453,6 +453,11 @@ export {
   resolveCellEditor,
 } from "./editing/cellEditing";
 export {
+  type DirtyCellState,
+  useDirtyCells,
+  type UseDirtyCellsOptions,
+} from "./editing/dirtyCells";
+export {
   type EditableCellController,
   type EditableCellEditing,
   type EditableCellMode,

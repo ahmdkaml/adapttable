@@ -71,6 +71,7 @@ export {
 export {
   focusEditorOnMount,
   rowEditingSignature,
+  rowIsDirty,
 } from "./editing/editableCellController";
 export {
   commitBooleanDraft,

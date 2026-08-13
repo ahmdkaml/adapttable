@@ -32,6 +32,7 @@ import {
   type PinOffset,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type RowPairMeasurer,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
@@ -287,6 +288,7 @@ function DesktopRowBase<TRow>({
         data-index={index}
         {...gridFocus?.getRowPropsAt(index)}
         data-stagger=""
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}
         style={{ background: selected ? "var(--gray-a3)" : undefined }}
         onMouseEnter={() => api.current.prefetch?.(row)}

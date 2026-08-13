@@ -33,6 +33,7 @@ import {
   type PinOffset,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type RowPairMeasurer,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
@@ -237,6 +238,7 @@ function DesktopRowBase<TRow>({
         data-index={index}
         {...gridFocus?.getRowPropsAt(index)}
         data-stagger=""
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}
         bg={selected ? "blackAlpha.100" : undefined}
         _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}

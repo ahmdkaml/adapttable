@@ -29,6 +29,7 @@ import {
   type PinOffset,
   rowClickProps,
   rowEditingSignature,
+  rowIsDirty,
   type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
@@ -264,6 +265,7 @@ function DesktopRowBase<TRow>(
         data-adapttable-part="row"
         data-stagger=""
         data-selected={selected ? "" : undefined}
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         data-clickable={clickable ? "" : undefined}
         className={cx(classNames.row, rowClass)}
         onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}
