@@ -53,6 +53,13 @@ export interface DataTableClassNames {
    * It is a live region, so a rejected commit is heard as well as seen.
    */
   editCellError?: string;
+  /**
+   * A failed save's message under the cell (`onCellEdit` returned a promise
+   * that rejected). A live region, so it is heard as well as seen.
+   */
+  editCellSaveError?: string;
+  /** The undo control beside it (`onEditRollback`). */
+  editCellRollback?: string;
   /** The indented wrapper in a tree row's tree column (`getChildren`). */
   treeCell?: string;
   /** The chevron that folds a node. */

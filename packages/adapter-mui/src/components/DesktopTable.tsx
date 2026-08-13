@@ -211,6 +211,8 @@ interface DesktopRowProps<TRow> {
   /** Measures a row together with its open detail panel. */
   measureRowPair?: RowPairMeasurer;
   editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  undoLabel: string;
   editing: EditableCellEditing<TRow> | undefined;
   rows: readonly TRow[];
   getRowId: (row: TRow) => string;
@@ -294,6 +296,7 @@ function DesktopRowImpl<TRow>({
   measureElement,
   measureRowPair,
   editLabel,
+  undoLabel,
   editing,
   rows,
   getRowId,
@@ -369,6 +372,7 @@ function DesktopRowImpl<TRow>({
                   columns={columns}
                   rowKey={getRowId}
                   editLabel={editLabel}
+                  undoLabel={undoLabel}
                 />
               </TreeCell>
               <FillHandle
@@ -829,6 +833,7 @@ export function DesktopTable<TRow>({
                     measureElement={measureElement}
                     measureRowPair={measureRowPair}
                     editLabel={labels.editCell}
+                    undoLabel={labels.undoEdit}
                     editing={editing}
                     rows={rows}
                     getRowId={getRowId}
@@ -873,6 +878,7 @@ export function DesktopTable<TRow>({
                       measureElement={measureElement}
                       measureRowPair={measureRowPair}
                       editLabel={labels.editCell}
+                      undoLabel={labels.undoEdit}
                       editing={editing}
                       rows={rows}
                       getRowId={getRowId}

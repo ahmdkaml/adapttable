@@ -271,6 +271,8 @@ interface DesktopRowProps<TRow> {
   confirm: ConfirmHandler;
   cancelLabel: string;
   editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  undoLabel: string;
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
   /** Resolved `rowClassName(row, index)` output. */
@@ -420,6 +422,7 @@ function DesktopRowBase<TRow>({
   confirm,
   cancelLabel,
   editLabel,
+  undoLabel,
   onRowClick,
   prefetch,
   className,
@@ -505,6 +508,7 @@ function DesktopRowBase<TRow>({
                   columns={columns}
                   rowKey={getRowId}
                   editLabel={editLabel}
+                  undoLabel={undoLabel}
                   display={
                     column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />
@@ -949,6 +953,7 @@ export function DesktopTable<TRow>({
                     confirm={confirm}
                     cancelLabel={labels.cancel}
                     editLabel={labels.editCell}
+                    undoLabel={labels.undoEdit}
                     onRowClick={onRowClick}
                     prefetch={prefetch}
                     className={rowClassName?.(entry.row, entry.index)}
@@ -994,6 +999,7 @@ export function DesktopTable<TRow>({
                       confirm={confirm}
                       cancelLabel={labels.cancel}
                       editLabel={labels.editCell}
+                      undoLabel={labels.undoEdit}
                       onRowClick={onRowClick}
                       prefetch={prefetch}
                       className={rowClassName?.(row, index)}

@@ -473,6 +473,13 @@ export {
   useTableEditHistory,
 } from "./editing/editHistory";
 export {
+  type CellSaveState,
+  type CellSaveStatus,
+  type FailedCellSave,
+  useCellSaveState,
+  type UseCellSaveStateOptions,
+} from "./editing/saveState";
+export {
   type CellEditingState,
   type CellEditKeyAction,
   type CellEditKeyOutcome,

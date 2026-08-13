@@ -308,6 +308,7 @@ function DesktopRowBase<TRow>({
                   columns={columns}
                   rowKey={getRowId}
                   editLabel={labels.editCell}
+                  undoLabel={labels.undoEdit}
                   display={
                     column.Cell ? (
                       <column.Cell row={row} rowIndex={index} />

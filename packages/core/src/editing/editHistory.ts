@@ -36,7 +36,7 @@ export interface UseEditHistoryOptions<TRow> {
   /** The columns, for reading a cell's value before it changes. */
   columns: readonly ColumnDef<TRow>[];
   /** The host's commit channel — every replay goes back out through it. */
-  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => unknown;
 }
 
 /** What {@link useEditHistory} returns. */
@@ -195,7 +195,7 @@ export interface TableEditHistoryProps<TRow> {
   /** The columns, for reading a cell's value before it changes. */
   columns: readonly ColumnDef<TRow>[];
   /** The host's commit channel. */
-  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => unknown;
 }
 
 /**
@@ -216,7 +216,7 @@ export interface TableEditHistoryProps<TRow> {
 export function useTableEditHistory<TRow>(props: TableEditHistoryProps<TRow>): {
   history: EditHistoryState<TRow>;
   onCellEdit:
-    | ((row: TRow, key: string, nextValue: unknown) => void)
+    | ((row: TRow, key: string, nextValue: unknown) => unknown)
     | undefined;
 } {
   const { editHistory, columns, onCellEdit } = props;
@@ -230,7 +230,10 @@ export function useTableEditHistory<TRow>(props: TableEditHistoryProps<TRow>): {
   const recording = useCallback(
     (row: TRow, key: string, nextValue: unknown) => {
       record([{ row, columnKey: key, value: nextValue }]);
-      onCellEdit?.(row, key, nextValue);
+      // Hand back whatever the host returned: a promise is how a cell knows the
+      // value is still on its way somewhere, and swallowing it here would make
+      // every save look instant.
+      return onCellEdit?.(row, key, nextValue);
     },
     [record, onCellEdit]
   );

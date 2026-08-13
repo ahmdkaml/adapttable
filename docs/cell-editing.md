@@ -239,6 +239,43 @@ and carries `aria-busy` while the check runs, and a newer draft supersedes an
 older check, so a stale answer can never mark a value the reader has already
 changed. A column with no validator commits synchronously, exactly as before.
 
+## Saving, and what happens when it fails
+
+Return a promise from `onCellEdit` and the table knows something the reader
+cannot see: the value is on its way somewhere. The cell says so until the promise
+settles — `data-save="saving"` and `aria-busy` on the cell — and says why if it
+rejects, in a live region beside it (`data-adapttable-part="edit-cell-save-error"`,
+`role="alert"`).
+
+```tsx
+<DataTable
+  {...props}
+  onCellEdit={async (row, key, value) => {
+    setRows(applyOptimistically(row, key, value));
+    await api.save(row.id, { [key]: value });
+  }}
+  onEditRollback={(previous, columnKey) => {
+    setRows((current) => restore(current, previous));
+  }}
+  formatEditError={(error) => humanize(error)}
+/>
+```
+
+A table that shows the new value before the server has agreed has to put the old
+one back when it disagrees — and only the host can write to its own rows, so
+`onEditRollback` receives the row as it was and restores it. The failed cell then
+offers an **Undo** (`labels.undoEdit`, localized in all seventeen locales), and
+pressing it calls that handler. Omit `onEditRollback` and the message shows
+without an undo, which is right for a table that refetches instead.
+
+A newer save supersedes an older one, so a slow rejection can never mark a value
+the reader has already replaced. A host that saves synchronously pays nothing:
+with nothing to wait for, there is no saving state to render.
+
+Headless: `useCellSaveState` (`CellSaveState`, `CellSaveStatus`,
+`FailedCellSave`, `UseCellSaveStateOptions`); the controller carries
+`saveStatus`, `saveFailure`, `canRollback`, `rollback` and `dismissFailure`.
+
 ## Headless editing
 
 The editing engine is exported for custom adapters and fully custom tables.

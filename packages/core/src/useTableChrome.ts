@@ -8,6 +8,7 @@ import {
   type UseColumnLayoutResult,
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
+import { useCellSaveState } from "./editing/saveState";
 import {
   type CellEditingState,
   useCellEditing,
@@ -508,12 +509,18 @@ export function useTableChrome<TRow>(
     validateRow: props.validateRow,
     applyEdit: props.applyEdit,
   });
+  // A host whose `onCellEdit` returns a promise gets a saving cell for free;
+  // one that saves synchronously never pays a render for it.
+  const saving = useCellSaveState<TRow>({
+    onRollback: props.onEditRollback,
+    formatError: props.formatEditError,
+  });
   const editing = useMemo(
     () =>
       onCellEdit
-        ? { onCellEdit, state: cellEditingState, validation }
+        ? { onCellEdit, state: cellEditingState, validation, saving }
         : undefined,
-    [onCellEdit, cellEditingState, validation]
+    [onCellEdit, cellEditingState, validation, saving]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
   // does NOTHING without the table-level change channel. Say so in dev.

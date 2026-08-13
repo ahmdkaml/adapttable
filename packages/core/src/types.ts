@@ -448,6 +448,11 @@ export interface TableLabels {
   /** Accessible name for starting inline cell edit (double-click / activate). */
   editCell?: string;
   /**
+   * The control a failed save offers beside its message: put the value back the
+   * way it was. Only rendered when the table was told how (`onEditRollback`).
+   */
+  undoEdit?: string;
+  /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when
    * the selection changes. Defaults to

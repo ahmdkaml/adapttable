@@ -322,6 +322,28 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   drawer.unmount();
 
+  // A rejected save: the cell carries the reason and the undo it offers.
+  const rejected = mount({
+    override: {
+      onCellEdit: () => Promise.reject(new Error("Could not save")),
+      onEditRollback: () => undefined,
+    },
+  });
+  const saveActivate = part("edit-cell-activate");
+  if (saveActivate) {
+    fireEvent.doubleClick(saveActivate);
+    const saveEditor = part("edit-cell-editor");
+    if (saveEditor) {
+      fireEvent.change(saveEditor, { target: { value: "Item 99" } });
+      fireEvent.keyDown(saveEditor, { key: "Enter" });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      absorb();
+    }
+  }
+  rejected.unmount();
+
   // A rejected commit: the editor stays open with its message beside it.
   const invalid = mount({
     override: {
@@ -417,6 +439,8 @@ const KEYS = [
   "filtersIcon",
   "filtersCount",
   "editCellError",
+  "editCellSaveError",
+  "editCellRollback",
   "treeCell",
   "treeToggle",
   "treeSpacer",

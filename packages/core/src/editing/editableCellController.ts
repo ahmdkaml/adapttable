@@ -12,6 +12,11 @@ import {
   resolveCellEditor,
   resolveCommitValue,
 } from "./cellEditing";
+import type {
+  CellSaveState,
+  CellSaveStatus,
+  FailedCellSave,
+} from "./saveState";
 import {
   beginCellEdit as beginEdit,
   type CellEditingState,
@@ -20,7 +25,11 @@ import type { CellValidator, EditValidationState } from "./validation";
 
 /** Opt-in editing bundle from {@link TableChrome.editing}. */
 export interface EditableCellEditing<TRow> {
-  onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
+  /**
+   * The change channel. Return a promise and the cell shows it is saving until
+   * that promise settles, and shows why if it rejects.
+   */
+  onCellEdit: (row: TRow, key: string, nextValue: unknown) => unknown;
   state: CellEditingState;
   /**
    * Validation, when the host declared any. A commit runs the validators first
@@ -28,18 +37,33 @@ export interface EditableCellEditing<TRow> {
    * it, so the reader fixes what they typed instead of losing it.
    */
   validation?: EditValidationState<TRow>;
+  /**
+   * Save state, when the host's `onCellEdit` returns promises. Inert for a
+   * host that saves synchronously.
+   */
+  saving?: CellSaveState<TRow>;
 }
 
 /** Display / edit mode for one cell. */
 export type EditableCellMode = "display" | "activatable" | "editing";
 
 /** Controller returned by {@link editableCellController}. */
-export interface EditableCellController {
+export interface EditableCellController<TRow = unknown> {
   mode: EditableCellMode;
   /** The validator's message for this cell, if it rejected the last commit. */
   error?: string;
   /** Whether an async validator is still deciding about this cell. */
   validating: boolean;
+  /** What this cell's last save is doing: in flight, or failed. */
+  saveStatus?: CellSaveStatus;
+  /** Why this cell's last save failed, and what it takes to undo it. */
+  saveFailure?: FailedCellSave<TRow>;
+  /** Whether an undo can be offered — the host said how to perform one. */
+  canRollback: boolean;
+  /** Put the previous value back after a failed save. */
+  rollback: () => void;
+  /** Forget a failed save without restoring anything. */
+  dismissFailure: () => void;
   /** Resolved editor when the column is editable; always set for activatable/editing. */
   editor: CellEditor | null;
   /** Normalized select options (empty for text/number). */
@@ -77,9 +101,12 @@ export function editableCellController<TRow>(options: {
 }): EditableCellController {
   const { editing, row, column, rowId, rows, columns, rowKey } = options;
 
-  const idle: EditableCellController = {
+  const idle: EditableCellController<TRow> = {
     mode: "display",
     validating: false,
+    canRollback: false,
+    rollback: () => undefined,
+    dismissFailure: () => undefined,
     editor: null,
     selectOptions: [],
     draft: "",
@@ -102,7 +129,7 @@ export function editableCellController<TRow>(options: {
       ? normalizeEditorOptions(editor.options)
       : [];
 
-  const { state, onCellEdit, validation } = editing;
+  const { state, onCellEdit, validation, saving } = editing;
   const isEditing = state.isActive(rowId, column.key);
 
   const validateCell = asCellValidator<TRow>(column);
@@ -113,13 +140,28 @@ export function editableCellController<TRow>(options: {
     validation !== undefined &&
     (validateCell !== undefined || validation.hasRowValidator);
 
-  /** Hand a resolved value to the host. */
+  /**
+   * Hand a resolved value to the host, and watch whatever it hands back: a
+   * promise means the value is still on its way somewhere, which is something
+   * the reader cannot see unless the cell says so.
+   */
   const sendToHost = (resolved: {
     row: TRow;
     column: EditableColumnLike<TRow>;
     value: unknown;
   }) => {
-    onCellEdit(resolved.row, resolved.column.key, resolved.value);
+    const result = onCellEdit(
+      resolved.row,
+      resolved.column.key,
+      resolved.value
+    );
+    void saving?.track({
+      rowId,
+      columnKey: resolved.column.key,
+      previous: resolved.row,
+      attempted: resolved.value,
+      result,
+    });
   };
 
   /** Send a commit straight through — the path for an ungated column. */
@@ -179,6 +221,15 @@ export function editableCellController<TRow>(options: {
       validation?.errorFor(rowId, column.key) ??
       (isEditing ? validation?.rowErrorFor(rowId) : undefined),
     validating: validation?.isValidating(rowId, column.key) ?? false,
+    saveStatus: saving?.statusFor(rowId, column.key),
+    saveFailure: saving?.failureFor(rowId, column.key),
+    canRollback: saving?.canRollback ?? false,
+    rollback: () => {
+      saving?.rollback(rowId, column.key);
+    },
+    dismissFailure: () => {
+      saving?.clear(rowId, column.key);
+    },
     editor,
     selectOptions,
     draft: isEditing ? state.draft : "",
@@ -275,7 +326,13 @@ export function rowEditingSignature<TRow>(
   // to show it. Left out, a rejected commit paints nothing.
   const marked = editing.validation?.rowHasError(rowId) ?? false;
   const busy = editing.validation?.isValidating(rowId, active?.columnKey ?? "");
-  if (active?.rowId !== rowId) return marked ? "invalid" : "";
+  // A save is in flight or has failed on a cell of this row, which may hold no
+  // editor at all by then — the reader closed it and moved on.
+  const save = editing.saving?.signature ?? "";
+  const rowSave = save.includes(`${rowId} `) ? save : "";
+  if (active?.rowId !== rowId) {
+    return marked ? `invalid${rowSave}` : rowSave;
+  }
   const message = editing.validation?.errorFor(rowId, active.columnKey) ?? "";
-  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}`;
+  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}`;
 }

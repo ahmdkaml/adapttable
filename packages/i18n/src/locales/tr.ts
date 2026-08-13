@@ -66,6 +66,7 @@ export const tr: Required<TableLabels> = {
   exportDone: "Dışa aktarma tamamlandı",
   exportFailed: "Dışa aktarma başarısız",
   editCell: "Hücreyi düzenle",
+  undoEdit: "Geri al",
   moreGroups: (remaining) => `${remaining} grup daha göster`,
   moreRowsInGroup: (remaining) => `Bu grupta ${remaining} tane daha`,
   groupTotal: (label) => `${label} toplamı`,

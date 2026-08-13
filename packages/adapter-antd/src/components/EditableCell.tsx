@@ -102,6 +102,8 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
 }): ReactElement {
   const display: ReactNode = props.column.Cell ? (
     <props.column.Cell row={props.row} rowIndex={props.rowIndex} />
@@ -119,6 +121,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={display}
       renderEditor={(ctrl) => (
         <AntdCellEditor ctrl={ctrl} label={props.editLabel} />

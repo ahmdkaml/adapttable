@@ -6,6 +6,7 @@ import {
   editableCellController,
   rowEditingSignature,
 } from "./editableCellController";
+import { useCellSaveState } from "./saveState";
 import { useCellEditing } from "./useCellEditing";
 import { useEditValidation } from "./validation";
 
@@ -516,5 +517,123 @@ describe("rowEditingSignature — with validation", () => {
         "1"
       )
     ).toBe("name:Ada:required:");
+  });
+});
+
+describe("editableCellController — saving", () => {
+  const enter = { key: "Enter", preventDefault: () => undefined };
+
+  /** A controller over live editing state and live save state. */
+  const setup = (
+    onCellEdit: (row: Person, key: string, next: unknown) => unknown,
+    onRollback?: (previous: Person, columnKey: string) => void
+  ) => {
+    const columns: ColumnDef<Person>[] = [{ key: "name", editable: true }];
+    const { result } = renderHook(() => ({
+      state: useCellEditing(),
+      saving: useCellSaveState<Person>({ onRollback }),
+    }));
+    const controller = () =>
+      editableCellController({
+        editing: {
+          onCellEdit,
+          state: result.current.state,
+          saving: result.current.saving,
+        },
+        row: ROWS[0]!,
+        column: columns[0]!,
+        rowId: "1",
+        rows: ROWS,
+        columns,
+        rowKey: (r) => r.id,
+      });
+    return { result, controller };
+  };
+
+  it("reports a save in flight, then done", async () => {
+    let settle: (() => void) | undefined;
+    const { controller } = setup(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        })
+    );
+    act(() => controller().begin());
+    act(() => {
+      controller().onEditorKeyDown(enter);
+    });
+    expect(controller().saveStatus).toBe("saving");
+
+    await act(async () => {
+      settle?.();
+      await Promise.resolve();
+    });
+    expect(controller().saveStatus).toBeUndefined();
+  });
+
+  it("reports a failure and offers no undo without a handler", async () => {
+    const { controller } = setup(() =>
+      Promise.reject(new Error("Someone else changed this row"))
+    );
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(controller().saveStatus).toBe("failed");
+    expect(controller().saveFailure?.message).toBe(
+      "Someone else changed this row"
+    );
+    // An undo control that would do nothing when pressed is worse than none.
+    expect(controller().canRollback).toBe(false);
+  });
+
+  it("rolls back through the host, and dismisses without one", async () => {
+    const onRollback = vi.fn();
+    const { controller } = setup(
+      () => Promise.reject(new Error("Conflict")),
+      onRollback
+    );
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(controller().canRollback).toBe(true);
+    act(() => {
+      controller().rollback();
+    });
+    expect(onRollback).toHaveBeenCalledExactlyOnceWith(ROWS[0], "name");
+    expect(controller().saveStatus).toBeUndefined();
+
+    // And dismissing a later failure restores nothing.
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    act(() => {
+      controller().dismissFailure();
+    });
+    expect(controller().saveStatus).toBeUndefined();
+    expect(onRollback).toHaveBeenCalledOnce();
+  });
+
+  it("has inert save actions when the host never opted into editing", () => {
+    const ctrl = editableCellController({
+      editing: undefined,
+      row: ROWS[0]!,
+      column: COLS[0]!,
+      rowId: "1",
+      rows: ROWS,
+      columns: COLS,
+      rowKey: (r) => r.id,
+    });
+    ctrl.commit();
+    ctrl.cancel();
+    ctrl.rollback();
+    ctrl.dismissFailure();
+    expect(ctrl.saveStatus).toBeUndefined();
+    expect(ctrl.canRollback).toBe(false);
   });
 });

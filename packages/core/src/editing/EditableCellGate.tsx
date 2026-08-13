@@ -63,6 +63,16 @@ export interface EditableCellGateProps<TRow> {
   readonly activateClassName?: string;
   /** Optional class for the validation message (adapters' styling hook). */
   readonly errorClassName?: string;
+  /** Optional class for a failed save's message. */
+  readonly saveErrorClassName?: string;
+  /** Optional class for the undo control beside it. */
+  readonly rollbackClassName?: string;
+  /**
+   * Label for the undo control a failed save offers (`labels.undoEdit`). Omit
+   * it and the message shows without one — right for a table that refetches
+   * rather than rolling back.
+   */
+  readonly undoLabel?: string;
   /**
    * Set by a kit whose own input renders the message — Mantine's `error`, MUI's
    * `helperText`. Those components own the input's `aria-describedby`, so a
@@ -266,41 +276,72 @@ export function EditableCellGate<TRow>(
   }
 
   return (
-    <button
-      ref={activateRef}
-      type="button"
-      // The cell VALUE is the accessible name (the button's content); the
-      // edit affordance rides along as the title — an aria-label here
-      // would hide the value from screen readers entirely.
-      title={props.editLabel}
-      className={props.activateClassName}
-      data-adapttable-part="edit-cell-activate"
-      onDoubleClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        ctrl.begin();
-      }}
-      onClick={(event) => {
-        // Keep row-click from firing when the user is aiming to edit.
-        event.stopPropagation();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === "F2") {
+    <>
+      <button
+        ref={activateRef}
+        type="button"
+        // The cell VALUE is the accessible name (the button's content); the
+        // edit affordance rides along as the title — an aria-label here
+        // would hide the value from screen readers entirely.
+        title={props.editLabel}
+        className={props.activateClassName}
+        // A value on its way somewhere is not the same as a saved one; a cell
+        // that looks settled while a request is out is a lie the reader only
+        // finds out about when it fails.
+        data-save={ctrl.saveStatus}
+        aria-busy={ctrl.saveStatus === "saving" ? true : undefined}
+        data-adapttable-part="edit-cell-activate"
+        onDoubleClick={(event) => {
           event.preventDefault();
-          stopCellEditKeyboard(event);
+          event.stopPropagation();
           ctrl.begin();
-        }
-      }}
-      style={{
-        all: "unset",
-        boxSizing: "border-box",
-        display: "block",
-        width: "100%",
-        cursor: "text",
-        textAlign: "inherit",
-      }}
-    >
-      {props.display}
-    </button>
+        }}
+        onClick={(event) => {
+          // Keep row-click from firing when the user is aiming to edit.
+          event.stopPropagation();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === "F2") {
+            event.preventDefault();
+            stopCellEditKeyboard(event);
+            ctrl.begin();
+          }
+        }}
+        style={{
+          all: "unset",
+          boxSizing: "border-box",
+          display: "block",
+          width: "100%",
+          cursor: "text",
+          textAlign: "inherit",
+        }}
+      >
+        {props.display}
+      </button>
+      {ctrl.saveFailure && (
+        <span
+          role="alert"
+          data-adapttable-part="edit-cell-save-error"
+          className={props.saveErrorClassName}
+        >
+          {ctrl.saveFailure.message}
+          {/* The undo is only offered when the table was told how to perform
+              one: a host that refetches instead has nothing for it to do. */}
+          {ctrl.canRollback && props.undoLabel !== undefined && (
+            <button
+              type="button"
+              data-adapttable-part="edit-cell-rollback"
+              className={props.rollbackClassName}
+              onClick={(event) => {
+                event.stopPropagation();
+                ctrl.rollback();
+              }}
+            >
+              {props.undoLabel}
+            </button>
+          )}
+        </span>
+      )}
+    </>
   );
 }

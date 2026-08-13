@@ -205,6 +205,8 @@ export const shadcnClassNames = {
   // A rejected commit reads as a form error, in the destructive tone shadcn
   // already uses for one.
   editCellError: "mt-1 block text-xs text-destructive",
+  editCellSaveError: "mt-1 flex items-center gap-2 text-xs text-destructive",
+  editCellRollback: "underline underline-offset-2 hover:no-underline",
   // ── Tree data ───────────────────────────────────────────────────
   // The chevron matches the group toggle exactly: one table can hold both,
   // and two disclosure controls that look different read as two mechanisms.

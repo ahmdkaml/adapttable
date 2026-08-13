@@ -429,6 +429,7 @@ function renderLeafDataCell<TRow>(
           columns={options.columns}
           rowKey={options.getRowId}
           editLabel={options.labels.editCell}
+          undoLabel={options.labels.undoEdit}
         />
       </TreeCell>
       <FillHandle

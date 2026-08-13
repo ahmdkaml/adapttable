@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 49,
+    budgetKB: 51,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -109,15 +109,17 @@ const FIXTURES = [
   // validation adds the per-cell message state, the async check that supersedes
   // a stale answer, and the ARIA every editor now carries (~1 KB). The editor
   // set — boolean, date, datetime, time, multi-select — adds the platform
-  // controls two of them render and the draft shapes they hold.
+  // controls two of them render and the draft shapes they hold. Async saves add
+  // the per-cell in-flight state, the rollback it offers, and a bring-your-own
+  // editor's contract.
   { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 73 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 72 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 72 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 69 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 72 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 78 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 75 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 73 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 73 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 70 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 73 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 79 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 76 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 74 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

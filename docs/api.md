@@ -294,6 +294,13 @@ receives (`draft`, `setDraft`, `commit`, `cancel`, `onKeyDown`, `onBlur`,
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
 
+**A save the reader can see.** `onCellEdit` may return a promise;
+`useCellSaveState(options)` (`UseCellSaveStateOptions` in, `CellSaveState` out)
+tracks it, exposing a `CellSaveStatus` per cell and a `FailedCellSave<TRow>` —
+the previous row, the attempted value and the message — for one that rejected.
+`onEditRollback` puts the row back and `formatEditError` words the failure;
+`labels.undoEdit` names the control the failed cell offers.
+
 **Validation gates the commit.** A column's `validate` (`CellValidator`) judges
 one value; the table's `validateRow` (`RowValidator`) judges the row an edit
 would produce, with `applyEdit` saying how the edit lands on it.

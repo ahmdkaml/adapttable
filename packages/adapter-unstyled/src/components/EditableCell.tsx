@@ -131,10 +131,14 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
   readonly display: ReactNode;
   /** Class for the invisible activate button. */
   readonly activateClassName?: string;
   readonly errorClassName?: string;
+  readonly saveErrorClassName?: string;
+  readonly rollbackClassName?: string;
   /** Class for the active inline editor. */
   readonly editorClassName?: string;
 }): ReactElement {
@@ -142,6 +146,8 @@ export function EditableDataCell<TRow>(props: {
     <EditableCellGate
       activateClassName={props.activateClassName}
       errorClassName={props.errorClassName}
+      saveErrorClassName={props.saveErrorClassName}
+      rollbackClassName={props.rollbackClassName}
       editing={props.editing}
       row={props.row}
       column={props.column}
@@ -150,6 +156,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={props.display}
       renderEditor={(ctrl) => (
         <NativeCellEditor

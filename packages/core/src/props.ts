@@ -105,8 +105,12 @@ export interface BaseDataTableProps<TRow> {
    * `editable`) activates editing — omit it and the table never opens an
    * editor, even if columns declare `editable`. The table never mutates
    * rows; apply `nextValue` in your own state / mutation.
+   *
+   * Return a promise and the cell shows it is saving until that promise
+   * settles, and shows why if it rejects — with an undo when
+   * {@link BaseDataTableProps.onEditRollback} says how to put the row back.
    */
-  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => unknown;
   /**
    * Cut — Ctrl/Cmd+X, after the clipboard has accepted the copy. Requires
    * `cellNavigation`.
@@ -212,6 +216,17 @@ export interface BaseDataTableProps<TRow> {
    * May be async.
    */
   validateRow?: RowValidator<TRow>;
+  /**
+   * Put a row back the way it was after a rejected save.
+   *
+   * A table that applies an edit optimistically has already shown the new
+   * value, so a rejection has to restore the old one — and only the host can
+   * write to its own rows. Without this the cell is marked failed and the value
+   * stays put, which is right for a table that refetches instead.
+   */
+  onEditRollback?: (previous: TRow, columnKey: string) => void;
+  /** Turn a rejected save into the sentence its cell shows. */
+  formatEditError?: (error: unknown) => string;
   /**
    * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
    * to judge. Defaults to a shallow spread keyed by the column key, which is

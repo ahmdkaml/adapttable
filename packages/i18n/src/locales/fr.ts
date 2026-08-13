@@ -65,6 +65,7 @@ export const fr: Required<TableLabels> = {
   exportDone: "Export terminé",
   exportFailed: "Échec de l’export",
   editCell: "Modifier la cellule",
+  undoEdit: "Annuler",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

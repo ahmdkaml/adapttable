@@ -196,6 +196,8 @@ function MobileCardBase<TRow>({
             <EditableDataCell
               activateClassName={classNames.editCellActivate}
               errorClassName={classNames.editCellError}
+              saveErrorClassName={classNames.editCellSaveError}
+              rollbackClassName={classNames.editCellRollback}
               editorClassName={classNames.editCellEditor}
               editing={editing}
               row={row}
@@ -205,6 +207,7 @@ function MobileCardBase<TRow>({
               columns={columns}
               rowKey={getRowId}
               editLabel={labels.editCell}
+              undoLabel={labels.undoEdit}
               display={
                 column.Cell ? (
                   <column.Cell row={row} rowIndex={index} />

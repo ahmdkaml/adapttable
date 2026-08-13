@@ -280,6 +280,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
               columns={columns}
               rowKey={getRowId}
               editLabel={labels.editCell}
+              undoLabel={labels.undoEdit}
             />
           </Descriptions.Item>
         ))}
