@@ -3,10 +3,18 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isDraftChecked,
+  isMultiSelectEditor,
+  isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
 import {
+  commitBooleanDraft,
   editorValidationProps,
   focusEditorOnMount,
+  multiDraftFromSelect,
 } from "@adapttable/core/adapter";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -31,7 +39,47 @@ export function NativeCellEditor({
     }
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <input
+        ref={focusEditorOnMount}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        className={className}
+        aria-label={label}
+        type="checkbox"
+        checked={isDraftChecked(ctrl.draft)}
+        // One gesture: a ticked box that changed nothing is a bug, not a draft.
+        onChange={(event) => commitBooleanDraft(ctrl, event.target.checked)}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <select
+        ref={focusEditorOnMount}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        className={className}
+        aria-label={label}
+        multiple
+        value={readMultiDraft(ctrl.draft)}
+        onChange={(event) => ctrl.setDraft(multiDraftFromSelect(event.target))}
+        onKeyDown={onKeyDown}
+        onBlur={ctrl.commitOnBlur}
+      >
+        {ctrl.selectOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <select
         ref={focusEditorOnMount}
@@ -60,7 +108,7 @@ export function NativeCellEditor({
       {...editorValidationProps(ctrl)}
       className={className}
       aria-label={label}
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}

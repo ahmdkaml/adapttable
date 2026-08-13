@@ -107,15 +107,17 @@ const FIXTURES = [
   // per-node fetch state a lazily loaded branch needs, and the nested-table
   // region that turns master/detail into a real table under a row. Editing
   // validation adds the per-cell message state, the async check that supersedes
-  // a stale answer, and the ARIA every editor now carries (~1 KB).
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 72 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 71 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 71 },
+  // a stale answer, and the ARIA every editor now carries (~1 KB). The editor
+  // set — boolean, date, datetime, time, multi-select — adds the platform
+  // controls two of them render and the draft shapes they hold.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 73 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 72 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 72 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 69 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 71 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 77 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 72 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 78 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 75 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 72 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 73 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

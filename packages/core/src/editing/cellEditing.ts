@@ -15,8 +15,21 @@ export interface CellEditorOption {
 export type CellEditor =
   | "text"
   | "number"
+  /** A checkbox. Commits `true` / `false`, never a string. */
+  | "boolean"
+  /** A date. Commits `YYYY-MM-DD`, the value a date input holds. */
+  | "date"
+  /** A date and a time. Commits `YYYY-MM-DDTHH:mm`. */
+  | "datetime"
+  /** A time of day. Commits `HH:mm`. */
+  | "time"
   | {
       type: "select";
+      options: readonly CellEditorOption[] | readonly string[];
+    }
+  | {
+      /** Several of a fixed set. Commits an array of the chosen values. */
+      type: "multi-select";
       options: readonly CellEditorOption[] | readonly string[];
     };
 
@@ -57,6 +70,65 @@ export interface CellEditCommit {
   columnKey: string;
   /** Raw draft string from the editor. */
   draft: string;
+}
+
+/** Whether this editor is a checkbox. */
+export function isBooleanEditor(editor: CellEditor | null): boolean {
+  return editor === "boolean";
+}
+
+/** Whether this editor chooses several of a fixed set. */
+export function isMultiSelectEditor(
+  editor: CellEditor | null
+): editor is { type: "multi-select"; options: readonly CellEditorOption[] } {
+  return (
+    editor !== null &&
+    typeof editor === "object" &&
+    editor.type === "multi-select"
+  );
+}
+
+/** Whether this editor chooses one of a fixed set. */
+export function isSelectEditor(
+  editor: CellEditor | null
+): editor is { type: "select"; options: readonly CellEditorOption[] } {
+  return (
+    editor !== null && typeof editor === "object" && editor.type === "select"
+  );
+}
+
+/**
+ * The native `type` an editor's input takes.
+ *
+ * One mapping for nine kits: every one of them renders a real `<input>`
+ * underneath, and the browser's own date and time controls are
+ * keyboard-complete and localized by the platform — a better answer than nine
+ * hand-built pickers.
+ *
+ * A checkbox is not among these: a boolean editor renders its own control, and
+ * several kits' text fields reject `type="checkbox"` outright.
+ *
+ * @param editor - The column's editor descriptor.
+ * @returns The `type` attribute for the editor's input.
+ */
+export function editorInputType(
+  editor: CellEditor | null
+): "text" | "number" | "date" | "datetime-local" | "time" {
+  if (editor === "number") return "number";
+  if (editor === "date") return "date";
+  if (editor === "datetime") return "datetime-local";
+  if (editor === "time") return "time";
+  return "text";
+}
+
+/** The draft string a checkbox holds. */
+export function booleanDraft(checked: boolean): string {
+  return checked ? "true" : "false";
+}
+
+/** Whether a boolean editor's draft is on. */
+export function isDraftChecked(draft: string): boolean {
+  return draft === "true";
 }
 
 /** Normalize select options to `{ value, label }` pairs. */
@@ -110,11 +182,28 @@ export function readEditableCellValue<TRow>(
   row: TRow,
   column: EditableColumnLike<TRow>
 ): string {
+  const seed = readSeed(row, column);
+  // A date editor holds a day, a time editor holds a time of day: trim the
+  // stored value to the part its own input can hold, or the browser rejects it
+  // and the editor opens empty.
+  return trimToEditor(seed, resolveCellEditor(column));
+}
+
+/** The raw seed, before the editor's own shape is applied. */
+function readSeed<TRow>(row: TRow, column: EditableColumnLike<TRow>): string {
   if (column.editValue) return column.editValue(row);
-  if (column.sortValue) {
-    return stringifyEditSeed(column.sortValue(row));
-  }
+  if (column.sortValue) return stringifyEditSeed(column.sortValue(row));
   return stringifyEditSeed(getPath(row, column.key));
+}
+
+/** Cut a `YYYY-MM-DDTHH:mm` seed down to what a date or time input holds. */
+function trimToEditor(seed: string, editor: CellEditor | null): string {
+  if (editor === "date") return seed.slice(0, 10);
+  if (editor === "time") {
+    const at = seed.indexOf("T");
+    return at === -1 ? seed.slice(0, 5) : seed.slice(at + 1, at + 6);
+  }
+  return seed;
 }
 
 function stringifyEditSeed(value: unknown): string {
@@ -126,7 +215,25 @@ function stringifyEditSeed(value: unknown): string {
   ) {
     return String(value);
   }
+  // A multi-select's stored value is the array it commits, so it seeds its own
+  // editor without the host writing an `editValue` for the round trip.
+  if (Array.isArray(value)) {
+    return formatMultiDraft(value.map((entry) => String(entry)));
+  }
+  // A Date seeds the date editors in the shape their inputs hold. Local parts,
+  // not the ISO string: `toISOString` shifts to UTC, which moves the day for
+  // most of the world.
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return localDateTimeParts(value);
+  }
   return "";
+}
+
+/** `YYYY-MM-DDTHH:mm` in local time — a `datetime` input's own format. */
+function localDateTimeParts(value: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${String(value.getFullYear())}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  return `${date}T${pad(value.getHours())}:${pad(value.getMinutes())}`;
 }
 
 /**
@@ -135,13 +242,56 @@ function stringifyEditSeed(value: unknown): string {
  * select and text stay strings.
  */
 export function parseCellEditValue(editor: CellEditor, draft: string): unknown {
-  if (editor === "number") {
-    const trimmed = draft.trim();
-    if (trimmed === "") return null;
-    const n = Number(trimmed);
-    return Number.isFinite(n) ? n : null;
+  if (editor === "number") return parseNumberDraft(draft);
+  if (editor === "boolean") return draft === "true";
+  if (typeof editor === "object" && editor.type === "multi-select") {
+    return parseMultiDraft(draft);
   }
+  // A date, datetime or time editor commits the string its input holds —
+  // `YYYY-MM-DD`, `YYYY-MM-DDTHH:mm`, `HH:mm`. A `Date` would be worse: it
+  // carries a timezone the reader never chose, and "the 3rd" is not an instant.
   return draft;
+}
+
+/** An empty number field is nothing, not zero. */
+function parseNumberDraft(draft: string): number | null {
+  const trimmed = draft.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * A multi-select's draft is its chosen values joined by the unit separator.
+ *
+ * A control character rather than a comma: an option's own label may contain
+ * one, and a separator that can appear inside a value is not a separator.
+ */
+function parseMultiDraft(draft: string): string[] {
+  return draft === "" ? [] : draft.split(MULTI_SEPARATOR);
+}
+
+/** The separator {@link formatMultiDraft} joins a multi-select's values with. */
+export const MULTI_SEPARATOR = "\u001f";
+
+/**
+ * The draft string for a set of chosen values — the inverse of the parse above.
+ *
+ * @param values - The chosen values.
+ * @returns The draft the editing state holds.
+ */
+export function formatMultiDraft(values: readonly string[]): string {
+  return values.join(MULTI_SEPARATOR);
+}
+
+/**
+ * The chosen values inside a multi-select draft.
+ *
+ * @param draft - The draft the editing state holds.
+ * @returns The chosen values, in the order they were joined.
+ */
+export function readMultiDraft(draft: string): string[] {
+  return parseMultiDraft(draft);
 }
 
 /**

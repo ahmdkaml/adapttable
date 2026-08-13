@@ -429,15 +429,24 @@ export {
 
 /* ── Inline cell editing ───────────────────────────────────────────── */
 export {
+  booleanDraft,
   type CellEditCommit,
   type CellEditor,
   type CellEditorOption,
   type CellEditTarget,
   type EditableColumnLike,
+  editorInputType,
+  formatMultiDraft,
   hasEditableColumns,
+  isBooleanEditor,
   isCellEditable,
+  isDraftChecked,
+  isMultiSelectEditor,
+  isSelectEditor,
+  MULTI_SEPARATOR,
   normalizeEditorOptions,
   parseCellEditValue,
+  readMultiDraft,
   resolveCellEditor,
 } from "./editing/cellEditing";
 export {

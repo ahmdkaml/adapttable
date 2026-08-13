@@ -278,7 +278,15 @@ vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
 the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
 describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
-`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
+`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`. Beyond
+text, number and select it names `boolean`, `date`, `datetime`, `time` and
+`multi-select`: `editorInputType` maps one to its input's `type`,
+`isBooleanEditor` / `isSelectEditor` / `isMultiSelectEditor` tell them apart,
+`booleanDraft` / `isDraftChecked` and `formatMultiDraft` / `readMultiDraft`
+(joined by `MULTI_SEPARATOR`) are the draft shapes those two hold, and
+`NativeBooleanEditor` / `NativeMultiSelectEditor` (`NativeEditorProps`) with
+`commitBooleanDraft` / `multiDraftFromSelect` from `@adapttable/core/adapter`
+are the platform controls the kits render for them.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
 

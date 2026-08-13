@@ -102,6 +102,8 @@ interface DataProps {
 const EDIT_FIELD: Record<string, keyof Person> = {
   person: "name",
   load: "utilization",
+  // The timeline cell shows a range; its editor edits the start it sorts by.
+  timeline: "start",
 };
 
 function Frontend({

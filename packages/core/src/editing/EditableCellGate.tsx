@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import type { ColumnDef } from "../types";
+import { booleanDraft, formatMultiDraft } from "./cellEditing";
 import {
   editableCellController,
   type EditableCellEditing,
@@ -111,6 +112,37 @@ export function editorBusyProps(ctrl: EditableCellEditorCtrl): {
   "aria-busy"?: true;
 } {
   return { "aria-busy": ctrl.validating ? true : undefined };
+}
+
+/**
+ * Toggle a checkbox editor and commit in the same gesture.
+ *
+ * A checkbox has one gesture, so waiting for Enter or a blur would leave the
+ * reader looking at a ticked box that has changed nothing. Safe to call
+ * synchronously: the editing state writes its draft ref in the same tick, so the
+ * commit that follows sees the new value.
+ *
+ * @param ctrl - The editor controller the gate handed the kit.
+ * @param checked - The box's new state.
+ */
+export function commitBooleanDraft(
+  ctrl: EditableCellEditorCtrl,
+  checked: boolean
+): void {
+  ctrl.setDraft(booleanDraft(checked));
+  ctrl.commitOnBlur();
+}
+
+/**
+ * The draft for a native `<select multiple>`'s current selection.
+ *
+ * @param select - The select element.
+ * @returns The draft string the editing state holds.
+ */
+export function multiDraftFromSelect(select: HTMLSelectElement): string {
+  return formatMultiDraft(
+    [...select.selectedOptions].map((option) => option.value)
+  );
 }
 
 export function EditableCellGate<TRow>(

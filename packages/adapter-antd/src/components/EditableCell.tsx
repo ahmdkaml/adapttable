@@ -3,10 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
 import {
   editorValidationProps,
   focusEditorOnMount,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
 import { Input, Select } from "antd";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
@@ -30,7 +36,23 @@ export function AntdCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <Select
         status={ctrl.error === undefined ? undefined : "error"}
@@ -60,7 +82,7 @@ export function AntdCellEditor({
       {...editorValidationProps(ctrl)}
       aria-label={label}
       size="small"
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}

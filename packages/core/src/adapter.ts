@@ -73,9 +73,16 @@ export {
   rowEditingSignature,
 } from "./editing/editableCellController";
 export {
+  commitBooleanDraft,
   editorBusyProps,
   editorValidationProps,
+  multiDraftFromSelect,
 } from "./editing/EditableCellGate";
+export {
+  NativeBooleanEditor,
+  type NativeEditorProps,
+  NativeMultiSelectEditor,
+} from "./editing/nativeEditors";
 export {
   ExportAnnouncer,
   type ExportAnnouncerProps,

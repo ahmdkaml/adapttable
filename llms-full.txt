@@ -1819,6 +1819,36 @@ export function People() {
 | `validateRow` | `(row) => string \| Record<string,string> \| undefined` | —        | Table rule over the row the edit would produce (cross-field).              |
 | `applyEdit`   | `(row, columnKey, value) => TRow`                       | spread   | How an edit lands on a row for `validateRow` to judge.                     |
 
+### The editor set
+
+| `editor`                            | Control           | Commits                         |
+| ----------------------------------- | ----------------- | ------------------------------- |
+| `"text"` (default)                  | text input        | the string                      |
+| `"number"`                          | number input      | `number \| null` (empty → null) |
+| `"boolean"`                         | checkbox          | `true` / `false`                |
+| `"date"`                            | date input        | `"YYYY-MM-DD"`                  |
+| `"datetime"`                        | datetime input    | `"YYYY-MM-DDTHH:mm"`            |
+| `"time"`                            | time input        | `"HH:mm"`                       |
+| `{ type: "select", options }`       | the kit's select  | the chosen value                |
+| `{ type: "multi-select", options }` | a multiple select | the chosen values, an array     |
+
+The date, time and checkbox editors use the platform's own controls: they are
+keyboard-complete and localized by the browser, which is a better answer than
+nine hand-built pickers.
+
+**Dates commit strings, not `Date` objects.** `"2026-08-13"` is a day; a `Date`
+is an instant in a timezone the reader never chose, and converting to one moves
+the day for most of the world. A column storing a `Date` still seeds its editor
+correctly — the local parts are read off it — and `parseValue` turns the committed
+string back into whatever you store.
+
+**A boolean commits on the tick.** A checkbox has one gesture, so waiting for
+Enter would leave a ticked box that changed nothing.
+
+**A multi-select seeds itself from a stored array** and commits an array back, so
+a host stores exactly what it gave — no separator to parse, no single-value
+special case. An empty selection commits `[]`, not `""`.
+
 ### Display, draft, and committed value
 
 Three moments in a cell's life, and a formatted column needs a different value
@@ -4904,7 +4934,15 @@ vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
 the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
 describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
-`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
+`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`. Beyond
+text, number and select it names `boolean`, `date`, `datetime`, `time` and
+`multi-select`: `editorInputType` maps one to its input's `type`,
+`isBooleanEditor` / `isSelectEditor` / `isMultiSelectEditor` tell them apart,
+`booleanDraft` / `isDraftChecked` and `formatMultiDraft` / `readMultiDraft`
+(joined by `MULTI_SEPARATOR`) are the draft shapes those two hold, and
+`NativeBooleanEditor` / `NativeMultiSelectEditor` (`NativeEditorProps`) with
+`commitBooleanDraft` / `multiDraftFromSelect` from `@adapttable/core/adapter`
+are the platform controls the kits render for them.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
 

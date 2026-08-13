@@ -3,12 +3,21 @@ import { describe, expect, it, vi } from "vitest";
 import type { ColumnDef } from "../types";
 import {
   applyCellEditCommit,
+  booleanDraft,
+  editorInputType,
+  formatMultiDraft,
   hasEditableColumns,
+  isBooleanEditor,
   isCellEditable,
+  isDraftChecked,
+  isMultiSelectEditor,
+  isSelectEditor,
+  MULTI_SEPARATOR,
   nextEditableCell,
   normalizeEditorOptions,
   parseCellEditValue,
   readEditableCellValue,
+  readMultiDraft,
   resolveCellEditor,
   stepEditableCell,
 } from "./cellEditing";
@@ -195,5 +204,148 @@ describe("applyCellEditCommit", () => {
       })
     ).toBe(false);
     expect(onCellEdit).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The editors beyond text, number and select.
+ *
+ * Each one is a round trip: what the row stores has to seed the control the
+ * browser renders, and what that control holds has to come back as a value the
+ * host can store again without parsing.
+ */
+describe("the editor set", () => {
+  interface Shift {
+    id: string;
+    approved: boolean;
+    day: Date;
+    tags: string[];
+  }
+  const SHIFT: Shift = {
+    id: "1",
+    approved: true,
+    day: new Date(2026, 7, 13, 14, 5),
+    tags: ["urgent", "billable"],
+  };
+
+  it("names the input type each editor asks for", () => {
+    expect(editorInputType("text")).toBe("text");
+    expect(editorInputType("number")).toBe("number");
+    expect(editorInputType("date")).toBe("date");
+    expect(editorInputType("datetime")).toBe("datetime-local");
+    expect(editorInputType("time")).toBe("time");
+    // A checkbox is not here: a boolean editor renders its own control, and
+    // several kits' text fields reject `type="checkbox"` outright.
+    expect(editorInputType("boolean")).toBe("text");
+    expect(editorInputType(null)).toBe("text");
+  });
+
+  it("tells the editor kinds apart", () => {
+    const select = { type: "select" as const, options: ["a"] };
+    const multi = { type: "multi-select" as const, options: ["a"] };
+    expect(isBooleanEditor("boolean")).toBe(true);
+    expect(isBooleanEditor("text")).toBe(false);
+    expect(isSelectEditor(select)).toBe(true);
+    expect(isSelectEditor(multi)).toBe(false);
+    expect(isSelectEditor(null)).toBe(false);
+    expect(isMultiSelectEditor(multi)).toBe(true);
+    expect(isMultiSelectEditor(select)).toBe(false);
+    expect(isMultiSelectEditor(null)).toBe(false);
+  });
+
+  it("carries a boolean both ways", () => {
+    expect(booleanDraft(true)).toBe("true");
+    expect(booleanDraft(false)).toBe("false");
+    expect(isDraftChecked("true")).toBe(true);
+    expect(isDraftChecked("false")).toBe(false);
+    expect(parseCellEditValue("boolean", "true")).toBe(true);
+    expect(parseCellEditValue("boolean", "false")).toBe(false);
+  });
+
+  it("seeds a checkbox from the stored flag", () => {
+    expect(
+      readEditableCellValue(SHIFT, {
+        key: "approved",
+        editable: true,
+        editor: "boolean",
+      })
+    ).toBe("true");
+  });
+
+  it("seeds the date editors from a stored Date, in local parts", () => {
+    // `toISOString` would shift to UTC, which moves the day for most of the
+    // world — the reader picked a day, not an instant.
+    expect(
+      readEditableCellValue(SHIFT, {
+        key: "day",
+        editable: true,
+        editor: "datetime",
+      })
+    ).toBe("2026-08-13T14:05");
+    expect(
+      readEditableCellValue(SHIFT, {
+        key: "day",
+        editable: true,
+        editor: "date",
+      })
+    ).toBe("2026-08-13");
+    expect(
+      readEditableCellValue(SHIFT, {
+        key: "day",
+        editable: true,
+        editor: "time",
+      })
+    ).toBe("14:05");
+  });
+
+  it("trims a plain time string for a time editor", () => {
+    const row = { id: "1", startsAt: "09:30:00" };
+    expect(
+      readEditableCellValue(row, {
+        key: "startsAt",
+        editable: true,
+        editor: "time",
+      })
+    ).toBe("09:30");
+  });
+
+  it("ignores a Date nobody can read", () => {
+    const row = { id: "1", day: new Date(Number.NaN) };
+    expect(
+      readEditableCellValue(row, { key: "day", editable: true, editor: "date" })
+    ).toBe("");
+  });
+
+  it("commits the date editors' own strings, not Dates", () => {
+    expect(parseCellEditValue("date", "2026-09-01")).toBe("2026-09-01");
+    expect(parseCellEditValue("datetime", "2026-09-01T08:00")).toBe(
+      "2026-09-01T08:00"
+    );
+    expect(parseCellEditValue("time", "07:15")).toBe("07:15");
+  });
+
+  it("carries a multi-select as the array it chose", () => {
+    const draft = formatMultiDraft(["urgent", "billable"]);
+    expect(readMultiDraft(draft)).toEqual(["urgent", "billable"]);
+    const multi = { type: "multi-select" as const, options: [] };
+    expect(parseCellEditValue(multi, draft)).toEqual(["urgent", "billable"]);
+    // Nothing chosen is an empty array, not an empty string.
+    expect(parseCellEditValue(multi, "")).toEqual([]);
+    // And a stored array seeds its own editor with no `editValue`.
+    expect(
+      readEditableCellValue(SHIFT, {
+        key: "tags",
+        editable: true,
+        editor: multi,
+      })
+    ).toBe(draft);
+  });
+
+  it("separates chosen values by a character an option cannot contain", () => {
+    // A comma would be a separator that can appear inside a value, which is
+    // not a separator.
+    expect(MULTI_SEPARATOR).toHaveLength(1);
+    expect(formatMultiDraft(["a,b", "c"])).toBe(`a,b${MULTI_SEPARATOR}c`);
+    expect(readMultiDraft(`a,b${MULTI_SEPARATOR}c`)).toEqual(["a,b", "c"]);
   });
 });

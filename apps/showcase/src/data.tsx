@@ -43,6 +43,8 @@ export interface Person {
   status?: DemoStatus;
   budget?: number;
   utilization?: number;
+  /** `YYYY-MM-DD`, once a date edit materializes one. */
+  start?: string;
 }
 
 export const PEOPLE = people as Person[];
@@ -85,6 +87,12 @@ export function demoOrders(person: Person): DemoOrder[] {
     qty: ((seed + i) % 5) + 1,
     amount: 1200 + ((seed * 137 + i * 419) % 8800),
   }));
+}
+
+/** `YYYY-MM-DD` in local time — what a date editor holds. */
+function localDay(value: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${String(value.getFullYear())}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 }
 
 /** Columns for the nested orders table — a different shape from the parent's. */
@@ -491,6 +499,11 @@ export function makeColumns(
       // the file gets the sortable ISO start date.
       exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
+      // The cell shows a localized range; the editor edits the start date it
+      // sorts by, in the browser's own date control.
+      editable: true,
+      editor: "date",
+      editValue: (r) => localDay(startDate(r)),
       width: 185,
       accessor: (row) => (
         <span style={cellStack}>
@@ -762,6 +775,10 @@ export function utilization(row: Person): number {
 }
 
 export function startDate(row: Person): Date {
+  if (row.start !== undefined) {
+    const [year, month, day] = row.start.split("-").map(Number);
+    return new Date(Date.UTC(year ?? 2026, (month ?? 1) - 1, day ?? 1));
+  }
   const day = 1 + ((Number(row.id) * 7) % 26);
   const month = (Number(row.id) * 2) % 12;
   return new Date(Date.UTC(2026, month, day));

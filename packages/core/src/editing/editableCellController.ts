@@ -6,6 +6,8 @@ import {
   type CellEditor,
   type EditableColumnLike,
   isCellEditable,
+  isMultiSelectEditor,
+  isSelectEditor,
   normalizeEditorOptions,
   resolveCellEditor,
   resolveCommitValue,
@@ -88,8 +90,9 @@ export function editableCellController<TRow>(options: {
   const editor = resolveCellEditor(column);
   if (!editor || !isCellEditable(column, row)) return idle;
 
+  // Both kinds of chooser carry options; only the number chosen differs.
   const selectOptions =
-    typeof editor === "object" && editor.type === "select"
+    isSelectEditor(editor) || isMultiSelectEditor(editor)
       ? normalizeEditorOptions(editor.options)
       : [];
 

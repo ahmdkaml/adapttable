@@ -456,3 +456,65 @@ describe("editableCellController — validation", () => {
     expect(result.current.validation.errorFor("1", "name")).toBe("required");
   });
 });
+
+describe("rowEditingSignature — with validation", () => {
+  it("changes for a row marked by a rule it is not editing", async () => {
+    // A cross-field rule marks a cell in a row that holds no open editor. That
+    // row still has to repaint, or the message it was given paints nothing.
+    const onCellEdit = vi.fn();
+    const { result } = renderHook(() => ({
+      state: useCellEditing(),
+      validation: useEditValidation<Person>(),
+    }));
+    const editing = {
+      onCellEdit,
+      state: result.current.state,
+      validation: result.current.validation,
+    };
+    expect(rowEditingSignature(editing, "2")).toBe("");
+
+    await act(async () => {
+      await result.current.validation.check({
+        target: { rowId: "2", columnKey: "age" },
+        value: 1,
+        row: ROWS[1]!,
+        validateCell: () => "too young",
+      });
+    });
+    expect(
+      rowEditingSignature(
+        { ...editing, validation: result.current.validation },
+        "2"
+      )
+    ).toBe("invalid");
+  });
+
+  it("carries the message and the busy flag for the row being edited", async () => {
+    const onCellEdit = vi.fn();
+    const { result } = renderHook(() => ({
+      state: useCellEditing(),
+      validation: useEditValidation<Person>(),
+    }));
+    act(() => {
+      result.current.state.begin("1", "name", "Ada");
+    });
+    await act(async () => {
+      await result.current.validation.check({
+        target: { rowId: "1", columnKey: "name" },
+        value: "",
+        row: ROWS[0]!,
+        validateCell: () => "required",
+      });
+    });
+    expect(
+      rowEditingSignature(
+        {
+          onCellEdit,
+          state: result.current.state,
+          validation: result.current.validation,
+        },
+        "1"
+      )
+    ).toBe("name:Ada:required:");
+  });
+});
