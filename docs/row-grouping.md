@@ -13,6 +13,36 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Paging groups, and paging inside one
+
+A table grouped by customer can have ten thousand groups. `groupPageSize` shows
+a screenful and offers the rest; `groupRowPageSize` does the same for the rows
+inside each group:
+
+```tsx
+<DataTable
+  data={ORDERS}
+  columns={columns}
+  rowKey={rowKey}
+  groupBy="customer"
+  groupPageSize={25}
+  groupRowPageSize={10}
+/>
+```
+
+Each limit adds one row — "Show 42 more groups", "Show 8 more in this group" —
+that reveals the next page when clicked. Only the **top level** pages: a nested
+level is already inside a group the reader opened, and hiding part of what they
+just opened would be a second "more" to hunt for.
+
+On a **server tier** the rest of a group is not in the browser yet, so
+`onGroupLoadMore(groupKey)` fires with the group that needs filling. Fetch it,
+hand back a longer `rows` for that group, and the next render shows them; the
+table reveals whatever it already holds either way. Both labels are localizable
+(`labels.moreGroups`, `labels.moreRowsInGroup`) in all seventeen locales, and the
+rows carry `group-more-row` / `group-more-cell` / `group-more` parts (with
+`groupMoreRow` / `groupMoreCell` class hooks in `@adapttable/unstyled`).
+
 ## Grouping on the server
 
 A backend that can group is usually the only thing that can: it has the whole

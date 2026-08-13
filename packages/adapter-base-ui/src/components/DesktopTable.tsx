@@ -685,7 +685,11 @@ export function DesktopTable<TRow>({
           )}
           {grouping
             ? grouping.entries.map((entry) => {
-                if (entry.kind === "group" || entry.kind === "groupFooter") {
+                if (
+                  entry.kind === "group" ||
+                  entry.kind === "groupFooter" ||
+                  entry.kind === "groupMore"
+                ) {
                   return (
                     <GroupHeaderRow
                       key={entry.key}
@@ -699,6 +703,7 @@ export function DesktopTable<TRow>({
                       dir={dir}
                       accentColor={accentColor}
                       onToggleCollapse={onToggleGroup}
+                      onShowMore={grouping.showMore}
                     />
                   );
                 }

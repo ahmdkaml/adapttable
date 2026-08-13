@@ -477,6 +477,10 @@ export interface TableLabels {
    * rows of 100,000 and "row 3 of 24" would be a lie.
    */
   gridCellPosition?: (row: number, total: number) => string;
+  /** Given how many are left, the row offering more groups. */
+  moreGroups?: (remaining: number) => string;
+  /** Given how many are left, the row offering more rows inside a group. */
+  moreRowsInGroup?: (remaining: number) => string;
   /** Given a group's label, the caption on its footer row — "Core total". */
   groupTotal?: (label: string) => string;
   /** Expand-group chevron accessible name. */

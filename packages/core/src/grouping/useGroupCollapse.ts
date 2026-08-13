@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
+import { useEventCallback } from "../hooks/useEventCallback";
+
 /** Collapse state + actions returned by {@link useGroupCollapse}. */
 export interface GroupCollapseState {
   /** Ids of currently collapsed groups (`group:…` keys). */
@@ -42,16 +44,17 @@ export function useGroupCollapse(controlled?: {
     [isControlled, controlledIds, uncontrolled]
   );
 
-  const commit = useCallback(
-    (next: Set<string>) => {
-      if (isControlled) {
-        controlled?.onCollapsedGroupIdsChange?.([...next]);
-      } else {
-        setUncontrolled(next);
-      }
-    },
-    [controlled, isControlled]
-  );
+  // Stable across renders on purpose: the options object arrives fresh from
+  // the caller every time, and a `commit` that changed with it would change
+  // every action here — which rebuilds the whole grouped model on a keystroke
+  // that has nothing to do with grouping.
+  const commit = useEventCallback((next: Set<string>) => {
+    if (isControlled) {
+      controlled?.onCollapsedGroupIdsChange?.([...next]);
+    } else {
+      setUncontrolled(next);
+    }
+  });
 
   const isCollapsed = useCallback(
     (groupKey: string) => collapsedGroupIds.has(groupKey),

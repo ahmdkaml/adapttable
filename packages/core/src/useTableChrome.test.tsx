@@ -445,3 +445,88 @@ describe("useTableChrome", () => {
     expect(renders.count - mounted).toBeLessThanOrEqual(2);
   });
 });
+
+describe("useTableChrome — the whole-tree grouping actions", () => {
+  interface Person {
+    id: string;
+    name: string;
+    role: string;
+  }
+  const rows: Person[] = [
+    { id: "1", name: "Ada", role: "Core" },
+    { id: "2", name: "Alan", role: "Core" },
+    { id: "3", name: "Grace", role: "Web" },
+  ];
+  const groupColumns: ColumnDef<Person>[] = [
+    { key: "name", header: "Name" },
+    { key: "role", header: "Role" },
+  ];
+  const setup = (props: Record<string, unknown> = {}) =>
+    renderHook(() => {
+      const source = useFrontendData<Person>({
+        data: rows,
+        urlAdapter: createMemoryAdapter(""),
+        columns: groupColumns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Person>({
+        source,
+        columns: groupColumns,
+        rowKey: (r) => r.id,
+        groupBy: ["role", "name"],
+        ...props,
+      });
+    });
+  const headers = (result: {
+    current: { grouping?: { entries: readonly { kind: string }[] } };
+  }) =>
+    result.current.grouping!.entries.filter((entry) => entry.kind === "group");
+
+  it("collapses everything, then opens it again", () => {
+    const { result } = setup();
+    expect(headers(result)).toHaveLength(5);
+    act(() => result.current.grouping!.collapseAll());
+    // Only the outermost headers survive a full collapse.
+    expect(headers(result)).toHaveLength(2);
+    act(() => result.current.grouping!.expandAll());
+    expect(headers(result)).toHaveLength(5);
+  });
+
+  it("shows the tree down to a depth", () => {
+    const { result } = setup();
+    act(() => result.current.grouping!.collapseToDepth(1));
+    // Depth 1 keeps the top level open and closes what is inside it.
+    expect(headers(result)).toHaveLength(5);
+    act(() => result.current.grouping!.collapseToDepth(0));
+    expect(headers(result)).toHaveLength(2);
+  });
+
+  it("reveals another page of groups", () => {
+    const { result } = setup({ groupBy: "role", groupPageSize: 1 });
+    expect(headers(result)).toHaveLength(1);
+    act(() => result.current.grouping!.showMore({ scope: "groups" }));
+    expect(headers(result)).toHaveLength(2);
+  });
+
+  it("reveals more of one group's rows, and says which", () => {
+    const onGroupLoadMore = vi.fn();
+    const { result } = setup({
+      groupBy: "role",
+      groupRowPageSize: 1,
+      onGroupLoadMore,
+    });
+    const leaves = () =>
+      result.current.grouping!.entries.filter((entry) => entry.kind === "row");
+    expect(leaves()).toHaveLength(2);
+    act(() =>
+      result.current.grouping!.showMore({
+        scope: "rows",
+        groupKey: "group:role:s:Core",
+      })
+    );
+    expect(leaves()).toHaveLength(3);
+    expect(onGroupLoadMore).toHaveBeenCalledExactlyOnceWith(
+      "group:role:s:Core"
+    );
+  });
+});

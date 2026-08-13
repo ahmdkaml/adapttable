@@ -64,6 +64,8 @@ export const it: Required<TableLabels> = {
   exportDone: "Esportazione completata",
   exportFailed: "Esportazione non riuscita",
   editCell: "Modifica cella",
+  moreGroups: (remaining) => `Mostra altri ${remaining} gruppi`,
+  moreRowsInGroup: (remaining) => `Mostra altri ${remaining} in questo gruppo`,
   groupTotal: (label) => `Totale ${label}`,
   expandGroup: "Espandi gruppo",
   collapseGroup: "Comprimi gruppo",

@@ -49,6 +49,8 @@ export { DEFAULT_CARD_SIZE_PX } from "./constants";
 export {
   cellHighlightStyle,
   groupIndentStyle,
+  type GroupRowKind,
+  groupRowParts,
   isCurrentMatchCell,
   isMatchedCell,
   isSelectedCell,
@@ -84,6 +86,10 @@ export {
   SelectionStatsBar,
   type SelectionStatsBarProps,
 } from "./focus/SelectionStatsBar";
+export {
+  GroupMoreButton,
+  type GroupMoreButtonProps,
+} from "./grouping/GroupMoreButton";
 export {
   type MountStaggerOptions,
   useMountStagger,

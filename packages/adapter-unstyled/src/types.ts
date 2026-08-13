@@ -41,6 +41,10 @@ export interface DataTableClassNames {
   groupFooterRow?: string;
   /** The spanning cell inside a group footer. */
   groupFooterCell?: string;
+  /** The row offering more groups, or more rows inside one. */
+  groupMoreRow?: string;
+  /** The spanning cell inside that row. */
+  groupMoreCell?: string;
   cellMatch?: string;
   /** The one match the find walk is on — `data-cell-match-current`. */
   cellMatchCurrent?: string;

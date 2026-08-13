@@ -84,6 +84,7 @@ function renderRow(
           selection={null}
           labels={labels}
           onToggleCollapse={onToggleCollapse}
+          onShowMore={() => undefined}
           {...props}
         />
       </Table.Tbody>
@@ -187,6 +188,7 @@ describe("GroupHeaderCard (mantine)", () => {
         selection={selection}
         labels={labels}
         onToggleCollapse={onToggleCollapse}
+        onShowMore={() => undefined}
       />
     );
     expect(

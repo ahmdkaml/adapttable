@@ -299,7 +299,9 @@ export function MobileCards<TRow>({
       )}
       {grouping
         ? grouping.entries.map((entry) =>
-            entry.kind === "group" || entry.kind === "groupFooter" ? (
+            entry.kind === "group" ||
+            entry.kind === "groupFooter" ||
+            entry.kind === "groupMore" ? (
               <li key={entry.key} style={{ display: "block" }}>
                 <GroupHeaderCard
                   entry={entry}
@@ -308,6 +310,7 @@ export function MobileCards<TRow>({
                   labels={labels}
                   classNames={classNames}
                   onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                  onShowMore={grouping.showMore}
                 />
               </li>
             ) : (

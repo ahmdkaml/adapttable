@@ -420,6 +420,12 @@ from `@adapttable/core/adapter` is the indent every kit applies. `GroupSort`
 names the orderings `groupSort` accepts (`"label"`, `"label-desc"`, `"count"`,
 `"count-desc"`, or a comparator) and `GroupNode` is what it and `groupFilter`
 receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`.
+Paging is `groupPageSize` / `groupRowPageSize`: `useGroupPaging()` holds how
+much has been revealed (`GroupPagingState`, whose `paging` is a `GroupPaging`),
+the model emits a `groupMore` entry for the rest, and `GroupMoreButton` /
+`GroupMoreButtonProps` from `@adapttable/core/adapter` render the offer.
+`groupRowParts(kind)` names the `data-adapttable-part` values for each of the
+three rows a grouped body renders (`GroupRowKind`).
 Expansion is the `collapsedGroupIds` / `onCollapsedGroupIdsChange` pair —
 `useGroupCollapseUrlState(options)` keeps it in the URL
 (`UseGroupCollapseUrlStateOptions` in, `UseGroupCollapseUrlStateResult` out,

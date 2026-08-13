@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { PIN_Z } from "./columns/useColumnLayout";
 import {
   cellHighlightStyle,
+  groupIndentStyle,
+  groupRowParts,
   isCurrentMatchCell,
   isMatchedCell,
   logicalAlign,
@@ -133,5 +135,30 @@ describe("cellHighlightStyle", () => {
     expect(isMatchedCell(undefined)).toBe(false);
     expect(isCurrentMatchCell({ "data-cell-match-current": "" })).toBe(true);
     expect(isCurrentMatchCell({})).toBe(false);
+  });
+});
+
+describe("groupRowParts", () => {
+  it("names each of the three rows a grouped body renders", () => {
+    expect(groupRowParts("group")).toEqual({
+      row: "group-row",
+      cell: "group-cell",
+      card: "group-card",
+      label: "group-label",
+    });
+    expect(groupRowParts("groupFooter").row).toBe("group-footer-row");
+    // A footer still labels itself as a group label — it names the group.
+    expect(groupRowParts("groupFooter").label).toBe("group-label");
+    expect(groupRowParts("groupMore")).toMatchObject({
+      row: "group-more-row",
+      label: "group-more-label",
+    });
+  });
+});
+
+describe("groupIndentStyle", () => {
+  it("indents deeper levels, logically so RTL mirrors it", () => {
+    expect(groupIndentStyle(0)).toEqual({});
+    expect(groupIndentStyle(2)).toEqual({ paddingInlineStart: "3rem" });
   });
 });

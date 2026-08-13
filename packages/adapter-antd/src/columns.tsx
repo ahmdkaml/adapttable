@@ -232,6 +232,8 @@ export interface BuildColumnsGrouping {
   collapsed: GroupCollapseState;
   /** Number of leaf data columns (for group-header colSpan). */
   dataColumnCount: number;
+  /** Reveal the next page of groups, or of one group's rows. */
+  showMore?: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
 }
 
 /** Options for {@link buildColumns}. */
@@ -347,6 +349,7 @@ function renderGroupDataCell<TRow>(
           group={record}
           labels={options.labels}
           onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+          onShowMore={options.grouping?.showMore}
         />
       );
     }
@@ -356,6 +359,7 @@ function renderGroupDataCell<TRow>(
         group={record}
         labels={options.labels}
         onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+        onShowMore={options.grouping?.showMore}
         aggregate={record.aggregateCells?.[column.key]}
       />
     );

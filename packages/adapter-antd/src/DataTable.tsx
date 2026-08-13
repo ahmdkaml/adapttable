@@ -601,6 +601,8 @@ function useCardWindowing<TRow>(options: {
 /** Row-grouping bundle from `useTableChrome` (opt-in when `groupBy` is set). */
 interface GroupingBundle<TRow> {
   groupBy: readonly string[];
+  /** Reveal the next page of groups, or of one group's rows. */
+  showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   collapsed: GroupCollapseState;
   entries: readonly GroupedFlatEntry<TRow>[];
   setGroupBy: (key: GroupByInput) => void;
@@ -1175,6 +1177,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ? {
           collapsed: grouping.collapsed,
           dataColumnCount: table.columns.length,
+          showMore: grouping.showMore,
         }
       : undefined,
   });

@@ -289,7 +289,9 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <Box aria-hidden style={{ height: paddingTop }} />}
       {grouping
         ? grouping.entries.map((entry) =>
-            entry.kind === "group" || entry.kind === "groupFooter" ? (
+            entry.kind === "group" ||
+            entry.kind === "groupFooter" ||
+            entry.kind === "groupMore" ? (
               <GroupHeaderCard
                 key={entry.key}
                 entry={entry}
@@ -299,6 +301,7 @@ export function MobileCards<TRow>({
                 dir={dir}
                 accentColor={accentColor}
                 onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                onShowMore={grouping.showMore}
               />
             ) : (
               renderCard(entry.row, entry.index, entry.key)

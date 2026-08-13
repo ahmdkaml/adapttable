@@ -225,6 +225,24 @@ export interface BaseDataTableProps<TRow> {
    */
   groupSort?: GroupSort<TRow>;
   /**
+   * Show at most this many top-level groups at a time, with a row offering the
+   * rest. A table grouped by customer can have ten thousand groups, and
+   * rendering all of them to fill one screen is the mistake virtualization
+   * exists to avoid.
+   */
+  groupPageSize?: number;
+  /**
+   * Show at most this many rows inside each group, with a "load more in this
+   * group" row beneath them.
+   */
+  groupRowPageSize?: number;
+  /**
+   * Called when a reader asks for more rows inside a group — the hook a server
+   * tier needs, since the rest of that group is not in the browser yet. The
+   * table reveals what it already holds either way.
+   */
+  onGroupLoadMore?: (groupKey: string) => void;
+  /**
    * Keep only the groups this answers true for, at every level — the group
    * equivalent of a filter, working on aggregates rather than cells:
    * `(g) => total(g.leafRows) > 10_000`.

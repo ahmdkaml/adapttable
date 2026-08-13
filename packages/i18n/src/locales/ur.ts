@@ -65,6 +65,8 @@ export const ur: Required<TableLabels> = {
   exportDone: "برآمد مکمل ہو گئی",
   exportFailed: "برآمد ناکام ہو گئی",
   editCell: "سیل میں ترمیم",
+  moreGroups: (remaining) => `${remaining} مزید گروپ دکھائیں`,
+  moreRowsInGroup: (remaining) => `اس گروپ میں ${remaining} مزید`,
   groupTotal: (label) => `${label} کا کل`,
   expandGroup: "گروپ پھیلائیں",
   collapseGroup: "گروپ سکیڑیں",

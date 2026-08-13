@@ -93,6 +93,8 @@ export const defaultLabels: Required<TableLabels> = {
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,
+  moreGroups: (remaining) => `Show ${remaining} more groups`,
+  moreRowsInGroup: (remaining) => `Show ${remaining} more in this group`,
   groupTotal: (label) => `${label} total`,
   expandGroup: "Expand group",
   collapseGroup: "Collapse group",

@@ -68,6 +68,32 @@ export type GroupedFlatEntry<TRow> =
       aggregateCells?: Partial<Record<string, ReactNode>>;
     }
   | {
+      /**
+       * "There are more" — a row offering the rest of a page of groups, or the
+       * rest of a group's leaves. Emitted only when the host set a page size,
+       * and only while something is still hidden.
+       */
+      kind: "groupMore";
+      /** Stable id. */
+      key: string;
+      /** Which group's leaves are being paged, or absent for top-level groups. */
+      groupKey?: string;
+      /** Depth the row sits at, so it indents with what it belongs to. */
+      level: number;
+      /** Whether this offers more groups or more rows inside one. */
+      scope: "groups" | "rows";
+      /** How many are still hidden. */
+      remaining: number;
+      /**
+       * Empty, and present so every group-shaped entry has the same fields:
+       * one adapter component renders headers, footers and this row, and a
+       * missing field there is a conditional in eight kits.
+       */
+      leafRows: readonly TRow[];
+      leafIds: readonly string[];
+      label: string;
+    }
+  | {
       kind: "row";
       key: string;
       row: TRow;
@@ -139,6 +165,24 @@ export interface BuildGroupedFlatModelOptions<TRow> {
   sort?: GroupSort<TRow>;
   /** Keep only the groups this answers true for, at every level. */
   filter?: (group: GroupNode<TRow>) => boolean;
+  /**
+   * Show at most this many top-level groups at a time. A table grouped by
+   * customer can have ten thousand groups, and rendering all of them to show
+   * the first screen is the same mistake as rendering ten thousand rows.
+   */
+  groupPageSize?: number;
+  /** Show at most this many leaves inside each group. */
+  rowPageSize?: number;
+  /** How many are currently revealed, from {@link GroupPaging}. */
+  paging?: GroupPaging;
+}
+
+/** How much of a paged group model the reader has asked to see. */
+export interface GroupPaging {
+  /** Extra top-level groups revealed beyond the first page. */
+  groups?: number;
+  /** Extra leaves revealed per group key. */
+  rows?: Readonly<Record<string, number>>;
 }
 
 /**
@@ -248,6 +292,9 @@ export function buildGroupedFlatModel<TRow>(
     footers = false,
     sort,
     filter,
+    groupPageSize,
+    rowPageSize,
+    paging,
   } = options;
   const keys = (typeof groupBy === "string" ? [groupBy] : groupBy).filter(
     (key) => key.length > 0
@@ -264,21 +311,7 @@ export function buildGroupedFlatModel<TRow>(
     path: readonly string[]
   ): void => {
     const key = keys[level]!;
-    const column = columns.find((c) => c.key === key);
-    const order: string[] = [];
-    const buckets = new Map<string, { value: unknown; rows: TRow[] }>();
-
-    for (const row of subset) {
-      const value = resolveGroupValue(row, key, column);
-      const valueKey = groupValueKey(value);
-      let bucket = buckets.get(valueKey);
-      if (!bucket) {
-        bucket = { value, rows: [] };
-        buckets.set(valueKey, bucket);
-        order.push(valueKey);
-      }
-      bucket.rows.push(row);
-    }
+    const { order, buckets } = bucketBy(subset, key, columns);
 
     // Filtering and ordering happen on the whole level at once, before any of
     // it is emitted: a group dropped here takes its leaves with it, and one
@@ -296,7 +329,18 @@ export function buildGroupedFlatModel<TRow>(
     });
     if (sort) nodes.sort((a, b) => compareGroups(a.node, b.node, sort));
 
-    for (const { valueKey, node } of nodes) {
+    // Only the top level pages: a nested level is already inside a group the
+    // reader chose to open, and hiding part of what they opened would be a
+    // second "more" to hunt for.
+    const groupLimit = pageLimit(
+      nodes.length,
+      level === 0 ? groupPageSize : undefined,
+      paging?.groups
+    );
+    const shown = nodes.slice(0, groupLimit);
+    const hiddenGroups = nodes.length - shown.length;
+
+    for (const { valueKey, node } of shown) {
       const bucket = buckets.get(valueKey)!;
       const here = [...path, valueKey];
       const groupKey = makeGroupRowKey(keys.slice(0, level + 1), here);
@@ -322,15 +366,17 @@ export function buildGroupedFlatModel<TRow>(
       if (level + 1 < keys.length) {
         walk(bucket.rows, level + 1, here);
       } else {
-        for (const row of bucket.rows) {
-          flat.push({
-            kind: "row",
-            key: getRowId(row),
-            row,
-            index: leafIndex++,
-            groupKey,
-          });
-        }
+        leafIndex = emitLeaves(flat, bucket.rows, {
+          groupKey,
+          level,
+          getRowId,
+          from: leafIndex,
+          limit: pageLimit(
+            bucket.rows.length,
+            rowPageSize,
+            paging?.rows?.[groupKey]
+          ),
+        });
       }
 
       // The footer closes the group AFTER everything inside it, including any
@@ -349,6 +395,12 @@ export function buildGroupedFlatModel<TRow>(
           aggregateCells,
         });
       }
+    }
+
+    if (hiddenGroups > 0) {
+      flat.push(
+        moreEntry("groups", hiddenGroups, level, undefined, path.join(">"))
+      );
     }
   };
 
@@ -378,4 +430,127 @@ function compareGroups<TRow>(
   if (sort === "label-desc") return b.label.localeCompare(a.label);
   if (sort === "count") return a.leafRows.length - b.leafRows.length;
   return b.leafRows.length - a.leafRows.length;
+}
+
+/**
+ * Emit one group's leaf rows, plus the offer for any it is holding back.
+ *
+ * @typeParam TRow - The row type.
+ * @param flat - The entry list being built, appended to in place.
+ * @param rows - The group's leaves.
+ * @param options - Where they belong and how many to show.
+ * @returns The next leaf index, so numbering continues across groups.
+ */
+function emitLeaves<TRow>(
+  flat: GroupedFlatEntry<TRow>[],
+  rows: readonly TRow[],
+  options: {
+    groupKey: string;
+    level: number;
+    getRowId: (row: TRow) => string;
+    from: number;
+    limit: number;
+  }
+): number {
+  const { groupKey, level, getRowId, from, limit } = options;
+  let index = from;
+  for (const row of rows.slice(0, limit)) {
+    flat.push({
+      kind: "row",
+      key: getRowId(row),
+      row,
+      index: index++,
+      groupKey,
+    });
+  }
+  const hidden = Math.max(0, rows.length - limit);
+  if (hidden > 0) flat.push(moreEntry("rows", hidden, level + 1, groupKey));
+  return index;
+}
+
+/**
+ * How many of something to show: everything without a page size, and one page
+ * plus whatever has been revealed with one.
+ *
+ * @param total - How many there are.
+ * @param pageSize - The page size, when the host set one.
+ * @param revealed - How many extra have been asked for.
+ * @returns The count to render.
+ */
+function pageLimit(
+  total: number,
+  pageSize: number | undefined,
+  revealed: number | undefined
+): number {
+  if (!pageSize) return total;
+  return Math.min(total, pageSize + (revealed ?? 0));
+}
+
+/**
+ * Partition rows into ordered buckets for one grouping key.
+ *
+ * Order is first-seen, which preserves whatever sort the source applied — the
+ * rows arrive sorted and the groups come out in the order those rows named
+ * them.
+ *
+ * @typeParam TRow - The row type.
+ * @param rows - The rows to partition.
+ * @param key - The grouping key for this level.
+ * @param columns - The columns, for the key's `sortValue`.
+ * @returns The bucket keys in order, and the buckets themselves.
+ */
+function bucketBy<TRow>(
+  rows: readonly TRow[],
+  key: string,
+  columns: readonly ColumnDef<TRow>[]
+): {
+  order: string[];
+  buckets: Map<string, { value: unknown; rows: TRow[] }>;
+} {
+  const column = columns.find((c) => c.key === key);
+  const order: string[] = [];
+  const buckets = new Map<string, { value: unknown; rows: TRow[] }>();
+  for (const row of rows) {
+    const value = resolveGroupValue(row, key, column);
+    const valueKey = groupValueKey(value);
+    let bucket = buckets.get(valueKey);
+    if (!bucket) {
+      bucket = { value, rows: [] };
+      buckets.set(valueKey, bucket);
+      order.push(valueKey);
+    }
+    bucket.rows.push(row);
+  }
+  return { order, buckets };
+}
+
+/**
+ * The "there are more" row, for either scope.
+ *
+ * @typeParam TRow - The row type.
+ * @param scope - Whether more groups or more rows are hidden.
+ * @param remaining - How many.
+ * @param level - The depth the row sits at.
+ * @param groupKey - The group whose rows are hidden, for a `"rows"` offer.
+ * @param pathKey - The path, so a nested level's offer has its own id.
+ * @returns The entry.
+ */
+function moreEntry<TRow>(
+  scope: "groups" | "rows",
+  remaining: number,
+  level: number,
+  groupKey?: string,
+  pathKey = ""
+): GroupedFlatEntry<TRow> {
+  return {
+    kind: "groupMore",
+    key: groupKey ? `${groupKey}:more` : `group-more:${level}:${pathKey}`,
+    groupKey,
+    level,
+    scope,
+    remaining,
+    leafRows: [],
+    leafIds: [],
+    label: "",
+  };
 }

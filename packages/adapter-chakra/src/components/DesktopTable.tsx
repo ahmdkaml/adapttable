@@ -384,7 +384,11 @@ function DesktopTableRows<TRow>({
 }>): ReactNode {
   if (grouping) {
     return grouping.entries.map((entry) => {
-      if (entry.kind === "group" || entry.kind === "groupFooter") {
+      if (
+        entry.kind === "group" ||
+        entry.kind === "groupFooter" ||
+        entry.kind === "groupMore"
+      ) {
         return (
           <GroupHeaderRow
             key={entry.key}
@@ -398,6 +402,7 @@ function DesktopTableRows<TRow>({
             dir={dir}
             accentColor={accentColor}
             onToggleCollapse={onToggleGroup}
+            onShowMore={grouping.showMore}
           />
         );
       }

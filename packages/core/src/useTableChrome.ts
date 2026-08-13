@@ -32,6 +32,7 @@ import {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+import { useGroupPaging } from "./grouping/useGroupPaging";
 import { useEventCallback } from "./hooks/useEventCallback";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -252,6 +253,8 @@ export interface TableChrome<TRow> {
      * outermost headers, `1` opens the first level inside them.
      */
     collapseToDepth: (depth: number) => void;
+    /** Reveal the next page of groups, or of one group's rows. */
+    showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   };
   /**
    * The rows the editing layer must treat as present: the grouped leaf set
@@ -511,6 +514,7 @@ export function useTableChrome<TRow>(
   );
 
   const getRowId = selectionGetId ?? rowKey;
+  const groupPaging = useGroupPaging();
   const grouping = useMemo(() => {
     if (groupByKeys.length === 0) return undefined;
     if (!source.allFilteredRows && !serverGroups) return undefined;
@@ -532,6 +536,9 @@ export function useTableChrome<TRow>(
           footers: props.groupFooters === true,
           sort: props.groupSort,
           filter: props.groupFilter,
+          groupPageSize: props.groupPageSize,
+          rowPageSize: props.groupRowPageSize,
+          paging: groupPaging.paging,
         });
     // The whole-tree actions need the keys, and the entries are where they
     // are: a collapsed group hides its children, so its own key is still
@@ -546,6 +553,21 @@ export function useTableChrome<TRow>(
       aggregates: props.groupAggregates,
       entries,
       setGroupBy,
+      /**
+       * Reveal the next page of groups, or of one group's rows. The table
+       * shows what it already holds; `onGroupLoadMore` is where a server tier
+       * fetches the rest.
+       */
+      showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => {
+        const size =
+          entry.scope === "groups"
+            ? (props.groupPageSize ?? 0)
+            : (props.groupRowPageSize ?? 0);
+        groupPaging.showMore(size, entry.groupKey);
+        if (entry.scope === "rows" && entry.groupKey) {
+          props.onGroupLoadMore?.(entry.groupKey);
+        }
+      },
       expandAll: groupCollapse.expandAll,
       collapseAll: () => {
         groupCollapse.collapseToDepth(0, openGroups);
@@ -565,6 +587,10 @@ export function useTableChrome<TRow>(
     props.groupFooters,
     props.groupSort,
     props.groupFilter,
+    props.groupPageSize,
+    props.groupRowPageSize,
+    props.onGroupLoadMore,
+    groupPaging,
     setGroupBy,
   ]);
 

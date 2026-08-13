@@ -155,6 +155,8 @@ const STATE_CLASSES = new Set([
   "cellSelected",
   "groupFooterRow",
   "groupFooterCell",
+  "groupMoreRow",
+  "groupMoreCell",
   "cellMatch",
   "cellMatchCurrent",
 ]);
@@ -434,6 +436,8 @@ const KEYS = [
   "cellSelected",
   "groupFooterRow",
   "groupFooterCell",
+  "groupMoreRow",
+  "groupMoreCell",
   "cellMatch",
   "cellMatchCurrent",
   "expandHeader",

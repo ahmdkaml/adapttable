@@ -332,6 +332,8 @@ export function MobileCards<TRow>({
   grouping?: {
     collapsed: { toggle: (key: string) => void };
     entries: readonly GroupedFlatEntry<TRow>[];
+    /** Reveal the next page of groups, or of one group's rows. */
+    showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   };
   /**
    * Windowed entries to render — the virtual slice when virtualization is on,
@@ -391,18 +393,30 @@ export function MobileCards<TRow>({
   };
 
   const toGroupRow = (
-    entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" | "groupFooter" }>
+    entry: Extract<
+      GroupedFlatEntry<TRow>,
+      { kind: "group" | "groupFooter" | "groupMore" }
+    >
   ): AdaptTableGroupRow => ({
     [ADAPTTABLE_GROUP]: true,
     key: entry.key,
     label: entry.label,
     level: entry.level,
     footer: entry.kind === "groupFooter",
+    more:
+      entry.kind === "groupMore"
+        ? {
+            scope: entry.scope,
+            groupKey: entry.groupKey,
+            remaining: entry.remaining,
+          }
+        : undefined,
     count:
       (entry.kind === "group" ? entry.serverCount : undefined) ??
       entry.leafIds.length,
     leafIds: entry.leafIds,
-    aggregateCells: entry.aggregateCells,
+    aggregateCells:
+      entry.kind === "groupMore" ? undefined : entry.aggregateCells,
     collapsed: entry.kind === "group" && entry.collapsed,
   });
 
@@ -422,7 +436,11 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <li aria-hidden style={{ height: paddingTop }} />}
       {grouping
         ? grouping.entries.map((entry) => {
-            if (entry.kind === "group" || entry.kind === "groupFooter") {
+            if (
+              entry.kind === "group" ||
+              entry.kind === "groupFooter" ||
+              entry.kind === "groupMore"
+            ) {
               return (
                 <li key={entry.key} ref={measureElement}>
                   <GroupHeaderCard
@@ -430,8 +448,9 @@ export function MobileCards<TRow>({
                     labels={labels}
                     onToggle={() => grouping.collapsed.toggle(entry.key)}
                     selection={selection ?? undefined}
+                    onShowMore={grouping.showMore}
                     aggregateNodes={
-                      entry.aggregateCells
+                      entry.kind !== "groupMore" && entry.aggregateCells
                         ? Object.entries(entry.aggregateCells).map(
                             ([colKey, node]) => (
                               <span key={colKey} data-column={colKey}>

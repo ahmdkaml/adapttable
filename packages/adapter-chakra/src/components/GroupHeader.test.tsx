@@ -84,6 +84,7 @@ function renderRow(
           selection={null}
           labels={labels}
           onToggleCollapse={onToggleCollapse}
+          onShowMore={() => undefined}
           {...props}
         />
       </Table.Body>
@@ -189,6 +190,7 @@ describe("GroupHeaderCard (chakra)", () => {
         selection={selection}
         labels={labels}
         onToggleCollapse={onToggleCollapse}
+        onShowMore={() => undefined}
       />
     );
     expect(

@@ -25,6 +25,8 @@ export interface AdaptTableGroupRow {
   level: number;
   /** A closing total rather than a header: no chevron, no checkbox. */
   footer?: boolean;
+  /** A row offering the next page of groups, or of this group's rows. */
+  more?: { scope: "groups" | "rows"; groupKey?: string; remaining: number };
   /** How many leaves it has — the server's number when it grouped. */
   count: number;
   leafIds: readonly string[];
@@ -59,11 +61,20 @@ function toGroupedDataRecord<TRow>(
           label: entry.label,
           level: entry.level,
           footer: entry.kind === "groupFooter",
+          more:
+            entry.kind === "groupMore"
+              ? {
+                  scope: entry.scope,
+                  groupKey: entry.groupKey,
+                  remaining: entry.remaining,
+                }
+              : undefined,
           count:
             (entry.kind === "group" ? entry.serverCount : undefined) ??
             entry.leafIds.length,
           leafIds: entry.leafIds,
-          aggregateCells: entry.aggregateCells,
+          aggregateCells:
+            entry.kind === "groupMore" ? undefined : entry.aggregateCells,
           collapsed: entry.kind === "group" && entry.collapsed,
         };
   return record;
@@ -141,11 +152,14 @@ export function GroupHeaderCell({
   group,
   labels,
   onToggle,
+  onShowMore,
   aggregate,
 }: Readonly<{
   group: AdaptTableGroupRow;
   labels: Required<TableLabels>;
   onToggle: () => void;
+  /** Reveal the next page of groups, or of one group's rows. */
+  onShowMore?: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   aggregate?: ReactNode;
 }>) {
   return (
@@ -156,7 +170,7 @@ export function GroupHeaderCell({
         group.footer === true ? "group-footer-cell" : "group-cell"
       }
     >
-      {group.footer !== true && (
+      {group.footer !== true && group.more === undefined && (
         <GroupToggle
           collapsed={group.collapsed}
           labels={labels}
@@ -166,10 +180,24 @@ export function GroupHeaderCell({
           }}
         />
       )}
-      <Typography.Text strong data-adapttable-part="group-label">
-        {group.footer === true ? labels.groupTotal(group.label) : group.label}
-      </Typography.Text>
-      {group.footer !== true && (
+      {group.more ? (
+        <Typography.Link
+          data-adapttable-part="group-more"
+          onClick={(event) => {
+            event.stopPropagation();
+            onShowMore?.(group.more!);
+          }}
+        >
+          {group.more.scope === "groups"
+            ? labels.moreGroups(group.more.remaining)
+            : labels.moreRowsInGroup(group.more.remaining)}
+        </Typography.Link>
+      ) : (
+        <Typography.Text strong data-adapttable-part="group-label">
+          {group.footer === true ? labels.groupTotal(group.label) : group.label}
+        </Typography.Text>
+      )}
+      {group.footer !== true && group.more === undefined && (
         <Typography.Text type="secondary" data-adapttable-part="group-count">
           {labels.groupCount(group.count)}
         </Typography.Text>
@@ -211,12 +239,15 @@ export function GroupHeaderCard({
   group,
   labels,
   onToggle,
+  onShowMore,
   selection,
   aggregateNodes,
 }: Readonly<{
   group: AdaptTableGroupRow;
   labels: Required<TableLabels>;
   onToggle: () => void;
+  /** Reveal the next page of groups, or of one group's rows. */
+  onShowMore?: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   selection?: SelectionState | null;
   aggregateNodes?: ReactNode;
 }>) {
@@ -246,9 +277,20 @@ export function GroupHeaderCard({
           onToggle();
         }}
       />
-      <Typography.Text strong data-adapttable-part="group-label">
-        {group.label}
-      </Typography.Text>
+      {group.more ? (
+        <Typography.Link
+          data-adapttable-part="group-more"
+          onClick={() => onShowMore?.(group.more!)}
+        >
+          {group.more.scope === "groups"
+            ? labels.moreGroups(group.more.remaining)
+            : labels.moreRowsInGroup(group.more.remaining)}
+        </Typography.Link>
+      ) : (
+        <Typography.Text strong data-adapttable-part="group-label">
+          {group.label}
+        </Typography.Text>
+      )}
       <Typography.Text type="secondary" data-adapttable-part="group-count">
         {labels.groupCount(group.count)}
       </Typography.Text>

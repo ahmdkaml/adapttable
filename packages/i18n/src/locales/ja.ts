@@ -63,6 +63,8 @@ export const ja: Required<TableLabels> = {
   exportDone: "エクスポートが完了しました",
   exportFailed: "エクスポートに失敗しました",
   editCell: "セルを編集",
+  moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
+  moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,
   expandGroup: "グループを展開",
   collapseGroup: "グループを折りたたむ",

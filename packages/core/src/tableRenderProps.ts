@@ -80,6 +80,8 @@ export interface SharedTableRenderProps<TRow> {
     collapseAll: () => void;
     /** Show the tree down to `depth` and no further. */
     collapseToDepth: (depth: number) => void;
+    /** Reveal the next page of groups, or of one group's rows. */
+    showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   };
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];

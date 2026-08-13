@@ -458,6 +458,7 @@ export {
   type GroupAggregatesFn,
   type GroupedFlatEntry,
   type GroupNode,
+  type GroupPaging,
   type GroupSort,
   groupValueKey,
 } from "./grouping/groupRows";
@@ -466,6 +467,10 @@ export {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+export {
+  type GroupPagingState,
+  useGroupPaging,
+} from "./grouping/useGroupPaging";
 export {
   type QueryGroupRow,
   type QueryGroupsPage,

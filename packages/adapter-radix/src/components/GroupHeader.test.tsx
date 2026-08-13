@@ -84,6 +84,7 @@ function renderRow(
           selection={null}
           labels={labels}
           onToggleCollapse={onToggleCollapse}
+          onShowMore={() => undefined}
           {...props}
         />
       </Table.Body>
@@ -190,6 +191,7 @@ describe("GroupHeaderCard (radix)", () => {
         selection={selection}
         labels={labels}
         onToggleCollapse={onToggleCollapse}
+        onShowMore={() => undefined}
       />
     );
     expect(

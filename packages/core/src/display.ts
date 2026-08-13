@@ -204,6 +204,49 @@ export function cellHighlightStyle(
   return isSelectedCell(props) ? { ...base, ...selected } : base;
 }
 
+/** The three rows a grouped body renders, all through one component. */
+export type GroupRowKind = "group" | "groupFooter" | "groupMore";
+
+/**
+ * The `data-adapttable-part` names for one of those rows.
+ *
+ * One place decides them, because a header, its footer and its "show more" row
+ * are the same component in every kit — and three nested ternaries per kit is
+ * how those names drift apart.
+ *
+ * @param kind - Which of the three the entry is.
+ * @returns The part names for its row, cell, card and label.
+ */
+export function groupRowParts(kind: GroupRowKind): {
+  row: string;
+  cell: string;
+  card: string;
+  label: string;
+} {
+  if (kind === "groupMore") {
+    return {
+      row: "group-more-row",
+      cell: "group-more-cell",
+      card: "group-more-card",
+      label: "group-more-label",
+    };
+  }
+  if (kind === "groupFooter") {
+    return {
+      row: "group-footer-row",
+      cell: "group-footer-cell",
+      card: "group-footer-card",
+      label: "group-label",
+    };
+  }
+  return {
+    row: "group-row",
+    cell: "group-cell",
+    card: "group-card",
+    label: "group-label",
+  };
+}
+
 /**
  * How far a nested group header sits in from the one above it.
  *

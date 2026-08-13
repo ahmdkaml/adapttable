@@ -84,6 +84,7 @@ function renderRow(
           labels={labels}
           classNames={{}}
           onToggleCollapse={onToggleCollapse}
+          onShowMore={() => undefined}
           {...props}
         />
       </tbody>
@@ -188,6 +189,7 @@ describe("GroupHeaderRow (unstyled)", () => {
             labels={labels}
             classNames={{}}
             onToggleCollapse={vi.fn()}
+            onShowMore={() => undefined}
           />
         </tbody>
       </table>
@@ -212,6 +214,7 @@ describe("GroupHeaderRow (unstyled)", () => {
             labels={labels}
             classNames={{}}
             onToggleCollapse={vi.fn()}
+            onShowMore={() => undefined}
           />
         </tbody>
       </table>
@@ -234,6 +237,7 @@ describe("GroupHeaderRow (unstyled)", () => {
             labels={labels}
             classNames={{}}
             onToggleCollapse={vi.fn()}
+            onShowMore={() => undefined}
           />
         </tbody>
       </table>
@@ -256,6 +260,7 @@ describe("GroupHeaderCard (unstyled)", () => {
         labels={labels}
         classNames={{}}
         onToggleCollapse={onToggleCollapse}
+        onShowMore={() => undefined}
       />
     );
     expect(
