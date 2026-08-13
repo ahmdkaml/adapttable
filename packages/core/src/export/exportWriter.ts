@@ -20,6 +20,11 @@
  * app importing it ever downloads — a table that exports CSV must not ship a
  * ZIP encoder.
  */
+import {
+  coveredAddressSet,
+  type GetCellSpan,
+  spanningArmed,
+} from "../rows/cellSpan";
 import type { ColumnDef } from "../types";
 import { isBrowser } from "../utils/env";
 import { defaultCsvValue, matrixToCsv } from "./csv";
@@ -93,15 +98,29 @@ function exportCellValue<TRow>(row: TRow, column: ColumnDef<TRow>): unknown {
  */
 export function buildExportTable<TRow>(
   rows: readonly TRow[],
-  columns: readonly ColumnDef<TRow>[]
+  columns: readonly ColumnDef<TRow>[],
+  span?: { getCellSpan?: GetCellSpan<TRow>; firstRowIndex?: number }
 ): ExportTable {
+  const firstRowIndex = span?.firstRowIndex ?? 0;
+  const coveredSet =
+    span?.getCellSpan && spanningArmed(columns, span.getCellSpan)
+      ? coveredAddressSet({
+          rows,
+          columns,
+          getCellSpan: span.getCellSpan,
+          firstRowIndex,
+        })
+      : undefined;
   return {
     headers: columns.map((column) =>
       typeof column.header === "string" ? column.header : column.key
     ),
     keys: columns.map((column) => column.key),
-    rows: rows.map((row) =>
-      columns.map((column) => exportCellValue(row, column))
+    rows: rows.map((row, rowIndex) =>
+      columns.map((column, col) => {
+        if (coveredSet?.has(`${firstRowIndex + rowIndex}:${col}`)) return "";
+        return exportCellValue(row, column);
+      })
     ),
   };
 }

@@ -99,6 +99,11 @@ export interface UseGridFocusOptions<TRow> {
   /** Enter or F2 on a cell — the editing model's entry point. */
   onActivate?: (cell: GridCell) => void;
   /**
+   * True for a cell covered by someone else's span. Arrow keys skip it
+   * rather than landing inside a cell that is not in the DOM.
+   */
+  isCoveredCell?: (cell: GridCell) => boolean;
+  /**
    * Fired whenever the selected range changes, including when it collapses to
    * a single cell. `null` means nothing is selected.
    */
@@ -239,6 +244,7 @@ export function useGridFocus<TRow>(
     onFind,
     matchKeys,
     currentMatch,
+    isCoveredCell,
   } = options;
 
   const [active, setActive] = useState<GridCell | null>(null);
@@ -548,7 +554,7 @@ export function useGridFocus<TRow>(
 
       const move = gridFocusMoveForKey(event, dir);
       if (!move) return;
-      const moved = moveGridFocus(from, move, bounds);
+      const moved = moveGridFocus(from, move, bounds, isCoveredCell);
       // The window may not start at row 0 (page 3 of a paged table) and the
       // mover clamps at zero, so hold that floor here too.
       const next = { row: Math.max(moved.row, firstRowIndex), col: moved.col };

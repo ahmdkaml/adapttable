@@ -67,6 +67,16 @@ describe("moveGridFocus", () => {
     expect(moveGridFocus(AT(0, 0), "up", none)).toEqual(AT(0, 0));
   });
 
+  it("skips a cell covered by a span and stops if the rest is covered", () => {
+    const covered = (cell: { row: number; col: number }) =>
+      cell.row === 5 && cell.col === 3;
+    expect(moveGridFocus(AT(5, 2), "right", BOUNDS, covered)).toEqual(AT(5, 4));
+    const wholeRow = (cell: { row: number; col: number }) => cell.row === 0;
+    expect(moveGridFocus(AT(0, 0), "right", BOUNDS, wholeRow)).toEqual(
+      AT(0, 0)
+    );
+  });
+
   it("treats a zero page size as one row, never as a no-op", () => {
     const flat: GridBounds = { rowCount: 100, colCount: 3, pageSize: 0 };
     expect(moveGridFocus(AT(10, 0), "pageDown", flat)).toEqual(AT(11, 0));

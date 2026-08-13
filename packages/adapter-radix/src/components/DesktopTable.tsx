@@ -19,7 +19,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  type BodyCell,
   cellHighlightStyle,
+  cellsForRow,
   columnFlexShares,
   columnSizeStyle,
   ColumnSpacer,
@@ -45,6 +47,7 @@ import {
   rowReorderDropStyle,
   RowReorderHandle,
   rowReorderSignature,
+  rowSpanSignature,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
@@ -258,6 +261,10 @@ interface DesktopRowProps<TRow> {
   accentColor?: RadixAccentColor;
   dir?: Direction;
   columns: readonly ColumnDef<TRow>[];
+  /** This row's cells — covered neighbours already omitted. */
+  bodyCells: readonly BodyCell<TRow>[];
+  /** Memo digest from {@link rowSpanSignature}. */
+  spanSignature: string;
   columnWidths?: Readonly<Record<string, number>>;
   /** Serialized pin geometry — stands in for the `pinOffset` closure. */
   pinSignature: string;
@@ -332,6 +339,7 @@ function DesktopRowBase<TRow>({
   accentColor,
   dir,
   columns,
+  bodyCells,
   className,
   labels,
   hasSelection,
@@ -456,12 +464,16 @@ function DesktopRowBase<TRow>({
         {columnSpacers && (
           <ColumnSpacer width={columnSpacers.start} side="start" />
         )}
-        {columns.map((column, colIndex) => {
-          const focusProps = gridFocus?.getCellPropsAt(focusIndex, colIndex);
+        {bodyCells.map((cell) => {
+          const { column, columnIndex, colSpan, rowSpan } = cell;
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
           return (
             <Table.Cell
               key={column.key}
+              colSpan={colSpan > 1 ? colSpan : undefined}
+              rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
+              data-adapttable-part="cell"
               {...focusProps}
               justify={justifyFor(column.align)}
               style={
@@ -501,7 +513,7 @@ function DesktopRowBase<TRow>({
               <FillHandle
                 focus={gridFocus}
                 windowIndex={focusIndex}
-                col={colIndex}
+                col={columnIndex}
               />
             </Table.Cell>
           );
@@ -600,6 +612,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  getCellSpan,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -614,6 +627,7 @@ export function DesktopTable<TRow>({
     entries,
     columnSpan,
     columnSpacers,
+    cellsByRow,
   } = tableRenderModel({
     table,
     rows,
@@ -627,6 +641,9 @@ export function DesktopTable<TRow>({
     rowReorder,
     pinnedTopRows,
     pinnedBottomRows,
+    getCellSpan,
+    pinOffset,
+    tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   const expandable = expansion !== undefined;
@@ -766,6 +783,8 @@ export function DesktopTable<TRow>({
         accentColor={accentColor}
         dir={dir}
         columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         columnWidths={columnWidths}
         pinSignature={pinSignature}
         className={rowClassName?.(row, sourceIndex)}
@@ -1062,6 +1081,10 @@ export function DesktopTable<TRow>({
                     accentColor={accentColor}
                     dir={dir}
                     columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
                     columnWidths={columnWidths}
                     pinSignature={pinSignature}
                     className={rowClassName?.(entry.row, entry.index)}
@@ -1109,6 +1132,10 @@ export function DesktopTable<TRow>({
                       accentColor={accentColor}
                       dir={dir}
                       columns={columns}
+                      bodyCells={cellsForRow(cellsByRow, id)}
+                      spanSignature={rowSpanSignature(
+                        cellsForRow(cellsByRow, id)
+                      )}
                       columnWidths={columnWidths}
                       pinSignature={pinSignature}
                       className={rowClassName?.(row, focusIndex)}

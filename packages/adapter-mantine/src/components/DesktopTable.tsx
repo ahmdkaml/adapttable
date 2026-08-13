@@ -18,7 +18,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  type BodyCell,
   cellHighlightStyle,
+  cellsForRow,
   ColumnSpacer,
   FillHandle,
   fittedTableStyle,
@@ -40,6 +42,7 @@ import {
   rowReorderDropStyle,
   RowReorderHandle,
   rowReorderSignature,
+  rowSpanSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -297,6 +300,10 @@ interface DesktopRowProps<TRow> {
   /** Stable row id from `getRowId`. */
   id: string;
   columns: readonly ColumnDef<TRow>[];
+  /** This row's cells — covered neighbours already omitted. */
+  bodyCells: readonly BodyCell<TRow>[];
+  /** Memo digest from {@link rowSpanSignature}. */
+  spanSignature: string;
   /** Core's cell prop-getter — identity-stable for the table's lifetime. */
   getCellProps: UseDataTableResult<TRow>["getCellProps"];
   /** Cell-navigation getters; absent unless `cellNavigation` is on. */
@@ -389,7 +396,8 @@ type UncomparedRowProp =
   | "getRowId"
   | "rowReorder"
   | "windowStart"
-  | "rowCount";
+  | "rowCount"
+  | "bodyCells";
 
 /** Every row prop the memo comparator checks with `Object.is`. */
 const COMPARED_ROW_PROPS: readonly Exclude<
@@ -405,6 +413,7 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   // state object is memoized as a whole.
   "gridFocus",
   "columns",
+  "spanSignature",
   "getCellProps",
   "selected",
   "selectLabel",
@@ -497,6 +506,7 @@ function DesktopRowBase<TRow>({
   index,
   id,
   columns,
+  bodyCells,
   getCellProps,
   gridFocus,
   selected,
@@ -623,12 +633,16 @@ function DesktopRowBase<TRow>({
         {columnSpacers && (
           <ColumnSpacer width={columnSpacers.start} side="start" />
         )}
-        {columns.map((column, colIndex) => {
-          const focusProps = gridFocus?.getCellPropsAt(focusIndex, colIndex);
+        {bodyCells.map((cell) => {
+          const { column, columnIndex, colSpan, rowSpan } = cell;
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
           return (
             <Table.Td
               key={column.key}
+              colSpan={colSpan > 1 ? colSpan : undefined}
+              rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
+              data-adapttable-part="cell"
               {...getCellProps(column)}
               {...focusProps}
               style={
@@ -669,7 +683,7 @@ function DesktopRowBase<TRow>({
               <FillHandle
                 focus={gridFocus}
                 windowIndex={focusIndex}
-                col={colIndex}
+                col={columnIndex}
               />
             </Table.Td>
           );
@@ -753,6 +767,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  getCellSpan,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
@@ -767,6 +782,7 @@ export function DesktopTable<TRow>({
     entries,
     columnSpan,
     columnSpacers,
+    cellsByRow,
   } = tableRenderModel({
     table,
     rows,
@@ -780,6 +796,9 @@ export function DesktopTable<TRow>({
     rowReorder,
     pinnedTopRows,
     pinnedBottomRows,
+    getCellSpan,
+    pinOffset,
+    tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   // Expansion state only exists when `renderRowDetail` is set (the chrome
@@ -1020,6 +1039,8 @@ export function DesktopTable<TRow>({
         index={sourceIndex}
         id={id}
         columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         getCellProps={table.getCellProps}
         gridFocus={gridFocus}
         selected={selection?.isSelected(id)}
@@ -1225,6 +1246,10 @@ export function DesktopTable<TRow>({
                     index={entry.index}
                     id={id}
                     columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
                     getCellProps={table.getCellProps}
                     gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
@@ -1290,6 +1315,10 @@ export function DesktopTable<TRow>({
                       index={index}
                       id={id}
                       columns={columns}
+                      bodyCells={cellsForRow(cellsByRow, id)}
+                      spanSignature={rowSpanSignature(
+                        cellsForRow(cellsByRow, id)
+                      )}
                       getCellProps={table.getCellProps}
                       gridFocus={gridFocus}
                       selected={selection?.isSelected(id)}

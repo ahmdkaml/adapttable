@@ -18,6 +18,7 @@ import type {
 import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
+import type { GetCellSpan } from "./rows/cellSpan";
 import type { RowPinState } from "./rows/rowPinning";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
@@ -356,6 +357,17 @@ export interface BaseDataTableProps<TRow> {
    * is what arms the feature — omit both and nothing renders.
    */
   onPinnedRowIdsChange?: (next: RowPinState) => void;
+  /**
+   * Per-cell row/column span. Return `{ colSpan, rowSpan }` for the origin;
+   * covered cells are omitted from the row's cell list. Column-level
+   * {@link ColumnDef.colSpan} / {@link ColumnDef.rowSpan} are the same
+   * thing when every row of a column shares a rule. Omit both and every
+   * kit still maps one cell per column.
+   *
+   * Mobile cards ignore geometry — a card is a list of fields. Spans are
+   * derived from data, so nothing is written to the URL.
+   */
+  getCellSpan?: GetCellSpan<TRow>;
   /**
    * Delete without a confirmation dialog. Off by default — a delete is
    * destructive and the table cannot undo it.

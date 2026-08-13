@@ -58,6 +58,7 @@ import {
   RowReorderAnnouncer,
   rowReorderDropStyle,
   SelectionStatsBar,
+  tableRenderModel,
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
@@ -1404,6 +1405,36 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollMargin: props.virtualScrollMargin,
   });
 
+  const treeEntries = c.tree?.entries;
+  const treeEntryByRow = new Map<TRow, TreeEntry<TRow>>(
+    treeEntries?.map((entry) => [entry.row, entry])
+  );
+  const dataSourceBase: readonly GroupedDataRecord<TRow>[] = grouping
+    ? buildGroupedDataSource(grouping.entries)
+    : (treeEntries?.map((entry) => entry.row) ?? source.rows);
+  const { dataSource, pinnedTopRows, pinnedBottomRows } = antdPinnedDataSource(
+    grouping,
+    treeEntries,
+    c.rowPinning,
+    source.rows,
+    getRowId,
+    dataSourceBase
+  );
+  const { cellsByRow } = tableRenderModel({
+    table,
+    rows: treeEntries?.map((entry) => entry.row) ?? source.rows,
+    rowActions,
+    getRowId,
+    renderRowDetail: props.renderRowDetail,
+    expansion: c.detail?.expansion,
+    editing: c.editing,
+    rowReorder: c.rowReorder,
+    pinnedTopRows,
+    pinnedBottomRows,
+    getCellSpan: props.getCellSpan,
+    pinOffset: c.columnLayout.pinOffset,
+  });
+
   const columns = buildColumns<TRow>({
     gridFocus: gridFocus,
     columns: table.columns,
@@ -1440,26 +1471,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       : undefined,
     rowReorder: c.rowReorder,
     windowStart,
+    cellsByRow,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own
   // `childrenColumnName` recursion stays out of it and one expansion state
   // drives all nine adapters.
-  const treeEntries = c.tree?.entries;
-  const treeEntryByRow = new Map<TRow, TreeEntry<TRow>>(
-    treeEntries?.map((entry) => [entry.row, entry])
-  );
-  const dataSourceBase: readonly GroupedDataRecord<TRow>[] = grouping
-    ? buildGroupedDataSource(grouping.entries)
-    : (treeEntries?.map((entry) => entry.row) ?? source.rows);
-  const { dataSource, pinnedTopRows, pinnedBottomRows } = antdPinnedDataSource(
-    grouping,
-    treeEntries,
-    c.rowPinning,
-    source.rows,
-    getRowId,
-    dataSourceBase
-  );
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
   const hasStartPin = pinnedSides.includes("start");

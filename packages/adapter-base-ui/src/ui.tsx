@@ -502,6 +502,7 @@ export const Table = {
     children,
     justify,
     colSpan,
+    rowSpan,
     style,
     className,
     ...rest
@@ -510,6 +511,7 @@ export const Table = {
       children?: ReactNode;
       justify?: Justify;
       colSpan?: number;
+      rowSpan?: number;
       style?: CSSProperties;
       className?: string;
     } & HTMLAttributes<HTMLTableCellElement>
@@ -519,6 +521,7 @@ export const Table = {
         className={className}
         data-justify={justify}
         colSpan={colSpan}
+        rowSpan={rowSpan}
         style={style}
         {...rest}
       >

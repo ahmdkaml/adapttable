@@ -242,6 +242,7 @@ The source for each lives in
   editors, keyboard flow.
 - [Row reordering](./row-reordering.md) — opt-in `onRowReorder`, Space-lift
 - [Row pinning](./row-pinning.md) — sticky top and bottom rows, `{ top, bottom }` ids
+- [Row and column spanning](./row-spanning.md) — `getCellSpan`, one cell list per row
   keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.

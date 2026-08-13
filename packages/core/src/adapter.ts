@@ -133,6 +133,7 @@ export {
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
+export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
 export {
   orderedCardEntries,
   PINNED_BOTTOM_PART,

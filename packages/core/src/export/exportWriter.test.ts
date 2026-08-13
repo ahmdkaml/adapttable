@@ -117,6 +117,19 @@ describe("csvWriter", () => {
     expect(guarded.text).toContain("'=CMD()");
     expect(raw.text).not.toContain("'=CMD()");
   });
+
+  it("exports a spanned value once and leaves covered cells empty", () => {
+    const columns: ColumnDef<Row>[] = [
+      { key: "name", header: "Name", accessor: (row) => row.name },
+      { key: "name2", header: "Also", accessor: (row) => row.name },
+    ];
+    const table = buildExportTable(ROWS, columns, {
+      getCellSpan: ({ column, rowIndex }) =>
+        column.key === "name" && rowIndex === 0 ? { colSpan: 2 } : undefined,
+    });
+    expect(table.rows[0]).toEqual(["Ada", ""]);
+    expect(table.rows[1]).toEqual(["Linus", "Linus"]);
+  });
 });
 
 describe("a custom writer in the export pipeline", () => {

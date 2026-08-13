@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 59,
+    budgetKB: 61,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -132,14 +132,21 @@ const FIXTURES = [
   // actions, and the URL pair. The host still opts in with `pinnedRowIds`
   // or `onPinnedRowIdsChange`. `core · simple table` stayed at 11.4 KB of
   // a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 86 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 85 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 86 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 82 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 86 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 92 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 89 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 86 },
+  //
+  // Row and column spanning (~1.5 KB) replaces every kit's columns.map
+  // with a per-row cell list: origins carry colSpan/rowSpan, covered
+  // cells are omitted, pins and the column window clip the rectangle,
+  // and arrows / CSV skip a covered address. The host still opts in
+  // with `getCellSpan` or `column.colSpan` / `column.rowSpan`.
+  // `core · simple table` stayed at 11.4 KB of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 89 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 88 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 89 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 85 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 89 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 95 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 92 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 89 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

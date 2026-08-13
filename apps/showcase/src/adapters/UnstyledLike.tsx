@@ -136,6 +136,7 @@ export function UnstyledLike({
   rowMutations,
   rowReorder,
   rowPinning,
+  cellSpan,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -155,6 +156,7 @@ export function UnstyledLike({
   rowMutations?: boolean;
   rowReorder?: boolean;
   rowPinning?: boolean;
+  cellSpan?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -173,6 +175,7 @@ export function UnstyledLike({
       rowMutations={rowMutations}
       rowReorder={rowReorder}
       rowPinning={rowPinning}
+      cellSpan={cellSpan}
       editing={editing}
       render={(source, columns) => {
         return (

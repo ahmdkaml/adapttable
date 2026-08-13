@@ -16,7 +16,9 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  type BodyCell,
   cellHighlightStyle,
+  cellsForRow,
   columnFlexShares,
   columnSizeStyle,
   FillHandle,
@@ -300,6 +302,8 @@ export interface BuildColumnsOptions<TRow> {
   rowReorder?: RowReorderState<TRow>;
   /** Dataset offset of the first rendered row (page / virtual window). */
   windowStart?: number;
+  /** Per-row body cells so `onCell` can apply col/row spans. */
+  cellsByRow?: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
 }
 
 /**
@@ -495,6 +499,7 @@ export function buildColumns<TRow>({
   tree,
   rowReorder,
   windowStart = 0,
+  cellsByRow,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -552,8 +557,8 @@ export function buildColumns<TRow>({
           ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
           : undefined,
         showSorterTooltip: false,
-        onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) =>
-          groupedOnCell(
+        onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) => {
+          const grouped = groupedOnCell(
             column.key,
             columnIndex,
             column.align,
@@ -561,7 +566,19 @@ export function buildColumns<TRow>({
             record,
             rowIndex,
             gridFocus
-          ),
+          );
+          if (isAdaptTableGroupRow(record) || !cellsByRow) return grouped;
+          const cells = cellsForRow(cellsByRow, getRowId(record));
+          const cell = cells.find((c) => c.column.key === column.key);
+          if (!cell) return { colSpan: 0 };
+          return {
+            ...grouped,
+            colSpan: cell.colSpan,
+            rowSpan: cell.rowSpan,
+            "data-adapttable-part": "cell",
+            "data-column-key": column.key,
+          };
+        },
         onHeaderCell: () => {
           // Column selection rides along with the sort/resize/pin props: antd
           // merges whatever this returns onto the <th>, so this is the one

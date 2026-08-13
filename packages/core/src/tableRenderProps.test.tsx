@@ -112,6 +112,50 @@ describe("tableRenderModel", () => {
     });
     expect(model.entries.map((entry) => entry.key)).toEqual(["b"]);
   });
+
+  it("emits cells for tree children, not only the source roots", () => {
+    const child: Row = { id: "c", name: "Cara" };
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      tree: {
+        entries: [
+          {
+            row: ROWS[0]!,
+            key: "a",
+            level: 0,
+            hasChildren: true,
+            expanded: true,
+            path: [],
+            descendantIds: ["c"],
+          },
+          {
+            row: child,
+            key: "c",
+            level: 1,
+            hasChildren: false,
+            expanded: false,
+            path: ["a"],
+            descendantIds: [],
+          },
+          {
+            row: ROWS[1]!,
+            key: "b",
+            level: 0,
+            hasChildren: false,
+            expanded: false,
+            path: [],
+            descendantIds: [],
+          },
+        ],
+        expansion: { expandedIds: new Set(["a"]) } as never,
+      },
+    });
+    expect(model.cellsByRow.get("c")?.map((cell) => cell.column.key)).toEqual([
+      "name",
+    ]);
+  });
 });
 
 describe("useChromeScrollReset", () => {

@@ -72,7 +72,7 @@ function clamp(value: number, max: number): number {
  * @param bounds - The grid's shape.
  * @returns The new address, which may equal `from` at an edge.
  */
-export function moveGridFocus(
+function stepGridFocus(
   from: GridCell,
   move: GridFocusMove,
   bounds: GridBounds
@@ -103,6 +103,42 @@ export function moveGridFocus(
     case "pageDown":
       return { row: clamp(from.row + step, lastRow), col: from.col };
   }
+}
+
+/**
+ * Where a move lands, clamped to the grid.
+ *
+ * Edges stop rather than wrap. Wrapping a right-arrow from the last column to
+ * the first cell of the next row is a spreadsheet convention, and in a table
+ * it silently moves the user to a different record — so this holds still and
+ * lets the screen reader stay quiet.
+ *
+ * A covered cell (inside someone else's row/col span) is skipped in the
+ * same direction; if every remaining cell is covered, focus stays put.
+ *
+ * @param from - Where focus is now.
+ * @param move - The intent, from {@link gridFocusMoveForKey}.
+ * @param bounds - The grid's shape.
+ * @param covered - True for a cell that must not receive focus.
+ * @returns The new address, which may equal `from` at an edge.
+ */
+export function moveGridFocus(
+  from: GridCell,
+  move: GridFocusMove,
+  bounds: GridBounds,
+  covered?: (cell: GridCell) => boolean
+): GridCell {
+  const landed = stepGridFocus(from, move, bounds);
+  if (!covered?.(landed)) return landed;
+  let current = landed;
+  const limit = Math.max(1, bounds.rowCount * bounds.colCount);
+  for (let step = 0; step < limit; step += 1) {
+    const next = stepGridFocus(current, move, bounds);
+    if (sameGridCell(next, current)) return from;
+    if (!covered(next)) return next;
+    current = next;
+  }
+  return from;
 }
 
 /** The key press, as much of it as the mapping needs. */

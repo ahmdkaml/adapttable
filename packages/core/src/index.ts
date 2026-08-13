@@ -385,6 +385,17 @@ export { stableKey } from "./utils/stableKey";
 /* ── Rows ──────────────────────────────────────────────────────────── */
 
 export {
+  type BodyCell,
+  buildBodyCells,
+  cellsForRow,
+  type CellSpanRequest,
+  coveredAddressSet,
+  type GetCellSpan,
+  type GetCellSpanArgs,
+  rowSpanSignature,
+  spanningArmed,
+} from "./rows/cellSpan";
+export {
   applyRowPatches,
   type InsertPatch,
   insertRow,

@@ -21,11 +21,16 @@ import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
+import {
+  type BodyCell,
+  buildBodyCells,
+  type GetCellSpan,
+} from "./rows/cellSpan";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
-import type { TreeEntry } from "./tree/treeRows";
+import { bodyRowEntries, type TreeEntry } from "./tree/treeRows";
 import type { TreeExpansionState } from "./tree/useTreeExpansion";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
@@ -88,6 +93,11 @@ export interface SharedTableRenderProps<TRow> {
   pinnedBottomRows?: readonly TRow[];
   /** Headless pin state — actions live on `rowActions`; this is the lists. */
   rowPinning?: RowPinningState<TRow>;
+  /**
+   * Per-cell span. When set (or a column declares `colSpan`/`rowSpan`),
+   * {@link TableRenderModel.cellsByRow} omits covered cells.
+   */
+  getCellSpan?: GetCellSpan<TRow>;
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
   /**
@@ -199,6 +209,11 @@ export interface TableRenderModel<TRow> {
    * cells and one after them.
    */
   columnSpacers?: { start: number; end: number };
+  /**
+   * Per-row body cells. Kits map this instead of `columns` so a span is
+   * one `<td>` and covered neighbours are already gone.
+   */
+  cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
 }
 
 /**
@@ -223,6 +238,9 @@ export function tableRenderModel<TRow>(
     | "rowReorder"
     | "pinnedTopRows"
     | "pinnedBottomRows"
+    | "getCellSpan"
+    | "pinOffset"
+    | "tree"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -259,6 +277,41 @@ export function tableRenderModel<TRow>(
     pinnedIds.size === 0
       ? rawEntries
       : rawEntries.filter((entry) => !pinnedIds.has(entry.key));
+  const fullColumns = props.table.columns;
+  const windowKeys = windowed
+    ? new Set(columns.map((column) => column.key))
+    : undefined;
+  const cellOptions = {
+    columns: fullColumns,
+    getRowId: props.getRowId,
+    getCellSpan: props.getCellSpan,
+    pinOffset: props.pinOffset,
+    windowKeys,
+  };
+  const cellsByRow = new Map<string, readonly BodyCell<TRow>[]>();
+  const merge = (map: ReadonlyMap<string, readonly BodyCell<TRow>[]>) => {
+    for (const [key, cells] of map) cellsByRow.set(key, cells);
+  };
+  merge(
+    buildBodyCells({
+      ...cellOptions,
+      rows: props.pinnedTopRows ?? [],
+    })
+  );
+  const scrollRows = bodyRowEntries(entries, props.tree);
+  merge(
+    buildBodyCells({
+      ...cellOptions,
+      rows: scrollRows.map((entry) => entry.row),
+      firstRowIndex: scrollRows[0]?.sourceIndex ?? scrollRows[0]?.index ?? 0,
+    })
+  );
+  merge(
+    buildBodyCells({
+      ...cellOptions,
+      rows: props.pinnedBottomRows ?? [],
+    })
+  );
   return {
     columns,
     selection,
@@ -281,6 +334,7 @@ export function tableRenderModel<TRow>(
           end: props.columnWindow?.paddingEnd ?? 0,
         }
       : undefined,
+    cellsByRow,
   };
 }
 

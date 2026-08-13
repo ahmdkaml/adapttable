@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
 import {
@@ -15,6 +15,7 @@ import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
+import { coveredAddressSet } from "./rows/cellSpan";
 import type { RowPinState } from "./rows/rowPinning";
 import type { TableSource } from "./source/TableSource";
 import {
@@ -160,6 +161,28 @@ export function useDataTableShell<TRow>(
     columns: chrome.columnLayout.visibleColumns,
     firstRowIndex: windowStart,
   });
+  const coveredCells = useMemo(
+    () =>
+      coveredAddressSet({
+        rows: chrome.source.rows,
+        columns: chrome.columnLayout.visibleColumns,
+        getCellSpan: props.getCellSpan,
+        firstRowIndex: windowStart,
+        pinOffset: chrome.columnLayout.pinOffset,
+      }),
+    [
+      chrome.source.rows,
+      chrome.columnLayout.visibleColumns,
+      chrome.columnLayout.pinOffset,
+      props.getCellSpan,
+      windowStart,
+    ]
+  );
+  const isCoveredCell = useCallback(
+    (cell: { row: number; col: number }) =>
+      coveredCells.has(`${cell.row}:${cell.col}`),
+    [coveredCells]
+  );
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
     rowCount: Math.max(
@@ -182,6 +205,7 @@ export function useDataTableShell<TRow>(
     onFind: find.openBar,
     matchKeys: find.matchKeys,
     currentMatch: find.current,
+    isCoveredCell,
   });
   useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
   // Computed here rather than in eight adapters: the rectangle, the rows and
@@ -212,6 +236,7 @@ export function useDataTableShell<TRow>(
         allColumns: chrome.allColumns,
         range: gridFocus.range,
         firstRowIndex: windowStart,
+        getCellSpan: props.getCellSpan,
       }
     ),
     labels,
@@ -312,6 +337,7 @@ export function useDataTableShell<TRow>(
     pinnedTopRows,
     pinnedBottomRows,
     rowPinning: chrome.rowPinning,
+    getCellSpan: props.getCellSpan,
     windowStart,
     confirm,
     getRowId,

@@ -17,7 +17,9 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  type BodyCell,
   cellHighlightStyle,
+  cellsForRow,
   columnFlexShares,
   columnSizeStyle,
   ColumnSpacer,
@@ -40,6 +42,7 @@ import {
   rowReorderDropStyle,
   RowReorderHandle,
   rowReorderSignature,
+  rowSpanSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -237,6 +240,10 @@ interface DesktopRowProps<TRow> {
   selected: boolean;
   expanded: boolean;
   columns: readonly ColumnDef<TRow>[];
+  /** This row's cells — covered neighbours already omitted. */
+  bodyCells: readonly BodyCell<TRow>[];
+  /** Memo digest from {@link rowSpanSignature}. */
+  spanSignature: string;
   sx: DesktopRowSx;
   /** Full spacer span, INCLUDING the expand column when present. */
   columnSpan: number;
@@ -320,6 +327,7 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "gridFocus",
   "expanded",
   "columns",
+  "spanSignature",
   "sx",
   "columnSpan",
   "size",
@@ -363,6 +371,7 @@ function DesktopRowImpl<TRow>({
   selected,
   expanded,
   columns,
+  bodyCells,
   sx,
   columnSpan,
   columnSpacers,
@@ -467,12 +476,16 @@ function DesktopRowImpl<TRow>({
         {columnSpacers && (
           <ColumnSpacer width={columnSpacers.start} side="start" />
         )}
-        {columns.map((column, colIndex) => {
-          const focusProps = gridFocus?.getCellPropsAt(focusIndex, colIndex);
+        {bodyCells.map((cell) => {
+          const { column, columnIndex, colSpan, rowSpan } = cell;
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
           return (
             <TableCell
               key={column.key}
+              colSpan={colSpan > 1 ? colSpan : undefined}
+              rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
+              data-adapttable-part="cell"
               sx={sx.cells[column.key]}
               // MUI's own selected fill, from the palette so it follows the
               // theme and dark mode. Applied as a style rather than merged into
@@ -514,7 +527,7 @@ function DesktopRowImpl<TRow>({
               <FillHandle
                 focus={gridFocus}
                 windowIndex={focusIndex}
-                col={colIndex}
+                col={columnIndex}
               />
             </TableCell>
           );
@@ -610,6 +623,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  getCellSpan,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -623,6 +637,7 @@ export function DesktopTable<TRow>({
     entries,
     columnSpan,
     columnSpacers,
+    cellsByRow,
   } = tableRenderModel({
     table,
     rows,
@@ -636,6 +651,9 @@ export function DesktopTable<TRow>({
     rowReorder,
     pinnedTopRows,
     pinnedBottomRows,
+    getCellSpan,
+    pinOffset,
+    tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   // Presentational header groups: contiguous visible columns sharing a
@@ -814,6 +832,8 @@ export function DesktopTable<TRow>({
         selected={selection?.isSelected(id) ?? false}
         expanded={isExpanded ? isExpanded(id) : false}
         columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         sx={rowSx}
         columnSpan={columnSpan}
         size={size}
@@ -1056,6 +1076,10 @@ export function DesktopTable<TRow>({
                     selected={selection?.isSelected(id) ?? false}
                     expanded={isExpanded ? isExpanded(id) : false}
                     columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
                     sx={rowSx}
                     columnSpan={columnSpan}
                     size={size}
@@ -1119,6 +1143,10 @@ export function DesktopTable<TRow>({
                       selected={selection?.isSelected(id) ?? false}
                       expanded={isExpanded ? isExpanded(id) : false}
                       columns={columns}
+                      bodyCells={cellsForRow(cellsByRow, id)}
+                      spanSignature={rowSpanSignature(
+                        cellsForRow(cellsByRow, id)
+                      )}
                       sx={rowSx}
                       columnSpan={columnSpan}
                       size={size}

@@ -77,6 +77,7 @@ export const SHARED_DESKTOP_ROW_KEYS = [
   "showReorder",
   "reorderSignature",
   "rowPinSignature",
+  "spanSignature",
   "hasRowClick",
   "columnSpan",
   // Cell focus and the selected range live here too, or a row never learns that

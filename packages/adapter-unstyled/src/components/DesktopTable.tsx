@@ -18,6 +18,8 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  type BodyCell,
+  cellsForRow,
   ColumnSpacer,
   FillHandle,
   fittedTableStyle,
@@ -42,6 +44,7 @@ import {
   rowReorderDropStyle,
   RowReorderHandle,
   rowReorderSignature,
+  rowSpanSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -120,6 +123,10 @@ interface DesktopRowProps<TRow> {
   /** Headless model (prop-getters); a fresh object every render — uncompared. */
   table: UseDataTableResult<TRow>;
   columns: readonly ColumnDef<TRow>[];
+  /** This row's cells — covered neighbours already omitted. */
+  bodyCells: readonly BodyCell<TRow>[];
+  /** Memo digest from {@link rowSpanSignature}. */
+  spanSignature: string;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
   /** `undefined` = no selection column; otherwise the row's selected state. */
@@ -214,6 +221,7 @@ function desktopRowPropsEqual<TRow>(
     // selection had before `gridFocus` joined this list.
     prev.treeEntry === next.treeEntry &&
     prev.columns === next.columns &&
+    prev.spanSignature === next.spanSignature &&
     prev.labels === next.labels &&
     prev.classNames === next.classNames &&
     prev.showActions === next.showActions &&
@@ -265,6 +273,7 @@ function DesktopRowBase<TRow>(
     table,
     gridFocus,
     columns,
+    bodyCells,
     labels,
     classNames,
     selected,
@@ -403,12 +412,15 @@ function DesktopRowBase<TRow>(
         {columnSpacers && (
           <ColumnSpacer width={columnSpacers.start} side="start" />
         )}
-        {columns.map((column, colIndex) => {
+        {bodyCells.map((cell) => {
+          const { column, columnIndex, colSpan, rowSpan } = cell;
           const pinStyle = bodyPinStyle(column.key);
-          const focusProps = gridFocus?.getCellPropsAt(focusIndex, colIndex);
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
           return (
             <td
               key={column.key}
+              colSpan={colSpan > 1 ? colSpan : undefined}
+              rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
               {...table.getCellProps(column, pinStyle && { style: pinStyle })}
               {...focusProps}
@@ -467,7 +479,7 @@ function DesktopRowBase<TRow>(
               <FillHandle
                 focus={gridFocus}
                 windowIndex={focusIndex}
-                col={colIndex}
+                col={columnIndex}
               />
             </td>
           );
@@ -601,6 +613,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  getCellSpan,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -614,6 +627,7 @@ export function DesktopTable<TRow>({
     entries,
     columnSpan,
     columnSpacers,
+    cellsByRow,
   } = tableRenderModel({
     table,
     rows,
@@ -627,6 +641,9 @@ export function DesktopTable<TRow>({
     rowReorder,
     pinnedTopRows,
     pinnedBottomRows,
+    getCellSpan,
+    pinOffset,
+    tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   // The actions column sticks when the user end-pins IT in the Columns menu —
@@ -807,6 +824,8 @@ export function DesktopTable<TRow>({
         id={id}
         table={table}
         columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         labels={labels}
         classNames={classNames}
         selected={selection ? selection.isSelected(id) : undefined}
@@ -1077,6 +1096,8 @@ export function DesktopTable<TRow>({
                   id={id}
                   table={table}
                   columns={columns}
+                  bodyCells={cellsForRow(cellsByRow, id)}
+                  spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
                   labels={labels}
                   classNames={classNames}
                   selected={selection ? selection.isSelected(id) : undefined}
@@ -1138,6 +1159,10 @@ export function DesktopTable<TRow>({
                     id={id}
                     table={table}
                     columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
                     labels={labels}
                     classNames={classNames}
                     selected={selection ? selection.isSelected(id) : undefined}

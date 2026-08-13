@@ -193,6 +193,18 @@ export interface ColumnDef<TRow> {
   flex?: number;
   /** Text alignment within the cell. Defaults to `"start"`. */
   align?: "start" | "center" | "end";
+  /**
+   * How many columns this cell covers, or a per-row callback. Covered
+   * neighbours are omitted from the row's cell list. Clipped at a pin
+   * boundary and at the column window. Default 1.
+   */
+  colSpan?: number | ((row: TRow) => number);
+  /**
+   * How many rows this cell covers, or a per-row callback. Covered cells
+   * in later rows are omitted. Stays inside one tbody (pin sections do
+   * not share a span). Default 1.
+   */
+  rowSpan?: number | ((row: TRow) => number);
   /** Label used on mobile card layouts; falls back to `header` when a string. */
   mobileLabel?: string;
   /**

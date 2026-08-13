@@ -148,6 +148,7 @@ export default defineConfig({
             { label: "Inline cell editing", slug: "cell-editing" },
             { label: "Row reordering", slug: "row-reordering" },
             { label: "Row pinning", slug: "row-pinning" },
+            { label: "Row and column spanning", slug: "row-spanning" },
             { label: "Row grouping", slug: "row-grouping" },
             { label: "Column management", slug: "column-management" },
             { label: "Saved views", slug: "saved-views" },

@@ -102,6 +102,7 @@ interface DataProps {
   rowMutations?: boolean;
   rowReorder?: boolean;
   rowPinning?: boolean;
+  cellSpan?: boolean;
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -173,6 +174,7 @@ function Frontend({
   rowMutations,
   rowReorder,
   rowPinning,
+  cellSpan,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -294,6 +296,20 @@ function Frontend({
         ...(rowMutations ? { onAddRow, onDuplicateRow, onDeleteRow } : {}),
         ...(rowReorder ? { onRowReorder } : {}),
         ...(rowPinning ? { onPinnedRowIdsChange: () => undefined } : {}),
+        ...(cellSpan
+          ? {
+              getCellSpan: ({
+                column,
+                rowIndex,
+              }: {
+                column: { key: string };
+                rowIndex: number;
+              }) =>
+                column.key === "person" && rowIndex === 0
+                  ? { colSpan: 2 }
+                  : undefined,
+            }
+          : {}),
       })}
     </>
   );
@@ -333,6 +349,7 @@ export function DemoBody({
   rowMutations,
   rowReorder,
   rowPinning,
+  cellSpan,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -347,6 +364,7 @@ export function DemoBody({
   rowMutations?: boolean;
   rowReorder?: boolean;
   rowPinning?: boolean;
+  cellSpan?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -390,6 +408,7 @@ export function DemoBody({
       rowMutations={rowMutations}
       rowReorder={rowReorder}
       rowPinning={rowPinning}
+      cellSpan={cellSpan}
     />
   );
 }
