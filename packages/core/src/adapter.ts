@@ -90,6 +90,7 @@ export {
   GroupMoreButton,
   type GroupMoreButtonProps,
 } from "./grouping/GroupMoreButton";
+export { GroupToggleSpacer } from "./grouping/GroupToggleSpacer";
 export {
   type MountStaggerOptions,
   useMountStagger,

@@ -14,6 +14,7 @@ import {
   groupIndentStyle,
   GroupMoreButton,
   groupRowParts,
+  GroupToggleSpacer,
   resolveMobileLabel,
 } from "@adapttable/core/adapter";
 import { Box, Card, HStack, IconButton, Table, Text } from "@chakra-ui/react";
@@ -131,7 +132,9 @@ export function GroupHeaderRow<TRow>({
         style={groupIndentStyle(entry.level)}
       >
         <HStack gap={2} w="full">
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupExpandToggle
               open={expanded}
               dir={dir}
@@ -250,7 +253,9 @@ export function GroupHeaderCard<TRow>({
     >
       <Card.Body>
         <HStack gap={2}>
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupExpandToggle
               open={expanded}
               dir={dir}

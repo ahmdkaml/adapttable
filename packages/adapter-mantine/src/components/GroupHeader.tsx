@@ -12,6 +12,7 @@ import {
   groupIndentStyle,
   GroupMoreButton,
   groupRowParts,
+  GroupToggleSpacer,
   resolveMobileLabel,
 } from "@adapttable/core/adapter";
 import { ActionIcon, Card, Checkbox, Group, Table, Text } from "@mantine/core";
@@ -130,7 +131,9 @@ export function GroupHeaderRow<TRow>({
         style={groupIndentStyle(entry.level)}
       >
         <Group gap="xs" wrap="nowrap">
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupToggle
               expanded={expanded}
               expandLabel={labels.expandGroup}
@@ -253,7 +256,9 @@ export function GroupHeaderCard<TRow>({
       fw={600}
     >
       <Group gap="xs" wrap="nowrap">
-        {!footer && !more && (
+        {footer || more ? (
+          <GroupToggleSpacer />
+        ) : (
           <GroupToggle
             expanded={expanded}
             expandLabel={labels.expandGroup}

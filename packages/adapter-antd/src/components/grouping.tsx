@@ -4,7 +4,7 @@ import {
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { groupIndentStyle } from "@adapttable/core/adapter";
+import { groupIndentStyle, GroupToggleSpacer } from "@adapttable/core/adapter";
 import { Button, Checkbox, Space, Typography } from "antd";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
@@ -170,7 +170,9 @@ export function GroupHeaderCell({
         group.footer === true ? "group-footer-cell" : "group-cell"
       }
     >
-      {group.footer !== true && group.more === undefined && (
+      {group.footer === true || group.more !== undefined ? (
+        <GroupToggleSpacer />
+      ) : (
         <GroupToggle
           collapsed={group.collapsed}
           labels={labels}

@@ -425,7 +425,9 @@ much has been revealed (`GroupPagingState`, whose `paging` is a `GroupPaging`),
 the model emits a `groupMore` entry for the rest, and `GroupMoreButton` /
 `GroupMoreButtonProps` from `@adapttable/core/adapter` render the offer.
 `groupRowParts(kind)` names the `data-adapttable-part` values for each of the
-three rows a grouped body renders (`GroupRowKind`).
+three rows a grouped body renders (`GroupRowKind`), and `GroupToggleSpacer`
+holds the chevron's width on the two rows that have no chevron, so a footer
+lines up with the header it closes.
 Expansion is the `collapsedGroupIds` / `onCollapsedGroupIdsChange` pair —
 `useGroupCollapseUrlState(options)` keeps it in the URL
 (`UseGroupCollapseUrlStateOptions` in, `UseGroupCollapseUrlStateResult` out,

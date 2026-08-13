@@ -12,6 +12,7 @@ import {
   groupIndentStyle,
   GroupMoreButton,
   groupRowParts,
+  GroupToggleSpacer,
   resolveMobileLabel,
 } from "@adapttable/core/adapter";
 import {
@@ -163,7 +164,9 @@ export function GroupHeaderRow<TRow>({
             width: "100%",
           }}
         >
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupToggle
               expanded={expanded}
               expandLabel={labels.expandGroup}
@@ -297,7 +300,9 @@ export function GroupHeaderCard<TRow>({
             fontWeight: 600,
           }}
         >
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupToggle
               expanded={expanded}
               expandLabel={labels.expandGroup}

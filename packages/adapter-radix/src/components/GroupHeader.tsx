@@ -14,6 +14,7 @@ import {
   groupIndentStyle,
   GroupMoreButton,
   groupRowParts,
+  GroupToggleSpacer,
   resolveMobileLabel,
 } from "@adapttable/core/adapter";
 import { Box, Card, Flex, IconButton, Table, Text } from "@radix-ui/themes";
@@ -132,7 +133,9 @@ export function GroupHeaderRow<TRow>({
         style={groupIndentStyle(entry.level)}
       >
         <Flex gap="2" align="center" width="100%">
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <GroupExpandToggle
               open={expanded}
               dir={dir}
@@ -254,7 +257,9 @@ export function GroupHeaderCard<TRow>({
       style={{ fontWeight: 600 }}
     >
       <Flex gap="2" align="center">
-        {!footer && !more && (
+        {footer || more ? (
+          <GroupToggleSpacer />
+        ) : (
           <GroupExpandToggle
             open={expanded}
             dir={dir}

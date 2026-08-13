@@ -12,6 +12,7 @@ import {
   groupIndentStyle,
   GroupMoreButton,
   groupRowParts,
+  GroupToggleSpacer,
   resolveMobileLabel,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode } from "react";
@@ -117,7 +118,9 @@ export function GroupHeaderRow<TRow>({
             width: "100%",
           }}
         >
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <button
               type="button"
               data-adapttable-part="group-toggle"
@@ -156,7 +159,9 @@ export function GroupHeaderRow<TRow>({
           >
             {labelContent}
           </span>
-          {!footer && !more && (
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
             <span
               data-adapttable-part="group-count"
               className={classNames.groupCount}
