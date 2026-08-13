@@ -73,6 +73,10 @@ export {
   rowEditingSignature,
 } from "./editing/editableCellController";
 export {
+  editorBusyProps,
+  editorValidationProps,
+} from "./editing/EditableCellGate";
+export {
   ExportAnnouncer,
   type ExportAnnouncerProps,
 } from "./export/ExportAnnouncer";

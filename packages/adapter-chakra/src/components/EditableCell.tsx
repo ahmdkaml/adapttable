@@ -4,7 +4,10 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  focusEditorOnMount,
+} from "@adapttable/core/adapter";
 import { Input } from "@chakra-ui/react";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -36,6 +39,7 @@ export function ChakraCellEditor({
         w="100%"
         aria-label={label}
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         value={ctrl.draft}
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
@@ -55,6 +59,7 @@ export function ChakraCellEditor({
     <Input
       ref={focusEditorOnMount}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       aria-label={label}
       size="sm"
       type={ctrl.editor === "number" ? "number" : "text"}

@@ -4,7 +4,7 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import { editorBusyProps, focusEditorOnMount } from "@adapttable/core/adapter";
 import { MenuItem, TextField } from "@mui/material";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -38,10 +38,13 @@ export function MuiCellEditor({
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
+        error={ctrl.error !== undefined}
+        helperText={ctrl.error}
         slotProps={{
           htmlInput: {
             "aria-label": label,
             "data-adapttable-part": "edit-cell-editor",
+            ...editorBusyProps(ctrl),
           },
         }}
       >
@@ -64,10 +67,13 @@ export function MuiCellEditor({
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
       onBlur={ctrl.commitOnBlur}
+      error={ctrl.error !== undefined}
+      helperText={ctrl.error}
       slotProps={{
         htmlInput: {
           "aria-label": label,
           "data-adapttable-part": "edit-cell-editor",
+          ...editorBusyProps(ctrl),
         },
       }}
     />
@@ -94,6 +100,7 @@ export function EditableDataCell<TRow>(props: {
 
   return (
     <EditableCellGate
+      kitRendersError
       editing={props.editing}
       row={props.row}
       column={props.column}

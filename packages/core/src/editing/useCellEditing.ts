@@ -99,6 +99,17 @@ export function useCellEditing(): CellEditingState {
     setDraft(value);
   }, []);
 
+  /**
+   * Same for the active cell: the ref exists so callers within one tick see
+   * what just happened, and a `setActive` that left the ref stale made
+   * `begin` right after `commit` a silent no-op — it read the cell it had
+   * just closed and treated the reopen as "same cell, keep the draft".
+   */
+  const writeActive = useCallback((next: CellEditTarget | null) => {
+    activeRef.current = next;
+    setActive(next);
+  }, []);
+
   const isActive = useCallback(
     (rowId: string, columnKey: string) =>
       active?.rowId === rowId && active.columnKey === columnKey,
@@ -111,10 +122,10 @@ export function useCellEditing(): CellEditingState {
       if (current?.rowId === rowId && current.columnKey === columnKey) {
         return;
       }
-      setActive({ rowId, columnKey });
+      writeActive({ rowId, columnKey });
       writeDraft(initialValue);
     },
-    [writeDraft]
+    [writeActive, writeDraft]
   );
 
   const commit = useCallback((): CellEditCommit | null => {
@@ -125,25 +136,25 @@ export function useCellEditing(): CellEditingState {
       columnKey: current.columnKey,
       draft: draftRef.current,
     };
-    setActive(null);
+    writeActive(null);
     writeDraft("");
     return result;
-  }, [writeDraft]);
+  }, [writeActive, writeDraft]);
 
   const cancel = useCallback(() => {
-    setActive(null);
+    writeActive(null);
     writeDraft("");
-  }, [writeDraft]);
+  }, [writeActive, writeDraft]);
 
   const discardIfRowMissing = useCallback(
     (rows: readonly unknown[], rowKey: (row: unknown) => string) => {
       const current = activeRef.current;
       if (!current) return;
       if (rows.some((row) => rowKey(row) === current.rowId)) return;
-      setActive(null);
+      writeActive(null);
       writeDraft("");
     },
-    [writeDraft]
+    [writeActive, writeDraft]
   );
 
   const handleKeyDown = useCallback(

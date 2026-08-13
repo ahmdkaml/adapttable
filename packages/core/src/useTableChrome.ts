@@ -12,6 +12,7 @@ import {
   type CellEditingState,
   useCellEditing,
 } from "./editing/useCellEditing";
+import { useEditValidation } from "./editing/validation";
 import type { ExportStatus } from "./export/useExportHandler";
 import {
   type ActiveFilterChip,
@@ -501,9 +502,18 @@ export function useTableChrome<TRow>(
   // but `editing` is only exposed when the host passes `onCellEdit`.
   const cellEditingState = useCellEditing();
   const onCellEdit = props.onCellEdit;
+  // Validation gates the commit and nothing else; it runs whether or not any
+  // validator exists, and stays inert until one rejects something.
+  const validation = useEditValidation<TRow>({
+    validateRow: props.validateRow,
+    applyEdit: props.applyEdit,
+  });
   const editing = useMemo(
-    () => (onCellEdit ? { onCellEdit, state: cellEditingState } : undefined),
-    [onCellEdit, cellEditingState]
+    () =>
+      onCellEdit
+        ? { onCellEdit, state: cellEditingState, validation }
+        : undefined,
+    [onCellEdit, cellEditingState, validation]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
   // does NOTHING without the table-level change channel. Say so in dev.

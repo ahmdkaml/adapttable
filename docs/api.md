@@ -281,6 +281,18 @@ describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
 `normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
+
+**Validation gates the commit.** A column's `validate` (`CellValidator`) judges
+one value; the table's `validateRow` (`RowValidator`) judges the row an edit
+would produce, with `applyEdit` saying how the edit lands on it.
+`useEditValidation(options)` holds the state — which cells carry a message, which
+are still checking — behind `EditValidationState` (`UseEditValidationOptions` in,
+`ValidationTarget` naming the cell a check is about), and
+`resolveCommitValue(options)` is the row, column and parsed value a validator
+sees before the host does. `editorValidationProps(ctrl)` from
+`@adapttable/core/adapter` is the `aria-invalid` / `aria-describedby` /
+`aria-busy` a kit's editor spreads, and `editorBusyProps(ctrl)` is just the busy
+flag for a kit whose own input owns the other two.
 See [cell editing](./cell-editing.md).
 
 **The grouped row model.** `buildGroupedFlatModel` turns rows into the flat

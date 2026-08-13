@@ -202,6 +202,9 @@ export const shadcnClassNames = {
   groupLabel: "text-sm font-semibold",
   groupCount: "text-xs text-muted-foreground",
   groupAggregate: "ms-auto text-xs text-muted-foreground",
+  // A rejected commit reads as a form error, in the destructive tone shadcn
+  // already uses for one.
+  editCellError: "mt-1 block text-xs text-destructive",
   // ── Tree data ───────────────────────────────────────────────────
   // The chevron matches the group toggle exactly: one table can hold both,
   // and two disclosure controls that look different read as two mechanisms.

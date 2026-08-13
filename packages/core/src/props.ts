@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
 import type {
@@ -203,6 +204,21 @@ export interface BaseDataTableProps<TRow> {
    * `renderRowDetail` also set, those rows fall back to it.
    */
   nestedTable?: NestedTableFor<TRow>;
+  /**
+   * Gate a commit on a rule no single cell can answer — an end date before its
+   * start, a total that must match its parts. Receives the row the edit WOULD
+   * produce, not the stored one; return a message for a row-level problem, a map
+   * of column key → message to mark individual cells, or nothing to allow it.
+   * May be async.
+   */
+  validateRow?: RowValidator<TRow>;
+  /**
+   * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
+   * to judge. Defaults to a shallow spread keyed by the column key, which is
+   * right when a column key IS the field; pass this when a column reads a
+   * nested path.
+   */
+  applyEdit?: (row: TRow, columnKey: string, value: unknown) => TRow;
   /**
    * Footer summary: map the CURRENT page's rows to per-column summary cells
    * (`{ budget: <b>{total}</b> }`). Rendered as a table footer row aligned

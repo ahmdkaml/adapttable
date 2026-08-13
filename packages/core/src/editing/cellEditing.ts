@@ -36,6 +36,12 @@ export interface EditableColumnLike<TRow = unknown> {
   parseValue?: {
     bivarianceHack(draft: string, row: TRow): unknown;
   }["bivarianceHack"];
+  validate?: {
+    bivarianceHack(
+      value: unknown,
+      row: TRow
+    ): string | undefined | Promise<string | undefined>;
+  }["bivarianceHack"];
   sortValue?: { bivarianceHack(row: TRow): SortableValue }["bivarianceHack"];
 }
 
@@ -189,6 +195,39 @@ export function nextEditableCell<TRow>(options: {
 }
 
 /**
+ * The row, the column and the parsed value a commit resolves to.
+ *
+ * Separate from applying it, because validation has to see the value BEFORE the
+ * host does — the whole point of a validator is to stop the call.
+ *
+ * @typeParam TRow - The row type.
+ * @param options - The commit and the page it addresses.
+ * @returns The resolved triple, or `null` for a stale commit whose row or
+ * column has since left the page.
+ */
+export function resolveCommitValue<TRow>(options: {
+  commit: CellEditCommit;
+  rows: readonly TRow[];
+  columns: readonly EditableColumnLike<TRow>[];
+  rowKey: (row: TRow) => string;
+}): { row: TRow; column: EditableColumnLike<TRow>; value: unknown } | null {
+  const row = options.rows.find(
+    (r) => options.rowKey(r) === options.commit.rowId
+  );
+  const column = options.columns.find(
+    (c) => c.key === options.commit.columnKey
+  );
+  if (!row || !column) return null;
+  const editor = resolveCellEditor(column) ?? "text";
+  // A column that states how to read its own drafts owns the conversion; the
+  // editor's built-in parsing is the fallback, not an extra step on top.
+  const value = column.parseValue
+    ? column.parseValue(options.commit.draft, row)
+    : parseCellEditValue(editor, options.commit.draft);
+  return { row, column, value };
+}
+
+/**
  * Apply a commit through the host channel: resolve the row, parse the draft
  * with the column's editor, call `onCellEdit`. Returns `false` when the row
  * or column is missing (stale commit after a filter/page change).
@@ -200,19 +239,8 @@ export function applyCellEditCommit<TRow>(options: {
   rowKey: (row: TRow) => string;
   onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
 }): boolean {
-  const row = options.rows.find(
-    (r) => options.rowKey(r) === options.commit.rowId
-  );
-  const column = options.columns.find(
-    (c) => c.key === options.commit.columnKey
-  );
-  if (!row || !column) return false;
-  const editor = resolveCellEditor(column) ?? "text";
-  // A column that states how to read its own drafts owns the conversion; the
-  // editor's built-in parsing is the fallback, not an extra step on top.
-  const nextValue = column.parseValue
-    ? column.parseValue(options.commit.draft, row)
-    : parseCellEditValue(editor, options.commit.draft);
-  options.onCellEdit(row, column.key, nextValue);
+  const resolved = resolveCommitValue(options);
+  if (!resolved) return false;
+  options.onCellEdit(resolved.row, resolved.column.key, resolved.value);
   return true;
 }

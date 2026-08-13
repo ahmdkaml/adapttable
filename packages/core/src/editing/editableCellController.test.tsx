@@ -7,6 +7,7 @@ import {
   rowEditingSignature,
 } from "./editableCellController";
 import { useCellEditing } from "./useCellEditing";
+import { useEditValidation } from "./validation";
 
 interface Person {
   id: string;
@@ -119,16 +120,18 @@ describe("rowEditingSignature", () => {
       rowEditingSignature({ onCellEdit, state: result.current }, "1")
     ).toBe("");
     act(() => result.current.begin("1", "name", "Ada"));
+    // The digest also carries the validation message and the busy flag, so a
+    // rejected cell repaints; both are empty while nothing validates it.
     expect(
       rowEditingSignature({ onCellEdit, state: result.current }, "1")
-    ).toBe("name:Ada");
+    ).toBe("name:Ada::");
     expect(
       rowEditingSignature({ onCellEdit, state: result.current }, "2")
     ).toBe("");
     act(() => result.current.setDraft("Augusta"));
     expect(
       rowEditingSignature({ onCellEdit, state: result.current }, "1")
-    ).toBe("name:Augusta");
+    ).toBe("name:Augusta::");
   });
 });
 
@@ -277,5 +280,179 @@ describe("editableCellController — leaving an edit", () => {
     ctrl.commitOnBlur();
     expect(ctrl.draft).toBe("");
     expect(ctrl.mode).toBe("display");
+  });
+});
+
+/**
+ * The validated commit path.
+ *
+ * The controller's job here is narrow: run the check, keep the reader in the
+ * editor while it runs, and let nothing through that the validators rejected.
+ */
+describe("editableCellController — validation", () => {
+  /** A controller over live editing state and live validation state. */
+  const setup = (options?: {
+    validate?: (
+      value: unknown
+    ) => string | undefined | Promise<string | undefined>;
+    validateRow?: (row: Person) => string | Record<string, string> | undefined;
+  }) => {
+    const onCellEdit = vi.fn();
+    const columns: ColumnDef<Person>[] = [
+      { key: "name", editable: true, validate: options?.validate },
+      { key: "age", editable: true, editor: "number" },
+    ];
+    const { result } = renderHook(() => ({
+      state: useCellEditing(),
+      validation: useEditValidation<Person>({
+        validateRow: options?.validateRow,
+      }),
+    }));
+    const controller = () =>
+      editableCellController({
+        editing: {
+          onCellEdit,
+          state: result.current.state,
+          validation: result.current.validation,
+        },
+        row: ROWS[0]!,
+        column: columns[0]!,
+        rowId: "1",
+        rows: ROWS,
+        columns,
+        rowKey: (r) => r.id,
+      });
+    return { onCellEdit, result, controller };
+  };
+  const enter = { key: "Enter", preventDefault: () => undefined };
+
+  it("keeps a rejected value from the host and marks the cell", async () => {
+    const { onCellEdit, result, controller } = setup({
+      validate: (value) => (value === "" ? "A name is required" : undefined),
+    });
+    act(() => controller().begin());
+    act(() => {
+      result.current.state.setDraft("");
+    });
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(onCellEdit).not.toHaveBeenCalled();
+    expect(result.current.validation.errorFor("1", "name")).toBe(
+      "A name is required"
+    );
+    // The editor is still the reader's, holding what they typed.
+    expect(result.current.state.isActive("1", "name")).toBe(true);
+    expect(controller().error).toBe("A name is required");
+  });
+
+  it("lets a passing value through and closes the editor", async () => {
+    const { onCellEdit, result, controller } = setup({
+      validate: (value) => (value === "" ? "A name is required" : undefined),
+    });
+    act(() => controller().begin());
+    act(() => {
+      result.current.state.setDraft("Augusta");
+    });
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(
+      ROWS[0],
+      "name",
+      "Augusta"
+    );
+    expect(result.current.state.isActive("1", "name")).toBe(false);
+  });
+
+  it("holds the editor open and busy while an async check runs", async () => {
+    let settle: ((message?: string) => void) | undefined;
+    const { onCellEdit, result, controller } = setup({
+      validate: () =>
+        new Promise<string | undefined>((resolve) => {
+          settle = resolve;
+        }),
+    });
+    act(() => controller().begin());
+    act(() => {
+      controller().onEditorKeyDown(enter);
+    });
+    expect(controller().validating).toBe(true);
+    expect(result.current.state.isActive("1", "name")).toBe(true);
+    expect(onCellEdit).not.toHaveBeenCalled();
+
+    await act(async () => {
+      settle?.(undefined);
+      await Promise.resolve();
+    });
+    expect(controller().validating).toBe(false);
+    expect(onCellEdit).toHaveBeenCalledOnce();
+  });
+
+  it("shows a row-level message under the cell being edited", async () => {
+    const { onCellEdit, result, controller } = setup({
+      validateRow: () => "Those two dates disagree",
+    });
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(onCellEdit).not.toHaveBeenCalled();
+    // A row rule has no cell of its own; it shows where the reader is.
+    expect(controller().error).toBe("Those two dates disagree");
+    expect(result.current.validation.rowErrorFor("1")).toBe(
+      "Those two dates disagree"
+    );
+  });
+
+  it("forgets the message when the reader gives up", async () => {
+    const { result, controller } = setup({ validate: () => "no" });
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown(enter);
+      await Promise.resolve();
+    });
+    expect(controller().error).toBe("no");
+    act(() => {
+      controller().onEditorKeyDown({
+        key: "Escape",
+        preventDefault: () => undefined,
+      });
+    });
+    expect(result.current.validation.errorFor("1", "name")).toBeUndefined();
+  });
+
+  it("does not advance to the next cell over a rejected value", async () => {
+    const { result, controller } = setup({ validate: () => "no" });
+    act(() => controller().begin());
+    await act(async () => {
+      controller().onEditorKeyDown({
+        key: "Tab",
+        preventDefault: () => undefined,
+      });
+      await Promise.resolve();
+    });
+    // Moving on would put the cursor past the message they need to read.
+    expect(result.current.state.isActive("1", "name")).toBe(true);
+    expect(result.current.state.isActive("1", "age")).toBe(false);
+  });
+
+  it("commits on blur through the validators", async () => {
+    const { onCellEdit, result, controller } = setup({
+      validate: (value) => (value === "" ? "required" : undefined),
+    });
+    act(() => controller().begin());
+    act(() => {
+      result.current.state.setDraft("");
+    });
+    await act(async () => {
+      controller().commitOnBlur();
+      await Promise.resolve();
+    });
+    expect(onCellEdit).not.toHaveBeenCalled();
+    expect(result.current.validation.errorFor("1", "name")).toBe("required");
   });
 });

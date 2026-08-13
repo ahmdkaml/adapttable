@@ -4,7 +4,10 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  focusEditorOnMount,
+} from "@adapttable/core/adapter";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 /** Native text / number / select editor for the unstyled adapter. */
@@ -33,6 +36,7 @@ export function NativeCellEditor({
       <select
         ref={focusEditorOnMount}
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         className={className}
         aria-label={label}
         value={ctrl.draft}
@@ -53,6 +57,7 @@ export function NativeCellEditor({
     <input
       ref={focusEditorOnMount}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       className={className}
       aria-label={label}
       type={ctrl.editor === "number" ? "number" : "text"}
@@ -81,12 +86,14 @@ export function EditableDataCell<TRow>(props: {
   readonly display: ReactNode;
   /** Class for the invisible activate button. */
   readonly activateClassName?: string;
+  readonly errorClassName?: string;
   /** Class for the active inline editor. */
   readonly editorClassName?: string;
 }): ReactElement {
   return (
     <EditableCellGate
       activateClassName={props.activateClassName}
+      errorClassName={props.errorClassName}
       editing={props.editing}
       row={props.row}
       column={props.column}

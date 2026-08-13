@@ -195,6 +195,7 @@ function MobileCardBase<TRow>({
           >
             <EditableDataCell
               activateClassName={classNames.editCellActivate}
+              errorClassName={classNames.editCellError}
               editorClassName={classNames.editCellEditor}
               editing={editing}
               row={row}

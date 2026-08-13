@@ -24,6 +24,20 @@ export interface EditableCellEditorCtrl {
   commitOnBlur: () => void;
   editor: NonNullable<ReturnType<typeof editableCellController>["editor"]>;
   selectOptions: ReturnType<typeof editableCellController>["selectOptions"];
+  /**
+   * A validator's message for this cell, when the last commit was rejected.
+   * Wire it to the kit's own error surface (Mantine's `error`, MUI's
+   * `helperText`, …) — and it is on the DOM either way, see `errorId`.
+   */
+  error?: string;
+  /** Whether an async validator is still deciding. */
+  validating: boolean;
+  /**
+   * `id` of the element holding the message. Put it on the editor's
+   * `aria-describedby` so the message is announced with the field, and set
+   * `aria-invalid` when `error` is set.
+   */
+  errorId: string;
 }
 
 /**
@@ -45,12 +59,58 @@ export interface EditableCellGateProps<TRow> {
   readonly editLabel: string;
   /** Optional class for the activate button (adapters' styling hook). */
   readonly activateClassName?: string;
+  /** Optional class for the validation message (adapters' styling hook). */
+  readonly errorClassName?: string;
+  /**
+   * Set by a kit whose own input renders the message — Mantine's `error`, MUI's
+   * `helperText`. Those components own the input's `aria-describedby`, so a
+   * second copy of the text would be both duplicated in the DOM and announced
+   * twice. The gate then renders no message of its own and leaves the ARIA to
+   * the kit.
+   */
+  readonly kitRendersError?: boolean;
   readonly display: ReactNode;
   /**
    * Kit-native editor. Only called while this cell is the active edit.
    * Wire `value`/`onChange`/`onKeyDown`/`onBlur` from the controller.
    */
   readonly renderEditor: (ctrl: EditableCellEditorCtrl) => ReactElement;
+}
+
+/**
+ * The ARIA a kit's editor needs when validation is in play.
+ *
+ * Spread onto the input or select: invalid marks the field, `describedby`
+ * points at the message so it is read WITH the field rather than announced
+ * once and lost, and busy says an async check is still deciding.
+ *
+ * @param ctrl - The editor controller the gate handed the kit.
+ * @returns Attributes to spread; empty while the value is fine.
+ */
+export function editorValidationProps(ctrl: EditableCellEditorCtrl): {
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+} {
+  return {
+    "aria-invalid": ctrl.error === undefined ? undefined : true,
+    "aria-describedby": ctrl.error === undefined ? undefined : ctrl.errorId,
+    "aria-busy": ctrl.validating ? true : undefined,
+  };
+}
+
+/**
+ * Just the busy flag, for a kit whose own input owns `aria-invalid` and
+ * `aria-describedby` (Mantine, MUI). Nothing else about an async check reaches
+ * those components, so this is the one attribute still ours to set.
+ *
+ * @param ctrl - The editor controller the gate handed the kit.
+ * @returns The attribute to spread; empty unless a check is running.
+ */
+export function editorBusyProps(ctrl: EditableCellEditorCtrl): {
+  "aria-busy"?: true;
+} {
+  return { "aria-busy": ctrl.validating ? true : undefined };
 }
 
 export function EditableCellGate<TRow>(
@@ -79,23 +139,46 @@ export function EditableCellGate<TRow>(
     return <>{props.display}</>;
   }
 
+  const errorId = `adapttable-edit-error-${props.rowId}-${props.column.key}`;
+
   if (ctrl.mode === "editing" && ctrl.editor) {
-    return props.renderEditor({
-      draft: ctrl.draft,
-      setDraft: ctrl.setDraft,
-      onEditorKeyDown: (event) => {
-        // Escape cancels, Enter commits — BOTH must hand keyboard focus
-        // back to the activate button, or it falls to <body>. (Tab moves
-        // to the next editable cell, which manages its own focus.)
-        if (event.key === "Escape" || event.key === "Enter") {
-          restoreFocusRef.current = true;
-        }
-        ctrl.onEditorKeyDown(event);
-      },
-      commitOnBlur: ctrl.commitOnBlur,
-      editor: ctrl.editor,
-      selectOptions: ctrl.selectOptions,
-    });
+    return (
+      <>
+        {props.renderEditor({
+          draft: ctrl.draft,
+          setDraft: ctrl.setDraft,
+          onEditorKeyDown: (event) => {
+            // Escape cancels, Enter commits — BOTH must hand keyboard focus
+            // back to the activate button, or it falls to <body>. (Tab moves
+            // to the next editable cell, which manages its own focus.)
+            if (event.key === "Escape" || event.key === "Enter") {
+              restoreFocusRef.current = true;
+            }
+            ctrl.onEditorKeyDown(event);
+          },
+          commitOnBlur: ctrl.commitOnBlur,
+          editor: ctrl.editor,
+          selectOptions: ctrl.selectOptions,
+          error: ctrl.error,
+          validating: ctrl.validating,
+          errorId,
+        })}
+        {/* The message is in the DOM whatever the kit does with `error`, and
+            it is a live region so it is heard the moment it appears — a
+            rejected commit that only paints red says nothing to a reader who
+            cannot see it. */}
+        {ctrl.error !== undefined && props.kitRendersError !== true && (
+          <span
+            id={errorId}
+            role="alert"
+            data-adapttable-part="edit-cell-error"
+            className={props.errorClassName}
+          >
+            {ctrl.error}
+          </span>
+        )}
+      </>
+    );
   }
 
   return (

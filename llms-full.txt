@@ -1807,14 +1807,17 @@ export function People() {
 
 ## Options
 
-| Prop / field | Type                                                   | Default  | Description                                                                |
-| ------------ | ------------------------------------------------------ | -------- | -------------------------------------------------------------------------- |
-| `onCellEdit` | `(row: TRow, key: string, nextValue: unknown) => void` | —        | Change channel; its presence enables editing.                              |
-| `editable`   | `boolean \| ((row: TRow) => boolean)`                  | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
-| `editor`     | `"text" \| "number" \| { type: "select"; options }`    | `"text"` | Widget for the active cell.                                                |
-| `editValue`  | `(row: TRow) => string`                                | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
-| `parseValue` | `(draft: string, row: TRow) => unknown`                | —        | Turns the edited text into the value committed to `onCellEdit`.            |
-| `labels`     | `TableLabels`                                          | English  | Override `editCell` for the activate control's accessible name.            |
+| Prop / field  | Type                                                    | Default  | Description                                                                |
+| ------------- | ------------------------------------------------------- | -------- | -------------------------------------------------------------------------- |
+| `onCellEdit`  | `(row: TRow, key: string, nextValue: unknown) => void`  | —        | Change channel; its presence enables editing.                              |
+| `editable`    | `boolean \| ((row: TRow) => boolean)`                   | —        | Whether this column can open an editor (still requires `onCellEdit`).      |
+| `editor`      | `"text" \| "number" \| { type: "select"; options }`     | `"text"` | Widget for the active cell.                                                |
+| `editValue`   | `(row: TRow) => string`                                 | —        | Draft seed when the displayed cell is formatted but editing needs the raw. |
+| `parseValue`  | `(draft: string, row: TRow) => unknown`                 | —        | Turns the edited text into the value committed to `onCellEdit`.            |
+| `labels`      | `TableLabels`                                           | English  | Override `editCell` for the activate control's accessible name.            |
+| `validate`    | `(value, row) => string \| undefined \| Promise<…>`     | —        | Column rule: return a message to reject the commit (see below).            |
+| `validateRow` | `(row) => string \| Record<string,string> \| undefined` | —        | Table rule over the row the edit would produce (cross-field).              |
+| `applyEdit`   | `(row, columnKey, value) => TRow`                       | spread   | How an edit lands on a row for `validateRow` to judge.                     |
 
 ### Display, draft, and committed value
 
@@ -1846,6 +1849,58 @@ receive, including a value no built-in editor produces, such as a `Date`.
 Without it nothing changes: a `number` editor commits `number | null` and every
 other editor commits the raw string.
 
+## Validation
+
+A validator gates the commit and nothing else. It never rejects a keystroke,
+never rewrites a value, and never decides what to save — the host still owns
+persistence, and will usually validate again on the server.
+
+Two levels, because they answer different questions. A **column** rule knows one
+value:
+
+```tsx
+const columns: ColumnDef<Task>[] = [
+  {
+    key: "title",
+    editable: true,
+    validate: (value) =>
+      String(value).trim() === "" ? "A title is required" : undefined,
+  },
+];
+```
+
+A **table** rule sees the row the edit would produce, and answers what no single
+cell can:
+
+```tsx
+<DataTable
+  {...props}
+  onCellEdit={apply}
+  validateRow={(task) =>
+    task.end <= task.start ? "The end must come after the start" : undefined
+  }
+/>
+```
+
+Return a string for a row-level problem, or a map of column key → message to
+mark individual cells — which is how a cross-field rule points at the field the
+reader should look at. Return nothing to allow the commit. When a column key is
+not the field (a nested path), pass `applyEdit` so the rule sees the right row.
+
+**A rejected value never reaches `onCellEdit`.** The editor stays open holding
+what the reader typed, and the message is announced rather than only painted.
+Where it renders depends on the kit: Mantine and MUI put it in their own input's
+error slot (their components own the field's `aria-describedby`), and every other
+kit renders `data-adapttable-part="edit-cell-error"` with `role="alert"`, the
+editor carrying `aria-invalid` and `aria-describedby` pointing at it. Either way
+the message exists once in the DOM and is read with the field. Escape clears it
+with the draft.
+
+Both levels may be async — "is this SKU real" is a request. The editor stays open
+and carries `aria-busy` while the check runs, and a newer draft supersedes an
+older check, so a stale answer can never mark a value the reader has already
+changed. A column with no validator commits synchronously, exactly as before.
+
 ## Headless editing
 
 The editing engine is exported for custom adapters and fully custom tables.
@@ -1855,17 +1910,21 @@ activation wrapper every built-in adapter renders (double-click / Enter / F2
 to begin, with the cell value as the accessible name and the edit hint as
 its `title`).
 
-| Export                                                                   | Purpose                                                                             |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `useCellEditing` / `CellEditingState`                                    | The state machine hook and the state it returns.                                    |
-| `EditableCellGate` / `EditableCellGateProps`                             | Activation wrapper: display content when idle, the kit's editor while active.       |
-| `EditableCellEditing`                                                    | The editing bundle adapters receive from the chrome (`chrome.editing`).             |
-| `CellEditCommit` / `CellEditTarget`                                      | A commit payload (`row`, `key`, `value`) and the active-cell address.               |
-| `CellEditor` / `CellEditorOption`                                        | The column `editor` descriptor and one option of a select editor.                   |
-| `CellEditKeyAction` / `CellEditKeyOutcome` / `CellEditNavigation`        | Keyboard-flow vocabulary: what a key press means and where focus goes next.         |
-| `EditableCellController` / `EditableCellEditorCtrl` / `EditableCellMode` | The controller handed to a custom editor: draft, commit/cancel, mode.               |
-| `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.    |
-| `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution. |
+| Export                                                                   | Purpose                                                                                                         |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `useCellEditing` / `CellEditingState`                                    | The state machine hook and the state it returns.                                                                |
+| `EditableCellGate` / `EditableCellGateProps`                             | Activation wrapper: display content when idle, the kit's editor while active.                                   |
+| `EditableCellEditing`                                                    | The editing bundle adapters receive from the chrome (`chrome.editing`).                                         |
+| `CellEditCommit` / `CellEditTarget`                                      | A commit payload (`row`, `key`, `value`) and the active-cell address.                                           |
+| `CellEditor` / `CellEditorOption`                                        | The column `editor` descriptor and one option of a select editor.                                               |
+| `CellEditKeyAction` / `CellEditKeyOutcome` / `CellEditNavigation`        | Keyboard-flow vocabulary: what a key press means and where focus goes next.                                     |
+| `EditableCellController` / `EditableCellEditorCtrl` / `EditableCellMode` | The controller handed to a custom editor: draft, commit/cancel, mode.                                           |
+| `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.                                |
+| `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution.                             |
+| `useEditValidation` / `EditValidationState` / `UseEditValidationOptions` | Validation state: which cells carry a message, which are still checking, and the `check` that gates one commit. |
+| `CellValidator` / `RowValidator` / `ValidationTarget`                    | The two validator signatures and the cell address a check is about.                                             |
+| `resolveCommitValue`                                                     | The row, column and parsed value a commit resolves to — what a validator judges before the host sees it.        |
+| `editorValidationProps`                                                  | The `aria-invalid` / `aria-describedby` / `aria-busy` a kit's editor spreads while validation is in play.       |
 
 ## Applying changes without a refetch
 
@@ -4848,6 +4907,18 @@ describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
 `normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
+
+**Validation gates the commit.** A column's `validate` (`CellValidator`) judges
+one value; the table's `validateRow` (`RowValidator`) judges the row an edit
+would produce, with `applyEdit` saying how the edit lands on it.
+`useEditValidation(options)` holds the state — which cells carry a message, which
+are still checking — behind `EditValidationState` (`UseEditValidationOptions` in,
+`ValidationTarget` naming the cell a check is about), and
+`resolveCommitValue(options)` is the row, column and parsed value a validator
+sees before the host does. `editorValidationProps(ctrl)` from
+`@adapttable/core/adapter` is the `aria-invalid` / `aria-describedby` /
+`aria-busy` a kit's editor spreads, and `editorBusyProps(ctrl)` is just the busy
+flag for a kit whose own input owns the other two.
 See [cell editing](./cell-editing.md).
 
 **The grouped row model.** `buildGroupedFlatModel` turns rows into the flat

@@ -75,6 +75,19 @@ const ROWS: Row[] = Array.from({ length: 30 }, (_, i) => ({
   qty: i,
 }));
 
+/** The same columns, with a rule the empty string breaks. */
+const VALIDATED_COLUMNS: ColumnDef<Row>[] = [
+  {
+    key: "name",
+    header: "Name",
+    accessor: (r) => r.name,
+    editable: true,
+    editor: "text",
+    validate: (value) =>
+      String(value).trim() === "" ? "A name is required" : undefined,
+  },
+];
+
 const columns: ColumnDef<Row>[] = [
   {
     key: "name",
@@ -309,6 +322,29 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   drawer.unmount();
 
+  // A rejected commit: the editor stays open with its message beside it.
+  const invalid = mount({
+    override: {
+      onCellEdit: () => undefined,
+      columns: VALIDATED_COLUMNS,
+    },
+  });
+  const activate = part("edit-cell-activate");
+  if (activate) {
+    fireEvent.doubleClick(activate);
+    absorb();
+    const editor = part("edit-cell-editor");
+    if (editor) {
+      fireEvent.change(editor, { target: { value: "" } });
+      await act(async () => {
+        fireEvent.keyDown(editor, { key: "Enter" });
+        await Promise.resolve();
+      });
+      absorb();
+    }
+  }
+  invalid.unmount();
+
   // Tree data: an open parent renders the chevron, an indented cell and — on
   // the leaf beside it — the spacer that holds a chevron's width.
   const tree = mount({
@@ -380,6 +416,7 @@ const KEYS = [
   "filtersButton",
   "filtersIcon",
   "filtersCount",
+  "editCellError",
   "treeCell",
   "treeToggle",
   "treeSpacer",

@@ -4,7 +4,10 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  focusEditorOnMount,
+} from "@adapttable/core/adapter";
 import { TextField } from "@radix-ui/themes";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -49,6 +52,7 @@ export function RadixCellEditor({
     <TextField.Root
       ref={focusEditorOnMount}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       aria-label={label}
       size="1"
       type={ctrl.editor === "number" ? "number" : "text"}

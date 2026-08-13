@@ -120,6 +120,20 @@ export interface ColumnDef<TRow> {
    */
   parseValue?: (draft: string, row: TRow) => unknown;
   /**
+   * Gate a commit on this column's own rule. Receives the value
+   * {@link ColumnDef.parseValue} produced, plus the row being edited; return a
+   * message to reject it, nothing to allow it.
+   *
+   * May be async — "is this SKU real" is a request — and the editor stays open
+   * and marked busy while it runs. A rejected value keeps the editor open with
+   * the message on it, so the reader fixes what they typed rather than losing it.
+   * Validation gates `onCellEdit` and nothing else: the host still owns saving.
+   */
+  validate?: (
+    value: unknown,
+    row: TRow
+  ) => string | undefined | Promise<string | undefined>;
+  /**
    * Component rendered per row. Define at module level (or memoise) so
    * its identity is stable across renders.
    */

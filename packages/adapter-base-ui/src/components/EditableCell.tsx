@@ -4,6 +4,7 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
+import { editorValidationProps } from "@adapttable/core/adapter";
 import {
   type KeyboardEvent,
   type ReactElement,
@@ -73,6 +74,7 @@ export function BaseUiCellEditor({
     <FocusOnMount>
       <TextField.Root
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         aria-label={label}
         size="1"
         type={ctrl.editor === "number" ? "number" : "text"}

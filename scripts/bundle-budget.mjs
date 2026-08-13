@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 47,
+    budgetKB: 49,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -105,15 +105,17 @@ const FIXTURES = [
   // second hierarchy model (~1 KB): the flattening walk, its own expansion
   // state, and the chevron every body and every card renders — plus the
   // per-node fetch state a lazily loaded branch needs, and the nested-table
-  // region that turns master/detail into a real table under a row.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 71 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 69 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 70 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 67 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 70 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 76 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 73 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 71 },
+  // region that turns master/detail into a real table under a row. Editing
+  // validation adds the per-cell message state, the async check that supersedes
+  // a stale answer, and the ARIA every editor now carries (~1 KB).
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 72 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 71 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 71 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 69 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 71 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 77 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 75 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 72 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

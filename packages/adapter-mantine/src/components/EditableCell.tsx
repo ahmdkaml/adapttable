@@ -4,7 +4,7 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import { editorBusyProps, focusEditorOnMount } from "@adapttable/core/adapter";
 import { Select, TextInput } from "@mantine/core";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -30,6 +30,8 @@ export function MantineCellEditor({
   if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
     return (
       <Select
+        error={ctrl.error}
+        {...editorBusyProps(ctrl)}
         ref={focusEditorOnMount}
         data-adapttable-part="edit-cell-editor"
         aria-label={label}
@@ -49,6 +51,8 @@ export function MantineCellEditor({
 
   return (
     <TextInput
+      error={ctrl.error}
+      {...editorBusyProps(ctrl)}
       ref={focusEditorOnMount}
       data-adapttable-part="edit-cell-editor"
       aria-label={label}
@@ -79,6 +83,7 @@ export function EditableDataCell<TRow>(props: {
 }): ReactElement {
   return (
     <EditableCellGate
+      kitRendersError
       editing={props.editing}
       row={props.row}
       column={props.column}

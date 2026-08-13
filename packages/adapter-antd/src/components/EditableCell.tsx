@@ -4,7 +4,10 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  focusEditorOnMount,
+} from "@adapttable/core/adapter";
 import { Input, Select } from "antd";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -30,8 +33,10 @@ export function AntdCellEditor({
   if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
     return (
       <Select
+        status={ctrl.error === undefined ? undefined : "error"}
         ref={focusEditorOnMount}
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         aria-label={label}
         size="small"
         style={{ width: "100%" }}
@@ -49,8 +54,10 @@ export function AntdCellEditor({
 
   return (
     <Input
+      status={ctrl.error === undefined ? undefined : "error"}
       ref={focusEditorOnMount}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       aria-label={label}
       size="small"
       type={ctrl.editor === "number" ? "number" : "text"}

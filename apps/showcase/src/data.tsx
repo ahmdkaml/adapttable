@@ -132,11 +132,14 @@ interface Strings {
   groupDelivery: string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
+  /** Rejection message for the editing demo's validated name column. */
+  nameRequired: string;
 }
 
 const STRINGS: Record<Locale, Strings> = {
   en: {
     search: "Search people…",
+    nameRequired: "A name is required",
     name: "Name",
     person: "Person",
     email: "Email",
@@ -161,6 +164,7 @@ const STRINGS: Record<Locale, Strings> = {
   },
   ar: {
     search: "ابحث عن الأشخاص…",
+    nameRequired: "الاسم مطلوب",
     name: "الاسم",
     person: "الشخص",
     email: "البريد الإلكتروني",
@@ -408,6 +412,9 @@ export function makeColumns(
       editable: true,
       editor: "text",
       editValue: (r) => r.name,
+      // A rule the reader can trip on purpose: clear the name and commit.
+      validate: (value) =>
+        String(value).trim() === "" ? s.nameRequired : undefined,
       width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>

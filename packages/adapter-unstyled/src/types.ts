@@ -48,6 +48,11 @@ export interface DataTableClassNames {
   cellMatch?: string;
   /** The one match the find walk is on — `data-cell-match-current`. */
   cellMatchCurrent?: string;
+  /**
+   * A validator's message under an open editor (`validate` / `validateRow`).
+   * It is a live region, so a rejected commit is heard as well as seen.
+   */
+  editCellError?: string;
   /** The indented wrapper in a tree row's tree column (`getChildren`). */
   treeCell?: string;
   /** The chevron that folds a node. */
