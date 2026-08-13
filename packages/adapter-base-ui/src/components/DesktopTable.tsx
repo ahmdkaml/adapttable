@@ -1,5 +1,6 @@
 /** The desktop `<table>`: header, pinned columns, rows and summary. */
 import {
+  bodyRowEntries,
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
@@ -13,6 +14,7 @@ import {
   type SelectionState,
   type TableLabels,
   tableMinWidth,
+  type TreeEntry,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
@@ -37,6 +39,7 @@ import {
   type SharedTableRenderProps,
   sortArrow,
   tableRenderModel,
+  TreeCell,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import {
@@ -172,6 +175,12 @@ interface DesktopRowProps<TRow> {
   columnSpan: number;
   /** Widths holding open the columns outside the horizontal window. */
   columnSpacers?: { start: number; end: number };
+  /** This row's place in the tree, when the table has one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Which column carries the chevron and the indent. */
+  treeColumnKey?: string;
+  /** Open or close a tree node. */
+  onToggleTree?: (id: string) => void;
   /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
@@ -225,6 +234,9 @@ function DesktopRowBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  treeColumnKey: treeKey,
+  onToggleTree,
 }: Readonly<DesktopRowProps<TRow>>) {
   // Render-time geometry reads the latest ref values: whenever they change, a
   // compared prop (pinSignature / hasSelection / …) changes with them.
@@ -296,23 +308,31 @@ function DesktopRowBase<TRow>({
                 )
               }
             >
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
+              <TreeCell
+                entry={treeEntry}
+                columnKey={column.key}
+                treeColumnKey={treeKey}
+                labels={labels}
+                onToggle={onToggleTree}
+              >
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={labels.editCell}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </TreeCell>
               <FillHandle
                 focus={gridFocus}
                 windowIndex={index}
@@ -393,6 +413,7 @@ export function DesktopTable<TRow>({
   actionsPinned = false,
   columnWindow,
   fitColumns,
+  tree,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -785,39 +806,46 @@ export function DesktopTable<TRow>({
                   />
                 );
               })
-            : entries.map(({ row, index, key }) => {
-                const id = getRowId(row);
-                return (
-                  <Row
-                    gridFocus={gridFocus}
-                    key={key}
-                    row={row}
-                    id={id}
-                    index={index}
-                    selected={selection?.isSelected(id) ?? false}
-                    expanded={expansion?.isExpanded(id) ?? false}
-                    size={size}
-                    accentColor={accentColor}
-                    dir={dir}
-                    columns={columns}
-                    columnWidths={columnWidths}
-                    pinSignature={pinSignature}
-                    className={rowClassName?.(row, index)}
-                    labels={labels}
-                    hasSelection={Boolean(selection)}
-                    expandable={expandable}
-                    showActions={showActions}
-                    hasRowClick={Boolean(onRowClick)}
-                    columnSpan={columnSpan}
-                    api={api}
-                    measureRef={measureRef}
-                    editing={editing}
-                    rows={rows}
-                    getRowId={getRowId}
-                    editingSignature={rowEditingSignature(editing, id)}
-                  />
-                );
-              })}
+            : // A tree renders its own flattened entries; a flat table renders the
+              // (possibly windowed) rows. Both carry a row and a key.
+              bodyRowEntries(entries, tree).map(
+                ({ row, index, key, treeEntry }) => {
+                  const id = getRowId(row);
+                  return (
+                    <Row
+                      gridFocus={gridFocus}
+                      key={key}
+                      row={row}
+                      id={id}
+                      index={index}
+                      selected={selection?.isSelected(id) ?? false}
+                      expanded={expansion?.isExpanded(id) ?? false}
+                      size={size}
+                      accentColor={accentColor}
+                      dir={dir}
+                      columns={columns}
+                      columnWidths={columnWidths}
+                      pinSignature={pinSignature}
+                      className={rowClassName?.(row, index)}
+                      labels={labels}
+                      hasSelection={Boolean(selection)}
+                      expandable={expandable}
+                      showActions={showActions}
+                      hasRowClick={Boolean(onRowClick)}
+                      columnSpan={columnSpan}
+                      api={api}
+                      measureRef={measureRef}
+                      editing={editing}
+                      rows={rows}
+                      getRowId={getRowId}
+                      treeEntry={treeEntry}
+                      treeColumnKey={tree?.columnKey}
+                      onToggleTree={tree?.expansion.toggle}
+                      editingSignature={rowEditingSignature(editing, id)}
+                    />
+                  );
+                }
+              )}
           {paddingBottom > 0 && (
             <Table.Row aria-hidden>
               <Table.Cell

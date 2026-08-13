@@ -190,6 +190,33 @@ export interface BaseDataTableProps<TRow> {
    * table never inserts group header rows (package DNA: opt-in). Frontend tier
    * only; server-paginated sources get a devWarn and grouping is ignored.
    */
+  /**
+   * Hierarchical rows: a row's children, for nested data.
+   *
+   * A tree is declared by the DATA — a folder contains files, a task has
+   * subtasks — which is why it is not grouping: grouping answers a question
+   * the reader asked and re-answers it when they change the question.
+   *
+   * Its presence arms the tree; omit it (and `getParentId`) and the table
+   * renders a flat list exactly as before.
+   */
+  getChildren?: (row: TRow) => readonly TRow[] | undefined;
+  /** Hierarchical rows the other way round: a flat table with a parent column. */
+  getParentId?: (row: TRow) => string | undefined;
+  /**
+   * Whether a row has children that have not been fetched yet — a server tree
+   * knows there is more before the browser does.
+   */
+  hasChildren?: (row: TRow) => boolean;
+  /**
+   * Which column carries the chevron and the indent. Defaults to the first
+   * rendered column, which is where a reader looks for a tree.
+   */
+  treeColumn?: string;
+  /** Controlled tree expansion: the ids currently open. */
+  expandedIds?: readonly string[];
+  /** Fired after the table opens or closes a node. */
+  onExpandedIdsChange?: (ids: string[]) => void;
   groupBy?: string | readonly string[] | null;
   /**
    * Notification fired AFTER the grouping change is applied — the table

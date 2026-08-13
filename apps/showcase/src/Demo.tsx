@@ -17,6 +17,7 @@ import {
   LIVE_DEFAULT_LAYOUT,
   PEOPLE,
   type Person,
+  reportsTo,
 } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
@@ -29,6 +30,7 @@ export type FiltersUi = "popover" | "drawer";
 // Five rows by default: enough to show real data while keeping the
 // whole table (and often the footer) on one screen.
 const DEFAULTS = { limit: 5 };
+const TREE_DEFAULTS = { limit: 30 };
 
 /**
  * The URL-persisted column controls every adapter demo spreads onto its
@@ -92,6 +94,7 @@ interface DataProps {
   /** Opt-in feature toggles — off renders the plain table (package DNA). */
   grouping?: boolean;
   editing?: boolean;
+  tree?: boolean;
 }
 
 /** Column key → row field for composite cells (person shows name; load
@@ -108,6 +111,7 @@ function Frontend({
   urlKey,
   grouping,
   editing,
+  tree,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -128,7 +132,10 @@ function Frontend({
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
-    defaults: DEFAULTS,
+    // A hierarchy needs its parents in hand: a five-row page cut through an
+    // org chart leaves every visible person a root, so the tree demo takes the
+    // whole team at once.
+    defaults: tree ? TREE_DEFAULTS : DEFAULTS,
     paginationMode: pageMode,
     urlKey,
   });
@@ -151,6 +158,10 @@ function Frontend({
                 b.leafRows.length - a.leafRows.length,
             }
           : { groupBy: null }),
+        // The same thirty people read as the org chart they already are:
+        // the first person on each team leads it, the rest report to them.
+        // Nothing about the data changes — only how it is declared.
+        ...(tree ? { getParentId: reportsTo, treeColumn: "person" } : {}),
       })}
     </>
   );
@@ -184,6 +195,7 @@ export function DemoBody({
   render,
   grouping,
   editing,
+  tree,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -191,6 +203,7 @@ export function DemoBody({
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   render: TableRender;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
@@ -229,6 +242,7 @@ export function DemoBody({
       urlKey={urlKey}
       grouping={grouping}
       editing={editing}
+      tree={tree}
     />
   );
 }

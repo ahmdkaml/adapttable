@@ -22,6 +22,7 @@ import {
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  type TreeEntry,
   type UrlStateAdapter,
   useChromeScrollReset,
   type UseColumnLayoutResult,
@@ -670,6 +671,7 @@ interface DataTableBodyRegionProps<TRow> {
   labels: Required<TableLabels>;
   emptyNode: ReactNode;
   grouping: GroupingBundle<TRow> | undefined;
+  tree: ReturnType<typeof useTableChrome<TRow>>["tree"];
   detailRender: ((row: TRow) => ReactNode) | undefined;
   detailExpansion: RowExpansionState | undefined;
   editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
@@ -846,6 +848,7 @@ function DataTableBodyRegion<TRow>(
     labels,
     emptyNode,
     grouping,
+    tree,
     detailRender,
     detailExpansion,
     editing,
@@ -913,6 +916,7 @@ function DataTableBodyRegion<TRow>(
         expansion={detailExpansion}
         editing={editing}
         grouping={grouping}
+        tree={tree}
         renderRowDetail={detailRender}
         summaryRow={summaryRow}
         {...cardWindow}
@@ -1189,6 +1193,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // of header clicks (single-sort via `onChange`).
     onToggleSortLevel: chainToggler(props.multiSort, source),
     fitColumns: props.fitColumns,
+    tree: c.tree
+      ? {
+          columnKey: c.tree.columnKey,
+          entryFor: (row: TRow) => treeEntryByRow.get(row),
+          toggle: c.tree.expansion.toggle,
+        }
+      : undefined,
     grouping: grouping
       ? {
           collapsed: grouping.collapsed,
@@ -1197,9 +1208,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         }
       : undefined,
   });
+  // A tree is already flat by the time antd sees it: core walks the hierarchy
+  // and hands back the visible rows in reading order, so antd's own
+  // `childrenColumnName` recursion stays out of it and one expansion state
+  // drives all nine adapters.
+  const treeEntries = c.tree?.entries;
+  const treeEntryByRow = new Map<TRow, TreeEntry<TRow>>(
+    treeEntries?.map((entry) => [entry.row, entry])
+  );
   const dataSource: readonly GroupedDataRecord<TRow>[] = grouping
     ? buildGroupedDataSource(grouping.entries)
-    : source.rows;
+    : (treeEntries?.map((entry) => entry.row) ?? source.rows);
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
   const hasStartPin = pinnedSides.includes("start");
@@ -1263,6 +1282,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       labels={labels}
       emptyNode={emptyNode}
       grouping={grouping}
+      tree={c.tree}
       detailRender={c.detail?.render}
       detailExpansion={c.detail?.expansion}
       editing={c.editing}

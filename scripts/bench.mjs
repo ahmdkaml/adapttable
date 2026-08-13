@@ -51,8 +51,7 @@ const JSON_OUT = args.includes("--json");
  *
  * A scenario for a feature the library does not have is absent rather than
  * stubbed — a benchmark that measures nothing is worse than a missing one, so
- * each arrives with the feature it measures. Tree data is the one still
- * outstanding, because hierarchical rows do not exist yet.
+ * each arrives with the feature it measures.
  */
 const SCENARIOS = [
   {
@@ -99,6 +98,14 @@ const SCENARIOS = [
     query: "rows=5000&cols=500&virtualizeColumns=1",
     smoke: false,
     expect: { maxDomRows: 60, maxCells: 3000 },
+  },
+  {
+    // A 50,000-row hierarchy with every parent open: the flattening walk runs
+    // over the whole set, and the window is what keeps the DOM small.
+    name: "tree · 50k rows, every parent open",
+    query: "rows=50000&tree=1",
+    smoke: true,
+    expect: { maxDomRows: 60 },
   },
   {
     name: "grouped by status",

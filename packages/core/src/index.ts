@@ -399,6 +399,24 @@ export {
   useRowExpansion,
 } from "./rows/useRowExpansion";
 
+/* ── Hierarchical (tree) rows ──────────────────────────────────────── */
+export {
+  bodyRowEntries,
+  type BodyRowEntry,
+  buildTreeEntries,
+  type BuildTreeEntriesOptions,
+  filterTreeRows,
+  treeCardStyle,
+  treeColumnKey,
+  type TreeEntry,
+  treeIndentStyle,
+  type TreeShape,
+} from "./tree/treeRows";
+export {
+  type TreeExpansionState,
+  useTreeExpansion,
+} from "./tree/useTreeExpansion";
+
 /* ── Inline cell editing ───────────────────────────────────────────── */
 export {
   type CellEditCommit,

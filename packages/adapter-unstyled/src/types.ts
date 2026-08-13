@@ -48,6 +48,12 @@ export interface DataTableClassNames {
   cellMatch?: string;
   /** The one match the find walk is on — `data-cell-match-current`. */
   cellMatchCurrent?: string;
+  /** The indented wrapper in a tree row's tree column (`getChildren`). */
+  treeCell?: string;
+  /** The chevron that folds a node. */
+  treeToggle?: string;
+  /** A leaf's placeholder, holding the chevron's width so names line up. */
+  treeSpacer?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

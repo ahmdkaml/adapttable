@@ -98,6 +98,9 @@ function makeBigList(n: number): BigPerson[] {
   return out;
 }
 
+/** Children per parent in the `?tree=1` benchmark shape. */
+const TREE_FANOUT = 10;
+
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -150,6 +153,7 @@ function scaleParams(): {
   server: boolean;
   edit: boolean;
   patches: number;
+  tree: boolean;
 } {
   const DEFAULTS = {
     total: 50000,
@@ -160,6 +164,7 @@ function scaleParams(): {
     edit: false,
     patches: 0,
     virtualCols: false,
+    tree: false,
   };
   if (typeof window === "undefined") return DEFAULTS;
   const p = new URLSearchParams(window.location.search);
@@ -176,6 +181,7 @@ function scaleParams(): {
     server: p.get("tier") === "server",
     edit: p.get("edit") === "1",
     patches: int("patch"),
+    tree: p.get("tree") === "1",
   };
 }
 
@@ -296,8 +302,17 @@ function ServerScaleTable({
 
 /** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const { total, virtual, virtualCols, all, cols, server, edit, patches } =
-    scaleParams();
+  const {
+    total,
+    virtual,
+    virtualCols,
+    all,
+    cols,
+    server,
+    edit,
+    patches,
+    tree,
+  } = scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
   if (server) {
     return (
@@ -319,6 +334,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
       all={all}
       edit={edit}
       patches={patches}
+      tree={tree}
       dark={dark}
     />
   );
@@ -333,6 +349,7 @@ function FrontendScaleTable({
   all,
   edit,
   patches,
+  tree,
   dark,
 }: Readonly<{
   total: number;
@@ -342,6 +359,7 @@ function FrontendScaleTable({
   all: boolean;
   edit: boolean;
   patches: number;
+  tree: boolean;
   dark: boolean;
 }>) {
   const initial = useMemo(() => makeBigList(total), [total]);
@@ -372,6 +390,23 @@ function FrontendScaleTable({
     };
     tick();
   }, [patches, total]);
+  // `?tree=1` reads the same flat list as a hierarchy — every tenth row is a
+  // root and the nine after it are its children — so the benchmark measures
+  // the tree model's cost over rows it already builds, with nothing else
+  // changed. Every root starts open, so the visible list is the full 50k and
+  // virtualization is what has to hold it down.
+  const treeShape = useMemo(() => {
+    if (!tree) return undefined;
+    const roots: string[] = [];
+    for (let id = 1; id <= total; id += TREE_FANOUT) roots.push(String(id));
+    return {
+      getParentId: (row: BigPerson) =>
+        (row.id - 1) % TREE_FANOUT === 0
+          ? undefined
+          : String(row.id - ((row.id - 1) % TREE_FANOUT)),
+      expandedIds: roots,
+    };
+  }, [tree, total]);
   const source = useFrontendData<BigPerson>({
     data: rows,
     columns,
@@ -395,6 +430,8 @@ function FrontendScaleTable({
           searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
           virtualize={virtual}
           virtualizeColumns={virtualCols}
+          getParentId={treeShape?.getParentId}
+          expandedIds={treeShape?.expandedIds}
           estimateRowSize={48}
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.

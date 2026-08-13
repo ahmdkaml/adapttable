@@ -117,6 +117,8 @@ export {
   tableRenderModel,
   useSummaryCells,
 } from "./tableRenderProps";
+export { TreeCell, type TreeCellProps } from "./tree/TreeCell";
+export { TreeToggle, type TreeToggleProps } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
 export { type SearchInputState } from "./useDataTable/useSearchInput";
 export {

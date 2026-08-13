@@ -24,6 +24,7 @@ type DemoComponent = ComponentType<
     density?: Density;
     animate?: boolean;
     grouping?: boolean;
+    tree?: boolean;
     editing?: boolean;
   }>
 >;
@@ -120,6 +121,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const [motion, setMotion] = useState<"on" | "off">("on");
   const [grouping, setGrouping] = useState<"on" | "off">("off");
+  const [tree, setTree] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -228,6 +230,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Tree">
+          <Segmented
+            label="tree"
+            value={tree}
+            onChange={(v) => {
+              startTransition(() => setTree(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Editing">
           <Segmented
             label="editing"
@@ -273,6 +288,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               filtersUi={filtersUi}
               animate={motion === "on"}
               grouping={grouping === "on"}
+              tree={tree === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

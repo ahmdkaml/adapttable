@@ -1,16 +1,20 @@
 /** The card list rendered in place of the table on narrow screens. */
 import {
+  bodyRowEntries,
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
   type RowAction,
   type TableLabels,
+  treeCardStyle,
+  type TreeEntry,
 } from "@adapttable/core";
 import {
   resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
+  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode } from "react";
@@ -26,6 +30,10 @@ import { RowActionButtons } from "./RowActionButtons";
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
+  /** This card's place in the tree, when the table is one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Open or close this node. */
+  onToggleTree?: (id: string) => void;
   row: TRow;
   index: number;
   /** Stable row id (selection / expansion key). */
@@ -87,6 +95,8 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "measureElement",
   "clickable",
   "editingSignature",
+  // Or a folder opens and its own chevron never turns.
+  "treeEntry",
 ];
 
 /**
@@ -123,10 +133,13 @@ function MobileCardBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  onToggleTree,
 }: Readonly<MobileCardProps<TRow>>) {
   return (
     <li
       {...rowClickProps(row, onRowClick, index)}
+      style={treeCardStyle(treeEntry?.level ?? 0)}
       ref={measureElement}
       data-index={index}
       data-adapttable-part="card"
@@ -135,6 +148,15 @@ function MobileCardBase<TRow>({
       data-clickable={clickable ? "" : undefined}
       className={cx(classNames.card, className)}
     >
+      {treeEntry && (
+        <TreeToggle
+          toggleClassName={classNames.treeToggle}
+          spacerClassName={classNames.treeSpacer}
+          entry={treeEntry}
+          labels={labels}
+          onToggle={onToggleTree ?? (() => undefined)}
+        />
+      )}
       {onToggleSelect && (
         <input
           type="checkbox"
@@ -234,6 +256,7 @@ export function MobileCards<TRow>({
   expansion,
   editing,
   grouping,
+  tree,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -251,7 +274,12 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderCard = (row: TRow, index: number, key: string): ReactElement => {
+  const renderCard = (
+    row: TRow,
+    index: number,
+    key: string,
+    treeEntry?: TreeEntry<TRow>
+  ): ReactElement => {
     const id = getRowId(row);
     return (
       <CardItem
@@ -277,6 +305,8 @@ export function MobileCards<TRow>({
         rows={rows}
         getRowId={getRowId}
         editingSignature={rowEditingSignature(editing, id)}
+        treeEntry={treeEntry}
+        onToggleTree={tree?.expansion.toggle}
       />
     );
   };
@@ -317,7 +347,9 @@ export function MobileCards<TRow>({
               renderCard(entry.row, entry.index, entry.key)
             )
           )
-        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
+        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
+            renderCard(row, index, key, treeEntry)
+          )}
       {paddingBottom > 0 && (
         <li
           data-adapttable-part="virtual-spacer"

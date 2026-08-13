@@ -237,6 +237,7 @@ export function useDataTableShell<TRow>(
   const {
     virtualization,
     groupingEntries,
+    treeEntries,
     loadMoreRef,
     canLoadMore,
     virtualScrollRef: bodyScrollRef,
@@ -283,6 +284,12 @@ export function useDataTableShell<TRow>(
     chrome.grouping && groupingEntries
       ? { ...chrome.grouping, entries: groupingEntries }
       : chrome.grouping;
+  // Same shape for the hierarchy: what the body renders is the window, not the
+  // whole walked tree.
+  const tree =
+    chrome.tree && treeEntries
+      ? { ...chrome.tree, entries: treeEntries }
+      : chrome.tree;
 
   // The kit-agnostic slice of a table renderer's props — the adapter spreads
   // this and adds its kit's row `size` and accent colour.
@@ -301,6 +308,7 @@ export function useDataTableShell<TRow>(
     measureRowPair: virtualization.measureRowPair,
     columnWindow,
     fitColumns: props.fitColumns,
+    tree,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
     pinOffset: chrome.columnLayout.pinOffset,

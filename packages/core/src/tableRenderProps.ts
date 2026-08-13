@@ -23,6 +23,8 @@ import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
+import type { TreeEntry } from "./tree/treeRows";
+import type { TreeExpansionState } from "./tree/useTreeExpansion";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
 import type { RowPairMeasurer } from "./virtual/measureRowPair";
@@ -66,6 +68,16 @@ export interface SharedTableRenderProps<TRow> {
    * Omit it and every cell stays plain display (package DNA: opt-in).
    */
   editing?: EditableCellEditing<TRow>;
+  /**
+   * Tree bundle — present iff the host declared a hierarchy. Adapters render
+   * `tree.entries` in place of plain rows and put a {@link TreeToggle} plus
+   * `treeIndentStyle` in the `tree.columnKey` cell.
+   */
+  tree?: {
+    entries: readonly TreeEntry<TRow>[];
+    expansion: TreeExpansionState;
+    columnKey?: string;
+  };
   /**
    * Row-grouping bundle — present iff chrome armed grouping. Adapters that
    * do not yet render group headers may ignore it; leaf `rows` stay valid.

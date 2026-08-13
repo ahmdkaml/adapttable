@@ -101,15 +101,17 @@ const FIXTURES = [
   // window too (~1 KB): the spacer cells and the horizontal window ride the
   // same render model every adapter already maps over. Auto-sizing added the
   // measurement and one menu action on top, and column sizing — bounds, flex
-  // shares and the container-fitting mode — closed phase 3.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 69 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 68 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 67 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 66 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 67 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 74 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 72 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 68 },
+  // shares and the container-fitting mode — closed phase 3. Tree data adds a
+  // second hierarchy model (~1 KB): the flattening walk, its own expansion
+  // state, and the chevron every body and every card renders.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 70 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 69 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 69 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 67 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 69 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 76 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 73 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 70 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

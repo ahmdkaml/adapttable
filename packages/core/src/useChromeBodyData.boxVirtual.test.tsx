@@ -154,3 +154,67 @@ describe("useChromeBodyData with row grouping", () => {
     expect(result.current.body.virtualization.enabled).toBe(true);
   });
 });
+
+describe("useChromeBodyData with tree data", () => {
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    vi.mocked(useVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useVirtualizer>
+    );
+  });
+
+  it("windows the tree's entries instead of the source rows", () => {
+    // A tree's visible list is its own — the row virtualizer counts source
+    // rows, so without a keyed window over the entries a 50,000-row hierarchy
+    // renders 50,000 rows.
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 0, start: 0, end: 48, key: "1" },
+        { index: 1, start: 48, end: 96, key: "2" },
+      ],
+      getTotalSize: () => 400,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        // Every row a child of the one before it: one deep chain, all open.
+        getParentId: (row: Row) =>
+          row.id === "0" ? undefined : String(Number(row.id) - 1),
+        expandedIds: ROWS.map((row) => row.id),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return { chrome, body: useChromeBodyData(chrome, props) };
+    });
+
+    // One entry per row the source handed over — the whole walked tree.
+    expect(result.current.chrome.tree?.entries).toHaveLength(
+      result.current.chrome.source.rows.length
+    );
+    // The body renders the window, not the walked tree.
+    expect(result.current.body.treeEntries).toHaveLength(2);
+    // Leaf row virtualization is off while a tree is armed — the keyed entry
+    // window owns the spacers instead.
+    expect(result.current.body.virtualization.rows).toEqual([]);
+    expect(result.current.body.virtualization.enabled).toBe(true);
+  });
+
+  it("leaves a flat table's rows to the row virtualizer", () => {
+    const { result } = renderBody(undefined);
+    expect(result.current.treeEntries).toBeUndefined();
+  });
+});

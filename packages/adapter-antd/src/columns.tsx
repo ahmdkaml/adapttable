@@ -12,6 +12,7 @@ import {
   type SortDirection,
   type SortLevel,
   type TableLabels,
+  type TreeEntry,
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
@@ -20,6 +21,7 @@ import {
   FillHandle,
   headerGroupRow,
   resolveDisabledReason,
+  TreeCell,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type {
@@ -239,7 +241,23 @@ export interface BuildColumnsGrouping {
 }
 
 /** Options for {@link buildColumns}. */
+/**
+ * What a cell needs to draw the tree: which column carries the chevron, the
+ * entry behind a given row, and how to open it. antd flattens the hierarchy
+ * into its own `dataSource`, so the row is the only handle a cell has.
+ */
+export interface BuildColumnsTree<TRow> {
+  /** The column that renders the chevron and the indent. */
+  columnKey?: string;
+  /** This row's place in the tree, if it is in one. */
+  entryFor: (row: TRow) => TreeEntry<TRow> | undefined;
+  /** Open or close a node. */
+  toggle: (id: string) => void;
+}
+
 export interface BuildColumnsOptions<TRow> {
+  /** Hierarchy, when the host declared one. */
+  tree?: BuildColumnsTree<TRow>;
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   columns: readonly ColumnDef<TRow>[];
@@ -388,22 +406,31 @@ function renderLeafDataCell<TRow>(
     getRowId: (row: TRow) => string;
     labels: Required<TableLabels>;
     gridFocus?: GridFocusState;
+    tree?: BuildColumnsTree<TRow>;
   },
   columnIndex: number
 ): ReactNode {
   return (
     <>
-      <EditableDataCell
-        editing={options.editing}
-        row={record}
-        column={column}
-        rowId={options.getRowId(record)}
-        rowIndex={index}
-        rows={options.rows}
-        columns={options.columns}
-        rowKey={options.getRowId}
-        editLabel={options.labels.editCell}
-      />
+      <TreeCell
+        entry={options.tree?.entryFor(record)}
+        columnKey={column.key}
+        treeColumnKey={options.tree?.columnKey}
+        labels={options.labels}
+        onToggle={options.tree?.toggle}
+      >
+        <EditableDataCell
+          editing={options.editing}
+          row={record}
+          column={column}
+          rowId={options.getRowId(record)}
+          rowIndex={index}
+          rows={options.rows}
+          columns={options.columns}
+          rowKey={options.getRowId}
+          editLabel={options.labels.editCell}
+        />
+      </TreeCell>
       <FillHandle
         focus={options.gridFocus}
         windowIndex={index}
@@ -427,6 +454,7 @@ function renderDataCell<TRow>(
     labels: Required<TableLabels>;
     grouping?: BuildColumnsGrouping;
     gridFocus?: GridFocusState;
+    tree?: BuildColumnsTree<TRow>;
   }
 ): ReactNode {
   if (isAdaptTableGroupRow(record)) {
@@ -454,6 +482,7 @@ export function buildColumns<TRow>({
   onToggleSortLevel,
   grouping,
   fitColumns,
+  tree,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -463,6 +492,7 @@ export function buildColumns<TRow>({
     labels,
     grouping,
     gridFocus,
+    tree,
   };
   // Each flexible column's share, from the same rule every other kit uses.
   const flexShares = columnFlexShares({

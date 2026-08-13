@@ -1,5 +1,6 @@
 /** The desktop `<table>`: header, pinned columns, rows and summary. */
 import {
+  bodyRowEntries,
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
@@ -13,6 +14,7 @@ import {
   type SelectionState,
   type TableLabels,
   tableMinWidth,
+  type TreeEntry,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
@@ -37,6 +39,7 @@ import {
   type SharedTableRenderProps,
   sortArrow,
   tableRenderModel,
+  TreeCell,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import { Box, chakra, Table, Text } from "@chakra-ui/react";
@@ -157,6 +160,12 @@ interface DesktopRowProps<TRow> {
   columnSpan: number;
   /** Widths holding open the columns outside the horizontal window. */
   columnSpacers?: { start: number; end: number };
+  /** This row's place in the tree, when the table has one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Which column carries the chevron and the indent. */
+  treeColumnKey?: string;
+  /** Open or close a tree node. */
+  onToggleTree?: (id: string) => void;
   /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
@@ -210,6 +219,9 @@ function DesktopRowBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  treeColumnKey: treeKey,
+  onToggleTree,
 }: Readonly<DesktopRowProps<TRow>>) {
   // Render-time geometry reads the latest ref values: whenever they change,
   // a compared prop (pinSignature / hasSelection / …) changes with them.
@@ -280,23 +292,31 @@ function DesktopRowBase<TRow>({
                 )
               }
             >
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
+              <TreeCell
+                entry={treeEntry}
+                columnKey={column.key}
+                treeColumnKey={treeKey}
+                labels={labels}
+                onToggle={onToggleTree}
+              >
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={labels.editCell}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </TreeCell>
               <FillHandle
                 focus={gridFocus}
                 windowIndex={index}
@@ -347,6 +367,7 @@ function DesktopTableRows<TRow>({
   gridFocus,
   grouping,
   entries,
+  tree,
   getRowId,
   selection,
   expansion,
@@ -375,6 +396,7 @@ function DesktopTableRows<TRow>({
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   grouping: SharedTableRenderProps<TRow>["grouping"];
+  tree: SharedTableRenderProps<TRow>["tree"];
   entries: ReturnType<typeof tableRenderModel<TRow>>["entries"];
   getRowId: (row: TRow) => string;
   selection: SelectionState | null;
@@ -458,7 +480,9 @@ function DesktopTableRows<TRow>({
       );
     });
   }
-  return entries.map(({ row, index, key }) => {
+  // A tree renders its own flattened entries; a flat table renders the
+  // (possibly windowed) rows. Both carry a row and a key.
+  return bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) => {
     const id = getRowId(row);
     return (
       <Row
@@ -488,6 +512,9 @@ function DesktopTableRows<TRow>({
         editing={editing}
         rows={rows}
         getRowId={getRowId}
+        treeEntry={treeEntry}
+        treeColumnKey={tree?.columnKey}
+        onToggleTree={tree?.expansion.toggle}
         editingSignature={rowEditingSignature(editing, id)}
       />
     );
@@ -530,6 +557,7 @@ export function DesktopTable<TRow>({
   actionsPinned = false,
   columnWindow,
   fitColumns,
+  tree,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -851,6 +879,7 @@ export function DesktopTable<TRow>({
             gridFocus={gridFocus}
             grouping={grouping}
             entries={entries}
+            tree={tree}
             getRowId={getRowId}
             selection={selection}
             expansion={expansion}

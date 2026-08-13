@@ -1,10 +1,13 @@
 import {
+  bodyRowEntries,
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
   type RowAction,
   runRowAction,
   type TableLabels,
+  treeCardStyle,
+  type TreeEntry,
 } from "@adapttable/core";
 import {
   resolveDisabledReason,
@@ -12,6 +15,7 @@ import {
   rowClickProps,
   rowEditingSignature,
   type SharedTableRenderProps,
+  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import {
@@ -56,6 +60,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "expansion"
   | "editing"
   | "grouping"
+  | "tree"
   | "rowEntries"
   | "paddingTop"
   | "paddingBottom"
@@ -68,6 +73,10 @@ export interface MobileCardsProps<TRow> extends Pick<
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
+  /** This card's place in the tree, when the table is one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Open or close this node. */
+  onToggleTree?: (id: string) => void;
   row: TRow;
   index: number;
   /** Stable row id (selection / expansion key). */
@@ -129,6 +138,8 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "cardPadding",
   "cardGap",
   "editingSignature",
+  // Or a folder opens and its own chevron never turns.
+  "treeEntry",
 ];
 
 /**
@@ -166,10 +177,13 @@ function MobileCardBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  onToggleTree,
 }: Readonly<MobileCardProps<TRow>>) {
   return (
     <Card
       {...rowClickProps(row, onRowClick, index)}
+      style={treeCardStyle(treeEntry?.level ?? 0)}
       className={className}
       ref={measureElement}
       data-index={index}
@@ -181,6 +195,13 @@ function MobileCardBase<TRow>({
       data-selected={selected ? "" : undefined}
     >
       <Stack gap={cardGap}>
+        {treeEntry && (
+          <TreeToggle
+            entry={treeEntry}
+            labels={labels}
+            onToggle={onToggleTree ?? (() => undefined)}
+          />
+        )}
         {onToggleSelect && (
           <Checkbox
             aria-label={labels.selectRow}
@@ -302,6 +323,7 @@ export function MobileCards<TRow>({
   expansion,
   editing,
   grouping,
+  tree,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -326,7 +348,12 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderCard = (row: TRow, index: number, key: string): ReactElement => {
+  const renderCard = (
+    row: TRow,
+    index: number,
+    key: string,
+    treeEntry?: TreeEntry<TRow>
+  ): ReactElement => {
     const id = getRowId(row);
     return (
       <CardItem
@@ -354,6 +381,8 @@ export function MobileCards<TRow>({
         rows={rows}
         getRowId={getRowId}
         editingSignature={rowEditingSignature(editing, id)}
+        treeEntry={treeEntry}
+        onToggleTree={tree?.expansion.toggle}
       />
     );
   };
@@ -385,7 +414,9 @@ export function MobileCards<TRow>({
               renderCard(entry.row, entry.index, entry.key)
             )
           )
-        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
+        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
+            renderCard(row, index, key, treeEntry)
+          )}
       {paddingBottom > 0 && (
         <div aria-hidden style={{ height: paddingBottom }} />
       )}

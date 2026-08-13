@@ -109,6 +109,7 @@ export function UnstyledLike({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -121,6 +122,7 @@ export function UnstyledLike({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -133,6 +135,7 @@ export function UnstyledLike({
       urlKey={urlKey}
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
       grouping={grouping}
+      tree={tree}
       editing={editing}
       render={(source, columns) => {
         return (

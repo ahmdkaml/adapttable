@@ -54,6 +54,7 @@ pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Tree data** (`getChildren` / `getParentId`) — hierarchical rows with expand/collapse, on desktop and on cards.
 - **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
 - **CSV export** (`exportCsv`) — current page, the full filtered set, or the

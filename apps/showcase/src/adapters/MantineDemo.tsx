@@ -63,6 +63,7 @@ export function MantineDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
   forceMobile,
@@ -76,6 +77,7 @@ export function MantineDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -89,6 +91,7 @@ export function MantineDemo({
         urlKey={urlKey}
         defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
         grouping={grouping}
+        tree={tree}
         editing={editing}
         render={(source, columns) => (
           <DataTable

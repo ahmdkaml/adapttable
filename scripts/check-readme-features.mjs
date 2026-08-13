@@ -37,6 +37,7 @@ const FEATURES = {
   "row-expansion": /row expansion/i,
   "row-grouping": /grouping/i,
   "saved-views": /saved view/i,
+  "tree-data": /tree data|hierarchical rows/i,
   selection: /selection/i,
   sorting: /sorting/i,
   virtualization: /virtuali/i,

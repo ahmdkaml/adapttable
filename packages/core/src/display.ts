@@ -83,6 +83,13 @@ export const SHARED_DESKTOP_ROW_KEYS = [
   // showed `data-cell-selected`. The state object is memoized as a whole, so
   // this compares one reference and changes only when focus or the range does.
   "gridFocus",
+  // A tree row's own place in the hierarchy — depth, whether it is open, and
+  // whether its children are loading. Without it a folder's children appear
+  // while its chevron stays shut, because the row that owns the chevron never
+  // re-renders.
+  "treeEntry",
+  // Which column carries the chevron, so moving the tree column moves it.
+  "treeColumnKey",
 ] as const;
 
 /** Shallow-equal two objects across a fixed key set (the row-memo guard). */

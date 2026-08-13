@@ -45,6 +45,15 @@ import {
 import type { SelectionState } from "./selection/useSelection";
 import { serverGroupEntries } from "./source/queryGroups";
 import type { TableSource } from "./source/TableSource";
+import {
+  buildTreeEntries,
+  treeColumnKey,
+  type TreeEntry,
+} from "./tree/treeRows";
+import {
+  type TreeExpansionState,
+  useTreeExpansion,
+} from "./tree/useTreeExpansion";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
   useDataTable,
@@ -230,6 +239,20 @@ export interface TableChrome<TRow> {
     onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
     /** Headless active-cell / draft / keyboard state. */
     state: CellEditingState;
+  };
+  /**
+   * Tree bundle — present iff the host declared a hierarchy (`getChildren` or
+   * `getParentId`). A tree and a grouping are different models and can both be
+   * dormant; a table that arms both renders the tree, since the rows' own
+   * shape outranks a derived one.
+   */
+  tree?: {
+    /** The flattened hierarchy, in render order. */
+    entries: readonly TreeEntry<TRow>[];
+    /** Which nodes are open. */
+    expansion: TreeExpansionState;
+    /** Which column carries the chevron and the indent. */
+    columnKey?: string;
   };
   /**
    * Row-grouping bundle — present iff an effective `groupBy` is set AND the
@@ -518,6 +541,40 @@ export function useTableChrome<TRow>(
 
   const getRowId = selectionGetId ?? rowKey;
   const groupPaging = useGroupPaging();
+
+  // A declared hierarchy is a fact about the rows, so it is armed by the shape
+  // the host gave rather than by a mode flag.
+  const treeExpansion = useTreeExpansion({
+    expandedIds: props.expandedIds,
+    onExpandedIdsChange: props.onExpandedIdsChange,
+  });
+  const treeShaped =
+    props.getChildren !== undefined || props.getParentId !== undefined;
+  const tree = useMemo(() => {
+    if (!treeShaped) return undefined;
+    return {
+      entries: buildTreeEntries<TRow>({
+        rows: source.rows,
+        getRowId,
+        expandedIds: treeExpansion.expandedIds,
+        getChildren: props.getChildren,
+        getParentId: props.getParentId,
+        hasChildren: props.hasChildren,
+      }),
+      expansion: treeExpansion,
+      columnKey: treeColumnKey(columnLayout.visibleColumns, props.treeColumn),
+    };
+  }, [
+    treeShaped,
+    source.rows,
+    getRowId,
+    treeExpansion,
+    props.getChildren,
+    props.getParentId,
+    props.hasChildren,
+    props.treeColumn,
+    columnLayout.visibleColumns,
+  ]);
   const grouping = useMemo(() => {
     if (groupByKeys.length === 0) return undefined;
     if (!source.allFilteredRows && !serverGroups) return undefined;
@@ -636,6 +693,7 @@ export function useTableChrome<TRow>(
     detail,
     editing,
     grouping,
+    tree,
     editingRows,
     showFooter,
     columnLayout,
@@ -652,6 +710,11 @@ export interface ChromeBodyData<TRow> {
    * adapters should render. `undefined` when grouping is dormant.
    */
   groupingEntries?: readonly GroupedFlatEntry<TRow>[];
+  /**
+   * When a tree is armed, the (possibly virtual-windowed) entries adapters
+   * should render. `undefined` when the table is flat.
+   */
+  treeEntries?: readonly TreeEntry<TRow>[];
   /** Sentinel ref that auto-loads the next page in infinite mode. */
   loadMoreRef: RefObject<HTMLDivElement | null>;
   /** Whether the load-more affordance applies (infinite mode, no error). */
@@ -699,15 +762,16 @@ export function useChromeBodyData<TRow>(
     scrollBoxRef.current = node;
   }, []);
   const inScrollBox = props.maxHeight != null;
-  const bodyEligible =
-    !chrome.isPaged &&
-    !source.error &&
-    (chrome.body === "desktop" || chrome.body === "mobile");
+  const bodyEligible = isBodyEligible(chrome);
   const groupingArmed = Boolean(chrome.grouping);
-  const groupKeys = chrome.grouping?.entries.map((entry) => entry.key) ?? [];
-  const estimateSize = chrome.isMobile
-    ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
-    : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+  const groupKeys = entryKeys(chrome.grouping?.entries);
+  // A tree is a keyed flat list once it has been walked, exactly like a
+  // grouped model — so it windows through the same hook rather than a second
+  // one. Without this a 50,000-row hierarchy renders 50,000 rows: the row
+  // virtualizer counts source rows, and a tree's visible list is its own.
+  const treeArmed = Boolean(chrome.tree);
+  const treeKeys = entryKeys(chrome.tree?.entries);
+  const estimateSize = estimateBodyItemSize(chrome, props);
   const scrollOpts = {
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
@@ -722,10 +786,15 @@ export function useChromeBodyData<TRow>(
     enabled: virtualize && groupingArmed && bodyEligible,
     ...scrollOpts,
   });
+  const treeVirtualization = useKeyedVirtualization({
+    keys: treeKeys,
+    enabled: virtualize && treeArmed && !groupingArmed && bodyEligible,
+    ...scrollOpts,
+  });
   const virtualization = useTableVirtualization({
     rows: source.rows,
     rowKey,
-    enabled: virtualize && !groupingArmed && bodyEligible,
+    enabled: virtualize && !groupingArmed && !treeArmed && bodyEligible,
     // Detail panels are separate elements from their rows, so the window
     // measures the two together rather than sizing an expanded row from its
     // top half.
@@ -736,10 +805,12 @@ export function useChromeBodyData<TRow>(
   const groupingEntries = chrome.grouping
     ? windowGroupedEntries(chrome.grouping.entries, groupVirtualization.indices)
     : undefined;
+  const treeEntries = chrome.tree
+    ? windowGroupedEntries(chrome.tree.entries, treeVirtualization.indices)
+    : undefined;
 
   const resolvedVirtualization = resolveBodyVirtualization(
-    groupingArmed,
-    groupVirtualization,
+    groupingArmed ? groupVirtualization : treeVirtualization,
     virtualization
   );
 
@@ -749,32 +820,63 @@ export function useChromeBodyData<TRow>(
     hasNextPage: Boolean(source.hasNextPage),
     isFetchingNextPage: Boolean(source.isFetchingNextPage),
     fetchNextPage: fetchNext,
-    itemCount: groupingArmed
-      ? (chrome.grouping?.entries.length ?? 0)
-      : source.rows.length,
+    itemCount: bodySentinelCount(chrome, groupingArmed),
     enabled: canLoadMore,
   });
   return {
     virtualization: resolvedVirtualization,
     groupingEntries,
+    treeEntries,
     loadMoreRef,
     canLoadMore,
     virtualScrollRef,
   };
 }
 
+/** The keys of a walked model's entries — one shape for groups and trees. */
+function entryKeys(entries?: readonly { key: string }[]): string[] {
+  return entries?.map((entry) => entry.key) ?? [];
+}
+
+/** Whether the body is a real row/card list the window can apply to. */
+function isBodyEligible<TRow>(chrome: TableChrome<TRow>): boolean {
+  return (
+    !chrome.isPaged &&
+    !chrome.source.error &&
+    (chrome.body === "desktop" || chrome.body === "mobile")
+  );
+}
+
+/** A card's height on a phone, a row's on a desktop. */
+function estimateBodyItemSize<TRow>(
+  chrome: TableChrome<TRow>,
+  props: BaseDataTableProps<TRow>
+): number {
+  return chrome.isMobile
+    ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
+    : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+}
+
+/** How many items the infinite-scroll sentinel counts as already rendered. */
+function bodySentinelCount<TRow>(
+  chrome: TableChrome<TRow>,
+  groupingArmed: boolean
+): number {
+  if (groupingArmed) return chrome.grouping?.entries.length ?? 0;
+  return chrome.source.rows.length;
+}
+
 function resolveBodyVirtualization<TRow>(
-  groupingArmed: boolean,
-  groupVirtualization: ReturnType<typeof useKeyedVirtualization>,
+  keyed: ReturnType<typeof useKeyedVirtualization>,
   virtualization: TableVirtualization<TRow>
 ): TableVirtualization<TRow> {
-  if (!(groupingArmed && groupVirtualization.enabled)) return virtualization;
+  if (!keyed.enabled) return virtualization;
   return {
     enabled: true,
     rows: [],
-    paddingTop: groupVirtualization.paddingTop,
-    paddingBottom: groupVirtualization.paddingBottom,
-    measureElement: groupVirtualization.measureElement,
+    paddingTop: keyed.paddingTop,
+    paddingBottom: keyed.paddingBottom,
+    measureElement: keyed.measureElement,
   };
 }
 

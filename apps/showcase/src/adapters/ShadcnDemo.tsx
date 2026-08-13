@@ -24,6 +24,7 @@ export function ShadcnDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -35,6 +36,7 @@ export function ShadcnDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -48,6 +50,7 @@ export function ShadcnDemo({
       filtersUi={filtersUi}
       animate={animate}
       grouping={grouping}
+      tree={tree}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}

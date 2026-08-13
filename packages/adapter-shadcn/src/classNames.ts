@@ -202,6 +202,13 @@ export const shadcnClassNames = {
   groupLabel: "text-sm font-semibold",
   groupCount: "text-xs text-muted-foreground",
   groupAggregate: "ms-auto text-xs text-muted-foreground",
+  // ── Tree data ───────────────────────────────────────────────────
+  // The chevron matches the group toggle exactly: one table can hold both,
+  // and two disclosure controls that look different read as two mechanisms.
+  treeCell: "inline-flex items-center gap-1",
+  treeToggle:
+    "inline-grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:bg-accent",
+  treeSpacer: "inline-block h-6 w-6",
   // ── Cell editing ────────────────────────────────────────────────
   editCellActivate: "w-full cursor-text text-start",
   editCellEditor:

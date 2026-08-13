@@ -237,6 +237,7 @@ export function UnstyledDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -248,6 +249,7 @@ export function UnstyledDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -261,6 +263,7 @@ export function UnstyledDemo({
       filtersUi={filtersUi}
       animate={animate}
       grouping={grouping}
+      tree={tree}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}

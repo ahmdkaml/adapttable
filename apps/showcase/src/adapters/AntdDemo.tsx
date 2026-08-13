@@ -83,6 +83,7 @@ export function AntdDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
   wide,
@@ -97,6 +98,7 @@ export function AntdDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -128,6 +130,7 @@ export function AntdDemo({
             : LIVE_DEFAULT_LAYOUT
         }
         grouping={grouping}
+        tree={tree}
         editing={editing}
         render={(source, columns) => (
           <DataTable

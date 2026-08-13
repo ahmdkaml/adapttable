@@ -470,6 +470,23 @@ serialized by `readCollapsedGroups` / `writeCollapsedGroups` under
 `collapseAll` and `collapseToDepth`. See
 [row grouping](./row-grouping.md).
 
+**Tree data.** A hierarchy the data declares, not one derived from values, so
+it is a separate model from grouping. `TreeShape<TRow>` is how a host declares
+it — `getChildren` for nested rows, `getParentId` for a flat list with a parent
+column, `hasChildren` for children not fetched yet. `buildTreeEntries(options)`
+(`BuildTreeEntriesOptions` in) flattens it into the `TreeEntry<TRow>` list
+adapters render, each entry carrying its `level`, `path`, `descendantIds` and
+`loading`; `useTreeExpansion(options)` holds the open set
+(`TreeExpansionState`), `treeColumnKey(columns, declared?)` picks the column
+that carries the chevron, and `filterTreeRows(options)` keeps a match together
+with every ancestor that leads to it. `treeIndentStyle(level)` indents a cell
+and `treeCardStyle(level)` a mobile card; `bodyRowEntries(rows, tree)` returns
+the `BodyRowEntry<TRow>` list a body maps over, tree or flat. `TreeCell` /
+`TreeCellProps` from `@adapttable/core/adapter` wrap the tree column's cell in
+its chevron and its indent (every other column passes through), and `TreeToggle`
+/ `TreeToggleProps` render the chevron itself.
+See [tree data](./tree-data.md).
+
 **Find in table.** `findMatches(options)` returns every cell whose text
 contains the query, in absolute addresses (`FindMatchesOptions` in);
 `matchKey(cell)` / `matchKeySet(matches)` make membership a constant-time

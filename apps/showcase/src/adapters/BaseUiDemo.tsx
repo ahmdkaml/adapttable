@@ -100,6 +100,7 @@ export function BaseUiDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -112,6 +113,7 @@ export function BaseUiDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -123,6 +125,7 @@ export function BaseUiDemo({
       urlKey={urlKey}
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
       grouping={grouping}
+      tree={tree}
       editing={editing}
       render={(source, columns) => (
         <DataTable

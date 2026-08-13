@@ -1,4 +1,5 @@
 import {
+  bodyRowEntries,
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
@@ -7,6 +8,8 @@ import {
   type RowExpansionState,
   runRowAction,
   type TableLabels,
+  treeCardStyle,
+  type TreeEntry,
   type UseDataTableResult,
 } from "@adapttable/core";
 import {
@@ -15,6 +18,7 @@ import {
   resolveVirtualRows,
   rowClickProps,
   rowEditingSignature,
+  TreeToggle,
   useSummaryCells,
   type VirtualTableRow,
 } from "@adapttable/core/adapter";
@@ -109,6 +113,10 @@ function SummaryCard<TRow>({
 
 /** Per-card inputs for the memoized {@link CardItemBase}. */
 interface CardItemProps<TRow> {
+  /** This card's place in the tree, when the table is one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Open or close this node. */
+  onToggleTree?: (id: string) => void;
   row: TRow;
   rowIndex: number;
   /** Stable row id (selection / expansion key). */
@@ -175,7 +183,9 @@ function cardItemPropsEqual<TRow>(
     prev.renderDetail === next.renderDetail &&
     prev.onRowClick === next.onRowClick &&
     prev.prefetch === next.prefetch &&
-    prev.editingSignature === next.editingSignature
+    prev.editingSignature === next.editingSignature &&
+    // Or a folder opens and its own chevron never turns.
+    prev.treeEntry === next.treeEntry
   );
 }
 
@@ -200,6 +210,8 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     editing,
     rows,
     getRowId,
+    treeEntry,
+    onToggleTree,
   } = props;
   const actions = rowActions && rowActions.length > 0 ? rowActions : null;
   return (
@@ -211,12 +223,23 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
       {...rowClickProps(row, onRowClick, rowIndex)}
       onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       title={
-        onToggleSelect ? (
-          <Checkbox
-            checked={selected}
-            aria-label={labels.selectRow}
-            onChange={() => onToggleSelect(id)}
-          />
+        (treeEntry ?? onToggleSelect) ? (
+          <Space size="small">
+            {treeEntry && (
+              <TreeToggle
+                entry={treeEntry}
+                labels={labels}
+                onToggle={onToggleTree ?? (() => undefined)}
+              />
+            )}
+            {onToggleSelect && (
+              <Checkbox
+                checked={selected}
+                aria-label={labels.selectRow}
+                onChange={() => onToggleSelect(id)}
+              />
+            )}
+          </Space>
         ) : undefined
       }
       extra={
@@ -297,6 +320,7 @@ export function MobileCards<TRow>({
   summaryRow,
   editing,
   grouping,
+  tree,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
@@ -329,6 +353,11 @@ export function MobileCards<TRow>({
    * Opt-in grouping bundle — when set, cards iterate flat group/leaf entries
    * instead of the leaf-only virtual window.
    */
+  /** Hierarchy, when the host declared one. */
+  tree?: {
+    entries: readonly TreeEntry<TRow>[];
+    expansion: { toggle: (id: string) => void };
+  };
   grouping?: {
     collapsed: { toggle: (key: string) => void };
     entries: readonly GroupedFlatEntry<TRow>[];
@@ -359,10 +388,20 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderLeafCard = (row: TRow, index: number, key: string) => {
+  const renderLeafCard = (
+    row: TRow,
+    index: number,
+    key: string,
+    treeEntry?: TreeEntry<TRow>
+  ) => {
     const id = getRowId(row);
     return (
-      <li key={key} ref={measureElement} data-index={index}>
+      <li
+        key={key}
+        ref={measureElement}
+        data-index={index}
+        style={treeCardStyle(treeEntry?.level ?? 0)}
+      >
         <CardItem
           row={row}
           rowIndex={index}
@@ -387,6 +426,8 @@ export function MobileCards<TRow>({
           rows={rows}
           getRowId={getRowId}
           editingSignature={rowEditingSignature(editing, id)}
+          treeEntry={treeEntry}
+          onToggleTree={tree?.expansion.toggle}
         />
       </li>
     );
@@ -466,7 +507,9 @@ export function MobileCards<TRow>({
             }
             return renderLeafCard(entry.row, entry.index, entry.key);
           })
-        : entries.map(({ row, index, key }) => renderLeafCard(row, index, key))}
+        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
+            renderLeafCard(row, index, key, treeEntry)
+          )}
       {summaryRow && (
         <li>
           <SummaryCard rows={rows} columns={columns} summaryRow={summaryRow} />

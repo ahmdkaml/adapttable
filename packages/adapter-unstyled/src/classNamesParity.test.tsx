@@ -309,6 +309,17 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   drawer.unmount();
 
+  // Tree data: an open parent renders the chevron, an indented cell and — on
+  // the leaf beside it — the spacer that holds a chevron's width.
+  const tree = mount({
+    override: {
+      getParentId: (row: Row) => (row.id === "2" ? "1" : undefined),
+      expandedIds: ["1"],
+    },
+  });
+  absorb();
+  tree.unmount();
+
   // Row grouping (desktop + mobile cards).
   mount({ url: "groupBy=team" }).unmount();
   const groupedMobile = mount({ url: "groupBy=team", isMobile: true });
@@ -369,6 +380,9 @@ const KEYS = [
   "filtersButton",
   "filtersIcon",
   "filtersCount",
+  "treeCell",
+  "treeToggle",
+  "treeSpacer",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",

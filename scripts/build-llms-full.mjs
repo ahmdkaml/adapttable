@@ -30,6 +30,7 @@ const DOCS = [
   "cell-editing.md",
   "cell-navigation.md",
   "row-grouping.md",
+  "tree-data.md",
   "column-management.md",
   "saved-views.md",
   "virtualization.md",

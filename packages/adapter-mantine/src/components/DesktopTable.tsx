@@ -1,4 +1,5 @@
 import {
+  bodyRowEntries,
   type ColumnDef,
   columnResizeHandleProps,
   type ConfirmHandler,
@@ -10,6 +11,7 @@ import {
   type RowAction,
   runRowAction,
   tableMinWidth,
+  type TreeEntry,
   type UseDataTableResult,
   useHorizontalOverflow,
 } from "@adapttable/core";
@@ -27,6 +29,7 @@ import {
   type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
+  TreeCell,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import {
@@ -258,6 +261,12 @@ interface DesktopRowProps<TRow> {
   columnSpan: number;
   /** Widths holding open the columns outside the horizontal window. */
   columnSpacers?: { start: number; end: number };
+  /** This row's place in the tree, when the table has one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Which column carries the chevron and the indent. */
+  treeColumnKey?: string;
+  /** Open or close a tree node. */
+  onToggleTree?: (id: string) => void;
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   cancelLabel: string;
@@ -331,6 +340,9 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   "measureElement",
   "pinSignature",
   "editingSignature",
+  // Or a folder opens and its own chevron never turns.
+  "treeEntry",
+  "treeColumnKey",
 ];
 
 /**
@@ -420,6 +432,9 @@ function DesktopRowBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  treeColumnKey: treeKey,
+  onToggleTree,
 }: Readonly<DesktopRowProps<TRow>>) {
   const showActions = (rowActions?.length ?? 0) > 0;
   return (
@@ -474,23 +489,31 @@ function DesktopRowBase<TRow>({
                 })
               }
             >
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={editLabel}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
+              <TreeCell
+                entry={treeEntry}
+                columnKey={column.key}
+                treeColumnKey={treeKey}
+                labels={{ expandRow: expandLabel, collapseRow: collapseLabel }}
+                onToggle={onToggleTree}
+              >
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={editLabel}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={index} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </TreeCell>
               <FillHandle
                 focus={gridFocus}
                 windowIndex={index}
@@ -555,6 +578,7 @@ export function DesktopTable<TRow>({
   density = "comfortable",
   columnWindow,
   fitColumns,
+  tree,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
@@ -942,48 +966,55 @@ export function DesktopTable<TRow>({
                   />
                 );
               })
-            : entries.map(({ row, index, key }) => {
-                const id = getRowId(row);
-                return (
-                  <Row
-                    key={key}
-                    row={row}
-                    index={index}
-                    id={id}
-                    columns={columns}
-                    getCellProps={table.getCellProps}
-                    gridFocus={gridFocus}
-                    selected={selection?.isSelected(id)}
-                    selectLabel={labels.selectRow}
-                    onToggleSelect={toggleSelect}
-                    expanded={expansion?.isExpanded(id)}
-                    expandLabel={labels.expandRow}
-                    collapseLabel={labels.collapseRow}
-                    onToggleExpand={expansion?.toggle}
-                    renderRowDetail={renderRowDetail}
-                    columnSpan={columnSpan}
-                    columnSpacers={columnSpacers}
-                    rowActions={rowActions}
-                    confirm={confirm}
-                    cancelLabel={labels.cancel}
-                    editLabel={labels.editCell}
-                    onRowClick={onRowClick}
-                    prefetch={prefetch}
-                    className={rowClassName?.(row, index)}
-                    measureElement={measureElement}
-                    measureRowPair={measureRowPair}
-                    pinStyleFor={bodyPinStyle}
-                    selectionCellStyle={selectionCellStyle}
-                    expansionCellStyle={expansionCellStyle}
-                    actionsCellStyle={actionsCellStyle}
-                    pinSignature={pinSignature}
-                    editing={editing}
-                    rows={rows}
-                    getRowId={getRowId}
-                    editingSignature={rowEditingSignature(editing, id)}
-                  />
-                );
-              })}
+            : // A tree renders its own flattened entries; a flat table renders the
+              // (possibly windowed) rows. Both carry a row and a key.
+              bodyRowEntries(entries, tree).map(
+                ({ row, index, key, treeEntry }) => {
+                  const id = getRowId(row);
+                  return (
+                    <Row
+                      key={key}
+                      row={row}
+                      index={index}
+                      id={id}
+                      columns={columns}
+                      getCellProps={table.getCellProps}
+                      gridFocus={gridFocus}
+                      selected={selection?.isSelected(id)}
+                      selectLabel={labels.selectRow}
+                      onToggleSelect={toggleSelect}
+                      expanded={expansion?.isExpanded(id)}
+                      expandLabel={labels.expandRow}
+                      collapseLabel={labels.collapseRow}
+                      onToggleExpand={expansion?.toggle}
+                      renderRowDetail={renderRowDetail}
+                      columnSpan={columnSpan}
+                      columnSpacers={columnSpacers}
+                      rowActions={rowActions}
+                      confirm={confirm}
+                      cancelLabel={labels.cancel}
+                      editLabel={labels.editCell}
+                      onRowClick={onRowClick}
+                      prefetch={prefetch}
+                      className={rowClassName?.(row, index)}
+                      measureElement={measureElement}
+                      measureRowPair={measureRowPair}
+                      pinStyleFor={bodyPinStyle}
+                      selectionCellStyle={selectionCellStyle}
+                      expansionCellStyle={expansionCellStyle}
+                      actionsCellStyle={actionsCellStyle}
+                      pinSignature={pinSignature}
+                      editing={editing}
+                      rows={rows}
+                      getRowId={getRowId}
+                      treeEntry={treeEntry}
+                      treeColumnKey={tree?.columnKey}
+                      onToggleTree={tree?.expansion.toggle}
+                      editingSignature={rowEditingSignature(editing, id)}
+                    />
+                  );
+                }
+              )}
           {paddingBottom > 0 && (
             <Table.Tr aria-hidden>
               <Table.Td
