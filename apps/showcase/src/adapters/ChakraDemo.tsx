@@ -98,6 +98,7 @@ export function ChakraDemo({
   grouping,
   tree,
   nested,
+  rowMode,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -112,6 +113,7 @@ export function ChakraDemo({
   grouping?: boolean;
   tree?: boolean;
   nested?: boolean;
+  rowMode?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -128,6 +130,7 @@ export function ChakraDemo({
           defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
           grouping={grouping}
           tree={tree}
+          rowMode={rowMode}
           editing={editing}
           render={(source, columns) => (
             <DataTable

@@ -66,6 +66,8 @@ export const ko: Required<TableLabels> = {
   exportFailed: "내보내기 실패",
   editCell: "셀 편집",
   undoEdit: "되돌리기",
+  editRow: "행 편집",
+  saveRow: "행 저장",
   moreGroups: (remaining) => `${remaining}개 그룹 더 보기`,
   moreRowsInGroup: (remaining) => `이 그룹에서 ${remaining}개 더 보기`,
   groupTotal: (label) => `${label} 합계`,

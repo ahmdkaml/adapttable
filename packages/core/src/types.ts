@@ -452,6 +452,10 @@ export interface TableLabels {
    * way it was. Only rendered when the table was told how (`onEditRollback`).
    */
   undoEdit?: string;
+  /** Accessible name for opening a whole row for editing (`rowEditing`). */
+  editRow?: string;
+  /** Accessible name for committing a row edit. */
+  saveRow?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

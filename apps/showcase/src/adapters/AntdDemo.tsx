@@ -104,6 +104,7 @@ export function AntdDemo({
   grouping,
   tree,
   nested,
+  rowMode,
   editing,
   cellNavigation,
   wide,
@@ -120,6 +121,7 @@ export function AntdDemo({
   grouping?: boolean;
   tree?: boolean;
   nested?: boolean;
+  rowMode?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -152,6 +154,7 @@ export function AntdDemo({
         }
         grouping={grouping}
         tree={tree}
+        rowMode={rowMode}
         editing={editing}
         render={(source, columns) => (
           <DataTable

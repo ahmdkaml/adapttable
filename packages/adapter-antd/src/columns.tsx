@@ -21,6 +21,7 @@ import {
   FillHandle,
   headerGroupRow,
   resolveDisabledReason,
+  RowEditActions,
   TreeCell,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
@@ -595,7 +596,10 @@ export function buildColumns<TRow>({
     leaves as TableColumnsType<TRow>
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
-  if (rowActions && rowActions.length > 0) {
+  // The trailing control column also carries row mode's save / cancel, so it
+  // exists when either is armed.
+  const rowMode = editing?.rowEditing;
+  if ((rowActions && rowActions.length > 0) || rowMode) {
     // The actions column rides antd's `fixed: "right"` when the user pins it
     // from the Columns menu (its reserved layout key, one click, no data pins
     // required) — OR'd with any end-pinned data column, which drags it
@@ -619,7 +623,15 @@ export function buildColumns<TRow>({
         const row = record;
         return (
           <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-            {rowActions.map((action) => {
+            {rowMode && (
+              <RowEditActions
+                rowEditing={rowMode}
+                row={row}
+                rowId={getRowId(row)}
+                labels={labels}
+              />
+            )}
+            {(rowActions ?? []).map((action) => {
               if (action.isHidden?.(row)) return null;
               const reason = resolveDisabledReason(
                 action.disabledReason?.(row)

@@ -25,6 +25,7 @@ import {
   pinnedColumnWidth,
   resolveDisabledReason,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
@@ -271,6 +272,9 @@ interface DesktopRowProps<TRow> {
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   cancelLabel: string;
+  /** `labels.editRow` / `labels.saveRow` — row mode's own controls. */
+  editRowLabel: string;
+  saveRowLabel: string;
   editLabel: string;
   /** `labels.undoEdit` — the control a failed save offers. */
   undoLabel: string;
@@ -439,8 +443,12 @@ function DesktopRowBase<TRow>({
   treeEntry,
   treeColumnKey: treeKey,
   onToggleTree,
+  editRowLabel,
+  saveRowLabel,
 }: Readonly<DesktopRowProps<TRow>>) {
-  const showActions = (rowActions?.length ?? 0) > 0;
+  // The trailing control column also carries row mode's save / cancel.
+  const showActions =
+    (rowActions?.length ?? 0) > 0 || editing?.rowEditing !== undefined;
   return (
     <>
       <Table.Tr
@@ -531,12 +539,28 @@ function DesktopRowBase<TRow>({
         {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <Table.Td ta="end" style={actionsCellStyle}>
-            <RowActions
-              row={row}
-              actions={rowActions!}
-              confirm={confirm}
-              cancelLabel={cancelLabel}
-            />
+            {editing?.rowEditing && (
+              <RowEditActions
+                rowEditing={editing.rowEditing}
+                row={row}
+                rowId={id}
+                labels={{
+                  editRow: editRowLabel,
+                  saveRow: saveRowLabel,
+                  cancel: cancelLabel,
+                }}
+              />
+            )}
+            {/* The control column also exists for row mode alone, so this is
+                not the same question as `showActions`. */}
+            {rowActions && rowActions.length > 0 && (
+              <RowActions
+                row={row}
+                actions={rowActions}
+                confirm={confirm}
+                cancelLabel={cancelLabel}
+              />
+            )}
           </Table.Td>
         )}
       </Table.Tr>
@@ -606,6 +630,7 @@ export function DesktopTable<TRow>({
     rowEntries,
     renderRowDetail,
     expansion,
+    editing,
   });
   // Expansion state only exists when `renderRowDetail` is set (the chrome
   // couples them), so its presence alone decides the leading chevron column.
@@ -954,6 +979,8 @@ export function DesktopTable<TRow>({
                     rowActions={rowActions}
                     confirm={confirm}
                     cancelLabel={labels.cancel}
+                    editRowLabel={labels.editRow}
+                    saveRowLabel={labels.saveRow}
                     editLabel={labels.editCell}
                     undoLabel={labels.undoEdit}
                     onRowClick={onRowClick}
@@ -1000,6 +1027,8 @@ export function DesktopTable<TRow>({
                       rowActions={rowActions}
                       confirm={confirm}
                       cancelLabel={labels.cancel}
+                      editRowLabel={labels.editRow}
+                      saveRowLabel={labels.saveRow}
                       editLabel={labels.editCell}
                       undoLabel={labels.undoEdit}
                       onRowClick={onRowClick}

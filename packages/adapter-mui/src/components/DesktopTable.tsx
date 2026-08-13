@@ -25,6 +25,7 @@ import {
   type PinLeads,
   pinnedColumnWidth,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
@@ -214,6 +215,9 @@ interface DesktopRowProps<TRow> {
   editLabel: string;
   /** `labels.undoEdit` — the control a failed save offers. */
   undoLabel: string;
+  /** `labels.editRow` / `labels.saveRow` — row mode's own controls. */
+  editRowLabel: string;
+  saveRowLabel: string;
   editing: EditableCellEditing<TRow> | undefined;
   rows: readonly TRow[];
   getRowId: (row: TRow) => string;
@@ -298,6 +302,8 @@ function DesktopRowImpl<TRow>({
   measureRowPair,
   editLabel,
   undoLabel,
+  editRowLabel,
+  saveRowLabel,
   editing,
   rows,
   getRowId,
@@ -388,12 +394,28 @@ function DesktopRowImpl<TRow>({
         {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <TableCell sx={sx.actions}>
-            <RowActionButtons
-              row={row}
-              actions={rowActions!}
-              confirm={confirm}
-              cancelLabel={cancelLabel}
-            />
+            {editing?.rowEditing && (
+              <RowEditActions
+                rowEditing={editing.rowEditing}
+                row={row}
+                rowId={id}
+                labels={{
+                  editRow: editRowLabel,
+                  saveRow: saveRowLabel,
+                  cancel: cancelLabel,
+                }}
+              />
+            )}
+            {/* The control column also exists for row mode alone, so this is
+                not the same question as `showActions`. */}
+            {rowActions && rowActions.length > 0 && (
+              <RowActionButtons
+                row={row}
+                actions={rowActions}
+                confirm={confirm}
+                cancelLabel={cancelLabel}
+              />
+            )}
           </TableCell>
         )}
       </TableRow>
@@ -474,6 +496,7 @@ export function DesktopTable<TRow>({
     rowEntries,
     renderRowDetail,
     expansion,
+    editing,
   });
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
@@ -836,6 +859,8 @@ export function DesktopTable<TRow>({
                     measureRowPair={measureRowPair}
                     editLabel={labels.editCell}
                     undoLabel={labels.undoEdit}
+                    editRowLabel={labels.editRow}
+                    saveRowLabel={labels.saveRow}
                     editing={editing}
                     rows={rows}
                     getRowId={getRowId}
@@ -881,6 +906,8 @@ export function DesktopTable<TRow>({
                       measureRowPair={measureRowPair}
                       editLabel={labels.editCell}
                       undoLabel={labels.undoEdit}
+                      editRowLabel={labels.editRow}
+                      saveRowLabel={labels.saveRow}
                       editing={editing}
                       rows={rows}
                       getRowId={getRowId}

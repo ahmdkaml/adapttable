@@ -13,6 +13,7 @@ import {
   resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   TreeToggle,
@@ -221,6 +222,14 @@ function MobileCardBase<TRow>({
           </span>
         </div>
       ))}
+      {editing?.rowEditing && (
+        <RowEditActions
+          rowEditing={editing.rowEditing}
+          row={row}
+          rowId={id}
+          labels={labels}
+        />
+      )}
       {rowActions && rowActions.length > 0 && (
         <div
           data-adapttable-part="card-actions"

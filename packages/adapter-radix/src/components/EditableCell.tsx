@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   editorValidationProps,
-  focusEditorOnMount,
   NativeBooleanEditor,
   NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
@@ -72,7 +71,7 @@ export function RadixCellEditor({
 
   return (
     <TextField.Root
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       {...editorValidationProps(ctrl)}
       aria-label={label}

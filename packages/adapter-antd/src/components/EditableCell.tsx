@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   editorValidationProps,
-  focusEditorOnMount,
   NativeBooleanEditor,
   NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
@@ -56,7 +55,7 @@ export function AntdCellEditor({
     return (
       <Select
         status={ctrl.error === undefined ? undefined : "error"}
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         {...editorValidationProps(ctrl)}
         aria-label={label}
@@ -77,7 +76,7 @@ export function AntdCellEditor({
   return (
     <Input
       status={ctrl.error === undefined ? undefined : "error"}
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       {...editorValidationProps(ctrl)}
       aria-label={label}

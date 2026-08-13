@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   editorBusyProps,
-  focusEditorOnMount,
   NativeBooleanEditor,
   NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
@@ -55,7 +54,7 @@ export function MuiCellEditor({
   if (isSelectEditor(ctrl.editor)) {
     return (
       <TextField
-        inputRef={focusEditorOnMount}
+        inputRef={ctrl.focusRef}
         select
         size="small"
         fullWidth
@@ -84,7 +83,7 @@ export function MuiCellEditor({
 
   return (
     <TextField
-      inputRef={focusEditorOnMount}
+      inputRef={ctrl.focusRef}
       size="small"
       fullWidth
       type={editorInputType(ctrl.editor)}

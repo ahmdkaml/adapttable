@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   editorValidationProps,
-  focusEditorOnMount,
   NativeBooleanEditor,
   NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
@@ -66,7 +65,7 @@ export function ChakraCellEditor({
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
-        fieldRef={focusEditorOnMount}
+        fieldRef={ctrl.focusRef}
       >
         {ctrl.selectOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -79,7 +78,7 @@ export function ChakraCellEditor({
 
   return (
     <Input
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       {...editorValidationProps(ctrl)}
       aria-label={label}

@@ -131,6 +131,7 @@ export function UnstyledLike({
   grouping,
   tree,
   nested,
+  rowMode,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -145,6 +146,7 @@ export function UnstyledLike({
   grouping?: boolean;
   tree?: boolean;
   nested?: boolean;
+  rowMode?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -158,6 +160,7 @@ export function UnstyledLike({
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
       grouping={grouping}
       tree={tree}
+      rowMode={rowMode}
       editing={editing}
       render={(source, columns) => {
         return (

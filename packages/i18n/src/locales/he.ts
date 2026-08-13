@@ -68,6 +68,8 @@ export const he: Required<TableLabels> = {
   exportFailed: "הייצוא נכשל",
   editCell: "עריכת תא",
   undoEdit: "בטל",
+  editRow: "ערוך שורה",
+  saveRow: "שמור שורה",
   moreGroups: (remaining) => `הצגת ${remaining} קבוצות נוספות`,
   moreRowsInGroup: (remaining) => `הצגת ${remaining} נוספות בקבוצה`,
   groupTotal: (label) => `סך הכול ${label}`,

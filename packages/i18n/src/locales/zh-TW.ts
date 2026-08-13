@@ -66,6 +66,8 @@ export const zhTW: Required<TableLabels> = {
   exportFailed: "匯出失敗",
   editCell: "編輯儲存格",
   undoEdit: "復原",
+  editRow: "編輯列",
+  saveRow: "儲存列",
   moreGroups: (remaining) => `再顯示 ${remaining} 個群組`,
   moreRowsInGroup: (remaining) => `在此群組中再顯示 ${remaining} 列`,
   groupTotal: (label) => `${label} 總計`,

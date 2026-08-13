@@ -238,6 +238,24 @@ export interface BaseDataTableProps<TRow> {
    */
   dirtyIndicators?: boolean;
   /**
+   * Edit a whole row at once instead of a cell at a time: every field opens
+   * together, holds its draft, and reaches the host as ONE patch when the reader
+   * saves. Requires {@link BaseDataTableProps.onRowEdit}.
+   *
+   * The right unit for a row whose fields constrain each other — a start and an
+   * end date cannot be edited one at a time without passing through a state that
+   * is invalid on the way.
+   */
+  rowEditing?: boolean;
+  /**
+   * Take everything a row edit changed, as one patch of parsed values keyed by
+   * column. The table never writes to a row.
+   *
+   * Return a promise and the row's controls show it is saving, exactly as a cell
+   * does.
+   */
+  onRowEdit?: (row: TRow, patch: Readonly<Record<string, unknown>>) => unknown;
+  /**
    * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
    * to judge. Defaults to a shallow spread keyed by the column key, which is
    * right when a column key IS the field; pass this when a column reads a

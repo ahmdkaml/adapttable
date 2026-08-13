@@ -85,6 +85,15 @@ export {
   NativeMultiSelectEditor,
 } from "./editing/nativeEditors";
 export {
+  RowEditActions,
+  type RowEditActionsProps,
+  RowEditCell,
+  type RowEditCellProps,
+  type RowEditControls,
+  rowEditControls,
+  type RowEditControlsOptions,
+} from "./editing/RowEditGate";
+export {
   ExportAnnouncer,
   type ExportAnnouncerProps,
 } from "./export/ExportAnnouncer";

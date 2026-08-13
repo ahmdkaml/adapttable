@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { CustomCellEditorCtrl } from "./cellEditing";
 import { EditableCellGate } from "./EditableCellGate";
+import { useRowEditing } from "./rowEditing";
 import { useCellEditing } from "./useCellEditing";
 
 interface Task {
@@ -178,5 +179,90 @@ describe("a custom editor through the gate", () => {
       "colour",
       "teal"
     );
+  });
+});
+
+/**
+ * The gate in row mode.
+ *
+ * The cell gate has to hand off to the row gate for a row that is open, or the
+ * per-cell activate control would be a second way to start an edit that already
+ * is one.
+ */
+describe("the gate in row mode", () => {
+  interface Row {
+    id: string;
+    name: string;
+  }
+  const ROW: Row = { id: "1", name: "Ada" };
+  const COLUMNS = [{ key: "name", editable: true }, { key: "id" }];
+
+  /** One cell, with row editing armed on the bundle. */
+  function RowModeHarness({
+    onRowEdit,
+    columnIndex,
+  }: Readonly<{
+    onRowEdit: (row: Row, patch: Readonly<Record<string, unknown>>) => unknown;
+    columnIndex: number;
+  }>) {
+    const state = useCellEditing();
+    const rowEditing = useRowEditing<Row>({
+      enabled: true,
+      columns: COLUMNS,
+      onRowEdit,
+    });
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            rowEditing.begin(ROW, "1");
+          }}
+        >
+          open
+        </button>
+        <EditableCellGate
+          editing={{ state, rowEditing }}
+          row={ROW}
+          column={COLUMNS[columnIndex]!}
+          rowId="1"
+          rows={[ROW]}
+          columns={COLUMNS}
+          rowKey={(row) => row.id}
+          editLabel="Edit cell"
+          display={columnIndex === 0 ? ROW.name : ROW.id}
+          renderEditor={(ctrl) => (
+            <input
+              aria-label="field"
+              ref={ctrl.focusRef}
+              value={ctrl.draft}
+              onChange={(event) => ctrl.setDraft(event.target.value)}
+              onKeyDown={ctrl.onEditorKeyDown}
+            />
+          )}
+        />
+      </>
+    );
+  }
+
+  it("renders no activate control while a row edit is open", () => {
+    const onRowEdit = vi.fn();
+    render(<RowModeHarness onRowEdit={onRowEdit} columnIndex={0} />);
+    // Closed: the cell is display-only, because there is no `onCellEdit`.
+    expect(part("edit-cell-activate")).toBeNull();
+    expect(screen.queryByLabelText("field")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "open" }));
+    // Open: the field, and still no per-cell activate control.
+    expect(screen.getByLabelText("field")).toHaveValue("Ada");
+    expect(part("edit-cell-activate")).toBeNull();
+  });
+
+  it("leaves a column nobody may edit as plain content", () => {
+    const onRowEdit = vi.fn();
+    render(<RowModeHarness onRowEdit={onRowEdit} columnIndex={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "open" }));
+    expect(screen.queryByLabelText("field")).toBeNull();
+    expect(screen.getByText("1")).toBeInTheDocument();
   });
 });

@@ -276,6 +276,51 @@ Headless: `useCellSaveState` (`CellSaveState`, `CellSaveStatus`,
 `FailedCellSave`, `UseCellSaveStateOptions`); the controller carries
 `saveStatus`, `saveFailure`, `canRollback`, `rollback` and `dismissFailure`.
 
+## Editing a whole row at once
+
+Cell editing commits each field as the reader leaves it, which is right for a
+spreadsheet and wrong for a form. A row whose fields constrain each other cannot
+be edited one cell at a time without passing through states that are invalid on
+the way — a start date after the end date it is about to replace. Row mode holds
+every field's draft until the reader saves, then hands you one patch:
+
+```tsx
+<DataTable
+  {...props}
+  rowEditing
+  onRowEdit={(row, patch) => {
+    // patch === { title: "Ship it", points: 8 } — only what changed
+    setRows((current) => applyPatch(current, row.id, patch));
+  }}
+/>
+```
+
+Each row grows an **Edit** control; opening one turns every editable column of
+that row into its editor at once, seeded from the row. **Save** hands over one
+patch of only the fields that actually changed — an untouched row reports
+nothing at all — and **Cancel** throws the drafts away. Enter and Escape do the
+same from any field, because in row mode the unit is the row.
+
+Only one row is open at a time: opening another closes the first. The same
+editors, the same `parseValue`, the same column-level `editable` predicate. The
+mobile card behaves identically — the fields open in the card and the three
+controls sit in its action area.
+
+Both props are required together: `rowEditing` without `onRowEdit` would be a
+mode with nowhere to send the patch. `onCellEdit` is not required — a table that
+only wants row-level commits leaves it out, and its cells stay display-only until
+a row is opened.
+
+Parts: `row-edit-begin`, `row-edit-actions`, `row-edit-save`, `row-edit-cancel`.
+Labels: `labels.editRow`, `labels.saveRow`, `labels.cancel`, all localized in
+every locale.
+
+Headless: `useRowEditing` (`RowEditingState`, `RowEditDrafts`,
+`UseRowEditingOptions`), with `RowEditCell` (`RowEditCellProps`),
+`RowEditActions` (`RowEditActionsProps`) and `rowEditControls`
+(`RowEditControlsOptions` in, `RowEditControls` out) from
+`@adapttable/core/adapter` for a custom renderer.
+
 ## Dirty marks
 
 A table that looks identical before and after a save leaves the reader no way to

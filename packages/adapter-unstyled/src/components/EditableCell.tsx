@@ -13,7 +13,6 @@ import {
 import {
   commitBooleanDraft,
   editorValidationProps,
-  focusEditorOnMount,
   multiDraftFromSelect,
 } from "@adapttable/core/adapter";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
@@ -42,7 +41,7 @@ export function NativeCellEditor({
   if (isBooleanEditor(ctrl.editor)) {
     return (
       <input
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         {...editorValidationProps(ctrl)}
         className={className}
@@ -59,7 +58,7 @@ export function NativeCellEditor({
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
       <select
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         {...editorValidationProps(ctrl)}
         className={className}
@@ -82,7 +81,7 @@ export function NativeCellEditor({
   if (isSelectEditor(ctrl.editor)) {
     return (
       <select
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         {...editorValidationProps(ctrl)}
         className={className}
@@ -103,7 +102,7 @@ export function NativeCellEditor({
 
   return (
     <input
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       {...editorValidationProps(ctrl)}
       className={className}

@@ -13,6 +13,7 @@ import {
   resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   TreeToggle,
@@ -218,6 +219,14 @@ function MobileCardBase<TRow>({
           </Box>
         ))}
         {expanded && <Box pt={1}>{renderDetail?.(row)}</Box>}
+        {editing?.rowEditing && (
+          <RowEditActions
+            rowEditing={editing.rowEditing}
+            row={row}
+            rowId={id}
+            labels={labels}
+          />
+        )}
         {rowActions && rowActions.length > 0 && (
           <RowActionButtons
             row={row}

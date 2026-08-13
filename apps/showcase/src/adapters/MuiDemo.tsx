@@ -112,6 +112,7 @@ export function MuiDemo({
   grouping,
   tree,
   nested,
+  rowMode,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -126,6 +127,7 @@ export function MuiDemo({
   grouping?: boolean;
   tree?: boolean;
   nested?: boolean;
+  rowMode?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -140,6 +142,7 @@ export function MuiDemo({
         defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
         grouping={grouping}
         tree={tree}
+        rowMode={rowMode}
         editing={editing}
         render={(source, columns) => (
           <DataTable

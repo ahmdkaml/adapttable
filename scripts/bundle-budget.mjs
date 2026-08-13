@@ -112,14 +112,17 @@ const FIXTURES = [
   // controls two of them render and the draft shapes they hold. Async saves add
   // the per-cell in-flight state, the rollback it offers, and a bring-your-own
   // editor's contract; dirty marks add the per-cell change set every row reads.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 74 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 73 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 74 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 71 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 74 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 79 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 77 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 75 },
+  // Row editing adds the second commit unit — the whole-row draft state, the
+  // cell that renders a field instead of a value, and the three controls that
+  // end the edit.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 76 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 75 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 75 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 72 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 75 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 81 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 78 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 76 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

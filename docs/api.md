@@ -301,6 +301,15 @@ the previous row, the attempted value and the message — for one that rejected.
 `onEditRollback` puts the row back and `formatEditError` words the failure;
 `labels.undoEdit` names the control the failed cell offers.
 
+**Editing a row as one unit.** `rowEditing` + `onRowEdit` change the commit unit
+from a cell to a row: `useRowEditing(options)` (`UseRowEditingOptions` in,
+`RowEditingState` out, holding `RowEditDrafts`) opens every editable field
+together and hands the host one patch of what changed. `RowEditCell` (`RowEditCellProps`),
+`RowEditActions` (`RowEditActionsProps`) and `rowEditControls`
+(`RowEditControlsOptions` in, `RowEditControls` out) from
+`@adapttable/core/adapter` render the fields and the edit / save / cancel
+controls; `labels.editRow` and `labels.saveRow` name them.
+
 **Dirty marks.** `dirtyIndicators` turns them on;
 `useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds
 which cells hold an unconfirmed change, with `isDirty` / `isRowDirty`, a `count`,

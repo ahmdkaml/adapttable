@@ -478,6 +478,12 @@ export {
   useTableEditHistory,
 } from "./editing/editHistory";
 export {
+  type RowEditDrafts,
+  type RowEditingState,
+  useRowEditing,
+  type UseRowEditingOptions,
+} from "./editing/rowEditing";
+export {
   type CellSaveState,
   type CellSaveStatus,
   type FailedCellSave,

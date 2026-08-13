@@ -30,16 +30,28 @@ function stopEditKeys(event: KeyboardEvent): void {
   }
 }
 
-/** Focus the first focusable control inside when the editor mounts. */
+/**
+ * Hand the control inside to the table's focus ref.
+ *
+ * Base UI's fields do not forward a ref to their input, so the wrapper finds it
+ * — and whether it actually takes focus is the table's call: in row mode only
+ * the first field should, or the reader ends up at the last column of the row
+ * they just opened.
+ */
 function FocusOnMount({
+  focusRef,
   children,
-}: Readonly<{ children: ReactNode }>): ReactElement {
+}: Readonly<{
+  focusRef: (node: { focus: () => void } | null) => void;
+  children: ReactNode;
+}>): ReactElement {
   const rootRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
-    rootRef.current
-      ?.querySelector<HTMLElement>("input, select, textarea, button")
-      ?.focus();
-  }, []);
+    const control = rootRef.current?.querySelector<HTMLElement>(
+      "input, select, textarea, button"
+    );
+    focusRef(control ?? null);
+  }, [focusRef]);
   return (
     <span ref={rootRef} style={{ display: "contents" }}>
       {children}
@@ -78,7 +90,7 @@ export function BaseUiCellEditor({
 
   if (isSelectEditor(ctrl.editor)) {
     return (
-      <FocusOnMount>
+      <FocusOnMount focusRef={ctrl.focusRef}>
         <NativeSelect
           size="1"
           width="100%"
@@ -95,7 +107,7 @@ export function BaseUiCellEditor({
   }
 
   return (
-    <FocusOnMount>
+    <FocusOnMount focusRef={ctrl.focusRef}>
       <TextField.Root
         data-adapttable-part="edit-cell-editor"
         {...editorValidationProps(ctrl)}

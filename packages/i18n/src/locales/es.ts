@@ -67,6 +67,8 @@ export const es: Required<TableLabels> = {
   exportFailed: "Error al exportar",
   editCell: "Editar celda",
   undoEdit: "Deshacer",
+  editRow: "Editar fila",
+  saveRow: "Guardar fila",
   moreGroups: (remaining) => `Mostrar ${remaining} grupos más`,
   moreRowsInGroup: (remaining) => `Mostrar ${remaining} más en este grupo`,
   groupTotal: (label) => `Total ${label}`,

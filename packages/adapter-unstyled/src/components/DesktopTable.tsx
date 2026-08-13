@@ -28,6 +28,7 @@ import {
   pinnedColumnWidth,
   type PinOffset,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
@@ -380,13 +381,25 @@ function DesktopRowBase<TRow>(
             style={edgePinStyle("end", hasEndPin || actionsPinned, PIN_Z.body)}
             className={cx(classNames.cell, classNames.actionsCell)}
           >
-            <RowActionButtons
-              row={row}
-              actions={rowActions!}
-              confirm={confirm}
-              cancelLabel={labels.cancel}
-              classNames={classNames}
-            />
+            {editing?.rowEditing && (
+              <RowEditActions
+                rowEditing={editing.rowEditing}
+                row={row}
+                rowId={id}
+                labels={labels}
+              />
+            )}
+            {/* The control column also exists for row mode alone, so this is
+                not the same question as `showActions`. */}
+            {rowActions && rowActions.length > 0 && (
+              <RowActionButtons
+                row={row}
+                actions={rowActions}
+                confirm={confirm}
+                cancelLabel={labels.cancel}
+                classNames={classNames}
+              />
+            )}
           </td>
         )}
       </tr>
@@ -469,6 +482,7 @@ export function DesktopTable<TRow>({
     rowEntries,
     renderRowDetail,
     expansion,
+    editing,
   });
   // The actions column sticks when the user end-pins IT in the Columns menu —
   // independently of any data pin on that side (and only while it renders).

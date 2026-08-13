@@ -7,12 +7,13 @@ import {
 
 import type { ColumnDef } from "../types";
 import { booleanDraft, formatMultiDraft, isCustomEditor } from "./cellEditing";
-import { focusEditorOnMount } from "./editableCellController";
 import {
   editableCellController,
   type EditableCellEditing,
+  focusEditorOnMount,
   stopCellEditKeyboard,
 } from "./editableCellController";
+import { RowEditCell } from "./RowEditGate";
 
 /** Props for a kit-native editor while a cell is active. */
 export interface EditableCellEditorCtrl {
@@ -40,6 +41,31 @@ export interface EditableCellEditorCtrl {
    * `aria-invalid` when `error` is set.
    */
   errorId: string;
+  /**
+   * Attach as the editor's `ref` so the table decides what takes focus.
+   *
+   * In cell mode that is this editor, every time. In row mode a whole row opens
+   * at once, and only the FIRST field should take focus — nine editors each
+   * calling focus on mount would leave the reader at the last column of the row
+   * they just opened.
+   */
+  focusRef: (node: { focus: () => void } | null) => void;
+}
+
+/**
+ * Whether a column is the first editable one — the field a row edit focuses.
+ *
+ * By column order rather than by which cell renders first, so the answer is the
+ * same in a windowed body and in a reordered one.
+ */
+function isFirstEditableColumn(
+  columns: readonly { key: string; editable?: unknown }[],
+  key: string
+): boolean {
+  const first = columns.find(
+    (column) => column.editable !== undefined && column.editable !== false
+  );
+  return first?.key === key;
 }
 
 /**
@@ -178,6 +204,22 @@ export function EditableCellGate<TRow>(
     activateRef.current?.focus();
   });
 
+  // A row being edited as one unit owns every cell in it: the per-cell activate
+  // control would be a second way to start an edit that is already open.
+  const rowEditing = props.editing?.rowEditing;
+  if (rowEditing?.isEditing(props.rowId) === true) {
+    return (
+      <RowEditCell
+        rowEditing={rowEditing}
+        column={props.column}
+        display={<>{props.display}</>}
+        editLabel={props.editLabel}
+        takesFocus={isFirstEditableColumn(props.columns, props.column.key)}
+        renderEditor={props.renderEditor}
+      />
+    );
+  }
+
   if (ctrl.mode === "display") {
     return <>{props.display}</>;
   }
@@ -256,6 +298,8 @@ export function EditableCellGate<TRow>(
           error: ctrl.error,
           validating: ctrl.validating,
           errorId,
+          // One cell, so this editor is what takes focus.
+          focusRef: focusEditorOnMount,
         })}
         {/* The message is in the DOM whatever the kit does with `error`, and
             it is a live region so it is heard the moment it appears — a

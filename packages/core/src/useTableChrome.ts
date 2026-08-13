@@ -9,11 +9,10 @@ import {
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import { useDirtyCells } from "./editing/dirtyCells";
+import type { EditableCellEditing } from "./editing/editableCellController";
+import { useRowEditing } from "./editing/rowEditing";
 import { useCellSaveState } from "./editing/saveState";
-import {
-  type CellEditingState,
-  useCellEditing,
-} from "./editing/useCellEditing";
+import { useCellEditing } from "./editing/useCellEditing";
 import { useEditValidation } from "./editing/validation";
 import type { ExportStatus } from "./export/useExportHandler";
 import {
@@ -235,16 +234,13 @@ export interface TableChrome<TRow> {
     expansion: RowExpansionState;
   };
   /**
-   * Inline cell-editing bundle — present iff `onCellEdit` is set, so ONE
-   * guard narrows both the host channel and the state machine. Omit
-   * `onCellEdit` and editing stays fully dormant (no UI, no keyboard).
+   * Inline editing bundle — present iff either channel is set (`onCellEdit`
+   * for per-cell commits, `rowEditing` + `onRowEdit` for row-level ones), so
+   * ONE guard narrows the host channel, the state machine, validation, save
+   * state, dirty marks and row mode. Pass neither and editing stays fully
+   * dormant: no UI, no keyboard.
    */
-  editing?: {
-    /** Host change channel — the table never mutates rows. */
-    onCellEdit: (row: TRow, key: string, nextValue: unknown) => void;
-    /** Headless active-cell / draft / keyboard state. */
-    state: CellEditingState;
-  };
+  editing?: EditableCellEditing<TRow>;
   /**
    * Tree bundle — present iff the host declared a hierarchy (`getChildren` or
    * `getParentId`). A tree and a grouping are different models and can both be
@@ -520,12 +516,44 @@ export function useTableChrome<TRow>(
   // to ask for: `dirtyIndicators` on, and `confirmEdits` to say when a value has
   // settled (a refetch agreed, a websocket echoed it back).
   const dirty = useDirtyCells({ enabled: props.dirtyIndicators === true });
+  // Row mode changes the commit unit from a cell to a row, so it takes both the
+  // flag and a channel: an Edit control with nowhere to send the patch would be
+  // a mode the reader can enter and never leave usefully.
+  const rowModeArmed =
+    props.rowEditing === true && props.onRowEdit !== undefined;
+  const rowEditing = useRowEditing<TRow>({
+    enabled: rowModeArmed,
+    columns: resolvedColumns,
+    onRowEdit: props.onRowEdit,
+  });
+  // Either channel arms the bundle: a host that wants row-level commits only
+  // never passes `onCellEdit`, and its cells stay display-only until a reader
+  // opens the row.
+  const editingArmed = onCellEdit !== undefined || rowModeArmed;
   const editing = useMemo(
     () =>
-      onCellEdit
-        ? { onCellEdit, state: cellEditingState, validation, saving, dirty }
+      editingArmed
+        ? {
+            onCellEdit,
+            state: cellEditingState,
+            validation,
+            saving,
+            dirty,
+            // Only when the host armed row mode: carried unconditionally, every
+            // table with cell editing would grow an "Edit row" control.
+            rowEditing: rowModeArmed ? rowEditing : undefined,
+          }
         : undefined,
-    [onCellEdit, cellEditingState, validation, saving, dirty]
+    [
+      editingArmed,
+      onCellEdit,
+      cellEditingState,
+      validation,
+      saving,
+      dirty,
+      rowModeArmed,
+      rowEditing,
+    ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
   // does NOTHING without the table-level change channel. Say so in dev.

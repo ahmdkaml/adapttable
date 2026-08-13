@@ -69,6 +69,8 @@ export const ru: Required<TableLabels> = {
   exportFailed: "Не удалось выполнить экспорт",
   editCell: "Изменить ячейку",
   undoEdit: "Отменить",
+  editRow: "Изменить строку",
+  saveRow: "Сохранить строку",
   moreGroups: (remaining) => `Показать ещё групп: ${remaining}`,
   moreRowsInGroup: (remaining) => `Показать ещё в этой группе: ${remaining}`,
   groupTotal: (label) => `Итого: ${label}`,

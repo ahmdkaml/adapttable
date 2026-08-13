@@ -13,6 +13,7 @@ import {
   resolveCommitValue,
 } from "./cellEditing";
 import type { DirtyCellState } from "./dirtyCells";
+import type { RowEditingState } from "./rowEditing";
 import type {
   CellSaveState,
   CellSaveStatus,
@@ -27,10 +28,14 @@ import type { CellValidator, EditValidationState } from "./validation";
 /** Opt-in editing bundle from {@link TableChrome.editing}. */
 export interface EditableCellEditing<TRow> {
   /**
-   * The change channel. Return a promise and the cell shows it is saving until
-   * that promise settles, and shows why if it rejects.
+   * The per-cell change channel. Return a promise and the cell shows it is
+   * saving until that promise settles, and shows why if it rejects.
+   *
+   * Absent when the host wants row-level commits only: the bundle still exists
+   * (row mode needs it) and every cell stays display-only until a reader opens
+   * the row.
    */
-  onCellEdit: (row: TRow, key: string, nextValue: unknown) => unknown;
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => unknown;
   state: CellEditingState;
   /**
    * Validation, when the host declared any. A commit runs the validators first
@@ -45,6 +50,11 @@ export interface EditableCellEditing<TRow> {
   saving?: CellSaveState<TRow>;
   /** Dirty marks, when the host asked for them (`dirtyIndicators`). */
   dirty?: DirtyCellState;
+  /**
+   * Row-mode state, when the host armed it. While a row is open its cells render
+   * row editors instead of the per-cell activate control.
+   */
+  rowEditing?: RowEditingState<TRow>;
 }
 
 /** Display / edit mode for one cell. */
@@ -124,7 +134,11 @@ export function editableCellController<TRow>(options: {
     commitOnBlur: () => undefined,
   };
 
-  if (!editing) return idle;
+  // No per-cell channel means no per-cell editing, whatever else the bundle
+  // carries: a cell that opened an editor with nowhere to send the value would
+  // lose whatever the reader typed.
+  if (!editing?.onCellEdit) return idle;
+  const onCellEdit = editing.onCellEdit;
 
   const editor = resolveCellEditor(column);
   if (!editor || !isCellEditable(column, row)) return idle;
@@ -135,7 +149,7 @@ export function editableCellController<TRow>(options: {
       ? normalizeEditorOptions(editor.options)
       : [];
 
-  const { state, onCellEdit, validation, saving, dirty } = editing;
+  const { state, validation, saving, dirty } = editing;
   const isEditing = state.isActive(rowId, column.key);
 
   const validateCell = asCellValidator<TRow>(column);
@@ -372,9 +386,15 @@ export function rowEditingSignature<TRow>(
   // A dirty mark belongs to the row too, and outlives the editor that made it.
   const marks = editing.dirty?.signature ?? "";
   const rowMarks = marks.includes(`${rowId} `) ? marks : "";
+  // Row mode replaces every cell in the open row with an editor, so the row it
+  // belongs to has to repaint — including on every keystroke in any field.
+  const rowMode = editing.rowEditing;
+  const rowDrafts =
+    rowMode?.activeRowId === rowId ? (rowMode.signature ?? "") : "";
   if (active?.rowId !== rowId) {
-    return marked ? `invalid${rowSave}${rowMarks}` : `${rowSave}${rowMarks}`;
+    const base = `${rowSave}${rowMarks}${rowDrafts}`;
+    return marked ? `invalid${base}` : base;
   }
   const message = editing.validation?.errorFor(rowId, active.columnKey) ?? "";
-  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}`;
+  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}${rowDrafts}`;
 }

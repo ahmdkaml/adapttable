@@ -67,6 +67,8 @@ export const fa: Required<TableLabels> = {
   exportFailed: "خروجی گرفتن ناموفق بود",
   editCell: "ویرایش سلول",
   undoEdit: "بازگردانی",
+  editRow: "ویرایش ردیف",
+  saveRow: "ذخیره ردیف",
   moreGroups: (remaining) => `نمایش ${remaining} گروه دیگر`,
   moreRowsInGroup: (remaining) => `نمایش ${remaining} مورد دیگر در این گروه`,
   groupTotal: (label) => `جمع ${label}`,

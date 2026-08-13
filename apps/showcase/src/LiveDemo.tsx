@@ -26,6 +26,7 @@ type DemoComponent = ComponentType<
     grouping?: boolean;
     tree?: boolean;
     nested?: boolean;
+    rowMode?: boolean;
     editing?: boolean;
   }>
 >;
@@ -124,6 +125,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [grouping, setGrouping] = useState<"on" | "off">("off");
   const [tree, setTree] = useState<"on" | "off">("off");
   const [nested, setNested] = useState<"on" | "off">("off");
+  const [rowMode, setRowMode] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -271,6 +273,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Row edit">
+          <Segmented
+            label="row edit"
+            value={rowMode}
+            onChange={(v) => {
+              startTransition(() => setRowMode(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Motion">
           <Segmented
             label="motion"
@@ -305,6 +320,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               grouping={grouping === "on"}
               tree={tree === "on"}
               nested={nested === "on"}
+              rowMode={rowMode === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

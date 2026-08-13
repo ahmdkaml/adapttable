@@ -185,6 +185,7 @@ export function tableRenderModel<TRow>(
     | "renderRowDetail"
     | "expansion"
     | "columnWindow"
+    | "editing"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -194,7 +195,12 @@ export function tableRenderModel<TRow>(
   const columns = windowed
     ? (props.columnWindow?.columns ?? props.table.columns)
     : props.table.columns;
-  const showActions = (props.rowActions?.length ?? 0) > 0;
+  // The trailing control column exists for row actions AND for row-mode's own
+  // edit / save / cancel — both live there, and a row edit with nowhere to be
+  // saved from would be a mode nobody can leave.
+  const showActions =
+    (props.rowActions?.length ?? 0) > 0 ||
+    props.editing?.rowEditing !== undefined;
   const entries = resolveVirtualRows(
     props.rows,
     props.getRowId,

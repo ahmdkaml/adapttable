@@ -67,6 +67,8 @@ export const hi: Required<TableLabels> = {
   exportFailed: "निर्यात विफल",
   editCell: "सेल संपादित करें",
   undoEdit: "पूर्ववत करें",
+  editRow: "पंक्ति संपादित करें",
+  saveRow: "पंक्ति सहेजें",
   moreGroups: (remaining) => `${remaining} और समूह दिखाएँ`,
   moreRowsInGroup: (remaining) => `इस समूह में ${remaining} और दिखाएँ`,
   groupTotal: (label) => `${label} कुल`,

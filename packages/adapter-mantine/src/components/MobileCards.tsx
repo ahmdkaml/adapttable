@@ -13,6 +13,7 @@ import {
   resolveDisabledReason,
   resolveMobileLabel,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type SharedTableRenderProps,
@@ -253,6 +254,14 @@ function MobileCardBase<TRow>({
           </div>
         ))}
         {expanded && renderDetail && <div>{renderDetail(row)}</div>}
+        {editing?.rowEditing && (
+          <RowEditActions
+            rowEditing={editing.rowEditing}
+            row={row}
+            rowId={id}
+            labels={labels}
+          />
+        )}
         {rowActions && rowActions.length > 0 && (
           <Group gap={4} justify="flex-end" pt={4}>
             {rowActions.map((action) => {

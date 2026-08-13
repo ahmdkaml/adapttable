@@ -66,6 +66,8 @@ export const zh: Required<TableLabels> = {
   exportFailed: "导出失败",
   editCell: "编辑单元格",
   undoEdit: "撤销",
+  editRow: "编辑行",
+  saveRow: "保存行",
   moreGroups: (remaining) => `再显示 ${remaining} 个分组`,
   moreRowsInGroup: (remaining) => `在此分组中再显示 ${remaining} 行`,
   groupTotal: (label) => `${label} 合计`,

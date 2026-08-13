@@ -69,6 +69,8 @@ export const defaultLabels: Required<TableLabels> = {
   exportFailed: "Export failed",
   editCell: "Edit cell",
   undoEdit: "Undo",
+  editRow: "Edit row",
+  saveRow: "Save row",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

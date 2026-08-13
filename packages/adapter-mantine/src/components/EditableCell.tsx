@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   editorBusyProps,
-  focusEditorOnMount,
   NativeBooleanEditor,
   NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
@@ -57,7 +56,7 @@ export function MantineCellEditor({
       <Select
         error={ctrl.error}
         {...editorBusyProps(ctrl)}
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         aria-label={label}
         size="xs"
@@ -78,7 +77,7 @@ export function MantineCellEditor({
     <TextInput
       error={ctrl.error}
       {...editorBusyProps(ctrl)}
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       aria-label={label}
       size="xs"

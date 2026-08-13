@@ -23,6 +23,7 @@ const ctrlFor = (
   selectOptions: [],
   validating: false,
   errorId: "err-1",
+  focusRef: () => undefined,
   ...over,
 });
 

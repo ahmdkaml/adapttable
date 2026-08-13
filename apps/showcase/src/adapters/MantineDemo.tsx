@@ -85,6 +85,7 @@ export function MantineDemo({
   grouping,
   tree,
   nested,
+  rowMode,
   editing,
   cellNavigation,
   forceMobile,
@@ -100,6 +101,7 @@ export function MantineDemo({
   grouping?: boolean;
   tree?: boolean;
   nested?: boolean;
+  rowMode?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -114,6 +116,7 @@ export function MantineDemo({
         defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
         grouping={grouping}
         tree={tree}
+        rowMode={rowMode}
         editing={editing}
         render={(source, columns) => (
           <DataTable

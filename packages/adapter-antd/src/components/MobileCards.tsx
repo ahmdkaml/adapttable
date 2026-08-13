@@ -17,6 +17,7 @@ import {
   resolveMobileLabel,
   resolveVirtualRows,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   TreeToggle,
@@ -245,13 +246,21 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
         ) : undefined
       }
       extra={
-        (onToggleExpand ?? actions) ? (
+        (onToggleExpand ?? actions ?? editing?.rowEditing) ? (
           <Space size="small">
             {onToggleExpand && (
               <ExpandToggle
                 expanded={expanded}
                 labels={labels}
                 onClick={() => onToggleExpand(id)}
+              />
+            )}
+            {editing?.rowEditing && (
+              <RowEditActions
+                rowEditing={editing.rowEditing}
+                row={row}
+                rowId={id}
+                labels={labels}
               />
             )}
             {actions && (

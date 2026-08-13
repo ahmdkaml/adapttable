@@ -95,6 +95,23 @@ interface DataProps {
   grouping?: boolean;
   editing?: boolean;
   tree?: boolean;
+  rowMode?: boolean;
+}
+
+/**
+ * Apply a row patch, mapping each column key to the field it edits — the same
+ * mapping a single cell edit uses.
+ */
+function applyRowPatch(
+  row: Person,
+  patch: Readonly<Record<string, unknown>>
+): Person {
+  let next = row;
+  for (const [key, value] of Object.entries(patch)) {
+    const field = EDIT_FIELD[key] ?? (key as keyof Person);
+    next = { ...next, [field]: value as never };
+  }
+  return next;
 }
 
 /** Column key → row field for composite cells (person shows name; load
@@ -114,6 +131,7 @@ function Frontend({
   grouping,
   editing,
   tree,
+  rowMode,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -148,6 +166,20 @@ function Frontend({
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
         ...(editing ? { onCellEdit } : {}),
+        // Row mode changes the commit unit: every field of the row opens
+        // together and arrives as one patch.
+        ...(rowMode
+          ? {
+              rowEditing: true,
+              onRowEdit: (row: Person, patch: Record<string, unknown>) => {
+                setData((prev) =>
+                  prev.map((r) =>
+                    r.id === row.id ? applyRowPatch(r, patch) : r
+                  )
+                );
+              },
+            }
+          : {}),
         // Two keys, so the demo shows what nesting looks like: each status
         // sits inside its team, and every header totals its whole subtree.
         ...(grouping
@@ -198,6 +230,7 @@ export function DemoBody({
   grouping,
   editing,
   tree,
+  rowMode,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -207,6 +240,7 @@ export function DemoBody({
   grouping?: boolean;
   tree?: boolean;
   editing?: boolean;
+  rowMode?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -245,6 +279,7 @@ export function DemoBody({
       grouping={grouping}
       editing={editing}
       tree={tree}
+      rowMode={rowMode}
     />
   );
 }

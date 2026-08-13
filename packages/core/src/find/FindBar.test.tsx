@@ -1,5 +1,9 @@
 /**
- * The bar itself: what it shows, and the keys it answers.
+ * The find bar.
+ *
+ * A search box the reader just asked for, plus the four controls around it. What
+ * these cover is the wiring — every control reaching the find state it belongs
+ * to, and the keyboard that walks matches and closes without leaving the box.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -7,113 +11,121 @@ import { describe, expect, it, vi } from "vitest";
 import { FindBar } from "./FindBar";
 import type { FindInTableState } from "./useFindInTable";
 
-const state = (overrides?: Partial<FindInTableState>): FindInTableState => ({
+/** A find state with everything stubbed, overridable per test. */
+const stateFor = (over: Partial<FindInTableState> = {}): FindInTableState => ({
   open: true,
   setOpen: vi.fn(),
-  query: "ada",
+  query: "",
   setQuery: vi.fn(),
-  matches: [
-    { row: 0, col: 0 },
-    { row: 3, col: 1 },
-  ],
-  matchKeys: new Set(["0:0", "3:1"]),
+  matches: [],
   index: 0,
-  current: { row: 0, col: 0 },
   next: vi.fn(),
   previous: vi.fn(),
-  openBar: vi.fn(),
-  ...overrides,
+  matchKeys: new Set<string>(),
+  current: null,
+  ...over,
 });
 
+const part = (name: string) =>
+  document.querySelector<HTMLElement>(`[data-adapttable-part="${name}"]`);
+
 describe("FindBar", () => {
-  it("renders nothing while it is closed", () => {
-    const { container } = render(<FindBar find={state({ open: false })} />);
+  it("renders nothing while the bar is closed", () => {
+    const { container } = render(<FindBar find={stateFor({ open: false })} />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows where the walk is", () => {
-    render(<FindBar find={state()} />);
-    expect(screen.getByText("1 of 2")).toBeInTheDocument();
+  it("focuses the box the reader just opened", () => {
+    render(<FindBar find={stateFor()} />);
+    expect(part("find-input")).toHaveFocus();
   });
 
-  it("says so plainly when nothing matched", () => {
-    render(
-      <FindBar
-        find={state({
-          matches: [],
-          index: -1,
-          current: null,
-          matchKeys: new Set(),
-        })}
-      />
-    );
-    expect(screen.getByText("No matches")).toBeInTheDocument();
-    expect(screen.getByLabelText("Next match")).toBeDisabled();
-  });
-
-  it("takes focus, so the box the user opened is the box they type in", () => {
-    render(<FindBar find={state()} />);
-    expect(screen.getByLabelText("Find in table")).toHaveFocus();
-  });
-
-  it("types into the query", () => {
-    const find = state();
+  it("reports what the reader types", () => {
+    const find = stateFor();
     render(<FindBar find={find} />);
-    fireEvent.change(screen.getByLabelText("Find in table"), {
-      target: { value: "grace" },
-    });
-    expect(find.setQuery).toHaveBeenCalledWith("grace");
+    fireEvent.change(part("find-input")!, { target: { value: "ada" } });
+    expect(find.setQuery).toHaveBeenCalledExactlyOnceWith("ada");
   });
 
-  it("walks with Enter and Shift+Enter", () => {
-    const find = state();
+  it("walks matches with Enter, and back with Shift+Enter", () => {
+    const find = stateFor({ query: "a", matches: [{}, {}] as never });
     render(<FindBar find={find} />);
-    const input = screen.getByLabelText("Find in table");
-    fireEvent.keyDown(input, { key: "Enter" });
-    fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
+    fireEvent.keyDown(part("find-input")!, { key: "Enter" });
     expect(find.next).toHaveBeenCalledOnce();
+    fireEvent.keyDown(part("find-input")!, { key: "Enter", shiftKey: true });
     expect(find.previous).toHaveBeenCalledOnce();
   });
 
-  it("closes on Escape and on the close button", () => {
-    const find = state();
+  it("closes on Escape, without leaving the box", () => {
+    const find = stateFor();
     render(<FindBar find={find} />);
-    fireEvent.keyDown(screen.getByLabelText("Find in table"), {
-      key: "Escape",
-    });
-    fireEvent.click(screen.getByLabelText("Close find"));
-    expect(find.setOpen).toHaveBeenCalledTimes(2);
-    expect(find.setOpen).toHaveBeenLastCalledWith(false);
+    fireEvent.keyDown(part("find-input")!, { key: "Escape" });
+    expect(find.setOpen).toHaveBeenCalledExactlyOnceWith(false);
   });
 
-  it("ignores keys it has no business with", () => {
-    const find = state();
+  it("leaves other keys to the input", () => {
+    const find = stateFor();
     render(<FindBar find={find} />);
-    fireEvent.keyDown(screen.getByLabelText("Find in table"), { key: "a" });
+    fireEvent.keyDown(part("find-input")!, { key: "a" });
     expect(find.next).not.toHaveBeenCalled();
+    expect(find.previous).not.toHaveBeenCalled();
     expect(find.setOpen).not.toHaveBeenCalled();
   });
 
-  it("walks from its own buttons", () => {
-    const find = state();
-    render(<FindBar find={find} />);
-    fireEvent.click(screen.getByLabelText("Next match"));
-    fireEvent.click(screen.getByLabelText("Previous match"));
-    expect(find.next).toHaveBeenCalledOnce();
-    expect(find.previous).toHaveBeenCalledOnce();
+  it("announces the count in a live region", () => {
+    render(
+      <FindBar find={stateFor({ index: 2, matches: Array(12).fill({}) })} />
+    );
+    const count = part("find-count")!;
+    expect(count).toHaveAttribute("role", "status");
+    // 1-based for the reader: the third match of twelve.
+    expect(count).toHaveTextContent("3 of 12");
   });
 
-  it("takes every word from the labels", () => {
+  it("disables the walk controls until something matches", () => {
+    render(<FindBar find={stateFor()} />);
+    expect(part("find-previous")).toBeDisabled();
+    expect(part("find-next")).toBeDisabled();
+  });
+
+  it("walks and closes from its own controls", () => {
+    const find = stateFor({ query: "a", matches: [{}, {}] as never });
+    render(<FindBar find={find} />);
+    fireEvent.click(part("find-next")!);
+    expect(find.next).toHaveBeenCalledOnce();
+    fireEvent.click(part("find-previous")!);
+    expect(find.previous).toHaveBeenCalledOnce();
+    fireEvent.click(part("find-close")!);
+    expect(find.setOpen).toHaveBeenCalledExactlyOnceWith(false);
+  });
+
+  it("takes localized names, and the host's own count wording", () => {
     render(
       <FindBar
-        find={state()}
+        find={stateFor({ matches: [{}] as never })}
         labels={{
-          findInTable: "Chercher",
-          findMatchCount: (current, total) => `${current}/${total}`,
+          findInTable: "ابحث في الجدول",
+          findPlaceholder: "ابحث…",
+          findNext: "التالي",
+          findPrevious: "السابق",
+          findClose: "إغلاق",
+          findMatchCount: (current, total) =>
+            `${String(current)} من ${String(total)}`,
         }}
       />
     );
-    expect(screen.getByLabelText("Chercher")).toBeInTheDocument();
-    expect(screen.getByText("1/2")).toBeInTheDocument();
+    expect(screen.getByLabelText("ابحث في الجدول")).toHaveAttribute(
+      "placeholder",
+      "ابحث…"
+    );
+    expect(screen.getByLabelText("التالي")).not.toBeNull();
+    expect(screen.getByLabelText("السابق")).not.toBeNull();
+    expect(screen.getByLabelText("إغلاق")).not.toBeNull();
+    expect(part("find-count")).toHaveTextContent("1 من 1");
+  });
+
+  it("takes a kit's own class for the bar", () => {
+    render(<FindBar find={stateFor()} className="cn-find" />);
+    expect(part("find-bar")).toHaveClass("cn-find");
   });
 });
