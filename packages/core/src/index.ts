@@ -482,6 +482,16 @@ export {
   type EditableCellGateProps,
 } from "./editing/EditableCellGate";
 export {
+  type EditConflict,
+  type EditConflictChoice,
+  type EditConflictHandler,
+  type EditConflictPolicy,
+  type EditConflictState,
+  liveRowChanged,
+  type ReconcileLiveEdit,
+  useEditConflict,
+} from "./editing/editConflict";
+export {
   asGesture,
   type EditHistoryEntry,
   type EditHistoryState,

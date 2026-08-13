@@ -198,6 +198,21 @@ function Frontend({
   const onDeleteRow = useCallback((row: Person) => {
     setData((prev) => prev.filter((r) => r.id !== row.id));
   }, []);
+  // A live update under an open editor is the conflict the table asks
+  // about — this is the demo's websocket, not a second commit path.
+  const bumpFirstRow = useCallback(() => {
+    setData((prev) => {
+      const first = prev[0];
+      if (!first) return prev;
+      return [
+        {
+          ...first,
+          name: `${first.name.replace(/ \*$/, "")} *`,
+        },
+        ...prev.slice(1),
+      ];
+    });
+  }, []);
   const source = useFrontendData<Person>({
     data,
     columns: BASE_COLUMNS,
@@ -213,6 +228,21 @@ function Frontend({
   });
   return (
     <>
+      {editing ? (
+        <button
+          type="button"
+          className="hint"
+          data-adapttable-part="demo-live-update"
+          onMouseDown={(event) => {
+            // A websocket does not steal focus. Prevent the editor from
+            // blur-committing before the row actually changes.
+            event.preventDefault();
+          }}
+          onClick={bumpFirstRow}
+        >
+          Simulate live update
+        </button>
+      ) : null}
       {render(source, {
         ...columns,
         // Both features are strictly opt-in: the toggles mirror the API —

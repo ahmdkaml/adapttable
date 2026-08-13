@@ -12,6 +12,7 @@ import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
 import { useBatchEditing } from "./editing/batchEditing";
 import { useDirtyCells } from "./editing/dirtyCells";
 import type { EditableCellEditing } from "./editing/editableCellController";
+import { useEditConflict } from "./editing/editConflict";
 import { useEditLifecycle } from "./editing/editingEvents";
 import { useRowEditing } from "./editing/rowEditing";
 import { useCellSaveState } from "./editing/saveState";
@@ -544,6 +545,7 @@ export function useTableChrome<TRow>(
     onEditStart: lifecycle.onEditStart,
     onEditCancel: lifecycle.onEditCancel,
   });
+  const conflict = useEditConflict<TRow>();
   const onCellEdit = props.onCellEdit;
   // Validation gates the commit and nothing else; it runs whether or not any
   // validator exists, and stays inert until one rejects something.
@@ -604,6 +606,12 @@ export function useTableChrome<TRow>(
             rowEditing: rowModeArmed ? rowEditing : undefined,
             batch: batchArmed ? batch : undefined,
             lifecycle,
+            conflict,
+            conflictLabels: {
+              message: table.labels.editConflict,
+              keepMine: table.labels.keepMine,
+              takeTheirs: table.labels.takeTheirs,
+            },
           }
         : undefined,
     [
@@ -618,6 +626,10 @@ export function useTableChrome<TRow>(
       batchArmed,
       batch,
       lifecycle,
+      conflict,
+      table.labels.editConflict,
+      table.labels.keepMine,
+      table.labels.takeTheirs,
     ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
@@ -858,7 +870,33 @@ export function useTableChrome<TRow>(
     editing.state.discardIfRowMissing(editingRows, (row) =>
       rowKey(row as TRow)
     );
-  }, [editing, editingRows, rowKey]);
+    conflict.reconcile({
+      active: editing.state.active,
+      openedRow: editing.state.openedRow() as TRow | undefined,
+      draft: editing.state.draft,
+      rows: editingRows,
+      columns: resolvedColumns,
+      rowKey,
+      rowVersion: props.rowVersion,
+      policy: props.editConflictPolicy ?? "ask",
+      onEditConflict: props.onEditConflict,
+      keep: (row) => {
+        editing.state.keepLive(row);
+      },
+      take: (row, value) => {
+        editing.state.takeLive(row, value);
+      },
+    });
+  }, [
+    editing,
+    editingRows,
+    rowKey,
+    conflict,
+    resolvedColumns,
+    props.rowVersion,
+    props.editConflictPolicy,
+    props.onEditConflict,
+  ]);
 
   const showFooter =
     isPaged &&

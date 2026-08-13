@@ -15,6 +15,7 @@ import {
   resolveCommitValue,
 } from "./cellEditing";
 import type { DirtyCellState } from "./dirtyCells";
+import type { EditConflict, EditConflictState } from "./editConflict";
 import type { EditLifecycle } from "./editingEvents";
 import { observeEdit } from "./editingEvents";
 import type { RowEditingState } from "./rowEditing";
@@ -66,6 +67,14 @@ export interface EditableCellEditing<TRow> {
   batch?: BatchEditingState<TRow>;
   /** Lifecycle observers — fire from the same place the transition happens. */
   lifecycle?: EditLifecycle<TRow>;
+  /** Live-update conflict for the open editor, when one is being asked about. */
+  conflict?: EditConflictState<TRow>;
+  /** Labels for the conflict notice — already resolved. */
+  conflictLabels?: {
+    message: string;
+    keepMine: string;
+    takeTheirs: string;
+  };
 }
 
 /** Display / edit mode for one cell. */
@@ -109,6 +118,21 @@ export interface EditableCellController<TRow = unknown> {
   }) => void;
   /** Commit on blur (click-away). No-op when not editing. */
   commitOnBlur: () => void;
+  /**
+   * A live row changed under this editor. Present only while the policy is
+   * asking; Keep mine / Take theirs resolve it.
+   */
+  conflict?: EditConflict<TRow>;
+  /** Labels for the conflict notice. */
+  conflictLabels?: {
+    message: string;
+    keepMine: string;
+    takeTheirs: string;
+  };
+  /** Keep the draft. */
+  keepConflict: () => void;
+  /** Take the incoming value. */
+  takeConflict: () => void;
 }
 
 /**
@@ -143,6 +167,8 @@ export function editableCellController<TRow>(options: {
     cancel: () => undefined,
     onEditorKeyDown: () => undefined,
     commitOnBlur: () => undefined,
+    keepConflict: () => undefined,
+    takeConflict: () => undefined,
   };
 
   // No per-cell channel means no per-cell editing, whatever else the bundle
@@ -279,13 +305,20 @@ export function editableCellController<TRow>(options: {
     beginEdit(state, nextRow, nextCol, rowKey);
   };
 
+  const liveConflict = editing.conflict?.isConflict(rowId, column.key)
+    ? (editing.conflict.current ?? undefined)
+    : undefined;
+  let validationError = validation?.errorFor(rowId, column.key);
+  if (validationError === undefined && isEditing) {
+    validationError = validation?.rowErrorFor(rowId);
+  }
+
   return {
     mode: isEditing ? "editing" : "activatable",
     // A row-level message has no cell of its own, so it shows under the cell
-    // the reader just edited — where they are looking.
-    error:
-      validation?.errorFor(rowId, column.key) ??
-      (isEditing ? validation?.rowErrorFor(rowId) : undefined),
+    // the reader just edited — where they are looking. A live conflict uses
+    // the same channel: the message is what `aria-describedby` points at.
+    error: liveConflict ? editing.conflictLabels?.message : validationError,
     validating: validation?.isValidating(rowId, column.key) ?? false,
     saveStatus: saving?.statusFor(rowId, column.key),
     saveFailure: saving?.failureFor(rowId, column.key),
@@ -308,6 +341,7 @@ export function editableCellController<TRow>(options: {
     setDraft: state.setDraft,
     commit: () => {
       if (!state.isActive(rowId, column.key)) return;
+      if (editing.conflict?.isConflict(rowId, column.key)) return;
       const pending = state.commit();
       if (gated) void commitValidated(pending);
       else commitNow(pending);
@@ -317,6 +351,16 @@ export function editableCellController<TRow>(options: {
       state.cancel();
     },
     onEditorKeyDown: (event) => {
+      // Enter / Tab would commit through the state machine, which does not
+      // know about the ask. Hold them until the reader chooses; Escape still
+      // throws the draft away.
+      if (
+        editing.conflict?.isConflict(rowId, column.key) &&
+        (event.key === "Enter" || event.key === "Tab")
+      ) {
+        event.preventDefault();
+        return;
+      }
       const outcome = state.handleKeyDown(event, {
         rows,
         columns,
@@ -341,9 +385,18 @@ export function editableCellController<TRow>(options: {
     },
     commitOnBlur: () => {
       if (!state.isActive(rowId, column.key)) return;
+      if (editing.conflict?.isConflict(rowId, column.key)) return;
       const commit = state.commit();
       if (gated) void commitValidated(commit);
       else commitNow(commit);
+    },
+    conflict: liveConflict,
+    conflictLabels: liveConflict ? editing.conflictLabels : undefined,
+    keepConflict: () => {
+      editing.conflict?.keep();
+    },
+    takeConflict: () => {
+      editing.conflict?.take();
     },
   };
 }
@@ -431,10 +484,17 @@ export function rowEditingSignature<TRow>(
   const batchAll = editing.batch?.signature ?? "";
   const batchRow =
     batchAll.split(";").find((entry) => entry.startsWith(`${rowId}:`)) ?? "";
+  // A live conflict is asked on the open editor. Left out, the row memo
+  // sees the same draft and never paints Keep mine / Take theirs.
+  const live = editing.conflict?.current;
+  const conflictMark =
+    live?.rowId === rowId
+      ? `conflict:${live.columnKey}:${live.incomingValue}`
+      : "";
   if (active?.rowId !== rowId) {
-    const base = `${rowSave}${rowMarks}${rowDrafts}${batchRow}`;
+    const base = `${rowSave}${rowMarks}${rowDrafts}${batchRow}${conflictMark}`;
     return marked ? `invalid${base}` : base;
   }
   const message = editing.validation?.errorFor(rowId, active.columnKey) ?? "";
-  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}${rowDrafts}${batchRow}`;
+  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}${rowDrafts}${batchRow}${conflictMark}`;
 }

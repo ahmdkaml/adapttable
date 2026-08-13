@@ -135,6 +135,35 @@ describe("rowEditingSignature", () => {
       rowEditingSignature({ onCellEdit, state: result.current }, "1")
     ).toBe("name:Augusta::");
   });
+
+  it("fingerprints a live conflict so the asked row repaints", () => {
+    const { result } = renderHook(() => useCellEditing());
+    const onCellEdit = vi.fn();
+    act(() => result.current.begin("1", "name", "Ada"));
+    const conflict = {
+      current: {
+        row: { ...ROWS[0]!, name: "Arrived" },
+        previous: ROWS[0]!,
+        rowId: "1",
+        columnKey: "name",
+        draft: "Ada",
+        incomingValue: "Arrived",
+        previousValue: "Ada",
+      },
+      isConflict: (rowId: string, columnKey: string) =>
+        rowId === "1" && columnKey === "name",
+      keep: () => undefined,
+      take: () => undefined,
+      reconcile: () => undefined,
+      clear: () => undefined,
+    };
+    expect(
+      rowEditingSignature({ onCellEdit, state: result.current, conflict }, "1")
+    ).toBe("name:Ada::conflict:name:Arrived");
+    expect(
+      rowEditingSignature({ onCellEdit, state: result.current, conflict }, "2")
+    ).toBe("");
+  });
 });
 
 /**
@@ -249,6 +278,60 @@ describe("editableCellController — leaving an edit", () => {
       "name",
       "Ada Lovelace"
     );
+  });
+
+  it("holds the draft while a live conflict is being asked", () => {
+    const { result } = renderHook(() => useCellEditing());
+    const onCellEdit = vi.fn();
+    const conflict = {
+      current: {
+        row: { ...ROWS[0]!, name: "Arrived" },
+        previous: ROWS[0]!,
+        rowId: "1",
+        columnKey: "name",
+        draft: "typed",
+        incomingValue: "Arrived",
+        previousValue: "Ada",
+      },
+      isConflict: (rowId: string, columnKey: string) =>
+        rowId === "1" && columnKey === "name",
+      keep: vi.fn(),
+      take: vi.fn(),
+      reconcile: () => undefined,
+      clear: () => undefined,
+    };
+    const ctrl = () =>
+      editableCellController({
+        editing: { onCellEdit, state: result.current, conflict },
+        row: ROWS[0]!,
+        column: COLS[0]!,
+        rowId: "1",
+        rows: ROWS,
+        columns: COLS,
+        rowKey: (r) => r.id,
+      });
+    act(() => {
+      ctrl().begin();
+    });
+    act(() => {
+      result.current.setDraft("typed");
+    });
+    act(() => {
+      ctrl().commitOnBlur();
+      ctrl().onEditorKeyDown({
+        key: "Enter",
+        preventDefault: () => undefined,
+      });
+      ctrl().commit();
+    });
+    expect(onCellEdit).not.toHaveBeenCalled();
+    expect(result.current.isActive("1", "name")).toBe(true);
+    act(() => {
+      ctrl().keepConflict();
+      ctrl().takeConflict();
+    });
+    expect(conflict.keep).toHaveBeenCalledOnce();
+    expect(conflict.take).toHaveBeenCalledOnce();
   });
 
   it("does nothing on the blur of a cell that was not the open one", () => {

@@ -471,6 +471,15 @@ export interface TableLabels {
   /** The question the delete dialog asks before it runs. */
   deleteRowConfirm?: string;
   /**
+   * The message on an editor whose row changed under it. Keep mine / Take
+   * theirs sit beside it.
+   */
+  editConflict?: string;
+  /** Keep the draft; accept the incoming row as the new snapshot. */
+  keepMine?: string;
+  /** Replace the draft with the incoming value. */
+  takeTheirs?: string;
+  /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when
    * the selection changes. Defaults to

@@ -78,6 +78,9 @@ export const fr: Required<TableLabels> = {
   duplicateRow: "Dupliquer la ligne",
   deleteRow: "Supprimer la ligne",
   deleteRowConfirm: "Supprimer cette ligne ? Cette action est irréversible.",
+  editConflict: "Cette ligne a changé pendant que vous l'éditiez",
+  keepMine: "Garder le mien",
+  takeTheirs: "Prendre le leur",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

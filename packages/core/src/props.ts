@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
+import type {
+  EditConflictHandler,
+  EditConflictPolicy,
+} from "./editing/editConflict";
 import type { EditEventHandler } from "./editing/editingEvents";
 import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
@@ -294,6 +298,22 @@ export interface BaseDataTableProps<TRow> {
    * this is the side-effect channel.
    */
   onEditError?: EditEventHandler<TRow>;
+  /**
+   * A row changed underneath an open editor. Return `"keep"` or `"take"` to
+   * resolve it; return nothing and {@link BaseDataTableProps.editConflictPolicy}
+   * decides. The default policy is `"ask"`.
+   */
+  onEditConflict?: EditConflictHandler<TRow>;
+  /**
+   * What to do when a live update disagrees with an open editor and the host
+   * did not choose. `"ask"` (default) surfaces Keep mine / Take theirs.
+   */
+  editConflictPolicy?: EditConflictPolicy;
+  /**
+   * Host version of a row. When set, any version change under an open editor
+   * is a conflict, not only a change to the edited column.
+   */
+  rowVersion?: (row: TRow) => string | number;
   /**
    * Add a row — an Add control appears in the toolbar as soon as this is set.
    * The host makes the row and stores it; it reaches the table through the

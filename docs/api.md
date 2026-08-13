@@ -82,6 +82,9 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `onEditCommit`              | `EditEventHandler<TRow>`                                        | —               | Observe a value reaching the host, after parse and validation.                                                                                                                                                                                                                                                                                                                   |
 | `onValidationFail`          | `EditEventHandler<TRow>`                                        | —               | Observe a validator refusing a value; the editor stays open.                                                                                                                                                                                                                                                                                                                     |
 | `onEditError`               | `EditEventHandler<TRow>`                                        | —               | Observe a save promise rejecting.                                                                                                                                                                                                                                                                                                                                                |
+| `onEditConflict`            | `EditConflictHandler<TRow>`                                     | —               | A row changed under an open editor. Return `"keep"` or `"take"`; omit and `editConflictPolicy` decides.                                                                                                                                                                                                                                                                          |
+| `editConflictPolicy`        | `"keep" \| "take" \| "ask"`                                     | `"ask"`         | What to do when the host does not choose. `"ask"` surfaces Keep mine / Take theirs.                                                                                                                                                                                                                                                                                              |
+| `rowVersion`                | `(row: TRow) => string \| number`                               | —               | Host version of a row. Any change under an open editor is a conflict, not only the edited column.                                                                                                                                                                                                                                                                                |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
 | `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
 | `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
@@ -332,6 +335,19 @@ the five together. `useCellEditing` accepts `UseCellEditingOptions` for start
 and cancel; a throw from any handler is swallowed so analytics cannot rewind a
 commit. The same events fire on a mobile card — the commit unit does not change
 with the layout.
+
+**Live-update conflicts.** A refetch or a websocket that changes the row under
+an open editor is a conflict, not a discard. `onEditConflict` (`EditConflictHandler<TRow>`)
+receives an `EditConflict<TRow>` (`row`, `previous`, `rowId`, `columnKey`,
+`draft`, `incomingValue`, `previousValue`) and may return `"keep"` or `"take"`
+(`EditConflictChoice`); returning nothing defers to `editConflictPolicy`
+(`EditConflictPolicy`, default `"ask"`). `"ask"` surfaces Keep mine / Take
+theirs on the same channel validation already owns (`aria-describedby`,
+`data-conflict`). `rowVersion` makes any version change a conflict, not only the
+edited column. `useEditConflict` (`EditConflictState` in, `ReconcileLiveEdit` the
+inspect input) is the headless state; `liveRowChanged` is the comparison.
+`labels.editConflict`, `labels.keepMine` and `labels.takeTheirs` name the notice.
+The same notice appears on a mobile card.
 
 **Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
 toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on

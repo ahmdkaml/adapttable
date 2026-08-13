@@ -39,6 +39,10 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
           <span className="hint">
             <Check size={12} /> Ctrl/Cmd+Z undoes · Ctrl/Cmd+F finds in place
           </span>
+          <span className="hint">
+            <Bolt size={12} /> Simulate live update asks Keep mine / Take theirs
+            while an editor is open
+          </span>
         </div>
         <div className="pad-surface__body">
           <MantineDemo

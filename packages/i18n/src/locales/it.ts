@@ -78,6 +78,9 @@ export const it: Required<TableLabels> = {
   deleteRow: "Elimina riga",
   deleteRowConfirm:
     "Eliminare questa riga? L'operazione non può essere annullata.",
+  editConflict: "Questa riga è cambiata mentre la stavi modificando",
+  keepMine: "Tieni il mio",
+  takeTheirs: "Prendi il nuovo",
   moreGroups: (remaining) => `Mostra altri ${remaining} gruppi`,
   moreRowsInGroup: (remaining) => `Mostra altri ${remaining} in questo gruppo`,
   groupTotal: (label) => `Totale ${label}`,

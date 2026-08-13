@@ -79,6 +79,9 @@ export const defaultLabels: Required<TableLabels> = {
   duplicateRow: "Duplicate row",
   deleteRow: "Delete row",
   deleteRowConfirm: "Delete this row? This cannot be undone.",
+  editConflict: "This row changed while you were editing",
+  keepMine: "Keep mine",
+  takeTheirs: "Take theirs",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

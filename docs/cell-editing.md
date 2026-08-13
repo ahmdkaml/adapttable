@@ -113,6 +113,30 @@ and optional `error`. For `onEditError`, `value` is the attempted save and
 `previousValue` is the cell's previous value. Omit every handler and nothing
 is called.
 
+### Live-update conflicts
+
+A refetch, a websocket, another user — the row under an open editor can change.
+The table does not merge. It can keep what you typed, take the incoming value,
+or ask. Silently discarding a draft is the one outcome nobody forgives, so the
+default is to ask.
+
+```tsx
+<DataTable
+  {...props}
+  onCellEdit={save}
+  editConflictPolicy="ask"
+  rowVersion={(row) => row.updatedAt}
+  onEditConflict={(conflict) => {
+    analytics.track("edit_conflict", conflict.columnKey);
+  }}
+/>
+```
+
+`onEditConflict` may return `"keep"` or `"take"` to resolve it; returning
+nothing uses the policy. `"ask"` puts Keep mine / Take theirs on the editor
+(`data-conflict`, the same `aria-describedby` channel as a validation message).
+Without `rowVersion`, only the edited column's stored value counts as a change.
+
 ### The editor set
 
 | `editor`                            | Control           | Commits                         |

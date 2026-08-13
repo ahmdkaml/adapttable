@@ -62,8 +62,8 @@ export function MuiCellEditor({
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
-        error={ctrl.error !== undefined}
-        helperText={ctrl.error}
+        error={ctrl.conflict === true ? false : ctrl.error !== undefined}
+        helperText={ctrl.conflict === true ? undefined : ctrl.error}
         slotProps={{
           htmlInput: {
             "aria-label": label,
@@ -91,8 +91,8 @@ export function MuiCellEditor({
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
       onBlur={ctrl.commitOnBlur}
-      error={ctrl.error !== undefined}
-      helperText={ctrl.error}
+      error={ctrl.conflict === true ? false : ctrl.error !== undefined}
+      helperText={ctrl.conflict === true ? undefined : ctrl.error}
       slotProps={{
         htmlInput: {
           "aria-label": label,

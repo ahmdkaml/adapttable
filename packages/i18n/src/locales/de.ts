@@ -80,6 +80,9 @@ export const de: Required<TableLabels> = {
   deleteRow: "Zeile löschen",
   deleteRowConfirm:
     "Diese Zeile löschen? Das kann nicht rückgängig gemacht werden.",
+  editConflict: "Diese Zeile hat sich während der Bearbeitung geändert",
+  keepMine: "Meins behalten",
+  takeTheirs: "Neues übernehmen",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

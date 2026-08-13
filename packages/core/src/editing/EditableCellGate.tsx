@@ -1,4 +1,5 @@
 import {
+  type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type ReactNode,
   useLayoutEffect,
@@ -50,6 +51,8 @@ export interface EditableCellEditorCtrl {
    * they just opened.
    */
   focusRef: (node: { focus: () => void } | null) => void;
+  /** A live row changed under this editor. */
+  conflict?: boolean;
 }
 
 /**
@@ -129,26 +132,88 @@ export function editorValidationProps(ctrl: EditableCellEditorCtrl): {
   "aria-invalid"?: true;
   "aria-describedby"?: string;
   "aria-busy"?: true;
+  "data-conflict"?: "";
 } {
   return {
     "aria-invalid": ctrl.error === undefined ? undefined : true,
     "aria-describedby": ctrl.error === undefined ? undefined : ctrl.errorId,
     "aria-busy": ctrl.validating ? true : undefined,
+    "data-conflict": ctrl.conflict === true ? "" : undefined,
   };
 }
 
 /**
- * Just the busy flag, for a kit whose own input owns `aria-invalid` and
- * `aria-describedby` (Mantine, MUI). Nothing else about an async check reaches
- * those components, so this is the one attribute still ours to set.
+ * Busy and conflict marks, for a kit whose own input owns `aria-invalid`
+ * (Mantine, MUI). `data-conflict` still belongs on the field so the same
+ * selector works on every kit; `aria-describedby` points at the notice
+ * while one is up.
  *
  * @param ctrl - The editor controller the gate handed the kit.
- * @returns The attribute to spread; empty unless a check is running.
+ * @returns Attributes to spread; empty unless a check is running or a
+ *   conflict is being asked.
  */
 export function editorBusyProps(ctrl: EditableCellEditorCtrl): {
   "aria-busy"?: true;
+  "aria-describedby"?: string;
+  "data-conflict"?: "";
 } {
-  return { "aria-busy": ctrl.validating ? true : undefined };
+  const describedBy =
+    ctrl.conflict === true ? { "aria-describedby": ctrl.errorId } : {};
+  return {
+    "aria-busy": ctrl.validating ? true : undefined,
+    ...describedBy,
+    "data-conflict": ctrl.conflict === true ? "" : undefined,
+  };
+}
+
+/** Keep mine / Take theirs — same channel as a validation message. */
+function ConflictNotice(
+  props: Readonly<{
+    ctrl: ReturnType<typeof editableCellController>;
+    errorId: string;
+    errorClassName?: string;
+  }>
+): ReactElement | null {
+  const { ctrl, errorId, errorClassName } = props;
+  if (ctrl.conflict === undefined || ctrl.conflictLabels === undefined) {
+    return null;
+  }
+  const holdFocus = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
+  return (
+    <span
+      id={errorId}
+      role="alert"
+      data-adapttable-part="edit-cell-conflict"
+      data-conflict=""
+      className={errorClassName}
+    >
+      {ctrl.conflictLabels.message}
+      <button
+        type="button"
+        data-adapttable-part="edit-cell-keep-mine"
+        onMouseDown={holdFocus}
+        onClick={(event) => {
+          event.stopPropagation();
+          ctrl.keepConflict();
+        }}
+      >
+        {ctrl.conflictLabels.keepMine}
+      </button>
+      <button
+        type="button"
+        data-adapttable-part="edit-cell-take-theirs"
+        onMouseDown={holdFocus}
+        onClick={(event) => {
+          event.stopPropagation();
+          ctrl.takeConflict();
+        }}
+      >
+        {ctrl.conflictLabels.takeTheirs}
+      </button>
+    </span>
+  );
 }
 
 /**
@@ -286,10 +351,15 @@ export function EditableCellGate<TRow>(
     return (
       <>
         {custom}
+        <ConflictNotice
+          ctrl={ctrl}
+          errorId={errorId}
+          errorClassName={props.errorClassName}
+        />
         {/* A kit that renders its own message does so through its own input,
             and a custom editor has none — so the message is always the gate's
             here, whatever the kit does for the built-in editors. */}
-        {ctrl.error !== undefined && (
+        {ctrl.conflict === undefined && ctrl.error !== undefined && (
           <span
             id={errorId}
             role="alert"
@@ -316,23 +386,32 @@ export function EditableCellGate<TRow>(
           error: ctrl.error,
           validating: ctrl.validating,
           errorId,
+          conflict: ctrl.conflict !== undefined,
           // One cell, so this editor is what takes focus.
           focusRef: focusEditorOnMount,
         })}
+        <ConflictNotice
+          ctrl={ctrl}
+          errorId={errorId}
+          errorClassName={props.errorClassName}
+        />
         {/* The message is in the DOM whatever the kit does with `error`, and
             it is a live region so it is heard the moment it appears — a
             rejected commit that only paints red says nothing to a reader who
-            cannot see it. */}
-        {ctrl.error !== undefined && props.kitRendersError !== true && (
-          <span
-            id={errorId}
-            role="alert"
-            data-adapttable-part="edit-cell-error"
-            className={props.errorClassName}
-          >
-            {ctrl.error}
-          </span>
-        )}
+            cannot see it. A conflict uses the same channel, so this span stays
+            off while that notice is up. */}
+        {ctrl.conflict === undefined &&
+          ctrl.error !== undefined &&
+          props.kitRendersError !== true && (
+            <span
+              id={errorId}
+              role="alert"
+              data-adapttable-part="edit-cell-error"
+              className={props.errorClassName}
+            >
+              {ctrl.error}
+            </span>
+          )}
       </>
     );
   }

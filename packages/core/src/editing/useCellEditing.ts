@@ -83,6 +83,21 @@ export interface CellEditingState {
     rowKey: (row: unknown) => string
   ) => void;
   /**
+   * The row the editor opened against, so a live update can be compared to
+   * what the reader started from.
+   */
+  openedRow: () => unknown;
+  /**
+   * Keep the draft and accept `row` as the new snapshot — the incoming
+   * change is acknowledged, the typing is not.
+   */
+  keepLive: (row: unknown) => void;
+  /**
+   * Replace the draft with `value` and accept `row` as the new snapshot —
+   * the reader takes the incoming cell.
+   */
+  takeLive: (row: unknown, value: string) => void;
+  /**
    * Keyboard flow:
    * - Enter → commit
    * - Escape → cancel (adapters restore focus)
@@ -238,6 +253,24 @@ export function useCellEditing<TRow = unknown>(
     [writeActive, writeDraft]
   );
 
+  const openedRow = useCallback(() => openedRef.current?.row, []);
+
+  const keepLive = useCallback((row: unknown) => {
+    const opened = openedRef.current;
+    if (!opened) return;
+    openedRef.current = { ...opened, row: row as TRow };
+  }, []);
+
+  const takeLive = useCallback(
+    (row: unknown, value: string) => {
+      const opened = openedRef.current;
+      if (!opened) return;
+      openedRef.current = { ...opened, row: row as TRow, initial: value };
+      writeDraft(value);
+    },
+    [writeDraft]
+  );
+
   const handleKeyDown = useCallback(
     (
       event: { key: string; preventDefault: () => void; shiftKey?: boolean },
@@ -295,6 +328,9 @@ export function useCellEditing<TRow = unknown>(
       cancel,
       close,
       discardIfRowMissing,
+      openedRow,
+      keepLive,
+      takeLive,
       handleKeyDown,
     }),
     [
@@ -307,6 +343,9 @@ export function useCellEditing<TRow = unknown>(
       cancel,
       close,
       discardIfRowMissing,
+      openedRow,
+      keepLive,
+      takeLive,
       handleKeyDown,
     ]
   );

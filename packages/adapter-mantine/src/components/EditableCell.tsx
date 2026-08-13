@@ -54,7 +54,7 @@ export function MantineCellEditor({
   if (isSelectEditor(ctrl.editor)) {
     return (
       <Select
-        error={ctrl.error}
+        error={ctrl.conflict === true ? undefined : ctrl.error}
         {...editorBusyProps(ctrl)}
         ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
@@ -75,7 +75,7 @@ export function MantineCellEditor({
 
   return (
     <TextInput
-      error={ctrl.error}
+      error={ctrl.conflict === true ? undefined : ctrl.error}
       {...editorBusyProps(ctrl)}
       ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"

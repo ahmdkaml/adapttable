@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import { focusEditorOnMount } from "./editableCellController";
-import { EditableCellGate } from "./EditableCellGate";
+import {
+  EditableCellGate,
+  editorBusyProps,
+  editorValidationProps,
+} from "./EditableCellGate";
 import { useCellEditing } from "./useCellEditing";
 
 interface Person {
@@ -122,5 +126,36 @@ describe("focusEditorOnMount", () => {
     focusEditorOnMount({ focus });
     expect(focus).toHaveBeenCalledTimes(1);
     focusEditorOnMount(null);
+  });
+});
+
+describe("editorValidationProps / editorBusyProps", () => {
+  const base = {
+    draft: "Ada",
+    setDraft: () => undefined,
+    onEditorKeyDown: () => undefined,
+    commitOnBlur: () => undefined,
+    editor: "text" as const,
+    selectOptions: [],
+    validating: false,
+    errorId: "err-1",
+    focusRef: () => undefined,
+  };
+
+  it("marks a conflict on both spreads", () => {
+    const ctrl = { ...base, conflict: true, error: "This row changed" };
+    expect(editorValidationProps(ctrl)["data-conflict"]).toBe("");
+    expect(editorValidationProps(ctrl)["aria-describedby"]).toBe("err-1");
+    expect(editorBusyProps(ctrl)["data-conflict"]).toBe("");
+    expect(editorBusyProps(ctrl)["aria-describedby"]).toBe("err-1");
+  });
+
+  it("stays empty while the value is fine", () => {
+    expect(editorValidationProps(base)["data-conflict"]).toBeUndefined();
+    expect(editorBusyProps(base)["data-conflict"]).toBeUndefined();
+    expect(editorBusyProps(base)["aria-busy"]).toBeUndefined();
+    // A missing key, not `undefined`: spreading `aria-describedby: undefined`
+    // onto MUI's input wipes the helperText description.
+    expect(editorBusyProps(base)).not.toHaveProperty("aria-describedby");
   });
 });
