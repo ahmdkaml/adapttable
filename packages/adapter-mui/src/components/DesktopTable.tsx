@@ -20,6 +20,7 @@ import {
   pinnedColumnWidth,
   rowClickProps,
   rowEditingSignature,
+  type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
   useSummaryCells,
@@ -192,6 +193,8 @@ interface DesktopRowProps<TRow> {
   onRowClick?: (row: TRow) => void;
   prefetch?: (row: TRow) => void;
   measureElement?: (element: Element | null) => void;
+  /** Measures a row together with its open detail panel. */
+  measureRowPair?: RowPairMeasurer;
   editLabel: string;
   editing: EditableCellEditing<TRow> | undefined;
   rows: readonly TRow[];
@@ -268,6 +271,7 @@ function DesktopRowImpl<TRow>({
   onRowClick,
   prefetch,
   measureElement,
+  measureRowPair,
   editLabel,
   editing,
   rows,
@@ -279,7 +283,7 @@ function DesktopRowImpl<TRow>({
         {...rowClickProps(row, onRowClick, index)}
         className={className}
         data-stagger=""
-        ref={measureElement}
+        ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-index={index}
         {...gridFocus?.getRowPropsAt(index)}
         hover
@@ -397,6 +401,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  measureRowPair,
   stickyHeader = false,
   stickyTop = 0,
   pinOffset,
@@ -756,6 +761,7 @@ export function DesktopTable<TRow>({
                     onRowClick={onRowClick}
                     prefetch={prefetch}
                     measureElement={measureElement}
+                    measureRowPair={measureRowPair}
                     editLabel={labels.editCell}
                     editing={editing}
                     rows={rows}
@@ -796,6 +802,7 @@ export function DesktopTable<TRow>({
                     onRowClick={onRowClick}
                     prefetch={prefetch}
                     measureElement={measureElement}
+                    measureRowPair={measureRowPair}
                     editLabel={labels.editCell}
                     editing={editing}
                     rows={rows}

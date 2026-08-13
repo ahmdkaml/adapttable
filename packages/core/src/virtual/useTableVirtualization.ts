@@ -6,6 +6,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { VIRTUAL_OVERSCAN } from "../constants";
+import { type RowPairMeasurer, useRowPairMeasurer } from "./measureRowPair";
 
 /** One row/card entry materialized from a virtual window. */
 export interface VirtualTableRow<TRow> {
@@ -31,6 +32,15 @@ export interface TableVirtualization<TRow> {
   paddingBottom: number;
   /** Element measurement callback for virtualized rows/cards. */
   measureElement?: (node: Element | null) => void;
+  /**
+   * Measure a row TOGETHER with its open detail panel.
+   *
+   * A table cannot nest a detail panel inside the row it belongs to, so the
+   * two are separate elements and the virtualizer would size the item from the
+   * row alone. These refs report the pair's real height instead — which is
+   * what lets row detail and virtualization be used together at all.
+   */
+  measureRowPair?: RowPairMeasurer;
 }
 
 /** Options for {@link useTableVirtualization}. */
@@ -55,6 +65,12 @@ export interface UseTableVirtualizationOptions<TRow> {
   getScrollElement?: () => Element | null;
   /** Called when the virtual window reaches the last source row. */
   onEndReached?: () => void;
+  /**
+   * Whether rows can expand. With detail panels in play the window measures
+   * each row together with its panel; without them the extra observers would
+   * be pure cost.
+   */
+  expandable?: boolean;
 }
 
 /** Resolve either virtual entries or the full source rows into render entries. */
@@ -102,6 +118,7 @@ export function useTableVirtualization<TRow>({
   scrollMargin = 0,
   getScrollElement,
   onEndReached,
+  expandable = false,
 }: UseTableVirtualizationOptions<TRow>): TableVirtualization<TRow> {
   const elementMode = getScrollElement !== undefined;
   // Stable identity, re-keyed ONLY when the data changes: the virtualizer
@@ -141,6 +158,7 @@ export function useTableVirtualization<TRow>({
 
   const virtualItems = virtualizer.getVirtualItems();
   const active = enabled && virtualItems.length > 0;
+  const measureRowPair = useRowPairMeasurer(virtualizer, enabled && expandable);
   const materializedRows = useMemo<readonly VirtualTableRow<TRow>[]>(() => {
     if (!active) {
       return rows.map((row, index) => ({
@@ -204,7 +222,10 @@ export function useTableVirtualization<TRow>({
     rows: materializedRows,
     paddingTop: Math.max(0, paddingTop),
     paddingBottom: Math.max(0, paddingBottom),
-    measureElement: virtualizer.measureElement,
+    // A row that can expand is measured as a PAIR; one that cannot keeps the
+    // virtualizer's own element measurement, which is cheaper.
+    measureElement: expandable ? undefined : virtualizer.measureElement,
+    measureRowPair: expandable ? measureRowPair : undefined,
   };
 }
 

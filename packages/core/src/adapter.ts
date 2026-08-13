@@ -124,6 +124,11 @@ export {
   type ToolbarChromeProps,
 } from "./useTableChrome";
 export {
+  type ResizableVirtualizer,
+  type RowPairMeasurer,
+  useRowPairMeasurer,
+} from "./virtual/measureRowPair";
+export {
   type KeyedVirtualization,
   resolveVirtualRows,
   useKeyedVirtualization,

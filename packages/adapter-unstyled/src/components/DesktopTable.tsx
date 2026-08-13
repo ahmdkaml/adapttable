@@ -25,6 +25,7 @@ import {
   type PinOffset,
   rowClickProps,
   rowEditingSignature,
+  type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
   useSummaryCells,
@@ -145,6 +146,8 @@ interface DesktopRowProps<TRow> {
   onToggleExpand: (id: string) => void;
   renderDetail: (row: TRow) => ReactNode;
   measureElement?: (element: Element | null) => void;
+  /** Measures a row together with its open detail panel. */
+  measureRowPair?: RowPairMeasurer;
 }
 
 /**
@@ -221,6 +224,7 @@ function DesktopRowBase<TRow>(
     onToggleExpand,
     renderDetail,
     measureElement,
+    measureRowPair,
   } = props;
   const expandable = expanded !== undefined;
   const leads: PinLeads = {
@@ -235,7 +239,7 @@ function DesktopRowBase<TRow>(
         {...table.getRowProps(row, index)}
         {...gridFocus?.getRowPropsAt(index)}
         {...rowClickProps(row, clickable ? onRowClick : undefined, index)}
-        ref={measureElement}
+        ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-adapttable-part="row"
         data-stagger=""
         data-selected={selected ? "" : undefined}
@@ -389,6 +393,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  measureRowPair,
   stickyHeader = false,
   stickyTop = 0,
   pinOffset,
@@ -789,6 +794,7 @@ export function DesktopTable<TRow>({
                   onToggleExpand={onToggleExpand}
                   renderDetail={renderDetail}
                   measureElement={measureElement}
+                  measureRowPair={measureRowPair}
                   editing={editing}
                   rows={rows}
                   getRowId={getRowId}
@@ -832,6 +838,7 @@ export function DesktopTable<TRow>({
                   onToggleExpand={onToggleExpand}
                   renderDetail={renderDetail}
                   measureElement={measureElement}
+                  measureRowPair={measureRowPair}
                   editing={editing}
                   rows={rows}
                   getRowId={getRowId}

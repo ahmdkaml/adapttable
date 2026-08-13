@@ -96,13 +96,15 @@ const FIXTURES = [
   //
   // Grouping grew on the same day: nesting, footers, ordering and the server's
   // own group rows all render through the entries every adapter already walks.
+  // Row detail then learned to be measured together with its row, which is
+  // what let it be used with virtualization at all.
   { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 67 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 64 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 66 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 65 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 64 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 65 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 72 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 68 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 70 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 66 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 

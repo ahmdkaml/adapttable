@@ -250,6 +250,7 @@ export function useDataTableShell<TRow>(
     paddingTop: virtualization.paddingTop,
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
+    measureRowPair: virtualization.measureRowPair,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
     pinOffset: chrome.columnLayout.pinOffset,

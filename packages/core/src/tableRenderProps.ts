@@ -25,6 +25,7 @@ import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
+import type { RowPairMeasurer } from "./virtual/measureRowPair";
 import {
   resolveVirtualRows,
   virtualColumnSpan,
@@ -91,6 +92,12 @@ export interface SharedTableRenderProps<TRow> {
   paddingBottom?: number;
   /** Ref callback that lets the virtualizer measure a row element. */
   measureElement?: (element: Element | null) => void;
+  /**
+   * Measure a row together with its open detail panel — used instead of
+   * `measureElement` when the table can expand rows, since the two are
+   * separate elements and the pair is what the window has to size.
+   */
+  measureRowPair?: RowPairMeasurer;
   /** Whether the header sticks to the top of the scroll box. */
   stickyHeader?: boolean;
   /** Offset (px) applied to the sticky header top. */

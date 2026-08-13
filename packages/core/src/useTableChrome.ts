@@ -681,11 +681,6 @@ export function useChromeBodyData<TRow>(
   // The chrome's view facade, so grouped full-set state (no next page, all
   // rows present) drives the sentinel and virtualization too.
   const { source } = chrome;
-  if (virtualize && props.renderRowDetail) {
-    devWarn(
-      "renderRowDetail with virtualize: desktop detail panels render as unmeasured sibling rows, so scroll heights can drift — prefer paged data with row details."
-    );
-  }
   if (virtualize && source.paginationMode === "paged") {
     devWarn(
       'virtualize only applies in infinite mode — this paged table renders unvirtualized. Pass paginationMode="infinite" to enable it.'
@@ -728,6 +723,10 @@ export function useChromeBodyData<TRow>(
     rows: source.rows,
     rowKey,
     enabled: virtualize && !groupingArmed && bodyEligible,
+    // Detail panels are separate elements from their rows, so the window
+    // measures the two together rather than sizing an expanded row from its
+    // top half.
+    expandable: props.renderRowDetail !== undefined,
     ...scrollOpts,
   });
 

@@ -27,6 +27,7 @@ import {
   type PinOffset,
   rowClickProps,
   rowEditingSignature,
+  type RowPairMeasurer,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
@@ -160,6 +161,8 @@ interface DesktopRowApi<TRow> {
   renderRowDetail?: (row: TRow) => ReactNode;
   pinOffset?: (key: string) => PinOffset | undefined;
   measureElement?: (element: Element | null) => void;
+  /** Measures a row together with its open detail panel. */
+  measureRowPair?: RowPairMeasurer;
   leads: PinLeads;
   hasStartPin: boolean;
   /** Actions cells stick: a data column is right-pinned OR actions are end-pinned. */
@@ -391,6 +394,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  measureRowPair,
   stickyHeader = false,
   stickyTop = 0,
   pinOffset,
@@ -505,6 +509,7 @@ export function DesktopTable<TRow>({
     renderRowDetail,
     pinOffset,
     measureElement,
+    measureRowPair,
     leads,
     hasStartPin,
     actionsStick,

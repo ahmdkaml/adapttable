@@ -410,6 +410,14 @@ the same entries local grouping produces. `groupLeafCount(entry)` is the count a
 header shows: the server's when it grouped, the rows in hand otherwise. See
 [row grouping](./row-grouping.md).
 
+**Virtualized row detail.** `useRowPairMeasurer(virtualizer, enabled)` returns
+`RowPairMeasurer` — `row(index)` and `detail(index)` ref callbacks — which
+report a row and its open panel as one height through the virtualizer's
+`resizeItem` (`ResizableVirtualizer`). It is what lets `renderRowDetail` and
+`virtualize` be used together; adapters take it as `measureRowPair` in place of
+`measureElement` when the table can expand rows. See
+[virtualization](./virtualization.md).
+
 **Row grouping.** `groupBy` takes a key or an ordered list; `parseGroupBy(value)`
 turns any of its forms (`GroupByInput`) into the key list and `formatGroupBy`
 back into the single comma-separated value state is stored as.

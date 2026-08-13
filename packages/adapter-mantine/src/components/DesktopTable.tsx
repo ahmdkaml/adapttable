@@ -22,6 +22,7 @@ import {
   resolveDisabledReason,
   rowClickProps,
   rowEditingSignature,
+  type RowPairMeasurer,
   type SharedTableRenderProps,
   tableRenderModel,
   useSummaryCells,
@@ -262,6 +263,8 @@ interface DesktopRowProps<TRow> {
   /** Resolved `rowClassName(row, index)` output. */
   className?: string;
   measureElement?: (element: Element | null) => void;
+  /** Measures a row together with its open detail panel. */
+  measureRowPair?: RowPairMeasurer;
   /** Pinned-cell style for a data column (output covered by `pinSignature`). */
   pinStyleFor: (key: string) => CSSProperties | undefined;
   selectionCellStyle?: CSSProperties;
@@ -404,6 +407,7 @@ function DesktopRowBase<TRow>({
   prefetch,
   className,
   measureElement,
+  measureRowPair,
   pinStyleFor,
   selectionCellStyle,
   expansionCellStyle,
@@ -422,7 +426,7 @@ function DesktopRowBase<TRow>({
         aria-selected={selected}
         {...rowClickProps(row, onRowClick, index)}
         className={className}
-        ref={measureElement}
+        ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-stagger=""
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
       >
@@ -528,6 +532,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  measureRowPair,
   stickyHeaderOffset = 0,
   stickyHeader = false,
   pinOffset,
@@ -898,6 +903,7 @@ export function DesktopTable<TRow>({
                     prefetch={prefetch}
                     className={rowClassName?.(entry.row, entry.index)}
                     measureElement={measureElement}
+                    measureRowPair={measureRowPair}
                     pinStyleFor={bodyPinStyle}
                     selectionCellStyle={selectionCellStyle}
                     expansionCellStyle={expansionCellStyle}
@@ -938,6 +944,7 @@ export function DesktopTable<TRow>({
                     prefetch={prefetch}
                     className={rowClassName?.(row, index)}
                     measureElement={measureElement}
+                    measureRowPair={measureRowPair}
                     pinStyleFor={bodyPinStyle}
                     selectionCellStyle={selectionCellStyle}
                     expansionCellStyle={expansionCellStyle}

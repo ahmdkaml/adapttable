@@ -671,10 +671,12 @@ describe("chrome row expansion", () => {
     );
   });
 
-  it("dev-warns when row details meet virtualization", () => {
+  it("measures a row with its panel rather than warning about the pair", () => {
+    // The warning this replaces existed because an open panel was unmeasured;
+    // the window now sizes the pair, so the combination is supported.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const adapter = createMemoryAdapter("");
-    renderHook(() => {
+    const { result } = renderHook(() => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
@@ -691,9 +693,10 @@ describe("chrome row expansion", () => {
       const chrome = useTableChrome<Row>(props);
       return useChromeBodyData<Row>(chrome, props);
     });
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("renderRowDetail with virtualize")
+    expect(warn.mock.calls.flat().join(" ")).not.toContain(
+      "renderRowDetail with virtualize"
     );
+    expect(result.current.virtualization.measureRowPair).toBeDefined();
     warn.mockRestore();
   });
 });
