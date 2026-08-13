@@ -293,6 +293,21 @@ export interface BaseDataTableProps<TRow> {
   /* ── Virtualization ──────────────────────────────────────────────── */
   /** Virtualize long infinite lists. Defaults to false. */
   virtualize?: boolean;
+  /**
+   * Window the COLUMNS as well as the rows, for tables that are wide rather
+   * than long: a hundred columns render as the two dozen a reader can see,
+   * plus a margin, with the rest held open by two spacer cells.
+   *
+   * Needs a horizontal scroll container, so it applies with `maxHeight` or
+   * pinned columns. Pinned columns are never windowed out — they are on screen
+   * by definition — and the spacers are logical, so a wide RTL table scrolls
+   * the right way.
+   *
+   * Not available in the Ant Design adapter, which renders through antd's own
+   * `<Table>`: that component owns its column rendering, and windowing it from
+   * outside would fight it rather than help.
+   */
+  virtualizeColumns?: boolean;
   /** Desktop row-size estimate in px. */
   estimateRowSize?: number;
   /** Mobile card-size estimate in px. */

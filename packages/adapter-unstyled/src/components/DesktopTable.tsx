@@ -15,6 +15,7 @@ import {
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
+  ColumnSpacer,
   FillHandle,
   headerGroupRow,
   isCurrentMatchCell,
@@ -101,7 +102,7 @@ interface DesktopRowProps<TRow> {
   id: string;
   /** Headless model (prop-getters); a fresh object every render — uncompared. */
   table: UseDataTableResult<TRow>;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
   /** `undefined` = no selection column; otherwise the row's selected state. */
@@ -113,6 +114,8 @@ interface DesktopRowProps<TRow> {
   confirm: ConfirmHandler;
   /** Full-width colSpan (expansion + selection + data + actions), core-computed. */
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
   /**
    * Comparator-only input: body cells inherit widths from the header's table
    * layout, but a width change must still re-render pinned rows (insets).
@@ -208,6 +211,7 @@ function DesktopRowBase<TRow>(
     rowActions,
     confirm,
     columnSpan,
+    columnSpacers,
     pinOffset,
     hasStartPin,
     hasEndPin,
@@ -277,6 +281,9 @@ function DesktopRowBase<TRow>(
             />
           </td>
         )}
+        {columnSpacers && (
+          <ColumnSpacer width={columnSpacers.start} side="start" />
+        )}
         {columns.map((column, colIndex) => {
           const pinStyle = bodyPinStyle(column.key);
           const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
@@ -330,6 +337,7 @@ function DesktopRowBase<TRow>(
             </td>
           );
         })}
+        {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <td
             data-adapttable-part="actions-cell"
@@ -403,19 +411,28 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  columnWindow,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
-  const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({
-      table,
-      rows,
-      rowActions,
-      getRowId,
-      rowEntries,
-      renderRowDetail,
-      expansion,
-    });
+  const {
+    columns,
+    selection,
+    labels,
+    showActions,
+    entries,
+    columnSpan,
+    columnSpacers,
+  } = tableRenderModel({
+    table,
+    rows,
+    columnWindow,
+    rowActions,
+    getRowId,
+    rowEntries,
+    renderRowDetail,
+    expansion,
+  });
   // The actions column sticks when the user end-pins IT in the Columns menu —
   // independently of any data pin on that side (and only while it renders).
   const stickActions = showActions && actionsPinned;
@@ -640,6 +657,9 @@ export function DesktopTable<TRow>({
               />
             </th>
           )}
+          {columnSpacers && (
+            <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
+          )}
           {columns.map((column, headerIndex) => {
             // Route the local sticky/pin/width style THROUGH the prop-getter
             // so it merges with core's alignment + declared width instead of
@@ -711,6 +731,9 @@ export function DesktopTable<TRow>({
               </th>
             );
           })}
+          {columnSpacers && (
+            <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+          )}
           {showActions && (
             <th
               data-adapttable-part="actions-header"

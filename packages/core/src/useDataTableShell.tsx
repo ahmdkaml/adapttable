@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
@@ -24,6 +24,7 @@ import {
   useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
+import { useColumnWindow } from "./virtual/useColumnWindow";
 
 /**
  * The kit-agnostic prop surface every batteries-included `<DataTable>` shares:
@@ -217,8 +218,21 @@ export function useDataTableShell<TRow>(
     groupingEntries,
     loadMoreRef,
     canLoadMore,
-    virtualScrollRef,
+    virtualScrollRef: bodyScrollRef,
   } = useChromeBodyData(chrome, chromeProps);
+  // One scroll box, two windows: the rows track its vertical scrolling and the
+  // columns its horizontal, so the adapters attach a single ref.
+  const scrollBoxElement = useRef<HTMLElement | null>(null);
+  const virtualScrollRef = useCallback(
+    (node: HTMLElement | null) => {
+      scrollBoxElement.current = node;
+      // Name the element every kit scrolls, whatever it called it: both
+      // windows read it, and CSS and tests need to be able to find it.
+      node?.setAttribute("data-adapttable-part", "scroll-box");
+      bodyScrollRef(node);
+    },
+    [bodyScrollRef]
+  );
 
   // The injected actions column is first-class in column management: the layout
   // state treats its reserved key like any column key, so the Columns menu can
@@ -230,6 +244,19 @@ export function useDataTableShell<TRow>(
     : props.rowActions;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+
+  // The horizontal window reads the same scroll box the vertical one does.
+  const columnWindow = useColumnWindow<TRow>({
+    columns: chrome.columnLayout.visibleColumns,
+    enabled: props.virtualizeColumns === true,
+    widths: chrome.columnLayout.state.widths,
+    pinnedKeys: new Set(
+      Object.keys(chrome.columnLayout.state.pinned).filter(
+        (key) => chrome.columnLayout.state.pinned[key] !== undefined
+      )
+    ),
+    getScrollElement: () => scrollBoxElement.current,
+  });
 
   const grouping =
     chrome.grouping && groupingEntries
@@ -251,6 +278,7 @@ export function useDataTableShell<TRow>(
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
     measureRowPair: virtualization.measureRowPair,
+    columnWindow,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
     pinOffset: chrome.columnLayout.pinOffset,

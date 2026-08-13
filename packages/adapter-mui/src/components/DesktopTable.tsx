@@ -14,6 +14,7 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  ColumnSpacer,
   FillHandle,
   headerGroupRow,
   type PinLeads,
@@ -167,10 +168,12 @@ interface DesktopRowProps<TRow> {
   gridFocus?: GridFocusState;
   selected: boolean;
   expanded: boolean;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   sx: DesktopRowSx;
   /** Full spacer span, INCLUDING the expand column when present. */
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
   size: "small" | "medium";
   dir?: "ltr" | "rtl";
   className?: string;
@@ -253,6 +256,7 @@ function DesktopRowImpl<TRow>({
   columns,
   sx,
   columnSpan,
+  columnSpacers,
   dir,
   className,
   hasSelection,
@@ -311,6 +315,9 @@ function DesktopRowImpl<TRow>({
             />
           </TableCell>
         )}
+        {columnSpacers && (
+          <ColumnSpacer width={columnSpacers.start} side="start" />
+        )}
         {columns.map((column, colIndex) => {
           const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
           return (
@@ -346,6 +353,7 @@ function DesktopRowImpl<TRow>({
             </TableCell>
           );
         })}
+        {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <TableCell sx={sx.actions}>
             <RowActionButtons
@@ -411,19 +419,28 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  columnWindow,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
-  const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({
-      table,
-      rows,
-      rowActions,
-      getRowId,
-      rowEntries,
-      renderRowDetail,
-      expansion,
-    });
+  const {
+    columns,
+    selection,
+    labels,
+    showActions,
+    entries,
+    columnSpan,
+    columnSpacers,
+  } = tableRenderModel({
+    table,
+    rows,
+    columnWindow,
+    rowActions,
+    getRowId,
+    rowEntries,
+    renderRowDetail,
+    expansion,
+  });
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
   const groupRow = headerGroupRow(columns);
@@ -627,6 +644,9 @@ export function DesktopTable<TRow>({
                 />
               </TableCell>
             )}
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
+            )}
             {columns.map((column, headerIndex) => {
               const headerCellProps = table.getHeaderCellProps(column);
               // Core reports aria-sort="none" for sortable-but-inactive
@@ -688,6 +708,9 @@ export function DesktopTable<TRow>({
                 </TableCell>
               );
             })}
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+            )}
             {showActions && (
               <TableCell
                 sx={{ ...edgeHeadSx("end", stickActions), textAlign: "end" }}

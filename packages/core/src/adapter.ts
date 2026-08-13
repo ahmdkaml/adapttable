@@ -123,11 +123,17 @@ export {
   type TableBodyRegion,
   type ToolbarChromeProps,
 } from "./useTableChrome";
+export { ColumnSpacer, type ColumnSpacerProps } from "./virtual/ColumnSpacer";
 export {
   type ResizableVirtualizer,
   type RowPairMeasurer,
   useRowPairMeasurer,
 } from "./virtual/measureRowPair";
+export {
+  type ColumnWindow,
+  useColumnWindow,
+  type UseColumnWindowOptions,
+} from "./virtual/useColumnWindow";
 export {
   type KeyedVirtualization,
   resolveVirtualRows,

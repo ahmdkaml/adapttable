@@ -4675,6 +4675,16 @@ the same entries local grouping produces. `groupLeafCount(entry)` is the count a
 header shows: the server's when it grouped, the rows in hand otherwise. See
 [row grouping](./row-grouping.md).
 
+**Column virtualization.** `useColumnWindow(options)` windows the horizontal
+axis (`UseColumnWindowOptions` in, `ColumnWindow` out — the columns to render
+and the `paddingStart` / `paddingEnd` that hold the rest open), and
+`ColumnSpacer` / `ColumnSpacerProps` from `@adapttable/core/adapter` render one
+of those spacers.
+The render model swaps the windowed columns in, so an adapter maps over
+`model.columns` as before and renders `model.columnSpacers` either side. On
+`<DataTable>` the prop is `virtualizeColumns`. See
+[virtualization](./virtualization.md).
+
 **Virtualized row detail.** `useRowPairMeasurer(virtualizer, enabled)` returns
 `RowPairMeasurer` — `row(index)` and `detail(index)` ref callbacks — which
 report a row and its open panel as one height through the virtualizer's

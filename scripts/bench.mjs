@@ -91,6 +91,15 @@ const SCENARIOS = [
     smoke: false,
     expect: { maxDomRows: 60 },
   },
+  // The horizontal A/B pair: same table, same rows, columns windowed or not.
+  // The cell count is the number that moves, and it is the whole point of
+  // windowing an axis nobody scrolls to the end of.
+  {
+    name: "wide · 500 columns, windowed (A/B arm)",
+    query: "rows=5000&cols=500&virtualizeColumns=1",
+    smoke: false,
+    expect: { maxDomRows: 60, maxCells: 3000 },
+  },
   {
     name: "grouped by status",
     query: "rows=20000&scale.groupBy=status",
@@ -234,6 +243,11 @@ function verdict(result, expect = {}) {
   if (expect.minDomRows !== undefined && result.domRows < expect.minDomRows) {
     failures.push(`${result.domRows} DOM rows < ${expect.minDomRows}`);
   }
+  // Cells are the number a wide table lives or dies by: windowing the rows of
+  // a 500-column table still leaves eleven thousand of them.
+  if (expect.maxCells !== undefined && result.domCells > expect.maxCells) {
+    failures.push(`${result.domCells} cells > ${expect.maxCells}`);
+  }
   return failures;
 }
 
@@ -342,6 +356,19 @@ if (JSON_OUT) {
         (on.heapMB && off.heapMB
           ? `, ${off.heapMB - on.heapMB}MB less heap`
           : "")
+    );
+  }
+  // The same claim on the other axis: a wide table renders the columns a
+  // reader can see, not the ones the schema has.
+  const wideOn = results.find((r) => r.query.includes("virtualizeColumns=1"));
+  const wideOff = results.find(
+    (r) =>
+      r.query.includes("cols=500") && !r.query.includes("virtualizeColumns")
+  );
+  if (wideOn && wideOff) {
+    console.log(
+      `windowing 500 columns: ${Math.round(wideOff.domCells / wideOn.domCells)}x ` +
+        `fewer DOM cells (${wideOff.domCells} → ${wideOn.domCells})`
     );
   }
   console.log(

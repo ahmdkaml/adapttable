@@ -85,7 +85,7 @@ function SummaryCard<TRow>({
   summaryRow,
 }: Readonly<{
   rows: readonly TRow[];
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   summaryRow: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
 }>) {
   const cells = useSummaryCells(summaryRow, rows) ?? {};
@@ -113,7 +113,7 @@ interface CardItemProps<TRow> {
   rowIndex: number;
   /** Stable row id (selection / expansion key). */
   id: string;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: readonly RowAction<TRow>[];

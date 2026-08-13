@@ -17,6 +17,7 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  ColumnSpacer,
   FillHandle,
   headerGroupRow,
   logicalAlign,
@@ -181,7 +182,7 @@ interface DesktopRowProps<TRow> {
   size: RadixSize;
   accentColor?: RadixAccentColor;
   dir?: Direction;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   columnWidths?: Readonly<Record<string, number>>;
   /** Serialized pin geometry — stands in for the `pinOffset` closure. */
   pinSignature: string;
@@ -194,6 +195,8 @@ interface DesktopRowProps<TRow> {
   hasRowClick: boolean;
   /** Spacer/detail colSpan (selection + data + actions + expansion). */
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
   /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
@@ -241,6 +244,7 @@ function DesktopRowBase<TRow>({
   showActions,
   hasRowClick,
   columnSpan,
+  columnSpacers,
   api,
   measureRef,
   editing,
@@ -293,6 +297,9 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
+        {columnSpacers && (
+          <ColumnSpacer width={columnSpacers.start} side="start" />
+        )}
         {columns.map((column, colIndex) => {
           const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
           return (
@@ -335,6 +342,7 @@ function DesktopRowBase<TRow>({
             </Table.Cell>
           );
         })}
+        {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <Table.Cell
             justify="end"
@@ -404,20 +412,29 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  columnWindow,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
   // so spacer and detail rows span it without local `+ 1` math.
-  const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({
-      table,
-      rows,
-      rowActions,
-      getRowId,
-      rowEntries,
-      renderRowDetail,
-      expansion,
-    });
+  const {
+    columns,
+    selection,
+    labels,
+    showActions,
+    entries,
+    columnSpan,
+    columnSpacers,
+  } = tableRenderModel({
+    table,
+    rows,
+    columnWindow,
+    rowActions,
+    getRowId,
+    rowEntries,
+    renderRowDetail,
+    expansion,
+  });
   const expandable = expansion !== undefined;
   const groups = headerGroupRow(columns);
   const summary = useSummaryCells(summaryRow, rows);
@@ -622,6 +639,9 @@ export function DesktopTable<TRow>({
                 />
               </Table.ColumnHeaderCell>
             )}
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
+            )}
             {columns.map((column, headerIndex) => {
               const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
                 | "ascending"
@@ -699,6 +719,9 @@ export function DesktopTable<TRow>({
                 </Table.ColumnHeaderCell>
               );
             })}
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+            )}
             {showActions && (
               <Table.ColumnHeaderCell
                 justify="end"

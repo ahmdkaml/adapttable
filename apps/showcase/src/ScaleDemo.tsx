@@ -144,6 +144,7 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
 function scaleParams(): {
   total: number;
   virtual: boolean;
+  virtualCols: boolean;
   all: boolean;
   cols: number;
   server: boolean;
@@ -158,6 +159,7 @@ function scaleParams(): {
     server: false,
     edit: false,
     patches: 0,
+    virtualCols: false,
   };
   if (typeof window === "undefined") return DEFAULTS;
   const p = new URLSearchParams(window.location.search);
@@ -168,6 +170,7 @@ function scaleParams(): {
   return {
     total: int("rows") || DEFAULTS.total,
     virtual: p.get("virtualize") !== "0",
+    virtualCols: p.get("virtualizeColumns") === "1",
     all: p.get("all") === "1",
     cols: int("cols"),
     server: p.get("tier") === "server",
@@ -246,11 +249,13 @@ function ServerScaleTable({
   total,
   columns,
   virtual,
+  virtualCols,
   dark,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
   virtual: boolean;
+  virtualCols: boolean;
   dark: boolean;
 }>) {
   const [page, setPage] = useState({ from: 0, limit: 500 });
@@ -280,6 +285,7 @@ function ServerScaleTable({
         labels={getLabels("en")}
         searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
         virtualize={virtual}
+        virtualizeColumns={virtualCols}
         estimateRowSize={48}
         stickyHeader
         stickyTop={62}
@@ -290,7 +296,8 @@ function ServerScaleTable({
 
 /** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const { total, virtual, all, cols, server, edit, patches } = scaleParams();
+  const { total, virtual, virtualCols, all, cols, server, edit, patches } =
+    scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
   if (server) {
     return (
@@ -298,6 +305,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
         total={total}
         columns={columns}
         virtual={virtual}
+        virtualCols={virtualCols}
         dark={dark}
       />
     );
@@ -307,6 +315,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
       total={total}
       columns={columns}
       virtual={virtual}
+      virtualCols={virtualCols}
       all={all}
       edit={edit}
       patches={patches}
@@ -320,6 +329,7 @@ function FrontendScaleTable({
   total,
   columns,
   virtual,
+  virtualCols,
   all,
   edit,
   patches,
@@ -328,6 +338,7 @@ function FrontendScaleTable({
   total: number;
   columns: ColumnDef<BigPerson>[];
   virtual: boolean;
+  virtualCols: boolean;
   all: boolean;
   edit: boolean;
   patches: number;
@@ -383,6 +394,7 @@ function FrontendScaleTable({
           labels={getLabels("en")}
           searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
           virtualize={virtual}
+          virtualizeColumns={virtualCols}
           estimateRowSize={48}
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.

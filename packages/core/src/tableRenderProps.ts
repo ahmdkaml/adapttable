@@ -26,6 +26,7 @@ import type { SelectionState } from "./selection/useSelection";
 import type { ColumnDef, RowAction, TableLabels } from "./types";
 import type { UseDataTableResult } from "./useDataTable/useDataTable";
 import type { RowPairMeasurer } from "./virtual/measureRowPair";
+import type { ColumnWindow } from "./virtual/useColumnWindow";
 import {
   resolveVirtualRows,
   virtualColumnSpan,
@@ -98,6 +99,12 @@ export interface SharedTableRenderProps<TRow> {
    * separate elements and the pair is what the window has to size.
    */
   measureRowPair?: RowPairMeasurer;
+  /**
+   * The windowed columns, when the table windows its horizontal axis. The
+   * render model swaps them in, so adapters map over `model.columns` exactly
+   * as before and render the two spacer cells `columnSpacers` describes.
+   */
+  columnWindow?: ColumnWindow<TRow>;
   /** Whether the header sticks to the top of the scroll box. */
   stickyHeader?: boolean;
   /** Offset (px) applied to the sticky header top. */
@@ -121,7 +128,7 @@ export interface SharedTableRenderProps<TRow> {
 
 /** The shared prelude every table/card renderer derives before rendering. */
 export interface TableRenderModel<TRow> {
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   /** Whether a trailing actions column/section renders. */
@@ -130,6 +137,12 @@ export interface TableRenderModel<TRow> {
   entries: readonly VirtualTableRow<TRow>[];
   /** Spacer/detail colSpan: expansion + selection + data + actions. */
   columnSpan: number;
+  /**
+   * Widths of the spacer cells holding open the columns outside the window,
+   * or `undefined` when every column is rendered. A row renders one before its
+   * cells and one after them.
+   */
+  columnSpacers?: { start: number; end: number };
 }
 
 /**
@@ -149,9 +162,16 @@ export function tableRenderModel<TRow>(
     | "rowEntries"
     | "renderRowDetail"
     | "expansion"
+    | "columnWindow"
   >
 ): TableRenderModel<TRow> {
-  const { columns, selection, labels } = props.table;
+  const { selection, labels } = props.table;
+  // Windowed columns replace the full set for every renderer at once, so no
+  // adapter has to know whether the horizontal axis is windowed.
+  const windowed = props.columnWindow?.enabled === true;
+  const columns = windowed
+    ? (props.columnWindow?.columns ?? props.table.columns)
+    : props.table.columns;
   const showActions = (props.rowActions?.length ?? 0) > 0;
   const entries = resolveVirtualRows(
     props.rows,
@@ -164,12 +184,19 @@ export function tableRenderModel<TRow>(
     labels,
     showActions,
     entries,
-    columnSpan: virtualColumnSpan(
-      columns.length,
-      Boolean(selection),
-      showActions,
-      Boolean(props.renderRowDetail && props.expansion)
-    ),
+    columnSpan:
+      virtualColumnSpan(
+        columns.length,
+        Boolean(selection),
+        showActions,
+        Boolean(props.renderRowDetail && props.expansion)
+      ) + (windowed ? 2 : 0),
+    columnSpacers: windowed
+      ? {
+          start: props.columnWindow?.paddingStart ?? 0,
+          end: props.columnWindow?.paddingEnd ?? 0,
+        }
+      : undefined,
   };
 }
 

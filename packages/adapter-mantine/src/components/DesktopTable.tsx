@@ -15,6 +15,7 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  ColumnSpacer,
   FillHandle,
   headerGroupRow,
   type PinLeads,
@@ -235,7 +236,7 @@ interface DesktopRowProps<TRow> {
   index: number;
   /** Stable row id from `getRowId`. */
   id: string;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   /** Core's cell prop-getter — identity-stable for the table's lifetime. */
   getCellProps: UseDataTableResult<TRow>["getCellProps"];
   /** Cell-navigation getters; absent unless `cellNavigation` is on. */
@@ -254,6 +255,8 @@ interface DesktopRowProps<TRow> {
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Detail-cell span: expansion + selection + data + actions columns. */
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   cancelLabel: string;
@@ -399,6 +402,7 @@ function DesktopRowBase<TRow>({
   onToggleExpand,
   renderRowDetail,
   columnSpan,
+  columnSpacers,
   rowActions,
   confirm,
   cancelLabel,
@@ -449,6 +453,9 @@ function DesktopRowBase<TRow>({
             />
           </Table.Td>
         )}
+        {columnSpacers && (
+          <ColumnSpacer width={columnSpacers.start} side="start" />
+        )}
         {columns.map((column, colIndex) => {
           const focusProps = gridFocus?.getCellPropsAt(index, colIndex);
           return (
@@ -490,6 +497,7 @@ function DesktopRowBase<TRow>({
             </Table.Td>
           );
         })}
+        {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <Table.Td ta="end" style={actionsCellStyle}>
             <RowActions
@@ -543,20 +551,29 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   actionsPinned = false,
   density = "comfortable",
+  columnWindow,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
   // `renderRowDetail` + `expansion` are wired.
-  const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({
-      table,
-      rows,
-      rowActions,
-      getRowId,
-      rowEntries,
-      renderRowDetail,
-      expansion,
-    });
+  const {
+    columns,
+    selection,
+    labels,
+    showActions,
+    entries,
+    columnSpan,
+    columnSpacers,
+  } = tableRenderModel({
+    table,
+    rows,
+    columnWindow,
+    rowActions,
+    getRowId,
+    rowEntries,
+    renderRowDetail,
+    expansion,
+  });
   // Expansion state only exists when `renderRowDetail` is set (the chrome
   // couples them), so its presence alone decides the leading chevron column.
   const expandable = expansion !== undefined;
@@ -895,6 +912,7 @@ export function DesktopTable<TRow>({
                     onToggleExpand={expansion?.toggle}
                     renderRowDetail={renderRowDetail}
                     columnSpan={columnSpan}
+                    columnSpacers={columnSpacers}
                     rowActions={rowActions}
                     confirm={confirm}
                     cancelLabel={labels.cancel}
@@ -936,6 +954,7 @@ export function DesktopTable<TRow>({
                     onToggleExpand={expansion?.toggle}
                     renderRowDetail={renderRowDetail}
                     columnSpan={columnSpan}
+                    columnSpacers={columnSpacers}
                     rowActions={rowActions}
                     confirm={confirm}
                     cancelLabel={labels.cancel}

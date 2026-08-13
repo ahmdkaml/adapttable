@@ -30,7 +30,7 @@ interface MobileCardProps<TRow> {
   index: number;
   /** Stable row id (selection / expansion key). */
   id: string;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: RowAction<TRow>[];
