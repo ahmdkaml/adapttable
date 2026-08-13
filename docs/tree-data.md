@@ -116,6 +116,42 @@ Headless: `useLazyChildren` holds the state (`LazyChildrenState`, options
 `UseLazyChildrenOptions`) and the table's tree bundle exposes `loadingIds` and
 `failedIds`.
 
+## The whole tree on the server
+
+A browser holding one page cannot know what is under a branch it has never seen,
+so a large hierarchy belongs to the side that has the data. Declare the
+capability and hand the source the open set:
+
+```tsx
+const [expandedIds, setExpandedIds] = useState<string[]>([]);
+
+const source = useQuerySource<Node, Params, Page>({
+  queryKey: ["files", expandedIds],
+  queryFn: fetchFiles,
+  supports: { tree: true },
+  expandedIds,
+});
+
+<DataTable
+  source={source}
+  columns={columns}
+  rowKey={(row) => row.id}
+  getParentId={(row) => row.parentId}
+  hasChildren={(row) => row.childCount > 0}
+  expandedIds={expandedIds}
+  onExpandedIdsChange={setExpandedIds}
+/>;
+```
+
+The query carries `expandedIds` — the ids the reader has open — and the response
+returns the rows of the tree that are visible: the roots, plus the children of
+every open node, each with its `parentId`. The table assembles the hierarchy from
+what arrived, so no row model changes between tiers.
+
+Without `supports: { tree: true }` the field is never sent, and development says
+so once rather than letting a server quietly ignore it. The same is true of
+`useServerData`, which takes `expandedIds` in the same place.
+
 ## Mobile
 
 Cards keep the hierarchy. Each card steps in by its depth (logical margin, so

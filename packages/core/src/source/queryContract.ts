@@ -26,6 +26,13 @@ import { devWarn } from "../utils/devWarn";
 export interface QuerySupport {
   /** Grouping keys reach the server, which returns group rows. */
   grouping?: boolean;
+  /**
+   * The open tree nodes reach the server, which returns the rows of the
+   * hierarchy that are visible — the roots, plus the children of every node
+   * the reader has opened. The only correct place for a large tree: a browser
+   * holding one page cannot know what is under a branch it has never seen.
+   */
+  tree?: boolean;
   /** Aggregate requests reach the server, which computes the values. */
   aggregates?: boolean;
   /** The nested AND/OR condition tree reaches the server. */
@@ -105,11 +112,18 @@ export interface QueryExtensions {
   facets?: readonly string[];
   /** Opaque cursor from the previous response, when paginating by cursor. */
   cursor?: string;
+  /**
+   * The ids of the tree nodes the reader has open, so the server can return
+   * their children with the page. Empty means a folded tree — the roots and
+   * nothing else.
+   */
+  expandedIds?: readonly string[];
 }
 
 /** The capability each extension field needs before the table will send it. */
 const REQUIRES: Record<keyof QueryExtensions, keyof QuerySupport> = {
   groupBy: "grouping",
+  expandedIds: "tree",
   aggregates: "aggregates",
   filterTree: "filterTree",
   facets: "facets",
@@ -119,6 +133,7 @@ const REQUIRES: Record<keyof QueryExtensions, keyof QuerySupport> = {
 /** Human-readable reason, so a warning tells the reader what to do next. */
 const REMEDY: Record<keyof QuerySupport, string> = {
   grouping: "return group rows for `query.groupBy`",
+  tree: "return the children of every node in `query.expandedIds`",
   aggregates: "compute `query.aggregates`",
   filterTree: "evaluate `query.filterTree`",
   facets: "return counts for `query.facets`",

@@ -87,6 +87,14 @@ export interface UseServerDataOptions<TRow> extends Pick<
    */
   supports?: QuerySupport;
   /**
+   * The tree nodes the reader has open, when the hierarchy lives on the server.
+   * Sent as `query.expandedIds` only if the source declares
+   * `supports: { tree: true }`, so the response can carry the children of every
+   * open branch alongside the page. Hold the same array in the table's
+   * `expandedIds` and one piece of state drives both.
+   */
+  expandedIds?: readonly string[];
+  /**
    * Fired with the consolidated {@link TableQuery} whenever it changes —
    * including once on mount with the URL-restored values. The previous
    * call's `signal` is aborted when a newer query supersedes it; forward it
@@ -125,6 +133,7 @@ export function useServerData<TRow>(
     paginationMode = "auto",
     forceMobile,
     supports,
+    expandedIds,
     onQueryChange,
     ...urlOptions
   } = options;
@@ -160,7 +169,7 @@ export function useServerData<TRow>(
       // Everything past the baseline is gated on what the source declared —
       // an undeclared capability is dropped here, never sent and ignored.
       ...applyQuerySupport(
-        { groupBy: groupBy ? [groupBy] : undefined, cursor },
+        { groupBy: groupBy ? [groupBy] : undefined, cursor, expandedIds },
         supports
       ),
     }),
@@ -175,6 +184,7 @@ export function useServerData<TRow>(
       groupBy,
       cursor,
       supports,
+      expandedIds,
     ]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire

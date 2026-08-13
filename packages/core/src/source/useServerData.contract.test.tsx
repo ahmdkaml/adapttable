@@ -20,7 +20,11 @@ interface Row {
 }
 
 /** Mount the server tier with a URL that already has grouping active. */
-function mount(supports?: QuerySupport, url = "groupBy=team") {
+function mount(
+  supports?: QuerySupport,
+  url = "groupBy=team",
+  expandedIds?: readonly string[]
+) {
   const seen: TableQuery[] = [];
   const adapter = createMemoryAdapter(url);
   function Harness() {
@@ -30,6 +34,7 @@ function mount(supports?: QuerySupport, url = "groupBy=team") {
       urlAdapter: adapter,
       forceMobile: false,
       supports,
+      expandedIds,
       onQueryChange: (query) => {
         seen.push(query);
       },
@@ -82,5 +87,17 @@ describe("the query a server receives", () => {
     expect(vi.mocked(console.warn).mock.calls[0]?.[0]).toContain(
       "supports.grouping"
     );
+  });
+
+  it("sends the open tree nodes to a source that answers trees", async () => {
+    const { seen } = mount({ tree: true }, "", ["src", "lib"]);
+    await waitFor(() => expect(seen.length).toBeGreaterThan(0));
+    expect(seen[0]?.expandedIds).toEqual(["src", "lib"]);
+  });
+
+  it("keeps the open nodes to itself when the source never declared trees", async () => {
+    const { seen } = mount(undefined, "", ["src"]);
+    await waitFor(() => expect(seen.length).toBeGreaterThan(0));
+    expect(seen[0]).not.toHaveProperty("expandedIds");
   });
 });

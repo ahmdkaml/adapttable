@@ -92,6 +92,14 @@ export interface UseQuerySourceOptions<
    */
   aggregates?: readonly QueryAggregate[];
   /**
+   * The tree nodes the reader has open, when the hierarchy lives on the server.
+   * Sent as `expandedIds` only if the source declares
+   * `supports: { tree: true }`, so the response can carry the children of every
+   * open branch alongside the page. Hold the same array in the table's
+   * `expandedIds` and one piece of state drives both.
+   */
+  expandedIds?: readonly string[];
+  /**
    * The token that opens the NEXT page, read from the page the query just
    * returned — pass it and declare `supports: { cursor: true }` to page by
    * cursor instead of by offset.
@@ -129,6 +137,7 @@ export function useQuerySource<
     forceMobile,
     supports,
     aggregates,
+    expandedIds,
     nextCursor,
     ...urlOptions
   } = options;
@@ -170,7 +179,7 @@ export function useQuerySource<
     Object.assign(
       merged,
       applyQuerySupport(
-        { cursor, groupBy: parseGroupBy(groupBy), aggregates },
+        { cursor, groupBy: parseGroupBy(groupBy), aggregates, expandedIds },
         supports
       )
     );
@@ -188,6 +197,7 @@ export function useQuerySource<
     sanitizeParams,
     cursor,
     aggregates,
+    expandedIds,
     supports,
   ]);
 

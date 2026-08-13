@@ -487,7 +487,9 @@ its chevron and its indent (every other column passes through), and `TreeToggle`
 / `TreeToggleProps` render the chevron itself. Lazy branches are
 `hasChildren` + `onLoadChildren`: `useLazyChildren(options)` holds which nodes
 are fetching (`LazyChildrenState`, `UseLazyChildrenOptions` in) and the tree
-bundle carries `loadingIds` / `failedIds`.
+bundle carries `loadingIds` / `failedIds`. A server-side tree is
+`supports: { tree: true }` plus `expandedIds` on `useServerData` /
+`useQuerySource`, which sends the open ids as `query.expandedIds`.
 See [tree data](./tree-data.md).
 
 **Find in table.** `findMatches(options)` returns every cell whose text
