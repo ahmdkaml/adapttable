@@ -83,6 +83,39 @@ with `getParentId` and the table assembles the hierarchy itself:
 Rows whose parent is not in the data are roots — so a filtered page still
 renders rather than vanishing into a parent that never arrived.
 
+## Children fetched when a branch is opened
+
+A hierarchy of any size cannot arrive whole. Say which rows have children the
+browser has not fetched, and what to do when one is opened:
+
+```tsx
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={(row) => row.id}
+  getChildren={(row) => row.children}
+  hasChildren={(row) => row.childCount > 0}
+  onLoadChildren={async (row) => {
+    const children = await fetchChildren(row.id);
+    setRows((current) => withChildren(current, row.id, children));
+  }}
+/>
+```
+
+`hasChildren` is what draws a chevron on a node with nothing under it yet.
+`onLoadChildren` fires once per node — the second click while a request is out
+does not ask again — and resolves when the children are in the data the table
+reads; the table re-walks the hierarchy itself and needs nothing back.
+
+The node **opens immediately** and shows it is working: its chevron carries
+`data-loading` and `aria-busy` until the rows land, so nobody is left clicking a
+control that appears to do nothing. A rejection clears the flag and leaves the
+node closed and clickable, so the retry is the same gesture as the first attempt.
+
+Headless: `useLazyChildren` holds the state (`LazyChildrenState`, options
+`UseLazyChildrenOptions`) and the table's tree bundle exposes `loadingIds` and
+`failedIds`.
+
 ## Mobile
 
 Cards keep the hierarchy. Each card steps in by its depth (logical margin, so

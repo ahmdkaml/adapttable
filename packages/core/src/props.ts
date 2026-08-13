@@ -213,6 +213,16 @@ export interface BaseDataTableProps<TRow> {
    * rendered column, which is where a reader looks for a tree.
    */
   treeColumn?: string;
+  /**
+   * Fetch a node's children when the reader opens it — a tree of any size
+   * arrives one branch at a time. Pair it with `hasChildren` so a node the
+   * browser has not fetched still shows a chevron. Resolve once the children
+   * are in the data the table reads; the table re-walks the hierarchy itself
+   * and needs nothing back. Its node carries a loading flag until then, and a
+   * rejection leaves the node closed and clickable so a retry is the same
+   * gesture as the first attempt.
+   */
+  onLoadChildren?: (row: TRow) => void | Promise<void>;
   /** Controlled tree expansion: the ids currently open. */
   expandedIds?: readonly string[];
   /** Fired after the table opens or closes a node. */

@@ -72,6 +72,9 @@ export function TreeToggle<TRow>({
           : (labels?.expandRow ?? "Expand row")
       }
       data-loading={entry.loading === true ? "" : undefined}
+      // A branch being fetched is busy, not broken: the chevron stays where it
+      // is and stays clickable, and a screen reader hears the wait.
+      aria-busy={entry.loading === true ? true : undefined}
       onClick={() => {
         onToggle(entry.key);
       }}

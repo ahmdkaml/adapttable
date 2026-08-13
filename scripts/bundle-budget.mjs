@@ -103,15 +103,16 @@ const FIXTURES = [
   // measurement and one menu action on top, and column sizing — bounds, flex
   // shares and the container-fitting mode — closed phase 3. Tree data adds a
   // second hierarchy model (~1 KB): the flattening walk, its own expansion
-  // state, and the chevron every body and every card renders.
+  // state, and the chevron every body and every card renders — plus the
+  // per-node fetch state a lazily loaded branch needs.
   { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 70 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 69 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 69 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 70 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 67 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 69 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 70 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 76 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 73 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 70 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 71 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

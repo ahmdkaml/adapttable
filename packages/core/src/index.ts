@@ -413,6 +413,11 @@ export {
   type TreeShape,
 } from "./tree/treeRows";
 export {
+  type LazyChildrenState,
+  useLazyChildren,
+  type UseLazyChildrenOptions,
+} from "./tree/useLazyChildren";
+export {
   type TreeExpansionState,
   useTreeExpansion,
 } from "./tree/useTreeExpansion";

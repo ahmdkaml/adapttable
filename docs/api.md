@@ -484,7 +484,10 @@ and `treeCardStyle(level)` a mobile card; `bodyRowEntries(rows, tree)` returns
 the `BodyRowEntry<TRow>` list a body maps over, tree or flat. `TreeCell` /
 `TreeCellProps` from `@adapttable/core/adapter` wrap the tree column's cell in
 its chevron and its indent (every other column passes through), and `TreeToggle`
-/ `TreeToggleProps` render the chevron itself.
+/ `TreeToggleProps` render the chevron itself. Lazy branches are
+`hasChildren` + `onLoadChildren`: `useLazyChildren(options)` holds which nodes
+are fetching (`LazyChildrenState`, `UseLazyChildrenOptions` in) and the tree
+bundle carries `loadingIds` / `failedIds`.
 See [tree data](./tree-data.md).
 
 **Find in table.** `findMatches(options)` returns every cell whose text

@@ -50,6 +50,7 @@ import {
   treeColumnKey,
   type TreeEntry,
 } from "./tree/treeRows";
+import { useLazyChildren } from "./tree/useLazyChildren";
 import {
   type TreeExpansionState,
   useTreeExpansion,
@@ -550,28 +551,64 @@ export function useTableChrome<TRow>(
   });
   const treeShaped =
     props.getChildren !== undefined || props.getParentId !== undefined;
+  // A branch the browser has not fetched yet: the host says there is more, the
+  // rows are not there, so opening it is a request rather than a reveal.
+  const lazyChildren = useLazyChildren<TRow>({
+    onLoadChildren: props.onLoadChildren,
+    hasLoadedChildren: (row) => hasLoadedChildren(row, source.rows, props),
+    getRowId,
+  });
+  // The walked hierarchy, before any lazy-loading chrome is layered on it: the
+  // entries are what a toggle looks a row up in, since a nested child never
+  // appears in `source.rows` at all.
+  const treeEntries = useMemo(
+    () =>
+      treeShaped
+        ? buildTreeEntries<TRow>({
+            rows: source.rows,
+            getRowId,
+            expandedIds: treeExpansion.expandedIds,
+            loadingIds: lazyChildren.loadingIds,
+            getChildren: props.getChildren,
+            getParentId: props.getParentId,
+            hasChildren: props.hasChildren,
+          })
+        : undefined,
+    [
+      treeShaped,
+      source.rows,
+      getRowId,
+      treeExpansion.expandedIds,
+      lazyChildren.loadingIds,
+      props.getChildren,
+      props.getParentId,
+      props.hasChildren,
+    ]
+  );
   const tree = useMemo(() => {
-    if (!treeShaped) return undefined;
+    if (!treeEntries) return undefined;
     return {
-      entries: buildTreeEntries<TRow>({
-        rows: source.rows,
-        getRowId,
-        expandedIds: treeExpansion.expandedIds,
-        getChildren: props.getChildren,
-        getParentId: props.getParentId,
-        hasChildren: props.hasChildren,
-      }),
-      expansion: treeExpansion,
+      entries: treeEntries,
+      // Opening a node fetches its children on the way: the row opens at once
+      // and fills when they land, so the chevron never feels stuck behind a
+      // request.
+      expansion: {
+        ...treeExpansion,
+        toggle: (id: string) => {
+          const entry = treeEntries.find((candidate) => candidate.key === id);
+          if (entry && !entry.expanded) lazyChildren.loadIfNeeded(entry.row);
+          treeExpansion.toggle(id);
+        },
+      },
+      loadingIds: lazyChildren.loadingIds,
+      /** Nodes whose last fetch failed — closed, and clickable again. */
+      failedIds: lazyChildren.failedIds,
       columnKey: treeColumnKey(columnLayout.visibleColumns, props.treeColumn),
     };
   }, [
-    treeShaped,
-    source.rows,
-    getRowId,
+    treeEntries,
     treeExpansion,
-    props.getChildren,
-    props.getParentId,
-    props.hasChildren,
+    lazyChildren,
     props.treeColumn,
     columnLayout.visibleColumns,
   ]);
@@ -831,6 +868,26 @@ export function useChromeBodyData<TRow>(
     canLoadMore,
     virtualScrollRef,
   };
+}
+
+/**
+ * Whether a row's children are already in the data.
+ *
+ * Both declarations answer it: nested data has them under the row, a flat table
+ * has them among the rows keyed by their parent. A node with none is one the
+ * host said has children (`hasChildren`) and the browser has not fetched.
+ */
+function hasLoadedChildren<TRow>(
+  row: TRow,
+  rows: readonly TRow[],
+  props: BaseDataTableProps<TRow>
+): boolean {
+  const nested = props.getChildren?.(row);
+  if (nested !== undefined) return nested.length > 0;
+  const { getParentId, rowKey } = props;
+  if (!getParentId) return false;
+  const id = rowKey(row);
+  return rows.some((candidate) => getParentId(candidate) === id);
 }
 
 /** The keys of a walked model's entries — one shape for groups and trees. */

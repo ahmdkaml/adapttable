@@ -1,4 +1,5 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -173,5 +174,85 @@ describe("tree data (unstyled)", () => {
     expect(cards).toHaveLength(4);
     expect(cards[0]?.style.marginInlineStart).toBe("");
     expect(cards[1]?.style.marginInlineStart).toBe("1.25rem");
+  });
+});
+
+/**
+ * Children fetched on demand.
+ *
+ * A server tree knows there is more before the browser does: `hasChildren`
+ * draws the chevron, `onLoadChildren` fills the branch, and the node carries a
+ * loading flag in between.
+ */
+describe("lazy-loaded children (unstyled)", () => {
+  interface Lazy {
+    id: string;
+    name: string;
+    children?: Lazy[];
+  }
+  const COLS_LAZY: ColumnDef<Lazy>[] = [
+    { key: "name", header: "Name", accessor: (r) => r.name },
+  ];
+
+  function LazyTable({
+    onLoad,
+  }: Readonly<{ onLoad: (row: Lazy) => Promise<void> }>) {
+    const [rows, setRows] = useState<Lazy[]>([{ id: "src", name: "src" }]);
+    return (
+      <DataTable
+        data={rows}
+        columns={COLS_LAZY}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        getChildren={(row) => row.children}
+        // The browser has nothing under `src` yet; the host says there is.
+        hasChildren={(row) => row.id === "src"}
+        onLoadChildren={async (row) => {
+          await onLoad(row);
+          setRows([
+            { id: "src", name: "src", children: [{ id: "a", name: "a.ts" }] },
+          ]);
+        }}
+      />
+    );
+  }
+
+  const toggle = () =>
+    document.querySelector<HTMLElement>(
+      '[data-adapttable-part="tree-toggle"]'
+    )!;
+
+  it("draws a chevron for a branch that has not been fetched", () => {
+    render(<LazyTable onLoad={() => Promise.resolve()} />);
+    expect(toggle()).not.toBeNull();
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("marks the node busy while it fetches, then shows what arrived", async () => {
+    let settle: (() => void) | undefined;
+    render(
+      <LazyTable
+        onLoad={() =>
+          new Promise<void>((resolve) => {
+            settle = resolve;
+          })
+        }
+      />
+    );
+    fireEvent.click(toggle());
+    // Open immediately, busy while the request is out — the reader is never
+    // left clicking a chevron that seems to do nothing.
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(toggle()).toHaveAttribute("data-loading");
+    expect(toggle()).toHaveAttribute("aria-busy", "true");
+
+    await act(async () => {
+      settle?.();
+      await Promise.resolve();
+    });
+    expect(toggle()).not.toHaveAttribute("data-loading");
+    expect(
+      document.querySelectorAll('tbody [data-column-key="name"]')
+    ).toHaveLength(2);
   });
 });

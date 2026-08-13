@@ -77,6 +77,10 @@ export interface SharedTableRenderProps<TRow> {
     entries: readonly TreeEntry<TRow>[];
     expansion: TreeExpansionState;
     columnKey?: string;
+    /** Nodes fetching their children right now (`onLoadChildren`). */
+    loadingIds?: ReadonlySet<string>;
+    /** Nodes whose last fetch rejected — closed, and clickable again. */
+    failedIds?: ReadonlySet<string>;
   };
   /**
    * Row-grouping bundle — present iff chrome armed grouping. Adapters that
