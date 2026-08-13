@@ -401,6 +401,11 @@ export {
 
 /* ── Hierarchical (tree) rows ──────────────────────────────────────── */
 export {
+  type NestedTable,
+  type NestedTableDefaults,
+  type NestedTableFor,
+} from "./tree/nestedTable";
+export {
   bodyRowEntries,
   type BodyRowEntry,
   buildTreeEntries,

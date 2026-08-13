@@ -104,8 +104,9 @@ const FIXTURES = [
   // shares and the container-fitting mode — closed phase 3. Tree data adds a
   // second hierarchy model (~1 KB): the flattening walk, its own expansion
   // state, and the chevron every body and every card renders — plus the
-  // per-node fetch state a lazily loaded branch needs.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 70 },
+  // per-node fetch state a lazily loaded branch needs, and the nested-table
+  // region that turns master/detail into a real table under a row.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 71 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 69 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 70 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 67 },

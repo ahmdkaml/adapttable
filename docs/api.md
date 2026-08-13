@@ -490,6 +490,15 @@ are fetching (`LazyChildrenState`, `UseLazyChildrenOptions` in) and the tree
 bundle carries `loadingIds` / `failedIds`. A server-side tree is
 `supports: { tree: true }` plus `expandedIds` on `useServerData` /
 `useQuerySource`, which sends the open ids as `query.expandedIds`.
+
+**A real table under a row.** `nestedTable` takes a `NestedTableFor<TRow>` and
+returns a `NestedTable` — a `label` and a `table(defaults)` that mounts the kit's
+own component. `NestedTableDefaults` is what it receives: `urlSync: false`,
+`searchable: false`, the parent's `density`, `labels` and the `tableLabel`.
+`nestedTableDefaults(label, parent)` builds them and `nestedTableDetail(options)`
+turns the declaration into the `renderRowDetail` the table places under a row
+(both from `@adapttable/core/adapter`, with `NestedTableParent` for what the
+parent contributes). See [tree data](./tree-data.md).
 See [tree data](./tree-data.md).
 
 **Find in table.** `findMatches(options)` returns every cell whose text

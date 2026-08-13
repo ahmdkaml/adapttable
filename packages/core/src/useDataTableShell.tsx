@@ -320,7 +320,7 @@ export function useDataTableShell<TRow>(
     onRowClick: props.onRowClick,
     prefetch: props.prefetch,
     rowClassName: props.rowClassName,
-    renderRowDetail: props.renderRowDetail,
+    renderRowDetail: chrome.detail?.render,
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,

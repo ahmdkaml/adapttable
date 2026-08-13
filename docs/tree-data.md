@@ -158,6 +158,47 @@ Cards keep the hierarchy. Each card steps in by its depth (logical margin, so
 it steps from the right in Arabic and Hebrew) and carries the same chevron,
 which folds the same nodes. A phone gets a tree, not a flattened list.
 
+## A real table under a row
+
+`renderRowDetail` gives a blank panel, and a table built by hand in one has none
+of the sorting, filtering, selection, keyboard navigation or accessibility the
+outer table has. `nestedTable` puts the same component in there instead:
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(row) => row.id}
+  nestedTable={(row) => ({
+    label: `Orders for ${row.name}`,
+    table: (defaults) => (
+      <DataTable
+        {...defaults}
+        data={row.orders}
+        columns={orderColumns}
+        rowKey={(order) => order.id}
+      />
+    ),
+  })}
+/>
+```
+
+The child rows keep their own type — the closure holds it, so nothing is erased
+at a prop boundary — and the row gets the same expand chevron `renderRowDetail`
+gives it.
+
+`defaults` carries what a table inside a row cannot do without: `urlSync: false`
+(two tables writing `?page=` fight over one URL, and the loser silently resets
+while the reader is using it), `searchable: false` (a second search box inside a
+row reads as chrome, not as a feature — pass `searchable` after the spread to
+keep it), and the parent's `density` and `labels`. Spread them first and override
+anything after.
+
+Return `undefined` for a row with no nested table. With `renderRowDetail` also
+set, those rows fall back to it, so master/detail and nested tables can live in
+one table. The region carries `data-adapttable-part="nested-table"` and is
+announced with the label you gave it.
+
 ## Headless pieces
 
 Everything above is composed from exports you can use directly when you render

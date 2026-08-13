@@ -45,6 +45,7 @@ import {
 import type { SelectionState } from "./selection/useSelection";
 import { serverGroupEntries } from "./source/queryGroups";
 import type { TableSource } from "./source/TableSource";
+import { nestedTableDetail } from "./tree/nestedTable";
 import {
   buildTreeEntries,
   treeColumnKey,
@@ -475,7 +476,19 @@ export function useTableChrome<TRow>(
   // Hooks run unconditionally; the state is simply unused (and unexposed)
   // when the caller renders no row details.
   const expansionState = useRowExpansion();
-  const renderRowDetail = props.renderRowDetail;
+  // A declared nested table IS the detail panel; a row without one falls back
+  // to whatever the host builds itself.
+  const { nestedTable, density, labels: hostLabels } = props;
+  const hostRenderRowDetail = props.renderRowDetail;
+  const renderRowDetail = useMemo(
+    () =>
+      nestedTableDetail({
+        nestedTable,
+        renderRowDetail: hostRenderRowDetail,
+        parent: { density, labels: hostLabels },
+      }),
+    [nestedTable, hostRenderRowDetail, density, hostLabels]
+  );
   const detail = useMemo(
     () =>
       renderRowDetail

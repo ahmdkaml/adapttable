@@ -12,6 +12,7 @@ import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { TableSource } from "./source/TableSource";
+import type { NestedTableFor } from "./tree/nestedTable";
 import type {
   BulkAction,
   ColumnDef,
@@ -175,6 +176,33 @@ export interface BaseDataTableProps<TRow> {
    * mobile cards; multiple rows may be open, keyed by row id.
    */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /**
+   * A real table under a row instead of a blank panel. Name it after the row
+   * and mount the kit's own `<DataTable>` with the defaults handed in:
+   *
+   * ```tsx
+   * nestedTable={(row) => ({
+   *   label: `Orders for ${row.name}`,
+   *   table: (defaults) => (
+   *     <DataTable
+   *       {...defaults}
+   *       data={row.orders}
+   *       columns={orderColumns}
+   *       rowKey={(order) => order.id}
+   *     />
+   *   ),
+   * })}
+   * ```
+   *
+   * It is the same component the page uses, so sorting, selection, keyboard
+   * navigation and accessibility come with it. The defaults are the ones a
+   * table inside a row cannot do without — no URL state to fight its parent's
+   * over, no second search box, the parent's density and labels.
+   *
+   * Return `undefined` for a row that has no nested table; with
+   * `renderRowDetail` also set, those rows fall back to it.
+   */
+  nestedTable?: NestedTableFor<TRow>;
   /**
    * Footer summary: map the CURRENT page's rows to per-column summary cells
    * (`{ budget: <b>{total}</b> }`). Rendered as a table footer row aligned

@@ -117,6 +117,11 @@ export {
   tableRenderModel,
   useSummaryCells,
 } from "./tableRenderProps";
+export {
+  nestedTableDefaults,
+  nestedTableDetail,
+  type NestedTableParent,
+} from "./tree/nestedTable";
 export { TreeCell, type TreeCellProps } from "./tree/TreeCell";
 export { TreeToggle, type TreeToggleProps } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
