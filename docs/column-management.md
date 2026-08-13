@@ -117,6 +117,41 @@ export function People() {
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
+## Widths, bounds and shares
+
+A column can say how wide it is three ways, and they compose:
+
+```tsx
+const columns = [
+  { key: "id", header: "ID", width: 80 }, // exactly this
+  { key: "name", header: "Name", minWidth: 160 }, // never narrower
+  { key: "note", header: "Note", flex: 2 }, // twice the leftover space
+];
+```
+
+`minWidth` and `maxWidth` are bounds the column keeps whatever else happens — a
+resize will not cross them, and neither will the fitting mode. `flex` asks for a
+share of whatever space is left over.
+
+### Filling the container
+
+By default a table takes the width its columns need and scrolls when that is
+more than the container. `fitColumns` reverses it: the columns share the
+container instead.
+
+```tsx
+<DataTable data={rows} columns={columns} rowKey={rowKey} fitColumns />
+```
+
+Columns with a `width` keep it, columns with a `flex` take that share, and
+everything else divides what remains equally. A width the **user** dragged wins
+over all of it — they said what they wanted.
+
+Underneath it is CSS the browser already knows: a fixed table layout with
+percentage widths shares space proportionally, and the bounds clamp it. The Ant
+Design adapter renders through antd's own `<Table>`, which sets its own layout
+mode; the per-column widths, bounds and shares still apply there.
+
 ## Sizing a column to its content
 
 Double-click a resize handle and that column takes the width of its widest

@@ -163,6 +163,20 @@ export interface ColumnDef<TRow> {
   sortable?: boolean;
   /** Column width passed through to the rendered header/cell. */
   width?: number | string;
+  /**
+   * Floor for this column's width, in pixels. A resize will not go below it,
+   * and neither will the container-fitting mode — a column of dates has a
+   * width below which it is simply unreadable.
+   */
+  minWidth?: number;
+  /** Ceiling for this column's width, in pixels. */
+  maxWidth?: number;
+  /**
+   * This column's share of the leftover width when the table fits its
+   * container: `flex: 2` takes twice the space of `flex: 1`. Columns without
+   * it keep their own width and are not stretched.
+   */
+  flex?: number;
   /** Text alignment within the cell. Defaults to `"start"`. */
   align?: "start" | "center" | "end";
   /** Label used on mobile card layouts; falls back to `header` when a string. */

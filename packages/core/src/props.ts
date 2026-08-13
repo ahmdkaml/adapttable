@@ -308,6 +308,15 @@ export interface BaseDataTableProps<TRow> {
    * outside would fight it rather than help.
    */
   virtualizeColumns?: boolean;
+  /**
+   * Make the columns share the container's width instead of overflowing it.
+   *
+   * Columns with a `flex` take that share of the space; columns with a `width`
+   * keep it; everything else divides what is left equally. `minWidth` and
+   * `maxWidth` are respected either way, so a column never shrinks below what
+   * it needs to be read.
+   */
+  fitColumns?: boolean;
   /** Desktop row-size estimate in px. */
   estimateRowSize?: number;
   /** Mobile card-size estimate in px. */

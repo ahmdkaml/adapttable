@@ -1188,6 +1188,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // Shift-click multi-sort is opt-in; without it antd keeps full control
     // of header clicks (single-sort via `onChange`).
     onToggleSortLevel: chainToggler(props.multiSort, source),
+    fitColumns: props.fitColumns,
     grouping: grouping
       ? {
           collapsed: grouping.collapsed,

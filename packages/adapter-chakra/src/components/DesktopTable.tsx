@@ -17,8 +17,11 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  columnFlexShares,
+  columnSizeStyle,
   ColumnSpacer,
   FillHandle,
+  fittedTableStyle,
   headerGroupRow,
   logicalAlign,
   type PinLeads,
@@ -526,6 +529,7 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   actionsPinned = false,
   columnWindow,
+  fitColumns,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -610,8 +614,9 @@ export function DesktopTable<TRow>({
     const width = pin
       ? pinnedColumnWidth(column, columnWidths)
       : columnWidths?.[key];
-    if (!pin && width == null && !setWidth) return undefined;
-    const style: CSSProperties = { ...pin };
+    const sizing = columnSizeStyle(column, flexShares, columnWidths?.[key]);
+    if (!pin && width == null && !setWidth && !sizing) return undefined;
+    const style: CSSProperties = { ...pin, ...sizing };
     if (width != null) style.width = width;
     if (setWidth && !stickyHeader && !pin) style.position = "relative";
     return style;
@@ -621,6 +626,14 @@ export function DesktopTable<TRow>({
 
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
+  // Each flexible column's share, from the same rule core's prop-getters
+  // use — so a kit that styles its own header still sizes identically.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
     extra:
@@ -691,6 +704,7 @@ export function DesktopTable<TRow>({
         minW={minWidth > 0 ? `${minWidth}px` : undefined}
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
+        style={fittedTableStyle(fitColumns)}
       >
         <Table.Header>
           {groups && (
@@ -763,6 +777,7 @@ export function DesktopTable<TRow>({
                   textAlign={logicalAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}
+                  data-column-key={column.key}
                   {...stickyTh}
                   style={headCellStyle(column)}
                 >
@@ -782,7 +797,6 @@ export function DesktopTable<TRow>({
                           as="span"
                           aria-hidden
                           data-sort-index={sortIndex}
-                          data-column-key={column.key}
                           fontSize="0.7em"
                           fontWeight="bold"
                           borderRadius="full"

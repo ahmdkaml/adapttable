@@ -105,6 +105,12 @@ export interface SharedTableRenderProps<TRow> {
    * as before and render the two spacer cells `columnSpacers` describes.
    */
   columnWindow?: ColumnWindow<TRow>;
+  /**
+   * Whether the table fits its container rather than overflowing it. Adapters
+   * spread `fittedTableStyle(fitColumns)` onto their `<table>`: percentage
+   * widths only mean anything under a fixed table layout.
+   */
+  fitColumns?: boolean;
   /** Whether the header sticks to the top of the scroll box. */
   stickyHeader?: boolean;
   /** Offset (px) applied to the sticky header top. */

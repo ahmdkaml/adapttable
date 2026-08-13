@@ -410,6 +410,15 @@ the same entries local grouping produces. `groupLeafCount(entry)` is the count a
 header shows: the server's when it grouped, the rows in hand otherwise. See
 [row grouping](./row-grouping.md).
 
+**Column sizing.** A `ColumnDef` takes `width`, `minWidth`, `maxWidth` and
+`flex`; `<DataTable fitColumns>` makes the columns share the container.
+`columnFlexShares(options)` computes each flexible column's percentage
+(`ColumnSizingOptions`), `columnSizeStyle(column, shares, userWidth)` is the
+style a cell carries — dragged width first, then the column's own, then its
+share — and `fittedTableStyle(fitColumns)` is what the `<table>` needs for
+percentages to mean anything. See
+[column management](./column-management.md).
+
 **Column auto-sizing.** `measureColumnWidth(root, key)` returns the width a
 column needs for its widest rendered cell — measured from the DOM by the
 `data-column-key` every cell carries — and `autoSizeColumns(root, keys,

@@ -37,6 +37,12 @@ export {
   type ColumnRowDragProps,
 } from "./columns/columnReorder";
 export { type ColumnResizeHandleProps } from "./columns/columnResize";
+export {
+  columnFlexShares,
+  columnSizeStyle,
+  type ColumnSizingOptions,
+  fittedTableStyle,
+} from "./columns/columnSizing";
 export { pinnedColumnWidth } from "./columns/columnWidths";
 export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";

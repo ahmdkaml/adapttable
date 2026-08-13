@@ -17,6 +17,7 @@ import {
   cellHighlightStyle,
   ColumnSpacer,
   FillHandle,
+  fittedTableStyle,
   headerGroupRow,
   type PinLeads,
   pinnedColumnWidth,
@@ -553,6 +554,7 @@ export function DesktopTable<TRow>({
   actionsPinned = false,
   density = "comfortable",
   columnWindow,
+  fitColumns,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
@@ -641,14 +643,17 @@ export function DesktopTable<TRow>({
   const headerStyleFor = (column: ColumnDef<TRow>): CSSProperties => {
     const key = column.key;
     const pin = pinnedCellStyle(pinOffset?.(key), PIN_Z.headerPinned, leads);
+    // A pinned column renders at the same width its sticky inset assumed, so
+    // stacked pins stay flush even with no declared width. Written only when
+    // there IS one: an explicit `width: undefined` spread over core's computed
+    // size would erase it.
+    const width = pin
+      ? pinnedColumnWidth(column, columnWidths)
+      : columnWidths?.[key];
     const merged: CSSProperties = {
       ...headerCellStyle,
       ...pin,
-      // A pinned column renders at the same width its sticky inset assumed,
-      // so stacked pins stay flush even with no declared width.
-      width: pin
-        ? pinnedColumnWidth(column, columnWidths)
-        : columnWidths?.[key],
+      ...(width == null ? {} : { width }),
     };
     if (setWidth && !merged.position) merged.position = "relative";
     return merged;
@@ -789,15 +794,17 @@ export function DesktopTable<TRow>({
         verticalSpacing={verticalSpacing}
         horizontalSpacing={horizontalSpacing}
         miw={Math.max(480, minWidth)}
-        // Chromium cannot stick a <th> inside a border-collapsed table, so
+        // Chromium cannot stick a <th
+        // <thead> inside a border-collapsed table, so
         // the sticky header opts into separate borders. That model ignores
         // borders on a <tr>, which is where the row dividers live — so the
         // sticky path draws them on the cells instead (`rowSeparator` above).
-        style={
-          stickyHeader
-            ? { borderCollapse: "separate", borderSpacing: 0 }
-            : undefined
-        }
+        style={{
+          ...(stickyHeader
+            ? { borderCollapse: "separate" as const, borderSpacing: 0 }
+            : {}),
+          ...fittedTableStyle(fitColumns),
+        }}
       >
         <Table.Thead style={{ background: SURFACE }}>
           {groupCells && (

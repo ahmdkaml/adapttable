@@ -15,6 +15,8 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  columnFlexShares,
+  columnSizeStyle,
   FillHandle,
   headerGroupRow,
   resolveDisabledReason,
@@ -269,6 +271,8 @@ export interface BuildColumnsOptions<TRow> {
    * group header (or per-column aggregates). Omit and grouping stays dormant.
    */
   grouping?: BuildColumnsGrouping;
+  /** Whether the table fits its container rather than overflowing it. */
+  fitColumns?: boolean;
 }
 
 /**
@@ -449,6 +453,7 @@ export function buildColumns<TRow>({
   sortLevels = [],
   onToggleSortLevel,
   grouping,
+  fitColumns,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -459,6 +464,13 @@ export function buildColumns<TRow>({
     grouping,
     gridFocus,
   };
+  // Each flexible column's share, from the same rule every other kit uses.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const leaves: TableColumnsType<GroupedDataRecord<TRow>> = columns.map(
     (column, columnIndex) => {
       // An active chain level supersedes the single sort for this column's
@@ -490,6 +502,8 @@ export function buildColumns<TRow>({
           </span>
         ),
         width: columnWidths?.[column.key] ?? column.width,
+        // Bounds and flex shares reach antd through the header cell's style,
+        // which is the one place this adapter can put per-column CSS.
         fixed: antdFixed(pinned?.[column.key]),
         sorter: column.sortable ? true : undefined,
         sortOrder: column.sortable
@@ -506,15 +520,11 @@ export function buildColumns<TRow>({
             rowIndex,
             gridFocus
           ),
-        onHeaderCell: () => ({
+        onHeaderCell: () => {
           // Column selection rides along with the sort/resize/pin props: antd
           // merges whatever this returns onto the <th>, so this is the one
           // place a header attribute can exist in this adapter.
-          "data-column-key": column.key,
-          ...(gridFocus?.getColumnHeaderProps(columnIndex, {
-            sortable: column.sortable,
-          }) ?? {}),
-          ...headerCellProps(
+          const head = headerCellProps(
             column,
             effectiveSortBy,
             effectiveSortDir,
@@ -522,8 +532,25 @@ export function buildColumns<TRow>({
             Boolean(setWidth),
             pinned?.[column.key] != null,
             onToggleSortLevel
-          ),
-        }),
+          );
+          return {
+            "data-column-key": column.key,
+            ...(gridFocus?.getColumnHeaderProps(columnIndex, {
+              sortable: column.sortable,
+            }) ?? {}),
+            ...head,
+            // The sizing merges INTO whatever style the header already has,
+            // rather than being overwritten by it.
+            style: {
+              ...head.style,
+              ...columnSizeStyle(
+                column,
+                flexShares,
+                columnWidths?.[column.key]
+              ),
+            },
+          };
+        },
         render: (
           _value: unknown,
           record: GroupedDataRecord<TRow>,

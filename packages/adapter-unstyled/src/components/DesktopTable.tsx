@@ -17,6 +17,7 @@ import {
 import {
   ColumnSpacer,
   FillHandle,
+  fittedTableStyle,
   headerGroupRow,
   isCurrentMatchCell,
   isMatchedCell,
@@ -413,6 +414,7 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   actionsPinned = false,
   columnWindow,
+  fitColumns,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -600,7 +602,10 @@ export function DesktopTable<TRow>({
       {...gridFocus?.getGridProps()}
       data-adapttable-part="table"
       className={classNames.table}
-      style={minWidth > 0 ? { minWidth } : undefined}
+      style={{
+        ...(minWidth > 0 ? { minWidth } : {}),
+        ...fittedTableStyle(fitColumns),
+      }}
     >
       <thead data-adapttable-part="thead" className={classNames.thead}>
         {groups && (

@@ -382,6 +382,9 @@ export function useTableChrome<TRow>(
     multiSort: props.multiSort,
     searchDebounceMs: props.searchDebounceMs,
     locale: props.locale,
+    fitColumns: props.fitColumns,
+    // The user's dragged widths win over any share: they said what they wanted.
+    columnWidths: columnLayout.state.widths,
   });
 
   useEffect(() => {

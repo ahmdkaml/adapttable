@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 45,
+    budgetKB: 47,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -100,14 +100,15 @@ const FIXTURES = [
   // what let it be used with virtualization at all, and the columns learned to
   // window too (~1 KB): the spacer cells and the horizontal window ride the
   // same render model every adapter already maps over. Auto-sizing added the
-  // measurement and one menu action on top.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 67 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 66 },
+  // measurement and one menu action on top, and column sizing — bounds, flex
+  // shares and the container-fitting mode — closed phase 3.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 69 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 68 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 67 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 66 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 67 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 74 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 70 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 72 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 68 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 

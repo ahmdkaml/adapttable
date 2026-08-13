@@ -14,8 +14,11 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  columnFlexShares,
+  columnSizeStyle,
   ColumnSpacer,
   FillHandle,
+  fittedTableStyle,
   headerGroupRow,
   type PinLeads,
   pinnedColumnWidth,
@@ -421,6 +424,7 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   actionsPinned = false,
   columnWindow,
+  fitColumns,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -586,6 +590,14 @@ export function DesktopTable<TRow>({
   }
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
+  // Each flexible column's share, from the same rule core's prop-getters
+  // use — so a kit that styles its own header still sizes identically.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
     extra: leadStart + leadEnd,
@@ -604,6 +616,7 @@ export function DesktopTable<TRow>({
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
         sx={minWidth > 0 ? { minWidth } : undefined}
+        style={fittedTableStyle(fitColumns)}
       >
         <TableHead>
           {groupRow && (
@@ -669,9 +682,14 @@ export function DesktopTable<TRow>({
                     sortable: column.sortable,
                   }) ?? {})}
                   aria-sort={ariaSort}
-                  data-sort-index={sortIndex}
                   data-column-key={column.key}
+                  data-sort-index={sortIndex}
                   sx={headCellSx(column)}
+                  style={columnSizeStyle(
+                    column,
+                    flexShares,
+                    columnWidths?.[column.key]
+                  )}
                 >
                   {column.sortable ? (
                     <TableSortLabel

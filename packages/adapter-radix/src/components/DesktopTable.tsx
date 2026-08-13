@@ -17,6 +17,8 @@ import {
 } from "@adapttable/core";
 import {
   cellHighlightStyle,
+  columnFlexShares,
+  columnSizeStyle,
   ColumnSpacer,
   FillHandle,
   headerGroupRow,
@@ -99,8 +101,16 @@ const STICKY_FIX_CLASS = "adapttable-radix-scroll";
  * but the columns stayed left-to-right — every other adapter mirrored. Force
  * the viewport back to the direction the table asked for.
  */
+/**
+ * Fourth quirk, and the reason `fitColumns` needs a class here: `Table.Root`
+ * renders the real `<table>` inside a ScrollArea, so a style on the root lands
+ * on the wrapper. The fitted layout has to reach the table itself.
+ */
+const FIT_CLASS = "adapttable-radix-fit";
+
 const STICKY_FIX_CSS =
   `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}` +
+  `.${FIT_CLASS} .rt-TableRootTable{table-layout:fixed;width:100%}` +
   `.rt-TableRoot[dir="rtl"] .rt-ScrollAreaRoot,.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport{direction:rtl}` +
   // Third Radix quirk: `justify` is compiled to PHYSICAL alignment classes
   // (`rt-r-ta-left` / `rt-r-ta-right`), not the logical `start` / `end` every
@@ -414,6 +424,7 @@ export function DesktopTable<TRow>({
   resizeLabel = "Resize column",
   actionsPinned = false,
   columnWindow,
+  fitColumns,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -495,8 +506,11 @@ export function DesktopTable<TRow>({
     const width = pin
       ? pinnedColumnWidth(column, columnWidths)
       : columnWidths?.[key];
-    if (!pin && width == null && !setWidth) return stickify(undefined);
-    const style: CSSProperties = { ...pin };
+    const sizing = columnSizeStyle(column, flexShares, columnWidths?.[key]);
+    if (!pin && width == null && !setWidth && !sizing) {
+      return stickify(undefined);
+    }
+    const style: CSSProperties = { ...pin, ...sizing };
     if (width != null) style.width = width;
     if (setWidth && !stickyHeader && !pin) style.position = "relative";
     return stickify(style);
@@ -506,6 +520,14 @@ export function DesktopTable<TRow>({
 
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
+  // Each flexible column's share, from the same rule core's prop-getters
+  // use — so a kit that styles its own header still sizes identically.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
     extra:
@@ -591,7 +613,9 @@ export function DesktopTable<TRow>({
         variant="surface"
         dir={dir}
         data-size={size}
-        className={className}
+        className={[className, fitColumns === true ? FIT_CLASS : ""]
+          .filter(Boolean)
+          .join(" ")}
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
       >
@@ -663,6 +687,7 @@ export function DesktopTable<TRow>({
                   }) ?? {})}
                   justify={justifyFor(column.align)}
                   aria-sort={ariaSort}
+                  data-column-key={column.key}
                   style={headCellStyle(column)}
                 >
                   {column.sortable ? (
@@ -691,7 +716,6 @@ export function DesktopTable<TRow>({
                           as="span"
                           aria-hidden
                           data-sort-index={sortIndex}
-                          data-column-key={column.key}
                           size="1"
                           weight="bold"
                           ml="1"
