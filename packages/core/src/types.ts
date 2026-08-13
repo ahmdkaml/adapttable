@@ -462,6 +462,14 @@ export interface TableLabels {
   saveAll?: string;
   /** The control that discards one. */
   cancelAll?: string;
+  /** The toolbar control that adds a row (`onAddRow`). */
+  addRow?: string;
+  /** The row action that copies a row (`onDuplicateRow`). */
+  duplicateRow?: string;
+  /** The row action that removes one (`onDeleteRow`). */
+  deleteRow?: string;
+  /** The question the delete dialog asks before it runs. */
+  deleteRowConfirm?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

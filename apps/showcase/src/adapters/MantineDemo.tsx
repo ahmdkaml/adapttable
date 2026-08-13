@@ -87,6 +87,7 @@ export function MantineDemo({
   nested,
   rowMode,
   batch,
+  rowMutations,
   editing,
   cellNavigation,
   forceMobile,
@@ -104,6 +105,7 @@ export function MantineDemo({
   nested?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -120,6 +122,7 @@ export function MantineDemo({
         tree={tree}
         rowMode={rowMode}
         batch={batch}
+        rowMutations={rowMutations}
         editing={editing}
         render={(source, columns) => (
           <DataTable

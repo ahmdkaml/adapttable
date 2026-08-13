@@ -223,6 +223,7 @@ function Harness(props: {
       rowActions={[{ key: "open", label: "Open", onClick: vi.fn() }]}
       savedViews={{ storageKey: "parity" }}
       exportCsv
+      onAddRow={vi.fn()}
       enableColumnMenu
       resizableColumns
       multiSort
@@ -444,6 +445,7 @@ const KEYS = [
   "treeCell",
   "treeToggle",
   "treeSpacer",
+  "addRow",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",

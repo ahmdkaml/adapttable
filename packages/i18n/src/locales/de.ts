@@ -75,6 +75,11 @@ export const de: Required<TableLabels> = {
       : `${String(count)} ungespeicherte Zeilen`,
   saveAll: "Alle speichern",
   cancelAll: "Alle verwerfen",
+  addRow: "Zeile hinzufügen",
+  duplicateRow: "Zeile duplizieren",
+  deleteRow: "Zeile löschen",
+  deleteRowConfirm:
+    "Diese Zeile löschen? Das kann nicht rückgängig gemacht werden.",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

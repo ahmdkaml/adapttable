@@ -212,8 +212,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // carrying the selection, the full column set and the highlighted range. It
   // used to be rebuilt here from the same parts, which is precisely how a new
   // scope can work in seven kits and silently fall back in the eighth.
-  const { onExportCsv, exportBusy, exportAnnouncement, exportLabel } =
-    shell.toolbarProps;
+  const {
+    onExportCsv,
+    exportBusy,
+    exportAnnouncement,
+    exportLabel,
+    onAddRow,
+    addRowLabel,
+  } = shell.toolbarProps;
 
   return (
     <div
@@ -329,7 +335,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             layout={chrome.columnLayout}
             labels={labels}
             classNames={classNames}
-            hasRowActions={(props.rowActions?.length ?? 0) > 0}
+            hasRowActions={shell.hasRowActions}
           />
         )}
         {onExportCsv && (
@@ -358,6 +364,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>
+        )}
+        {onAddRow && (
+          <button
+            type="button"
+            data-adapttable-part="add-row"
+            className={classNames.addRow}
+            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+            onClick={onAddRow}
+          >
+            {addRowLabel}
+          </button>
         )}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect

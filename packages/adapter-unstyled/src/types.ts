@@ -66,6 +66,8 @@ export interface DataTableClassNames {
   treeToggle?: string;
   /** A leaf's placeholder, holding the chevron's width so names line up. */
   treeSpacer?: string;
+  /** The Add-row toolbar button (when `onAddRow` is set). */
+  addRow?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

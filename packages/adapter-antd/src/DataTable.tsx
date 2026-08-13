@@ -1,5 +1,4 @@
 import {
-  ACTIONS_COLUMN_KEY,
   asGesture,
   autoSizeColumns as autoSizeAllColumns,
   cellFillHandler,
@@ -1083,10 +1082,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // rowActions BEFORE buildColumns — the trailing column, summary spans, and
   // min-width all adjust together. The Columns menu still lists it (from the
   // raw prop) so it can be shown again.
-  const rowActions = c.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
-  const hasRowActions = Boolean(rowActions?.length);
+  const rowActions = c.rowActions;
+  const hasRowActions = rowActions !== undefined;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
@@ -1348,6 +1345,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
             onCloseFilters={() => setFiltersOpen(false)}
             onClearFilters={c.clearFilters}
+            onAddRow={c.rowMutations.canAdd ? c.rowMutations.addRow : undefined}
+            addRowLabel={labels.addRow}
             isRefreshing={c.isRefreshing}
             dir={props.dir}
             columnMenu={
@@ -1358,7 +1357,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 layout={c.columnLayout}
                 labels={labels}
                 dir={props.dir}
-                hasRowActions={Boolean(props.rowActions?.length)}
+                hasRowActions={c.hasRowActions}
               />
             }
             {...exportHandler}

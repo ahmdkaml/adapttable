@@ -269,6 +269,25 @@ export interface BaseDataTableProps<TRow> {
    */
   onBatchEdit?: (edits: readonly BatchRowEdit<TRow>[]) => unknown;
   /**
+   * Add a row — an Add control appears in the toolbar as soon as this is set.
+   * The host makes the row and stores it; it reaches the table through the
+   * source like every other row, so it is editable, filterable and counted
+   * from the moment it lands.
+   */
+  onAddRow?: () => unknown;
+  /**
+   * Copy a row — a Duplicate action appears on every row. What a copy means
+   * (which fields carry over, which reset, what id it gets) is the host's.
+   */
+  onDuplicateRow?: (row: TRow) => unknown;
+  /** Remove a row. A Delete row action appears as soon as this is set. */
+  onDeleteRow?: (row: TRow) => unknown;
+  /**
+   * Delete without a confirmation dialog. Off by default — a delete is
+   * destructive and the table cannot undo it.
+   */
+  confirmDeleteRow?: boolean;
+  /**
    * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
    * to judge. Defaults to a shallow spread keyed by the column key, which is
    * right when a column key IS the field; pass this when a column reads a

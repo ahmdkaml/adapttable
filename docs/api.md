@@ -318,6 +318,17 @@ single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
 cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
 all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
 
+**Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
+toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
+every row, after the host's own `rowActions`, under the keys
+`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. A delete confirms first
+unless `confirmDeleteRow={false}`. `useRowMutations(options)`
+(`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
+`RowMutationHandlers`) is the state behind them; `labels.addRow`,
+`labels.duplicateRow`, `labels.deleteRow` and `labels.deleteRowConfirm` name
+them. The table stores nothing — a new row arrives through the source like any
+other.
+
 **Dirty marks.** `dirtyIndicators` turns them on;
 `useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds
 which cells hold an unconfirmed change, with `isDirty` / `isRowDirty`, a `count`,

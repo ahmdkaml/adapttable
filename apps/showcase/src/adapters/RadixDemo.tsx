@@ -92,6 +92,7 @@ export function RadixDemo({
   nested,
   rowMode,
   batch,
+  rowMutations,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -108,6 +109,7 @@ export function RadixDemo({
   nested?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -132,6 +134,7 @@ export function RadixDemo({
         tree={tree}
         rowMode={rowMode}
         batch={batch}
+        rowMutations={rowMutations}
         editing={editing}
         render={(source, columns) => (
           <DataTable

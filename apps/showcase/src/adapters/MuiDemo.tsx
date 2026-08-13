@@ -114,6 +114,7 @@ export function MuiDemo({
   nested,
   rowMode,
   batch,
+  rowMutations,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -130,6 +131,7 @@ export function MuiDemo({
   nested?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -146,6 +148,7 @@ export function MuiDemo({
         tree={tree}
         rowMode={rowMode}
         batch={batch}
+        rowMutations={rowMutations}
         editing={editing}
         render={(source, columns) => (
           <DataTable

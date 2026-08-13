@@ -2,6 +2,7 @@ import type { ReactNode, RefCallback, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
+import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { resolveColumns } from "./columns/resolveColumns";
 import {
   useColumnLayout,
@@ -41,6 +42,7 @@ import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
+import { type RowMutationsState, useRowMutations } from "./rows/rowMutations";
 import {
   type RowExpansionState,
   useRowExpansion,
@@ -59,7 +61,13 @@ import {
   type TreeExpansionState,
   useTreeExpansion,
 } from "./tree/useTreeExpansion";
-import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
+import type {
+  BulkAction,
+  ColumnDef,
+  RowAction,
+  SortByOption,
+  TableLabels,
+} from "./types";
 import {
   useDataTable,
   type UseDataTableResult,
@@ -147,6 +155,13 @@ export interface ToolbarChromeProps<TRow> {
    * the user is not getting.
    */
   exportLabel?: string;
+  /**
+   * When set, render an Add-row control and call this on click. Present iff
+   * the host wired `onAddRow`, so the toolbar needs no second guard.
+   */
+  onAddRow?: () => void;
+  /** The Add control's caption, already localized. */
+  addRowLabel?: string;
   /** Text direction, for adapters whose toolbar needs explicit RTL hints. */
   dir?: "ltr" | "rtl";
 }
@@ -242,6 +257,24 @@ export interface TableChrome<TRow> {
    * dormant: no UI, no keyboard.
    */
   editing?: EditableCellEditing<TRow>;
+  /**
+   * Adding, duplicating and deleting rows. Always present: `canAdd` says
+   * whether the toolbar's Add control renders, and the duplicate and delete
+   * actions are already folded into {@link TableChrome.rowActions}, so an
+   * adapter that renders row actions gets both for free.
+   */
+  rowMutations: RowMutationsState<TRow>;
+  /**
+   * The row actions to render — the host's, plus duplicate and delete when
+   * those are wired, and `undefined` when the reader hid the actions column.
+   * Adapters read THIS rather than the `rowActions` prop.
+   */
+  rowActions?: RowAction<TRow>[];
+  /**
+   * Whether an actions column exists at all, hidden or not — what the column
+   * menu offers, and the one figure a hidden column must not change.
+   */
+  hasRowActions: boolean;
   /**
    * Tree bundle — present iff the host declared a hierarchy (`getChildren` or
    * `getParentId`). A tree and a grouping are different models and can both be
@@ -617,6 +650,29 @@ export function useTableChrome<TRow>(
 
   const getRowId = selectionGetId ?? rowKey;
   const groupPaging = useGroupPaging();
+  // Adding, duplicating and deleting: the table asks, the host does. Nothing
+  // renders until the handler that performs it is wired.
+  const rowMutations = useRowMutations<TRow>({
+    labels: table.labels,
+    onAddRow: props.onAddRow,
+    onDuplicateRow: props.onDuplicateRow,
+    onDeleteRow: props.onDeleteRow,
+    confirmDeleteRow: props.confirmDeleteRow,
+  });
+  // The one row-action list every renderer reads. Duplicate and delete come
+  // after the host's own, so a delete stays last where a destructive action
+  // belongs — and the whole column hides and end-pins as one, because the
+  // layout state cannot tell a synthesized action from a declared one.
+  const mutationActions = rowMutations.actions;
+  const hasRowActions =
+    (props.rowActions?.length ?? 0) + mutationActions.length > 0;
+  const actionsHidden = columnLayout.isHidden(ACTIONS_COLUMN_KEY);
+  const hostRowActions = props.rowActions;
+  const rowActions = useMemo<RowAction<TRow>[] | undefined>(() => {
+    if (actionsHidden || !hasRowActions) return undefined;
+    if (mutationActions.length === 0) return hostRowActions;
+    return [...(hostRowActions ?? []), ...mutationActions];
+  }, [actionsHidden, hasRowActions, hostRowActions, mutationActions]);
 
   // A declared hierarchy is a fact about the rows, so it is armed by the shape
   // the host gave rather than by a mode flag.
@@ -803,6 +859,9 @@ export function useTableChrome<TRow>(
     isRefreshing,
     clearFilters,
     detail,
+    rowMutations,
+    rowActions,
+    hasRowActions,
     editing,
     grouping,
     tree,

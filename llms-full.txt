@@ -2090,6 +2090,52 @@ Headless: `useBatchEditing` (`BatchEditingState`, `BatchRowEdit`,
 `UseBatchEditingOptions`), with `BatchEditCell` and `BatchEditBar` from
 `@adapttable/core/adapter`.
 
+## Adding, duplicating and deleting rows
+
+Editing a value is one thing; changing which rows exist is another. Three
+handlers cover it, and each one puts its own control on screen:
+
+```tsx
+<DataTable
+  {...props}
+  onAddRow={() => setRows((rows) => [blankTask(), ...rows])}
+  onDuplicateRow={(row) =>
+    setRows((rows) => [{ ...row, id: nextId() }, ...rows])
+  }
+  onDeleteRow={(row) => setRows((rows) => rows.filter((r) => r.id !== row.id))}
+/>
+```
+
+`onAddRow` puts an **Add row** button in the toolbar. `onDuplicateRow` and
+`onDeleteRow` put **Duplicate row** and **Delete row** on every row, after your
+own `rowActions` — so a delete stays last, where a destructive action belongs.
+They ride the actions column like any other row action: hideable and end-pinnable
+from the Columns menu, buttons on desktop and card buttons on mobile.
+
+**The table asks; you do the rest.** It holds no draft and stores no row. A row
+you add arrives through the source like every other row, which is what keeps it
+ordinary — editable, filterable, sortable, counted, grouped and virtualized from
+the moment it lands, with nothing about it special. It also means what a copy
+_means_ is yours: which fields carry over, which reset, what id it gets.
+
+For an in-memory table, [`insertRow`, `removeRow` and `applyRowPatches`](./api.md)
+do the list work.
+
+**A delete asks first.** It goes through the same confirmation dialog a
+`rowActions` entry with a `confirm` block uses — `labels.deleteRow` as the title,
+`labels.deleteRowConfirm` as the question, both translated in all seventeen
+locales. Pass `confirmDeleteRow={false}` when your own UI already asked, or when
+your delete is reversible.
+
+Nothing here needs `onCellEdit`. Pair them and a reader adds a blank row and
+fills it in place; leave editing off and Add is simply a button that runs your
+handler.
+
+Headless: `useRowMutations` (`RowMutationHandlers`, `RowMutationsState`) builds
+the same state a kit renders, and `chrome.rowMutations` carries it — `canAdd`
+plus `addRow`, with the duplicate and delete actions already folded into
+`chrome.rowActions`.
+
 ## Dirty marks
 
 A table that looks identical before and after a save leaves the reader no way to
@@ -5157,6 +5203,17 @@ the `BatchRowEdit<TRow>[]` — `{ row, rowId, patch }` — the host receives in 
 single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
 cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
 all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
+
+**Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
+toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
+every row, after the host's own `rowActions`, under the keys
+`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. A delete confirms first
+unless `confirmDeleteRow={false}`. `useRowMutations(options)`
+(`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
+`RowMutationHandlers`) is the state behind them; `labels.addRow`,
+`labels.duplicateRow`, `labels.deleteRow` and `labels.deleteRowConfirm` name
+them. The table stores nothing — a new row arrives through the source like any
+other.
 
 **Dirty marks.** `dirtyIndicators` turns them on;
 `useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds

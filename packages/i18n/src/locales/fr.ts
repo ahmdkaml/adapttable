@@ -74,6 +74,10 @@ export const fr: Required<TableLabels> = {
       : `${String(count)} lignes non enregistrées`,
   saveAll: "Tout enregistrer",
   cancelAll: "Tout annuler",
+  addRow: "Ajouter une ligne",
+  duplicateRow: "Dupliquer la ligne",
+  deleteRow: "Supprimer la ligne",
+  deleteRowConfirm: "Supprimer cette ligne ? Cette action est irréversible.",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

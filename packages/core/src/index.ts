@@ -395,6 +395,14 @@ export {
   upsertRow,
 } from "./rows/patch";
 export {
+  DELETE_ROW_ACTION_KEY,
+  DUPLICATE_ROW_ACTION_KEY,
+  type RowMutationHandlers,
+  type RowMutationsState,
+  useRowMutations,
+  type UseRowMutationsOptions,
+} from "./rows/rowMutations";
+export {
   type RowExpansionState,
   useRowExpansion,
 } from "./rows/useRowExpansion";

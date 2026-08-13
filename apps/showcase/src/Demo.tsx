@@ -97,6 +97,29 @@ interface DataProps {
   tree?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
+}
+
+/** The next free id, so an added row never collides with a seeded one. */
+function nextId(rows: readonly Person[]): string {
+  return String(
+    rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1
+  );
+}
+
+/** A blank person to fill in — the row an Add starts from. */
+function blankPerson(rows: readonly Person[]): Person {
+  const id = nextId(rows);
+  return {
+    id,
+    name: "",
+    email: "",
+    role: "",
+    team: PEOPLE[0]?.team ?? "",
+    nameAr: "",
+    roleAr: "",
+    teamAr: "",
+  };
 }
 
 /** Apply whichever of a batch's edits belongs to this row. */
@@ -143,6 +166,7 @@ function Frontend({
   tree,
   rowMode,
   batch,
+  rowMutations,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -163,6 +187,17 @@ function Frontend({
     },
     []
   );
+  // Adding, copying and removing rows: the table asks, the demo owns the list —
+  // the same one-way flow a real app's mutation would follow.
+  const onAddRow = useCallback(() => {
+    setData((prev) => [blankPerson(prev), ...prev]);
+  }, []);
+  const onDuplicateRow = useCallback((row: Person) => {
+    setData((prev) => [{ ...row, id: nextId(prev) }, ...prev]);
+  }, []);
+  const onDeleteRow = useCallback((row: Person) => {
+    setData((prev) => prev.filter((r) => r.id !== row.id));
+  }, []);
   const source = useFrontendData<Person>({
     data,
     columns: BASE_COLUMNS,
@@ -215,6 +250,9 @@ function Frontend({
         ...(tree ? { getParentId: reportsTo, treeColumn: "person" } : {}),
         // Batch mode: every editable cell is a field, one write at the end.
         ...(batch ? { batchEditing: true, onBatchEdit } : {}),
+        // Three handlers, three controls: Add in the toolbar, Duplicate and
+        // Delete on every row.
+        ...(rowMutations ? { onAddRow, onDuplicateRow, onDeleteRow } : {}),
       })}
     </>
   );
@@ -251,6 +289,7 @@ export function DemoBody({
   tree,
   rowMode,
   batch,
+  rowMutations,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -262,6 +301,7 @@ export function DemoBody({
   editing?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -302,6 +342,7 @@ export function DemoBody({
       tree={tree}
       rowMode={rowMode}
       batch={batch}
+      rowMutations={rowMutations}
     />
   );
 }

@@ -9,9 +9,16 @@ import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { useBatchEditing } from "./batchEditing";
 import type { EditableColumnLike } from "./cellEditing";
 import type { EditableCellEditorCtrl } from "./EditableCellGate";
-import { RowEditActions, RowEditCell, rowEditControls } from "./RowEditGate";
+import {
+  BatchEditBar,
+  BatchEditCell,
+  RowEditActions,
+  RowEditCell,
+  rowEditControls,
+} from "./RowEditGate";
 import { useRowEditing } from "./rowEditing";
 
 interface Task {
@@ -368,5 +375,195 @@ describe("RowEditActions", () => {
     });
     expect(stopped).toHaveBeenCalled();
     expect(result.current.activeRowId).toBeNull();
+  });
+});
+
+/**
+ * A live batch-editing state, already holding one change on the first task so
+ * the cell and the bar have something to show.
+ */
+function mountBatch() {
+  const onBatchEdit = vi.fn();
+  const result = renderHook(() =>
+    useBatchEditing<Task>({
+      enabled: true,
+      columns: COLUMNS,
+      onBatchEdit,
+    })
+  ).result;
+  act(() => {
+    result.current.setDraft(TASK, "1", "title", "Ship it");
+  });
+  return { result, onBatchEdit };
+}
+
+describe("BatchEditCell", () => {
+  it("renders the kit's editor, seeded from the pending draft", () => {
+    const { result } = mountBatch();
+    render(
+      <BatchEditCell
+        batch={result.current}
+        row={TASK}
+        rowId="1"
+        column={COLUMNS[0]!}
+        display="Ship"
+        editLabel="Edit cell"
+        renderEditor={editorFor}
+      />
+    );
+    expect(screen.getByLabelText("field")).toHaveValue("Ship it");
+    expect(part("batch-edit-cell")).toHaveAttribute("data-changed", "");
+  });
+
+  it("passes a column nobody may edit straight through", () => {
+    const { result } = mountBatch();
+    render(
+      <BatchEditCell
+        batch={result.current}
+        row={TASK}
+        rowId="1"
+        column={COLUMNS[2]!}
+        display="1"
+        editLabel="Edit cell"
+        renderEditor={editorFor}
+      />
+    );
+    expect(screen.queryByLabelText("field")).toBeNull();
+    expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("holds a change without committing — Enter and blur do nothing", () => {
+    const { result, onBatchEdit } = mountBatch();
+    render(
+      <BatchEditCell
+        batch={result.current}
+        row={TASK}
+        rowId="1"
+        column={COLUMNS[0]!}
+        display="Ship"
+        editLabel="Edit cell"
+        renderEditor={editorFor}
+      />
+    );
+    const input = screen.getByLabelText("field");
+    act(() => {
+      fireEvent.change(input, { target: { value: "Ship it now" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      fireEvent.blur(input);
+    });
+    expect(onBatchEdit).not.toHaveBeenCalled();
+    expect(result.current.draftFor(TASK, "1", "title")).toBe("Ship it now");
+  });
+
+  it("marks only a changed cell, and hands a custom editor cancel-this-row", () => {
+    const { result } = mountBatch();
+    render(
+      <BatchEditCell
+        batch={result.current}
+        row={TASK}
+        rowId="1"
+        column={{
+          key: "title",
+          editable: true,
+          editor: {
+            type: "custom",
+            render: (ctrl) => (
+              <button type="button" onClick={ctrl.cancel}>
+                throw away
+              </button>
+            ),
+          },
+        }}
+        display="Ship"
+        editLabel="Edit cell"
+        renderEditor={editorFor}
+      />
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "throw away" }));
+    });
+    expect(result.current.isPending("1")).toBe(false);
+  });
+
+  it("does not mark a cell the reader has not touched", () => {
+    const { result } = mountBatch();
+    render(
+      <BatchEditCell
+        batch={result.current}
+        row={TASK}
+        rowId="1"
+        column={COLUMNS[1]!}
+        display="3"
+        editLabel="Edit cell"
+        renderEditor={editorFor}
+      />
+    );
+    expect(part("batch-edit-cell")).not.toHaveAttribute("data-changed");
+  });
+});
+
+describe("BatchEditBar", () => {
+  it("renders nothing until something is pending", () => {
+    const result = renderHook(() =>
+      useBatchEditing<Task>({ enabled: true, columns: COLUMNS })
+    ).result;
+    const { container } = render(<BatchEditBar batch={result.current} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("names the pending rows and saves them all", () => {
+    const { result, onBatchEdit } = mountBatch();
+    render(<BatchEditBar batch={result.current} />);
+    expect(part("batch-edit-count")).toHaveTextContent("1 unsaved row");
+    act(() => {
+      fireEvent.click(part("batch-edit-save")!);
+    });
+    expect(onBatchEdit).toHaveBeenCalledExactlyOnceWith([
+      { row: TASK, rowId: "1", patch: { title: "Ship it" } },
+    ]);
+    expect(result.current.pending).toBe(false);
+  });
+
+  it("throws everything away on cancel, and uses the host's wording", () => {
+    const { result, onBatchEdit } = mountBatch();
+    act(() => {
+      result.current.setDraft(
+        { id: "2", title: "Test", points: 5 },
+        "2",
+        "title",
+        "Tested"
+      );
+    });
+    render(
+      <BatchEditBar
+        batch={result.current}
+        labels={{
+          pendingRows: (n) => `${String(n)} waiting`,
+          saveAll: "Save the lot",
+          cancelAll: "Throw away",
+        }}
+      />
+    );
+    expect(part("batch-edit-count")).toHaveTextContent("2 waiting");
+    expect(part("batch-edit-save")).toHaveTextContent("Save the lot");
+    act(() => {
+      fireEvent.click(part("batch-edit-cancel")!);
+    });
+    expect(onBatchEdit).not.toHaveBeenCalled();
+    expect(result.current.pending).toBe(false);
+  });
+
+  it("pluralizes the default count", () => {
+    const { result } = mountBatch();
+    act(() => {
+      result.current.setDraft(
+        { id: "2", title: "Test", points: 5 },
+        "2",
+        "title",
+        "Tested"
+      );
+    });
+    render(<BatchEditBar batch={result.current} />);
+    expect(part("batch-edit-count")).toHaveTextContent("2 unsaved rows");
   });
 });

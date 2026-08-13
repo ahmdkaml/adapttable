@@ -260,10 +260,7 @@ export function useDataTableShell<TRow>(
   // state treats its reserved key like any column key, so the Columns menu can
   // hide it (strip rowActions before the renderers) or end-pin it (the
   // renderers stick the actions cells, with zero data columns pinned).
-  const hasRowActions = Boolean(props.rowActions?.length);
-  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
+  const { hasRowActions, rowActions } = chrome;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
 
@@ -342,6 +339,10 @@ export function useDataTableShell<TRow>(
     onClearFilters: chrome.clearFilters,
     // Hidden in the grouped full-set view, where page size has no effect.
     showRowsPerPage: canLoadMore && !chrome.grouping,
+    onAddRow: chrome.rowMutations.canAdd
+      ? chrome.rowMutations.addRow
+      : undefined,
+    addRowLabel: labels.addRow,
     ...exportHandler,
     dir: props.dir,
   };

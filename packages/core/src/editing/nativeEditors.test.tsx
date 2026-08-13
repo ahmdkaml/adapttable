@@ -120,4 +120,20 @@ describe("NativeMultiSelectEditor", () => {
     fireEvent.blur(document.querySelector("select")!);
     expect(ctrl.commitOnBlur).toHaveBeenCalledOnce();
   });
+
+  it("hands the kit's keydown through, so Enter and Escape still work", () => {
+    const onKeyDown = vi.fn();
+    render(
+      <NativeMultiSelectEditor
+        ctrl={ctrlFor({
+          editor: { type: "multi-select", options },
+          selectOptions: options,
+        })}
+        label="Tags"
+        onKeyDown={onKeyDown}
+      />
+    );
+    fireEvent.keyDown(document.querySelector("select")!, { key: "Escape" });
+    expect(onKeyDown).toHaveBeenCalledOnce();
+  });
 });

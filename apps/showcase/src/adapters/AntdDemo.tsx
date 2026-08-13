@@ -106,6 +106,7 @@ export function AntdDemo({
   nested,
   rowMode,
   batch,
+  rowMutations,
   editing,
   cellNavigation,
   wide,
@@ -124,6 +125,7 @@ export function AntdDemo({
   nested?: boolean;
   rowMode?: boolean;
   batch?: boolean;
+  rowMutations?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -158,6 +160,7 @@ export function AntdDemo({
         tree={tree}
         rowMode={rowMode}
         batch={batch}
+        rowMutations={rowMutations}
         editing={editing}
         render={(source, columns) => (
           <DataTable

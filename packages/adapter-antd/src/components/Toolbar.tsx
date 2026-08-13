@@ -42,6 +42,8 @@ export function Toolbar<TRow>({
   isRefreshing,
   dir,
   columnMenu,
+  onAddRow,
+  addRowLabel,
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
@@ -135,6 +137,15 @@ export function Toolbar<TRow>({
             </Button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>
+        )}
+        {onAddRow && (
+          <Button
+            type="primary"
+            data-adapttable-part="add-row"
+            onClick={onAddRow}
+          >
+            {addRowLabel}
+          </Button>
         )}
         {showRowsPerPage && (
           <Select

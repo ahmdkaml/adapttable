@@ -73,6 +73,11 @@ export const it: Required<TableLabels> = {
     count === 1 ? "1 riga non salvata" : `${String(count)} righe non salvate`,
   saveAll: "Salva tutto",
   cancelAll: "Annulla tutto",
+  addRow: "Aggiungi riga",
+  duplicateRow: "Duplica riga",
+  deleteRow: "Elimina riga",
+  deleteRowConfirm:
+    "Eliminare questa riga? L'operazione non può essere annullata.",
   moreGroups: (remaining) => `Mostra altri ${remaining} gruppi`,
   moreRowsInGroup: (remaining) => `Mostra altri ${remaining} in questo gruppo`,
   groupTotal: (label) => `Totale ${label}`,

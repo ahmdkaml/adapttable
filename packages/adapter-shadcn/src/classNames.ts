@@ -25,6 +25,10 @@ export const shadcnClassNames = {
     "h-8 rounded-md border border-input bg-background px-1.5 text-sm text-foreground",
   filtersButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  // The one toolbar control that changes the data rather than the view, so it
+  // takes shadcn's primary button rather than the outline every other one uses.
+  addRow:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90",
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   cellSelected: "bg-accent",
