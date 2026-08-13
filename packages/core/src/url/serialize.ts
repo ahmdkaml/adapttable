@@ -43,6 +43,8 @@ export const PARAM_GROUP_BY = "groupBy";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
 /** Column-layout params (hidden / pinned / order / widths). */
+/** Collapsed group keys, comma-separated. */
+export const PARAM_GROUP_CLOSED = "groupClosed";
 export const PARAM_COL_HIDDEN = "colHide";
 export const PARAM_COL_PINNED = "colPin";
 export const PARAM_COL_ORDER = "colOrder";
@@ -269,4 +271,41 @@ export function writeSortLevels(
     prefix + PARAM_SORT,
     levels.map((l) => `${encodeURIComponent(l.key)}:${l.dir}`).join(",")
   );
+}
+
+/**
+ * Read the collapsed group keys.
+ *
+ * @param params - The URL parameters.
+ * @param prefix - The table's namespace, when it has one.
+ * @returns The keys, or `undefined` when the parameter is absent — which means
+ *   "nothing has been said", not "nothing is collapsed".
+ */
+export function readCollapsedGroups(
+  params: URLSearchParams,
+  prefix = ""
+): string[] | undefined {
+  const raw = params.get(prefix + PARAM_GROUP_CLOSED);
+  if (raw === null) return undefined;
+  return raw
+    .split(",")
+    .filter((key) => key.length > 0)
+    .map((key) => decodeURIComponent(key));
+}
+
+/**
+ * Write the collapsed group keys, dropping the parameter when none are.
+ *
+ * @param params - The URL parameters, mutated in place.
+ * @param keys - The collapsed group keys.
+ * @param prefix - The table's namespace, when it has one.
+ */
+export function writeCollapsedGroups(
+  params: URLSearchParams,
+  keys: readonly string[],
+  prefix = ""
+): void {
+  const value = keys.map((key) => encodeURIComponent(key)).join(",");
+  if (value) params.set(prefix + PARAM_GROUP_CLOSED, value);
+  else params.delete(prefix + PARAM_GROUP_CLOSED);
 }

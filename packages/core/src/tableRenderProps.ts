@@ -74,6 +74,12 @@ export interface SharedTableRenderProps<TRow> {
     collapsed: GroupCollapseState;
     entries: readonly GroupedFlatEntry<TRow>[];
     setGroupBy: (key: GroupByInput) => void;
+    /** Open every group. */
+    expandAll: () => void;
+    /** Close every group, at every level. */
+    collapseAll: () => void;
+    /** Show the tree down to `depth` and no further. */
+    collapseToDepth: (depth: number) => void;
   };
   /** Virtual row window (with absolute indices) when virtualization is on. */
   rowEntries?: readonly VirtualTableRow<TRow>[];

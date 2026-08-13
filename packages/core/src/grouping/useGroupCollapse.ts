@@ -12,6 +12,15 @@ export interface GroupCollapseState {
   expandAll: () => void;
   /** Collapse every group in `groupKeys`. */
   collapseAll: (groupKeys: readonly string[]) => void;
+  /**
+   * Show the tree down to `depth` and no further: every group at that depth or
+   * deeper closes, everything above it opens. Depth 0 collapses the top level,
+   * so only the outermost headers show.
+   */
+  collapseToDepth: (
+    depth: number,
+    groups: readonly { key: string; level: number }[]
+  ) => void;
 }
 
 /**
@@ -70,8 +79,33 @@ export function useGroupCollapse(controlled?: {
     [commit]
   );
 
+  const collapseToDepth = useCallback(
+    (depth: number, groups: readonly { key: string; level: number }[]) => {
+      commit(
+        new Set(
+          groups.filter((group) => group.level >= depth).map((g) => g.key)
+        )
+      );
+    },
+    [commit]
+  );
+
   return useMemo(
-    () => ({ collapsedGroupIds, isCollapsed, toggle, expandAll, collapseAll }),
-    [collapsedGroupIds, isCollapsed, toggle, expandAll, collapseAll]
+    () => ({
+      collapsedGroupIds,
+      isCollapsed,
+      toggle,
+      expandAll,
+      collapseAll,
+      collapseToDepth,
+    }),
+    [
+      collapsedGroupIds,
+      isCollapsed,
+      toggle,
+      expandAll,
+      collapseAll,
+      collapseToDepth,
+    ]
   );
 }

@@ -465,6 +465,11 @@ export {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+export {
+  useGroupCollapseUrlState,
+  type UseGroupCollapseUrlStateOptions,
+  type UseGroupCollapseUrlStateResult,
+} from "./url/useGroupCollapseUrlState";
 
 /* ── Export (CSV, and any format a writer adds) ────────────────────── */
 export {

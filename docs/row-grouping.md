@@ -13,6 +13,46 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Controlling what is open
+
+Groups start expanded and collapse on their own. To hold that state yourself,
+pass the pair:
+
+```tsx
+const [closed, setClosed] = useState<string[]>([]);
+
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy={["team", "status"]}
+  collapsedGroupIds={closed}
+  onCollapsedGroupIdsChange={setClosed}
+/>;
+```
+
+The set names what is **closed**, because groups default to open — so an empty
+set is a fully expanded table, and the state stays small no matter how many
+groups there are. Each key carries the group's whole path, so nesting needs no
+extra bookkeeping.
+
+**In the URL**, with `useGroupCollapseUrlState`:
+
+```tsx
+const groups = useGroupCollapseUrlState({ urlKey: "people" });
+
+<DataTable {...groups} groupBy="team" columns={columns} rowKey={rowKey} />;
+```
+
+A link then carries which groups were folded — part of what someone means when
+they send one. Keys are percent-encoded, so a label containing a comma cannot
+split the list, and the parameter disappears when everything is open again.
+
+**Whole-tree actions** live on the table's grouping bundle, for a host that
+wants its own buttons: `expandAll()`, `collapseAll()`, and
+`collapseToDepth(depth)` — depth `0` leaves only the outermost headers showing,
+`1` opens the first level inside them.
+
 ## Ordering and filtering groups
 
 `groupSort` orders the groups inside their parent, and `groupFilter` decides

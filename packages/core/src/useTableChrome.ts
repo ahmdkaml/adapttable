@@ -242,6 +242,15 @@ export interface TableChrome<TRow> {
     /** Flat group-header + leaf entries for adapters to render. */
     entries: readonly GroupedFlatEntry<TRow>[];
     setGroupBy: (key: GroupByInput) => void;
+    /** Open every group. */
+    expandAll: () => void;
+    /** Close every group, at every level. */
+    collapseAll: () => void;
+    /**
+     * Show the tree down to `depth` and no further — `0` leaves only the
+     * outermost headers, `1` opens the first level inside them.
+     */
+    collapseToDepth: (depth: number) => void;
   };
   /**
    * The rows the editing layer must treat as present: the grouped leaf set
@@ -510,12 +519,26 @@ export function useTableChrome<TRow>(
       sort: props.groupSort,
       filter: props.groupFilter,
     });
+    // The whole-tree actions need the keys, and the entries are where they
+    // are: a collapsed group hides its children, so its own key is still
+    // listed while theirs are not — which is exactly what closing everything
+    // one level at a time produces.
+    const openGroups = entries.flatMap((entry) =>
+      entry.kind === "group" ? [{ key: entry.key, level: entry.level }] : []
+    );
     return {
       groupBy: groupByKeys,
       collapsed: groupCollapse,
       aggregates: props.groupAggregates,
       entries,
       setGroupBy,
+      expandAll: groupCollapse.expandAll,
+      collapseAll: () => {
+        groupCollapse.collapseToDepth(0, openGroups);
+      },
+      collapseToDepth: (depth: number) => {
+        groupCollapse.collapseToDepth(depth, openGroups);
+      },
     };
   }, [
     groupByKeys,

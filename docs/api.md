@@ -409,7 +409,13 @@ its `path` and the leaves of its whole subtree — and `groupIndentStyle(level)`
 from `@adapttable/core/adapter` is the indent every kit applies. `GroupSort`
 names the orderings `groupSort` accepts (`"label"`, `"label-desc"`, `"count"`,
 `"count-desc"`, or a comparator) and `GroupNode` is what it and `groupFilter`
-receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`. See
+receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`.
+Expansion is the `collapsedGroupIds` / `onCollapsedGroupIdsChange` pair —
+`useGroupCollapseUrlState(options)` keeps it in the URL
+(`UseGroupCollapseUrlStateOptions` in, `UseGroupCollapseUrlStateResult` out,
+serialized by `readCollapsedGroups` / `writeCollapsedGroups` under
+`PARAM_GROUP_CLOSED`), and the table's grouping bundle carries `expandAll`,
+`collapseAll` and `collapseToDepth`. See
 [row grouping](./row-grouping.md).
 
 **Find in table.** `findMatches(options)` returns every cell whose text

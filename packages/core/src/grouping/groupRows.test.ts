@@ -417,3 +417,96 @@ describe("buildGroupedFlatModel — ordering and filtering groups", () => {
     expect(rows).toEqual(["2", "3", "4", "1"]);
   });
 });
+
+describe("buildGroupedFlatModel — footers", () => {
+  interface Sale {
+    id: string;
+    region: string;
+    amount: number;
+  }
+  const SALES: Sale[] = [
+    { id: "1", region: "West", amount: 10 },
+    { id: "2", region: "East", amount: 90 },
+  ];
+  const columns = [
+    { key: "region", header: "Region" },
+    { key: "id", header: "Id" },
+  ];
+  const build = (
+    extra: Partial<Parameters<typeof buildGroupedFlatModel<Sale>>[0]> = {}
+  ) =>
+    buildGroupedFlatModel<Sale>({
+      rows: SALES,
+      groupBy: "region",
+      columns,
+      getRowId: (row) => row.id,
+      collapsedGroupIds: new Set(),
+      aggregates: (rows) => ({
+        amount: rows.reduce((sum, row) => sum + row.amount, 0),
+      }),
+      footers: true,
+      ...extra,
+    });
+
+  it("closes each group with a footer carrying the same aggregates", () => {
+    const entries = build();
+    expect(entries.map((entry) => entry.kind)).toEqual([
+      "group",
+      "row",
+      "groupFooter",
+      "group",
+      "row",
+      "groupFooter",
+    ]);
+    const footer = entries[2]!;
+    expect(footer).toMatchObject({
+      kind: "groupFooter",
+      label: "West",
+      level: 0,
+      groupBy: "region",
+      aggregateCells: { amount: 10 },
+    });
+  });
+
+  it("names the footer after the group it closes", () => {
+    const [header, , footer] = build();
+    expect(footer?.key).toBe(`${header?.key}:footer`);
+    expect(footer?.kind === "groupFooter" && footer.groupKey).toBe(header?.key);
+  });
+
+  it("emits none at all without the flag", () => {
+    expect(
+      build({ footers: false }).some((e) => e.kind === "groupFooter")
+    ).toBe(false);
+  });
+
+  it("says nothing beneath a collapsed group, footer included", () => {
+    const [header] = build();
+    const collapsed = build({ collapsedGroupIds: new Set([header!.key]) });
+    expect(collapsed.map((entry) => entry.kind)).toEqual([
+      "group",
+      "group",
+      "row",
+      "groupFooter",
+    ]);
+  });
+
+  it("closes the innermost group first", () => {
+    const nested = build({ groupBy: ["region", "id"] });
+    const shape = nested.map((entry) =>
+      entry.kind === "row" ? "row" : `${entry.kind}:${entry.level}`
+    );
+    expect(shape).toEqual([
+      "group:0",
+      "group:1",
+      "row",
+      "groupFooter:1",
+      "groupFooter:0",
+      "group:0",
+      "group:1",
+      "row",
+      "groupFooter:1",
+      "groupFooter:0",
+    ]);
+  });
+});
