@@ -25,6 +25,7 @@ type DemoComponent = ComponentType<
     animate?: boolean;
     grouping?: boolean;
     tree?: boolean;
+    nested?: boolean;
     editing?: boolean;
   }>
 >;
@@ -122,6 +123,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [motion, setMotion] = useState<"on" | "off">("on");
   const [grouping, setGrouping] = useState<"on" | "off">("off");
   const [tree, setTree] = useState<"on" | "off">("off");
+  const [nested, setNested] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -243,6 +245,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Nested">
+          <Segmented
+            label="nested"
+            value={nested}
+            onChange={(v) => {
+              startTransition(() => setNested(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Editing">
           <Segmented
             label="editing"
@@ -289,6 +304,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               animate={motion === "on"}
               grouping={grouping === "on"}
               tree={tree === "on"}
+              nested={nested === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

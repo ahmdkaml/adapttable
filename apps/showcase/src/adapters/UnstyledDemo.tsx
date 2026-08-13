@@ -238,6 +238,7 @@ export function UnstyledDemo({
   animate,
   grouping,
   tree,
+  nested,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -250,6 +251,7 @@ export function UnstyledDemo({
   animate?: boolean;
   grouping?: boolean;
   tree?: boolean;
+  nested?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -264,6 +266,7 @@ export function UnstyledDemo({
       animate={animate}
       grouping={grouping}
       tree={tree}
+      nested={nested}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}

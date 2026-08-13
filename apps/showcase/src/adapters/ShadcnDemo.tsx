@@ -25,6 +25,7 @@ export function ShadcnDemo({
   animate,
   grouping,
   tree,
+  nested,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -37,6 +38,7 @@ export function ShadcnDemo({
   animate?: boolean;
   grouping?: boolean;
   tree?: boolean;
+  nested?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -51,6 +53,7 @@ export function ShadcnDemo({
       animate={animate}
       grouping={grouping}
       tree={tree}
+      nested={nested}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}

@@ -1,3 +1,4 @@
+import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mui";
 import {
@@ -12,9 +13,11 @@ import {
 
 import {
   type AvatarCellProps,
+  DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoOrders,
   demoSavedViews,
   initials,
   LIVE_DEFAULT_LAYOUT,
@@ -24,6 +27,7 @@ import {
   makeBulkActions,
   makeColumns,
   nameHue,
+  type Person,
   type StatusCellProps,
   statusTone,
   strings,
@@ -80,6 +84,22 @@ const MUI_CELLS: DemoCells = {
   ),
 };
 
+/**
+ * The orders under one person, as a nested table — the kit's own `<DataTable>`
+ * inside a row, so the reader gets the same table twice over.
+ */
+const nestedOrders = (row: Person) => ({
+  label: `${row.name} — recent orders`,
+  table: (defaults: NestedTableDefaults) => (
+    <DataTable
+      {...defaults}
+      data={demoOrders(row)}
+      columns={DEMO_ORDER_COLUMNS}
+      rowKey={(order) => order.id}
+    />
+  ),
+});
+
 export function MuiDemo({
   mode,
   locale,
@@ -91,6 +111,7 @@ export function MuiDemo({
   animate,
   grouping,
   tree,
+  nested,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -104,6 +125,7 @@ export function MuiDemo({
   animate?: boolean;
   grouping?: boolean;
   tree?: boolean;
+  nested?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -124,6 +146,7 @@ export function MuiDemo({
             source={source}
             columns={makeColumns(locale, MUI_CELLS)}
             rowKey={(r) => r.id}
+            nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
             selectionStats={editing}
             editHistory={editing}

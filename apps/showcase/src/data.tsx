@@ -57,6 +57,48 @@ for (const person of PEOPLE) {
   if (!TEAM_LEAD.has(person.team)) TEAM_LEAD.set(person.team, person.id);
 }
 
+/** One line item under a person — the nested table's rows. */
+export interface DemoOrder {
+  id: string;
+  item: string;
+  qty: number;
+  amount: number;
+}
+
+const ORDER_ITEMS = [
+  "Analytical engine time",
+  "Punch cards",
+  "Compiler licence",
+  "Support retainer",
+];
+
+/**
+ * The orders under one person, derived from their id so the nested-table demo
+ * needs no second seed file and stays stable across reloads.
+ */
+export function demoOrders(person: Person): DemoOrder[] {
+  const seed = Number(person.id);
+  const count = (seed % 3) + 2;
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${person.id}-${i + 1}`,
+    item: ORDER_ITEMS[(seed + i) % ORDER_ITEMS.length],
+    qty: ((seed + i) % 5) + 1,
+    amount: 1200 + ((seed * 137 + i * 419) % 8800),
+  }));
+}
+
+/** Columns for the nested orders table — a different shape from the parent's. */
+export const DEMO_ORDER_COLUMNS: ColumnDef<DemoOrder>[] = [
+  { key: "item", header: "Item", accessor: (row) => row.item },
+  { key: "qty", header: "Qty", accessor: (row) => row.qty, align: "end" },
+  {
+    key: "amount",
+    header: "Amount",
+    accessor: (row) => `$${row.amount.toLocaleString("en-US")}`,
+    align: "end",
+  },
+];
+
 /** The id of a person's manager, or `undefined` for a team lead. */
 export function reportsTo(person: Person): string | undefined {
   const lead = TEAM_LEAD.get(person.team);
