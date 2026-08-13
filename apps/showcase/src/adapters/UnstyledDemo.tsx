@@ -240,6 +240,7 @@ export function UnstyledDemo({
   tree,
   nested,
   rowMode,
+  batch,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -254,6 +255,7 @@ export function UnstyledDemo({
   tree?: boolean;
   nested?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -270,6 +272,7 @@ export function UnstyledDemo({
       tree={tree}
       nested={nested}
       rowMode={rowMode}
+      batch={batch}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}

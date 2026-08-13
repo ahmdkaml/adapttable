@@ -85,6 +85,10 @@ export {
   NativeMultiSelectEditor,
 } from "./editing/nativeEditors";
 export {
+  BatchEditBar,
+  type BatchEditBarProps,
+  BatchEditCell,
+  type BatchEditCellProps,
   RowEditActions,
   type RowEditActionsProps,
   RowEditCell,

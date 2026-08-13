@@ -69,6 +69,12 @@ export const tr: Required<TableLabels> = {
   undoEdit: "Geri al",
   editRow: "Satırı düzenle",
   saveRow: "Satırı kaydet",
+  pendingRows: (count) =>
+    count === 1
+      ? "1 kaydedilmemiş satır"
+      : `${String(count)} kaydedilmemiş satır`,
+  saveAll: "Tümünü kaydet",
+  cancelAll: "Tümünü iptal et",
   moreGroups: (remaining) => `${remaining} grup daha göster`,
   moreRowsInGroup: (remaining) => `Bu grupta ${remaining} tane daha`,
   groupTotal: (label) => `${label} toplamı`,

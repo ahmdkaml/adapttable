@@ -40,6 +40,7 @@ import {
   windowGroupedEntries,
 } from "@adapttable/core";
 import {
+  BatchEditBar,
   DEFAULT_CARD_SIZE_PX,
   FindBar,
   GridFocusAnnouncer,
@@ -1378,6 +1379,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={c.clearFilters}
           labels={labels}
         />
+        {c.editing?.batch && (
+          <BatchEditBar batch={c.editing.batch} labels={labels} />
+        )}
+
         {selection && props.bulkActions && (
           <BulkBar
             selection={selection}

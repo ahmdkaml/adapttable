@@ -1,6 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import type { ColumnDef } from "../types";
+import type { BatchEditingState } from "./batchEditing";
 import {
   type CellEditCommit,
   type CellEditor,
@@ -55,6 +56,11 @@ export interface EditableCellEditing<TRow> {
    * row editors instead of the per-cell activate control.
    */
   rowEditing?: RowEditingState<TRow>;
+  /**
+   * Batch state, when the host armed it. Every editable cell renders a field
+   * and nothing reaches the host until the reader saves them all.
+   */
+  batch?: BatchEditingState<TRow>;
 }
 
 /** Display / edit mode for one cell. */
@@ -391,10 +397,15 @@ export function rowEditingSignature<TRow>(
   const rowMode = editing.rowEditing;
   const rowDrafts =
     rowMode?.activeRowId === rowId ? (rowMode.signature ?? "") : "";
+  // A batch holds drafts for many rows at once, so each row watches its own
+  // slice of the digest — without it a typed cell never repaints.
+  const batchAll = editing.batch?.signature ?? "";
+  const batchRow =
+    batchAll.split(";").find((entry) => entry.startsWith(`${rowId}:`)) ?? "";
   if (active?.rowId !== rowId) {
-    const base = `${rowSave}${rowMarks}${rowDrafts}`;
+    const base = `${rowSave}${rowMarks}${rowDrafts}${batchRow}`;
     return marked ? `invalid${base}` : base;
   }
   const message = editing.validation?.errorFor(rowId, active.columnKey) ?? "";
-  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}${rowDrafts}`;
+  return `${active.columnKey}:${draft}:${message}:${busy === true ? "1" : ""}${rowSave}${rowMarks}${rowDrafts}${batchRow}`;
 }

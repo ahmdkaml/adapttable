@@ -71,6 +71,12 @@ export const ru: Required<TableLabels> = {
   undoEdit: "Отменить",
   editRow: "Изменить строку",
   saveRow: "Сохранить строку",
+  pendingRows: (count) =>
+    count === 1
+      ? "1 несохранённая строка"
+      : `${String(count)} несохранённых строк`,
+  saveAll: "Сохранить всё",
+  cancelAll: "Отменить всё",
   moreGroups: (remaining) => `Показать ещё групп: ${remaining}`,
   moreRowsInGroup: (remaining) => `Показать ещё в этой группе: ${remaining}`,
   groupTotal: (label) => `Итого: ${label}`,

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { BatchRowEdit } from "./editing/batchEditing";
 import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
@@ -255,6 +256,18 @@ export interface BaseDataTableProps<TRow> {
    * does.
    */
   onRowEdit?: (row: TRow, patch: Readonly<Record<string, unknown>>) => unknown;
+  /**
+   * Change many rows and save them together: every editable cell is a field,
+   * nothing is sent until the reader saves, and one Cancel puts it all back.
+   * The shape of a review pass — walk a list correcting values, write once.
+   * Requires {@link BaseDataTableProps.onBatchEdit}.
+   */
+  batchEditing?: boolean;
+  /**
+   * Take every pending row at once, as a list of `{ row, rowId, patch }`. Called
+   * once per save, which is what lets a host make the whole batch one request.
+   */
+  onBatchEdit?: (edits: readonly BatchRowEdit<TRow>[]) => unknown;
   /**
    * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
    * to judge. Defaults to a shallow spread keyed by the column key, which is

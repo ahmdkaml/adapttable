@@ -132,6 +132,7 @@ export function UnstyledLike({
   tree,
   nested,
   rowMode,
+  batch,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -147,6 +148,7 @@ export function UnstyledLike({
   tree?: boolean;
   nested?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -161,6 +163,7 @@ export function UnstyledLike({
       grouping={grouping}
       tree={tree}
       rowMode={rowMode}
+      batch={batch}
       editing={editing}
       render={(source, columns) => {
         return (

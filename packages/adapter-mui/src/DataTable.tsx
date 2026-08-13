@@ -1,5 +1,6 @@
 import { resolveLabels } from "@adapttable/core";
 import {
+  BatchEditBar,
   FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
@@ -174,6 +175,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={c.clearFilters}
           labels={labels}
         />
+        {c.editing?.batch && (
+          <BatchEditBar batch={c.editing.batch} labels={labels} />
+        )}
+
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}

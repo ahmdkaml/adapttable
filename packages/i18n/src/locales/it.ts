@@ -69,6 +69,10 @@ export const it: Required<TableLabels> = {
   undoEdit: "Annulla",
   editRow: "Modifica riga",
   saveRow: "Salva riga",
+  pendingRows: (count) =>
+    count === 1 ? "1 riga non salvata" : `${String(count)} righe non salvate`,
+  saveAll: "Salva tutto",
+  cancelAll: "Annulla tutto",
   moreGroups: (remaining) => `Mostra altri ${remaining} gruppi`,
   moreRowsInGroup: (remaining) => `Mostra altri ${remaining} in questo gruppo`,
   groupTotal: (label) => `Totale ${label}`,

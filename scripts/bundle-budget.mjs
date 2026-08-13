@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 51,
+    budgetKB: 53,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -114,15 +114,16 @@ const FIXTURES = [
   // editor's contract; dirty marks add the per-cell change set every row reads.
   // Row editing adds the second commit unit — the whole-row draft state, the
   // cell that renders a field instead of a value, and the three controls that
-  // end the edit.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 76 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 75 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 75 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 72 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 75 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 81 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 78 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 76 },
+  // end the edit — and batch editing the third, holding many rows at once
+  // behind one write.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 78 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 77 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 77 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 74 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 77 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 83 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 80 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 78 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

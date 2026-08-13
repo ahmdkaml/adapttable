@@ -70,6 +70,10 @@ export const he: Required<TableLabels> = {
   undoEdit: "בטל",
   editRow: "ערוך שורה",
   saveRow: "שמור שורה",
+  pendingRows: (count) =>
+    count === 1 ? "שורה אחת שלא נשמרה" : `${String(count)} שורות שלא נשמרו`,
+  saveAll: "שמור הכול",
+  cancelAll: "בטל הכול",
   moreGroups: (remaining) => `הצגת ${remaining} קבוצות נוספות`,
   moreRowsInGroup: (remaining) => `הצגת ${remaining} נוספות בקבוצה`,
   groupTotal: (label) => `סך הכול ${label}`,

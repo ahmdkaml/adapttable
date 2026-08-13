@@ -96,6 +96,16 @@ interface DataProps {
   editing?: boolean;
   tree?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
+}
+
+/** Apply whichever of a batch's edits belongs to this row. */
+function applyEdits(
+  row: Person,
+  edits: readonly { row: Person; patch: Record<string, unknown> }[]
+): Person {
+  const edit = edits.find((one) => one.row.id === row.id);
+  return edit ? applyRowPatch(row, edit.patch) : row;
 }
 
 /**
@@ -132,6 +142,7 @@ function Frontend({
   editing,
   tree,
   rowMode,
+  batch,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -143,6 +154,12 @@ function Frontend({
           r.id === row.id ? { ...r, [field]: nextValue as never } : r
         )
       );
+    },
+    []
+  );
+  const onBatchEdit = useCallback(
+    (edits: readonly { row: Person; patch: Record<string, unknown> }[]) => {
+      setData((prev) => prev.map((row) => applyEdits(row, edits)));
     },
     []
   );
@@ -196,6 +213,8 @@ function Frontend({
         // the first person on each team leads it, the rest report to them.
         // Nothing about the data changes — only how it is declared.
         ...(tree ? { getParentId: reportsTo, treeColumn: "person" } : {}),
+        // Batch mode: every editable cell is a field, one write at the end.
+        ...(batch ? { batchEditing: true, onBatchEdit } : {}),
       })}
     </>
   );
@@ -231,6 +250,7 @@ export function DemoBody({
   editing,
   tree,
   rowMode,
+  batch,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -241,6 +261,7 @@ export function DemoBody({
   tree?: boolean;
   editing?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -280,6 +301,7 @@ export function DemoBody({
       editing={editing}
       tree={tree}
       rowMode={rowMode}
+      batch={batch}
     />
   );
 }

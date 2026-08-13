@@ -70,6 +70,10 @@ export const ur: Required<TableLabels> = {
   undoEdit: "واپس کریں",
   editRow: "قطار میں ترمیم کریں",
   saveRow: "قطار محفوظ کریں",
+  pendingRows: (count) =>
+    count === 1 ? "1 غیر محفوظ قطار" : `${String(count)} غیر محفوظ قطاریں`,
+  saveAll: "سب محفوظ کریں",
+  cancelAll: "سب منسوخ کریں",
   moreGroups: (remaining) => `${remaining} مزید گروپ دکھائیں`,
   moreRowsInGroup: (remaining) => `اس گروپ میں ${remaining} مزید`,
   groupTotal: (label) => `${label} کا کل`,

@@ -71,6 +71,10 @@ export const defaultLabels: Required<TableLabels> = {
   undoEdit: "Undo",
   editRow: "Edit row",
   saveRow: "Save row",
+  pendingRows: (count) =>
+    count === 1 ? "1 unsaved row" : `${String(count)} unsaved rows`,
+  saveAll: "Save all",
+  cancelAll: "Cancel all",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

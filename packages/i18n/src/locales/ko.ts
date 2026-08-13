@@ -68,6 +68,12 @@ export const ko: Required<TableLabels> = {
   undoEdit: "되돌리기",
   editRow: "행 편집",
   saveRow: "행 저장",
+  pendingRows: (count) =>
+    count === 1
+      ? "저장되지 않은 행 1개"
+      : `${String(count)} 개의 저장되지 않은 행`,
+  saveAll: "모두 저장",
+  cancelAll: "모두 취소",
   moreGroups: (remaining) => `${remaining}개 그룹 더 보기`,
   moreRowsInGroup: (remaining) => `이 그룹에서 ${remaining}개 더 보기`,
   groupTotal: (label) => `${label} 합계`,

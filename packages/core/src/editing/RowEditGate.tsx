@@ -11,6 +11,7 @@
 import type { ReactElement } from "react";
 
 import type { TableLabels } from "../types";
+import type { BatchEditingState } from "./batchEditing";
 import {
   type CellEditor,
   type EditableColumnLike,
@@ -260,4 +261,154 @@ export function RowEditActions<TRow>({
       </button>
     </span>
   );
+}
+
+/** Props for {@link BatchEditCell}. */
+export interface BatchEditCellProps<TRow> {
+  /** The batch state from the chrome. */
+  batch: BatchEditingState<TRow>;
+  /** The row this cell belongs to. */
+  row: TRow;
+  /** Its stable id. */
+  rowId: string;
+  /** The column this cell belongs to. */
+  column: EditableColumnLike<TRow>;
+  /** The cell's display content, for a column that is not editable. */
+  display: ReactElement | string | number | null;
+  /** Accessible name for the editor (`labels.editCell`). */
+  editLabel: string;
+  /** Render the kit's own editor from a controller. */
+  renderEditor: (ctrl: EditableCellEditorCtrl) => ReactElement;
+}
+
+/**
+ * One cell while a batch is being edited: always a field, never an activate
+ * control.
+ *
+ * Batch mode's premise is that the reader is walking a list correcting values,
+ * so making them open each cell first would be the friction the mode exists to
+ * remove. A changed cell carries `data-changed`, which is how the reader finds
+ * their way back to what they touched.
+ *
+ * @typeParam TRow - The row type.
+ * @param props - See {@link BatchEditCellProps}.
+ * @returns The field, or the display content.
+ */
+export function BatchEditCell<TRow>({
+  batch,
+  row,
+  rowId,
+  column,
+  display,
+  editLabel,
+  renderEditor,
+}: Readonly<BatchEditCellProps<TRow>>): ReactElement {
+  const editor = resolveCellEditor(column);
+  if (!editor) return <>{display}</>;
+
+  const ctrl: EditableCellEditorCtrl = {
+    draft: batch.draftFor(row, rowId, column.key),
+    setDraft: (value) => {
+      batch.setDraft(row, rowId, column.key, value);
+    },
+    // No key ends a batch: the reader is moving through a list, and Enter would
+    // send everything they have not finished.
+    onEditorKeyDown: () => undefined,
+    commitOnBlur: () => undefined,
+    editor,
+    selectOptions: selectOptionsFor(editor),
+    validating: false,
+    errorId: `adapttable-batch-edit-${rowId}-${column.key}`,
+    // Nothing steals focus: every cell is a field, and the reader chose where
+    // to start.
+    focusRef: () => undefined,
+  };
+
+  if (isCustomEditor(editor)) {
+    return editor.render({
+      draft: ctrl.draft,
+      setDraft: ctrl.setDraft,
+      commit: () => undefined,
+      cancel: () => {
+        batch.cancelRow(rowId);
+      },
+      onKeyDown: ctrl.onEditorKeyDown,
+      onBlur: ctrl.commitOnBlur,
+      focusRef: ctrl.focusRef,
+      label: editLabel,
+      validating: false,
+      errorId: ctrl.errorId,
+    });
+  }
+  return (
+    <span
+      data-adapttable-part="batch-edit-cell"
+      data-changed={batch.isChanged(rowId, column.key) ? "" : undefined}
+    >
+      {renderEditor(ctrl)}
+    </span>
+  );
+}
+
+/** Props for {@link BatchEditBar}. */
+export interface BatchEditBarProps<TRow> {
+  /** The batch state from the chrome. */
+  batch: BatchEditingState<TRow>;
+  /** Labels; falls back to the built-in English. */
+  labels?: TableLabels;
+  /** Class for the bar. */
+  className?: string;
+  /** Class for each button. */
+  buttonClassName?: string;
+}
+
+/**
+ * The bar that ends a batch: how many rows are waiting, save all, cancel all.
+ *
+ * Rendered only while something is pending — a bar that is always there says
+ * the table is in a mode, when what matters is that there are unsaved changes.
+ *
+ * @typeParam TRow - The row type.
+ * @param props - See {@link BatchEditBarProps}.
+ * @returns The bar, or nothing.
+ */
+export function BatchEditBar<TRow>({
+  batch,
+  labels,
+  className,
+  buttonClassName,
+}: Readonly<BatchEditBarProps<TRow>>): ReactElement | null {
+  if (!batch.pending) return null;
+  const count = (labels?.pendingRows ?? defaultPendingRows)(batch.count);
+  return (
+    <div
+      data-adapttable-part="batch-edit-bar"
+      className={className}
+      role="status"
+      style={{ display: "flex", alignItems: "center", gap: "0.5em" }}
+    >
+      <span data-adapttable-part="batch-edit-count">{count}</span>
+      <button
+        type="button"
+        data-adapttable-part="batch-edit-save"
+        className={buttonClassName}
+        onClick={batch.saveAll}
+      >
+        {labels?.saveAll ?? "Save all"}
+      </button>
+      <button
+        type="button"
+        data-adapttable-part="batch-edit-cancel"
+        className={buttonClassName}
+        onClick={batch.cancelAll}
+      >
+        {labels?.cancelAll ?? "Cancel all"}
+      </button>
+    </div>
+  );
+}
+
+/** "3 unsaved rows" — replaceable through `labels.pendingRows`. */
+function defaultPendingRows(count: number): string {
+  return count === 1 ? "1 unsaved row" : `${String(count)} unsaved rows`;
 }

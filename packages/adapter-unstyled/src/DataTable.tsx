@@ -1,5 +1,6 @@
 import type { TableSource } from "@adapttable/core";
 import {
+  BatchEditBar,
   ExportAnnouncer,
   FindBar,
   GridFocusAnnouncer,
@@ -386,6 +387,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         labels={labels}
         classNames={classNames}
       />
+
+      {chrome.editing?.batch && (
+        <BatchEditBar batch={chrome.editing.batch} labels={labels} />
+      )}
 
       {table.selection && bulkActions && (
         <BulkBar

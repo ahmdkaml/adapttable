@@ -68,6 +68,12 @@ export const fr: Required<TableLabels> = {
   undoEdit: "Annuler",
   editRow: "Modifier la ligne",
   saveRow: "Enregistrer la ligne",
+  pendingRows: (count) =>
+    count === 1
+      ? "1 ligne non enregistrée"
+      : `${String(count)} lignes non enregistrées`,
+  saveAll: "Tout enregistrer",
+  cancelAll: "Tout annuler",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

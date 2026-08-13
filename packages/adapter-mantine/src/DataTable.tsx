@@ -4,6 +4,7 @@ import {
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
+  BatchEditBar,
   FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
@@ -250,6 +251,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               label={table.labels.filters}
               clearAllLabel={table.labels.clearAll}
             />
+            {chrome.editing?.batch && (
+              <BatchEditBar
+                batch={chrome.editing.batch}
+                labels={table.labels}
+              />
+            )}
+
             {table.selection && bulkActions && (
               <BulkActionBar
                 selection={table.selection}

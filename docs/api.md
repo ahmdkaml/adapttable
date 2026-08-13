@@ -310,6 +310,14 @@ together and hands the host one patch of what changed. `RowEditCell` (`RowEditCe
 `@adapttable/core/adapter` render the fields and the edit / save / cancel
 controls; `labels.editRow` and `labels.saveRow` name them.
 
+**Changing many rows at once.** `batchEditing` + `onBatchEdit` hold every change
+until one save: `useBatchEditing(options)` (`UseBatchEditingOptions` in,
+`BatchEditingState` out) counts pending ROWS, marks changed cells, and produces
+the `BatchRowEdit<TRow>[]` — `{ row, rowId, patch }` — the host receives in a
+single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
+cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
+all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
+
 **Dirty marks.** `dirtyIndicators` turns them on;
 `useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds
 which cells hold an unconfirmed change, with `isDirty` / `isRowDirty`, a `count`,

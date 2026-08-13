@@ -13,7 +13,7 @@ import {
   focusEditorOnMount,
   stopCellEditKeyboard,
 } from "./editableCellController";
-import { RowEditCell } from "./RowEditGate";
+import { BatchEditCell, RowEditCell } from "./RowEditGate";
 
 /** Props for a kit-native editor while a cell is active. */
 export interface EditableCellEditorCtrl {
@@ -203,6 +203,24 @@ export function EditableCellGate<TRow>(
     restoreFocusRef.current = false;
     activateRef.current?.focus();
   });
+
+  // A batch turns every editable cell into a field: the reader is walking a
+  // list correcting values, and opening each cell first is the friction the
+  // mode exists to remove.
+  const batch = props.editing?.batch;
+  if (batch) {
+    return (
+      <BatchEditCell
+        batch={batch}
+        row={props.row}
+        rowId={props.rowId}
+        column={props.column}
+        display={<>{props.display}</>}
+        editLabel={props.editLabel}
+        renderEditor={props.renderEditor}
+      />
+    );
+  }
 
   // A row being edited as one unit owns every cell in it: the per-cell activate
   // control would be a second way to start an edit that is already open.

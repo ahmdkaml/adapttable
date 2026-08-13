@@ -99,6 +99,7 @@ export function ChakraDemo({
   tree,
   nested,
   rowMode,
+  batch,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -114,6 +115,7 @@ export function ChakraDemo({
   tree?: boolean;
   nested?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -131,6 +133,7 @@ export function ChakraDemo({
           grouping={grouping}
           tree={tree}
           rowMode={rowMode}
+          batch={batch}
           editing={editing}
           render={(source, columns) => (
             <DataTable

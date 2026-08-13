@@ -68,6 +68,10 @@ export const zh: Required<TableLabels> = {
   undoEdit: "撤销",
   editRow: "编辑行",
   saveRow: "保存行",
+  pendingRows: (count) =>
+    count === 1 ? "1 行未保存" : `${String(count)} 行未保存`,
+  saveAll: "全部保存",
+  cancelAll: "全部取消",
   moreGroups: (remaining) => `再显示 ${remaining} 个分组`,
   moreRowsInGroup: (remaining) => `在此分组中再显示 ${remaining} 行`,
   groupTotal: (label) => `${label} 合计`,

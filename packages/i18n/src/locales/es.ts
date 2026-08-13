@@ -69,6 +69,10 @@ export const es: Required<TableLabels> = {
   undoEdit: "Deshacer",
   editRow: "Editar fila",
   saveRow: "Guardar fila",
+  pendingRows: (count) =>
+    count === 1 ? "1 fila sin guardar" : `${String(count)} filas sin guardar`,
+  saveAll: "Guardar todo",
+  cancelAll: "Cancelar todo",
   moreGroups: (remaining) => `Mostrar ${remaining} grupos más`,
   moreRowsInGroup: (remaining) => `Mostrar ${remaining} más en este grupo`,
   groupTotal: (label) => `Total ${label}`,

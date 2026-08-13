@@ -69,6 +69,10 @@ export const fa: Required<TableLabels> = {
   undoEdit: "بازگردانی",
   editRow: "ویرایش ردیف",
   saveRow: "ذخیره ردیف",
+  pendingRows: (count) =>
+    count === 1 ? "۱ ردیف ذخیره‌نشده" : `${String(count)} ردیف ذخیره‌نشده`,
+  saveAll: "ذخیره همه",
+  cancelAll: "لغو همه",
   moreGroups: (remaining) => `نمایش ${remaining} گروه دیگر`,
   moreRowsInGroup: (remaining) => `نمایش ${remaining} مورد دیگر در این گروه`,
   groupTotal: (label) => `جمع ${label}`,

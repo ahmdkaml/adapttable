@@ -429,6 +429,12 @@ export {
 
 /* ── Inline cell editing ───────────────────────────────────────────── */
 export {
+  type BatchEditingState,
+  type BatchRowEdit,
+  useBatchEditing,
+  type UseBatchEditingOptions,
+} from "./editing/batchEditing";
+export {
   booleanDraft,
   type CellEditCommit,
   type CellEditor,

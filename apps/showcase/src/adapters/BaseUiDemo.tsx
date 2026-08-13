@@ -123,6 +123,7 @@ export function BaseUiDemo({
   tree,
   nested,
   rowMode,
+  batch,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -138,6 +139,7 @@ export function BaseUiDemo({
   tree?: boolean;
   nested?: boolean;
   rowMode?: boolean;
+  batch?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -151,6 +153,7 @@ export function BaseUiDemo({
       grouping={grouping}
       tree={tree}
       rowMode={rowMode}
+      batch={batch}
       editing={editing}
       render={(source, columns) => (
         <DataTable

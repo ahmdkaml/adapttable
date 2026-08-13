@@ -321,6 +321,43 @@ Headless: `useRowEditing` (`RowEditingState`, `RowEditDrafts`,
 (`RowEditControlsOptions` in, `RowEditControls` out) from
 `@adapttable/core/adapter` for a custom renderer.
 
+## Changing many rows, saving once
+
+A review pass — walking a list correcting values — wants one write at the end,
+not one per row. `batchEditing` turns every editable cell into a field and holds
+every change until the reader saves them all:
+
+```tsx
+<DataTable
+  {...props}
+  batchEditing
+  onBatchEdit={(edits) => {
+    // edits === [{ row, rowId, patch }, …] — every pending row, once
+    return api.saveAll(
+      edits.map((edit) => ({ id: edit.rowId, ...edit.patch }))
+    );
+  }}
+/>
+```
+
+`onBatchEdit` is called **once** per save, which is what lets the whole batch be
+one request — and makes it atomic if your endpoint treats it that way. A bar
+appears as soon as something is pending, with the count, Save all and Cancel all;
+it is a live region, so the count is heard as well as seen. Cancel restores
+everything at once, because nothing was ever applied.
+
+The count is **rows**, not cells: three changes across two rows read "2 unsaved
+rows". A value typed back to what it was stops counting. Changed cells carry
+`data-changed`, so the reader can find their way back to what they touched.
+
+Labels: `pendingRows(count)`, `saveAll`, `cancelAll` — localized in every locale.
+Parts: `batch-edit-cell`, `batch-edit-bar`, `batch-edit-count`,
+`batch-edit-save`, `batch-edit-cancel`.
+
+Headless: `useBatchEditing` (`BatchEditingState`, `BatchRowEdit`,
+`UseBatchEditingOptions`), with `BatchEditCell` and `BatchEditBar` from
+`@adapttable/core/adapter`.
+
 ## Dirty marks
 
 A table that looks identical before and after a save leaves the reader no way to

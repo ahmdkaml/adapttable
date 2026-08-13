@@ -68,6 +68,10 @@ export const zhTW: Required<TableLabels> = {
   undoEdit: "復原",
   editRow: "編輯列",
   saveRow: "儲存列",
+  pendingRows: (count) =>
+    count === 1 ? "1 列未儲存" : `${String(count)} 列未儲存`,
+  saveAll: "全部儲存",
+  cancelAll: "全部取消",
   moreGroups: (remaining) => `再顯示 ${remaining} 個群組`,
   moreRowsInGroup: (remaining) => `在此群組中再顯示 ${remaining} 列`,
   groupTotal: (label) => `${label} 總計`,

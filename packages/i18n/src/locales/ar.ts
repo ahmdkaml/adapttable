@@ -70,6 +70,10 @@ export const ar: Required<TableLabels> = {
   undoEdit: "تراجع",
   editRow: "تعديل الصف",
   saveRow: "حفظ الصف",
+  pendingRows: (count) =>
+    count === 1 ? "صف واحد غير محفوظ" : `${String(count)} صفوف غير محفوظة`,
+  saveAll: "حفظ الكل",
+  cancelAll: "إلغاء الكل",
   moreGroups: (remaining) => `عرض ${remaining} مجموعات أخرى`,
   moreRowsInGroup: (remaining) => `عرض ${remaining} أخرى في هذه المجموعة`,
   groupTotal: (label) => `إجمالي ${label}`,

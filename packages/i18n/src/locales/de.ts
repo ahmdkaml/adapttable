@@ -69,6 +69,12 @@ export const de: Required<TableLabels> = {
   undoEdit: "Rückgängig",
   editRow: "Zeile bearbeiten",
   saveRow: "Zeile speichern",
+  pendingRows: (count) =>
+    count === 1
+      ? "1 ungespeicherte Zeile"
+      : `${String(count)} ungespeicherte Zeilen`,
+  saveAll: "Alle speichern",
+  cancelAll: "Alle verwerfen",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

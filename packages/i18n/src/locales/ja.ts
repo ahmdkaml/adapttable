@@ -68,6 +68,10 @@ export const ja: Required<TableLabels> = {
   undoEdit: "元に戻す",
   editRow: "行を編集",
   saveRow: "行を保存",
+  pendingRows: (count) =>
+    count === 1 ? "未保存の行 1 件" : `${String(count)} 件の未保存の行`,
+  saveAll: "すべて保存",
+  cancelAll: "すべて取り消し",
   moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
   moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,

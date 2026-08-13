@@ -69,6 +69,12 @@ export const hi: Required<TableLabels> = {
   undoEdit: "पूर्ववत करें",
   editRow: "पंक्ति संपादित करें",
   saveRow: "पंक्ति सहेजें",
+  pendingRows: (count) =>
+    count === 1
+      ? "1 सहेजी न गई पंक्ति"
+      : `${String(count)} सहेजी न गई पंक्तियाँ`,
+  saveAll: "सभी सहेजें",
+  cancelAll: "सभी रद्द करें",
   moreGroups: (remaining) => `${remaining} और समूह दिखाएँ`,
   moreRowsInGroup: (remaining) => `इस समूह में ${remaining} और दिखाएँ`,
   groupTotal: (label) => `${label} कुल`,

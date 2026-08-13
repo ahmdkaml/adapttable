@@ -1,4 +1,5 @@
 import {
+  BatchEditBar,
   FindBar,
   GridFocusAnnouncer,
   SelectionStatsBar,
@@ -173,6 +174,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={chrome.clearFilters}
           labels={labels}
         />
+        {chrome.editing?.batch && (
+          <BatchEditBar batch={chrome.editing.batch} labels={labels} />
+        )}
+
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}

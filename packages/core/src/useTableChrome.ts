@@ -8,6 +8,7 @@ import {
   type UseColumnLayoutResult,
 } from "./columns/useColumnLayout";
 import { DEFAULT_CARD_SIZE_PX, DEFAULT_ROW_SIZE_PX } from "./constants";
+import { useBatchEditing } from "./editing/batchEditing";
 import { useDirtyCells } from "./editing/dirtyCells";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import { useRowEditing } from "./editing/rowEditing";
@@ -529,7 +530,15 @@ export function useTableChrome<TRow>(
   // Either channel arms the bundle: a host that wants row-level commits only
   // never passes `onCellEdit`, and its cells stay display-only until a reader
   // opens the row.
-  const editingArmed = onCellEdit !== undefined || rowModeArmed;
+  // Batch mode is the third commit unit: many rows held, one write at the end.
+  const batchArmed =
+    props.batchEditing === true && props.onBatchEdit !== undefined;
+  const batch = useBatchEditing<TRow>({
+    enabled: batchArmed,
+    columns: resolvedColumns,
+    onBatchEdit: props.onBatchEdit,
+  });
+  const editingArmed = onCellEdit !== undefined || rowModeArmed || batchArmed;
   const editing = useMemo(
     () =>
       editingArmed
@@ -542,6 +551,7 @@ export function useTableChrome<TRow>(
             // Only when the host armed row mode: carried unconditionally, every
             // table with cell editing would grow an "Edit row" control.
             rowEditing: rowModeArmed ? rowEditing : undefined,
+            batch: batchArmed ? batch : undefined,
           }
         : undefined,
     [
@@ -553,6 +563,8 @@ export function useTableChrome<TRow>(
       dirty,
       rowModeArmed,
       rowEditing,
+      batchArmed,
+      batch,
     ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column

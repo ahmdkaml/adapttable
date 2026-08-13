@@ -456,6 +456,12 @@ export interface TableLabels {
   editRow?: string;
   /** Accessible name for committing a row edit. */
   saveRow?: string;
+  /** How many rows a batch is holding — "3 unsaved rows". */
+  pendingRows?: (count: number) => string;
+  /** The control that commits a whole batch. */
+  saveAll?: string;
+  /** The control that discards one. */
+  cancelAll?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

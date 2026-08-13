@@ -70,6 +70,10 @@ export const pt: Required<TableLabels> = {
   undoEdit: "Desfazer",
   editRow: "Editar linha",
   saveRow: "Salvar linha",
+  pendingRows: (count) =>
+    count === 1 ? "1 linha não salva" : `${String(count)} linhas não salvas`,
+  saveAll: "Salvar tudo",
+  cancelAll: "Cancelar tudo",
   moreGroups: (remaining) => `Mostrar mais ${remaining} grupos`,
   moreRowsInGroup: (remaining) => `Mostrar mais ${remaining} neste grupo`,
   groupTotal: (label) => `Total ${label}`,
