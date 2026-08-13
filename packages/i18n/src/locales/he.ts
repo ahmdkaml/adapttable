@@ -57,6 +57,8 @@ export const he: Required<TableLabels> = {
   moveStart: "הזז לכיוון ההתחלה",
   moveEnd: "הזז לכיוון הסוף",
   resetColumns: "אפס עמודות",
+  autoSizeColumns: "התאמת עמודות לתוכן",
+  autoSizeColumn: "התאמת עמודה לתוכן",
   resizeColumn: "שנה גודל עמודה",
   showColumn: "הצג עמודה",
   hideColumn: "הסתר עמודה",

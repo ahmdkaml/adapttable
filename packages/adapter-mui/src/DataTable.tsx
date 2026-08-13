@@ -89,6 +89,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
+      onAutoSize={shell.autoSizeColumns}
       layout={c.columnLayout}
       labels={labels}
       hasRowActions={hasRowActions}

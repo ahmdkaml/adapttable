@@ -55,6 +55,8 @@ export const fr: Required<TableLabels> = {
   moveStart: "Déplacer au début",
   moveEnd: "Déplacer à la fin",
   resetColumns: "Réinitialiser les colonnes",
+  autoSizeColumns: "Ajuster les colonnes au contenu",
+  autoSizeColumn: "Ajuster la colonne au contenu",
   resizeColumn: "Redimensionner la colonne",
   showColumn: "Afficher la colonne",
   hideColumn: "Masquer la colonne",

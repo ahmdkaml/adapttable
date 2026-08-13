@@ -57,6 +57,8 @@ export const ur: Required<TableLabels> = {
   moveStart: "شروع کی طرف منتقل کریں",
   moveEnd: "آخر کی طرف منتقل کریں",
   resetColumns: "کالمز ری سیٹ کریں",
+  autoSizeColumns: "کالم مواد کے مطابق کریں",
+  autoSizeColumn: "کالم کو مواد کے مطابق کریں",
   resizeColumn: "کالم کا سائز تبدیل کریں",
   showColumn: "کالم دکھائیں",
   hideColumn: "کالم چھپائیں",

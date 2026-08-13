@@ -39,6 +39,8 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
 };
@@ -54,7 +56,12 @@ describe("mantine ColumnMenu", () => {
     const layout = fakeLayout();
     render(
       <MantineProvider>
-        <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+        <ColumnMenu
+          allColumns={cols}
+          layout={layout}
+          labels={labels}
+          onAutoSize={() => undefined}
+        />
       </MantineProvider>
     );
     await user.click(screen.getByRole("button", { name: "Columns" }));
@@ -99,7 +106,12 @@ describe("mantine ColumnMenu", () => {
     const layout = fakeLayout();
     render(
       <MantineProvider>
-        <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+        <ColumnMenu
+          allColumns={cols}
+          layout={layout}
+          labels={labels}
+          onAutoSize={() => undefined}
+        />
       </MantineProvider>
     );
     await user.click(screen.getByRole("button", { name: "Columns" }));
@@ -135,6 +147,7 @@ describe("mantine ColumnMenu", () => {
       <MantineProvider>
         <ColumnMenu
           allColumns={cols}
+          onAutoSize={() => undefined}
           layout={layout}
           labels={labels}
           hasRowActions
@@ -178,6 +191,7 @@ describe("mantine ColumnMenu", () => {
       <MantineProvider>
         <ColumnMenu
           allColumns={cols}
+          onAutoSize={() => undefined}
           layout={layout}
           labels={labels}
           hasRowActions
@@ -207,6 +221,7 @@ describe("mantine ColumnMenu", () => {
       <MantineProvider>
         <ColumnMenu
           allColumns={cols}
+          onAutoSize={() => undefined}
           layout={fakeLayout()}
           labels={labels}
           dir="rtl"

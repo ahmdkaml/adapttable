@@ -461,6 +461,7 @@ function DesktopRowBase<TRow>({
           return (
             <Table.Td
               key={column.key}
+              data-column-key={column.key}
               {...getCellProps(column)}
               {...focusProps}
               style={

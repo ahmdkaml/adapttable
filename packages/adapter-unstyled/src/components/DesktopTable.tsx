@@ -290,6 +290,7 @@ function DesktopRowBase<TRow>(
           return (
             <td
               key={column.key}
+              data-column-key={column.key}
               {...table.getCellProps(column, pinStyle && { style: pinStyle })}
               {...focusProps}
               data-adapttable-part="cell"

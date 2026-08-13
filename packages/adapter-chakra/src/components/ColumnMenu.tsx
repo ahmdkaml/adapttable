@@ -39,6 +39,8 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * actions column always trails, so it never reorders or pins left).
    */
   hasRowActions?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
   /** Text direction — flips the row layout (grip ↔ pin) under RTL, since the
    *  menu portals to `<body>` and would otherwise lose the table's direction. */
   dir?: Direction;
@@ -115,6 +117,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions,
+  onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
@@ -218,6 +221,9 @@ export function ColumnMenu<TRow>({
                 </>
               )}
               <Separator my={1} />
+              <Button size="xs" variant="ghost" onClick={onAutoSize}>
+                {labels.autoSizeColumns}
+              </Button>
               <Button size="xs" variant="ghost" onClick={() => layout.reset()}>
                 {labels.resetColumns}
               </Button>

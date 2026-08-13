@@ -235,6 +235,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               columnMenu={
                 <ColumnMenuSlot
                   enabled={enableColumnMenu && !isMobile}
+                  onAutoSize={shell.autoSizeColumns}
                   allColumns={chrome.allColumns}
                   layout={chrome.columnLayout}
                   labels={table.labels}

@@ -218,6 +218,8 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * end-pins like any data column.
    */
   hasRowActions?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
 }
 
 /**
@@ -232,6 +234,7 @@ export function ColumnMenu<TRow>({
   labels,
   classNames,
   hasRowActions,
+  onAutoSize,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
@@ -297,6 +300,14 @@ export function ColumnMenu<TRow>({
               />
             </>
           )}
+          <button
+            type="button"
+            data-adapttable-part="column-menu-auto-size"
+            className={cx(classNames.columnMenuAutoSize)}
+            onClick={onAutoSize}
+          >
+            {labels.autoSizeColumns}
+          </button>
           <button
             type="button"
             data-adapttable-part="column-menu-reset"

@@ -151,6 +151,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             props.enableColumnMenu && !chrome.isMobile ? (
               <ColumnMenu
                 allColumns={chrome.allColumns}
+                onAutoSize={shell.autoSizeColumns}
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}

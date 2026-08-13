@@ -55,6 +55,8 @@ export const zh: Required<TableLabels> = {
   moveStart: "移到开头",
   moveEnd: "移到末尾",
   resetColumns: "重置列",
+  autoSizeColumns: "列宽自适应内容",
+  autoSizeColumn: "列宽自适应内容",
   resizeColumn: "调整列宽",
   showColumn: "显示列",
   hideColumn: "隐藏列",

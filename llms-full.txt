@@ -2880,6 +2880,30 @@ export function People() {
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
+## Sizing a column to its content
+
+Double-click a resize handle and that column takes the width of its widest
+rendered cell. The Columns menu's **Size columns to content** does the same for
+every column at once.
+
+Measurement comes from the DOM, not the data: a cell renders a badge, an avatar
+and a name, and the only honest answer to "how wide is this column" is what the
+browser laid out. It measures the **rendered** rows — the page, or the window
+under virtualization — which is the set the reader is looking at, and it reads
+each cell's content width, so a column that is currently clipping its text is
+sized to fit it rather than to its clipped width.
+
+The result is an ordinary width in the column layout: it persists, serializes to
+the URL and to saved views, and a later drag overrides it exactly as it
+overrides any other width. A column with nothing measurable on screen is left
+alone rather than collapsed.
+
+Both actions are localizable — `labels.autoSizeColumns` and
+`labels.autoSizeColumn` — in all seventeen locales.
+
+Headless: `measureColumnWidth(root, key)` and `autoSizeColumns(root, keys,
+setWidth)`.
+
 ---
 
 # React table saved views — shareable named layouts
@@ -3656,6 +3680,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `columnMenuItem` / `columnMenuGrip` / `columnMenuLabel` | One column row, its drag grip, and its label.               |
 | `columnMenuVisibility` / `columnMenuPin`                | The show/hide toggle and the pin control.                   |
 | `columnMenuSeparator` / `columnMenuReset`               | The separator above the actions entry and the reset button. |
+| `columnMenuAutoSize`                                    | The menu's "size columns to content" action.                |
 | `resizeHandle`                                          | A header's drag/keyboard resize handle.                     |
 
 ### Saved views
@@ -4674,6 +4699,13 @@ and `serverGroupEntries(options)` (`ServerGroupEntriesOptions`) lays them out as
 the same entries local grouping produces. `groupLeafCount(entry)` is the count a
 header shows: the server's when it grouped, the rows in hand otherwise. See
 [row grouping](./row-grouping.md).
+
+**Column auto-sizing.** `measureColumnWidth(root, key)` returns the width a
+column needs for its widest rendered cell — measured from the DOM by the
+`data-column-key` every cell carries — and `autoSizeColumns(root, keys,
+setWidth)` sizes a whole set, returning how many it could measure. A resize
+handle sizes its own column on double-click, and the column menu's action calls
+`shell.autoSizeColumns`. See [column management](./column-management.md).
 
 **Column virtualization.** `useColumnWindow(options)` windows the horizontal
 axis (`UseColumnWindowOptions` in, `ColumnWindow` out — the columns to render

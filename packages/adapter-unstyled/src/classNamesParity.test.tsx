@@ -405,6 +405,7 @@ const KEYS = [
   "columnMenuPin",
   "columnMenuSeparator",
   "columnMenuReset",
+  "columnMenuAutoSize",
   "viewsMenu",
   "viewsButton",
   "viewsPanel",

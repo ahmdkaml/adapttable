@@ -264,6 +264,7 @@ function DesktopRowBase<TRow>({
           return (
             <Table.Cell
               key={column.key}
+              data-column-key={column.key}
               {...focusProps}
               textAlign={logicalAlign(column.align)}
               style={
@@ -781,6 +782,7 @@ export function DesktopTable<TRow>({
                           as="span"
                           aria-hidden
                           data-sort-index={sortIndex}
+                          data-column-key={column.key}
                           fontSize="0.7em"
                           fontWeight="bold"
                           borderRadius="full"

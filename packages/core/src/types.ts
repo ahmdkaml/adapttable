@@ -389,6 +389,10 @@ export interface TableLabels {
   moveEnd?: string;
   /** Reset the column layout to defaults. */
   resetColumns?: string;
+  /** The column menu's "size every column to its content" action. */
+  autoSizeColumns?: string;
+  /** Accessible hint on a resize handle: double-click sizes to content. */
+  autoSizeColumn?: string;
   /** Accessible label for a column-resize handle. */
   resizeColumn?: string;
   /** Accessible label prefix for the column-menu visibility toggle (show). */

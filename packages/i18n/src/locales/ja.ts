@@ -55,6 +55,8 @@ export const ja: Required<TableLabels> = {
   moveStart: "先頭へ移動",
   moveEnd: "末尾へ移動",
   resetColumns: "列をリセット",
+  autoSizeColumns: "列幅を内容に合わせる",
+  autoSizeColumn: "列幅を内容に合わせる",
   resizeColumn: "列のサイズ変更",
   showColumn: "列を表示",
   hideColumn: "列を非表示",

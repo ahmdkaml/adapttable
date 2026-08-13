@@ -289,6 +289,7 @@ function groupSpansAll(group: AdaptTableGroupRow): boolean {
 
 /** Cell props for a data column when grouping may produce synthetic rows. */
 function groupedOnCell<TRow>(
+  columnKey: string,
   columnIndex: number,
   align: ColumnDef<unknown>["align"],
   grouping: BuildColumnsGrouping | undefined,
@@ -313,6 +314,8 @@ function groupedOnCell<TRow>(
   const base = {
     ...styled,
     ...focus,
+    // Which column this cell belongs to — what auto-sizing measures by.
+    "data-column-key": columnKey,
     ...(highlighted ? { style: highlighted } : {}),
   };
   if (!grouping || !isAdaptTableGroupRow(record)) return base;
@@ -495,6 +498,7 @@ export function buildColumns<TRow>({
         showSorterTooltip: false,
         onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) =>
           groupedOnCell(
+            column.key,
             columnIndex,
             column.align,
             grouping,
@@ -506,6 +510,7 @@ export function buildColumns<TRow>({
           // Column selection rides along with the sort/resize/pin props: antd
           // merges whatever this returns onto the <th>, so this is the one
           // place a header attribute can exist in this adapter.
+          "data-column-key": column.key,
           ...(gridFocus?.getColumnHeaderProps(columnIndex, {
             sortable: column.sortable,
           }) ?? {}),

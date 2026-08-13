@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
 import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
@@ -213,6 +214,26 @@ export function useDataTableShell<TRow>(
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
+  // Name the root the way the scroll box is named: the column menu sizes
+  // columns by measuring cells, and it has to know which table is its own.
+  useEffect(() => {
+    rootRef.current?.setAttribute("data-adapttable-part", "root");
+  });
+
+  /**
+   * Size every rendered column to its content — the column menu's action.
+   * Measures the DOM, because a cell's width is what the browser laid out
+   * rather than anything the data knows.
+   */
+  const autoSizeColumns = useCallback(
+    () =>
+      autoSizeAllColumns(
+        rootRef.current,
+        chrome.columnLayout.visibleColumns.map((column) => column.key),
+        chrome.columnLayout.setWidth
+      ),
+    [chrome.columnLayout]
+  );
   const {
     virtualization,
     groupingEntries,
@@ -339,6 +360,8 @@ export function useDataTableShell<TRow>(
     setFiltersOpen,
     filtersTrigger,
     rootRef,
+    /** Size every rendered column to its content. */
+    autoSizeColumns,
     loadMoreRef,
     canLoadMore,
     hasRowActions,

@@ -323,6 +323,7 @@ function DesktopRowImpl<TRow>({
           return (
             <TableCell
               key={column.key}
+              data-column-key={column.key}
               sx={sx.cells[column.key]}
               // MUI's own selected fill, from the palette so it follows the
               // theme and dark mode. Applied as a style rather than merged into
@@ -669,6 +670,7 @@ export function DesktopTable<TRow>({
                   }) ?? {})}
                   aria-sort={ariaSort}
                   data-sort-index={sortIndex}
+                  data-column-key={column.key}
                   sx={headCellSx(column)}
                 >
                   {column.sortable ? (

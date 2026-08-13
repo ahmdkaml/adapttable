@@ -146,6 +146,8 @@ const menuLabels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
 };
@@ -156,7 +158,12 @@ describe("ColumnMenu hidden column", () => {
     const layout = hiddenLayout();
     render(
       <MantineProvider>
-        <ColumnMenu allColumns={menuCols} layout={layout} labels={menuLabels} />
+        <ColumnMenu
+          allColumns={menuCols}
+          layout={layout}
+          labels={menuLabels}
+          onAutoSize={() => undefined}
+        />
       </MantineProvider>
     );
     await user.click(screen.getByRole("button", { name: "Columns" }));

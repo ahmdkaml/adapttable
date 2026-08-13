@@ -410,6 +410,13 @@ the same entries local grouping produces. `groupLeafCount(entry)` is the count a
 header shows: the server's when it grouped, the rows in hand otherwise. See
 [row grouping](./row-grouping.md).
 
+**Column auto-sizing.** `measureColumnWidth(root, key)` returns the width a
+column needs for its widest rendered cell — measured from the DOM by the
+`data-column-key` every cell carries — and `autoSizeColumns(root, keys,
+setWidth)` sizes a whole set, returning how many it could measure. A resize
+handle sizes its own column on double-click, and the column menu's action calls
+`shell.autoSizeColumns`. See [column management](./column-management.md).
+
 **Column virtualization.** `useColumnWindow(options)` windows the horizontal
 axis (`UseColumnWindowOptions` in, `ColumnWindow` out — the columns to render
 and the `paddingStart` / `paddingEnd` that hold the rest open), and

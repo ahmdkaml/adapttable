@@ -58,6 +58,8 @@ export const defaultLabels: Required<TableLabels> = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   resizeColumn: "Resize column",
   showColumn: "Show column",
   hideColumn: "Hide column",

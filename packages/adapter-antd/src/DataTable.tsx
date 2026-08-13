@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   asGesture,
+  autoSizeColumns as autoSizeAllColumns,
   cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
@@ -68,6 +69,7 @@ import {
   type ReactElement,
   type ReactNode,
   type UIEventHandler,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -329,6 +331,7 @@ function ColumnMenuSlot<TRow>({
   labels,
   dir,
   hasRowActions,
+  onAutoSize,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
@@ -336,6 +339,8 @@ function ColumnMenuSlot<TRow>({
   labels: Required<TableLabels>;
   dir?: "ltr" | "rtl";
   hasRowActions: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
 }>) {
   if (!enabled) return null;
   return (
@@ -345,6 +350,7 @@ function ColumnMenuSlot<TRow>({
       labels={labels}
       dir={dir}
       hasRowActions={hasRowActions}
+      onAutoSize={onAutoSize}
     />
   );
 }
@@ -1097,6 +1103,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
+  // Same action the shell exposes, wired to this adapter's own root: sizing a
+  // column means measuring cells, and the cells are in there.
+  const onAutoSize = useCallback(() => {
+    autoSizeAllColumns(
+      rootRef.current,
+      c.columnLayout.visibleColumns.map((column) => column.key),
+      c.columnLayout.setWidth
+    );
+  }, [c.columnLayout]);
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -1308,6 +1323,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             dir={props.dir}
             columnMenu={
               <ColumnMenuSlot
+                onAutoSize={onAutoSize}
                 enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
                 allColumns={c.allColumns}
                 layout={c.columnLayout}

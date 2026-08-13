@@ -36,6 +36,8 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
@@ -47,7 +49,14 @@ const byLabel = (name: string) =>
 describe("mui ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -87,7 +96,14 @@ describe("mui ColumnMenu", () => {
 
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -116,7 +132,14 @@ describe("mui ColumnMenu", () => {
     // `r.hidden` is derived from `layout.isHidden(key)`; mark "b" hidden so the
     // hidden-side branches (eye color, text color, line-through) are exercised.
     layout.isHidden = (key) => key === "b";
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -139,6 +162,7 @@ describe("mui ColumnMenu", () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -165,6 +189,7 @@ describe("mui ColumnMenu", () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -188,7 +213,12 @@ describe("mui ColumnMenu", () => {
 
   it("omits the Actions row when the table has no row actions", async () => {
     render(
-      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -203,6 +233,7 @@ describe("mui ColumnMenu", () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={fakeLayout()}
         labels={labels}
         dir="rtl"

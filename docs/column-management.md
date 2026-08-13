@@ -116,3 +116,27 @@ export function People() {
   storage (Safari private mode, sandboxed webviews) is tolerated silently.
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
+
+## Sizing a column to its content
+
+Double-click a resize handle and that column takes the width of its widest
+rendered cell. The Columns menu's **Size columns to content** does the same for
+every column at once.
+
+Measurement comes from the DOM, not the data: a cell renders a badge, an avatar
+and a name, and the only honest answer to "how wide is this column" is what the
+browser laid out. It measures the **rendered** rows — the page, or the window
+under virtualization — which is the set the reader is looking at, and it reads
+each cell's content width, so a column that is currently clipping its text is
+sized to fit it rather than to its clipped width.
+
+The result is an ordinary width in the column layout: it persists, serializes to
+the URL and to saved views, and a later drag overrides it exactly as it
+overrides any other width. A column with nothing measurable on screen is left
+alone rather than collapsed.
+
+Both actions are localizable — `labels.autoSizeColumns` and
+`labels.autoSizeColumn` — in all seventeen locales.
+
+Headless: `measureColumnWidth(root, key)` and `autoSizeColumns(root, keys,
+setWidth)`.

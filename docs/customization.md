@@ -89,6 +89,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `columnMenuItem` / `columnMenuGrip` / `columnMenuLabel` | One column row, its drag grip, and its label.               |
 | `columnMenuVisibility` / `columnMenuPin`                | The show/hide toggle and the pin control.                   |
 | `columnMenuSeparator` / `columnMenuReset`               | The separator above the actions entry and the reset button. |
+| `columnMenuAutoSize`                                    | The menu's "size columns to content" action.                |
 | `resizeHandle`                                          | A header's drag/keyboard resize handle.                     |
 
 ### Saved views

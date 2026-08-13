@@ -40,6 +40,8 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
@@ -49,6 +51,7 @@ function open(layout: UseColumnLayoutResult<Row>, hasRowActions = false) {
   const view = render(
     <ColumnMenu
       allColumns={cols}
+      onAutoSize={() => undefined}
       layout={layout}
       labels={labels}
       classNames={{}}

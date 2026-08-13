@@ -36,6 +36,8 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
@@ -47,7 +49,14 @@ const byLabel = (name: string) =>
 describe("antd ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -87,7 +96,14 @@ describe("antd ColumnMenu", () => {
 
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -113,7 +129,12 @@ describe("antd ColumnMenu", () => {
 
   it("closes on Escape and reports collapsed state on the trigger", async () => {
     render(
-      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     const trigger = screen.getByRole("button", { name: "Columns" });
     fireEvent.click(trigger);
@@ -129,7 +150,12 @@ describe("antd ColumnMenu", () => {
 
   it("keeps the menu open for non-Escape keys", async () => {
     render(
-      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     const trigger = screen.getByRole("button", { name: "Columns" });
     fireEvent.click(trigger);
@@ -146,6 +172,7 @@ describe("antd ColumnMenu", () => {
         layout={fakeLayout()}
         labels={labels}
         dir="rtl"
+        onAutoSize={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -165,6 +192,7 @@ describe("antd ColumnMenu", () => {
         layout={layout}
         labels={labels}
         hasRowActions
+        onAutoSize={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -203,6 +231,7 @@ describe("antd ColumnMenu", () => {
         layout={layout}
         labels={labels}
         hasRowActions
+        onAutoSize={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -221,6 +250,7 @@ describe("antd ColumnMenu", () => {
         layout={layout}
         labels={labels}
         hasRowActions
+        onAutoSize={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -233,7 +263,12 @@ describe("antd ColumnMenu", () => {
 
   it("omits the actions row when the table has no row actions", async () => {
     render(
-      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -244,7 +279,14 @@ describe("antd ColumnMenu", () => {
     const layout = fakeLayout();
     layout.state = { hidden: ["b"], order: [], pinned: {}, widths: {} };
     layout.isHidden = (key) => key === "b";
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 

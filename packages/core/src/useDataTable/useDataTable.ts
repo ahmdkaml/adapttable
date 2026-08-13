@@ -371,6 +371,7 @@ export function useDataTable<TRow>(
             chainLevel(source.sortLevels, column.key)?.dir ?? source.sortDir
           ),
           "data-sort-index": sortIndexAttr(source.sortLevels, column.key),
+          "data-column-key": column.key,
           style: { textAlign: textAlign(column.align), width: column.width },
         },
         props
@@ -434,6 +435,9 @@ export function useDataTable<TRow>(
       mergeProps(
         {
           role: "cell",
+          // Which column this cell belongs to, so auto-sizing can measure a
+          // column's content and CSS can target one column across any kit.
+          "data-column-key": column.key,
           style: { textAlign: textAlign(column.align), width: column.width },
         },
         props

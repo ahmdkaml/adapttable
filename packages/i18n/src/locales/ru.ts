@@ -58,6 +58,8 @@ export const ru: Required<TableLabels> = {
   moveStart: "Переместить в начало",
   moveEnd: "Переместить в конец",
   resetColumns: "Сбросить столбцы",
+  autoSizeColumns: "Подогнать столбцы по содержимому",
+  autoSizeColumn: "Подогнать столбец по содержимому",
   resizeColumn: "Изменить ширину столбца",
   showColumn: "Показать столбец",
   hideColumn: "Скрыть столбец",

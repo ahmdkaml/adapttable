@@ -30,6 +30,8 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: ColumnMenuChromeProps<TRow>["labels"] & { actions: string };
   /** Whether the table has row actions — lists the injected actions column. */
   hasRowActions?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
   /** Text direction — the Popover portals to `<body>`, so it loses the
    *  table's direction unless we hand it over explicitly (RTL flips
    *  grip ↔ pin). */
@@ -157,6 +159,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions,
+  onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
@@ -247,6 +250,14 @@ export function ColumnMenu<TRow>({
           })}
           {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
           <Divider sx={{ my: 0.5 }} />
+          <Button
+            size="small"
+            fullWidth
+            sx={{ justifyContent: "flex-start" }}
+            onClick={onAutoSize}
+          >
+            {labels.autoSizeColumns}
+          </Button>
           <Button
             size="small"
             fullWidth

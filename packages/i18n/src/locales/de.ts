@@ -56,6 +56,8 @@ export const de: Required<TableLabels> = {
   moveStart: "An den Anfang",
   moveEnd: "Ans Ende",
   resetColumns: "Spalten zurücksetzen",
+  autoSizeColumns: "Spalten an Inhalt anpassen",
+  autoSizeColumn: "Spalte an Inhalt anpassen",
   resizeColumn: "Spalte anpassen",
   showColumn: "Spalte einblenden",
   hideColumn: "Spalte ausblenden",

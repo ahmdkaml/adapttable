@@ -37,6 +37,8 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
@@ -49,7 +51,12 @@ describe("radix ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
     renderRadix(
-      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -91,7 +98,12 @@ describe("radix ColumnMenu", () => {
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
     renderRadix(
-      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -121,6 +133,7 @@ describe("radix ColumnMenu", () => {
     renderRadix(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -153,6 +166,7 @@ describe("radix ColumnMenu", () => {
     renderRadix(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -179,6 +193,7 @@ describe("radix ColumnMenu", () => {
     renderRadix(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={fakeLayout()}
         labels={labels}
         dir="rtl"

@@ -297,6 +297,7 @@ export {
 export { nextSort } from "./sort/cycleSort";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
+export { autoSizeColumns, measureColumnWidth } from "./columns/autoSizeColumns";
 export {
   ACTIONS_COLUMN_KEY,
   columnMenuLabel,

@@ -55,6 +55,8 @@ export const ko: Required<TableLabels> = {
   moveStart: "시작으로 이동",
   moveEnd: "끝으로 이동",
   resetColumns: "열 초기화",
+  autoSizeColumns: "내용에 맞게 열 너비 조정",
+  autoSizeColumn: "내용에 맞게 열 너비 조정",
   resizeColumn: "열 너비 조절",
   showColumn: "열 표시",
   hideColumn: "열 숨기기",

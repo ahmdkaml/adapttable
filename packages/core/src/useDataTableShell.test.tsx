@@ -297,3 +297,53 @@ describe("useDataTableShell", () => {
     expect(result.current.tableProps.rowEntries).toBeUndefined();
   });
 });
+
+describe("useDataTableShell — the scroll box and column sizing", () => {
+  it("names the scroll box so both windows can find it", () => {
+    // Every kit calls its scroll container something different; core names it,
+    // and the row and column windows both read that one element.
+    const { result } = renderHook(() =>
+      useDataTableShell({ data: ROWS, columns, rowKey }, noForm)
+    );
+    const box = document.createElement("div");
+    result.current.tableProps.virtualScrollRef(box);
+    expect(box.getAttribute("data-adapttable-part")).toBe("scroll-box");
+  });
+
+  it("sizes every rendered column to its content", () => {
+    const onColumnLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        { data: ROWS, columns, rowKey, onColumnLayoutChange },
+        noForm
+      )
+    );
+    // A root with one measurable cell per column is all the action needs.
+    const root = document.createElement("div");
+    const cell = document.createElement("div");
+    cell.setAttribute("data-column-key", "name");
+    Object.defineProperty(cell, "scrollWidth", { value: 200 });
+    root.append(cell);
+    document.body.append(root);
+    result.current.rootRef.current = root;
+
+    result.current.autoSizeColumns();
+    expect(onColumnLayoutChange).toHaveBeenCalledOnce();
+    expect(onColumnLayoutChange.mock.calls[0]?.[0].widths).toMatchObject({
+      name: 224,
+    });
+    root.remove();
+  });
+
+  it("sizes nothing when there is nothing rendered to measure", () => {
+    const onColumnLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        { data: ROWS, columns, rowKey, onColumnLayoutChange },
+        noForm
+      )
+    );
+    result.current.autoSizeColumns();
+    expect(onColumnLayoutChange).not.toHaveBeenCalled();
+  });
+});

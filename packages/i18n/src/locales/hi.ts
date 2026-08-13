@@ -56,6 +56,8 @@ export const hi: Required<TableLabels> = {
   moveStart: "आरंभ पर ले जाएँ",
   moveEnd: "अंत पर ले जाएँ",
   resetColumns: "स्तंभ रीसेट करें",
+  autoSizeColumns: "कॉलम को सामग्री के अनुसार करें",
+  autoSizeColumn: "कॉलम को सामग्री के अनुसार करें",
   resizeColumn: "स्तंभ का आकार बदलें",
   showColumn: "स्तंभ दिखाएँ",
   hideColumn: "स्तंभ छिपाएँ",

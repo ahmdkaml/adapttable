@@ -57,6 +57,8 @@ export const ar: Required<TableLabels> = {
   moveStart: "نقل نحو البداية",
   moveEnd: "نقل نحو النهاية",
   resetColumns: "إعادة تعيين الأعمدة",
+  autoSizeColumns: "ملاءمة الأعمدة للمحتوى",
+  autoSizeColumn: "ملاءمة العمود للمحتوى",
   resizeColumn: "تغيير حجم العمود",
   showColumn: "إظهار العمود",
   hideColumn: "إخفاء العمود",

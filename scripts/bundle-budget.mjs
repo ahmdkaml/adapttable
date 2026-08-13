@@ -99,13 +99,14 @@ const FIXTURES = [
   // Row detail then learned to be measured together with its row, which is
   // what let it be used with virtualization at all, and the columns learned to
   // window too (~1 KB): the spacer cells and the horizontal window ride the
-  // same render model every adapter already maps over.
+  // same render model every adapter already maps over. Auto-sizing added the
+  // measurement and one menu action on top.
   { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 67 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 66 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 67 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 64 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 66 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 67 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 72 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 74 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 70 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 68 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));

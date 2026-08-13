@@ -56,6 +56,8 @@ export const tr: Required<TableLabels> = {
   moveStart: "Başa taşı",
   moveEnd: "Sona taşı",
   resetColumns: "Sütunları sıfırla",
+  autoSizeColumns: "Sütunları içeriğe sığdır",
+  autoSizeColumn: "Sütunu içeriğe sığdır",
   resizeColumn: "Sütun boyutunu değiştir",
   showColumn: "Sütunu göster",
   hideColumn: "Sütunu gizle",

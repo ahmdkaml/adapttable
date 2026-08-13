@@ -39,6 +39,8 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: ColumnMenuLabels & { actions: string };
   /** Whether the table has row actions (lists the injected actions column). */
   hasRowActions?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
   /** Text direction — the menu portals to `<body>`, so it loses the table's
    *  direction unless we hand it over explicitly (RTL flipped grip ↔ pin). */
   dir?: Direction;
@@ -143,6 +145,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions = false,
+  onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
@@ -233,6 +236,15 @@ export function ColumnMenu<TRow>({
             </>
           )}
           <Divider my={4} />
+          <Button
+            variant="subtle"
+            size="xs"
+            fullWidth
+            justify="flex-start"
+            onClick={onAutoSize}
+          >
+            {labels.autoSizeColumns}
+          </Button>
           <Button
             variant="subtle"
             size="xs"

@@ -99,6 +99,8 @@ export interface DataTableClassNames {
   /** The separator above the trailing row-actions entry in the menu. */
   columnMenuSeparator?: string;
   columnMenuReset?: string;
+  /** The column menu's "size columns to content" action. */
+  columnMenuAutoSize?: string;
   /** The saved-views menu container (trigger + anchored panel). */
   viewsMenu?: string;
   /** The saved-views menu trigger button. */

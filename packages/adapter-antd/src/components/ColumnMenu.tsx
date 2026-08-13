@@ -28,6 +28,8 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: MenuLabels;
   /** List the injected row-actions column as a managed trailing row. */
   hasRowActions?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
 }
 
 /** The eye toggle shared by data rows and the trailing actions row. */
@@ -146,6 +148,7 @@ export function ColumnMenu<TRow>({
   labels,
   dir,
   hasRowActions,
+  onAutoSize,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const { token } = theme.useToken();
@@ -231,6 +234,9 @@ export function ColumnMenu<TRow>({
       })}
       {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
       <Divider style={{ margin: "8px 0" }} />
+      <Button size="small" type="text" onClick={onAutoSize}>
+        {labels.autoSizeColumns}
+      </Button>
       <Button size="small" type="text" onClick={() => layout.reset()}>
         {labels.resetColumns}
       </Button>

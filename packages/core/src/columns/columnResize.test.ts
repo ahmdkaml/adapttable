@@ -163,3 +163,42 @@ describe("drag-less click", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("columnResizeHandleProps — double-click sizes to content", () => {
+  /** A header cell with a body cell under it, both measurable. */
+  function tableWithHandle(contentWidth: number) {
+    document.body.innerHTML = `
+      <table>
+        <thead><tr><th data-column-key="name"><span id="handle"></span></th></tr></thead>
+        <tbody><tr><td data-column-key="name"></td></tr></tbody>
+      </table>`;
+    for (const cell of document.querySelectorAll<HTMLElement>(
+      '[data-column-key="name"]'
+    )) {
+      Object.defineProperty(cell, "scrollWidth", { value: contentWidth });
+    }
+    return document.querySelector<HTMLElement>("#handle")!;
+  }
+
+  it("sizes the column to its widest cell", () => {
+    const setWidth = vi.fn();
+    const handle = tableWithHandle(300);
+    const props = columnResizeHandleProps("name", setWidth, "Resize column");
+    props.onDoubleClick({
+      currentTarget: handle,
+    } as unknown as Parameters<typeof props.onDoubleClick>[0]);
+    expect(setWidth).toHaveBeenCalledExactlyOnceWith("name", 324);
+  });
+
+  it("does nothing when there is nothing to measure", () => {
+    // An empty or unrendered column keeps the width it has rather than
+    // collapsing to the minimum.
+    const setWidth = vi.fn();
+    const handle = tableWithHandle(0);
+    const props = columnResizeHandleProps("name", setWidth, "Resize column");
+    props.onDoubleClick({
+      currentTarget: handle,
+    } as unknown as Parameters<typeof props.onDoubleClick>[0]);
+    expect(setWidth).not.toHaveBeenCalled();
+  });
+});

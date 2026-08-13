@@ -93,6 +93,8 @@ export interface ColumnMenuLabels {
   moveStart: string;
   moveEnd: string;
   resetColumns: string;
+  /** "Size columns to content" — the menu's auto-size action. */
+  autoSizeColumns: string;
   showColumn: string;
   hideColumn: string;
 }

@@ -56,6 +56,8 @@ export const fa: Required<TableLabels> = {
   moveStart: "انتقال به ابتدا",
   moveEnd: "انتقال به انتها",
   resetColumns: "بازنشانی ستون‌ها",
+  autoSizeColumns: "اندازه ستون‌ها بر پایه محتوا",
+  autoSizeColumn: "اندازه ستون بر پایه محتوا",
   resizeColumn: "تغییر اندازه ستون",
   showColumn: "نمایش ستون",
   hideColumn: "پنهان‌کردن ستون",

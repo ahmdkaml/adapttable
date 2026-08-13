@@ -113,6 +113,8 @@ export const shadcnClassNames = {
     "inline-grid place-items-center rounded p-[3px] text-muted-foreground hover:bg-muted data-[active]:text-primary",
   columnMenuReset:
     "mt-1.5 w-full border-t border-border px-2 pb-1 pt-2 text-start text-[13px] font-medium text-primary hover:opacity-80",
+  columnMenuAutoSize:
+    "mt-1.5 w-full border-t border-border px-2 pb-1 pt-2 text-start text-[13px] font-medium text-primary hover:opacity-80",
   resizeHandle: "hover:bg-border",
   card: "mb-2 rounded-lg border border-border p-3 [[data-density=compact]_&]:p-2",
   cardRow: "flex justify-between gap-3 py-0.5 text-sm",
