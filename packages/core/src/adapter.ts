@@ -134,6 +134,20 @@ export {
   paginationSlots,
 } from "./pagination/paginationMath";
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+export {
+  REORDER_COLUMN_WIDTH,
+  ROW_DND_MIME,
+  rowReorderDropStyle,
+  rowReorderSignature,
+  type RowReorderState,
+} from "./rows/rowReorder";
+export {
+  RowReorderAnnouncer,
+  RowReorderButtons,
+  type RowReorderButtonsProps,
+  RowReorderHandle,
+  type RowReorderHandleProps,
+} from "./rows/RowReorderHandle";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";
 export {

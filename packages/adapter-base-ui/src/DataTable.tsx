@@ -2,6 +2,7 @@ import {
   BatchEditBar,
   FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
   SelectionStatsBar,
   type TableBodyRegion,
   useDataTableShell,
@@ -68,6 +69,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     toolbarProps,
   } = shell;
   const tableProps = { ...shell.tableProps, size, accentColor };
@@ -137,6 +139,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={chrome.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Flex direction="column" gap="3">
         <Toolbar
@@ -169,6 +176,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}
+                hasRowReorder={hasRowReorder}
                 dir={props.dir}
               />
             ) : undefined

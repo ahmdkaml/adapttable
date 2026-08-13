@@ -21,6 +21,7 @@ import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
 import type { GroupCollapseState } from "./grouping/useGroupCollapse";
+import type { RowReorderState } from "./rows/rowReorder";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import type { TreeEntry } from "./tree/treeRows";
@@ -61,6 +62,19 @@ export interface SharedTableRenderProps<TRow> {
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
+  /**
+   * Row-reorder bundle — present iff the host passed `onRowReorder` and
+   * grouping/tree are off. Omit it and no handle renders.
+   */
+  rowReorder?: RowReorderState<TRow>;
+  /**
+   * Dataset offset of the first rendered row (page start). Zero when the
+   * source is not paged. Added to each row's local index so the host hears
+   * dataset-relative `from` / `to`.
+   */
+  windowStart?: number;
+  /** Whether the injected reorder column is start-pinned. */
+  reorderPinned?: boolean;
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
   /**
@@ -155,9 +169,16 @@ export interface TableRenderModel<TRow> {
   labels: Required<TableLabels>;
   /** Whether a trailing actions column/section renders. */
   showActions: boolean;
+  /** Whether the leading reorder column renders. */
+  showReorder: boolean;
+  /**
+   * Leading control cells before data: expansion + reorder + selection.
+   * Group headers and summaries use this so their colSpans stay aligned.
+   */
+  leadingCells: number;
   /** Materialised row entries (virtual window or the full set). */
   entries: readonly VirtualTableRow<TRow>[];
-  /** Spacer/detail colSpan: expansion + selection + data + actions. */
+  /** Spacer/detail colSpan: expansion + reorder + selection + data + actions. */
   columnSpan: number;
   /**
    * Widths of the spacer cells holding open the columns outside the window,
@@ -186,6 +207,7 @@ export function tableRenderModel<TRow>(
     | "expansion"
     | "columnWindow"
     | "editing"
+    | "rowReorder"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -201,6 +223,11 @@ export function tableRenderModel<TRow>(
   const showActions =
     (props.rowActions?.length ?? 0) > 0 ||
     props.editing?.rowEditing !== undefined;
+  const showReorder = props.rowReorder !== undefined;
+  const expandable = Boolean(props.renderRowDetail && props.expansion);
+  const hasSelection = Boolean(selection);
+  const leadingCells =
+    (expandable ? 1 : 0) + (showReorder ? 1 : 0) + (hasSelection ? 1 : 0);
   const entries = resolveVirtualRows(
     props.rows,
     props.getRowId,
@@ -211,13 +238,16 @@ export function tableRenderModel<TRow>(
     selection,
     labels,
     showActions,
+    showReorder,
+    leadingCells,
     entries,
     columnSpan:
       virtualColumnSpan(
         columns.length,
-        Boolean(selection),
+        hasSelection,
         showActions,
-        Boolean(props.renderRowDetail && props.expansion)
+        expandable,
+        showReorder
       ) + (windowed ? 2 : 0),
     columnSpacers: windowed
       ? {

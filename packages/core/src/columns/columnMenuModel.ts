@@ -64,6 +64,13 @@ export function pinActionLabel(
  */
 export const ACTIONS_COLUMN_KEY = "actions";
 
+/**
+ * Reserved layout key for the injected row-reorder column. Same deal as
+ * {@link ACTIONS_COLUMN_KEY}: not a `ColumnDef`, but hideable and
+ * start-pinnable through the layout because the key is just a string.
+ */
+export const REORDER_COLUMN_KEY = "reorder";
+
 export function columnMenuRows<TRow>(
   allColumns: readonly ColumnDef<TRow>[],
   layout: UseColumnLayoutResult<TRow>

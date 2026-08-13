@@ -1,4 +1,7 @@
-import { ACTIONS_COLUMN_KEY } from "../columns/columnMenuModel";
+import {
+  ACTIONS_COLUMN_KEY,
+  REORDER_COLUMN_KEY,
+} from "../columns/columnMenuModel";
 import { type CellRange, cellRangeIndices } from "../focus/cellRange";
 import type { TableSource } from "../source/TableSource";
 import type { ColumnDef, ExtraFilters, SortDirection } from "../types";
@@ -157,11 +160,14 @@ export function resolveExportCsv<TRow = unknown>(
   return value;
 }
 
-/** Columns that belong in a CSV (drop the synthetic actions column). */
+/** Columns that belong in a CSV (drop synthetic actions and reorder columns). */
 export function exportableColumns<TRow>(
   columns: readonly ColumnDef<TRow>[]
 ): ColumnDef<TRow>[] {
-  return columns.filter((column) => column.key !== ACTIONS_COLUMN_KEY);
+  return columns.filter(
+    (column) =>
+      column.key !== ACTIONS_COLUMN_KEY && column.key !== REORDER_COLUMN_KEY
+  );
 }
 
 /**

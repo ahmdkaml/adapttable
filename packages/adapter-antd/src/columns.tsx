@@ -7,6 +7,7 @@ import {
   type GridFocusState,
   type GroupCollapseState,
   type PinSide,
+  REORDER_COLUMN_KEY,
   type RowAction,
   runRowAction,
   type SortDirection,
@@ -20,8 +21,11 @@ import {
   columnSizeStyle,
   FillHandle,
   headerGroupRow,
+  REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
   RowEditActions,
+  RowReorderHandle,
+  type RowReorderState,
   TreeCell,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
@@ -292,6 +296,10 @@ export interface BuildColumnsOptions<TRow> {
   grouping?: BuildColumnsGrouping;
   /** Whether the table fits its container rather than overflowing it. */
   fitColumns?: boolean;
+  /** Headless row-reorder; omit and no reorder column is injected. */
+  rowReorder?: RowReorderState<TRow>;
+  /** Dataset offset of the first rendered row (page / virtual window). */
+  windowStart?: number;
 }
 
 /**
@@ -485,6 +493,8 @@ export function buildColumns<TRow>({
   grouping,
   fitColumns,
   tree,
+  rowReorder,
+  windowStart = 0,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -595,6 +605,51 @@ export function buildColumns<TRow>({
     columns,
     leaves as TableColumnsType<TRow>
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
+
+  if (rowReorder) {
+    const reorderFixed =
+      pinned?.[REORDER_COLUMN_KEY] === "start" ||
+      columns.some((column) => pinned?.[column.key] === "start");
+    cols.unshift({
+      key: "__reorder__",
+      // Empty like the other kits: the header is a grip slot, named by
+      // aria-label. Visible "Reorder row" text collided with the Columns
+      // menu row of the same name.
+      title: "",
+      width: REORDER_COLUMN_WIDTH,
+      fixed: reorderFixed ? "left" : undefined,
+      onCell: (record: GroupedDataRecord<TRow>) => {
+        if (isAdaptTableGroupRow(record)) return { colSpan: 0 };
+        return {};
+      },
+      onHeaderCell: () => ({
+        "data-adapttable-part": "reorder-header",
+        "aria-label": labels.reorderRow,
+      }),
+      render: (
+        _value: unknown,
+        record: GroupedDataRecord<TRow>,
+        index: number
+      ) => {
+        if (isAdaptTableGroupRow(record)) return null;
+        const row = record;
+        const id = getRowId(row);
+        return (
+          <span data-adapttable-part="reorder-cell">
+            <RowReorderHandle
+              reorder={rowReorder}
+              labels={labels}
+              rowId={id}
+              localIndex={index}
+              row={row}
+              windowStart={windowStart}
+              rowCount={rows.length}
+            />
+          </span>
+        );
+      },
+    });
+  }
 
   // The trailing control column also carries row mode's save / cancel, so it
   // exists when either is armed.

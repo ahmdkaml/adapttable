@@ -45,9 +45,14 @@ const labels = {
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
-function open(layout: UseColumnLayoutResult<Row>, hasRowActions = false) {
+function open(
+  layout: UseColumnLayoutResult<Row>,
+  hasRowActions = false,
+  hasRowReorder = false
+) {
   const view = render(
     <ColumnMenu
       allColumns={cols}
@@ -56,6 +61,7 @@ function open(layout: UseColumnLayoutResult<Row>, hasRowActions = false) {
       labels={labels}
       classNames={{}}
       hasRowActions={hasRowActions}
+      hasRowReorder={hasRowReorder}
     />
   );
   fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -177,6 +183,20 @@ describe("unstyled ColumnMenu", () => {
       screen.getByRole("button", { name: "Show column: Charlie" })
     );
     expect(layout.toggleVisible).toHaveBeenCalledWith("c");
+  });
+
+  it("lists a leading reorder row with an eye and a start pin", () => {
+    const layout = fakeLayout();
+    open(layout, false, true);
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Reorder" })
+    );
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to start: Reorder" })
+    );
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
   });
 
   it("omits the actions row when the table has no row actions", () => {

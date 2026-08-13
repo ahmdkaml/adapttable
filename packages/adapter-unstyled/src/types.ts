@@ -182,6 +182,18 @@ export interface DataTableClassNames {
   actionsHeader?: string;
   actionsCell?: string;
   actionButton?: string;
+  /** The leading row-reorder header cell. */
+  reorderHeader?: string;
+  /** The leading row-reorder body cell on each row. */
+  reorderCell?: string;
+  /** The desktop drag-handle button. */
+  rowReorderHandle?: string;
+  /** The mobile up/down control group. */
+  rowReorderButtons?: string;
+  /** Move this card one slot up. */
+  rowReorderUp?: string;
+  /** Move this card one slot down. */
+  rowReorderDown?: string;
   /** The leading select-all header cell. */
   selectionHeader?: string;
   selectionCell?: string;

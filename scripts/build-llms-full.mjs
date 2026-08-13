@@ -28,6 +28,7 @@ const DOCS = [
   "selection.md",
   "row-expansion.md",
   "cell-editing.md",
+  "row-reordering.md",
   "cell-navigation.md",
   "row-grouping.md",
   "tree-data.md",

@@ -88,6 +88,7 @@ export function MantineDemo({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
   editing,
   cellNavigation,
   forceMobile,
@@ -106,6 +107,7 @@ export function MantineDemo({
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -123,6 +125,7 @@ export function MantineDemo({
         rowMode={rowMode}
         batch={batch}
         rowMutations={rowMutations}
+        rowReorder={rowReorder}
         editing={editing}
         render={(source, columns) => (
           <DataTable

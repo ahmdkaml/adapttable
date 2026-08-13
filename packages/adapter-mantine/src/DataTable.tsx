@@ -7,6 +7,7 @@ import {
   BatchEditBar,
   FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
   SelectionStatsBar,
   useDataTableShell,
 } from "@adapttable/core/adapter";
@@ -121,6 +122,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     toolbarProps,
   } = shell;
   // Everything rendered below reads the chrome's VIEW facade — identical to
@@ -204,6 +206,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={classNames?.root}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
       <FindBar find={shell.find} labels={table.labels} />
       <Stack gap="xs">
         <Box
@@ -241,6 +248,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                   layout={chrome.columnLayout}
                   labels={table.labels}
                   hasRowActions={hasRowActions}
+                  hasRowReorder={hasRowReorder}
                   dir={dir}
                 />
               }

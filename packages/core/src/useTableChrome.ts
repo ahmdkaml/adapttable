@@ -2,7 +2,10 @@ import type { ReactNode, RefCallback, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type ConfirmHandler, defaultConfirm } from "./actions/confirm";
-import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import {
+  ACTIONS_COLUMN_KEY,
+  REORDER_COLUMN_KEY,
+} from "./columns/columnMenuModel";
 import { resolveColumns } from "./columns/resolveColumns";
 import {
   useColumnLayout,
@@ -45,6 +48,7 @@ import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
 import { type RowMutationsState, useRowMutations } from "./rows/rowMutations";
+import { type RowReorderState, useRowReorder } from "./rows/rowReorder";
 import {
   type RowExpansionState,
   useRowExpansion,
@@ -277,6 +281,16 @@ export interface TableChrome<TRow> {
    * menu offers, and the one figure a hidden column must not change.
    */
   hasRowActions: boolean;
+  /**
+   * Whether a reorder column exists at all, hidden or not — what the column
+   * menu offers. False when grouping or a tree is armed (reorder is refused).
+   */
+  hasRowReorder: boolean;
+  /**
+   * Headless row-reorder state. Present iff the host passed `onRowReorder`,
+   * grouping/tree are off, and the column is visible. Adapters read THIS.
+   */
+  rowReorder?: RowReorderState<TRow>;
   /**
    * Tree bundle — present iff the host declared a hierarchy (`getChildren` or
    * `getParentId`). A tree and a grouping are different models and can both be
@@ -865,6 +879,35 @@ export function useTableChrome<TRow>(
     return leaves;
   }, [grouping, viewSource.rows]);
 
+  // Reorder a flat list, never a nested one: grouping and trees have their
+  // own order, and a splice through them would silently lie.
+  const requestedReorder = props.onRowReorder !== undefined;
+  const reorderBlocked = grouping !== undefined || treeShaped;
+  useEffect(() => {
+    if (!requestedReorder || !reorderBlocked) return;
+    devWarn(
+      "onRowReorder is ignored while grouping or a tree is armed — reorder a flat list, not a nested one."
+    );
+  }, [requestedReorder, reorderBlocked]);
+  const hasRowReorder = requestedReorder && !reorderBlocked;
+  const reorderHidden = columnLayout.isHidden(REORDER_COLUMN_KEY);
+  const rowReorderEnabled = hasRowReorder && !reorderHidden;
+  const hostRowReorder = props.onRowReorder;
+  const rowReorderState = useRowReorder<TRow>({
+    enabled: rowReorderEnabled,
+    onRowReorder: hostRowReorder,
+    labels: {
+      reorderRow: table.labels.reorderRow,
+      moveRowUp: table.labels.moveRowUp,
+      moveRowDown: table.labels.moveRowDown,
+      rowLifted: table.labels.rowLifted,
+      rowMoved: table.labels.rowMoved,
+      rowReorderCancelled: table.labels.rowReorderCancelled,
+    },
+    rowAt: (index) => editingRows[index],
+  });
+  const rowReorder = rowReorderEnabled ? rowReorderState : undefined;
+
   useEffect(() => {
     if (!editing) return;
     editing.state.discardIfRowMissing(editingRows, (row) =>
@@ -920,6 +963,8 @@ export function useTableChrome<TRow>(
     rowMutations,
     rowActions,
     hasRowActions,
+    hasRowReorder,
+    rowReorder,
     editing,
     grouping,
     tree,

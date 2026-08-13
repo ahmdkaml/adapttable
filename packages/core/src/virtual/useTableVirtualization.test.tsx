@@ -291,6 +291,7 @@ describe("useTableVirtualization", () => {
   it("computes table spacer column spans", () => {
     expect(virtualColumnSpan(3, false, false)).toBe(3);
     expect(virtualColumnSpan(3, true, true)).toBe(5);
+    expect(virtualColumnSpan(3, false, false, true, true)).toBe(5);
   });
 });
 

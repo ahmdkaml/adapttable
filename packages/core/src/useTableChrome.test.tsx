@@ -341,6 +341,54 @@ describe("useTableChrome", () => {
     }
   });
 
+  it("arms row reorder when onRowReorder is set, and warns under grouping", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const onRowReorder = vi.fn();
+      const { result } = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          onRowReorder,
+        });
+      });
+      expect(result.current.hasRowReorder).toBe(true);
+      expect(result.current.rowReorder).toBeDefined();
+
+      warn.mockClear();
+      resetDevWarnings();
+      const grouped = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          groupBy: "name",
+          onRowReorder,
+        });
+      });
+      expect(grouped.result.current.hasRowReorder).toBe(false);
+      expect(grouped.result.current.rowReorder).toBeUndefined();
+      expect(warn.mock.calls[0]?.[0]).toContain("onRowReorder");
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
   it("controlled selection: change requests go to the handler, state stays put", () => {
     const onSelectionChange = vi.fn();
     const adapter = createMemoryAdapter("");

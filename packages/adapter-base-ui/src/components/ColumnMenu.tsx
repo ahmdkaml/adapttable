@@ -3,6 +3,7 @@ import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  REORDER_COLUMN_KEY,
   useColumnDragState,
 } from "@adapttable/core";
 import type {
@@ -26,13 +27,18 @@ import { Button, Flex, IconButton, Separator, Text } from "../ui";
  */
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   /** Resolved labels, including the actions column's display name. */
-  labels: ColumnMenuLabels & { actions: string };
+  labels: ColumnMenuLabels & { actions: string; reorderRow: string };
   /**
    * List the injected row-actions column as a separated trailing row with
    * the standard visibility toggle and a one-click end-pin toggle (the
    * actions column always trails, so it never reorders or pins left).
    */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
   /** Text direction — the menu portals to `<body>`, so it loses the table's
@@ -113,13 +119,16 @@ export function ColumnMenu<TRow>({
   allColumns,
   layout,
   labels,
-  hasRowActions,
+  hasRowActions = false,
+  hasRowReorder = false,
   onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const actionsHidden = layout.isHidden(ACTIONS_COLUMN_KEY);
   const actionsPinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+  const reorderHidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const reorderPinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -202,29 +211,52 @@ export function ColumnMenu<TRow>({
                   </Flex>
                 );
               })}
-              {hasRowActions && (
-                <>
-                  <Separator my="1" size="4" />
+              {(hasRowReorder || hasRowActions) && (
+                <Separator my="1" size="4" />
+              )}
+              {hasRowReorder && (
+                <div data-adapttable-part="column-menu-item" data-reorder="">
                   <Flex gap="1" align="center">
                     <VisibilityToggle
-                      hidden={actionsHidden}
-                      name={labels.actions}
+                      hidden={reorderHidden}
+                      name={labels.reorderRow}
                       labels={labels}
-                      onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+                      onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
                     />
-                    <RowName hidden={actionsHidden} name={labels.actions} />
+                    <RowName hidden={reorderHidden} name={labels.reorderRow} />
                     <PinToggle
-                      pinned={actionsPinned}
-                      label={`${actionsPinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
+                      pinned={reorderPinned}
+                      label={`${reorderPinned ? labels.unpin : labels.pinStart}: ${labels.reorderRow}`}
                       onClick={() =>
                         layout.setPinned(
-                          ACTIONS_COLUMN_KEY,
-                          actionsPinned ? undefined : "end"
+                          REORDER_COLUMN_KEY,
+                          reorderPinned ? undefined : "start"
                         )
                       }
                     />
                   </Flex>
-                </>
+                </div>
+              )}
+              {hasRowActions && (
+                <Flex gap="1" align="center">
+                  <VisibilityToggle
+                    hidden={actionsHidden}
+                    name={labels.actions}
+                    labels={labels}
+                    onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+                  />
+                  <RowName hidden={actionsHidden} name={labels.actions} />
+                  <PinToggle
+                    pinned={actionsPinned}
+                    label={`${actionsPinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
+                    onClick={() =>
+                      layout.setPinned(
+                        ACTIONS_COLUMN_KEY,
+                        actionsPinned ? undefined : "end"
+                      )
+                    }
+                  />
+                </Flex>
               )}
               <Separator my="1" size="4" />
               <Button

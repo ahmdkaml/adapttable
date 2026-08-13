@@ -42,6 +42,7 @@ const labels = {
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
 const byLabel = (name: string) =>
@@ -183,6 +184,26 @@ describe("radix ColumnMenu", () => {
     // Pinned → ONE click unpins (the end↔unpinned toggle, no cycle).
     fireEvent.click(byLabel("Unpin: Actions"));
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("lists a leading reorder row with an eye and a start pin", async () => {
+    const layout = fakeLayout();
+    renderRadix(
+      <ColumnMenu
+        allColumns={cols}
+        onAutoSize={() => undefined}
+        layout={layout}
+        labels={labels}
+        hasRowReorder
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(byLabel("Hide column: Reorder"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(byLabel("Pin to start: Reorder"));
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
   });
 
   // Regression: the menu portals to <body>, so it does not inherit the

@@ -81,6 +81,13 @@ export const fr: Required<TableLabels> = {
   editConflict: "Cette ligne a changé pendant que vous l'éditiez",
   keepMine: "Garder le mien",
   takeTheirs: "Prendre le leur",
+  reorderRow: "Réorganiser la ligne",
+  moveRowUp: "Monter la ligne",
+  moveRowDown: "Descendre la ligne",
+  rowLifted: (position) => `Ligne ${String(position)} soulevée`,
+  rowMoved: (from, to) =>
+    `Ligne déplacée de ${String(from)} vers ${String(to)}`,
+  rowReorderCancelled: "Réorganisation annulée",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

@@ -82,6 +82,13 @@ export const tr: Required<TableLabels> = {
   editConflict: "Düzenlerken bu satır değişti",
   keepMine: "Benimkini tut",
   takeTheirs: "Yenisini al",
+  reorderRow: "Satırı yeniden sırala",
+  moveRowUp: "Satırı yukarı taşı",
+  moveRowDown: "Satırı aşağı taşı",
+  rowLifted: (position) => `${String(position)}. satır kaldırıldı`,
+  rowMoved: (from, to) =>
+    `Satır ${String(from)} konumundan ${String(to)} konumuna taşındı`,
+  rowReorderCancelled: "Yeniden sıralama iptal edildi",
   moreGroups: (remaining) => `${remaining} grup daha göster`,
   moreRowsInGroup: (remaining) => `Bu grupta ${remaining} tane daha`,
   groupTotal: (label) => `${label} toplamı`,

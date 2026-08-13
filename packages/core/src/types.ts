@@ -479,6 +479,18 @@ export interface TableLabels {
   keepMine?: string;
   /** Replace the draft with the incoming value. */
   takeTheirs?: string;
+  /** Accessible name of the row-reorder grip, and the Columns-menu row. */
+  reorderRow?: string;
+  /** Mobile: move this card one slot earlier. */
+  moveRowUp?: string;
+  /** Mobile: move this card one slot later. */
+  moveRowDown?: string;
+  /** Live region: the reader lifted the row at this 1-based position. */
+  rowLifted?: (position: number) => string;
+  /** Live region: the row moved from one 1-based position to another. */
+  rowMoved?: (from: number, to: number) => string;
+  /** Live region: Escape cancelled a lift. */
+  rowReorderCancelled?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

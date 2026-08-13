@@ -1,5 +1,6 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent } from "react";
 
+import { isRtlElement } from "../layout/writingDirection";
 import { measureColumnWidth } from "./autoSizeColumns";
 
 /** Minimum column width (px) a resize drag/keyboard step will not go below. */
@@ -43,9 +44,7 @@ function cellWidth(handle: HTMLElement): number {
  * falling back to the resolved CSS `direction` for theme-only RTL.
  */
 function isRtl(handle: HTMLElement): boolean {
-  const scoped = handle.closest("[dir]");
-  if (scoped) return scoped.getAttribute("dir") === "rtl";
-  return globalThis.getComputedStyle(handle).direction === "rtl";
+  return isRtlElement(handle);
 }
 
 /**

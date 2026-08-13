@@ -439,6 +439,11 @@ _means_ is yours: which fields carry over, which reset, what id it gets.
 For an in-memory table, [`insertRow`, `removeRow` and `applyRowPatches`](./api.md)
 do the list work.
 
+## Reordering rows
+
+Changing which row sits where is the same one-way write: pass `onRowReorder`
+and a grip appears. See [row reordering](./row-reordering.md).
+
 **A delete asks first.** It goes through the same confirmation dialog a
 `rowActions` entry with a `confirm` block uses — `labels.deleteRow` as the title,
 `labels.deleteRowConfirm` as the question, both translated in all seventeen

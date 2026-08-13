@@ -36,6 +36,7 @@ const FEATURES = {
   pagination: /paginat/i,
   "row-expansion": /row expansion/i,
   "row-grouping": /grouping/i,
+  "row-reordering": /row reorder/i,
   "saved-views": /saved view/i,
   "tree-data": /tree data|hierarchical rows/i,
   selection: /selection/i,

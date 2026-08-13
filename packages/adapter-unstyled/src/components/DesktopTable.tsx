@@ -27,11 +27,15 @@ import {
   type PinLeads,
   pinnedColumnWidth,
   type PinOffset,
+  REORDER_COLUMN_WIDTH,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
+  rowReorderDropStyle,
+  RowReorderHandle,
+  rowReorderSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -116,6 +120,15 @@ interface DesktopRowProps<TRow> {
   /** `undefined` = no expansion column; otherwise the row's expanded state. */
   expanded: boolean | undefined;
   showActions: boolean;
+  /** Whether the leading reorder column renders. */
+  showReorder: boolean;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: SharedTableRenderProps<TRow>["rowReorder"];
+  windowStart: number;
+  rowCount: number;
+  reorderPinned: boolean;
+  /** Memo digest from {@link rowReorderSignature}. */
+  reorderSignature: string | null;
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   /** Full-width colSpan (expansion + selection + data + actions), core-computed. */
@@ -189,6 +202,9 @@ function desktopRowPropsEqual<TRow>(
     prev.labels === next.labels &&
     prev.classNames === next.classNames &&
     prev.showActions === next.showActions &&
+    prev.showReorder === next.showReorder &&
+    prev.reorderSignature === next.reorderSignature &&
+    prev.reorderPinned === next.reorderPinned &&
     prev.rowActions === next.rowActions &&
     prev.columnSpan === next.columnSpan &&
     prev.columnWidths === next.columnWidths &&
@@ -224,6 +240,11 @@ function DesktopRowBase<TRow>(
     selected,
     expanded,
     showActions,
+    showReorder,
+    rowReorder,
+    windowStart,
+    rowCount,
+    reorderPinned,
     rowActions,
     confirm,
     columnSpan,
@@ -251,7 +272,9 @@ function DesktopRowBase<TRow>(
   } = props;
   const expandable = expanded !== undefined;
   const leads: PinLeads = {
-    start: selected === undefined ? 0 : SELECTION_WIDTH,
+    start:
+      (showReorder ? REORDER_COLUMN_WIDTH : 0) +
+      (selected === undefined ? 0 : SELECTION_WIDTH),
     end: showActions ? ACTIONS_WIDTH : 0,
   };
   const bodyPinStyle = (key: string): CSSProperties | undefined =>
@@ -262,6 +285,8 @@ function DesktopRowBase<TRow>(
         {...table.getRowProps(row, index)}
         {...gridFocus?.getRowPropsAt(index)}
         {...rowClickProps(row, clickable ? onRowClick : undefined, index)}
+        {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
+        {...(rowReorder?.rowAttrs(id, index) ?? {})}
         ref={measureRowPair ? measureRowPair.row(index) : measureElement}
         data-adapttable-part="row"
         data-stagger=""
@@ -269,6 +294,7 @@ function DesktopRowBase<TRow>(
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         data-clickable={clickable ? "" : undefined}
         className={cx(classNames.row, rowClass)}
+        style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
         onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}
       >
         {expandable && (
@@ -281,6 +307,29 @@ function DesktopRowBase<TRow>(
               labels={labels}
               classNames={classNames}
               onToggle={() => onToggleExpand(id)}
+            />
+          </td>
+        )}
+        {showReorder && rowReorder && (
+          <td
+            data-adapttable-part="reorder-cell"
+            data-pinned={hasStartPin || reorderPinned ? "start" : undefined}
+            style={edgePinStyle(
+              "start",
+              hasStartPin || reorderPinned,
+              PIN_Z.body
+            )}
+            className={cx(classNames.cell, classNames.reorderCell)}
+          >
+            <RowReorderHandle
+              reorder={rowReorder}
+              labels={labels}
+              rowId={id}
+              localIndex={index}
+              row={row}
+              windowStart={windowStart}
+              rowCount={rowCount}
+              className={classNames.rowReorderHandle}
             />
           </td>
         )}
@@ -428,6 +477,37 @@ function createDesktopRow<TRow>() {
   return memo<DesktopRowProps<TRow>>(DesktopRowBase, desktopRowPropsEqual);
 }
 
+function startLeadWidth(showReorder: boolean, hasSelection: boolean): number {
+  return (
+    (showReorder ? REORDER_COLUMN_WIDTH : 0) +
+    (hasSelection ? SELECTION_WIDTH : 0)
+  );
+}
+
+function reservedChromeWidth(
+  showReorder: boolean,
+  hasSelection: boolean,
+  showActions: boolean
+): number {
+  return (
+    startLeadWidth(showReorder, hasSelection) +
+    (showActions ? ACTIONS_WIDTH : 0)
+  );
+}
+
+function desktopHasPinned(
+  columns: readonly { key: string }[],
+  pinOffset: ((key: string) => PinOffset | undefined) | undefined,
+  stickActions: boolean,
+  reorderPinnedLead: boolean
+): boolean {
+  return (
+    columns.some((column) => pinOffset?.(column.key) != null) ||
+    stickActions ||
+    reorderPinnedLead
+  );
+}
+
 /** Desktop semantic `<table>` rendering. */
 export function DesktopTable<TRow>({
   gridFocus,
@@ -459,6 +539,9 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  reorderPinned = false,
+  rowReorder,
+  windowStart = 0,
   columnWindow,
   fitColumns,
   tree,
@@ -470,6 +553,8 @@ export function DesktopTable<TRow>({
     selection,
     labels,
     showActions,
+    showReorder,
+    leadingCells,
     entries,
     columnSpan,
     columnSpacers,
@@ -483,6 +568,7 @@ export function DesktopTable<TRow>({
     renderRowDetail,
     expansion,
     editing,
+    rowReorder,
   });
   // The actions column sticks when the user end-pins IT in the Columns menu —
   // independently of any data pin on that side (and only while it renders).
@@ -554,8 +640,12 @@ export function DesktopTable<TRow>({
   // context: pin to ITS top — a viewport offset would shove the header down
   // into the rows. A user-pinned actions column counts: it needs the same
   // horizontal scroll container to stick to.
-  const hasPinned =
-    columns.some((c) => pinOffset?.(c.key) != null) || stickActions;
+  const hasPinned = desktopHasPinned(
+    columns,
+    pinOffset,
+    stickActions,
+    showReorder && reorderPinned
+  );
   const inScrollBox = maxHeight != null || hasPinned || overflowing;
   const stickyStyle: CSSProperties | undefined = stickyHeader
     ? {
@@ -566,7 +656,7 @@ export function DesktopTable<TRow>({
     : undefined;
   const stickyAttr = stickyHeader || undefined;
   const leads: PinLeads = {
-    start: selection ? SELECTION_WIDTH : 0,
+    start: startLeadWidth(showReorder, Boolean(selection)),
     end: showActions ? ACTIONS_WIDTH : 0,
   };
   const hasStartPin = columns.some((c) => pinOffset?.(c.key)?.side === "start");
@@ -622,8 +712,7 @@ export function DesktopTable<TRow>({
   // overflows and scrolls horizontally instead of squishing columns to fit.
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra:
-      (selection ? SELECTION_WIDTH : 0) + (showActions ? ACTIONS_WIDTH : 0),
+    extra: reservedChromeWidth(showReorder, Boolean(selection), showActions),
   });
 
   // The grouped header row (when any visible column declares a `group`) and
@@ -662,6 +751,7 @@ export function DesktopTable<TRow>({
             className={classNames.headerGroupRow}
           >
             {expandable && groupPad}
+            {showReorder && groupPad}
             {selection && groupPad}
             {groups.map((group) => (
               <th
@@ -688,6 +778,16 @@ export function DesktopTable<TRow>({
               data-sticky={stickyAttr}
               style={stickyStyle}
               className={cx(classNames.headerCell, classNames.expandHeader)}
+            />
+          )}
+          {showReorder && (
+            <th
+              aria-label={labels.reorderRow}
+              data-adapttable-part="reorder-header"
+              data-sticky={stickyAttr}
+              data-pinned={hasStartPin || reorderPinned ? "start" : undefined}
+              style={edgeHeadStyle("start", hasStartPin || reorderPinned)}
+              className={cx(classNames.headerCell, classNames.reorderHeader)}
             />
           )}
           {selection && (
@@ -825,7 +925,7 @@ export function DesktopTable<TRow>({
                     key={entry.key}
                     entry={entry}
                     columns={columns}
-                    leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+                    leadingCells={leadingCells}
                     showActions={showActions}
                     getCellProps={table.getCellProps}
                     selection={selection}
@@ -853,6 +953,16 @@ export function DesktopTable<TRow>({
                     expansionState ? expansionState.isExpanded(id) : undefined
                   }
                   showActions={showActions}
+                  showReorder={showReorder}
+                  rowReorder={rowReorder}
+                  windowStart={windowStart}
+                  rowCount={rows.length}
+                  reorderPinned={reorderPinned}
+                  reorderSignature={rowReorderSignature(
+                    rowReorder,
+                    id,
+                    entry.index
+                  )}
                   rowActions={rowActions}
                   confirm={confirm}
                   columnSpan={columnSpan}
@@ -900,6 +1010,16 @@ export function DesktopTable<TRow>({
                       expansionState ? expansionState.isExpanded(id) : undefined
                     }
                     showActions={showActions}
+                    showReorder={showReorder}
+                    rowReorder={rowReorder}
+                    windowStart={windowStart}
+                    rowCount={rows.length}
+                    reorderPinned={reorderPinned}
+                    reorderSignature={rowReorderSignature(
+                      rowReorder,
+                      id,
+                      index
+                    )}
                     rowActions={rowActions}
                     confirm={confirm}
                     columnSpan={columnSpan}
@@ -949,6 +1069,7 @@ export function DesktopTable<TRow>({
             className={classNames.summaryRow}
           >
             {expandable && summaryPad}
+            {showReorder && summaryPad}
             {selection && summaryPad}
             {columns.map((column) => (
               <td

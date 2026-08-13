@@ -82,6 +82,12 @@ export const defaultLabels: Required<TableLabels> = {
   editConflict: "This row changed while you were editing",
   keepMine: "Keep mine",
   takeTheirs: "Take theirs",
+  reorderRow: "Reorder row",
+  moveRowUp: "Move row up",
+  moveRowDown: "Move row down",
+  rowLifted: (position) => `Row ${String(position)} lifted`,
+  rowMoved: (from, to) => `Row moved from ${String(from)} to ${String(to)}`,
+  rowReorderCancelled: "Reorder cancelled",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

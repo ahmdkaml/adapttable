@@ -115,6 +115,7 @@ export function MuiDemo({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -132,6 +133,7 @@ export function MuiDemo({
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -149,6 +151,7 @@ export function MuiDemo({
         rowMode={rowMode}
         batch={batch}
         rowMutations={rowMutations}
+        rowReorder={rowReorder}
         editing={editing}
         render={(source, columns) => (
           <DataTable

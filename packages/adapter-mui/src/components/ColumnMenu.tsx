@@ -3,6 +3,7 @@ import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  REORDER_COLUMN_KEY,
   useColumnDragState,
 } from "@adapttable/core";
 import type { ColumnMenuChromeProps } from "@adapttable/core/adapter";
@@ -27,9 +28,17 @@ import { useState } from "react";
 /** Props for the column menu — the shared core contract + actions wiring. */
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   /** Resolved labels, including the trailing actions-column entry's name. */
-  labels: ColumnMenuChromeProps<TRow>["labels"] & { actions: string };
+  labels: ColumnMenuChromeProps<TRow>["labels"] & {
+    actions: string;
+    reorderRow: string;
+  };
   /** Whether the table has row actions — lists the injected actions column. */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
   /** Text direction — the Popover portals to `<body>`, so it loses the
@@ -106,6 +115,39 @@ function PinToggle({
   );
 }
 
+function ReorderRow<TRow>({
+  layout,
+  labels,
+}: Readonly<Pick<ColumnMenuProps<TRow>, "layout" | "labels">>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  return (
+    <div data-adapttable-part="column-menu-item" data-reorder="">
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
+      >
+        <Box aria-hidden sx={{ width: 24 }} />
+        <VisibilityToggle
+          hidden={hidden}
+          name={labels.reorderRow}
+          labels={labels}
+          onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+        />
+        <RowName hidden={hidden} name={labels.reorderRow} />
+        <PinToggle
+          active={pinned}
+          label={`${pinned ? labels.unpin : labels.pinStart}: ${labels.reorderRow}`}
+          onClick={() =>
+            layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+          }
+        />
+      </Stack>
+    </div>
+  );
+}
+
 /**
  * Trailing menu row for the injected row-actions column. It is not a data
  * column — no reorder grip, no left pin — but the layout state treats the
@@ -120,31 +162,28 @@ function ActionsRow<TRow>({
   const hidden = layout.isHidden(ACTIONS_COLUMN_KEY);
   const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return (
-    <>
-      <Divider sx={{ my: 0.5 }} />
-      <Stack
-        direction="row"
-        spacing={0.5}
-        sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
-      >
-        {/* Spacer where data rows show the drag grip — actions never move. */}
-        <Box aria-hidden sx={{ width: 24 }} />
-        <VisibilityToggle
-          hidden={hidden}
-          name={labels.actions}
-          labels={labels}
-          onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
-        />
-        <RowName hidden={hidden} name={labels.actions} />
-        <PinToggle
-          active={pinned}
-          label={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
-          onClick={() =>
-            layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
-          }
-        />
-      </Stack>
-    </>
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
+    >
+      {/* Spacer where data rows show the drag grip — actions never move. */}
+      <Box aria-hidden sx={{ width: 24 }} />
+      <VisibilityToggle
+        hidden={hidden}
+        name={labels.actions}
+        labels={labels}
+        onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+      />
+      <RowName hidden={hidden} name={labels.actions} />
+      <PinToggle
+        active={pinned}
+        label={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
+        onClick={() =>
+          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
+        }
+      />
+    </Stack>
   );
 }
 
@@ -158,7 +197,8 @@ export function ColumnMenu<TRow>({
   allColumns,
   layout,
   labels,
-  hasRowActions,
+  hasRowActions = false,
+  hasRowReorder = false,
   onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
@@ -248,6 +288,8 @@ export function ColumnMenu<TRow>({
               </Stack>
             );
           })}
+          {(hasRowReorder || hasRowActions) && <Divider sx={{ my: 0.5 }} />}
+          {hasRowReorder && <ReorderRow layout={layout} labels={labels} />}
           {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
           <Divider sx={{ my: 0.5 }} />
           <Button

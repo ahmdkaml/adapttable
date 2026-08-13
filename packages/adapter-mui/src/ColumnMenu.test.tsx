@@ -41,6 +41,7 @@ const labels = {
   showColumn: "Show column",
   hideColumn: "Hide column",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
 const byLabel = (name: string) =>
@@ -209,6 +210,26 @@ describe("mui ColumnMenu", () => {
     // Pinned right → the single pin action is "Unpin".
     fireEvent.click(byLabel("Unpin: Actions"));
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("lists a leading reorder row with an eye and a start pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowReorder
+        onAutoSize={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(byLabel("Hide column: Reorder"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(byLabel("Pin to start: Reorder"));
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
   });
 
   it("omits the Actions row when the table has no row actions", async () => {

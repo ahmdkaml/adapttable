@@ -240,6 +240,8 @@ The source for each lives in
   (show/hide, reorder, pin), resizing.
 - [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
   editors, keyboard flow.
+- [Row reordering](./row-reordering.md) — opt-in `onRowReorder`, Space-lift
+  keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
 - [Data tiers](./data-tiers.md) — server data without a query library

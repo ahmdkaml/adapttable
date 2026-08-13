@@ -16,6 +16,8 @@ import {
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
+  RowReorderButtons,
+  rowReorderSignature,
   TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
@@ -69,10 +71,15 @@ interface MobileCardProps<TRow> {
   getRowId: (row: TRow) => string;
   /** Memo digest from {@link rowEditingSignature}. */
   editingSignature: string | null;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: SharedProps<TRow>["rowReorder"];
+  windowStart: number;
+  rowCount: number;
+  reorderSignature: string | null;
 }
 
 /** The card props the memo comparator deliberately skips (see `editing`). */
-type UncomparedCardProp = "editing" | "rows" | "getRowId";
+type UncomparedCardProp = "editing" | "rows" | "getRowId" | "rowReorder";
 
 /** Every card prop the memo comparator checks with `Object.is`. */
 const COMPARED_CARD_PROPS: readonly Exclude<
@@ -97,6 +104,9 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "measureElement",
   "clickable",
   "editingSignature",
+  "reorderSignature",
+  "windowStart",
+  "rowCount",
   // Or a folder opens and its own chevron never turns.
   "treeEntry",
 ];
@@ -137,6 +147,9 @@ function MobileCardBase<TRow>({
   getRowId,
   treeEntry,
   onToggleTree,
+  rowReorder,
+  windowStart,
+  rowCount,
 }: Readonly<MobileCardProps<TRow>>) {
   return (
     <li
@@ -222,6 +235,19 @@ function MobileCardBase<TRow>({
           </span>
         </div>
       ))}
+      {rowReorder && (
+        <RowReorderButtons
+          reorder={rowReorder}
+          labels={labels}
+          localIndex={index}
+          row={row}
+          windowStart={windowStart}
+          rowCount={rowCount}
+          className={classNames.rowReorderButtons}
+          upClassName={classNames.rowReorderUp}
+          downClassName={classNames.rowReorderDown}
+        />
+      )}
       {editing?.rowEditing && (
         <RowEditActions
           rowEditing={editing.rowEditing}
@@ -276,6 +302,8 @@ export function MobileCards<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  rowReorder,
+  windowStart = 0,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = resolveVirtualRows(rows, getRowId, rowEntries);
@@ -315,13 +343,17 @@ export function MobileCards<TRow>({
         renderDetail={renderRowDetail}
         onRowClick={onRowClick}
         measureElement={measureElement}
-        clickable={Boolean(onRowClick)}
         editing={editing}
         rows={rows}
         getRowId={getRowId}
         editingSignature={rowEditingSignature(editing, id)}
         treeEntry={treeEntry}
-        onToggleTree={tree?.expansion.toggle}
+        onToggleTree={tree ? tree.expansion.toggle : undefined}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
+        rowCount={rows.length}
+        reorderSignature={rowReorderSignature(rowReorder, id, index)}
+        clickable={Boolean(onRowClick)}
       />
     );
   };

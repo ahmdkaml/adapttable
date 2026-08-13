@@ -150,6 +150,7 @@ const menuLabels = {
   autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  reorderRow: "Reorder",
 };
 
 describe("ColumnMenu hidden column", () => {

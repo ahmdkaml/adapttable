@@ -33,6 +33,7 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
 const labels = {
   columns: "Columns",
   actions: "Actions",
+  reorderRow: "Reorder",
   pinStart: "Pin to start",
   pinEnd: "Pin to end",
   unpin: "Unpin",
@@ -209,6 +210,29 @@ describe("mantine ColumnMenu", () => {
     // Pinned → one click unpins (right ↔ none, nothing in between).
     fireEvent.click(byLabel("Unpin: Actions"));
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("lists a leading reorder row with an eye and a start pin", async () => {
+    const user = userEvent.setup();
+    const layout = fakeLayout();
+    render(
+      <MantineProvider>
+        <ColumnMenu
+          allColumns={cols}
+          layout={layout}
+          labels={labels}
+          hasRowReorder
+          onAutoSize={() => undefined}
+        />
+      </MantineProvider>
+    );
+    await user.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(byLabel("Hide column: Reorder"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(byLabel("Pin to start: Reorder"));
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
   });
 
   // Regression: the menu portals to <body>, so it does not inherit the

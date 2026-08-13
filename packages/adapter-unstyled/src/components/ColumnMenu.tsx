@@ -1,17 +1,16 @@
-import type { UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  REORDER_COLUMN_KEY,
   useColumnDragState,
+  type UseColumnLayoutResult,
 } from "@adapttable/core";
-import type {
-  ColumnDragState,
-  ColumnMenuChromeProps,
-  ColumnMenuLabels,
-  ColumnMenuRow,
-} from "@adapttable/core/adapter";
 import {
+  type ColumnDragState,
+  type ColumnMenuChromeProps,
+  type ColumnMenuLabels,
+  type ColumnMenuRow,
   EyeIcon,
   GripIcon,
   nextPinSide,
@@ -24,7 +23,10 @@ import type { DataTableClassNames } from "../types";
 import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
 
 /** Menu labels: the shared chrome contract plus the actions row's name. */
-type ColumnMenuRowLabels = ColumnMenuLabels & { actions: string };
+type ColumnMenuRowLabels = ColumnMenuLabels & {
+  actions: string;
+  reorderRow: string;
+};
 
 /** The eye toggle shared by data-column rows and the actions row. */
 function VisibilityToggle({
@@ -208,6 +210,47 @@ function ActionsMenuRowItem<TRow>({
   );
 }
 
+/**
+ * The injected row-reorder column as a first-class menu row: the same eye
+ * toggle as a data column plus a one-click start-pin toggle. The column
+ * always leads, so there is no end pin and no reorder grip.
+ */
+function ReorderMenuRowItem<TRow>({
+  layout,
+  labels,
+  classNames,
+}: Readonly<ActionsMenuRowProps<TRow>>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  const name = labels.reorderRow;
+  return (
+    <div
+      data-adapttable-part="column-menu-item"
+      data-reorder=""
+      data-hidden={hidden || undefined}
+      data-pinned={pinned ? "start" : undefined}
+      className={classNames.columnMenuItem}
+    >
+      <VisibilityToggle
+        hidden={hidden}
+        name={name}
+        labels={labels}
+        classNames={classNames}
+        onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+      />
+      <RowName hidden={hidden} name={name} classNames={classNames} />
+      <PinToggle
+        active={pinned}
+        actionLabel={`${pinned ? labels.unpin : labels.pinStart}: ${name}`}
+        classNames={classNames}
+        onClick={() =>
+          layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+        }
+      />
+    </div>
+  );
+}
+
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   classNames: DataTableClassNames;
   /** Resolved labels — the shared contract plus the actions row's name. */
@@ -218,6 +261,11 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * end-pins like any data column.
    */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
 }
@@ -234,6 +282,7 @@ export function ColumnMenu<TRow>({
   labels,
   classNames,
   hasRowActions,
+  hasRowReorder,
   onAutoSize,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
@@ -287,18 +336,25 @@ export function ColumnMenu<TRow>({
               drag={drag}
             />
           ))}
+          {(hasRowReorder === true || hasRowActions === true) && (
+            <hr
+              data-adapttable-part="column-menu-separator"
+              className={classNames.columnMenuSeparator}
+            />
+          )}
+          {hasRowReorder && (
+            <ReorderMenuRowItem
+              layout={layout}
+              labels={labels}
+              classNames={classNames}
+            />
+          )}
           {hasRowActions && (
-            <>
-              <hr
-                data-adapttable-part="column-menu-separator"
-                className={classNames.columnMenuSeparator}
-              />
-              <ActionsMenuRowItem
-                layout={layout}
-                labels={labels}
-                classNames={classNames}
-              />
-            </>
+            <ActionsMenuRowItem
+              layout={layout}
+              labels={labels}
+              classNames={classNames}
+            />
           )}
           <button
             type="button"

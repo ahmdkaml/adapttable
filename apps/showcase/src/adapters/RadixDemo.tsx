@@ -93,6 +93,7 @@ export function RadixDemo({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -110,6 +111,7 @@ export function RadixDemo({
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -135,6 +137,7 @@ export function RadixDemo({
         rowMode={rowMode}
         batch={batch}
         rowMutations={rowMutations}
+        rowReorder={rowReorder}
         editing={editing}
         render={(source, columns) => (
           <DataTable

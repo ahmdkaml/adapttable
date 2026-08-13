@@ -6,6 +6,7 @@ import {
   type GroupedFlatEntry,
   type RowAction,
   type RowExpansionState,
+  type RowReorderState,
   runRowAction,
   type TableLabels,
   treeCardStyle,
@@ -20,6 +21,8 @@ import {
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
+  RowReorderButtons,
+  rowReorderSignature,
   TreeToggle,
   useSummaryCells,
   type VirtualTableRow,
@@ -154,6 +157,11 @@ interface CardItemProps<TRow> {
   getRowId: (row: TRow) => string;
   /** Memo digest from {@link rowEditingSignature}. */
   editingSignature: string | null;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
+  rowCount: number;
+  reorderSignature: string | null;
 }
 
 /**
@@ -186,6 +194,9 @@ function cardItemPropsEqual<TRow>(
     prev.onRowClick === next.onRowClick &&
     prev.prefetch === next.prefetch &&
     prev.editingSignature === next.editingSignature &&
+    prev.reorderSignature === next.reorderSignature &&
+    prev.windowStart === next.windowStart &&
+    prev.rowCount === next.rowCount &&
     // Or a folder opens and its own chevron never turns.
     prev.treeEntry === next.treeEntry
   );
@@ -214,6 +225,9 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     getRowId,
     treeEntry,
     onToggleTree,
+    rowReorder,
+    windowStart,
+    rowCount,
   } = props;
   const actions = rowActions && rowActions.length > 0 ? rowActions : null;
   return (
@@ -296,6 +310,16 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
           </Descriptions.Item>
         ))}
       </Descriptions>
+      {rowReorder && (
+        <RowReorderButtons
+          reorder={rowReorder}
+          labels={labels}
+          localIndex={rowIndex}
+          row={row}
+          windowStart={windowStart}
+          rowCount={rowCount}
+        />
+      )}
       {expanded && renderDetail ? (
         <div data-adapttable-part="card-detail" style={{ marginTop: 8 }}>
           {renderDetail(row)}
@@ -337,6 +361,8 @@ export function MobileCards<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  rowReorder,
+  windowStart = 0,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   /** Class applied to every card (merged before `rowClassName`). */
@@ -387,6 +413,8 @@ export function MobileCards<TRow>({
   paddingBottom?: number;
   /** Card measurement callback for the virtual window. */
   measureElement?: (node: Element | null) => void;
+  rowReorder?: RowReorderState<TRow>;
+  windowStart?: number;
 }>) {
   const { labels, selection, columns } = table;
   // Either the virtual slice or every source row, resolved to render entries
@@ -440,6 +468,10 @@ export function MobileCards<TRow>({
           editingSignature={rowEditingSignature(editing, id)}
           treeEntry={treeEntry}
           onToggleTree={tree?.expansion.toggle}
+          rowReorder={rowReorder}
+          windowStart={windowStart}
+          rowCount={rows.length}
+          reorderSignature={rowReorderSignature(rowReorder, id, index)}
         />
       </li>
     );

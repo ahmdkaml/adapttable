@@ -302,6 +302,7 @@ export {
   ACTIONS_COLUMN_KEY,
   columnMenuLabel,
   columnMenuRows,
+  REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
 export {
   columnDropProps,
@@ -402,6 +403,18 @@ export {
   useRowMutations,
   type UseRowMutationsOptions,
 } from "./rows/rowMutations";
+export {
+  applyRowReorder,
+  datasetIndex,
+  REORDER_COLUMN_WIDTH,
+  ROW_DND_MIME,
+  rowReorderDropStyle,
+  type RowReorderHandler,
+  type RowReorderLabels,
+  rowReorderSignature,
+  type RowReorderState,
+  useRowReorder,
+} from "./rows/rowReorder";
 export {
   type RowExpansionState,
   useRowExpansion,

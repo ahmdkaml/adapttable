@@ -51,6 +51,7 @@ pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
 - **Row expansion** — inline detail panels via `renderRowDetail`.
 - **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
   editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row reordering** (`onRowReorder`) — drag handle, Space-lift keyboard, dataset-relative indices. Grouping and trees refuse it.
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.

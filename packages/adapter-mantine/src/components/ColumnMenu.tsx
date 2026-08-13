@@ -3,6 +3,7 @@ import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  REORDER_COLUMN_KEY,
   useColumnDragState,
 } from "@adapttable/core";
 import type {
@@ -36,9 +37,14 @@ import { useEscapeClose } from "./useEscapeClose";
  */
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   /** Resolved labels — the shared menu set plus the actions-column name. */
-  labels: ColumnMenuLabels & { actions: string };
+  labels: ColumnMenuLabels & { actions: string; reorderRow: string };
   /** Whether the table has row actions (lists the injected actions column). */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
   /** Text direction — the menu portals to `<body>`, so it loses the table's
@@ -136,6 +142,37 @@ function ActionsRow<TRow>({
   );
 }
 
+function ReorderRow<TRow>({
+  layout,
+  labels,
+}: Readonly<{
+  layout: UseColumnLayoutResult<TRow>;
+  labels: ColumnMenuProps<TRow>["labels"];
+}>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  return (
+    <div data-adapttable-part="column-menu-item" data-reorder="">
+      <Group justify="flex-start" wrap="nowrap" gap={6} px={4} py={2}>
+        <Box w={22} />
+        <RowVisibility
+          hidden={hidden}
+          name={labels.reorderRow}
+          labels={labels}
+          onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+        />
+        <PinToggle
+          pinned={pinned}
+          label={`${pinned ? labels.unpin : labels.pinStart}: ${labels.reorderRow}`}
+          onClick={() =>
+            layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+          }
+        />
+      </Group>
+    </div>
+  );
+}
+
 /**
  * Column-management popover: per-column drag grip (reorder), eye (show/hide),
  * and pin toggle. Keyboard users focus a grip and use arrow keys.
@@ -145,6 +182,7 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   hasRowActions = false,
+  hasRowReorder = false,
   onAutoSize,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
@@ -229,12 +267,9 @@ export function ColumnMenu<TRow>({
               </Group>
             );
           })}
-          {hasRowActions && (
-            <>
-              <Divider my={4} />
-              <ActionsRow layout={layout} labels={labels} />
-            </>
-          )}
+          {(hasRowReorder || hasRowActions) && <Divider my={4} />}
+          {hasRowReorder && <ReorderRow layout={layout} labels={labels} />}
+          {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
           <Divider my={4} />
           <Button
             variant="subtle"

@@ -152,7 +152,11 @@ const camel = (part: string): string =>
  * it to a host is handing over a way to silence the table. Anything visible
  * belongs in the contract; these do not.
  */
-const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
+const A11Y_PARTS = new Set([
+  "export-announcer",
+  "grid-announcer",
+  "row-reorder-announcer",
+]);
 
 /**
  * Class hooks that modify an existing part rather than naming one of their own.
@@ -385,6 +389,11 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   groupedMobile.unmount();
 
+  // Row reorder: desktop grip + header, mobile up/down. Isolated so grouping
+  // does not refuse the column and fire a devWarn in the kitchen-sink mounts.
+  mount({ override: { onRowReorder: vi.fn() } }).unmount();
+  mount({ isMobile: true, override: { onRowReorder: vi.fn() } }).unmount();
+
   // Mobile cards with an expanded card detail.
   const mobile = mount({ isMobile: true });
   const cardExpand = part("expand-button");
@@ -527,6 +536,12 @@ const KEYS = [
   "actionsHeader",
   "actionsCell",
   "actionButton",
+  "reorderHeader",
+  "reorderCell",
+  "rowReorderHandle",
+  "rowReorderButtons",
+  "rowReorderUp",
+  "rowReorderDown",
   "selectionHeader",
   "selectionCell",
   "checkbox",

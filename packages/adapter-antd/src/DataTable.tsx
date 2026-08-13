@@ -16,6 +16,7 @@ import {
   resolveExportCsv,
   resolveLabels,
   type RowExpansionState,
+  type RowReorderState,
   type SelectionState,
   selectionStats,
   type TableLabels,
@@ -43,8 +44,11 @@ import {
   DEFAULT_CARD_SIZE_PX,
   FindBar,
   GridFocusAnnouncer,
+  REORDER_COLUMN_WIDTH,
   rowClickProps,
   rowIsDirty,
+  RowReorderAnnouncer,
+  rowReorderDropStyle,
   SelectionStatsBar,
   useExportHandler,
   useKeyedVirtualization,
@@ -181,11 +185,15 @@ function antdMinWidth<TRow>(
   columns: readonly ColumnDef<TRow>[],
   widths: Readonly<Record<string, number>>,
   hasSelection: boolean,
-  hasActions: boolean
+  hasActions: boolean,
+  hasReorder: boolean
 ): number {
   return tableMinWidth(columns, {
     widths,
-    extra: (hasSelection ? 48 : 0) + (hasActions ? 120 : 0),
+    extra:
+      (hasSelection ? 48 : 0) +
+      (hasActions ? 120 : 0) +
+      (hasReorder ? REORDER_COLUMN_WIDTH : 0),
   });
 }
 
@@ -333,6 +341,7 @@ function ColumnMenuSlot<TRow>({
   labels,
   dir,
   hasRowActions,
+  hasRowReorder,
   onAutoSize,
 }: Readonly<{
   enabled: boolean;
@@ -341,6 +350,7 @@ function ColumnMenuSlot<TRow>({
   labels: Required<TableLabels>;
   dir?: "ltr" | "rtl";
   hasRowActions: boolean;
+  hasRowReorder: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
 }>) {
@@ -352,6 +362,7 @@ function ColumnMenuSlot<TRow>({
       labels={labels}
       dir={dir}
       hasRowActions={hasRowActions}
+      hasRowReorder={hasRowReorder}
       onAutoSize={onAutoSize}
     />
   );
@@ -445,8 +456,12 @@ function buildSummary<TRow>(
 }
 
 /** How many non-data columns antd injects ahead of ours (expand, selection). */
-function summaryLeadingCells(rowSelection: unknown, expandable: unknown) {
-  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0);
+function summaryLeadingCells(
+  rowSelection: unknown,
+  expandable: unknown,
+  hasReorder: boolean
+) {
+  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0) + (hasReorder ? 1 : 0);
 }
 
 /** The shift-click chain toggler — only when `multiSort` is opted in. */
@@ -701,6 +716,8 @@ interface DataTableBodyRegionProps<TRow> {
   minWidth: number;
   hasPinned: boolean;
   hasRowActions: boolean;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -728,6 +745,8 @@ function DesktopTableBody<TRow>({
   maxHeight,
   minWidth,
   emptyNode,
+  rowReorder,
+  windowStart,
 }: Readonly<{
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
@@ -754,6 +773,8 @@ function DesktopTableBody<TRow>({
   maxHeight: number | undefined;
   minWidth: number;
   emptyNode: ReactNode;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
 }>) {
   // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
   // reach it through the `components` seam. Memoized: a new component identity
@@ -797,8 +818,16 @@ function DesktopTableBody<TRow>({
             "data-collapsed": record.collapsed ? "true" : undefined,
           } as HTMLAttributes<HTMLElement>;
         }
+        const id = getRowId(record);
         return {
           ...rowClickProps(record, onRowClick, rowIndex),
+          ...(rowReorder && rowIndex !== undefined
+            ? {
+                ...rowReorder.dropProps(rowIndex, record, windowStart),
+                ...rowReorder.rowAttrs(id, rowIndex),
+                style: rowReorderDropStyle(rowReorder.rowAttrs(id, rowIndex)),
+              }
+            : {}),
           // antd builds its own <tr>, so the absolute aria-rowindex arrives
           // here rather than through a spread on the element.
           ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
@@ -881,6 +910,8 @@ function DataTableBodyRegion<TRow>(
     minWidth,
     hasPinned,
     hasRowActions,
+    rowReorder,
+    windowStart,
   } = props;
 
   let body: ReactNode;
@@ -926,6 +957,8 @@ function DataTableBodyRegion<TRow>(
         renderRowDetail={detailRender}
         summaryRow={summaryRow}
         {...cardWindow}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
       />
     );
   } else {
@@ -954,10 +987,19 @@ function DataTableBodyRegion<TRow>(
         maxHeight={maxHeight}
         minWidth={minWidth}
         emptyNode={emptyNode}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
       />
     );
   }
   return body;
+}
+
+function AntdRowReorderAnnouncer<TRow>({
+  rowReorder,
+}: Readonly<{ rowReorder: RowReorderState<TRow> | undefined }>) {
+  if (rowReorder === undefined) return null;
+  return <RowReorderAnnouncer announcement={rowReorder.announcement} />;
 }
 
 /**
@@ -1212,6 +1254,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           showMore: grouping.showMore,
         }
       : undefined,
+    rowReorder: c.rowReorder,
+    windowStart,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own
@@ -1231,7 +1275,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     table.columns,
     c.columnLayout.state.widths,
     Boolean(table.selection),
-    hasRowActions
+    hasRowActions,
+    Boolean(c.rowReorder)
   );
 
   const handleChange = sortChangeHandler(source);
@@ -1253,7 +1298,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const summary = buildSummary(
     props.summaryRow,
     table.columns,
-    summaryLeadingCells(rowSelection, expandable),
+    summaryLeadingCells(rowSelection, expandable, Boolean(c.rowReorder)),
     hasRowActions
   );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
@@ -1314,6 +1359,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       minWidth={minWidth}
       hasPinned={hasPinned}
       hasRowActions={hasRowActions}
+      rowReorder={c.rowReorder}
+      windowStart={windowStart}
     />
   );
 
@@ -1327,6 +1374,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={c.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={gridFocus} />
+      <AntdRowReorderAnnouncer rowReorder={c.rowReorder} />
       <FindBar find={find} labels={c.table.labels} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <div className={classNames?.toolbar}>
@@ -1358,6 +1406,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 labels={labels}
                 dir={props.dir}
                 hasRowActions={c.hasRowActions}
+                hasRowReorder={c.hasRowReorder}
               />
             }
             {...exportHandler}

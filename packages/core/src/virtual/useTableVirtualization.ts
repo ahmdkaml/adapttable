@@ -94,13 +94,15 @@ export function virtualColumnSpan(
   columnCount: number,
   hasSelection: boolean,
   hasActions: boolean,
-  hasExpansion = false
+  hasExpansion = false,
+  hasReorder = false
 ): number {
   return (
     columnCount +
     (hasSelection ? 1 : 0) +
     (hasActions ? 1 : 0) +
-    (hasExpansion ? 1 : 0)
+    (hasExpansion ? 1 : 0) +
+    (hasReorder ? 1 : 0)
   );
 }
 

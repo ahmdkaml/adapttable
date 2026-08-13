@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
-import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import {
+  ACTIONS_COLUMN_KEY,
+  REORDER_COLUMN_KEY,
+} from "./columns/columnMenuModel";
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
@@ -260,9 +263,11 @@ export function useDataTableShell<TRow>(
   // state treats its reserved key like any column key, so the Columns menu can
   // hide it (strip rowActions before the renderers) or end-pin it (the
   // renderers stick the actions cells, with zero data columns pinned).
-  const { hasRowActions, rowActions } = chrome;
+  const { hasRowActions, rowActions, hasRowReorder, rowReorder } = chrome;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+  const reorderPinned =
+    chrome.columnLayout.state.pinned[REORDER_COLUMN_KEY] === "start";
 
   // The horizontal window reads the same scroll box the vertical one does.
   const columnWindow = useColumnWindow<TRow>({
@@ -296,6 +301,9 @@ export function useDataTableShell<TRow>(
     rows: chrome.editingRows,
     rowActions,
     actionsPinned,
+    rowReorder,
+    reorderPinned,
+    windowStart,
     confirm,
     getRowId,
     rowEntries: virtualization.enabled ? virtualization.rows : undefined,
@@ -375,6 +383,7 @@ export function useDataTableShell<TRow>(
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     tableProps,
     toolbarProps,
   };

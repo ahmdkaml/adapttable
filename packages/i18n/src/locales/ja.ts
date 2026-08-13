@@ -79,6 +79,13 @@ export const ja: Required<TableLabels> = {
   editConflict: "編集中にこの行が変わりました",
   keepMine: "自分の入力を残す",
   takeTheirs: "新しい値を使う",
+  reorderRow: "行を並び替え",
+  moveRowUp: "行を上へ",
+  moveRowDown: "行を下へ",
+  rowLifted: (position) => `${String(position)} 行目を持ち上げました`,
+  rowMoved: (from, to) =>
+    `行を ${String(from)} から ${String(to)} へ移動しました`,
+  rowReorderCancelled: "並び替えを取り消しました",
   moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
   moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,

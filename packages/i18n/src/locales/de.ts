@@ -83,6 +83,13 @@ export const de: Required<TableLabels> = {
   editConflict: "Diese Zeile hat sich während der Bearbeitung geändert",
   keepMine: "Meins behalten",
   takeTheirs: "Neues übernehmen",
+  reorderRow: "Zeile neu anordnen",
+  moveRowUp: "Zeile nach oben",
+  moveRowDown: "Zeile nach unten",
+  rowLifted: (position) => `Zeile ${String(position)} angehoben`,
+  rowMoved: (from, to) =>
+    `Zeile von ${String(from)} nach ${String(to)} verschoben`,
+  rowReorderCancelled: "Neuordnung abgebrochen",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

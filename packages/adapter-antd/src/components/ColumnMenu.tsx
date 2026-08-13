@@ -3,6 +3,7 @@ import {
   ACTIONS_COLUMN_KEY,
   columnMenuRows,
   columnReorderKeyProps,
+  REORDER_COLUMN_KEY,
   useColumnDragState,
 } from "@adapttable/core";
 import type {
@@ -20,7 +21,7 @@ import { Button, Divider, Flex, Popover, theme } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 /** Menu labels plus the actions-column display name. */
-type MenuLabels = ColumnMenuLabels & { actions: string };
+type MenuLabels = ColumnMenuLabels & { actions: string; reorderRow: string };
 
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   dir?: Direction;
@@ -28,6 +29,11 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   labels: MenuLabels;
   /** List the injected row-actions column as a managed trailing row. */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
 }
@@ -92,6 +98,40 @@ function PinToggle({
   );
 }
 
+function ReorderRow<TRow>({
+  layout,
+  labels,
+}: Readonly<{ layout: UseColumnLayoutResult<TRow>; labels: MenuLabels }>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  return (
+    <div data-adapttable-part="column-menu-item" data-reorder="">
+      <Flex align="center" gap={6} style={{ padding: "2px 0" }}>
+        <span
+          aria-hidden="true"
+          style={{ display: "inline-flex", visibility: "hidden" }}
+        >
+          <GripIcon />
+        </span>
+        <VisibilityToggle
+          name={labels.reorderRow}
+          hidden={hidden}
+          labels={labels}
+          onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+        />
+        <RowName name={labels.reorderRow} hidden={hidden} />
+        <PinToggle
+          pinned={pinned}
+          actionLabel={`${pinned ? labels.unpin : labels.pinStart}: ${labels.reorderRow}`}
+          onPin={() =>
+            layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+          }
+        />
+      </Flex>
+    </div>
+  );
+}
+
 /**
  * The injected row-actions column's management row. Separated from the data
  * columns and stripped to the two controls that apply: the eye and a
@@ -106,31 +146,28 @@ function ActionsRow<TRow>({
   const hidden = layout.isHidden(ACTIONS_COLUMN_KEY);
   const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return (
-    <>
-      <Divider style={{ margin: "6px 0" }} />
-      <Flex align="center" gap={6} style={{ padding: "2px 0" }}>
-        <span
-          aria-hidden="true"
-          style={{ display: "inline-flex", visibility: "hidden" }}
-        >
-          <GripIcon />
-        </span>
-        <VisibilityToggle
-          name={labels.actions}
-          hidden={hidden}
-          labels={labels}
-          onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
-        />
-        <RowName name={labels.actions} hidden={hidden} />
-        <PinToggle
-          pinned={pinned}
-          actionLabel={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
-          onPin={() =>
-            layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
-          }
-        />
-      </Flex>
-    </>
+    <Flex align="center" gap={6} style={{ padding: "2px 0" }}>
+      <span
+        aria-hidden="true"
+        style={{ display: "inline-flex", visibility: "hidden" }}
+      >
+        <GripIcon />
+      </span>
+      <VisibilityToggle
+        name={labels.actions}
+        hidden={hidden}
+        labels={labels}
+        onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+      />
+      <RowName name={labels.actions} hidden={hidden} />
+      <PinToggle
+        pinned={pinned}
+        actionLabel={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
+        onPin={() =>
+          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
+        }
+      />
+    </Flex>
   );
 }
 
@@ -147,7 +184,8 @@ export function ColumnMenu<TRow>({
   layout,
   labels,
   dir,
-  hasRowActions,
+  hasRowActions = false,
+  hasRowReorder = false,
   onAutoSize,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
@@ -232,6 +270,10 @@ export function ColumnMenu<TRow>({
           </Flex>
         );
       })}
+      {(hasRowReorder || hasRowActions) && (
+        <Divider style={{ margin: "6px 0" }} />
+      )}
+      {hasRowReorder && <ReorderRow layout={layout} labels={labels} />}
       {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
       <Divider style={{ margin: "8px 0" }} />
       <Button size="small" type="text" onClick={onAutoSize}>

@@ -84,6 +84,13 @@ export const ru: Required<TableLabels> = {
   editConflict: "Эта строка изменилась, пока вы её редактировали",
   keepMine: "Оставить своё",
   takeTheirs: "Взять новое",
+  reorderRow: "Изменить порядок строки",
+  moveRowUp: "Переместить строку вверх",
+  moveRowDown: "Переместить строку вниз",
+  rowLifted: (position) => `Строка ${String(position)} поднята`,
+  rowMoved: (from, to) =>
+    `Строка перемещена с ${String(from)} на ${String(to)}`,
+  rowReorderCancelled: "Перестановка отменена",
   moreGroups: (remaining) => `Показать ещё групп: ${remaining}`,
   moreRowsInGroup: (remaining) => `Показать ещё в этой группе: ${remaining}`,
   groupTotal: (label) => `Итого: ${label}`,

@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 56,
+    budgetKB: 58,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -120,14 +120,21 @@ const FIXTURES = [
   // inline arrow never repaints rows. Edit conflicts (~0.5 KB) compare the
   // open editor to a live row and surface Keep mine / Take theirs on the
   // validation channel. The simple-table fixture did not move.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 81 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 80 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 80 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 77 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 80 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 86 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 83 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 81 },
+  //
+  // Row reordering (~2 KB) is chrome every adapter already walks: the reserved
+  // grip column, Space-lift keyboard, live-region announcer, HTML5 drop
+  // targets, and the mobile up/down pair. The host still opts in with
+  // `onRowReorder` — omit it and nothing renders — but the builders sit on
+  // the same path as row actions. `core · simple table` stayed at 11.4 KB
+  // of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 85 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 85 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 85 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 81 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 85 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 91 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 88 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 86 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

@@ -10,6 +10,7 @@ import {
   PIN_Z,
   pinnedCellStyle,
   type RowAction,
+  type TableLabels,
   tableMinWidth,
   type TreeEntry,
   useHorizontalOverflow,
@@ -24,11 +25,15 @@ import {
   headerGroupRow,
   type PinLeads,
   pinnedColumnWidth,
+  REORDER_COLUMN_WIDTH,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
+  rowReorderDropStyle,
+  RowReorderHandle,
+  rowReorderSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -90,6 +95,50 @@ export interface SharedProps<TRow> extends SharedTableRenderProps<TRow> {
 
 /** Width (px) of the leading expand-chevron column (MUI's checkbox cell). */
 const EXPAND_WIDTH = 48;
+
+/** Empty leading pad (group header / summary) — keeps DesktopTable lean. */
+function ExtraCheckboxCell({ show }: Readonly<{ show: boolean }>) {
+  if (!show) return null;
+  return <TableCell padding="checkbox" />;
+}
+
+const SELECTION_WIDTH = 48;
+const ACTIONS_WIDTH = 120;
+
+/** Pin leads and whether the table needs a horizontal scroll box. */
+function muiPinGeometry(
+  expandActive: boolean,
+  showReorder: boolean,
+  hasSelection: boolean,
+  showActions: boolean,
+  actionsPinned: boolean,
+  reorderPinned: boolean,
+  columns: readonly { key: string }[],
+  pinOffset?: (key: string) => unknown
+): {
+  hasPinned: boolean;
+  leads: PinLeads;
+  leadStart: number;
+  leadEnd: number;
+  selectionLead: number;
+  reorderLead: number;
+} {
+  const expand = expandActive ? EXPAND_WIDTH : 0;
+  const reorder = showReorder ? REORDER_COLUMN_WIDTH : 0;
+  const start = expand + reorder + (hasSelection ? SELECTION_WIDTH : 0);
+  const end = showActions ? ACTIONS_WIDTH : 0;
+  return {
+    hasPinned:
+      actionsPinned ||
+      (showReorder && reorderPinned) ||
+      columns.some((c) => pinOffset?.(c.key) != null),
+    leads: { start, end },
+    leadStart: start,
+    leadEnd: end,
+    selectionLead: expand + reorder,
+    reorderLead: expand,
+  };
+}
 
 /**
  * Identity-stable dispatcher for `selection.toggle` / `expansion.toggle`.
@@ -162,6 +211,8 @@ interface DesktopRowSx {
   cells: Readonly<Record<string, SxProps<Theme>>>;
   /** Leading expand-chevron cell (edge-pinned alongside left data pins). */
   expand?: SxProps<Theme>;
+  /** Leading reorder-grip cell (edge-pinned just past the expand column). */
+  reorder?: SxProps<Theme>;
   /** Leading selection cell (edge-pinned just past the expand column). */
   selection?: SxProps<Theme>;
   /** Trailing actions cell (edge-pinned, end-aligned). */
@@ -194,6 +245,15 @@ interface DesktopRowProps<TRow> {
   hasSelection: boolean;
   hasExpansion: boolean;
   showActions: boolean;
+  showReorder: boolean;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: SharedTableRenderProps<TRow>["rowReorder"];
+  windowStart: number;
+  rowCount: number;
+  reorderPinned: boolean;
+  /** Memo digest from {@link rowReorderSignature}. */
+  reorderSignature: string | null;
+  labels: Required<TableLabels>;
   selectRowLabel: string;
   cancelLabel: string;
   expandLabel: string;
@@ -251,6 +311,10 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "hasSelection",
   "hasExpansion",
   "showActions",
+  "showReorder",
+  "reorderSignature",
+  "reorderPinned",
+  "labels",
   "selectRowLabel",
   "cancelLabel",
   "expandLabel",
@@ -286,6 +350,11 @@ function DesktopRowImpl<TRow>({
   hasSelection,
   hasExpansion,
   showActions,
+  showReorder,
+  rowReorder,
+  windowStart,
+  rowCount,
+  labels,
   selectRowLabel,
   cancelLabel,
   expandLabel,
@@ -312,7 +381,10 @@ function DesktopRowImpl<TRow>({
     <>
       <TableRow
         {...rowClickProps(row, onRowClick, index)}
+        {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
+        {...(rowReorder?.rowAttrs(id, index) ?? {})}
         className={className}
+        style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
         data-stagger=""
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={measureRowPair ? measureRowPair.row(index) : measureElement}
@@ -331,6 +403,23 @@ function DesktopRowImpl<TRow>({
               dir={dir}
               expandLabel={expandLabel}
               collapseLabel={collapseLabel}
+            />
+          </TableCell>
+        )}
+        {showReorder && rowReorder && (
+          <TableCell
+            padding="checkbox"
+            data-adapttable-part="reorder-cell"
+            sx={sx.reorder}
+          >
+            <RowReorderHandle
+              reorder={rowReorder}
+              labels={labels}
+              rowId={id}
+              localIndex={index}
+              row={row}
+              windowStart={windowStart}
+              rowCount={rowCount}
             />
           </TableCell>
         )}
@@ -473,6 +562,9 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  reorderPinned = false,
+  rowReorder,
+  windowStart = 0,
   columnWindow,
   fitColumns,
   tree,
@@ -484,6 +576,8 @@ export function DesktopTable<TRow>({
     selection,
     labels,
     showActions,
+    showReorder,
+    leadingCells,
     entries,
     columnSpan,
     columnSpacers,
@@ -497,6 +591,7 @@ export function DesktopTable<TRow>({
     renderRowDetail,
     expansion,
     editing,
+    rowReorder,
   });
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
@@ -521,8 +616,17 @@ export function DesktopTable<TRow>({
   // left/right (corner-sticky in the header) with an opaque background.
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
-  const hasPinned =
-    actionsPinned || table.columns.some((c) => pinOffset?.(c.key) != null);
+  const { hasPinned, leads, leadStart, leadEnd, selectionLead, reorderLead } =
+    muiPinGeometry(
+      expandActive,
+      showReorder,
+      Boolean(selection),
+      showActions,
+      actionsPinned,
+      reorderPinned,
+      table.columns,
+      pinOffset
+    );
   // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
   // pins, the wrapper only becomes a scroll container when the table is
   // actually wider than it — an unconditional `overflowX: auto` would trap
@@ -539,17 +643,6 @@ export function DesktopTable<TRow>({
         bgcolor: "background.paper",
       }
     : undefined;
-  // The leading expand (48px) + checkbox (48px) and trailing actions (120px)
-  // columns pin to the edge alongside the data columns, which therefore
-  // start past them.
-  const selectionWidth = 48;
-  const actionsWidth = 120;
-  const leadStart =
-    (expandActive ? EXPAND_WIDTH : 0) + (selection ? selectionWidth : 0);
-  const leadEnd = showActions ? actionsWidth : 0;
-  const leads: PinLeads = { start: leadStart, end: leadEnd };
-  // The selection cell itself sits past the expand column when both pin.
-  const selectionLead = expandActive ? EXPAND_WIDTH : 0;
   const hasStartPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "start"
   );
@@ -621,6 +714,7 @@ export function DesktopTable<TRow>({
     return {
       cells,
       expand: edge("start", hasStartPin),
+      reorder: edge("start", hasStartPin || reorderPinned, reorderLead),
       selection: edge("start", hasStartPin, selectionLead),
       actions: { ...edge("end", stickActions), textAlign: "end" },
     };
@@ -632,6 +726,8 @@ export function DesktopTable<TRow>({
     hasStartPin,
     stickActions,
     selectionLead,
+    reorderLead,
+    reorderPinned,
   ]);
 
   let boxSx: SxProps<Theme> | undefined;
@@ -677,6 +773,7 @@ export function DesktopTable<TRow>({
             // overlap them, so only the sortable header row pins.
             <TableRow>
               {expandActive && <TableCell padding="checkbox" />}
+              <ExtraCheckboxCell show={showReorder} />
               {selection && <TableCell padding="checkbox" />}
               {groupRow.map((cell) => (
                 <TableCell
@@ -695,6 +792,18 @@ export function DesktopTable<TRow>({
               <TableCell
                 padding="checkbox"
                 sx={edgeHeadSx("start", hasStartPin)}
+              />
+            )}
+            {showReorder && (
+              <TableCell
+                padding="checkbox"
+                aria-label={labels.reorderRow}
+                data-adapttable-part="reorder-header"
+                sx={edgeHeadSx(
+                  "start",
+                  hasStartPin || reorderPinned,
+                  reorderLead
+                )}
               />
             )}
             {selection && (
@@ -813,9 +922,7 @@ export function DesktopTable<TRow>({
                       key={entry.key}
                       entry={entry}
                       columns={columns}
-                      leadingCells={
-                        (expandActive ? 1 : 0) + (selection ? 1 : 0)
-                      }
+                      leadingCells={leadingCells}
                       showActions={showActions}
                       getCellProps={table.getCellProps}
                       selection={selection}
@@ -843,6 +950,17 @@ export function DesktopTable<TRow>({
                     hasSelection={Boolean(selection)}
                     hasExpansion={expandActive}
                     showActions={showActions}
+                    showReorder={showReorder}
+                    rowReorder={rowReorder}
+                    windowStart={windowStart}
+                    rowCount={rows.length}
+                    reorderPinned={reorderPinned}
+                    reorderSignature={rowReorderSignature(
+                      rowReorder,
+                      id,
+                      entry.index
+                    )}
+                    labels={labels}
                     selectRowLabel={labels.selectRow}
                     cancelLabel={labels.cancel}
                     expandLabel={labels.expandRow}
@@ -890,6 +1008,17 @@ export function DesktopTable<TRow>({
                       hasSelection={Boolean(selection)}
                       hasExpansion={expandActive}
                       showActions={showActions}
+                      showReorder={showReorder}
+                      rowReorder={rowReorder}
+                      windowStart={windowStart}
+                      rowCount={rows.length}
+                      reorderPinned={reorderPinned}
+                      reorderSignature={rowReorderSignature(
+                        rowReorder,
+                        id,
+                        index
+                      )}
+                      labels={labels}
                       selectRowLabel={labels.selectRow}
                       cancelLabel={labels.cancel}
                       expandLabel={labels.expandRow}
@@ -932,6 +1061,7 @@ export function DesktopTable<TRow>({
           <TableFooter>
             <TableRow>
               {expandActive && <TableCell padding="checkbox" />}
+              <ExtraCheckboxCell show={showReorder} />
               {selection && <TableCell padding="checkbox" />}
               {columns.map((column) => (
                 // One cell per column keeps the summary aligned under its

@@ -4,6 +4,7 @@ import {
   ExportAnnouncer,
   FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
   SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
@@ -235,6 +236,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={cx("adapttable", classNames.root)}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
       <FindBar find={shell.find} labels={labels} />
       <div
         data-adapttable-part="toolbar"
@@ -336,6 +342,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
             classNames={classNames}
             hasRowActions={shell.hasRowActions}
+            hasRowReorder={shell.hasRowReorder}
           />
         )}
         {onExportCsv && (

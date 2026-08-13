@@ -90,6 +90,18 @@ describe("tableRenderModel", () => {
     expect(model.showActions).toBe(false);
     expect(model.columnSpan).toBe(2); // selection + 1 data column
   });
+
+  it("counts the reorder column when the host opted in", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      rowReorder: { lifted: null } as never,
+    });
+    expect(model.showReorder).toBe(true);
+    expect(model.leadingCells).toBe(1);
+    expect(model.columnSpan).toBe(2);
+  });
 });
 
 describe("useChromeScrollReset", () => {

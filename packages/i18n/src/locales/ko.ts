@@ -81,6 +81,13 @@ export const ko: Required<TableLabels> = {
   editConflict: "편집하는 동안 이 행이 변경되었습니다",
   keepMine: "내 내용 유지",
   takeTheirs: "새 값 사용",
+  reorderRow: "행 순서 변경",
+  moveRowUp: "행을 위로",
+  moveRowDown: "행을 아래로",
+  rowLifted: (position) => `${String(position)}번째 행을 들었습니다`,
+  rowMoved: (from, to) =>
+    `행을 ${String(from)}에서 ${String(to)}(으)로 옮겼습니다`,
+  rowReorderCancelled: "순서 변경을 취소했습니다",
   moreGroups: (remaining) => `${remaining}개 그룹 더 보기`,
   moreRowsInGroup: (remaining) => `이 그룹에서 ${remaining}개 더 보기`,
   groupTotal: (label) => `${label} 합계`,

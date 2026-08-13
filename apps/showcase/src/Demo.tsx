@@ -1,5 +1,6 @@
 import type { GroupNode } from "@adapttable/core";
 import {
+  applyRowReorder,
   type ColumnLayoutState,
   type TableSource,
   useColumnLayoutUrlState,
@@ -48,6 +49,7 @@ export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
+  onRowReorder?: (from: number, to: number, row: Person) => void;
   /** `null` forces grouping off even if the URL carries a groupBy. */
   groupBy?: string | readonly string[] | null;
   groupAggregates?: (
@@ -98,6 +100,7 @@ interface DataProps {
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -167,6 +170,7 @@ function Frontend({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -197,6 +201,9 @@ function Frontend({
   }, []);
   const onDeleteRow = useCallback((row: Person) => {
     setData((prev) => prev.filter((r) => r.id !== row.id));
+  }, []);
+  const onRowReorder = useCallback((from: number, to: number) => {
+    setData((prev) => applyRowReorder(prev, from, to));
   }, []);
   // A live update under an open editor is the conflict the table asks
   // about — this is the demo's websocket, not a second commit path.
@@ -283,6 +290,7 @@ function Frontend({
         // Three handlers, three controls: Add in the toolbar, Duplicate and
         // Delete on every row.
         ...(rowMutations ? { onAddRow, onDuplicateRow, onDeleteRow } : {}),
+        ...(rowReorder ? { onRowReorder } : {}),
       })}
     </>
   );
@@ -320,6 +328,7 @@ export function DemoBody({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -332,6 +341,7 @@ export function DemoBody({
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -373,6 +383,7 @@ export function DemoBody({
       rowMode={rowMode}
       batch={batch}
       rowMutations={rowMutations}
+      rowReorder={rowReorder}
     />
   );
 }

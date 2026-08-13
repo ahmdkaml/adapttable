@@ -29,6 +29,7 @@ export function ShadcnDemo({
   rowMode,
   batch,
   rowMutations,
+  rowReorder,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -45,6 +46,7 @@ export function ShadcnDemo({
   rowMode?: boolean;
   batch?: boolean;
   rowMutations?: boolean;
+  rowReorder?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -63,6 +65,7 @@ export function ShadcnDemo({
       rowMode={rowMode}
       batch={batch}
       rowMutations={rowMutations}
+      rowReorder={rowReorder}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}

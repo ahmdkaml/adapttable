@@ -72,7 +72,7 @@ export const shadcnClassNames = {
     "border-b border-border bg-card px-3 py-2.5 text-start font-medium text-muted-foreground [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
   sortButton:
     "inline-flex items-center gap-1 font-medium hover:text-foreground",
-  row: "border-b border-border last:border-0 hover:bg-muted/50 data-[selected]:bg-accent",
+  row: "border-b border-border last:border-0 hover:bg-muted/50 data-[selected]:bg-accent data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_hsl(var(--primary))] data-[drop=after]:shadow-[inset_0_-2px_0_0_hsl(var(--primary))]",
   // Pinned cells must be opaque so scrolled content never shows through.
   cell: "px-3 py-2.5 [&[data-pinned]]:bg-card [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
   actionButton:
@@ -181,6 +181,15 @@ export const shadcnClassNames = {
     "w-[120px] border-b border-border bg-card px-3 py-2.5 text-end font-medium text-muted-foreground",
   actionsCell:
     "px-3 py-2.5 text-end [&[data-pinned]]:bg-card [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
+  reorderHeader: "w-10 border-b border-border bg-card",
+  reorderCell: "w-10 px-1 py-2.5",
+  rowReorderHandle:
+    "inline-grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent data-[dragging]:cursor-grabbing",
+  rowReorderButtons: "mt-2 flex items-center gap-1",
+  rowReorderUp:
+    "inline-grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent disabled:opacity-50",
+  rowReorderDown:
+    "inline-grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent disabled:opacity-50",
   // ── Row expansion & detail ──────────────────────────────────────
   expandHeader: "w-8 border-b border-border bg-card",
   expandCell: "w-8 px-2 py-2.5",

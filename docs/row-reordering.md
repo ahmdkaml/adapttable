@@ -1,0 +1,85 @@
+# React table row reordering — drag handle, keyboard grab, dataset indices
+
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onRowReorder` and a grip appears. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
+▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Reorder** on. Space lifts a row, arrows move it, Space drops it.
+
+Pass `onRowReorder` and a drag handle appears in a reserved leading column.
+Omit it and nothing renders, nothing ships in the hot path — the same opt-in
+rule as `onCellEdit`. The table never mutates your array; you apply the move.
+
+```tsx
+import { applyRowReorder, DataTable } from "@adapttable/mantine";
+import { useState } from "react";
+
+function Tasks({ seed }: { seed: Task[] }) {
+  const [rows, setRows] = useState(seed);
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      onRowReorder={(from, to) => {
+        setRows((current) => applyRowReorder(current, from, to));
+      }}
+    />
+  );
+}
+```
+
+`from` and `to` are **dataset-relative**: the row's index in the current source
+plus the page offset, so a virtual window or a paged slice does not lie about
+where the row sits. The third argument is the row that moved, so a host that
+keys by identity never has to look it up.
+
+`applyRowReorder(rows, from, to)` is the in-memory helper — a copy, never a
+mutate. Out of range is a no-op copy.
+
+## Keyboard first
+
+A drag-only reorder is unusable with a keyboard and fails accessibility
+review. The grip is a real button:
+
+- **Space** lifts the row (announced: "Row 3 lifted")
+- **Arrow Up / Down** (and Left / Right, following `dir`) move the drop target
+- **Space** again drops it (announced: "Row moved from 3 to 5")
+- **Escape** cancels
+
+`RowReorderAnnouncer` is the live region. It mounts only when reorder is
+armed, so a table without `onRowReorder` does not add a second status
+region (export already owns one).
+
+## Mobile
+
+Cards get **up / down** buttons (`RowReorderButtons`), not a drag handle. The
+ends disable rather than wrapping.
+
+## What it will not do
+
+**Grouping or a tree.** Nested order is not a flat splice. Passing
+`onRowReorder` while either is armed logs a `devWarn` and the handle does not
+render — never a silent ignore.
+
+**URL / Saved Views.** Row order is the host's array. There is nothing to
+serialize.
+
+## Column menu
+
+The reorder column uses the reserved key `REORDER_COLUMN_KEY` (`"reorder"`),
+the same trick as the actions column. Hide it or pin it to the start from the
+Columns menu. CSV export drops it the way it drops actions
+(`exportableColumns`).
+
+## Headless
+
+`useRowReorder(options)` (`RowReorderState` is what it returns; `RowReorderHandler`
+is the host callback; `RowReorderLabels` names the grip and the live region)
+is the grab state. `datasetIndex(localIndex, windowStart)` turns a rendered
+slot into a dataset index. `rowReorderSignature(reorder, rowId, localIndex)` is
+the memo digest so a virtualized row repaints when it is lifted or is the drop
+target, and bails out otherwise.
+
+Kits render `RowReorderHandle` (`RowReorderHandleProps`) and `RowReorderButtons`
+(`RowReorderButtonsProps`) from `@adapttable/core/adapter`. `RowReorderAnnouncer`
+is the live region. `REORDER_COLUMN_WIDTH` is the pin-lead width every kit
+shares. `ROW_DND_MIME` is the HTML5 drag type.
