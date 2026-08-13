@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { parseGroupBy } from "../grouping/groupKeys";
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type {
   PaginatedResponse,
@@ -10,7 +11,11 @@ import {
   useTableUrlState,
   type UseTableUrlStateOptions,
 } from "../url/useTableUrlState";
-import { applyQuerySupport, type QuerySupport } from "./queryContract";
+import {
+  applyQuerySupport,
+  type QueryAggregate,
+  type QuerySupport,
+} from "./queryContract";
 import type { TableSource } from "./TableSource";
 
 /**
@@ -79,6 +84,14 @@ export interface UseQuerySourceOptions<
    */
   supports?: QuerySupport;
   /**
+   * Aggregates to ask the server for — `[{ key: "budget", fn: "sum" }]`.
+   *
+   * Sent only when the source declares `supports.aggregates`. With grouping
+   * armed the server computes them per group; without it, over the whole
+   * result set.
+   */
+  aggregates?: readonly QueryAggregate[];
+  /**
    * The token that opens the NEXT page, read from the page the query just
    * returned — pass it and declare `supports: { cursor: true }` to page by
    * cursor instead of by offset.
@@ -115,6 +128,7 @@ export function useQuerySource<
     sanitizeParams,
     forceMobile,
     supports,
+    aggregates,
     nextCursor,
     ...urlOptions
   } = options;
@@ -150,8 +164,16 @@ export function useQuerySource<
     merged.sortDir = sortDir;
     merged.groupBy = groupBy;
     merged.filters = extra;
-    // Everything past the baseline is gated on what the source declared.
-    Object.assign(merged, applyQuerySupport({ cursor }, supports));
+    // Everything past the baseline is gated on what the source declared. The
+    // grouping keys travel as a LIST even when there is one — the contract has
+    // always been an array, so nesting needed no new field.
+    Object.assign(
+      merged,
+      applyQuerySupport(
+        { cursor, groupBy: parseGroupBy(groupBy), aggregates },
+        supports
+      )
+    );
     const next = merged as Partial<TParams>;
     return sanitizeParams ? sanitizeParams(next) : next;
   }, [
@@ -165,6 +187,7 @@ export function useQuerySource<
     groupBy,
     sanitizeParams,
     cursor,
+    aggregates,
     supports,
   ]);
 

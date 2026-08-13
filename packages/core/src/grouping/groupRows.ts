@@ -34,6 +34,13 @@ export type GroupedFlatEntry<TRow> =
        */
       leafRows: readonly TRow[];
       leafIds: readonly string[];
+      /**
+       * How many leaves the SERVER says are in this group, when the grouping
+       * was computed there. A server-grouped table holds a page of a group of
+       * 4,000 and must still say 4,000; local grouping leaves this unset and
+       * the count comes from `leafIds`.
+       */
+      serverCount?: number;
       /** Present when the host passed `groupAggregates`. */
       aggregateCells?: Partial<Record<string, ReactNode>>;
       collapsed: boolean;

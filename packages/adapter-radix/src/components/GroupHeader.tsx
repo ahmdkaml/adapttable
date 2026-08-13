@@ -3,6 +3,7 @@ import {
   type Direction,
   groupAggregateEntries,
   type GroupedFlatEntry,
+  groupLeafCount,
   groupRowLayout,
   groupSelectionState,
   type SelectionState,
@@ -127,7 +128,7 @@ export function GroupHeaderRow<TRow>({
             color="gray"
             size="2"
           >
-            {footer ? null : labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(groupLeafCount(entry))}
           </Text>
           {layout.labelAggregates.map(({ column, node }) => (
             <Box
@@ -222,7 +223,7 @@ export function GroupHeaderCard<TRow>({
           color="gray"
           size="2"
         >
-          {footer ? null : labels.groupCount(entry.leafIds.length)}
+          {footer ? null : labels.groupCount(groupLeafCount(entry))}
         </Text>
       </Flex>
       {groupAggregateEntries(columns, entry.aggregateCells).map(

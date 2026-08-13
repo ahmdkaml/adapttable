@@ -42,6 +42,7 @@ import {
   useRowExpansion,
 } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
+import { serverGroupEntries } from "./source/queryGroups";
 import type { TableSource } from "./source/TableSource";
 import type { BulkAction, ColumnDef, SortByOption, TableLabels } from "./types";
 import {
@@ -340,8 +341,12 @@ export function useTableChrome<TRow>(
     () => parseGroupBy(requestedGroupBy),
     [requestedGroupBy]
   );
+  // A server tier that answered `query.groupBy` sends its own groups; a
+  // frontend tier hands over the whole filtered set to group locally. Either
+  // way the adapters see the same entries.
+  const serverGroups = source.groups;
   const groupingArmed = Boolean(
-    groupByKeys.length > 0 && source.allFilteredRows
+    groupByKeys.length > 0 && (source.allFilteredRows ?? serverGroups)
   );
   const viewSource = useMemo<TableSource<TRow>>(() => {
     if (!groupingArmed || !source.allFilteredRows) return source;
@@ -481,11 +486,11 @@ export function useTableChrome<TRow>(
 
   useEffect(() => {
     if (groupByKeys.length === 0) return;
-    if (source.allFilteredRows) return;
+    if (source.allFilteredRows || serverGroups) return;
     devWarn(
       "groupBy is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot regroup a full result set; grouping is ignored."
     );
-  }, [groupByKeys, source.allFilteredRows]);
+  }, [groupByKeys, source.allFilteredRows, serverGroups]);
 
   // Depend on the two stable members, never the whole props/source objects
   // (both fresh every render) — keying on them rebuilt the grouping bundle,
@@ -507,18 +512,27 @@ export function useTableChrome<TRow>(
 
   const getRowId = selectionGetId ?? rowKey;
   const grouping = useMemo(() => {
-    if (groupByKeys.length === 0 || !source.allFilteredRows) return undefined;
-    const entries = buildGroupedFlatModel({
-      rows: source.allFilteredRows,
-      groupBy: groupByKeys,
-      columns: columnLayout.visibleColumns,
-      getRowId,
-      collapsedGroupIds: groupCollapse.collapsedGroupIds,
-      aggregates: props.groupAggregates,
-      footers: props.groupFooters === true,
-      sort: props.groupSort,
-      filter: props.groupFilter,
-    });
+    if (groupByKeys.length === 0) return undefined;
+    if (!source.allFilteredRows && !serverGroups) return undefined;
+    const entries = serverGroups
+      ? serverGroupEntries({
+          groups: serverGroups,
+          groupBy: groupByKeys,
+          collapsedGroupIds: groupCollapse.collapsedGroupIds,
+          getRowId,
+          footers: props.groupFooters === true,
+        })
+      : buildGroupedFlatModel({
+          rows: source.allFilteredRows ?? [],
+          groupBy: groupByKeys,
+          columns: columnLayout.visibleColumns,
+          getRowId,
+          collapsedGroupIds: groupCollapse.collapsedGroupIds,
+          aggregates: props.groupAggregates,
+          footers: props.groupFooters === true,
+          sort: props.groupSort,
+          filter: props.groupFilter,
+        });
     // The whole-tree actions need the keys, and the entries are where they
     // are: a collapsed group hides its children, so its own key is still
     // listed while theirs are not — which is exactly what closing everything
@@ -542,6 +556,7 @@ export function useTableChrome<TRow>(
     };
   }, [
     groupByKeys,
+    serverGroups,
     source.allFilteredRows,
     columnLayout.visibleColumns,
     getRowId,

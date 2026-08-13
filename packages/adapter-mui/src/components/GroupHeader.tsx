@@ -2,6 +2,7 @@ import {
   type ColumnDef,
   groupAggregateEntries,
   type GroupedFlatEntry,
+  groupLeafCount,
   groupRowLayout,
   groupSelectionState,
   type SelectionState,
@@ -158,7 +159,7 @@ export function GroupHeaderRow<TRow>({
             variant="body2"
             color="text.secondary"
           >
-            {footer ? null : labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(groupLeafCount(entry))}
           </Typography>
           {layout.labelAggregates.map(({ column, node }) => (
             <Box
@@ -265,7 +266,7 @@ export function GroupHeaderCard<TRow>({
             variant="body2"
             color="text.secondary"
           >
-            {footer ? null : labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(groupLeafCount(entry))}
           </Typography>
         </Box>
         {groupAggregateEntries(columns, entry.aggregateCells).map(

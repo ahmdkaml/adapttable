@@ -105,3 +105,19 @@ export function groupAggregateEntries<TRow>(
     return node === undefined ? [] : [{ column, node }];
   });
 }
+
+/**
+ * How many leaves a group header should report.
+ *
+ * The server's count when the grouping was computed there — a page of a group
+ * of 4,000 still says 4,000 — and the rows in hand otherwise.
+ *
+ * @param entry - The group entry.
+ * @returns The count to display.
+ */
+export function groupLeafCount(entry: {
+  leafIds: readonly string[];
+  serverCount?: number;
+}): number {
+  return entry.serverCount ?? entry.leafIds.length;
+}

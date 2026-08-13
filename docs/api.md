@@ -400,6 +400,16 @@ a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
 cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
 `editHistory`. See [cell editing](./cell-editing.md).
 
+**Server-side grouping.** A source that declares `supports.grouping` receives
+`query.groupBy` (the keys, outermost first) and, with `supports.aggregates`,
+`query.aggregates` from `useQuerySource`'s `aggregates` option. It answers with
+`QueryGroupRow` values — `value`, `count`, optional `aggregates`, `groups` and
+`rows` — on the source's `groups` field (`QueryGroupsPage` types a whole page),
+and `serverGroupEntries(options)` (`ServerGroupEntriesOptions`) lays them out as
+the same entries local grouping produces. `groupLeafCount(entry)` is the count a
+header shows: the server's when it grouped, the rows in hand otherwise. See
+[row grouping](./row-grouping.md).
+
 **Row grouping.** `groupBy` takes a key or an ordered list; `parseGroupBy(value)`
 turns any of its forms (`GroupByInput`) into the key list and `formatGroupBy`
 back into the single comma-separated value state is stored as.

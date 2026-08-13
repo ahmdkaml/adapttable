@@ -398,6 +398,9 @@ export function MobileCards<TRow>({
     label: entry.label,
     level: entry.level,
     footer: entry.kind === "groupFooter",
+    count:
+      (entry.kind === "group" ? entry.serverCount : undefined) ??
+      entry.leafIds.length,
     leafIds: entry.leafIds,
     aggregateCells: entry.aggregateCells,
     collapsed: entry.kind === "group" && entry.collapsed,

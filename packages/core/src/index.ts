@@ -447,6 +447,7 @@ export {
 } from "./grouping/groupKeys";
 export {
   groupAggregateEntries,
+  groupLeafCount,
   type GroupRowCell,
   type GroupRowLayout,
   groupRowLayout,
@@ -465,6 +466,12 @@ export {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+export {
+  type QueryGroupRow,
+  type QueryGroupsPage,
+  serverGroupEntries,
+  type ServerGroupEntriesOptions,
+} from "./source/queryGroups";
 export {
   useGroupCollapseUrlState,
   type UseGroupCollapseUrlStateOptions,

@@ -4,6 +4,7 @@ import type {
   ResolvedPaginationMode,
   SortDirection,
 } from "../types";
+import type { QueryGroupRow } from "./queryGroups";
 
 /**
  * The uniform contract a table consumes regardless of whether its rows
@@ -76,6 +77,13 @@ export interface TableSource<TRow> extends TableStateMutators {
    * param but grouping stays dormant without `allFilteredRows`.
    */
   readonly groupBy: string | undefined;
+  /**
+   * Groups the SERVER computed, when it answered `query.groupBy` itself.
+   * Present only on a server tier that declared `supports.grouping`; the table
+   * then renders these instead of grouping the page it holds, which it could
+   * not do correctly anyway with one page of the data.
+   */
+  readonly groups?: readonly QueryGroupRow<TRow>[];
 
   /* State (write) is the shared {@link TableStateMutators} contract. */
 }

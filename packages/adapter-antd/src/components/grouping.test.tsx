@@ -29,6 +29,7 @@ function makeGroup(
     key: GROUP_KEY,
     label: "Core",
     level: 0,
+    count: LEAF_IDS.length,
     leafIds: LEAF_IDS,
     collapsed: false,
     ...overrides,

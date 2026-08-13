@@ -25,6 +25,8 @@ export interface AdaptTableGroupRow {
   level: number;
   /** A closing total rather than a header: no chevron, no checkbox. */
   footer?: boolean;
+  /** How many leaves it has — the server's number when it grouped. */
+  count: number;
   leafIds: readonly string[];
   aggregateCells?: Partial<Record<string, ReactNode>>;
   collapsed: boolean;
@@ -57,6 +59,9 @@ function toGroupedDataRecord<TRow>(
           label: entry.label,
           level: entry.level,
           footer: entry.kind === "groupFooter",
+          count:
+            (entry.kind === "group" ? entry.serverCount : undefined) ??
+            entry.leafIds.length,
           leafIds: entry.leafIds,
           aggregateCells: entry.aggregateCells,
           collapsed: entry.kind === "group" && entry.collapsed,
@@ -166,7 +171,7 @@ export function GroupHeaderCell({
       </Typography.Text>
       {group.footer !== true && (
         <Typography.Text type="secondary" data-adapttable-part="group-count">
-          {labels.groupCount(group.leafIds.length)}
+          {labels.groupCount(group.count)}
         </Typography.Text>
       )}
       {aggregate != null && aggregate !== false ? (
@@ -245,7 +250,7 @@ export function GroupHeaderCard({
         {group.label}
       </Typography.Text>
       <Typography.Text type="secondary" data-adapttable-part="group-count">
-        {labels.groupCount(group.leafIds.length)}
+        {labels.groupCount(group.count)}
       </Typography.Text>
       {aggregateNodes}
     </div>

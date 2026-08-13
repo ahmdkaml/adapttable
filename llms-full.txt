@@ -2332,6 +2332,96 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Grouping on the server
+
+A backend that can group is usually the only thing that can: it has the whole
+dataset, and the browser has a page of it. Declare the capability and the table
+sends the grouping keys with every query:
+
+```tsx
+const source = useQuerySource<Person, Params, Page>({
+  queryKey: ["people"],
+  queryFn: fetchPeople,
+  select: (page) => ({
+    rows: page.rows,
+    total: page.total,
+    groups: page.groups,
+  }),
+  supports: { grouping: true, aggregates: true },
+  aggregates: [{ key: "budget", fn: "sum" }],
+});
+
+<DataTable source={source} columns={columns} rowKey={rowKey} groupBy="team" />;
+```
+
+`query.groupBy` arrives as an **array**, outermost key first — one entry for a
+flat grouping, more for nested — and `query.aggregates` as
+`[{ key, fn }]`. Neither is sent unless the source declared the matching
+capability, so an endpoint that predates this never sees a field it does not
+understand.
+
+### The response shape
+
+```ts
+interface QueryGroupRow<TRow> {
+  value: unknown; // the group's value, shown as its label
+  count: number; // leaves beneath it, across the dataset
+  aggregates?: Record<string, unknown>; // by column key
+  groups?: QueryGroupRow<TRow>[]; // nested levels, when asked for
+  rows?: TRow[]; // leaves, when the server includes them
+}
+```
+
+Return them as `groups` on the source and the table renders them exactly as it
+renders local groups — same headers, same collapsing, same footers, same
+selection. **The counts and aggregates are the server's**: a group of 4,000
+whose response carried 20 rows says 4,000, because counting what arrived would
+be a number the user can see is wrong.
+
+A reference endpoint, grouping one level and returning the first page of each
+group's rows:
+
+```ts
+app.get("/people", async (req, res) => {
+  const groupBy = [req.query.groupBy ?? []].flat(); // e.g. ["team"]
+  if (groupBy.length === 0) return res.json(await plainPage(req));
+
+  const key = groupBy[0];
+  const rows = await db
+    .select(key, db.raw("count(*) as count"), db.raw("sum(budget) as budget"))
+    .from("people")
+    .groupBy(key)
+    .orderBy("count", "desc");
+
+  res.json({
+    total: rows.reduce((sum, row) => sum + Number(row.count), 0),
+    groups: await Promise.all(
+      rows.map(async (row) => ({
+        value: row[key],
+        count: Number(row.count),
+        aggregates: { budget: Number(row.budget) },
+        rows: await db
+          .select("*")
+          .from("people")
+          .where(key, row[key])
+          .limit(20),
+      }))
+    ),
+  });
+});
+```
+
+Leave `rows` out to send counts only — the headers render with their counts and
+nothing beneath them, which is the right answer for a table of a million rows
+in a hundred groups. Fetch a group's rows when it opens by reacting to
+`onCollapsedGroupIdsChange`: it tells you exactly which group the user just
+expanded, and the next response fills it in.
+
+**Without the capability**, a server tier that is asked to group says so in
+development — "grouping is only supported on the frontend data tier" — and
+renders ungrouped rather than grouping the page it happens to hold, which would
+be one page's worth of groups presented as the whole set.
+
 ## Controlling what is open
 
 Groups start expanded and collapse on their own. To hold that state yourself,
@@ -4542,6 +4632,16 @@ records each inline edit as a one-cell gesture. `asGesture(apply, record)` makes
 a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
 cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
 `editHistory`. See [cell editing](./cell-editing.md).
+
+**Server-side grouping.** A source that declares `supports.grouping` receives
+`query.groupBy` (the keys, outermost first) and, with `supports.aggregates`,
+`query.aggregates` from `useQuerySource`'s `aggregates` option. It answers with
+`QueryGroupRow` values — `value`, `count`, optional `aggregates`, `groups` and
+`rows` — on the source's `groups` field (`QueryGroupsPage` types a whole page),
+and `serverGroupEntries(options)` (`ServerGroupEntriesOptions`) lays them out as
+the same entries local grouping produces. `groupLeafCount(entry)` is the count a
+header shows: the server's when it grouped, the rows in hand otherwise. See
+[row grouping](./row-grouping.md).
 
 **Row grouping.** `groupBy` takes a key or an ordered list; `parseGroupBy(value)`
 turns any of its forms (`GroupByInput`) into the key list and `formatGroupBy`

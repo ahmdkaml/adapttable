@@ -3,6 +3,7 @@ import {
   type Direction,
   groupAggregateEntries,
   type GroupedFlatEntry,
+  groupLeafCount,
   groupRowLayout,
   groupSelectionState,
   type SelectionState,
@@ -121,7 +122,7 @@ export function GroupHeaderRow<TRow>({
             {footer ? labels.groupTotal(entry.label) : entry.label}
           </Text>
           <Text as="span" data-adapttable-part="group-count" {...subtleText}>
-            {footer ? null : labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(groupLeafCount(entry))}
           </Text>
           {layout.labelAggregates.map(({ column, node }) => (
             <Box
@@ -213,7 +214,7 @@ export function GroupHeaderCard<TRow>({
             {footer ? labels.groupTotal(entry.label) : entry.label}
           </Text>
           <Text as="span" data-adapttable-part="group-count" {...subtleText}>
-            {footer ? null : labels.groupCount(entry.leafIds.length)}
+            {footer ? null : labels.groupCount(groupLeafCount(entry))}
           </Text>
         </HStack>
         {groupAggregateEntries(columns, entry.aggregateCells).map(
