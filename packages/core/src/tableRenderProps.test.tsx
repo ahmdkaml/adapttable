@@ -1,6 +1,7 @@
 import { act, render, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { createIncrementalView } from "./rows/incremental";
 import { useFrontendData } from "./source/useFrontendData";
 import { tableRenderModel, useSummaryCells } from "./tableRenderProps";
 import type { ColumnDef } from "./types";
@@ -978,5 +979,23 @@ describe("useSummaryCells", () => {
     rerender({ rows: next, tick: 2 });
     expect(result.current).toEqual({ amount: 15 });
     expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it("prefers aggregates already on an incremental view", () => {
+    const view = createIncrementalView(SUM_ROWS, {
+      getRowId: (row) => row.id,
+      summaryRow: (rows) => ({
+        amount: rows.reduce((sum, row) => sum + row.amount, 0),
+      }),
+    });
+    const spy = vi.fn();
+    const { result } = renderHook(() =>
+      useSummaryCells((rows) => {
+        spy();
+        return { amount: rows.length };
+      }, view.sorted)
+    );
+    expect(result.current).toEqual({ amount: 5 });
+    expect(spy).not.toHaveBeenCalled();
   });
 });

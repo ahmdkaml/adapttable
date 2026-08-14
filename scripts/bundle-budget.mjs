@@ -59,7 +59,7 @@ const FIXTURES = [
   {
     name: "core · simple table",
     pkg: "core",
-    budgetKB: 13,
+    budgetKB: 20,
     code: `export { useFrontendData, useDataTable } from "PKG";`,
     // The size ceiling says the base import is small. These say WHY: the heavy
     // capabilities are genuinely shaken out, not merely compressing well. A
@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 79,
+    budgetKB: 93,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -211,19 +211,22 @@ const FIXTURES = [
   // after, against the same 13 KB ceiling. The PDF writer and the print
   // layout (#319) are behind `@adapttable/core/pdf` and cost the kits nothing.
   //
-  // Incremental re-eval (#322) is not imported by `useFrontendData` yet — a
-  // patch still walks the full set. The simple-table fixture is still 12.5 KB
-  // of a 13 KB ceiling and still shakes out toCsv, Blob, download, virtual,
-  // and exportView. When the snapshot sits on that hook so a patch can skip a
-  // 20k walk, this fixture will move and the ceiling should move with it.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 110 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 110 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 110 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 105 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 110 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 116 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 112 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 109 },
+  // Incremental re-eval (#322) sits on `useFrontendData`. A patch that
+  // carries a `rowPatchLog` re-runs search, filters, sort, grouping and
+  // aggregates for the touched rows only, instead of walking the set.
+  // That snapshot is the live path now, so the simple-table fixture
+  // moved from 12.5 KB to 17.1 KB; the ceiling is 20 KB (~15%
+  // headroom). The heavy capabilities are still shaken out: toCsv,
+  // Blob, download and virtual stay absent. Every adapter imports that
+  // hook, so the kit fixtures moved with it.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 130 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 129 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 129 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 123 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 129 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 136 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 131 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 128 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

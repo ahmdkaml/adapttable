@@ -249,6 +249,8 @@ All from `@adapttable/core`.
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
   filters, sorts, and slices a raw array from URL state. Pass
   `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
+  `getRowId` (default `defaultFrontendRowId`) matches `applyRowPatches`
+  so a `rowPatchLog` can continue the live incremental view.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -328,7 +330,9 @@ Building blocks for columns, rows and queries:
   mapper. See [row grouping](./row-grouping.md).
 - `applyRowPatches(rows, patches, getRowId)` with `insertRow` / `updateRow` /
   `upsertRow` / `removeRow` — apply changes without a refetch, preserving row
-  identity. See [cell editing](./cell-editing.md).
+  identity. `applyRowPatchesWithLog` returns the `RowPatchLog` /
+  `RowPatchEvent`s; `rowPatchLog` reads the log `applyRowPatches` attaches
+  (spreading the array drops it). See [cell editing](./cell-editing.md).
 - `tableQueryKey(query, options)` / `tableQueryBaseKey(query, options)` —
   stable cache keys for TanStack Query or SWR. See
   [data tiers](./data-tiers.md).
@@ -484,6 +488,15 @@ emptied, `exportViewFromChrome` picks which model is showing, and
 `summaryExportValues` turns a `summaryRow` into file values. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
+**PDF export and print layout.** `@adapttable/core/pdf` adds `pdfWriter` for
+the export button and `buildTablePdf` for a host assembling rows by hand.
+Print is a different verb: `openPrintLayout` (an `ExportTable`) and
+`printTable` (rows and columns) load `buildPrintDocument` into a hidden
+iframe. `buildPrintTableHtml` is the `<table>` alone; `printStyles` is the
+stylesheet. `PrintLayoutOptions` / `PdfWriterOptions` / `PrintPageSize`
+configure title, direction and paper. See
+[PDF export and print layout](./export-pdf.md).
+
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /
 `sparklineColumn` so a cell can draw a bar, line or area chart without a
 chart library and without pulling the mark into the base bundle.
@@ -495,7 +508,17 @@ series as text so CSV and xlsx never get an SVG. See
 
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
-See [cell editing](./cell-editing.md).
+`applyRowPatchesWithLog` returns a `RowPatchLog` of `RowPatchEvent`s;
+`rowPatchLog` reads the log attached to the result array (a spread copy
+drops it). **Incremental re-evaluation.** `createIncrementalView` builds
+an `IncrementalView` from an `IncrementalViewConfig`; `applyRowPatchesToView`
+and `applyRowPatchLogToView` re-run search, filters, sort, grouping and
+aggregates for touched rows only. `configureIncrementalView` merges
+grouping / summary extras without walking the set when only those
+changed. `incrementalViewOf` / `attachIncrementalView` link a derived
+array to the snapshot (`incrementalViewConfig` reads it back);
+`incrementalSearchText` is the default projector. See
+[cell editing](./cell-editing.md).
 
 **Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
 

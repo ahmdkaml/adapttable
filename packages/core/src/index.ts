@@ -372,6 +372,7 @@ export {
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
 export {
+  defaultFrontendRowId,
   defaultSearchText,
   useFrontendData,
   type UseFrontendDataOptions,
@@ -559,12 +560,28 @@ export {
   isExtraEntry,
 } from "./rows/extraRows";
 export {
+  applyRowPatchesToView,
+  applyRowPatchLogToView,
+  attachIncrementalView,
+  configureIncrementalView,
+  createIncrementalView,
+  incrementalSearchText,
+  type IncrementalView,
+  type IncrementalViewConfig,
+  incrementalViewConfig,
+  incrementalViewOf,
+} from "./rows/incremental";
+export {
   applyRowPatches,
+  applyRowPatchesWithLog,
   type InsertPatch,
   insertRow,
   type RemovePatch,
   removeRow,
   type RowPatch,
+  type RowPatchEvent,
+  type RowPatchLog,
+  rowPatchLog,
   type UpdatePatch,
   updateRow,
   type UpsertPatch,

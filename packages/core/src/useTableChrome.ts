@@ -49,6 +49,10 @@ import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
 import { insertExtraRows } from "./rows/extraRows";
+import {
+  configureIncrementalView,
+  incrementalViewOf,
+} from "./rows/incremental";
 import { type RowMutationsState, useRowMutations } from "./rows/rowMutations";
 import {
   partitionPinnedRows,
@@ -819,6 +823,22 @@ export function useTableChrome<TRow>(
   const grouping = useMemo(() => {
     if (groupByKeys.length === 0) return undefined;
     if (!source.allFilteredRows && !serverGroups) return undefined;
+    const incremental = incrementalViewOf(source.allFilteredRows ?? []);
+    const view = incremental
+      ? configureIncrementalView(incremental, {
+          groupBy: groupByKeys,
+          columns: columnLayout.visibleColumns,
+          getRowId,
+          groupAggregates: props.groupAggregates,
+          groupSort: props.groupSort,
+          groupFilter: props.groupFilter,
+          groupFooters: props.groupFooters === true,
+          collapsedGroupIds: groupCollapse.collapsedGroupIds,
+          groupPageSize: props.groupPageSize,
+          rowPageSize: props.groupRowPageSize,
+          paging: groupPaging.paging,
+        })
+      : undefined;
     const entries = serverGroups
       ? serverGroupEntries({
           groups: serverGroups,
@@ -827,7 +847,8 @@ export function useTableChrome<TRow>(
           getRowId,
           footers: props.groupFooters === true,
         })
-      : buildGroupedFlatModel({
+      : (view?.groups ??
+        buildGroupedFlatModel({
           rows: source.allFilteredRows ?? [],
           groupBy: groupByKeys,
           columns: columnLayout.visibleColumns,
@@ -840,7 +861,7 @@ export function useTableChrome<TRow>(
           groupPageSize: props.groupPageSize,
           rowPageSize: props.groupRowPageSize,
           paging: groupPaging.paging,
-        });
+        }));
     // The whole-tree actions need the keys, and the entries are where they
     // are: a collapsed group hides its children, so its own key is still
     // listed while theirs are not — which is exactly what closing everything

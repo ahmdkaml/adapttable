@@ -1,10 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
+import { useEffect, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { applyRowPatches, rowPatchLog, updateRow } from "../rows/patch";
 import type { ColumnDef } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
 import { resetDevWarnings } from "../utils/devWarn";
 import {
+  defaultFrontendRowId,
   defaultSearchText,
   useFrontendData,
   type UseFrontendDataOptions,
@@ -278,5 +281,105 @@ describe("multi-sort chain on the frontend tier", () => {
     act(() => result.current.toggleSortLevel("name")); // desc → removed
     expect(result.current.rows[0]!.name).toBe("Zoe"); // original order
     expect(result.current.sortLevels).toEqual([]);
+  });
+});
+
+describe("defaultFrontendRowId", () => {
+  it("reads a string or number id, otherwise empty", () => {
+    expect(defaultFrontendRowId({ id: "a" })).toBe("a");
+    expect(defaultFrontendRowId({ id: 7 })).toBe("7");
+    expect(defaultFrontendRowId("x")).toBe("x");
+    expect(defaultFrontendRowId(3)).toBe("3");
+    expect(defaultFrontendRowId({ name: "no-id" })).toBe("");
+  });
+});
+
+describe("useFrontendData — incremental patches", () => {
+  const byId = (row: Row) => row.id;
+  // Typed readonly so a patched (readonly) result can be rerendered in.
+  const INITIAL_ROWS: { data: readonly Row[] } = { data: ROWS };
+
+  it("does not re-run filterFn on untouched rows when the patch log is kept", () => {
+    const filterFn = vi.fn((row: Row) => row.count > 0);
+    const adapter = createMemoryAdapter("");
+    const { result, rerender } = renderHook(
+      ({ data }: { data: readonly Row[] }) =>
+        useFrontendData<Row>({
+          data,
+          filterFn,
+          urlAdapter: adapter,
+          paginationMode: "paged",
+        }),
+      { initialProps: INITIAL_ROWS }
+    );
+    const filtered = () => result.current.allFilteredRows ?? [];
+    expect(filtered().map((row) => row.id)).toEqual(["a", "b", "c"]);
+    filterFn.mockClear();
+
+    const patched = applyRowPatches(ROWS, [updateRow("a", { count: 9 })], byId);
+    expect(rowPatchLog(patched)).toBeDefined();
+    rerender({ data: patched });
+
+    expect(filterFn).toHaveBeenCalledTimes(1);
+    expect(filterFn.mock.calls[0]?.[0]?.id).toBe("a");
+    expect(filtered().find((row) => row.id === "a")?.count).toBe(9);
+    expect(filtered().find((row) => row.id === "b")).toBe(ROWS[1]);
+  });
+
+  it("falls back to a full rebuild when the host spreads the patched array", () => {
+    const filterFn = vi.fn((row: Row) => row.count > 0);
+    const adapter = createMemoryAdapter("");
+    const { rerender } = renderHook(
+      ({ data }: { data: readonly Row[] }) =>
+        useFrontendData<Row>({
+          data,
+          filterFn,
+          urlAdapter: adapter,
+          paginationMode: "paged",
+        }),
+      { initialProps: INITIAL_ROWS }
+    );
+    filterFn.mockClear();
+
+    const spread = [
+      ...applyRowPatches(ROWS, [updateRow("a", { count: 9 })], byId),
+    ];
+    expect(rowPatchLog(spread)).toBeUndefined();
+    rerender({ data: spread });
+
+    expect(filterFn).toHaveBeenCalledTimes(ROWS.length);
+  });
+
+  it("does not loop when extra, columns and filterFn are new identities each render", () => {
+    const adapter = createMemoryAdapter("");
+    let renders = 0;
+    const { result, rerender } = renderHook(() => {
+      renders += 1;
+      const [, setTick] = useState(0);
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: [
+          {
+            key: "count",
+            header: "Count",
+            sortable: true,
+            sortValue: (row) => row.count,
+          },
+        ],
+        filterFn: (row, extra) => extra.only == null || row.name === extra.only,
+        filterTreeFn: () => true,
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      });
+      useEffect(() => {
+        setTick((n) => n + 1);
+      }, [source.rows]);
+      return source;
+    });
+    const first = result.current.rows;
+    rerender();
+    rerender();
+    expect(result.current.rows).toBe(first);
+    expect(renders).toBeLessThan(10);
   });
 });
