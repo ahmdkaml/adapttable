@@ -215,6 +215,14 @@ export interface ColumnDef<TRow> {
   hideOnMobile?: boolean;
   /** Hide this column entirely on desktop layouts. */
   hideOnDesktop?: boolean;
+  /** Gray out the menu's reorder grip — the column stays where it is. */
+  lockPosition?: boolean;
+  /** Gray out the menu's show/hide control. */
+  lockVisibility?: boolean;
+  /** Gray out resize and per-column auto-size. */
+  lockWidth?: boolean;
+  /** Gray out the menu's pin control. */
+  lockPin?: boolean;
   /** Arbitrary metadata adapters may read (e.g. a custom renderer flag). */
   meta?: Record<string, unknown>;
 }
@@ -440,6 +448,24 @@ export interface TableLabels {
   showColumn?: string;
   /** Accessible label prefix for the column-menu visibility toggle (hide). */
   hideColumn?: string;
+  /** Search box inside the column menu. */
+  searchColumns?: string;
+  /** Show every unlocked hidden column. */
+  showAllColumns?: string;
+  /** Hide every unlocked visible column. */
+  hideAllColumns?: string;
+  /** Unpin every unlocked column. */
+  unpinAllColumns?: string;
+  /** Restore one column's visibility, pin and width. */
+  resetColumn?: string;
+  /** Sort this column ascending from the column-menu submenu. */
+  sortAscending?: string;
+  /** Sort this column descending from the column-menu submenu. */
+  sortDescending?: string;
+  /** Open the table filters from a column-menu submenu. */
+  filterColumn?: string;
+  /** Accessible name of the per-column submenu trigger. */
+  columnActions?: string;
   /** Toolbar CSV export button. */
   exportCsv?: string;
   /**

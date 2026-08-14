@@ -121,6 +121,18 @@ export interface DataTableClassNames {
   columnMenuReset?: string;
   /** The column menu's "size columns to content" action. */
   columnMenuAutoSize?: string;
+  /** Search box inside the column menu. */
+  columnMenuSearch?: string;
+  /** Bulk show/hide/unpin row. */
+  columnMenuBulk?: string;
+  /** One bulk action button. */
+  columnMenuBulkButton?: string;
+  /** Per-column submenu trigger. */
+  columnMenuMore?: string;
+  /** The open per-column submenu. */
+  columnMenuSubmenu?: string;
+  /** One action inside the per-column submenu. */
+  columnMenuAction?: string;
   /** The saved-views menu container (trigger + anchored panel). */
   viewsMenu?: string;
   /** The saved-views menu trigger button. */

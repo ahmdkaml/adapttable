@@ -93,6 +93,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <ColumnMenu
       allColumns={c.allColumns}
       onAutoSize={shell.autoSizeColumns}
+      onAutoSizeColumn={shell.autoSizeColumn}
+      onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+      onFilterColumn={() => setFiltersOpen(true)}
+      sortBy={viewSource.sortBy}
+      sortDir={viewSource.sortDir}
       layout={c.columnLayout}
       labels={labels}
       hasRowActions={hasRowActions}

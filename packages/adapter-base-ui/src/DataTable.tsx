@@ -173,6 +173,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               <ColumnMenu
                 allColumns={chrome.allColumns}
                 onAutoSize={shell.autoSizeColumns}
+                onAutoSizeColumn={shell.autoSizeColumn}
+                onSortColumn={(key, dir) => source.setSort(key, dir)}
+                onFilterColumn={() => setFiltersOpen(true)}
+                sortBy={source.sortBy}
+                sortDir={source.sortDir}
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}

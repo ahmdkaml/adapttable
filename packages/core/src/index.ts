@@ -300,9 +300,17 @@ export { nextSort } from "./sort/cycleSort";
 export { autoSizeColumns, measureColumnWidth } from "./columns/autoSizeColumns";
 export {
   ACTIONS_COLUMN_KEY,
+  type ColumnMenuAction,
+  type ColumnMenuActionContext,
+  columnMenuActions,
   columnMenuLabel,
   columnMenuRows,
+  filterColumnMenuRows,
+  hideAllColumns,
   REORDER_COLUMN_KEY,
+  resetColumnLayout,
+  showAllColumns,
+  unpinAllColumns,
 } from "./columns/columnMenuModel";
 export {
   columnDropProps,

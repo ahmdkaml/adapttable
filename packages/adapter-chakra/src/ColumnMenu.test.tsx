@@ -42,6 +42,15 @@ const labels = {
   autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
   reorderRow: "Reorder",
 };
@@ -205,5 +214,24 @@ describe("chakra ColumnMenu", () => {
     expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
     fireEvent.click(byLabel("Pin to start: Reorder"));
     expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
+  });
+
+  it("filters the chooser by the search box", async () => {
+    renderChakra(
+      <ColumnMenu
+        allColumns={cols}
+        onAutoSize={() => undefined}
+        layout={fakeLayout()}
+        labels={labels}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.change(
+      document.querySelector('[data-adapttable-part="column-menu-search"]')!,
+      { target: { value: "bravo" } }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
   });
 });

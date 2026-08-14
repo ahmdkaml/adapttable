@@ -84,7 +84,7 @@ export function People() {
 
 ## How it works
 
-- `enableColumnMenu` renders the built-in Columns menu: a visibility toggle per column, drag- or arrow-key reorder on each row's grip, a pin control cycling none → left → right → none, and a reset action. Hiding a column never reorders the rest.
+- `enableColumnMenu` renders the built-in Columns menu: a search box, bulk show/hide/unpin, a visibility toggle per column, drag- or arrow-key reorder on each row's grip, a pin control, a per-column submenu (sort, pin, hide, auto-size, filter, reset one), auto-size-all, and reset-all. Hiding a column never reorders the rest. `lockPosition` / `lockVisibility` / `lockWidth` / `lockPin` on a `ColumnDef` gray out the matching controls.
 - Pinning is logical (inline start/end), so a "left" pin sticks to the correct edge under `dir="rtl"`. It needs a horizontal scroll context to visibly stick — set `maxHeight`, or let the table exceed its container width.
 - `resizableColumns` adds a handle to every header: drag it, or focus it and press ←/→ (16 px per step, 60 px minimum). Direction-aware, so it widens the right way in RTL.
 - The row-actions column is first-class under the reserved key `"actions"` (`ACTIONS_COLUMN_KEY`): the menu lists it with a visibility toggle and an end-pin toggle — `hidden: ["actions"]` hides it, `pinned: { actions: "right" }` pins it to the end on its own, no data-column pin required. It never reorders or resizes; it always trails.

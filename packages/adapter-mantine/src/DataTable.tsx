@@ -244,6 +244,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
                 <ColumnMenuSlot
                   enabled={enableColumnMenu && !isMobile}
                   onAutoSize={shell.autoSizeColumns}
+                  onAutoSizeColumn={shell.autoSizeColumn}
+                  onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+                  onFilterColumn={() => setDrawerOpened(true)}
+                  sortBy={viewSource.sortBy}
+                  sortDir={viewSource.sortDir}
                   allColumns={chrome.allColumns}
                   layout={chrome.columnLayout}
                   labels={table.labels}

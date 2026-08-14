@@ -554,6 +554,11 @@ function ColumnMenuSlot<TRow>({
   hasRowActions,
   hasRowReorder,
   onAutoSize,
+  onAutoSizeColumn,
+  onSortColumn,
+  onFilterColumn,
+  sortBy,
+  sortDir,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
@@ -564,6 +569,11 @@ function ColumnMenuSlot<TRow>({
   hasRowReorder: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onFilterColumn?: (key: string) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }>) {
   if (!enabled) return null;
   return (
@@ -575,6 +585,11 @@ function ColumnMenuSlot<TRow>({
       hasRowActions={hasRowActions}
       hasRowReorder={hasRowReorder}
       onAutoSize={onAutoSize}
+      onAutoSizeColumn={onAutoSizeColumn}
+      onSortColumn={onSortColumn}
+      onFilterColumn={onFilterColumn}
+      sortBy={sortBy}
+      sortDir={sortDir}
     />
   );
 }
@@ -1422,6 +1437,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       c.columnLayout.setWidth
     );
   }, [c.columnLayout]);
+  const onAutoSizeColumn = useCallback(
+    (key: string) =>
+      autoSizeAllColumns(rootRef.current, [key], c.columnLayout.setWidth),
+    [c.columnLayout]
+  );
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -1702,6 +1722,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             columnMenu={
               <ColumnMenuSlot
                 onAutoSize={onAutoSize}
+                onAutoSizeColumn={onAutoSizeColumn}
+                onSortColumn={(key, dir) => source.setSort(key, dir)}
+                onFilterColumn={() => setFiltersOpen(true)}
+                sortBy={source.sortBy}
+                sortDir={source.sortDir}
                 enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
                 allColumns={c.allColumns}
                 layout={c.columnLayout}

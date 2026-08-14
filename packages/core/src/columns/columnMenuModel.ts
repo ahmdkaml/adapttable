@@ -22,6 +22,18 @@ export interface ColumnMenuRow<TRow> {
   pinned: PinnedSide;
   /** Index in the full column order (visible + hidden) — the reorder target. */
   index: number;
+  /** False when `column.lockPosition` is set. */
+  canMove: boolean;
+  /** False when `column.lockVisibility` is set. */
+  canHide: boolean;
+  /** False when `column.lockPin` is set. */
+  canPin: boolean;
+  /** False when `column.lockWidth` is set. */
+  canResize: boolean;
+  /** True when the column declared `sortable`. */
+  canSort: boolean;
+  /** True when the column declared a `filter`. */
+  canFilter: boolean;
 }
 
 /**
@@ -83,8 +95,166 @@ export function columnMenuRows<TRow>(
       hidden: layout.isHidden(column.key),
       pinned: layout.state.pinned[column.key],
       index,
+      canMove: column.lockPosition !== true,
+      canHide: column.lockVisibility !== true,
+      canPin: column.lockPin !== true,
+      canResize: column.lockWidth !== true,
+      canSort: column.sortable === true,
+      canFilter: column.filter !== undefined,
     })
   );
+}
+
+/** Keep rows whose name or key contains the query (case-insensitive). */
+export function filterColumnMenuRows<TRow>(
+  rows: readonly ColumnMenuRow<TRow>[],
+  query: string
+): ColumnMenuRow<TRow>[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return [...rows];
+  return rows.filter(
+    (row) =>
+      row.name.toLowerCase().includes(needle) ||
+      row.key.toLowerCase().includes(needle)
+  );
+}
+
+/** Show every unlocked hidden column. */
+export function showAllColumns<TRow>(
+  rows: readonly ColumnMenuRow<TRow>[],
+  layout: UseColumnLayoutResult<TRow>
+): void {
+  for (const row of rows) {
+    if (row.canHide && layout.isHidden(row.key)) {
+      layout.setHidden(row.key, false);
+    }
+  }
+}
+
+/** Hide every unlocked visible column. */
+export function hideAllColumns<TRow>(
+  rows: readonly ColumnMenuRow<TRow>[],
+  layout: UseColumnLayoutResult<TRow>
+): void {
+  for (const row of rows) {
+    if (row.canHide && !layout.isHidden(row.key)) {
+      layout.setHidden(row.key, true);
+    }
+  }
+}
+
+/** Unpin every unlocked pinned column. */
+export function unpinAllColumns<TRow>(
+  rows: readonly ColumnMenuRow<TRow>[],
+  layout: UseColumnLayoutResult<TRow>
+): void {
+  for (const row of rows) {
+    if (row.canPin && layout.state.pinned[row.key] !== undefined) {
+      layout.setPinned(row.key, undefined);
+    }
+  }
+}
+
+/** Restore one column's visibility, pin and width. Locks still apply. */
+export function resetColumnLayout<TRow>(
+  row: ColumnMenuRow<TRow>,
+  layout: UseColumnLayoutResult<TRow>
+): void {
+  if (row.canHide) layout.setHidden(row.key, false);
+  if (row.canPin) layout.setPinned(row.key, undefined);
+  if (row.canResize) layout.setWidth(row.key, undefined);
+}
+
+/** One action in a per-column submenu. */
+export interface ColumnMenuAction {
+  id: string;
+  label: string;
+  disabled: boolean;
+  run: () => void;
+}
+
+/** What a submenu needs besides the row itself. */
+export interface ColumnMenuActionContext<TRow = unknown> {
+  labels: ColumnMenuLabels;
+  layout: UseColumnLayoutResult<TRow>;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onFilterColumn?: (key: string) => void;
+}
+
+/** Sort, pin, hide, autosize, filter, reset — disabled when locked. */
+export function columnMenuActions<TRow>(
+  row: ColumnMenuRow<TRow>,
+  ctx: ColumnMenuActionContext<TRow>
+): ColumnMenuAction[] {
+  const actions: ColumnMenuAction[] = [];
+  if (row.canSort && ctx.onSortColumn) {
+    actions.push({
+      id: "sort-asc",
+      label: ctx.labels.sortAscending,
+      disabled: ctx.sortBy === row.key && ctx.sortDir === "asc",
+      run: () => ctx.onSortColumn?.(row.key, "asc"),
+    });
+    actions.push({
+      id: "sort-desc",
+      label: ctx.labels.sortDescending,
+      disabled: ctx.sortBy === row.key && ctx.sortDir === "desc",
+      run: () => ctx.onSortColumn?.(row.key, "desc"),
+    });
+  }
+  if (row.canPin) {
+    actions.push({
+      id: "pin-start",
+      label: ctx.labels.pinStart,
+      disabled: row.pinned === "start",
+      run: () => ctx.layout.setPinned(row.key, "start"),
+    });
+    actions.push({
+      id: "pin-end",
+      label: ctx.labels.pinEnd,
+      disabled: row.pinned === "end",
+      run: () => ctx.layout.setPinned(row.key, "end"),
+    });
+    actions.push({
+      id: "unpin",
+      label: ctx.labels.unpin,
+      disabled: row.pinned === undefined,
+      run: () => ctx.layout.setPinned(row.key, undefined),
+    });
+  }
+  if (row.canHide) {
+    actions.push({
+      id: row.hidden ? "show" : "hide",
+      label: row.hidden ? ctx.labels.showColumn : ctx.labels.hideColumn,
+      disabled: false,
+      run: () => ctx.layout.toggleVisible(row.key),
+    });
+  }
+  if (row.canResize && ctx.onAutoSizeColumn) {
+    actions.push({
+      id: "auto-size",
+      label: ctx.labels.autoSizeColumn,
+      disabled: false,
+      run: () => ctx.onAutoSizeColumn?.(row.key),
+    });
+  }
+  if (row.canFilter && ctx.onFilterColumn) {
+    actions.push({
+      id: "filter",
+      label: ctx.labels.filterColumn,
+      disabled: false,
+      run: () => ctx.onFilterColumn?.(row.key),
+    });
+  }
+  actions.push({
+    id: "reset",
+    label: ctx.labels.resetColumn,
+    disabled: !row.canHide && !row.canPin && !row.canResize,
+    run: () => resetColumnLayout(row, ctx.layout),
+  });
+  return actions;
 }
 
 /**
@@ -104,6 +274,16 @@ export interface ColumnMenuLabels {
   autoSizeColumns: string;
   showColumn: string;
   hideColumn: string;
+  searchColumns: string;
+  showAllColumns: string;
+  hideAllColumns: string;
+  unpinAllColumns: string;
+  resetColumn: string;
+  sortAscending: string;
+  sortDescending: string;
+  filterColumn: string;
+  columnActions: string;
+  autoSizeColumn: string;
 }
 
 /** The shared prop surface of every adapter's `<ColumnMenu>`. */

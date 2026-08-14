@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 61,
+    budgetKB: 62,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -146,14 +146,21 @@ const FIXTURES = [
   // `collapsibleColumnGroups` — omit it and no toggle renders — but the
   // path walker sits on the same header-group path the kits already
   // imported. `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 90 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 89 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 89 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 86 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 89 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 96 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 93 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 90 },
+  //
+  // Column menu 2.0 (~2 KB per kit) adds the search box, bulk
+  // show/hide/unpin, the per-column submenu, and the lock flags the
+  // shared model already computed. The host still opts in with
+  // `enableColumnMenu` — omit it and the menu does not render — but
+  // every kit's ColumnMenu is on the same always-imported path.
+  // `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 93 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 92 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 93 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 89 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 93 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 99 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 95 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 92 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

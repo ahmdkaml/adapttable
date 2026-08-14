@@ -25,12 +25,20 @@ export {
   type ColumnGroupToggleProps,
 } from "./columns/ColumnGroupToggle";
 export {
+  type ColumnMenuAction,
+  type ColumnMenuActionContext,
+  columnMenuActions,
   type ColumnMenuChromeProps,
   type ColumnMenuLabels,
   type ColumnMenuRow,
+  filterColumnMenuRows,
+  hideAllColumns,
   nextPinSide,
   pinActionLabel,
   type PinnedSide,
+  resetColumnLayout,
+  showAllColumns,
+  unpinAllColumns,
 } from "./columns/columnMenuModel";
 export {
   COLUMN_DND_MIME,

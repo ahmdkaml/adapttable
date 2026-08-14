@@ -45,6 +45,15 @@ const labels = {
   autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
 };
 
 // Mantine renders the dropdown in a portal whose buttons testing-library's
@@ -240,6 +249,28 @@ describe("mantine ColumnMenu", () => {
   // table's direction. Under an Arabic locale the grip and pin controls
   // stayed on the LTR sides while the table itself mirrored. Only Chakra
   // passed `dir` through; the rest silently dropped it.
+  it("filters the chooser by the search box", async () => {
+    const user = userEvent.setup();
+    render(
+      <MantineProvider>
+        <ColumnMenu
+          allColumns={cols}
+          layout={fakeLayout()}
+          labels={labels}
+          onAutoSize={() => undefined}
+        />
+      </MantineProvider>
+    );
+    await user.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.change(
+      document.querySelector('[data-adapttable-part="column-menu-search"]')!,
+      { target: { value: "bravo" } }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+  });
+
   it("forwards dir to the portalled menu", async () => {
     const user = userEvent.setup();
     render(

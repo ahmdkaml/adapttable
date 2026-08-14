@@ -266,6 +266,11 @@ export function useDataTableShell<TRow>(
       ),
     [chrome.columnLayout]
   );
+  const autoSizeColumn = useCallback(
+    (key: string) =>
+      autoSizeAllColumns(rootRef.current, [key], chrome.columnLayout.setWidth),
+    [chrome.columnLayout]
+  );
   const {
     virtualization,
     groupingEntries,
@@ -421,6 +426,7 @@ export function useDataTableShell<TRow>(
     rootRef,
     /** Size every rendered column to its content. */
     autoSizeColumns,
+    autoSizeColumn,
     loadMoreRef,
     canLoadMore,
     hasRowActions,

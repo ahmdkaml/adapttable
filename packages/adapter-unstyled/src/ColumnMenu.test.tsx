@@ -45,6 +45,15 @@ const labels = {
   autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
   reorderRow: "Reorder",
 };
@@ -262,6 +271,46 @@ describe("unstyled ColumnMenu", () => {
       screen.getByRole("button", { name: "Show column: Actions" })
     );
     expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+  });
+
+  it("filters the chooser by the search box", () => {
+    open(fakeLayout());
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Search columns" }),
+      {
+        target: { value: "bravo" },
+      }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+    expect(screen.queryByText("Charlie")).toBeNull();
+  });
+
+  it("bulk-unpins from the menu", () => {
+    const layout = fakeLayout();
+    open(layout);
+    fireEvent.click(screen.getByRole("button", { name: "Unpin all" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+  });
+
+  it("opens a per-column submenu", () => {
+    const onSortColumn = vi.fn();
+    render(
+      <ColumnMenu
+        allColumns={[{ ...cols[0]!, sortable: true }, cols[1]!, cols[2]!]}
+        onAutoSize={() => undefined}
+        onSortColumn={onSortColumn}
+        layout={fakeLayout()}
+        labels={labels}
+        classNames={{}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Column actions: Alpha" })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sort ascending" }));
+    expect(onSortColumn).toHaveBeenCalledWith("a", "asc");
   });
 
   it("resets the layout", () => {

@@ -41,6 +41,15 @@ const labels = {
   autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
   reorderRow: "Reorder",
 };
@@ -323,5 +332,24 @@ describe("antd ColumnMenu", () => {
 
     fireEvent.click(hiddenEye);
     expect(layout.toggleVisible).toHaveBeenCalledWith("b");
+  });
+
+  it("filters the chooser by the search box", async () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.change(
+      document.querySelector('[data-adapttable-part="column-menu-search"]')!,
+      { target: { value: "bravo" } }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
   });
 });

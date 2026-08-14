@@ -279,6 +279,11 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   }
   fireEvent.click(part("column-menu-button")!);
   absorb();
+  const more = part("column-menu-more");
+  if (more) {
+    fireEvent.click(more);
+    absorb();
+  }
   // Saved views: open, name one, save — the list + delete render.
   fireEvent.click(part("views-button")!);
   absorb();
@@ -511,6 +516,12 @@ const KEYS = [
   "columnMenuSeparator",
   "columnMenuReset",
   "columnMenuAutoSize",
+  "columnMenuSearch",
+  "columnMenuBulk",
+  "columnMenuBulkButton",
+  "columnMenuMore",
+  "columnMenuSubmenu",
+  "columnMenuAction",
   "viewsMenu",
   "viewsButton",
   "viewsPanel",

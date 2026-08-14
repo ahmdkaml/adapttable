@@ -343,6 +343,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             classNames={classNames}
             hasRowActions={shell.hasRowActions}
             hasRowReorder={shell.hasRowReorder}
+            onAutoSizeColumn={shell.autoSizeColumn}
+            onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+            onFilterColumn={() => shell.setFiltersOpen(true)}
+            sortBy={viewSource.sortBy}
+            sortDir={viewSource.sortDir}
           />
         )}
         {onExportCsv && (

@@ -1,14 +1,20 @@
 import type { Direction, UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
+  columnMenuActions,
   columnMenuRows,
   columnReorderKeyProps,
+  filterColumnMenuRows,
+  hideAllColumns,
   REORDER_COLUMN_KEY,
+  showAllColumns,
+  unpinAllColumns,
   useColumnDragState,
 } from "@adapttable/core";
 import type {
   ColumnMenuChromeProps,
   ColumnMenuLabels,
+  ColumnMenuRow,
 } from "@adapttable/core/adapter";
 import {
   EyeIcon,
@@ -17,7 +23,7 @@ import {
   pinActionLabel,
   PinIcon,
 } from "@adapttable/core/adapter";
-import { Button, Divider, Flex, Popover, theme } from "antd";
+import { Button, Divider, Flex, Input, Popover, theme } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 /** Menu labels plus the actions-column display name. */
@@ -36,6 +42,14 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   hasRowReorder?: boolean;
   /** Size every rendered column to its content. */
   onAutoSize: () => void;
+  /** Size one column to its content. */
+  onAutoSizeColumn?: (key: string) => void;
+  /** Sort one column from the submenu. */
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  /** Open the filter UI from the submenu. */
+  onFilterColumn?: (key: string) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }
 
 /** The eye toggle shared by data rows and the trailing actions row. */
@@ -44,11 +58,13 @@ function VisibilityToggle({
   hidden,
   labels,
   onToggle,
+  disabled = false,
 }: Readonly<{
   name: string;
   hidden: boolean;
   labels: MenuLabels;
   onToggle: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <Button
@@ -56,6 +72,7 @@ function VisibilityToggle({
       type={hidden ? "text" : "link"}
       aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
       aria-pressed={!hidden}
+      disabled={disabled}
       icon={<EyeIcon off={hidden} />}
       onClick={onToggle}
     />
@@ -86,12 +103,19 @@ function PinToggle({
   pinned,
   actionLabel,
   onPin,
-}: Readonly<{ pinned: boolean; actionLabel: string; onPin: () => void }>) {
+  disabled = false,
+}: Readonly<{
+  pinned: boolean;
+  actionLabel: string;
+  onPin: () => void;
+  disabled?: boolean;
+}>) {
   return (
     <Button
       size="small"
       type={pinned ? "primary" : "text"}
       aria-label={actionLabel}
+      disabled={disabled}
       icon={<PinIcon />}
       onClick={onPin}
     />
@@ -171,6 +195,134 @@ function ActionsRow<TRow>({
   );
 }
 
+function ColumnMenuRowItem<TRow>({
+  row,
+  layout,
+  labels,
+  drag,
+  token,
+  sortBy,
+  sortDir,
+  onSortColumn,
+  onAutoSizeColumn,
+  onFilterColumn,
+}: Readonly<{
+  row: ColumnMenuRow<TRow>;
+  layout: UseColumnLayoutResult<TRow>;
+  labels: MenuLabels;
+  drag: ReturnType<typeof useColumnDragState>;
+  token: { colorPrimary: string };
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onFilterColumn?: (key: string) => void;
+}>) {
+  const { key, name, hidden, pinned, index, canMove, canHide, canPin } = row;
+  const [open, setOpen] = useState(false);
+  const actions = columnMenuActions(row, {
+    labels,
+    layout,
+    sortBy,
+    sortDir,
+    onSortColumn,
+    onAutoSizeColumn,
+    onFilterColumn,
+  });
+  const indicator = canMove ? drag.rowAttrs(key, index) : {};
+  const edge = indicator["data-drop"];
+  const edgeOffset = edge === "before" ? "2px" : "-2px";
+  return (
+    <div
+      data-adapttable-part="column-menu-item"
+      data-hidden={hidden || undefined}
+      data-pinned={pinned}
+    >
+      <Flex
+        align="center"
+        gap={6}
+        style={{
+          padding: "2px 0",
+          cursor: canMove ? "grab" : "default",
+          opacity: "data-dragging" in indicator ? 0.4 : undefined,
+          boxShadow: edge
+            ? `inset 0 ${edgeOffset} 0 0 ${token.colorPrimary}`
+            : undefined,
+        }}
+        {...(canMove
+          ? {
+              ...drag.rowDragProps(key, index),
+              ...drag.dropProps(index, layout.move),
+              ...indicator,
+            }
+          : {})}
+      >
+        <span
+          aria-disabled={!canMove || undefined}
+          style={{
+            display: "inline-flex",
+            cursor: canMove ? "grab" : "default",
+            opacity: canMove ? 0.55 : 0.3,
+          }}
+          {...(canMove
+            ? columnReorderKeyProps(
+                key,
+                index,
+                layout.move,
+                `${labels.moveStart} / ${labels.moveEnd}: ${name}`
+              )
+            : {})}
+        >
+          <GripIcon />
+        </span>
+        <VisibilityToggle
+          name={name}
+          hidden={hidden}
+          labels={labels}
+          disabled={!canHide}
+          onToggle={() => layout.toggleVisible(key)}
+        />
+        <RowName name={name} hidden={hidden} />
+        <PinToggle
+          pinned={Boolean(pinned)}
+          actionLabel={`${pinActionLabel(pinned, labels)}: ${name}`}
+          disabled={!canPin}
+          onPin={() => layout.setPinned(key, nextPinSide(pinned))}
+        />
+        <Button
+          size="small"
+          type="text"
+          data-adapttable-part="column-menu-more"
+          aria-expanded={open}
+          aria-label={`${labels.columnActions}: ${name}`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          ⋯
+        </Button>
+      </Flex>
+      {open ? (
+        <div data-adapttable-part="column-menu-submenu">
+          {actions.map((action) => (
+            <Button
+              key={action.id}
+              size="small"
+              type="text"
+              data-adapttable-part="column-menu-action"
+              disabled={action.disabled}
+              onClick={() => {
+                action.run();
+                setOpen(false);
+              }}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * AntD column-management popover: per-column drag grip (reorder), eye
  * (show/hide), and pin toggle — plus a separated trailing row for the
@@ -187,10 +339,17 @@ export function ColumnMenu<TRow>({
   hasRowActions = false,
   hasRowReorder = false,
   onAutoSize,
+  onAutoSizeColumn,
+  onSortColumn,
+  onFilterColumn,
+  sortBy,
+  sortDir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const { token } = theme.useToken();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const rows = filterColumnMenuRows(columnMenuRows(allColumns, layout), query);
   const triggerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -222,54 +381,62 @@ export function ColumnMenu<TRow>({
       >
         {labels.columns}
       </div>
-      {columnMenuRows(allColumns, layout).map((r) => {
-        // Drop-position feedback: dim the source, line the landing edge.
-        const indicator = drag.rowAttrs(r.key, r.index);
-        const edge = indicator["data-drop"];
-        const edgeOffset = edge === "before" ? "2px" : "-2px";
-        return (
-          <Flex
-            key={r.key}
-            align="center"
-            gap={6}
-            style={{
-              padding: "2px 0",
-              cursor: "grab",
-              opacity: "data-dragging" in indicator ? 0.4 : undefined,
-              boxShadow: edge
-                ? `inset 0 ${edgeOffset} 0 0 ${token.colorPrimary}`
-                : undefined,
-            }}
-            {...drag.rowDragProps(r.key, r.index)}
-            {...drag.dropProps(r.index, layout.move)}
-            {...indicator}
-          >
-            <span
-              style={{ display: "inline-flex", cursor: "grab", opacity: 0.55 }}
-              {...columnReorderKeyProps(
-                r.key,
-                r.index,
-                layout.move,
-                `${labels.moveStart} / ${labels.moveEnd}: ${r.name}`
-              )}
-            >
-              <GripIcon />
-            </span>
-            <VisibilityToggle
-              name={r.name}
-              hidden={r.hidden}
-              labels={labels}
-              onToggle={() => layout.toggleVisible(r.key)}
-            />
-            <RowName name={r.name} hidden={r.hidden} />
-            <PinToggle
-              pinned={Boolean(r.pinned)}
-              actionLabel={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-              onPin={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
-            />
-          </Flex>
-        );
-      })}
+      <Input
+        type="search"
+        size="small"
+        data-adapttable-part="column-menu-search"
+        placeholder={labels.searchColumns}
+        aria-label={labels.searchColumns}
+        value={query}
+        style={{ marginBottom: 8 }}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <Flex
+        gap={4}
+        wrap="wrap"
+        data-adapttable-part="column-menu-bulk"
+        style={{ marginBottom: 8 }}
+      >
+        <Button
+          size="small"
+          type="text"
+          data-adapttable-part="column-menu-bulk-button"
+          onClick={() => showAllColumns(rows, layout)}
+        >
+          {labels.showAllColumns}
+        </Button>
+        <Button
+          size="small"
+          type="text"
+          data-adapttable-part="column-menu-bulk-button"
+          onClick={() => hideAllColumns(rows, layout)}
+        >
+          {labels.hideAllColumns}
+        </Button>
+        <Button
+          size="small"
+          type="text"
+          data-adapttable-part="column-menu-bulk-button"
+          onClick={() => unpinAllColumns(rows, layout)}
+        >
+          {labels.unpinAllColumns}
+        </Button>
+      </Flex>
+      {rows.map((row) => (
+        <ColumnMenuRowItem
+          key={row.key}
+          row={row}
+          layout={layout}
+          labels={labels}
+          drag={drag}
+          token={token}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSortColumn={onSortColumn}
+          onAutoSizeColumn={onAutoSizeColumn}
+          onFilterColumn={onFilterColumn}
+        />
+      ))}
       {(hasRowReorder || hasRowActions) && (
         <Divider style={{ margin: "6px 0" }} />
       )}
@@ -293,7 +460,12 @@ export function ColumnMenu<TRow>({
       content={content}
       styles={{ content: { padding: 0 } }}
     >
-      <Button ref={triggerRef} aria-expanded={open} aria-haspopup="true">
+      <Button
+        ref={triggerRef}
+        aria-expanded={open}
+        aria-haspopup="true"
+        data-adapttable-part="column-menu-button"
+      >
         {labels.columns}
       </Button>
     </Popover>

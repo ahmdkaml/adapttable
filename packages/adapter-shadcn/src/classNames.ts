@@ -119,6 +119,16 @@ export const shadcnClassNames = {
     "mt-1.5 w-full border-t border-border px-2 pb-1 pt-2 text-start text-[13px] font-medium text-primary hover:opacity-80",
   columnMenuAutoSize:
     "mt-1.5 w-full border-t border-border px-2 pb-1 pt-2 text-start text-[13px] font-medium text-primary hover:opacity-80",
+  columnMenuSearch:
+    "mb-1.5 h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  columnMenuBulk: "mb-1.5 flex flex-wrap gap-1 px-1",
+  columnMenuBulkButton:
+    "rounded-md px-2 py-1 text-start text-[12px] font-medium text-foreground hover:bg-muted/60",
+  columnMenuMore:
+    "inline-grid place-items-center rounded p-[3px] text-muted-foreground hover:bg-muted hover:text-foreground",
+  columnMenuSubmenu: "ms-6 flex flex-col gap-0.5 py-1",
+  columnMenuAction:
+    "w-full rounded-md px-2 py-1.5 text-start text-[13px] font-medium hover:bg-muted/60 disabled:opacity-50",
   resizeHandle: "hover:bg-border",
   card: "mb-2 rounded-lg border border-border p-3 [[data-density=compact]_&]:p-2",
   cardRow: "flex justify-between gap-3 py-0.5 text-sm",
