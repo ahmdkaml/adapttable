@@ -39,14 +39,17 @@ function renderForm(
 
 describe("<AutoFilterForm> (Chakra)", () => {
   it("text: labels from the humanized key, shows the placeholder, writes the key", () => {
-    const { setExtra } = renderForm([
+    const { setExtras } = renderForm([
       { key: "firstName", type: "text", placeholder: "Type a name" },
     ]);
-    const input = screen.getByLabelText("First Name");
+    const input = screen.getByPlaceholderText("Type a name");
     expect(input).toHaveAttribute("placeholder", "Type a name");
     expect(input).toHaveValue("");
     fireEvent.change(input, { target: { value: "ali" } });
-    expect(setExtra).toHaveBeenCalledWith("firstName", "ali");
+    expect(setExtras).toHaveBeenCalledWith({
+      firstName: "ali",
+      firstNameOp: "contains",
+    });
   });
 
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
@@ -118,7 +121,16 @@ describe("<AutoFilterForm> (Chakra)", () => {
       within(select)
         .getAllByRole("option")
         .map((o) => o.textContent)
-    ).toEqual(["Operator", "On", "On or after", "On or before", "Between"]);
+    ).toEqual([
+      "Operator",
+      "Before",
+      "After",
+      "On",
+      "On or after",
+      "On or before",
+      "Between",
+      "Is empty",
+    ]);
     const input = screen.getByLabelText("Value");
     expect(input).toHaveAttribute("type", "date");
     expect(input).toHaveValue("2026-01-01");
@@ -126,6 +138,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       hiredAtFrom: "2026-02-01",
       hiredAtTo: undefined,
+      hiredAtOp: "gte",
     });
   });
 
@@ -147,7 +160,18 @@ describe("<AutoFilterForm> (Chakra)", () => {
       within(select)
         .getAllByRole("option")
         .map((o) => o.textContent)
-    ).toEqual(["Vergleich", "Gleich", "Mindestens", "Höchstens", "Zwischen"]);
+    ).toEqual([
+      "Vergleich",
+      "Gleich",
+      "Not equal",
+      "Greater than",
+      "Mindestens",
+      "Less than",
+      "Höchstens",
+      "Zwischen",
+      "Is any of",
+      "Is none of",
+    ]);
     // No operator picked yet → no value input.
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByLabelText("Value")).toBeNull();
@@ -164,6 +188,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -178,6 +203,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "10",
       budgetMax: "10",
+      budgetOp: "eq",
     });
   });
 
@@ -192,6 +218,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: "7",
+      budgetOp: "lte",
     });
   });
 
@@ -209,11 +236,13 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "2",
       budgetMax: "9",
+      budgetOp: "between",
     });
     fireEvent.change(from, { target: { value: "3" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "3",
       budgetMax: "8",
+      budgetOp: "between",
     });
   });
 
@@ -238,6 +267,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     // Back to the untouched widget: operator placeholder, no value input.
     expect(select).toHaveValue("");
@@ -252,7 +282,11 @@ describe("<AutoFilterForm> (Chakra)", () => {
     fireEvent.change(screen.getByLabelText("Budget"), {
       target: { value: "between" },
     });
-    expect(setExtras).toHaveBeenCalledWith({ budgetMin: "5", budgetMax: "5" });
+    expect(setExtras).toHaveBeenCalledWith({
+      budgetMin: "5",
+      budgetMax: "5",
+      budgetOp: "between",
+    });
   });
 
   it("select: shows one disabled placeholder option while async options load", async () => {

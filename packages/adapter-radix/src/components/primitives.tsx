@@ -113,6 +113,7 @@ export function NativeSelect({
   options,
   width,
   "aria-label": ariaLabel,
+  "data-adapttable-part": part,
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
@@ -121,6 +122,7 @@ export function NativeSelect({
   options: readonly SelectOption[];
   width?: string;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
 }>) {
   return (
     <Select.Root
@@ -130,6 +132,7 @@ export function NativeSelect({
     >
       <Select.Trigger
         aria-label={ariaLabel}
+        data-adapttable-part={part}
         placeholder={placeholder}
         style={width ? { width } : undefined}
       />

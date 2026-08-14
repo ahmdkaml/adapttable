@@ -3,13 +3,14 @@ import {
   type FilterDef,
   type FilterFormSource,
   filterLabel,
+  filterOpLabel,
   listFilterValues,
-  RANGE_OPS,
   resolveLabels,
   scalarFilterText,
   type TableLabels,
   useFilterOptions,
   useRangeFilterWidget,
+  useTextFilterWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -74,7 +75,7 @@ function RangeField<TRow>({
   labels: Required<TableLabels>;
 }>) {
   const id = useId();
-  const { label, opLabelKeys, inputType, op, setOp, a, b, write } =
+  const { label, ops, opLabelKeys, inputType, arity, op, setOp, a, b, write } =
     useRangeFilterWidget(def, source);
   return (
     <FormField label={label}>
@@ -90,18 +91,21 @@ function RangeField<TRow>({
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
-            const next = RANGE_OPS.find((o) => o === e.target.value);
+            const next = ops.find((o) => o === e.target.value);
             setOp(next);
             write(next, a, b);
           }}
         >
-          {RANGE_OPS.map((o) => (
+          {ops.map((o) => (
             <option key={o} value={o}>
-              {labels[opLabelKeys[o]]}
+              {filterOpLabel(
+                labels,
+                opLabelKeys[o as keyof typeof opLabelKeys]
+              )}
             </option>
           ))}
         </NativeSelect>
-        {op === "between" ? (
+        {arity === "two" ? (
           <>
             <Input
               id={`${id}-a`}
@@ -127,7 +131,8 @@ function RangeField<TRow>({
             />
           </>
         ) : (
-          op && (
+          op &&
+          arity !== "none" && (
             <Input
               id={`${id}-a`}
               size="sm"
@@ -140,6 +145,56 @@ function RangeField<TRow>({
               onChange={(e) => write(op, e.target.value, "")}
             />
           )
+        )}
+      </HStack>
+    </FormField>
+  );
+}
+
+/** Operator-first text filter: comparison select, then the term (if needed). */
+function TextFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, ops, opLabelKeys, op, value, needsValue, write } =
+    useTextFilterWidget(def, source);
+  return (
+    <FormField label={label}>
+      <HStack gap={2} align="flex-start" flexWrap="wrap" rowGap={2}>
+        <NativeSelect
+          size="sm"
+          flex="0 0 8.5rem"
+          w="8.5rem"
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
+          value={op}
+          onChange={(e) => {
+            const found = ops.find((choice) => choice === e.target.value);
+            if (found) write(found, value);
+          }}
+        >
+          {ops.map((choice) => (
+            <option key={choice} value={choice}>
+              {filterOpLabel(labels, opLabelKeys[choice])}
+            </option>
+          ))}
+        </NativeSelect>
+        {needsValue && (
+          <Input
+            size="sm"
+            flex="1 1 7rem"
+            minW="7rem"
+            aria-label={label}
+            data-adapttable-part="filter-input"
+            value={value}
+            placeholder={def.placeholder}
+            onChange={(e) => write(op, e.target.value)}
+          />
         )}
       </HStack>
     </FormField>
@@ -166,16 +221,7 @@ function AutoFilterField<TRow>({
   const { options, loading } = useFilterOptions(def);
   switch (def.type) {
     case "text":
-      return (
-        <FormField label={label}>
-          <Input
-            size="sm"
-            value={scalarFilterText(extra[def.key])}
-            placeholder={def.placeholder}
-            onChange={(e) => setExtra(def.key, e.target.value)}
-          />
-        </FormField>
-      );
+      return <TextFilterField def={def} source={source} labels={labels} />;
     case "select":
       return (
         <FormField label={label}>

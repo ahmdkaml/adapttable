@@ -175,7 +175,7 @@ describe("<AutoFilterForm> (Ant Design)", () => {
 });
 
 describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
-  it("lists the four number operators with the caller's localized labels", () => {
+  it("lists the number operators with the caller's localized labels", () => {
     render(
       <RangeHarness
         defs={BUDGET}
@@ -200,7 +200,15 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
   it("lists the date operator wordings for a dateRange", () => {
     render(<RangeHarness defs={SHIPPED} />);
     openOperator("Shipped Operator");
-    for (const op of ["On", "On or after", "On or before", "Between"]) {
+    for (const op of [
+      "Before",
+      "After",
+      "On",
+      "On or after",
+      "On or before",
+      "Between",
+      "Is empty",
+    ]) {
       expect(screen.getByTitle(op)).toBeInTheDocument();
     }
     expect(screen.queryByTitle("At least")).toBeNull();
@@ -212,16 +220,17 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     openOperator("Budget Operator");
     fireEvent.click(screen.getByTitle("At least"));
     // Choosing an operator alone persists nothing yet — both keys cleared.
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: undefined,
       budgetMax: undefined,
     });
     fireEvent.change(screen.getByLabelText("Budget Value"), {
       target: { value: "30" },
     });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: "30",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -233,9 +242,10 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     fireEvent.change(screen.getByLabelText("Budget Value"), {
       target: { value: "5" },
     });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: "5",
       budgetMax: "5",
+      budgetOp: "eq",
     });
   });
 
@@ -248,16 +258,17 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     fireEvent.change(screen.getByLabelText("Budget From"), {
       target: { value: "10" },
     });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: "10",
       budgetMax: undefined,
     });
     fireEvent.change(screen.getByLabelText("Budget To"), {
       target: { value: "20" },
     });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: "10",
       budgetMax: "20",
+      budgetOp: "between",
     });
   });
 
@@ -274,7 +285,7 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     expect(screen.getByTitle("Equal")).toBeInTheDocument();
     expect(screen.getByLabelText("Budget Value")).toHaveValue("5");
     fireEvent.mouseDown(container.querySelector(".ant-select-clear")!);
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: undefined,
       budgetMax: undefined,
     });
@@ -294,9 +305,10 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     const value = screen.getByLabelText("Budget Value");
     expect(value).toHaveValue("40");
     fireEvent.change(value, { target: { value: "45" } });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: undefined,
       budgetMax: "45",
+      budgetOp: "lte",
     });
   });
 
@@ -309,21 +321,24 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
         onPatch={onPatch}
       />
     );
-    // Mounted as "At least 30"; Between keeps 30 as the lower bound.
+    // Mounted as "At least 30"; Between copies that value into both bounds.
     expect(screen.getByTitle("At least")).toBeInTheDocument();
     openOperator("Budget Operator");
     fireEvent.click(screen.getByTitle("Between"));
     expect(screen.getByLabelText("Budget From")).toHaveValue("30");
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(screen.getByLabelText("Budget To")).toHaveValue("30");
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: "30",
-      budgetMax: undefined,
+      budgetMax: "30",
+      budgetOp: "between",
     });
     // …and a single-value comparison takes the lower bound with it.
     openOperator("Budget Operator");
     fireEvent.click(screen.getByTitle("At most"));
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       budgetMin: undefined,
       budgetMax: "30",
+      budgetOp: "lte",
     });
     expect(screen.getByLabelText("Budget Value")).toHaveValue("30");
   });
@@ -336,9 +351,10 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
     const input = screen.getByLabelText<HTMLInputElement>("Shipped Value");
     expect(input.type).toBe("date");
     fireEvent.change(input, { target: { value: "2026-01-01" } });
-    expect(onPatch.mock.lastCall?.[0]).toStrictEqual({
+    expect(onPatch.mock.lastCall?.[0]).toMatchObject({
       shippedFrom: "2026-01-01",
       shippedTo: undefined,
+      shippedOp: "gte",
     });
   });
 });

@@ -1,15 +1,28 @@
 import { useState } from "react";
 
 import type { TableSource } from "../source/TableSource";
-import type { FilterValue } from "../types";
-import type { FilterDef } from "./filterDefs";
-import { filterLabel, filterStateKeys } from "./filterDefs";
-import type { RangeOp } from "./rangeWidget";
+import type { FilterValue, TableLabels } from "../types";
+import { type FilterDef, filterLabel, RANGE_SUFFIXES } from "./filterDefs";
 import {
-  RANGE_OP_LABEL_KEYS,
-  readRangeWidget,
-  writeRangeWidget,
-} from "./rangeWidget";
+  DATE_OP_LABEL_KEYS,
+  DATE_OPS,
+  type DateOp,
+  filterOpKey,
+  isBetweenFilterOp,
+  isListFilterOp,
+  isValuelessFilterOp,
+  NUMBER_OP_LABEL_KEYS,
+  NUMBER_OPS,
+  type NumberOp,
+  parseTextOp,
+  TEXT_OP_LABEL_KEYS,
+  TEXT_OPS,
+  type TextOp,
+} from "./operators";
+import { type RangeOp, readRangeWidget, writeRangeFilter } from "./rangeWidget";
+
+/** Operand shape for a selected range operator. */
+export type RangeOpArity = "none" | "one" | "two" | "list";
 
 /**
  * The slice of the table source the auto-built filter form reads and writes:
@@ -32,38 +45,57 @@ export function listFilterValues(value: FilterValue): string[] {
   return value == null || value === "" ? [] : [String(value)];
 }
 
+function rangeArity(op: RangeOp | undefined): RangeOpArity {
+  if (!op) return "one";
+  if (isValuelessFilterOp(op)) return "none";
+  if (isListFilterOp(op)) return "list";
+  if (isBetweenFilterOp(op)) return "two";
+  return "one";
+}
+
+function rangeInputType(
+  flavour: "number" | "date",
+  arity: RangeOpArity
+): "date" | "number" | "text" {
+  if (flavour === "date") return "date";
+  if (arity === "list") return "text";
+  return "number";
+}
+
 /** Per-operator label keys for one widget flavour (numbers or dates). */
 export type RangeOpLabelKeys =
-  | (typeof RANGE_OP_LABEL_KEYS)["number"]
-  | (typeof RANGE_OP_LABEL_KEYS)["date"];
+  | typeof NUMBER_OP_LABEL_KEYS
+  | (typeof DATE_OP_LABEL_KEYS & { readonly eq: "opOn" });
 
 /** Computed state + writers driving an operator-first range field. */
 export interface RangeFieldWidget {
   /** The field's display label. */
   label: string;
+  /** Operators offered for this flavour, in display order. */
+  ops: readonly RangeOp[];
   /** Per-operator label keys for the current flavour (number vs date). */
   opLabelKeys: RangeOpLabelKeys;
-  /** Native input `type` for the bound inputs. */
-  inputType: "date" | "number";
+  /** Native input `type` for the bound inputs (`text` for `in` / `notIn`). */
+  inputType: "date" | "number" | "text";
+  /** Operand shape for the selected operator. */
+  arity: RangeOpArity;
   /** The selected operator, or `undefined` until one is chosen. */
   op: RangeOp | undefined;
   /** Set the operator (UI state, re-seeded from the persisted pair). */
   setOp: (op: RangeOp | undefined) => void;
-  /** The single / lower bound as input text. */
+  /** The single / lower bound / list as input text. */
   a: string;
   /** The upper bound as input text (`between` only). */
   b: string;
-  /** Persist an operator + bound(s) back to the inclusive Min/Max pair. */
+  /** Persist an operator + bound(s) back to the bag, including `f_<key>Op`. */
   write: (nextOp: RangeOp | undefined, nextA: string, nextB: string) => void;
 }
 
 /**
  * The shared, kit-agnostic logic behind an auto-built range filter
  * (`numberRange` / `dateRange`): it seeds the operator from the persisted
- * `Min`/`Max` pair, derives the visible bound(s), and writes interactions back
- * to that pair (emptying an input clears both keys). Adapters render their own
- * kit controls over the returned state, so the operator-first widget behaves
- * identically across kits without each one re-deriving the bounds.
+ * `Op` token (or infers it from the Min/Max pair), derives the visible
+ * bound(s), and writes interactions back so the operator survives the URL.
  *
  * @typeParam TRow - The row type.
  * @param def - The range filter definition.
@@ -76,19 +108,126 @@ export function useRangeFilterWidget<TRow>(
 ): RangeFieldWidget {
   const { extra, setExtras } = source;
   const label = filterLabel(def);
-  const [lowKey, highKey] = filterStateKeys(def);
+  const flavour = def.type === "dateRange" ? "date" : "number";
+  const suffixes =
+    RANGE_SUFFIXES[flavour === "date" ? "dateRange" : "numberRange"];
+  const lowKey = def.key + suffixes.start;
+  const highKey = def.key + suffixes.end;
+  const opKey = filterOpKey(def.key);
+  const ops: readonly RangeOp[] = flavour === "date" ? DATE_OPS : NUMBER_OPS;
   const opLabelKeys =
-    RANGE_OP_LABEL_KEYS[def.type === "dateRange" ? "date" : "number"];
-  const inputType = def.type === "dateRange" ? "date" : "number";
+    flavour === "date"
+      ? { ...DATE_OP_LABEL_KEYS, eq: "opOn" as const }
+      : NUMBER_OP_LABEL_KEYS;
   const [op, setOp] = useState<RangeOp | undefined>(
-    () => readRangeWidget(extra, lowKey!, highKey!).op
+    () => readRangeWidget(extra, lowKey, highKey, opKey, def.key, flavour).op
   );
-  // Bounds derive from the persisted pair, so URL state and chip clears stay
-  // the source of truth: "At most" reads the upper key, everything else the
-  // lower one ("Equal" wrote both identical), "Between" reads both.
-  const a = scalarFilterText(extra[op === "lte" ? highKey! : lowKey!]);
-  const b = scalarFilterText(extra[highKey!]);
-  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
-    setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey!, highKey!));
-  return { label, opLabelKeys, inputType, op, setOp, a, b, write };
+  const derived = readRangeWidget(
+    extra,
+    lowKey,
+    highKey,
+    opKey,
+    def.key,
+    flavour
+  );
+  const a = derived.a;
+  const b = derived.b;
+  const arity = rangeArity(op);
+  const inputType = rangeInputType(flavour, arity);
+  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) => {
+    // Switching into `between` from a single-value comparison copies the
+    // current value into both bounds so the pair is never half-empty.
+    const seededB =
+      nextOp === "between" && nextB === "" && nextA !== "" && op !== "between"
+        ? nextA
+        : nextB;
+    setExtras(
+      writeRangeFilter(nextOp, nextA, seededB, lowKey, highKey, def.key)
+    );
+  };
+  return {
+    label,
+    ops,
+    opLabelKeys,
+    inputType,
+    arity,
+    op,
+    setOp,
+    a,
+    b,
+    write,
+  };
 }
+
+/** Computed state + writers driving an operator-first text field. */
+export interface TextFieldWidget {
+  /** The field's display label. */
+  label: string;
+  /** Operators offered for text filters. */
+  ops: readonly TextOp[];
+  /** Per-operator `TableLabels` keys. */
+  opLabelKeys: typeof TEXT_OP_LABEL_KEYS;
+  /** The selected operator (defaults to `contains`). */
+  op: TextOp;
+  /** Set the operator and persist it. */
+  setOp: (op: TextOp) => void;
+  /** The comparison term (unused for `empty` / `notEmpty`). */
+  value: string;
+  /** Whether the operator needs a value input. */
+  needsValue: boolean;
+  /** Persist the operator + term (clears the term for valueless ops). */
+  write: (nextOp: TextOp, nextValue: string) => void;
+}
+
+/**
+ * Kit-agnostic logic for a `text` filter: operator-first, persisted as
+ * `f_<key>` plus `f_<key>Op` so the comparison survives the URL.
+ *
+ * @typeParam TRow - The row type.
+ * @param def - The text filter definition.
+ * @param source - The filter-bag slice (extra + setters).
+ * @returns The {@link TextFieldWidget} state and writers.
+ */
+export function useTextFilterWidget<TRow>(
+  def: FilterDef<TRow>,
+  source: FilterFormSource<TRow>
+): TextFieldWidget {
+  const { extra, setExtras } = source;
+  const label = filterLabel(def);
+  const opKey = filterOpKey(def.key);
+  const storedOp = parseTextOp(extra[opKey]);
+  const [localOp, setLocalOp] = useState<TextOp>(storedOp);
+  const op = extra[opKey] != null ? storedOp : localOp;
+  const value = scalarFilterText(extra[def.key]);
+  const needsValue = !isValuelessFilterOp(op);
+  const write = (nextOp: TextOp, nextValue: string) => {
+    const valueless = isValuelessFilterOp(nextOp);
+    setLocalOp(nextOp);
+    setExtras({
+      [def.key]: valueless || nextValue === "" ? undefined : nextValue,
+      [opKey]: valueless || nextValue !== "" ? nextOp : undefined,
+    });
+  };
+  const setOp = (next: TextOp) => write(next, value);
+  return {
+    label,
+    ops: TEXT_OPS,
+    opLabelKeys: TEXT_OP_LABEL_KEYS,
+    op,
+    setOp,
+    value,
+    needsValue,
+    write,
+  };
+}
+
+/** Resolve a `TableLabels` key to the string the widget should show. */
+export function filterOpLabel(
+  labels: Required<TableLabels>,
+  key: keyof TableLabels
+): string {
+  const value = labels[key];
+  return typeof value === "string" ? value : String(key);
+}
+
+export type { DateOp, NumberOp, TextOp };

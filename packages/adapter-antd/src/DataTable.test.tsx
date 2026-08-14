@@ -1656,7 +1656,7 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     expect(urlState()).toContain("f_firstName=ali");
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.queryByText("Bob")).toBeNull();
-    expect(screen.getByText("First Name: ali")).toBeInTheDocument();
+    expect(screen.getByText("First Name Contains ali")).toBeInTheDocument();
 
     // The standalone select definition narrows further and chips up too.
     fireEvent.change(within(popover).getByLabelText("City"), {

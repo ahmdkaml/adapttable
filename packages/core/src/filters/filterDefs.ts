@@ -6,10 +6,30 @@
  * and the table-level `filters` array — merged by {@link resolveFilterDefs}.
  */
 import { localizedColumnPath } from "../columns/resolveColumns";
-import type { ColumnDef, ExtraFilters, FilterValue } from "../types";
+import { defaultLabels } from "../labels";
+import type {
+  ColumnDef,
+  ExtraFilters,
+  FilterValue,
+  TableLabels,
+} from "../types";
 import { devWarn } from "../utils/devWarn";
 import { humanizeKey } from "../utils/humanizeKey";
 import { getPath } from "../utils/path";
+import {
+  DATE_OP_LABEL_KEYS,
+  type DateOp,
+  filterOpKey,
+  formatFilterChip,
+  isEmptyRowValue,
+  NUMBER_OP_LABEL_KEYS,
+  type NumberOp,
+  parseDateOp,
+  parseNumberList,
+  parseNumberOp,
+  parseTextOp,
+  TEXT_OP_LABEL_KEYS,
+} from "./operators";
 import type { ChipLabelResolver } from "./useActiveFilterChips";
 
 /** Every built-in filter shape, exported so consumers never hand-type them. */
@@ -81,10 +101,14 @@ export const RANGE_SUFFIXES = {
 export function filterStateKeys(
   def: Pick<FilterDef, "key" | "type">
 ): string[] {
+  const opKey = filterOpKey(def.key);
   if (def.type === "dateRange" || def.type === "numberRange") {
     const s = RANGE_SUFFIXES[def.type];
-    return [def.key + s.start, def.key + s.end];
+    const pair = [def.key + s.start, def.key + s.end, opKey];
+    // `in` / `notIn` store the list on the bare key.
+    return def.type === "numberRange" ? [def.key, ...pair] : pair;
   }
+  if (def.type === "text") return [def.key, opKey];
   return [def.key];
 }
 
@@ -200,6 +224,143 @@ function textMatch(rowValue: unknown, term: string): boolean {
   return text !== "" && text.includes(term.toLowerCase());
 }
 
+function textRowMatches(
+  op: ReturnType<typeof parseTextOp>,
+  rowValue: unknown,
+  term: string
+): boolean {
+  if (op === "empty") return isEmptyRowValue(rowValue);
+  if (op === "notEmpty") return !isEmptyRowValue(rowValue);
+  const text = valueText(rowValue).toLowerCase();
+  const needle = term.toLowerCase();
+  switch (op) {
+    case "eq":
+      return text === needle;
+    case "neq":
+      return text !== needle;
+    case "contains":
+      return textMatch(rowValue, term);
+    case "notContains":
+      return !text.includes(needle);
+    case "startsWith":
+      return text !== "" && text.startsWith(needle);
+    case "endsWith":
+      return text !== "" && text.endsWith(needle);
+  }
+}
+
+function dateUpperBoundMs(bound: FilterValue): number {
+  return (
+    dateValueToEpochMs(bound) +
+    (typeof bound === "string" && DATE_ONLY_RE.test(bound.trim())
+      ? END_OF_DAY_MS
+      : 0)
+  );
+}
+
+function dateOnMatch(time: number, day: FilterValue | undefined): boolean {
+  if (day == null || day === "") return true;
+  const start = dateValueToEpochMs(day);
+  return time >= start && time <= dateUpperBoundMs(day);
+}
+
+function dateInclusiveBounds(
+  time: number,
+  extra: ExtraFilters,
+  fromKey: string,
+  toKey: string
+): boolean {
+  if (has(extra, fromKey) && time < dateValueToEpochMs(extra[fromKey])) {
+    return false;
+  }
+  if (has(extra, toKey) && time > dateUpperBoundMs(extra[toKey])) {
+    return false;
+  }
+  return true;
+}
+
+function dateRowMatches(
+  op: DateOp | undefined,
+  time: number,
+  extra: ExtraFilters,
+  fromKey: string,
+  toKey: string
+): boolean {
+  if (op === "empty") return Number.isNaN(time);
+  if (Number.isNaN(time)) return false;
+  if (op === "before" && has(extra, toKey)) {
+    return time < dateValueToEpochMs(extra[toKey]);
+  }
+  if (op === "after" && has(extra, fromKey)) {
+    return time > dateUpperBoundMs(extra[fromKey]);
+  }
+  if (op === "on") {
+    const day = has(extra, fromKey) ? extra[fromKey] : extra[toKey];
+    return dateOnMatch(time, day);
+  }
+  return dateInclusiveBounds(time, extra, fromKey, toKey);
+}
+
+function numberRowMatches(
+  op: NumberOp | undefined,
+  n: number,
+  extra: ExtraFilters,
+  minKey: string,
+  maxKey: string,
+  listKey: string
+): boolean {
+  if (Number.isNaN(n)) return false;
+  if (op === "in") return parseNumberList(extra[listKey]).includes(n);
+  if (op === "notIn") return !parseNumberList(extra[listKey]).includes(n);
+  const min = has(extra, minKey) ? Number(extra[minKey]) : Number.NaN;
+  const max = has(extra, maxKey) ? Number(extra[maxKey]) : Number.NaN;
+  switch (op) {
+    case "eq":
+      return !Number.isNaN(min) && n === min;
+    case "neq":
+      return !Number.isNaN(min) && n !== min;
+    case "gt":
+      return !Number.isNaN(min) && n > min;
+    case "gte":
+      return !Number.isNaN(min) && n >= min;
+    case "lt":
+      return !Number.isNaN(max) && n < max;
+    case "lte":
+      return !Number.isNaN(max) && n <= max;
+    default:
+      if (!Number.isNaN(min) && n < min) return false;
+      return Number.isNaN(max) || n <= max;
+  }
+}
+
+function textFilterActive(extra: ExtraFilters, key: string): boolean {
+  const op = parseTextOp(extra[filterOpKey(key)]);
+  if (op === "empty" || op === "notEmpty") return true;
+  return has(extra, key);
+}
+
+function dateFilterActive(
+  extra: ExtraFilters,
+  key: string,
+  fromKey: string,
+  toKey: string
+): boolean {
+  const op = parseDateOp(extra[filterOpKey(key)]);
+  if (op === "empty") return true;
+  return has(extra, fromKey) || has(extra, toKey);
+}
+
+function numberFilterActive(
+  extra: ExtraFilters,
+  key: string,
+  minKey: string,
+  maxKey: string
+): boolean {
+  const op = parseNumberOp(extra[filterOpKey(key)]);
+  if (op === "in" || op === "notIn") return has(extra, key);
+  return has(extra, minKey) || has(extra, maxKey);
+}
+
 /** Build one definition's client-side predicate (true = row matches). */
 export function filterPredicate<TRow>(
   def: FilterDef<TRow>
@@ -208,8 +369,14 @@ export function filterPredicate<TRow>(
     def.getValue ? def.getValue(row) : getPath(row, def.key);
   switch (def.type) {
     case "text":
-      return (row, extra) =>
-        !has(extra, def.key) || textMatch(value(row), String(extra[def.key]));
+      return (row, extra) => {
+        if (!textFilterActive(extra, def.key)) return true;
+        return textRowMatches(
+          parseTextOp(extra[filterOpKey(def.key)]),
+          value(row),
+          String(extra[def.key] ?? "")
+        );
+      };
     case "select":
       return (row, extra) =>
         !has(extra, def.key) ||
@@ -222,37 +389,32 @@ export function filterPredicate<TRow>(
         return list.includes(valueText(value(row)));
       };
     case "dateRange": {
-      const [fromKey, toKey] = filterStateKeys(def);
+      const fromKey = def.key + RANGE_SUFFIXES.dateRange.start;
+      const toKey = def.key + RANGE_SUFFIXES.dateRange.end;
       return (row, extra) => {
-        if (!has(extra, fromKey!) && !has(extra, toKey!)) return true;
-        const time = dateValueToEpochMs(value(row));
-        if (Number.isNaN(time)) return false;
-        if (has(extra, fromKey!)) {
-          const from = dateValueToEpochMs(extra[fromKey!]);
-          if (time < from) return false;
-        }
-        if (has(extra, toKey!)) {
-          const bound = extra[toKey!];
-          // Inclusive: a date-only "to" keeps that whole (local) day's
-          // rows; an exact datetime bound is inclusive as given.
-          const to =
-            dateValueToEpochMs(bound) +
-            (typeof bound === "string" && DATE_ONLY_RE.test(bound.trim())
-              ? END_OF_DAY_MS
-              : 0);
-          if (time > to) return false;
-        }
-        return true;
+        if (!dateFilterActive(extra, def.key, fromKey, toKey)) return true;
+        return dateRowMatches(
+          parseDateOp(extra[filterOpKey(def.key)]),
+          dateValueToEpochMs(value(row)),
+          extra,
+          fromKey,
+          toKey
+        );
       };
     }
     case "numberRange": {
-      const [minKey, maxKey] = filterStateKeys(def);
+      const minKey = def.key + RANGE_SUFFIXES.numberRange.start;
+      const maxKey = def.key + RANGE_SUFFIXES.numberRange.end;
       return (row, extra) => {
-        if (!has(extra, minKey!) && !has(extra, maxKey!)) return true;
-        const n = numericRowValue(value(row));
-        if (Number.isNaN(n)) return false;
-        if (has(extra, minKey!) && n < Number(extra[minKey!])) return false;
-        return !(has(extra, maxKey!) && n > Number(extra[maxKey!]));
+        if (!numberFilterActive(extra, def.key, minKey, maxKey)) return true;
+        return numberRowMatches(
+          parseNumberOp(extra[filterOpKey(def.key)]),
+          numericRowValue(value(row)),
+          extra,
+          minKey,
+          maxKey,
+          def.key
+        );
       };
     }
   }
@@ -284,6 +446,66 @@ const optionLabel = (
   return options.find((o) => o.value === value)?.label ?? value;
 };
 
+function opWord(labels: Required<TableLabels>, key: keyof TableLabels): string {
+  const value = labels[key];
+  return typeof value === "string" ? value : key;
+}
+
+function textChipLabel(
+  field: string,
+  value: string,
+  extra: ExtraFilters | undefined,
+  key: string
+): string {
+  const op = parseTextOp(extra?.[filterOpKey(key)]);
+  return formatFilterChip(
+    field,
+    opWord(defaultLabels, TEXT_OP_LABEL_KEYS[op]),
+    value
+  );
+}
+
+function rangeChipLabel(
+  field: string,
+  value: string,
+  extra: ExtraFilters | undefined,
+  key: string,
+  side: "low" | "high",
+  flavour: "number" | "date"
+): string {
+  const raw = extra?.[filterOpKey(key)];
+  if (flavour === "number") {
+    const op = parseNumberOp(raw);
+    if (op && op !== "between") {
+      return formatFilterChip(
+        field,
+        opWord(defaultLabels, NUMBER_OP_LABEL_KEYS[op]),
+        value
+      );
+    }
+  } else {
+    const op = parseDateOp(raw);
+    if (op && op !== "between") {
+      return formatFilterChip(
+        field,
+        opWord(defaultLabels, DATE_OP_LABEL_KEYS[op]),
+        value
+      );
+    }
+  }
+  return side === "low" ? `${field} ≥ ${value}` : `${field} ≤ ${value}`;
+}
+
+function emptyOpChip(field: string, token: string): string {
+  if (token === "empty") {
+    return formatFilterChip(field, defaultLabels.opEmpty);
+  }
+  if (token === "notEmpty") {
+    return formatFilterChip(field, defaultLabels.opNotEmpty);
+  }
+  return "";
+}
+
 /** Derive the full runtime (URL keys, chips, predicate) from definitions. */
 export function buildFilterRuntime<TRow>(
   defs: readonly FilterDef<TRow>[]
@@ -295,6 +517,7 @@ export function buildFilterRuntime<TRow>(
 
   for (const def of defs) {
     const label = filterLabel(def);
+    const opKey = filterOpKey(def.key);
     switch (def.type) {
       case "multiSelect":
         arrayExtraKeys.push(def.key);
@@ -304,19 +527,32 @@ export function buildFilterRuntime<TRow>(
         filterLabels[def.key] = (v) => `${label}: ${optionLabel(def, v)}`;
         break;
       case "text":
-        filterLabels[def.key] = (v) => `${label}: ${v}`;
+        filterLabels[def.key] = (v, extra) =>
+          textChipLabel(label, v, extra, def.key);
+        filterLabels[opKey] = (v) => emptyOpChip(label, v);
         break;
       case "dateRange": {
-        const [fromKey, toKey] = filterStateKeys(def);
-        filterLabels[fromKey!] = (v) => `${label} ≥ ${v}`;
-        filterLabels[toKey!] = (v) => `${label} ≤ ${v}`;
+        const fromKey = def.key + RANGE_SUFFIXES.dateRange.start;
+        const toKey = def.key + RANGE_SUFFIXES.dateRange.end;
+        filterLabels[fromKey] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "low", "date");
+        filterLabels[toKey] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "high", "date");
+        filterLabels[opKey] = (v) => emptyOpChip(label, v);
         break;
       }
       case "numberRange": {
-        const [minKey, maxKey] = filterStateKeys(def);
-        numberExtraKeys.push(minKey!, maxKey!);
-        filterLabels[minKey!] = (v) => `${label} ≥ ${v}`;
-        filterLabels[maxKey!] = (v) => `${label} ≤ ${v}`;
+        const minKey = def.key + RANGE_SUFFIXES.numberRange.start;
+        const maxKey = def.key + RANGE_SUFFIXES.numberRange.end;
+        numberExtraKeys.push(minKey, maxKey);
+        arrayExtraKeys.push(def.key);
+        filterLabels[minKey] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "low", "number");
+        filterLabels[maxKey] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "high", "number");
+        filterLabels[def.key] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "low", "number");
+        filterLabels[opKey] = (v) => emptyOpChip(label, v);
         break;
       }
     }

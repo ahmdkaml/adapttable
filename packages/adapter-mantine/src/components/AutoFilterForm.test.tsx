@@ -89,15 +89,21 @@ const HIRED_DEF: FilterDef<Row> = { key: "hired", type: "dateRange" };
 
 describe("<AutoFilterForm>", () => {
   it("text: shows the current value + placeholder and writes the state key", () => {
-    const { source, setExtra } = makeSource({ name: "al" });
+    const { source, setExtras } = makeSource({ name: "al" });
     renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);
     const input = screen.getByLabelText("Name");
     expect(input).toHaveValue("al");
     expect(input).toHaveAttribute("placeholder", "Find…");
     fireEvent.change(input, { target: { value: "ali" } });
-    expect(setExtra).toHaveBeenCalledWith("name", "ali");
+    expect(setExtras).toHaveBeenCalledWith({
+      name: "ali",
+      nameOp: "contains",
+    });
     fireEvent.change(input, { target: { value: "" } });
-    expect(setExtra).toHaveBeenCalledWith("name", "");
+    expect(setExtras).toHaveBeenCalledWith({
+      name: undefined,
+      nameOp: undefined,
+    });
   });
 
   it("select: prepends a clearing All option and writes the chosen value", () => {
@@ -205,6 +211,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
       target: { value: "150" },
@@ -212,6 +219,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "150",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -225,6 +233,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: "5",
+      budgetOp: "eq",
     });
   });
 
@@ -240,6 +249,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: "200",
+      budgetOp: "lte",
     });
   });
 
@@ -260,11 +270,13 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "100",
       budgetMax: "1200",
+      budgetOp: "between",
     });
     fireEvent.change(from, { target: { value: "150" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "150",
       budgetMax: "900",
+      budgetOp: "between",
     });
   });
 
@@ -279,6 +291,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
   });
 
@@ -296,6 +309,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -310,6 +324,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     expect(operator).toHaveValue("At least");
   });
@@ -338,6 +353,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-01",
       hiredTo: undefined,
+      hiredOp: "gte",
     });
   });
 
@@ -359,11 +375,13 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-15",
       hiredTo: "2026-02-01",
+      hiredOp: "between",
     });
     fireEvent.change(to, { target: { value: "2026-03-01" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-01",
       hiredTo: "2026-03-01",
+      hiredOp: "between",
     });
   });
 });

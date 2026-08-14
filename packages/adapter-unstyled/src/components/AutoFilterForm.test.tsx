@@ -161,7 +161,11 @@ describe("<AutoFilterForm> standalone", () => {
     expect(screen.getByLabelText("Value")).toHaveValue(9);
     // Switching to "At least" carries the value onto the lower bound.
     fireEvent.change(operator, { target: { value: "gte" } });
-    expect(setExtras).toHaveBeenCalledWith({ ageMin: "9", ageMax: undefined });
+    expect(setExtras).toHaveBeenCalledWith({
+      ageMin: "9",
+      ageMax: undefined,
+      ageOp: "gte",
+    });
   });
 
   it("range: each Between input patches only its own bound (empty clears it)", () => {
@@ -173,9 +177,17 @@ describe("<AutoFilterForm> standalone", () => {
       />
     );
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "12" } });
-    expect(setExtras).toHaveBeenCalledWith({ ageMin: "2", ageMax: "12" });
+    expect(setExtras).toHaveBeenCalledWith({
+      ageMin: "2",
+      ageMax: "12",
+      ageOp: "between",
+    });
     fireEvent.change(screen.getByLabelText("From"), { target: { value: "" } });
-    expect(setExtras).toHaveBeenCalledWith({ ageMin: undefined, ageMax: "9" });
+    expect(setExtras).toHaveBeenCalledWith({
+      ageMin: undefined,
+      ageMax: "9",
+      ageOp: "between",
+    });
   });
 
   it("range: dateRange uses From/To state keys and the date input type", () => {
@@ -194,6 +206,7 @@ describe("<AutoFilterForm> standalone", () => {
     expect(setExtras).toHaveBeenCalledWith({
       hiredAtFrom: undefined,
       hiredAtTo: undefined,
+      hiredAtOp: undefined,
     });
     const input = screen.getByLabelText("Value");
     expect(input).toHaveAttribute("type", "date");
@@ -202,6 +215,7 @@ describe("<AutoFilterForm> standalone", () => {
     expect(setExtras).toHaveBeenCalledWith({
       hiredAtFrom: undefined,
       hiredAtTo: "2026-01-01",
+      hiredAtOp: "lte",
     });
   });
 });

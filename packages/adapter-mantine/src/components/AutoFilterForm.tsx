@@ -1,16 +1,13 @@
 import {
   type FilterDef,
   filterLabel,
+  filterOpLabel,
   type FilterValue,
-  RANGE_OP_LABEL_KEYS,
-  RANGE_OPS,
-  RANGE_SUFFIXES,
-  type RangeOp,
-  readRangeWidget,
   type TableLabels,
   type TableSource,
   useFilterOptions,
-  writeRangeWidget,
+  useRangeFilterWidget,
+  useTextFilterWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -23,7 +20,7 @@ import {
   Stack,
   TextInput,
 } from "@mantine/core";
-import { type ReactNode, useState } from "react";
+import { type ReactNode } from "react";
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -45,101 +42,71 @@ const asList = (value: FilterValue): string[] => {
   return Array.isArray(value) ? value : [String(value)];
 };
 
-/** The select's raw option value parsed back to a known operator. */
-const asOp = (value: string | null): RangeOp | undefined =>
-  RANGE_OPS.find((op) => op === value);
-
-/** Which operator label set each range type reads. */
-const RANGE_FLAVOUR = { numberRange: "number", dateRange: "date" } as const;
-
 /**
  * The operator-first control shared by the `numberRange` / `dateRange`
- * types: pick a comparison (Equal / At least / …), then fill ONE value —
- * or From/To when "Between". The persisted state stays the inclusive
- * `Min`/`Max` (`From`/`To`) pair via {@link readRangeWidget} /
- * {@link writeRangeWidget}, so URLs, chips and predicates are unchanged.
+ * types. The operator is persisted as `f_<key>Op`.
  */
 function RangeField<TRow>({
   def,
   source,
-  kind,
   labels,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: TableSource<TRow>;
-  kind: "numberRange" | "dateRange";
   labels: Required<TableLabels>;
 }>) {
-  const label = filterLabel(def);
-  const lowKey = def.key + RANGE_SUFFIXES[kind].start;
-  const highKey = def.key + RANGE_SUFFIXES[kind].end;
-
-  // The operator is UI state seeded from the persisted pair (URL state
-  // mounts pre-selected); it wins over the derived value so a half-filled
-  // "Between" keeps showing two inputs while only one bound is stored.
-  const derived = readRangeWidget(source.extra, lowKey, highKey);
-  const [chosen, setChosen] = useState<RangeOp | null>(null);
-  const op = chosen ?? derived.op ?? null;
-
-  const low = asText(source.extra[lowKey]);
-  const high = asText(source.extra[highKey]);
-  /** The one visible value outside "Between" (`lte` stores the upper bound). */
-  const single = op === "lte" ? high : low;
-
-  const write = (nextOp: RangeOp | undefined, a: string, b: string) =>
-    source.setExtras(writeRangeWidget(nextOp, a, b, lowKey, highKey));
-
-  const handleOp = (value: string | null) => {
-    const next = asOp(value);
-    setChosen(next ?? null);
-    // Switching keeps the first value; clearing the select clears the pair.
-    write(next, single, "");
-  };
-
-  const flavour = RANGE_FLAVOUR[kind];
-  const opLabelKeys = RANGE_OP_LABEL_KEYS[flavour];
-  const data = RANGE_OPS.map((value) => ({
+  const { label, ops, opLabelKeys, inputType, arity, op, setOp, a, b, write } =
+    useRangeFilterWidget(def, source);
+  const data = ops.map((value) => ({
     value,
-    label: labels[opLabelKeys[value]],
+    label: filterOpLabel(
+      labels,
+      opLabelKeys[value as keyof typeof opLabelKeys]
+    ),
   }));
+  const handleOp = (value: string | null) => {
+    const next = ops.find((choice) => choice === value);
+    setOp(next);
+    write(next, a, b);
+  };
 
   const valueInput = (
     text: string,
-    value: string,
+    fieldValue: string,
     commit: (next: string) => void
   ) =>
-    flavour === "number" ? (
+    inputType === "number" ? (
       <NumberInput
         size="sm"
         hideControls
         style={{ flex: "1 1 6rem", minWidth: "6rem" }}
         aria-label={`${label} ${text}`}
         placeholder={text}
-        value={value}
+        value={fieldValue}
         onChange={(next) => commit(String(next))}
       />
     ) : (
       <TextInput
-        type="date"
+        type={inputType === "date" ? "date" : "text"}
         size="sm"
         style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
         aria-label={`${label} ${text}`}
         placeholder={text}
-        value={value}
+        value={fieldValue}
         onChange={(e) => commit(e.currentTarget.value)}
       />
     );
 
   let values: ReactNode = null;
-  if (op === "between") {
+  if (arity === "two") {
     values = (
       <>
-        {valueInput(labels.from, low, (next) => write("between", next, high))}
-        {valueInput(labels.to, high, (next) => write("between", low, next))}
+        {valueInput(labels.from, a, (next) => write(op, next, b))}
+        {valueInput(labels.to, b, (next) => write(op, a, next))}
       </>
     );
-  } else if (op) {
-    values = valueInput(labels.value, single, (next) => write(op, next, ""));
+  } else if (op && arity !== "none") {
+    values = valueInput(labels.value, a, (next) => write(op, next, ""));
   }
 
   return (
@@ -156,7 +123,7 @@ function RangeField<TRow>({
           aria-label={`${label} ${labels.operator}`}
           placeholder={labels.operator}
           data={data}
-          value={op}
+          value={op ?? null}
           onChange={handleOp}
           comboboxProps={{ withinPortal: false }}
         />
@@ -226,6 +193,55 @@ function MultiSelectControl<TRow>({
   );
 }
 
+/** Operator-first text filter: comparison select, then the term (if needed). */
+function TextFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: TableSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, ops, opLabelKeys, op, value, needsValue, write } =
+    useTextFilterWidget(def, source);
+  const data = ops.map((choice) => ({
+    value: choice,
+    label: filterOpLabel(labels, opLabelKeys[choice]),
+  }));
+  return (
+    <Stack gap={4}>
+      <Input.Label size="sm">{label}</Input.Label>
+      <Group gap="xs" align="flex-start">
+        <Select
+          size="sm"
+          style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
+          aria-label={`${label} ${labels.operator}`}
+          data-adapttable-part="filter-operator"
+          data={data}
+          value={op}
+          onChange={(next) => {
+            const found = ops.find((choice) => choice === next);
+            if (found) write(found, value);
+          }}
+          comboboxProps={{ withinPortal: false }}
+        />
+        {needsValue && (
+          <TextInput
+            size="sm"
+            style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+            aria-label={label}
+            data-adapttable-part="filter-input"
+            placeholder={def.placeholder}
+            value={value}
+            onChange={(e) => write(op, e.currentTarget.value)}
+          />
+        )}
+      </Group>
+    </Stack>
+  );
+}
+
 /** One labeled, kit-native control for a single filter definition. */
 function FilterControl<TRow>({
   def,
@@ -238,24 +254,14 @@ function FilterControl<TRow>({
 }>) {
   switch (def.type) {
     case "text":
-      return (
-        <TextInput
-          size="sm"
-          label={filterLabel(def)}
-          placeholder={def.placeholder}
-          value={asText(source.extra[def.key])}
-          onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
-        />
-      );
+      return <TextFilterField def={def} source={source} labels={labels} />;
     case "select":
       return <SelectControl def={def} source={source} />;
     case "multiSelect":
       return <MultiSelectControl def={def} source={source} />;
     case "dateRange":
     case "numberRange":
-      return (
-        <RangeField def={def} source={source} kind={def.type} labels={labels} />
-      );
+      return <RangeField def={def} source={source} labels={labels} />;
   }
 }
 

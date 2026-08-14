@@ -238,7 +238,7 @@ describe("declarative DataTable (MUI)", () => {
   it("text filter writes its key (and empty clears it)", () => {
     const adapter = mountTable();
     openFilters();
-    const input = screen.getByLabelText("First Name");
+    const input = screen.getByLabelText("Value");
     fireEvent.change(input, { target: { value: "car" } });
     expect(param(adapter, "f_firstName")).toBe("car");
     expect(screen.queryByText("Alice")).toBeNull();
@@ -280,20 +280,28 @@ describe("declarative DataTable (MUI)", () => {
     expect(budgetOps).toEqual([
       "",
       "Equal",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "At most",
       "Between",
+      "Is any of",
+      "Is none of",
     ]);
-    // Date flavour: on / on-or-after / on-or-before / between.
+    // Date flavour: before / after / on / on-or / between / empty.
     const hiredOps = hiredGroup()
       .getAllByRole("option")
       .map((option) => option.textContent);
     expect(hiredOps).toEqual([
       "",
+      "Before",
+      "After",
       "On",
       "On or after",
       "On or before",
       "Between",
+      "Is empty",
     ]);
     // Operator-first: no value input until a comparison is chosen.
     expect(budgetGroup().queryByLabelText("Value")).toBeNull();

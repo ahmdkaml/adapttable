@@ -174,10 +174,11 @@ surface — see [Adapter extras](#adapter-extras) and
 | `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                     |
 
 Range types persist two inclusive state keys: `dateRange` →
-`${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. The range
-widgets are operator-first (Equal / At least / At most / Between; dates: On /
-On or after / On or before / Between) — headless: `readRangeWidget`,
-`writeRangeWidget`, `RANGE_OPS`.
+`${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. Every
+operator-first widget also writes `f_<key>Op` (`TEXT_OPS` / `NUMBER_OPS` /
+`DATE_OPS`) so the comparison survives the URL and Saved Views. Headless:
+`readRangeWidget`, `writeRangeWidget`, `writeRangeFilter`,
+`useTextFilterWidget`, `useRangeFilterWidget`.
 
 ## Adapter extras
 
@@ -472,8 +473,17 @@ state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
 / `isCountFilterComplete` / `clearCountFilterExtra` /
 `sanitizeCountFilterParams`, and a chip label from `countFilterChipLabel`.
 Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
-`RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
-`RangeOpLabelKeys`. See [filtering](./filtering.md).
+`RangeFieldWidget` / `RangeOp` / `RangeOpArity` / `RANGE_SUFFIXES` /
+`RANGE_OPS` / `RANGE_OP_LABEL_KEYS` / `RangeOpLabelKeys` /
+`writeRangeFilter`. Operator registry: `TEXT_OPS` /
+`NUMBER_OPS` / `DATE_OPS` / `TEXT_OP_LABEL_KEYS` / `NUMBER_OP_LABEL_KEYS` /
+`DATE_OP_LABEL_KEYS` / `FilterOp` / `TextOp` / `NumberOp` / `DateOp` /
+`FILTER_OP_SUFFIX` / `filterOpKey` / `isFilterOpKey` /
+`isValuelessFilterOp` / `isListFilterOp` / `isBetweenFilterOp` /
+`parseTextOp` / `parseNumberOp` / `parseDateOp` /
+`readFilterOp` / `parseListOperand` / `parseNumberList` / `isEmptyRowValue` /
+`formatFilterChip` / `filterOpLabel` / `useTextFilterWidget` /
+`TextFieldWidget`. See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,

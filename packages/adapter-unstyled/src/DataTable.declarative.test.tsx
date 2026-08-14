@@ -250,17 +250,25 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(optionTexts("Age")).toEqual([
       "Vergleich",
       "Equal",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "At most",
       "Between",
+      "Is any of",
+      "Is none of",
     ]);
     // …and the date flavour swaps in the On/On-or wordings.
     expect(optionTexts("Hired At")).toEqual([
       "Vergleich",
+      "Before",
+      "After",
       "Am",
       "On or after",
       "On or before",
       "Between",
+      "Is empty",
     ]);
   });
 
@@ -386,8 +394,8 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     // One text input + the URL-restored Between pair on the number range.
     expect(count('[data-adapttable-part="filter-input"].c-input')).toBe(3);
     expect(count('[data-adapttable-part="filter-select"].c-select')).toBe(1);
-    // One operator select per range definition.
-    expect(count('[data-adapttable-part="filter-operator"].c-op')).toBe(2);
+    // One operator select per text + range definition.
+    expect(count('[data-adapttable-part="filter-operator"].c-op')).toBe(3);
     expect(
       count('[data-adapttable-part="filter-checkbox-group"].c-group')
     ).toBe(1);

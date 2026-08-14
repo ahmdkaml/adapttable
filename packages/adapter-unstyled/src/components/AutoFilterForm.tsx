@@ -1,19 +1,16 @@
 import {
   type FilterDef,
   filterLabel,
+  filterOpLabel,
   type FilterValue,
-  RANGE_OP_LABEL_KEYS,
-  RANGE_OPS,
-  RANGE_SUFFIXES,
-  type RangeOp,
-  readRangeWidget,
   resolveLabels,
   type TableLabels,
   type TableSource,
   useFilterOptions,
-  writeRangeWidget,
+  useRangeFilterWidget,
+  useTextFilterWidget,
 } from "@adapttable/core";
-import { type ReactElement, type ReactNode, useState } from "react";
+import { type ReactElement, type ReactNode } from "react";
 
 import type { DataTableClassNames } from "../types";
 
@@ -68,55 +65,56 @@ function GroupField({
   );
 }
 
-interface BagInputProps<TRow> {
-  source: TableSource<TRow>;
-  stateKey: string;
-  type: "text" | "date" | "number";
-  placeholder?: string;
-  classNames: DataTableClassNames;
-}
-
-/** One input bound to a filter-bag state key (empty text clears it). */
-function BagInput<TRow>({
-  source,
-  stateKey,
-  type,
-  placeholder,
-  classNames,
-}: Readonly<BagInputProps<TRow>>) {
-  return (
-    <input
-      type={type}
-      placeholder={placeholder}
-      data-adapttable-part="filter-input"
-      className={classNames.filterInput}
-      value={asText(source.extra[stateKey])}
-      onChange={(e) => source.setExtra(stateKey, e.currentTarget.value)}
-    />
-  );
-}
-
 function TextField<TRow>({
   def,
   source,
   classNames,
-}: Readonly<DefFieldProps<TRow>>) {
+  labels,
+}: Readonly<DefFieldProps<TRow> & { labels: Required<TableLabels> }>) {
+  const { label, ops, opLabelKeys, op, value, needsValue, write } =
+    useTextFilterWidget(def, source);
   return (
-    <label data-adapttable-part={FIELD_PART} className={classNames.filterField}>
-      <span
+    <fieldset
+      data-adapttable-part={FIELD_PART}
+      className={classNames.filterField}
+    >
+      <legend
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
       >
-        {filterLabel(def)}
-      </span>{" "}
-      <BagInput
-        source={source}
-        stateKey={def.key}
-        type="text"
-        placeholder={def.placeholder}
-        classNames={classNames}
-      />
-    </label>
+        {label}
+      </legend>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <select
+          style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
+          className={classNames.filterOperator}
+          value={op}
+          onChange={(e) => {
+            const next = ops.find((choice) => choice === e.currentTarget.value);
+            if (next) write(next, value);
+          }}
+        >
+          {ops.map((choice) => (
+            <option key={choice} value={choice}>
+              {filterOpLabel(labels, opLabelKeys[choice])}
+            </option>
+          ))}
+        </select>
+        {needsValue && (
+          <input
+            type="text"
+            aria-label={label}
+            placeholder={def.placeholder}
+            data-adapttable-part="filter-input"
+            className={classNames.filterInput}
+            value={value}
+            onChange={(e) => write(op, e.currentTarget.value)}
+          />
+        )}
+      </div>
+    </fieldset>
   );
 }
 
@@ -211,7 +209,7 @@ function MultiSelectField<TRow>({
 }
 
 interface RangeValueInputProps {
-  type: "date" | "number";
+  type: "date" | "number" | "text";
   /** Placeholder AND accessible name (`Value`, `From`, or `To`). */
   label: string;
   value: string;
@@ -242,43 +240,25 @@ function RangeValueInput({
 }
 
 interface RangeFieldProps<TRow> extends DefFieldProps<TRow> {
-  /** Input type AND the `RANGE_OP_LABEL_KEYS` flavour (number vs date). */
-  inputType: "date" | "number";
-  suffixes: { readonly start: string; readonly end: string };
   labels: Required<TableLabels>;
 }
 
 /**
  * Operator-first range field: a comparison `<select>` (its placeholder
  * option clears the pair), then ONE value input — or a labeled From/To
- * pair for `between`. The persisted state stays the inclusive
- * `<key><start>` / `<key><end>` pair, written through `setExtras`.
+ * pair for `between`. The operator is persisted as `f_<key>Op`.
  */
 function RangeField<TRow>({
   def,
   source,
   classNames,
-  inputType,
-  suffixes,
   labels,
 }: Readonly<RangeFieldProps<TRow>>) {
-  const lowKey = def.key + suffixes.start;
-  const highKey = def.key + suffixes.end;
-  // The chosen comparison is widget-local UI state (an operator with no
-  // value persists nothing); it seeds from the persisted pair, so a
-  // URL-restored pair reopens on its matching operator.
-  const [op, setOp] = useState<RangeOp | undefined>(
-    () => readRangeWidget(source.extra, lowKey, highKey).op
-  );
-  // Values stay bag-driven so chips / Clear all reset them live. The
-  // single-value operators read the bound they write — `lte` the upper.
-  const a = asText(source.extra[op === "lte" ? highKey : lowKey]);
-  const b = asText(source.extra[highKey]);
-  const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) =>
-    source.setExtras(writeRangeWidget(nextOp, nextA, nextB, lowKey, highKey));
-  const opLabelKeys = RANGE_OP_LABEL_KEYS[inputType];
+  const { label, ops, opLabelKeys, inputType, arity, op, setOp, a, b, write } =
+    useRangeFilterWidget(def, source);
+  const boundType = inputType === "text" ? "text" : inputType;
   return (
-    <GroupField caption={filterLabel(def)} classNames={classNames}>
+    <GroupField caption={label} classNames={classNames}>
       {/* Structural layout only (like the toolbar): the operator keeps a
           constant width; values fill the rest and wrap when they don't fit
           (date inputs have a wide native minimum). */}
@@ -291,29 +271,32 @@ function RangeField<TRow>({
           value={op ?? ""}
           onChange={(e) => {
             // Find (not cast) the next operator; "" → undefined → clear.
-            const next = RANGE_OPS.find((o) => o === e.currentTarget.value);
+            const next = ops.find((o) => o === e.currentTarget.value);
             setOp(next);
             write(next, a, b);
           }}
         >
           <option value="">{labels.operator}</option>
-          {RANGE_OPS.map((o) => (
+          {ops.map((o) => (
             <option key={o} value={o}>
-              {labels[opLabelKeys[o]]}
+              {filterOpLabel(
+                labels,
+                opLabelKeys[o as keyof typeof opLabelKeys]
+              )}
             </option>
           ))}
         </select>
-        {op === "between" && (
+        {arity === "two" && (
           <>
             <RangeValueInput
-              type={inputType}
+              type={boundType}
               label={labels.from}
               value={a}
               onValue={(next) => write(op, next, b)}
               classNames={classNames}
             />
             <RangeValueInput
-              type={inputType}
+              type={boundType}
               label={labels.to}
               value={b}
               onValue={(next) => write(op, a, next)}
@@ -321,9 +304,9 @@ function RangeField<TRow>({
             />
           </>
         )}
-        {op !== undefined && op !== "between" && (
+        {op !== undefined && arity !== "none" && arity !== "two" && (
           <RangeValueInput
-            type={inputType}
+            type={boundType}
             label={labels.value}
             value={a}
             onValue={(next) => write(op, next, "")}
@@ -347,7 +330,14 @@ function FilterField<TRow>({
 }: Readonly<FilterFieldProps<TRow>>): ReactElement {
   switch (def.type) {
     case "text":
-      return <TextField def={def} source={source} classNames={classNames} />;
+      return (
+        <TextField
+          def={def}
+          source={source}
+          classNames={classNames}
+          labels={labels}
+        />
+      );
     case "select":
       return <SelectField def={def} source={source} classNames={classNames} />;
     case "multiSelect":
@@ -355,24 +345,12 @@ function FilterField<TRow>({
         <MultiSelectField def={def} source={source} classNames={classNames} />
       );
     case "dateRange":
-      return (
-        <RangeField
-          def={def}
-          source={source}
-          classNames={classNames}
-          inputType="date"
-          suffixes={RANGE_SUFFIXES.dateRange}
-          labels={labels}
-        />
-      );
     case "numberRange":
       return (
         <RangeField
           def={def}
           source={source}
           classNames={classNames}
-          inputType="number"
-          suffixes={RANGE_SUFFIXES.numberRange}
           labels={labels}
         />
       );

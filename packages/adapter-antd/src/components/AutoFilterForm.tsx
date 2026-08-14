@@ -1,17 +1,13 @@
 import {
-  type ExtraFilters,
   type FilterDef,
   filterLabel,
-  filterStateKeys,
+  filterOpLabel,
   type FilterValue,
-  RANGE_OP_LABEL_KEYS,
-  RANGE_OPS,
-  type RangeOp,
-  readRangeWidget,
   type TableLabels,
   type TableSource,
   useFilterOptions,
-  writeRangeWidget,
+  useRangeFilterWidget,
+  useTextFilterWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -23,19 +19,8 @@ import {
   Spin,
   Typography,
 } from "antd";
-import { useState } from "react";
-
-/** The widget flavour — which operator wording the range select shows. */
-type RangeFlavour = keyof typeof RANGE_OP_LABEL_KEYS;
-
-/** A label key for one localized operator name, in either flavour. */
-type RangeOpLabelKey = (typeof RANGE_OP_LABEL_KEYS)[RangeFlavour][RangeOp];
-
-/** The pre-resolved strings the operator-first range widgets render. */
-export type RangeFilterLabels = Pick<
-  Required<TableLabels>,
-  "operator" | "value" | "from" | "to" | RangeOpLabelKey
->;
+/** Localized strings the operator-first widgets render. */
+export type RangeFilterLabels = Required<TableLabels>;
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -59,69 +44,27 @@ function listValue(value: FilterValue): string[] {
   return [String(value)];
 }
 
-/** A persisted range bound as input text (`""` when unset). */
-function boundValue(value: FilterValue): string {
-  return typeof value === "string" || typeof value === "number"
-    ? String(value)
-    : "";
-}
-
-interface RangeFieldProps {
-  /** The filter's display label — prefixes each control's aria-label. */
-  label: string;
-  /** Number vs date wording for the operator choices. */
-  flavour: RangeFlavour;
-  /** State key of the inclusive lower bound (`…Min` / `…From`). */
-  lowKey: string;
-  /** State key of the inclusive upper bound (`…Max` / `…To`). */
-  highKey: string;
-  extra: ExtraFilters;
-  setExtras: (updates: ExtraFilters) => void;
-  labels: RangeFilterLabels;
-}
-
 /**
- * The operator-first range control shared by `numberRange` and `dateRange`:
- * pick the comparison, then fill ONE value — or a From/To pair for
- * "Between". The persisted state stays the inclusive low/high pair
- * (`readRangeWidget` / `writeRangeWidget`), so URLs, chips, predicates and
- * the server query contract are unchanged; only the entry UX is new. The
- * operator itself is local UI state — choosing one before typing a value
- * persists nothing, and clearing the select clears the whole pair.
+ * The operator-first range control shared by `numberRange` and `dateRange`.
+ * The operator is persisted as `f_<key>Op`.
  */
-function RangeField({
-  label,
-  flavour,
-  lowKey,
-  highKey,
-  extra,
-  setExtras,
+function RangeField<TRow>({
+  def,
+  source,
   labels,
-}: Readonly<RangeFieldProps>) {
-  const [op, setOp] = useState<RangeOp | undefined>(
-    () => readRangeWidget(extra, lowKey, highKey).op
-  );
-  const low = boundValue(extra[lowKey]);
-  const high = boundValue(extra[highKey]);
-  // Single-input ops keep their value on one side of the pair: `lte` the
-  // upper bound, everything else the lower (`eq` mirrors it to both).
-  const single = op === "lte" ? high : low;
-  const apply = (nextOp: RangeOp | undefined, a: string, b: string) => {
-    setExtras(writeRangeWidget(nextOp, a, b, lowKey, highKey));
-  };
-  const changeOp = (next: RangeOp | undefined) => {
-    setOp(next);
-    // Carry the value(s) already entered into the new comparison; clearing
-    // the operator (allowClear) clears the persisted pair with it.
-    if (next === "between") apply(next, low, high);
-    else apply(next, single, "");
-  };
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: AutoFilterFormProps<TRow>["source"];
+  labels: RangeFilterLabels;
+}>) {
+  const { label, ops, opLabelKeys, inputType, arity, op, setOp, a, b, write } =
+    useRangeFilterWidget(def, source);
   const input = (
     suffix: string,
     value: string,
     commit: (next: string) => void
   ) => {
-    if (flavour === "number") {
+    if (inputType === "number") {
       return (
         <InputNumber
           size="small"
@@ -137,7 +80,7 @@ function RangeField({
       <Input
         style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
         size="small"
-        type="date"
+        type={inputType === "date" ? "date" : "text"}
         aria-label={`${label} ${suffix}`}
         placeholder={suffix}
         value={value}
@@ -149,30 +92,84 @@ function RangeField({
     // Operator and value(s) share a row when they fit and wrap when they
     // don't (date inputs have a wide native minimum).
     <Flex gap={8} wrap style={{ position: "relative" }}>
-      <Select<RangeOp | undefined>
+      <Select
         size="small"
         allowClear
         style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         aria-label={`${label} ${labels.operator}`}
         placeholder={labels.operator}
         value={op}
-        onChange={changeOp}
+        onChange={(next) => {
+          const found = ops.find((choice) => choice === next);
+          setOp(found);
+          write(found, a, b);
+        }}
         // Keep the dropdown inside this (position: relative) field so it
         // never counts as an outside click for the hosting popover.
         getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
-        options={RANGE_OPS.map((choice) => ({
+        options={ops.map((choice) => ({
           value: choice,
-          label: labels[RANGE_OP_LABEL_KEYS[flavour][choice]],
+          label: filterOpLabel(
+            labels,
+            opLabelKeys[choice as keyof typeof opLabelKeys]
+          ),
         }))}
       />
       {op !== undefined &&
-        op !== "between" &&
-        input(labels.value, single, (next) => apply(op, next, ""))}
-      {op === "between" && (
+        arity !== "none" &&
+        arity !== "two" &&
+        input(labels.value, a, (next) => write(op, next, ""))}
+      {arity === "two" && (
         <>
-          {input(labels.from, low, (next) => apply("between", next, high))}
-          {input(labels.to, high, (next) => apply("between", low, next))}
+          {input(labels.from, a, (next) => write(op, next, b))}
+          {input(labels.to, b, (next) => write(op, a, next))}
         </>
+      )}
+    </Flex>
+  );
+}
+
+/** Operator-first text filter: comparison select, then the term (if needed). */
+function TextFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: AutoFilterFormProps<TRow>["source"];
+  labels: RangeFilterLabels;
+}>) {
+  const { ops, opLabelKeys, op, value, needsValue, write } =
+    useTextFilterWidget(def, source);
+  const label = filterLabel(def);
+  return (
+    <Flex gap={8} wrap style={{ position: "relative" }}>
+      <Select
+        size="small"
+        style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
+        aria-label={`${label} ${labels.operator}`}
+        data-adapttable-part="filter-operator"
+        value={op}
+        onChange={(next) => {
+          const found = ops.find((choice) => choice === next);
+          if (found) write(found, value);
+        }}
+        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
+        options={ops.map((choice) => ({
+          value: choice,
+          label: filterOpLabel(labels, opLabelKeys[choice]),
+        }))}
+      />
+      {needsValue && (
+        <Input
+          size="small"
+          aria-label={label}
+          data-adapttable-part="filter-input"
+          placeholder={def.placeholder}
+          value={value}
+          onChange={(event) => write(op, event.target.value)}
+          style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+        />
       )}
     </Flex>
   );
@@ -204,15 +201,7 @@ function FilterControl<TRow>({
   const { extra, setExtra } = source;
   switch (def.type) {
     case "text":
-      return (
-        <Input
-          size="small"
-          aria-label={label}
-          placeholder={def.placeholder}
-          value={scalarValue(extra[def.key])}
-          onChange={(event) => setExtra(def.key, event.target.value)}
-        />
-      );
+      return <TextFilterField def={def} source={source} labels={labels} />;
     case "select":
       // A native select (antd-styled) instead of antd's portal-driven
       // <Select>, so the control works anywhere the popover renders.
@@ -249,20 +238,8 @@ function FilterControl<TRow>({
         />
       );
     case "dateRange":
-    case "numberRange": {
-      const [lowKey, highKey] = filterStateKeys(def);
-      return (
-        <RangeField
-          label={label}
-          flavour={def.type === "numberRange" ? "number" : "date"}
-          lowKey={lowKey!}
-          highKey={highKey!}
-          extra={extra}
-          setExtras={source.setExtras}
-          labels={labels}
-        />
-      );
-    }
+    case "numberRange":
+      return <RangeField def={def} source={source} labels={labels} />;
   }
 }
 

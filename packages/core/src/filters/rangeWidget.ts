@@ -1,22 +1,32 @@
 import type { ExtraFilters, FilterValue } from "../types";
+import {
+  DATE_OP_LABEL_KEYS,
+  type DateOp,
+  filterOpKey,
+  isListFilterOp,
+  isValuelessFilterOp,
+  NUMBER_OP_LABEL_KEYS,
+  type NumberOp,
+  parseDateOp,
+  parseListOperand,
+  parseNumberOp,
+} from "./operators";
 
 /**
- * Operator choices for the auto-built range widgets (`numberRange` /
- * `dateRange`). The widget is operator-first — pick the comparison, then
- * fill ONE value (or two for `between`) — but the persisted state stays
- * the inclusive `Min`/`Max` (`From`/`To`) pair, so URLs, chips, predicates
- * and the server-tier query contract are unchanged.
+ * Historical four-operator set. New code should use {@link NUMBER_OPS} /
+ * {@link DATE_OPS}; this list stays exported so existing imports keep
+ * type-checking while the widgets read the flavour-specific lists.
  */
 export const RANGE_OPS = ["eq", "gte", "lte", "between"] as const;
 
-/** One range-widget comparison operator. */
-export type RangeOp = (typeof RANGE_OPS)[number];
+/** One range-widget comparison operator (number or date). */
+export type RangeOp = NumberOp | DateOp;
 
 /** The widget's view of a range: an operator plus its bound(s). */
 export interface RangeWidgetState {
   /** Selected comparison, or `undefined` while nothing is chosen. */
   op: RangeOp | undefined;
-  /** The single value (`eq`/`gte`/`lte`) or the lower bound (`between`). */
+  /** The single value, the lower bound (`between`), or the list text. */
   a: string;
   /** The upper bound (`between` only). */
   b: string;
@@ -25,26 +35,75 @@ export interface RangeWidgetState {
 const text = (value: FilterValue | undefined): string =>
   value == null ? "" : String(value);
 
-/**
- * Derive the widget state from the persisted pair: both bounds equal →
- * `eq`, both present → `between`, lower only → `gte`, upper only → `lte`,
- * none → no operator yet.
- */
-export function readRangeWidget(
+const asOpValue = (raw: string): FilterValue => (raw === "" ? undefined : raw);
+
+function readStoredRangeOp(
+  extra: ExtraFilters,
+  stored: RangeOp,
+  lowKey: string,
+  highKey: string,
+  listKey?: string
+): RangeWidgetState {
+  if (stored === "in" || stored === "notIn") {
+    return {
+      op: stored,
+      a: parseListOperand(listKey ? extra[listKey] : undefined).join(", "),
+      b: "",
+    };
+  }
+  if (stored === "empty") {
+    return { op: stored, a: "", b: "" };
+  }
+  const low = text(extra[lowKey]);
+  const high = text(extra[highKey]);
+  if (stored === "lte" || stored === "lt" || stored === "before") {
+    return { op: stored, a: high || low, b: "" };
+  }
+  if (stored === "between") {
+    return { op: stored, a: low, b: high };
+  }
+  return { op: stored, a: low || high, b: "" };
+}
+
+function inferRangeFromPair(
   extra: ExtraFilters,
   lowKey: string,
-  highKey: string
+  highKey: string,
+  flavour?: "number" | "date"
 ): RangeWidgetState {
   const low = text(extra[lowKey]);
   const high = text(extra[highKey]);
   if (low !== "" && high !== "") {
     return low === high
-      ? { op: "eq", a: low, b: "" }
+      ? { op: flavour === "date" ? "on" : "eq", a: low, b: "" }
       : { op: "between", a: low, b: high };
   }
   if (low !== "") return { op: "gte", a: low, b: "" };
-  if (high !== "") return { op: "lte", a: "", b: high };
+  if (high !== "") return { op: "lte", a: high, b: "" };
   return { op: undefined, a: "", b: "" };
+}
+
+/**
+ * Derive the widget state. A stored `f_<key>Op` wins; without it the
+ * inclusive pair still infers `eq` / `gte` / `lte` / `between` so links
+ * written before operators were persisted keep opening on the right
+ * comparison.
+ */
+export function readRangeWidget(
+  extra: ExtraFilters,
+  lowKey: string,
+  highKey: string,
+  opKey?: string,
+  listKey?: string,
+  flavour?: "number" | "date"
+): RangeWidgetState {
+  const stored = opKey
+    ? (parseNumberOp(extra[opKey]) ?? parseDateOp(extra[opKey]))
+    : undefined;
+  if (stored) {
+    return readStoredRangeOp(extra, stored, lowKey, highKey, listKey);
+  }
+  return inferRangeFromPair(extra, lowKey, highKey, flavour);
 }
 
 /**
@@ -58,33 +117,71 @@ export function writeRangeWidget(
   lowKey: string,
   highKey: string
 ): ExtraFilters {
-  const value = (raw: string): FilterValue => (raw === "" ? undefined : raw);
   switch (op) {
     case "eq":
-      return { [lowKey]: value(a), [highKey]: value(a) };
+    case "on":
+      return { [lowKey]: asOpValue(a), [highKey]: asOpValue(a) };
     case "gte":
-      return { [lowKey]: value(a), [highKey]: undefined };
+    case "gt":
+    case "after":
+    case "neq":
+      return { [lowKey]: asOpValue(a), [highKey]: undefined };
     case "lte":
-      return { [lowKey]: undefined, [highKey]: value(a) };
+    case "lt":
+    case "before":
+      return { [lowKey]: undefined, [highKey]: asOpValue(a) };
     case "between":
-      return { [lowKey]: value(a), [highKey]: value(b) };
+      return { [lowKey]: asOpValue(a), [highKey]: asOpValue(b) };
     default:
       return { [lowKey]: undefined, [highKey]: undefined };
   }
 }
 
+/**
+ * Persist an operator-first range (or list) filter: the inclusive pair,
+ * the list key for `in` / `notIn`, and the readable `f_<key>Op` token.
+ */
+export function writeRangeFilter(
+  op: RangeOp | undefined,
+  a: string,
+  b: string,
+  lowKey: string,
+  highKey: string,
+  key: string
+): ExtraFilters {
+  const opKey = filterOpKey(key);
+  if (!op) {
+    return {
+      ...writeRangeWidget(undefined, "", "", lowKey, highKey),
+      [opKey]: undefined,
+    };
+  }
+  if (isValuelessFilterOp(op)) {
+    return {
+      ...writeRangeWidget(undefined, "", "", lowKey, highKey),
+      [key]: undefined,
+      [opKey]: op,
+    };
+  }
+  if (isListFilterOp(op)) {
+    const entries = parseListOperand(a);
+    return {
+      ...writeRangeWidget(undefined, "", "", lowKey, highKey),
+      [key]: entries.length > 0 ? entries : undefined,
+      [opKey]: entries.length > 0 ? op : undefined,
+    };
+  }
+  const pair = writeRangeWidget(op, a, b, lowKey, highKey);
+  const active = a !== "" || (op === "between" && b !== "");
+  return {
+    ...pair,
+    [opKey]: active ? op : undefined,
+  };
+}
+
 /** Label keys for each operator, per widget flavour (numbers vs dates). */
 export const RANGE_OP_LABEL_KEYS = {
-  number: {
-    eq: "opEqual",
-    gte: "opAtLeast",
-    lte: "opAtMost",
-    between: "opBetween",
-  },
-  date: {
-    eq: "opOn",
-    gte: "opOnOrAfter",
-    lte: "opOnOrBefore",
-    between: "opBetween",
-  },
+  number: NUMBER_OP_LABEL_KEYS,
+  /** `eq` stays as the historical spelling of `on` for existing widgets. */
+  date: { ...DATE_OP_LABEL_KEYS, eq: "opOn" },
 } as const;

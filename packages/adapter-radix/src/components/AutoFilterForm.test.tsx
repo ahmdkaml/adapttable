@@ -58,14 +58,17 @@ function triggerText(name: string): string {
 
 describe("<AutoFilterForm> (Radix)", () => {
   it("text: labels from the humanized key, shows the placeholder, writes the key", () => {
-    const { setExtra } = renderForm([
+    const { setExtras } = renderForm([
       { key: "firstName", type: "text", placeholder: "Type a name" },
     ]);
     const input = screen.getByLabelText("First Name");
     expect(input).toHaveAttribute("placeholder", "Type a name");
     expect(input).toHaveValue("");
     fireEvent.change(input, { target: { value: "ali" } });
-    expect(setExtra).toHaveBeenCalledWith("firstName", "ali");
+    expect(setExtras).toHaveBeenCalledWith({
+      firstName: "ali",
+      firstNameOp: "contains",
+    });
   });
 
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
@@ -139,10 +142,13 @@ describe("<AutoFilterForm> (Radix)", () => {
     // placeholder doubling as the clear option.
     expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Operator",
+      "Before",
+      "After",
       "On",
       "On or after",
       "On or before",
       "Between",
+      "Is empty",
     ]);
     // Close the popup before reaching for the value input.
     fireEvent.keyDown(document.body, { key: "Escape" });
@@ -153,6 +159,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       hiredAtFrom: "2026-02-01",
       hiredAtTo: undefined,
+      hiredAtOp: "gte",
     });
   });
 
@@ -173,9 +180,14 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Vergleich",
       "Gleich",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "Höchstens",
       "Zwischen",
+      "Is any of",
+      "Is none of",
     ]);
     fireEvent.keyDown(document.body, { key: "Escape" });
     // No operator picked yet → no value input.
@@ -192,6 +204,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -204,6 +217,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "10",
       budgetMax: "10",
+      budgetOp: "eq",
     });
   });
 
@@ -219,6 +233,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: "7",
+      budgetOp: "lte",
     });
   });
 
@@ -236,11 +251,13 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "2",
       budgetMax: "9",
+      budgetOp: "between",
     });
     fireEvent.change(from, { target: { value: "3" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "3",
       budgetMax: "8",
+      budgetOp: "between",
     });
   });
 
@@ -265,6 +282,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     // Back to the untouched widget: operator placeholder, no value input.
     expect(triggerText("Operator")).toBe("Operator");
@@ -277,7 +295,11 @@ describe("<AutoFilterForm> (Radix)", () => {
       budgetMax: 5,
     });
     pickOption("Operator", "Between");
-    expect(setExtras).toHaveBeenCalledWith({ budgetMin: "5", budgetMax: "5" });
+    expect(setExtras).toHaveBeenCalledWith({
+      budgetMin: "5",
+      budgetMax: "5",
+      budgetOp: "between",
+    });
   });
 
   it("select: shows one disabled placeholder option while async options load", async () => {

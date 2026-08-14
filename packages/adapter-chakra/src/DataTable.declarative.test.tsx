@@ -111,7 +111,7 @@ describe("<DataTable> declarative tiers (Chakra)", () => {
     expect(screen.getByText("Carol")).toBeInTheDocument();
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.queryByText("Bob")).toBeNull();
-    expect(screen.getByText("Age ≥ 40")).toBeInTheDocument();
+    expect(screen.getByText("Age At least 40")).toBeInTheDocument();
   });
 
   it("restores Equal from a URL where both range keys carry the same value", async () => {

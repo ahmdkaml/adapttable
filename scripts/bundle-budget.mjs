@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 62,
+    budgetKB: 65,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -153,14 +153,21 @@ const FIXTURES = [
   // `enableColumnMenu` — omit it and the menu does not render — but
   // every kit's ColumnMenu is on the same always-imported path.
   // `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 93 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 92 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 93 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 89 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 93 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 99 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 95 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 92 },
+  //
+  // Rich filter operators (~1.5 KB) put the per-datatype registry, the
+  // operator-first widgets, and `f_<key>Op` persistence on the filter
+  // form every kit already imports. The host still opts in with a
+  // `filters` array — omit it and no widget renders — but the
+  // comparison tokens ride the same AutoFilterForm path. `core ·
+  // simple table` stayed at 11.7 KB of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 95 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 95 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 94 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 91 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 94 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 101 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 97 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 94 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

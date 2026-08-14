@@ -417,6 +417,32 @@ export interface TableLabels {
   opOnOrAfter?: string;
   /** Date operator: on or before the day. */
   opOnOrBefore?: string;
+  /** Comparison: not equal. */
+  opNotEqual?: string;
+  /** Number operator: strictly greater than. */
+  opGreater?: string;
+  /** Number operator: strictly less than. */
+  opLess?: string;
+  /** Text operator: contains the term. */
+  opContains?: string;
+  /** Text operator: does not contain the term. */
+  opNotContains?: string;
+  /** Text operator: starts with the term. */
+  opStartsWith?: string;
+  /** Text operator: ends with the term. */
+  opEndsWith?: string;
+  /** Operator: the value is empty. */
+  opEmpty?: string;
+  /** Operator: the value is not empty. */
+  opNotEmpty?: string;
+  /** Number operator: is any of a list. */
+  opIn?: string;
+  /** Number operator: is none of a list. */
+  opNotIn?: string;
+  /** Date operator: strictly before the day. */
+  opBefore?: string;
+  /** Date operator: strictly after the day. */
+  opAfter?: string;
   /** Saved-views menu trigger / list title. */
   savedViews?: string;
   /** Save-current-view action. */

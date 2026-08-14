@@ -863,6 +863,12 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
   const s = STRINGS[locale];
   return [
     {
+      key: "name",
+      type: "text",
+      label: s.person,
+      getValue: (row) => row.name,
+    },
+    {
       key: "team",
       type: "multiSelect",
       label: s.team,

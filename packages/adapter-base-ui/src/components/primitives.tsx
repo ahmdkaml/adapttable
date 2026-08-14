@@ -121,6 +121,7 @@ export function NativeSelect({
   options,
   width,
   "aria-label": ariaLabel,
+  "data-adapttable-part": part,
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
@@ -129,6 +130,7 @@ export function NativeSelect({
   options: readonly SelectOption[];
   width?: string;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
 }>) {
   const selected = value === "" ? EMPTY_VALUE : value;
   const items = Object.fromEntries(
@@ -147,6 +149,7 @@ export function NativeSelect({
     >
       <Select.Trigger
         aria-label={ariaLabel}
+        data-adapttable-part={part}
         className="adapttable-btn"
         data-size={size}
         data-variant="outline"

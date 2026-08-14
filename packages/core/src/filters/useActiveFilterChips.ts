@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { FilterValue } from "../types";
+import type { ExtraFilters, FilterValue } from "../types";
 
 /** A single removable filter chip. */
 export interface ActiveFilterChip {
@@ -13,7 +13,7 @@ export interface ActiveFilterChip {
 }
 
 /** Translate a single raw filter value into a chip label. */
-export type ChipLabelResolver = (value: string) => string;
+export type ChipLabelResolver = (value: string, extra?: ExtraFilters) => string;
 
 /**
  * Merge a table's derived filter chips with caller-supplied `extraChips`,
@@ -70,6 +70,17 @@ export interface UseActiveFilterChipsOptions {
  * @param options - See {@link UseActiveFilterChipsOptions}.
  * @returns The derived chips, memoised on their inputs.
  */
+function pushChip(
+  chips: ActiveFilterChip[],
+  key: string,
+  entry: string,
+  label: string,
+  onRemove: () => void
+): void {
+  if (!label) return;
+  chips.push({ key: `${key}:${entry}`, label, onRemove });
+}
+
 export function useActiveFilterChips({
   values,
   labels,
@@ -87,22 +98,16 @@ export function useActiveFilterChips({
       }
       if (Array.isArray(value)) {
         for (const entry of value) {
-          chips.push({
-            key: `${key}:${entry}`,
-            label: resolve(entry),
-            onRemove: () => {
-              const remaining = value.filter((v) => v !== entry);
-              onChange(key, remaining.length > 0 ? remaining : undefined);
-            },
+          pushChip(chips, key, entry, resolve(entry, values), () => {
+            const remaining = value.filter((v) => v !== entry);
+            onChange(key, remaining.length > 0 ? remaining : undefined);
           });
         }
       } else {
         const text = String(value);
-        chips.push({
-          key: `${key}:${text}`,
-          label: resolve(text),
-          onRemove: () => onChange(key, undefined),
-        });
+        pushChip(chips, key, text, resolve(text, values), () =>
+          onChange(key, undefined)
+        );
       }
     }
     return chips;
