@@ -95,4 +95,28 @@ describe("RowReorderButtons", () => {
     fireEvent.click(screen.getByRole("button", { name: "Move row down" }));
     expect(onRowReorder).toHaveBeenCalledExactlyOnceWith(0, 1, ROW);
   });
+
+  it("moves up from a later card", () => {
+    const onRowReorder = vi.fn();
+    const { result } = renderHook(() =>
+      useRowReorder<Task>({
+        enabled: true,
+        onRowReorder,
+        labels: LABELS,
+        rowAt: () => ROW,
+      })
+    );
+    render(
+      <RowReorderButtons
+        reorder={result.current}
+        labels={LABELS}
+        localIndex={1}
+        row={ROW}
+        windowStart={0}
+        rowCount={3}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Move row up" }));
+    expect(onRowReorder).toHaveBeenCalledExactlyOnceWith(1, 0, ROW);
+  });
 });

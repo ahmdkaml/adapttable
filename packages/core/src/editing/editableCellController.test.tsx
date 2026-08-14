@@ -2,9 +2,11 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
+import { useDirtyCells } from "./dirtyCells";
 import {
   editableCellController,
   rowEditingSignature,
+  rowIsDirty,
 } from "./editableCellController";
 import type { EditLifecycle } from "./editingEvents";
 import { useCellSaveState } from "./saveState";
@@ -107,6 +109,31 @@ describe("editableCellController", () => {
     );
     expect(onCellEdit).toHaveBeenCalledWith(ROWS[0], "name", "Augusta");
     expect(result.current.active).toBeNull();
+  });
+});
+
+describe("rowIsDirty", () => {
+  it("is false without a dirty tracker and true when that row is dirty", () => {
+    expect(rowIsDirty(undefined, "1")).toBe(false);
+    const { result } = renderHook(() => {
+      const state = useCellEditing();
+      const dirty = useDirtyCells({ enabled: true });
+      return { state, dirty };
+    });
+    const onCellEdit = vi.fn();
+    expect(rowIsDirty({ onCellEdit, state: result.current.state }, "1")).toBe(
+      false
+    );
+    act(() => {
+      result.current.dirty.mark("1", "name");
+    });
+    const editing = {
+      onCellEdit,
+      state: result.current.state,
+      dirty: result.current.dirty,
+    };
+    expect(rowIsDirty(editing, "1")).toBe(true);
+    expect(rowIsDirty(editing, "2")).toBe(false);
   });
 });
 

@@ -5,7 +5,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { useFindInTable } from "./useFindInTable";
+import { useFindFocus, useFindInTable } from "./useFindInTable";
 
 interface Row {
   id: string;
@@ -122,6 +122,32 @@ describe("useFindInTable", () => {
       result.current.setQuery("ada");
     });
     expect(result.current.index).toBe(0);
+  });
+
+  it("opens the bar through openBar, the way Ctrl/Cmd+F does", () => {
+    const { result } = setup();
+    expect(result.current.open).toBe(false);
+    act(() => {
+      result.current.openBar?.();
+    });
+    expect(result.current.open).toBe(true);
+  });
+
+  it("focuses and selects the current match", () => {
+    const focusCell = vi.fn();
+    const selectRange = vi.fn();
+    let current: { row: number; col: number } | null = null;
+    const { rerender } = renderHook(() =>
+      useFindFocus(current, focusCell, selectRange)
+    );
+    expect(focusCell).not.toHaveBeenCalled();
+    current = { row: 1, col: 0 };
+    rerender();
+    expect(focusCell).toHaveBeenCalledWith({ row: 1, col: 0 });
+    expect(selectRange).toHaveBeenCalledWith({
+      anchor: { row: 1, col: 0 },
+      head: { row: 1, col: 0 },
+    });
   });
 
   it("stays shut when the feature is off", () => {

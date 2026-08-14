@@ -135,6 +135,23 @@ describe("buildBodyCells", () => {
     ]);
   });
 
+  it("extends a column span across columns that share a pin side", () => {
+    const map = buildBodyCells({
+      rows: [ROWS[0]!],
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: ({ column }) =>
+        column.key === "name" ? { colSpan: 3 } : undefined,
+      pinOffset: (key) =>
+        key === "city" ? undefined : { side: "start", inset: 0 },
+    });
+    expect(cellsForRow(map, "a")[0]?.colSpan).toBe(2);
+    expect(cellsForRow(map, "a").map((cell) => cell.column.key)).toEqual([
+      "name",
+      "city",
+    ]);
+  });
+
   it("clips a column span at a pin boundary", () => {
     const map = buildBodyCells({
       rows: [ROWS[0]!],
@@ -167,6 +184,47 @@ describe("buildBodyCells", () => {
     expect(cells[0]?.column.key).toBe("team");
     expect(cells[0]?.colSpan).toBe(2);
     expect(cells[0]?.columnIndex).toBe(1);
+  });
+
+  it("drops a span whose columns all sit outside the window", () => {
+    const map = buildBodyCells({
+      rows: [ROWS[0]!],
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: ({ column }) =>
+        column.key === "name" ? { colSpan: 2 } : undefined,
+      windowKeys: new Set(["city"]),
+    });
+    expect(cellsForRow(map, "a").map((cell) => cell.column.key)).toEqual([
+      "city",
+    ]);
+  });
+
+  it("continues a row span whose origin column is off the window", () => {
+    const map = buildBodyCells({
+      rows: ROWS.slice(0, 2),
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: ({ column, rowIndex }) =>
+        column.key === "name" && rowIndex === 0
+          ? { colSpan: 2, rowSpan: 2 }
+          : undefined,
+      windowKeys: new Set(["team", "city"]),
+    });
+    const continued = cellsForRow(map, "b");
+    expect(continued.map((cell) => cell.column.key)).toEqual(["team", "city"]);
+    expect(continued[0]?.rowSpan).toBe(1);
+    expect(continued[0]?.colSpan).toBe(1);
+  });
+
+  it("maps every row to no cells when the table has no columns", () => {
+    const map = buildBodyCells({
+      rows: ROWS,
+      columns: [],
+      getRowId: id,
+    });
+    expect([...map.keys()]).toEqual(["a", "b", "c"]);
+    expect(cellsForRow(map, "a")).toEqual([]);
   });
 });
 

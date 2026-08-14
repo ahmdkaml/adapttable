@@ -181,6 +181,8 @@ describe("column menu 2.0", () => {
     );
     sortActs.find((a) => a.id === "sort-asc")!.run();
     expect(onSortColumn).toHaveBeenCalledWith("b", "asc");
+    sortActs.find((a) => a.id === "sort-desc")!.run();
+    expect(onSortColumn).toHaveBeenCalledWith("b", "desc");
     const filterActs = columnMenuActions(rows[2]!, {
       labels: defaultLabels,
       layout: l,
@@ -188,5 +190,38 @@ describe("column menu 2.0", () => {
     });
     filterActs.find((a) => a.id === "filter")!.run();
     expect(onFilterColumn).toHaveBeenCalledWith("c");
+  });
+
+  it("runs pin, hide, autosize and reset from the submenu", () => {
+    const setPinned = vi.fn();
+    const toggleVisible = vi.fn();
+    const setHidden = vi.fn();
+    const setWidth = vi.fn();
+    const onAutoSizeColumn = vi.fn();
+    const l = layout(["b"], { b: "start" });
+    l.setPinned = setPinned;
+    l.toggleVisible = toggleVisible;
+    l.setHidden = setHidden;
+    l.setWidth = setWidth;
+    const row = columnMenuRows(locked, l)[1]!;
+    const acts = columnMenuActions(row, {
+      labels: defaultLabels,
+      layout: l,
+      onAutoSizeColumn,
+    });
+    acts.find((a) => a.id === "pin-start")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", "start");
+    acts.find((a) => a.id === "pin-end")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", "end");
+    acts.find((a) => a.id === "unpin")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    acts.find((a) => a.id === "show")!.run();
+    expect(toggleVisible).toHaveBeenCalledWith("b");
+    acts.find((a) => a.id === "auto-size")!.run();
+    expect(onAutoSizeColumn).toHaveBeenCalledWith("b");
+    acts.find((a) => a.id === "reset")!.run();
+    expect(setHidden).toHaveBeenCalledWith("b", false);
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    expect(setWidth).toHaveBeenCalledWith("b", undefined);
   });
 });

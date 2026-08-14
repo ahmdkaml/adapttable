@@ -57,6 +57,7 @@ function Grid(props: {
   onFill?: (edits: CellEdit<Row>[]) => void;
   onUndo?: () => number;
   onRedo?: () => number;
+  onFind?: () => void;
   /** Columns a paste is allowed to write into. */
   editable?: boolean;
 }) {
@@ -77,6 +78,7 @@ function Grid(props: {
     onFill: props.onFill,
     onUndo: props.onUndo,
     onRedo: props.onRedo,
+    onFind: props.onFind,
   });
   const first = props.firstRowIndex ?? 0;
   const rendered =
@@ -829,5 +831,13 @@ describe("useGridFocus — undo and redo keys", () => {
     cellAt(0, 0)!.focus();
     fireEvent.keyDown(cellAt(0, 0)!, { key: "z", ctrlKey: true });
     expect(document.querySelector("output")?.textContent).toBe("");
+  });
+
+  it("opens find on Ctrl/Cmd+F when the table has a find bar", () => {
+    const onFind = vi.fn();
+    render(<Grid rows={makeRows(3)} onFind={onFind} />);
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "f", ctrlKey: true });
+    expect(onFind).toHaveBeenCalledOnce();
   });
 });

@@ -114,6 +114,22 @@ describe("clipboardRangeText", () => {
     expect(text).toBe("1240");
   });
 
+  it("copies an empty field when exportValue is not a primitive", () => {
+    const text = clipboardRangeText({
+      range: range([0, 0], [0, 0]),
+      rows: ROWS,
+      columns: [
+        {
+          key: "name",
+          header: "Name",
+          accessor: (row) => row.name,
+          exportValue: () => ({ nested: 1 }),
+        },
+      ],
+    });
+    expect(text).toBe("");
+  });
+
   it("writes nothing when the range names no rendered column", () => {
     expect(
       clipboardRangeText({

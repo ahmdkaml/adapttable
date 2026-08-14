@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   resolveVirtualRows,
+  rowSourceIndex,
   useKeyedVirtualization,
   useTableVirtualization,
   virtualColumnSpan,
@@ -26,6 +27,13 @@ const rows: Row[] = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 const rowKey = (row: Row) => row.id;
+
+describe("rowSourceIndex", () => {
+  it("uses the pinned source index and otherwise the window index", () => {
+    expect(rowSourceIndex({ index: 7 })).toBe(7);
+    expect(rowSourceIndex({ index: 0, sourceIndex: 3 })).toBe(3);
+  });
+});
 
 describe("useTableVirtualization", () => {
   beforeEach(() => {

@@ -190,6 +190,22 @@ describe("useEditConflict", () => {
     expect(result.current.current).toBeNull();
   });
 
+  it("clears when the live row matches the opened snapshot again", () => {
+    const { result } = renderHook(() => useEditConflict<Task>());
+    act(() => {
+      result.current.reconcile({ ...base, policy: "ask" });
+    });
+    expect(result.current.current).not.toBeNull();
+    act(() => {
+      result.current.reconcile({
+        ...base,
+        rows: [OPENED],
+        policy: "ask",
+      });
+    });
+    expect(result.current.current).toBeNull();
+  });
+
   it("keep and take are no-ops while idle", () => {
     const { result } = renderHook(() => useEditConflict<Task>());
     act(() => {

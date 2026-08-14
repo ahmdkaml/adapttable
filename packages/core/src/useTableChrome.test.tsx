@@ -658,3 +658,81 @@ describe("useTableChrome — the whole-tree grouping actions", () => {
     );
   });
 });
+
+describe("useTableChrome — row mutations and lazy tree", () => {
+  it("appends duplicate and delete after the host's own row actions", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        rowActions: [{ key: "edit", label: "Edit", onClick: () => undefined }],
+        onDuplicateRow: vi.fn(),
+        onDeleteRow: vi.fn(),
+      });
+    });
+    expect(result.current.rowActions?.map((action) => action.key)).toEqual([
+      "edit",
+      "adapttable:duplicate-row",
+      "adapttable:delete-row",
+    ]);
+  });
+
+  it("loads children when a collapsed lazy node is opened", () => {
+    const onLoadChildren = vi.fn().mockResolvedValue(undefined);
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        getChildren: (row) => (row.id === "a" ? [] : undefined),
+        hasChildren: (row) => row.id === "a",
+        onLoadChildren,
+      });
+    });
+    expect(result.current.tree?.entries[0]?.expanded).toBe(false);
+    act(() => {
+      result.current.tree?.expansion.toggle("a");
+    });
+    expect(onLoadChildren).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("does not reload a flat node whose children are already in the rows", () => {
+    const onLoadChildren = vi.fn().mockResolvedValue(undefined);
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        getParentId: (row) => (row.id === "b" ? "a" : undefined),
+        hasChildren: (row) => row.id === "a",
+        onLoadChildren,
+      });
+    });
+    act(() => {
+      result.current.tree?.expansion.toggle("a");
+    });
+    expect(onLoadChildren).not.toHaveBeenCalled();
+  });
+});

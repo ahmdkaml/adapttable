@@ -9,7 +9,12 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { asGesture, readCellValue, useEditHistory } from "./editHistory";
+import {
+  asGesture,
+  readCellValue,
+  useEditHistory,
+  useTableEditHistory,
+} from "./editHistory";
 
 interface Row {
   id: string;
@@ -185,5 +190,31 @@ describe("asGesture", () => {
 
   it("is nothing when there was nothing to wrap", () => {
     expect(asGesture<Row>(undefined, vi.fn())).toBeUndefined();
+  });
+});
+
+describe("useTableEditHistory", () => {
+  it("records an inline commit so undo restores the previous value", () => {
+    const onCellEdit = vi.fn();
+    const { result } = renderHook(() =>
+      useTableEditHistory<Row>({
+        editHistory: true,
+        columns: COLUMNS,
+        onCellEdit,
+      })
+    );
+    act(() => {
+      result.current.onCellEdit?.(ADA, "name", "Ada Lovelace");
+    });
+    expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(
+      ADA,
+      "name",
+      "Ada Lovelace"
+    );
+    expect(result.current.history.canUndo).toBe(true);
+    act(() => {
+      result.current.history.undo();
+    });
+    expect(onCellEdit).toHaveBeenLastCalledWith(ADA, "name", "Ada");
   });
 });

@@ -131,14 +131,14 @@ export function moveGridFocus(
   const landed = stepGridFocus(from, move, bounds);
   if (!covered?.(landed)) return landed;
   let current = landed;
-  const limit = Math.max(1, bounds.rowCount * bounds.colCount);
-  for (let step = 0; step < limit; step += 1) {
+  // Edges stop rather than wrap, so this always hits `sameGridCell` before
+  // it could cycle. A trip-count would never run.
+  for (;;) {
     const next = stepGridFocus(current, move, bounds);
     if (sameGridCell(next, current)) return from;
     if (!covered(next)) return next;
     current = next;
   }
-  return from;
 }
 
 /** The key press, as much of it as the mapping needs. */

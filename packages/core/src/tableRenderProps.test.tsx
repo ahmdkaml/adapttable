@@ -113,6 +113,43 @@ describe("tableRenderModel", () => {
     expect(model.entries.map((entry) => entry.key)).toEqual(["b"]);
   });
 
+  it("drops pinned-bottom rows from the scroll entries too", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      pinnedBottomRows: [ROWS[1]!],
+    });
+    expect(model.entries.map((entry) => entry.key)).toEqual(["a"]);
+  });
+
+  it("windows body cells to the column window", () => {
+    const wide: ColumnDef<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "id", header: "Id", accessor: (r) => r.id },
+    ];
+    const wideTable = {
+      ...table,
+      columns: wide,
+    } as unknown as UseDataTableResult<Row>;
+    const model = tableRenderModel({
+      table: wideTable,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      columnWindow: {
+        enabled: true,
+        columns: [wide[1]!],
+        paddingStart: 80,
+        paddingEnd: 0,
+      },
+    });
+    expect(model.columns.map((column) => column.key)).toEqual(["id"]);
+    expect(model.cellsByRow.get("a")?.map((cell) => cell.column.key)).toEqual([
+      "id",
+    ]);
+    expect(model.columnSpacers).toEqual({ start: 80, end: 0 });
+  });
+
   it("emits cells for tree children, not only the source roots", () => {
     const child: Row = { id: "c", name: "Cara" };
     const model = tableRenderModel({

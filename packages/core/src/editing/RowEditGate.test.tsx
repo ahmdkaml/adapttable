@@ -515,6 +515,7 @@ describe("BatchEditBar", () => {
     const { result, onBatchEdit } = mountBatch();
     render(<BatchEditBar batch={result.current} />);
     expect(part("batch-edit-count")).toHaveTextContent("1 unsaved row");
+    expect(part("batch-edit-save")).toHaveTextContent("Save all");
     act(() => {
       fireEvent.click(part("batch-edit-save")!);
     });
