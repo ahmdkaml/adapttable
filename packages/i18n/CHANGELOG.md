@@ -1,5 +1,306 @@
 # @adapttable/i18n
 
+## 2.2.0
+
+### Minor Changes
+
+- ec12556: Boolean filter type
+
+  A tri-state any / true / false widget — never a checkbox — with chips and
+  `f_<key>=true|false` URL serialization.
+
+- cdcb992: Size a column to its content
+
+  Double-click a resize handle and the column takes the width of its widest
+  rendered cell; the Columns menu's "Size columns to content" does every column at
+  once.
+
+  Measurement comes from the DOM rather than the data, because a cell rendering a
+  badge, an avatar and a name has no width the data knows. It reads each cell's
+  content width, so a column currently clipping its text is sized to fit it, and a
+  column with nothing measurable on screen is left alone rather than collapsed.
+
+  The result is an ordinary layout width: it persists, serializes to the URL and
+  saved views, and a later drag overrides it. Every cell now carries
+  `data-column-key`, which is also a stable hook for styling one column across any
+  kit.
+
+  Headless: `measureColumnWidth` and `autoSizeColumns`.
+
+- c14991d: Fill handle on the selection's corner
+
+  Select cells with `cellNavigation` on and a small square appears on the bottom
+  corner of the selection. Drag it and the values carry on — down, up or sideways
+  — with the cells it would write highlighted before anything is committed. Two or
+  more numbers a constant step apart continue the series; anything else repeats.
+  Ctrl/Cmd+D fills the selection down from its top row and announces what it
+  wrote.
+
+  The edits arrive through `onCellEdit`, or `onCellFill` for the batch, so the
+  handle appears as soon as a table can be edited and never when it cannot. All
+  eight adapters, RTL included.
+
+  Headless: `fillDirection`, `fillTargetRange`, `fillRangeEdits`,
+  `cellFillHandler`, and `FillHandle` from `@adapttable/core/adapter`.
+
+- d3309cc: Find in table
+
+  `findInTable` puts a find bar over the table on Ctrl/Cmd+F. It leaves every row
+  where it is and walks the cells whose text contains the query — Enter forward,
+  Shift+Enter back, Escape to close — marking each hit and taking focus to the one
+  you are on, so the cell is scrolled into view, announced and selected.
+
+  Matching reads what a cell shows, so a formatted date is found by its formatted
+  text, and only the loaded rows are searched: a hit the table cannot take you to
+  would be a lie. Hits are painted in the amber browsers use for their own find,
+  overridable through `--adapttable-find-match` (or the `cellMatch` /
+  `cellMatchCurrent` class hooks in `@adapttable/unstyled`, which the shadcn preset
+  fills in).
+
+  Every word is localizable in all seventeen locales. Headless: `findMatches`,
+  `useFindInTable` and `FindBar` from `@adapttable/core/adapter`.
+
+- 51deb4b: Group footers
+
+  `groupFooters` closes every group with a row carrying the same aggregates its
+  header carries, so the totals read at the bottom of a long group as well as the
+  top. A footer shows no chevron and no checkbox — the header owns both — nested
+  groups each get their own innermost first, and a collapsed group shows none at
+  all.
+
+  `summaryRow` remains the grand total and, under grouping, totals the whole
+  filtered set. On mobile the footer is a card of its own; exports are untouched,
+  since a footer is chrome rather than a row.
+
+  Captioned through `labels.groupTotal` in all seventeen locales, with
+  `group-footer-row` / `group-footer-cell` parts and matching class hooks in
+  `@adapttable/unstyled`.
+
+- 9f9ed08: Page the groups, and the rows inside them
+
+  `groupPageSize` shows a screenful of top-level groups and offers the rest;
+  `groupRowPageSize` does the same for the rows inside each group. Each limit adds
+  one row — "Show 42 more groups", "Show 8 more in this group" — that reveals the
+  next page when clicked.
+
+  Only the top level pages: a nested level is already inside a group the reader
+  opened. On a server tier, where the rest of a group is not in the browser yet,
+  `onGroupLoadMore(groupKey)` fires with the group that needs filling.
+
+  Localized in all seventeen locales, with `group-more-row` / `group-more-cell` /
+  `group-more` parts and `groupMoreRow` / `groupMoreCell` class hooks in
+  `@adapttable/unstyled`.
+
+- 5af9a99: Paste a spreadsheet into the table with Ctrl/Cmd+V
+
+  With `cellNavigation` on, Ctrl/Cmd+V parses the tab-separated text Excel, Google
+  Sheets, Numbers and LibreOffice write — quoted tabs and newlines intact — and
+  commits it through `onCellEdit`, the same channel inline editing uses. A table
+  that can be edited can now be pasted into with nothing extra wired. Set
+  `onCellPaste` to take the batch whole instead, and `onCellCut` to receive what
+  Ctrl/Cmd+X covered.
+
+  The clipboard's shape decides the destination: a 3×2 block pasted into one
+  focused cell writes 3×2. Cells landing outside the loaded rows or the rendered
+  columns are dropped, columns that are not `editable` are skipped, and every
+  value goes through the column's `parseValue`. The outcome is announced in all
+  seventeen locales.
+
+  Headless: `readClipboardText`, `parseClipboardTable`, `pasteRangeEdits` and
+  `cellPasteHandler`.
+
+- b050673: Relative date filter tokens
+
+  Date filters gain a Relative operator that stores `today` / `last:7` / …
+  in the URL — never a resolved calendar day — and resolves the window at
+  query time.
+
+- 69c2338: Rich filter operators per datatype
+
+  Text, number and date filters are operator-first. The comparison is stored
+  as `f_<key>Op` so it survives the URL and Saved Views. Existing links
+  without an operator keep their old meaning.
+
+- f0cf1c0: Selection statistics
+
+  `selectionStats` puts a strip under the table saying what the selected cells
+  add up to: count, sum, average, min and max. The count covers every selected
+  cell and the arithmetic covers the numeric ones, so a rectangle spanning a name
+  and a budget still has a sum. Numbers are read the way an export reads them, so
+  the total on screen matches the total a spreadsheet computes from the same
+  cells.
+
+  A single cell shows nothing. The strip is a status region, so the figures are
+  read after the range announcement, and every word is localizable in all
+  seventeen locales. Number formatting follows the table's `locale`.
+
+  Headless: `selectionStats` and `SelectionStatsBar` from
+  `@adapttable/core/adapter`.
+
+- 8f55d33: Ctrl/Cmd+C copies the selected cell rectangle as tab-separated text — the format
+  Excel, Google Sheets, Numbers and LibreOffice read — so it pastes into columns
+  rather than one cell. Ctrl/Cmd+X copies and then calls `onCut(range)`; the table
+  clears nothing itself, because a cut that emptied cells before the clipboard
+  accepted them would lose the data.
+
+  Values resolve exactly as an export's do, so a copy and a downloaded file agree.
+  The outcome is announced through `labels.gridRangeCopied` and
+  `gridRangeCopyFailed`, translated in all seventeen locales — the Clipboard API
+  needs a secure context and can be refused, and a copy that silently did nothing
+  is the thing worth avoiding.
+
+  `clipboardRangeText` and `writeClipboardText` are the headless halves.
+
+- 24a7199: Undo and redo for edits
+
+  `editHistory` remembers edits so Ctrl/Cmd+Z can take them back, with
+  Ctrl/Cmd+Shift+Z and Ctrl+Y to put them forward again. One gesture is one entry:
+  a paste of two hundred cells undoes in a single press, as does a fill.
+
+  An undo commits the previous value back through `onCellEdit`, the same call the
+  original edit made, so validation, mutations and optimistic updates all run on
+  the way back exactly as they ran on the way out — the table still never writes
+  to data it does not own. Fifty gestures are kept by default; pass
+  `{ depth: 200 }` for more, and `table.editHistory` exposes `undo`, `redo`,
+  `canUndo`, `canRedo` and `clear` for your own buttons.
+
+  Announced in all seventeen locales.
+
+### Patch Changes
+
+- c2ea3ef: Excel-style checklist filter
+
+  A `checklist` filter type lists distinct values with search, select-all,
+  clear, and counts. Frontend reads `allFilteredRows`; a server page that
+  omits that list does not offer the widget. Labels land in all 17 locales.
+
+- 9239898: Collapsible multi-level column groups
+
+  `column.group` accepts a path; `collapsibleColumnGroups` adds a toggle.
+  A collapsed group keeps its first leaf. State is `collapsedGroups` and
+  the URL `colGroupCollapse`.
+
+- bd52b39: Column menu 2.0
+
+  Search, bulk show/hide/unpin, per-column submenu (sort, pin, hide,
+  auto-size, filter, reset one), and `lockPosition` / `lockVisibility` /
+  `lockWidth` / `lockPin` that gray out the matching controls.
+
+- 2c97e75: Edit conflict handling under live updates
+
+  A row that changes under an open editor is a conflict, not a discard.
+  `onEditConflict` and `editConflictPolicy` (`keep` / `take` / `ask`, default
+  `ask`) decide; `"ask"` surfaces Keep mine / Take theirs on the validation
+  channel (`data-conflict`). `rowVersion` treats any version change as a
+  conflict. The same notice appears on a mobile card.
+
+- 9ac9635: Full-width and separator rows via `extraRows`
+
+  Host-injected slots splice into the body by `beforeRowId`. A separator is
+  a rule; a full-width row is one spanning cell. Mobile cards keep the same
+  slots. Nothing goes in the URL.
+
+- 74a0544: AND/OR filter tree builder
+
+  The filter panel now has a kit-agnostic builder — add condition, add
+  group, AND/OR — over the versioned `ft` tree. Leaves show as chips;
+  Clear all drops the tree. Labels land in all 17 locales.
+
+- d256fe7: Header filter row
+
+  `headerFilters` adds a compact per-column filter row under the header,
+  bound to the same defs and extra bag as the panel. Desktop only; mobile
+  cards keep the Filters button. Labels land in all 17 locales.
+
+- 9bccc0b: Add, duplicate and delete rows
+
+  Three handlers, three controls. `onAddRow` puts an Add row button in the
+  toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
+  every row, after your own `rowActions` so a delete stays last. They ride the
+  actions column like any other row action — hideable and end-pinnable from the
+  Columns menu, buttons on desktop and card buttons on mobile.
+
+  A delete asks first, through the same confirmation dialog a `rowActions` entry
+  uses; `confirmDeleteRow={false}` skips it.
+
+  The table stores nothing. A row you add arrives through the source like every
+  other row, so it is editable, filterable, sortable, grouped, counted and
+  virtualized from the moment it lands.
+
+  Labels `addRow`, `duplicateRow`, `deleteRow` and `deleteRowConfirm` are
+  translated in all seventeen locales. Headless: `useRowMutations`.
+
+- 670b772: Row pinning via sticky top and bottom sections
+
+  `pinnedRowIds` / `onPinnedRowIdsChange` take `{ top, bottom }` id lists.
+  Pinned rows leave the virtual window and stick above or below the scroll
+  box; column pins still apply. Grouping and trees refuse it with a
+  `devWarn`. Mobile cards get the actions and no sticky chrome. The lists
+  round-trip in the URL (`rowPin`) and in saved views.
+
+- 5392ae4: Row reordering via a reserved drag-handle column
+
+  `onRowReorder(from, to, row)` is the write — dataset-relative indices, never
+  a mutate (`applyRowReorder` for in-memory hosts). Keyboard is a grab: Space
+  lifts, arrows move, Space drops, Escape cancels, each step announced.
+  Grouping and trees refuse it with a `devWarn`. Mobile cards get up/down
+  buttons. The column hides and start-pins from the Columns menu
+  (`REORDER_COLUMN_KEY`).
+
+- Updated dependencies [a9992c9]
+- Updated dependencies [ac998d0]
+- Updated dependencies [ec12556]
+- Updated dependencies [9d334bd]
+- Updated dependencies [c2ea3ef]
+- Updated dependencies [cdcb992]
+- Updated dependencies [9239898]
+- Updated dependencies [bd52b39]
+- Updated dependencies [96c74d0]
+- Updated dependencies [c20c888]
+- Updated dependencies [1c53d5c]
+- Updated dependencies [1819d00]
+- Updated dependencies [2c97e75]
+- Updated dependencies [71de77b]
+- Updated dependencies [4c2f4d2]
+- Updated dependencies [f06b849]
+- Updated dependencies [9ac9635]
+- Updated dependencies [6e26b32]
+- Updated dependencies [424bdbc]
+- Updated dependencies [c14991d]
+- Updated dependencies [74a0544]
+- Updated dependencies [9227de5]
+- Updated dependencies [5bdb072]
+- Updated dependencies [d3309cc]
+- Updated dependencies [b166133]
+- Updated dependencies [62a788e]
+- Updated dependencies [51deb4b]
+- Updated dependencies [9f9ed08]
+- Updated dependencies [daaa7c0]
+- Updated dependencies [b321249]
+- Updated dependencies [d256fe7]
+- Updated dependencies [428e1ce]
+- Updated dependencies [61d20c9]
+- Updated dependencies [a28a2de]
+- Updated dependencies [5af9a99]
+- Updated dependencies [e990107]
+- Updated dependencies [b050673]
+- Updated dependencies [69c2338]
+- Updated dependencies [4e19a68]
+- Updated dependencies [9bccc0b]
+- Updated dependencies [670b772]
+- Updated dependencies [5392ae4]
+- Updated dependencies [3c1699e]
+- Updated dependencies [df87e16]
+- Updated dependencies [f0cf1c0]
+- Updated dependencies [2ab6c3a]
+- Updated dependencies [774cd87]
+- Updated dependencies [8f55d33]
+- Updated dependencies [e43e87c]
+- Updated dependencies [bc1b903]
+- Updated dependencies [24a7199]
+- Updated dependencies [8cc2690]
+  - @adapttable/core@2.3.0
+
 ## 2.1.0
 
 ### Minor Changes
