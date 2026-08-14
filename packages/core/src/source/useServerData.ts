@@ -169,7 +169,12 @@ export function useServerData<TRow>(
       // Everything past the baseline is gated on what the source declared —
       // an undeclared capability is dropped here, never sent and ignored.
       ...applyQuerySupport(
-        { groupBy: groupBy ? [groupBy] : undefined, cursor, expandedIds },
+        {
+          groupBy: groupBy ? [groupBy] : undefined,
+          cursor,
+          expandedIds,
+          filterTree: state.filterTree,
+        },
         supports
       ),
     }),
@@ -185,6 +190,7 @@ export function useServerData<TRow>(
       cursor,
       supports,
       expandedIds,
+      state.filterTree,
     ]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire
@@ -335,6 +341,7 @@ export function useServerData<TRow>(
     sortDir,
     groupBy,
     extra,
+    filterTree: state.filterTree,
     isLoading,
     isFetching: loading,
     isFetchingNextPage: appendPending,
@@ -350,6 +357,7 @@ export function useServerData<TRow>(
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,
+    setFilterTree: state.setFilterTree,
     clearExtras: state.clearExtras,
     clearAll: state.clearAll,
     fetchNextPage,

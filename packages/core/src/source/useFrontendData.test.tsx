@@ -98,6 +98,25 @@ describe("useFrontendData", () => {
     expect(result.current.rows.map((r) => r.id)).toEqual(["b"]);
   });
 
+  it("ANDs the filter tree after filterFn", () => {
+    const { result } = render(
+      "ft=1." +
+        JSON.stringify({
+          combinator: "or",
+          conditions: [{ key: "name", op: "eq", value: "Bob" }],
+        }),
+      {
+        filterTreeFn: (row, tree) =>
+          tree.conditions.some(
+            (node) =>
+              "key" in node && node.key === "name" && row.name === node.value
+          ),
+      }
+    );
+    expect(result.current.rows.map((r) => r.id)).toEqual(["b"]);
+    expect(result.current.filterTree?.combinator).toBe("or");
+  });
+
   it("filterFn with an empty extra bag keeps every row", () => {
     const { result } = render("", {
       filterFn: (row, extra) => extra.only == null || row.name === extra.only,

@@ -190,7 +190,17 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
   `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
   `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
-  `relativeTokenLabel` / `resolveRelativeRange`.
+  `relativeTokenLabel` / `resolveRelativeRange`. AND/OR groups:
+  `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
+  `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
+  `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
+  (`isFilterGroup` narrows a child). The builder UI is a later issue;
+  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
+  tier (ANDed with the flat extra bag). `useTableData` wires
+  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  directly passes `filterTreeFn` over the same defs as `filterFn`. A
+  server that declares `supports.filterTree` receives the same tree on
+  `query.filterTree`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

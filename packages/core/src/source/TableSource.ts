@@ -4,6 +4,7 @@ import type {
   ResolvedPaginationMode,
   SortDirection,
 } from "../types";
+import type { QueryFilterGroup } from "./queryContract";
 import type { QueryGroupRow } from "./queryGroups";
 
 /**
@@ -71,6 +72,8 @@ export interface TableSource<TRow> extends TableStateMutators {
   readonly sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   readonly extra: ExtraFilters;
+  /** Nested AND/OR filter tree, when one is active. */
+  readonly filterTree?: QueryFilterGroup;
   /**
    * Active single-level row-grouping column key, if any. Frontend chrome
    * builds the grouped flat model when set; server sources may echo the URL

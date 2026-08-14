@@ -179,7 +179,13 @@ export function useQuerySource<
     Object.assign(
       merged,
       applyQuerySupport(
-        { cursor, groupBy: parseGroupBy(groupBy), aggregates, expandedIds },
+        {
+          cursor,
+          groupBy: parseGroupBy(groupBy),
+          aggregates,
+          expandedIds,
+          filterTree: state.filterTree,
+        },
         supports
       )
     );
@@ -199,6 +205,7 @@ export function useQuerySource<
     aggregates,
     expandedIds,
     supports,
+    state.filterTree,
   ]);
 
   const query = usePaginatedQuery(params);
@@ -301,6 +308,7 @@ export function useQuerySource<
     setSearch,
     setExtra,
     setExtras,
+    setFilterTree,
     clearExtras,
     clearAll,
   } = state;
@@ -323,6 +331,7 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      filterTree: state.filterTree,
       setPage,
       setLimit,
       setSort,
@@ -332,6 +341,7 @@ export function useQuerySource<
       setSearch,
       setExtra,
       setExtras,
+      setFilterTree,
       clearExtras,
       clearAll,
     }),
@@ -354,6 +364,7 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      state.filterTree,
       setPage,
       setLimit,
       setSort,
@@ -363,6 +374,7 @@ export function useQuerySource<
       setSearch,
       setExtra,
       setExtras,
+      setFilterTree,
       clearExtras,
       clearAll,
     ]

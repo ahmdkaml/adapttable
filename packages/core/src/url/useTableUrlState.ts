@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LIMIT } from "../constants";
+import type { QueryFilterGroup } from "../source/queryContract";
 import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
@@ -21,11 +22,13 @@ import {
   PARAM_SORT_BY,
   PARAM_SORT_DIR,
   readExtra,
+  readFilterTreeParam,
   readLimit,
   readPage,
   readSortDir,
   readSortLevels,
   writeExtra,
+  writeFilterTreeParam,
   writeSortLevels,
 } from "./serialize";
 
@@ -73,6 +76,8 @@ export interface UseTableUrlStateResult extends TableStateMutators {
   groupBy: string | undefined;
   /** The extra-filter bag. */
   extra: ExtraFilters;
+  /** Nested AND/OR filter tree, when one is in the URL. */
+  filterTree: QueryFilterGroup | undefined;
 }
 
 /** Mounted namespaces per adapter, for the duplicate-urlKey dev warning. */
@@ -200,6 +205,11 @@ export function useTableUrlState(
         readExtra(params, numberExtraKeys, arrayExtraKeys, ns)
       ),
     [mergeDefaultExtra, params, numberExtraKeys, arrayExtraKeys, ns]
+  );
+
+  const filterTree = useMemo(
+    () => readFilterTreeParam(params, ns),
+    [params, ns]
   );
 
   const commit = useCallback(
@@ -344,6 +354,15 @@ export function useTableUrlState(
     [commit, readEffectiveExtra, resetPage, writeExtraWithDefaults]
   );
 
+  const setFilterTree = useCallback(
+    (tree: QueryFilterGroup | undefined) =>
+      commit((p) => {
+        writeFilterTreeParam(p, tree, ns);
+        resetPage(p);
+      }),
+    [commit, ns, resetPage]
+  );
+
   const clearExtras = useCallback(
     () =>
       commit((p) => {
@@ -368,6 +387,7 @@ export function useTableUrlState(
         else p.delete(ns + PARAM_GROUP_BY);
         resetPage(p);
         writeExtraWithDefaults(p, {});
+        writeFilterTreeParam(p, undefined, ns);
       }),
     [
       commit,
@@ -388,6 +408,7 @@ export function useTableUrlState(
     sortDir,
     groupBy,
     extra,
+    filterTree,
     setPage,
     setLimit,
     setSort,
@@ -397,6 +418,7 @@ export function useTableUrlState(
     setSearch,
     setExtra,
     setExtras,
+    setFilterTree,
     clearExtras,
     clearAll,
   };

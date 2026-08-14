@@ -100,6 +100,15 @@ export {
   useTextFilterWidget,
 } from "./filters/filterForm";
 export {
+  conditionToExtra,
+  evaluateFilterTree,
+  FILTER_TREE_PARAM,
+  FILTER_TREE_VERSION,
+  isActiveFilterTree,
+  parseFilterTree,
+  serializeFilterTree,
+} from "./filters/filterTree";
+export {
   DATE_OP_LABEL_KEYS,
   DATE_OPS,
   FILTER_OP_SUFFIX,

@@ -6,12 +6,14 @@ import {
   isEmptyFilterValue,
   readColumnLayout,
   readExtra,
+  readFilterTreeParam,
   readLimit,
   readPage,
   readRowPins,
   readSortDir,
   writeColumnLayout,
   writeExtra,
+  writeFilterTreeParam,
   writeRowPins,
 } from "./serialize";
 
@@ -121,6 +123,22 @@ describe("writeExtra", () => {
     const p = ps("f_a=1&f_b=2");
     writeExtra(p, {});
     expect(p.toString()).toBe("");
+  });
+});
+
+describe("filter-tree param", () => {
+  it("round-trips a v1 tree and drops an unknown version", () => {
+    const tree = {
+      combinator: "and" as const,
+      conditions: [{ key: "name", op: "eq", value: "Ada" }],
+    };
+    const p = new URLSearchParams();
+    writeFilterTreeParam(p, tree);
+    expect(p.get("ft")?.startsWith("1.")).toBe(true);
+    expect(readFilterTreeParam(p)).toEqual(tree);
+    expect(readFilterTreeParam(ps("ft=9.nope"))).toBeUndefined();
+    writeFilterTreeParam(p, undefined);
+    expect(p.has("ft")).toBe(false);
   });
 });
 

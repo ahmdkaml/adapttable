@@ -183,6 +183,9 @@ A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
 the param is any. A `dateRange` `relative` operator stores a token
 (`today`, `last:7`, …) in `${key}From` — never a resolved calendar day —
 and `resolveRelativeRange` is the only place that token becomes a window.
+An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
+`serializeFilterTree`); the frontend ANDs it with the flat bag, and a
+server that sets `supports.filterTree` receives `query.filterTree`.
 
 ## Adapter extras
 
@@ -216,7 +219,8 @@ All from `@adapttable/core`.
 ### Data sources
 
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
-  filters, sorts, and slices a raw array from URL state.
+  filters, sorts, and slices a raw array from URL state. Pass
+  `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -231,7 +235,7 @@ All from `@adapttable/core`.
 - `useTableUrlState(options?): UseTableUrlStateResult` — page / limit /
   search / sort / extra-filter bag in the query string, with setters
   (`setPage`, `setSearch`, `setSort`, `toggleSortLevel`, `setExtra`,
-  `setExtras`, `clearExtras`, `clearAll`).
+  `setExtras`, `setFilterTree`, `clearExtras`, `clearAll`).
 - `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` —
   URL-persisted column layout (hidden / order / pinned / widths).
 - `useColumnLayoutStorageState(options): { layout, onLayoutChange }` — the
@@ -494,7 +498,11 @@ Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
 `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
 `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
 `relativeTokenLabel` / `resolveRelativeRange`.
-See [filtering](./filtering.md).
+AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
+`parseFilterTree` / `serializeFilterTree` / `isActiveFilterTree` /
+`evaluateFilterTree` / `conditionToExtra`. The tree is a
+`QueryFilterGroup` of `QueryCondition`s (`isFilterGroup` narrows a
+child). See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,

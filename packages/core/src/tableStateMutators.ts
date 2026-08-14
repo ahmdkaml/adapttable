@@ -1,4 +1,5 @@
 import type { SortLevel } from "./sort/compare";
+import type { QueryFilterGroup } from "./source/queryContract";
 import type { ExtraFilters, FilterValue, SortDirection } from "./types";
 
 /**
@@ -30,6 +31,8 @@ export interface TableStateMutators {
   setExtra: (key: string, value: FilterValue) => void;
   /** Set several extra filters in one commit; resets to page 1. */
   setExtras: (updates: ExtraFilters) => void;
+  /** Replace the AND/OR filter tree; resets to page 1. Omit to clear. */
+  setFilterTree?: (tree: QueryFilterGroup | undefined) => void;
   /** Clear every extra filter (and reset the page) — search/sort stay. */
   clearExtras: () => void;
   /** Clear search + sort + groupBy + page + every extra filter in one commit. */

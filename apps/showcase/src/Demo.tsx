@@ -2,6 +2,7 @@ import type { GroupNode } from "@adapttable/core";
 import {
   applyRowReorder,
   type ColumnLayoutState,
+  evaluateFilterTree,
   type TableSource,
   useColumnLayoutUrlState,
   useFrontendData,
@@ -235,6 +236,8 @@ function Frontend({
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
+    filterTreeFn: (row, tree) =>
+      evaluateFilterTree(tree, row, DEMO_FILTER_RUNTIME.defs),
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
@@ -353,6 +356,7 @@ function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     defaults: DEFAULTS,
     paginationMode: pageMode,
     urlKey,
+    supports: { filterTree: true },
   });
   // No onCellEdit — editing stays dormant on the server path.
   return <>{render(source, columns)}</>;

@@ -1368,7 +1368,17 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
   `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
   `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
-  `relativeTokenLabel` / `resolveRelativeRange`.
+  `relativeTokenLabel` / `resolveRelativeRange`. AND/OR groups:
+  `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
+  `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
+  `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
+  (`isFilterGroup` narrows a child). The builder UI is a later issue;
+  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
+  tier (ANDed with the flat extra bag). `useTableData` wires
+  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  directly passes `filterTreeFn` over the same defs as `filterFn`. A
+  server that declares `supports.filterTree` receives the same tree on
+  `query.filterTree`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -4477,6 +4487,7 @@ modals or drawers where the address bar shouldn't change.
 | `f_<key>`                   | `f_status=active`           | One filter value; `multiSelect` arrays are comma-separated with each entry percent-encoded.                                                                    |
 | `f_<key>From` / `f_<key>To` | `f_hiredAtFrom=2026-01-01`  | `dateRange` bounds (inclusive; the end bound keeps that whole day). A `relative` operator stores the token here (`today`, `last:7`) instead of a resolved day. |
 | `f_<key>Min` / `f_<key>Max` | `f_salaryMin=50000`         | `numberRange` bounds (inclusive; parsed as numbers).                                                                                                           |
+| `ft`                        | `ft=1.{"combinator":"and"}` | Versioned AND/OR filter tree. Unknown versions are dropped, never reinterpreted.                                                                               |
 | `colHide`                   | `colHide=email,phone`       | Hidden columns (keys percent-encoded).                                                                                                                         |
 | `colPin`                    | `colPin=name:left`          | Pinned columns and their side.                                                                                                                                 |
 | `colOrder`                  | `colOrder=name,role,salary` | Explicit column order.                                                                                                                                         |
@@ -5517,6 +5528,9 @@ A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
 the param is any. A `dateRange` `relative` operator stores a token
 (`today`, `last:7`, …) in `${key}From` — never a resolved calendar day —
 and `resolveRelativeRange` is the only place that token becomes a window.
+An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
+`serializeFilterTree`); the frontend ANDs it with the flat bag, and a
+server that sets `supports.filterTree` receives `query.filterTree`.
 
 ## Adapter extras
 
@@ -5550,7 +5564,8 @@ All from `@adapttable/core`.
 ### Data sources
 
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
-  filters, sorts, and slices a raw array from URL state.
+  filters, sorts, and slices a raw array from URL state. Pass
+  `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -5565,7 +5580,7 @@ All from `@adapttable/core`.
 - `useTableUrlState(options?): UseTableUrlStateResult` — page / limit /
   search / sort / extra-filter bag in the query string, with setters
   (`setPage`, `setSearch`, `setSort`, `toggleSortLevel`, `setExtra`,
-  `setExtras`, `clearExtras`, `clearAll`).
+  `setExtras`, `setFilterTree`, `clearExtras`, `clearAll`).
 - `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` —
   URL-persisted column layout (hidden / order / pinned / widths).
 - `useColumnLayoutStorageState(options): { layout, onLayoutChange }` — the
@@ -5828,7 +5843,11 @@ Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
 `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
 `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
 `relativeTokenLabel` / `resolveRelativeRange`.
-See [filtering](./filtering.md).
+AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
+`parseFilterTree` / `serializeFilterTree` / `isActiveFilterTree` /
+`evaluateFilterTree` / `conditionToExtra`. The tree is a
+`QueryFilterGroup` of `QueryCondition`s (`isFilterGroup` narrows a
+child). See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,

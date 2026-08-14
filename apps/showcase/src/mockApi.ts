@@ -1,7 +1,9 @@
-import type { FilterValue } from "@adapttable/core";
+import type { FilterValue, QueryFilterGroup } from "@adapttable/core";
+import { evaluateFilterTree } from "@adapttable/core";
 
 import {
   budget,
+  DEMO_FILTER_RUNTIME,
   matchesDemoFilters,
   PEOPLE,
   type Person,
@@ -60,7 +62,9 @@ function sortValue(row: Person, key: string): string {
  * artificial latency. Swapping this for `fetch('/api/people')` is the only
  * change needed to talk to a real server.
  */
-export async function fetchPeople(params: PeopleParams): Promise<PeoplePage> {
+export async function fetchPeople(
+  params: PeopleParams & { filterTree?: QueryFilterGroup }
+): Promise<PeoplePage> {
   await new Promise((resolve) => setTimeout(resolve, 480));
 
   let rows = PEOPLE.slice();
@@ -73,6 +77,9 @@ export async function fetchPeople(params: PeopleParams): Promise<PeoplePage> {
   }
 
   rows = rows.filter((r) => matchesDemoFilters(r, params));
+  rows = rows.filter((r) =>
+    evaluateFilterTree(params.filterTree, r, DEMO_FILTER_RUNTIME.defs)
+  );
 
   if (params.sortBy && params.sortDir) {
     const dir = params.sortDir === "asc" ? 1 : -1;

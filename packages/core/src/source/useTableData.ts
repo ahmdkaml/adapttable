@@ -10,6 +10,7 @@ import {
   materializeAutoOptions,
   resolveFilterDefs,
 } from "../filters/filterDefs";
+import { evaluateFilterTree } from "../filters/filterTree";
 import type {
   ColumnDef,
   ExtraFilters,
@@ -316,6 +317,7 @@ export function useTableData<TRow>(
     data: tier === "frontend" ? (data ?? []) : [],
     columns: resolvedColumns,
     filterFn: combinedFilterFn,
+    filterTreeFn: (row, tree) => evaluateFilterTree(tree, row, runtime.defs),
     arrayExtraKeys: runtime.arrayExtraKeys,
     numberExtraKeys: runtime.numberExtraKeys,
     paginationMode,

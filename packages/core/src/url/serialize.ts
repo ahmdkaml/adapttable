@@ -11,7 +11,12 @@
  */
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from "../columns/columnResize";
 import type { ColumnLayoutState } from "../columns/useColumnLayout";
+import {
+  parseFilterTree,
+  serializeFilterTree,
+} from "../filters/filterTreeCodec";
 import { type RowPinSide, type RowPinState } from "../rows/rowPinning";
+import type { QueryFilterGroup } from "../source/queryContract";
 import type { ExtraFilters, FilterValue, SortDirection } from "../types";
 
 /** Decode a URI component, tolerating malformed input from hand-edited URLs. */
@@ -43,6 +48,8 @@ export const PARAM_SORT = "sort";
 export const PARAM_GROUP_BY = "groupBy";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
+/** Versioned AND/OR filter tree (`ft=1.{…}`). */
+export const PARAM_FILTER_TREE = "ft";
 /** Column-layout params (hidden / pinned / order / widths). */
 /** Collapsed group keys, comma-separated. */
 export const PARAM_GROUP_CLOSED = "groupClosed";
@@ -156,6 +163,26 @@ export function writeExtra(
       params.set(param, String(value));
     }
   }
+}
+
+/** Read the versioned filter tree; unknown versions are dropped. */
+export function readFilterTreeParam(
+  params: URLSearchParams,
+  prefix = ""
+): QueryFilterGroup | undefined {
+  return parseFilterTree(params.get(prefix + PARAM_FILTER_TREE));
+}
+
+/** Write or clear the versioned filter tree. */
+export function writeFilterTreeParam(
+  params: URLSearchParams,
+  tree: QueryFilterGroup | undefined,
+  prefix = ""
+): void {
+  const key = prefix + PARAM_FILTER_TREE;
+  const raw = serializeFilterTree(tree);
+  if (raw) params.set(key, raw);
+  else params.delete(key);
 }
 
 /**

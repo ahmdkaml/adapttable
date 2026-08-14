@@ -59,7 +59,7 @@ const FIXTURES = [
   {
     name: "core · simple table",
     pkg: "core",
-    budgetKB: 12,
+    budgetKB: 13,
     code: `export { useFrontendData, useDataTable } from "PKG";`,
     // The size ceiling says the base import is small. These say WHY: the heavy
     // capabilities are genuinely shaken out, not merely compressing well. A
@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 65,
+    budgetKB: 67,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -167,14 +167,23 @@ const FIXTURES = [
   // Relative date tokens (~0.5–1.1 KB) add the preset select + last/next
   // N on the dateRange widget. `core · simple table` stayed at 11.9 KB
   // of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 97 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 96 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 96 },
+  //
+  // AND/OR filter trees (~0.4 KB on the simple path, ~0.9 KB on the
+  // full export) parse `ft=1.{…}` in the URL layer and evaluate the
+  // tree in `useTableData`. A shared link has to filter without a
+  // builder, so the codec cannot sit behind an optional entry. The
+  // evaluator stays next to `filterDefs` (already on `useTableData`);
+  // the codec is a separate module so `useFrontendData` does not pull
+  // the predicate engine. `core · simple table` is 12.3 KB of a 13 KB
+  // ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 98 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 97 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 97 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 93 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 96 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 102 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 98 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 95 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 97 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 103 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 99 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 96 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**
