@@ -41,6 +41,12 @@ async function openFilters(page: Page, name = "Filters"): Promise<void> {
     .getByRole("button", { name: "Popover", exact: true })
     .click();
   const trigger = filtersTrigger(page, name);
+  // Open with the toolbar at the top of the viewport. The card is taller than
+  // the window, and reaching a field further down makes Playwright scroll —
+  // which dismisses an anchored popover before the field can be used.
+  await trigger.evaluate((node) => {
+    window.scrollBy(0, node.getBoundingClientRect().top - 60);
+  });
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 }
