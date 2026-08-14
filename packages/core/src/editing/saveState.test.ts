@@ -150,8 +150,7 @@ describe("useCellSaveState", () => {
           columnKey: "name",
           previous: ADA,
           attempted: "x",
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- reading a non-Error rejection IS the behaviour under test
-          result: Promise.reject(error),
+          result: rejectingThenable(error),
         });
       });
       return result.current.failureFor("1", "name")?.message;
