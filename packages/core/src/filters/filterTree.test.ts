@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { QueryFilterGroup } from "../source/queryContract";
 import type { FilterDef } from "./filterDefs";
+import { emptyFilterRegistry } from "./filterRegistry";
 import {
   conditionToExtra,
   evaluateFilterTree,
@@ -186,5 +187,28 @@ describe("conditionToExtra", () => {
     expect(
       conditionToExtra(DEFS[0]!, { key: "name", op: "eq", value: null })
     ).toEqual({ name: undefined, nameOp: "eq" });
+  });
+
+  it("projects an unregistered type as a scalar plus op", () => {
+    // A host can declare a custom `type` string without registering a spec.
+    // FilterTypeSpec requires conditionToExtra, so the only way here is an
+    // unknown type — not a registered type that omitted the projector.
+    const def: FilterDef<Row> = { key: "score", type: "custom-score" };
+    const empty = emptyFilterRegistry();
+    expect(
+      conditionToExtra(def, { key: "score", op: "eq", value: 10 }, empty)
+    ).toEqual({ score: "10", scoreOp: "eq" });
+    expect(
+      conditionToExtra(def, { key: "score", op: "eq", value: "high" }, empty)
+    ).toEqual({ score: "high", scoreOp: "eq" });
+    expect(
+      conditionToExtra(def, { key: "score", op: "eq", value: true }, empty)
+    ).toEqual({ score: "true", scoreOp: "eq" });
+    expect(
+      conditionToExtra(def, { key: "score", op: "eq", value: null }, empty)
+    ).toEqual({ score: undefined, scoreOp: "eq" });
+    expect(
+      conditionToExtra(def, { key: "score", op: "eq", value: { n: 1 } }, empty)
+    ).toEqual({ score: undefined, scoreOp: "eq" });
   });
 });

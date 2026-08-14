@@ -34,6 +34,25 @@ describe("collectChecklistValues", () => {
     ]);
   });
 
+  it("stringifies bigint values and skips objects", () => {
+    interface Mixed {
+      team: unknown;
+    }
+    const def: FilterDef<Mixed> = {
+      key: "team",
+      type: "checklist",
+      getValue: (row) => row.team,
+    };
+    expect(
+      collectChecklistValues(def, [
+        { team: 10n },
+        { team: 10n },
+        { team: { nested: true } },
+        { team: null },
+      ])
+    ).toEqual([{ value: "10", label: "10", count: 2 }]);
+  });
+
   it("keeps a selected value that the current set no longer holds", () => {
     expect(collectChecklistValues(DEF, ROWS, ["Gone"])).toEqual([
       { value: "Core", label: "Core team", count: 2 },
@@ -114,6 +133,8 @@ describe("useChecklistFilter", () => {
     expect(setExtra).toHaveBeenCalledWith("team", undefined);
     result.current.toggle("Web", true);
     expect(setExtra).toHaveBeenCalledWith("team", ["Web"]);
+    result.current.toggle("Web", false);
+    expect(setExtra).toHaveBeenCalledWith("team", undefined);
   });
 
   it("windows once the visible list is long", () => {

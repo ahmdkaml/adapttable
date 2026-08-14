@@ -280,6 +280,34 @@ describe("FilterHeaderRow", () => {
     );
     expect(screen.getByLabelText("Name")).toBeVisible();
   });
+
+  it("draws a registered custom render instead of the kit widget", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personCard",
+      render: () => <output>custom-person</output>,
+    });
+    render(
+      <table>
+        <thead>
+          <FilterHeaderRow
+            columns={[{ key: "name" }]}
+            defs={[{ key: "name", type: "personCard", label: "Name" }]}
+            source={{
+              extra: {},
+              setExtra: () => undefined,
+              setExtras: () => undefined,
+            }}
+            labels={defaultLabels}
+            registry={registry}
+          />
+        </thead>
+      </table>
+    );
+    expect(screen.getByText("custom-person")).toBeVisible();
+    expect(screen.queryByLabelText("Name")).toBeNull();
+  });
 });
 
 describe("FilterHeaderControl", () => {

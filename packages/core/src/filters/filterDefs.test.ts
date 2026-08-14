@@ -13,6 +13,7 @@ import {
   filterStateKeys,
   resolveFilterDefs,
 } from "./filterDefs";
+import { emptyFilterRegistry } from "./filterRegistry";
 
 function pred<T>(def: FilterDef<T>) {
   return filterPredicate(def, defaultFilterRegistry);
@@ -49,6 +50,12 @@ describe("coerceBooleanValue", () => {
     expect(coerceBooleanValue("")).toBeUndefined();
     expect(coerceBooleanValue(null)).toBeUndefined();
   });
+
+  it("treats any other value as its Boolean() truth", () => {
+    expect(coerceBooleanValue(42)).toBe(true);
+    expect(coerceBooleanValue("maybe")).toBe(true);
+    expect(coerceBooleanValue({ flag: true })).toBe(true);
+  });
 });
 
 describe("filterStateKeys", () => {
@@ -66,6 +73,15 @@ describe("filterStateKeys", () => {
       "budgetMax",
       "budgetOp",
     ]);
+  });
+
+  it("falls back to the bag key when the type has no registry spec", () => {
+    expect(
+      filterStateKeys({ key: "name", type: "text" }, emptyFilterRegistry())
+    ).toEqual(["name"]);
+    expect(clearedFilterExtras([{ key: "name", type: "text" }])).toEqual({
+      name: undefined,
+    });
   });
 });
 
@@ -271,6 +287,8 @@ describe("filterPredicate", () => {
 
   it("numberRange: exclusive and list operators honour the stored Op", () => {
     const p = pred<Row>({ key: "budget", type: "numberRange" });
+    expect(p(ROW, { budgetMin: 1200, budgetOp: "eq" })).toBe(true);
+    expect(p(ROW, { budgetMin: 1199, budgetOp: "eq" })).toBe(false);
     expect(p(ROW, { budgetMin: 1200, budgetOp: "gt" })).toBe(false);
     expect(p(ROW, { budgetMin: 1199, budgetOp: "gt" })).toBe(true);
     expect(p(ROW, { budgetMin: 1200, budgetOp: "neq" })).toBe(false);
@@ -444,6 +462,8 @@ describe("buildFilterRuntime", () => {
       runtime.filterLabels.hiredAtFrom!("last:7", { hiredAtOp: "relative" })
     ).toBe("Hired Last 7 days");
     expect(runtime.filterLabels.nameOp!("notEmpty")).toBe("Name Is not empty");
+    expect(runtime.filterLabels.hiredAtOp!("empty")).toBe("Hired Is empty");
+    expect(runtime.filterLabels.budgetOp!("empty")).toBe("Budget Is empty");
     expect(runtime.filterLabels.budget!("1, 2", { budgetOp: "in" })).toBe(
       "Budget Is any of 1, 2"
     );

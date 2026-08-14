@@ -62,6 +62,13 @@ describe("filterTreeChipLabel", () => {
         defaultLabels
       )
     ).toBe("Person in");
+    expect(
+      filterTreeChipLabel(
+        { key: "name", op: "eq", value: { x: 1 } },
+        DEFS,
+        defaultLabels
+      )
+    ).toBe("Person Equal");
   });
 });
 

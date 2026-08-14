@@ -3,6 +3,7 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import type { QueryFilterGroup } from "../source/queryContract";
+import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
 import { FilterTreeBuilder } from "./FilterTreeBuilder";
 
@@ -132,5 +133,44 @@ describe("FilterTreeBuilder", () => {
     );
     expect(screen.getByLabelText("Operator")).toHaveValue("empty");
     expect(screen.queryByLabelText("Value")).toBeNull();
+  });
+
+  it("shows an empty value input for a non-scalar condition", () => {
+    render(
+      <Harness
+        initial={{
+          combinator: "and",
+          conditions: [{ key: "name", op: "eq", value: { x: 1 } }],
+        }}
+      />
+    );
+    expect(screen.getByLabelText("Value")).toHaveValue("");
+  });
+
+  it("labels unknown-widget operators with the raw op token", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "sku",
+      widget: "select",
+      ops: ["eq", "soundsLike"],
+      defaultOp: "eq",
+    });
+    render(
+      <FilterTreeBuilder
+        defs={[{ key: "sku", type: "sku", label: "SKU" }]}
+        source={{
+          filterTree: {
+            combinator: "and",
+            conditions: [{ key: "sku", op: "soundsLike", value: "ab" }],
+          },
+          setFilterTree: () => undefined,
+        }}
+        registry={registry}
+      />
+    );
+    expect(
+      screen.getByRole("option", { name: "soundsLike" })
+    ).toBeInTheDocument();
   });
 });
