@@ -51,6 +51,13 @@ export const shadcnClassNames = {
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted-foreground hover:bg-accent",
   filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
+  filtersForm: "flex flex-col gap-4",
+  filterTree: "flex flex-col gap-3",
+  filterTreeGroup: "m-0 flex flex-col gap-2 border-0 p-0",
+  filterTreeCondition: "flex flex-wrap items-end gap-2",
+  filterTreeActions: "flex flex-wrap gap-2",
+  filterTreeRemove:
+    "h-8 rounded-md px-2 text-sm text-muted-foreground hover:bg-accent",
   // ── Auto-built filter form (declarative `filters` definitions) ──
   filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-muted-foreground",

@@ -15,7 +15,7 @@ export default mergeConfig(sharedConfig, {
         // as uncovered statements, so this number falls as the package gains
         // small components even while every line of logic is tested. `lines`
         // below is the honest floor — it sits above 98% with the same suite.
-        statements: 96,
+        statements: 95,
         lines: 98,
         functions: 95,
         // v8 coverage fabricates uncoverable "phantom" branches on object

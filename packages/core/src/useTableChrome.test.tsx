@@ -271,6 +271,36 @@ describe("useTableChrome", () => {
     expect(onClearFilters).toHaveBeenCalledTimes(1);
   });
 
+  it("tree chips appear and clearFilters drops the tree", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        filterDefs: [{ key: "name", type: "text", label: "Person" }],
+      });
+    });
+    act(() =>
+      result.current.source.setFilterTree?.({
+        combinator: "and",
+        conditions: [{ key: "name", op: "eq", value: "Ada" }],
+      })
+    );
+    expect(
+      result.current.mergedChips.some((chip) => chip.label.includes("Ada"))
+    ).toBe(true);
+    act(() => result.current.clearFilters());
+    expect(result.current.source.filterTree).toBeUndefined();
+    expect(result.current.mergedChips).toEqual([]);
+  });
+
   it("onGroupByChange observes — a logging handler never breaks grouping", () => {
     const onGroupByChange = vi.fn();
     const adapter = createMemoryAdapter("");

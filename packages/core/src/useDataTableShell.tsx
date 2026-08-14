@@ -134,6 +134,7 @@ export function useDataTableShell<TRow>(
     onCellEdit: recordingCellEdit,
     source,
     filters: filtersNode,
+    filterDefs: runtime.defs,
     filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
     ...pinProps,
   };

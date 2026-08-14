@@ -1,4 +1,5 @@
 import {
+  FilterTreeBuilder,
   resolveLabels,
   type TableLabels,
   type UseSavedViewsOptions,
@@ -105,11 +106,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // scroll reset, body windowing — lives in core. Mantine adds only what its
   // kit needs: a measured sticky toolbar, per-body stagger refs, and density.
   const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      labels={resolveLabels(props.labels)}
-    />
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        labels={resolveLabels(props.labels)}
+      />
+      <FilterTreeBuilder defs={defs} source={source} labels={props.labels} />
+    </div>
   ));
   const {
     chrome,

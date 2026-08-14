@@ -109,6 +109,21 @@ export {
   serializeFilterTree,
 } from "./filters/filterTree";
 export {
+  FilterTreeBuilder,
+  type FilterTreeBuilderProps,
+  type FilterTreeClassNames,
+} from "./filters/FilterTreeBuilder";
+export {
+  addFilterTreeCondition,
+  addFilterTreeGroup,
+  emptyFilterTree,
+  type FilterTreeNode,
+  removeFilterTreeNode,
+  replaceFilterTreeNode,
+  setFilterTreeCombinator,
+  walkFilterTreeConditions,
+} from "./filters/filterTreeMutations";
+export {
   DATE_OP_LABEL_KEYS,
   DATE_OPS,
   FILTER_OP_SUFFIX,
@@ -159,6 +174,11 @@ export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export {
+  filterTreeChipLabel,
+  useFilterTreeChips,
+  type UseFilterTreeChipsOptions,
+} from "./filters/useFilterTreeChips";
 export {
   findMatches,
   type FindMatchesOptions,

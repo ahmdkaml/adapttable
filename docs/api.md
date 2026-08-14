@@ -186,6 +186,8 @@ and `resolveRelativeRange` is the only place that token becomes a window.
 An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
 `serializeFilterTree`); the frontend ANDs it with the flat bag, and a
 server that sets `supports.filterTree` receives `query.filterTree`.
+`FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
+the chrome label tree chips.
 
 ## Adapter extras
 
@@ -500,9 +502,16 @@ Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
 `relativeTokenLabel` / `resolveRelativeRange`.
 AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `parseFilterTree` / `serializeFilterTree` / `isActiveFilterTree` /
-`evaluateFilterTree` / `conditionToExtra`. The tree is a
-`QueryFilterGroup` of `QueryCondition`s (`isFilterGroup` narrows a
-child). See [filtering](./filtering.md).
+`evaluateFilterTree` / `conditionToExtra`. Mutations:
+`emptyFilterTree` / `addFilterTreeCondition` / `addFilterTreeGroup` /
+`removeFilterTreeNode` / `replaceFilterTreeNode` /
+`setFilterTreeCombinator` / `walkFilterTreeConditions` /
+`FilterTreeNode`. Builder: `FilterTreeBuilder` /
+`FilterTreeBuilderProps` / `FilterTreeClassNames`. Chips:
+`useFilterTreeChips` / `UseFilterTreeChipsOptions` /
+`filterTreeChipLabel`. The tree is a `QueryFilterGroup` of
+`QueryCondition`s (`isFilterGroup` narrows a child). See
+[filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,

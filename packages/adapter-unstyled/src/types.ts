@@ -87,6 +87,18 @@ export interface DataTableClassNames {
   filtersFooter?: string;
   filtersClear?: string;
   filtersDone?: string;
+  /** Wrapper around the auto form and the AND/OR builder. */
+  filtersForm?: string;
+  /** AND/OR filter-tree builder root. */
+  filterTree?: string;
+  /** One nested group in the filter-tree builder. */
+  filterTreeGroup?: string;
+  /** One condition row in the filter-tree builder. */
+  filterTreeCondition?: string;
+  /** Add-condition / add-group row in the filter-tree builder. */
+  filterTreeActions?: string;
+  /** Remove-condition / remove-group control in the filter-tree builder. */
+  filterTreeRemove?: string;
   /** One auto-built filter field (the `<label>`/`<fieldset>` wrapper). */
   filterField?: string;
   /** The field's caption (the `<span>`/`<legend>` holding the label text). */

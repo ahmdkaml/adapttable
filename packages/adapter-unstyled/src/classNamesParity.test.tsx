@@ -267,6 +267,9 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   const desktop = mount({});
   fireEvent.click(part("filters-button")!);
   absorb();
+  const addCondition = desktop.getByRole("button", { name: "Add condition" });
+  fireEvent.click(addCondition);
+  absorb();
   fireEvent.click(part("selection-cell")!.querySelector("input")!);
   absorb();
   // Bulk failure surfaces the bulk error message.
@@ -495,6 +498,12 @@ const KEYS = [
   "filtersFooter",
   "filtersClear",
   "filtersDone",
+  "filtersForm",
+  "filterTree",
+  "filterTreeGroup",
+  "filterTreeCondition",
+  "filterTreeActions",
+  "filterTreeRemove",
   "filterField",
   "filterLabel",
   "filterInput",

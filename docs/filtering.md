@@ -200,7 +200,9 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `evaluateFilterTree` itself; a host that calls `useFrontendData`
   directly passes `filterTreeFn` over the same defs as `filterFn`. A
   server that declares `supports.filterTree` receives the same tree on
-  `query.filterTree`.
+  `query.filterTree`. The filter panel mounts `FilterTreeBuilder` —
+  add condition, add group, AND/OR — over that same model. Tree
+  leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

@@ -610,6 +610,13 @@ export interface BaseDataTableProps<TRow> {
    */
   filters?: readonly FilterDef<TRow>[] | ReactNode;
   /**
+   * Resolved filter definitions, used to label AND/OR tree chips. The
+   * shell sets this from the declarative `filters` array; hosts that
+   * call `useTableChrome` directly can pass the same defs the builder
+   * receives.
+   */
+  filterDefs?: readonly FilterDef<TRow>[];
+  /**
    * How the filter container opens. `"popover"` (default) anchors a light
    * card under the Filters button — no backdrop, closing on Escape and
    * outside click; `"drawer"` slides in a side panel with a real backdrop.

@@ -7,6 +7,7 @@ import {
   columnsHaveFooter,
   type ConfirmHandler,
   type FilterRuntime,
+  FilterTreeBuilder,
   type GridFocusState,
   type GroupByInput,
   type GroupCollapseState,
@@ -793,7 +794,12 @@ function autoFilterForm<TRow>(
   labels: Required<TableLabels>
 ) {
   if (runtime.defs.length === 0) return undefined;
-  return <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />;
+  return (
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />
+      <FilterTreeBuilder defs={runtime.defs} source={source} labels={labels} />
+    </div>
+  );
 }
 
 /** antd `<Table>` size tokens. */
@@ -1353,6 +1359,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onCellEdit: recordingCellEdit,
     source: resolvedSource,
     filters: filtersNode,
+    filterDefs: runtime.defs,
     filterLabels,
     pinnedRowIds: pinChrome.pinnedRowIds,
     onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,

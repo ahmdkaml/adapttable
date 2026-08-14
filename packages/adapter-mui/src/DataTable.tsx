@@ -1,4 +1,4 @@
-import { resolveLabels } from "@adapttable/core";
+import { FilterTreeBuilder, resolveLabels } from "@adapttable/core";
 import {
   BatchEditBar,
   FindBar,
@@ -66,11 +66,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration lives in core's shell; MUI adds only its
   // kit's row `size` over the returned bundles.
   const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      labels={resolveLabels(props.labels)}
-    />
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        labels={resolveLabels(props.labels)}
+      />
+      <FilterTreeBuilder defs={defs} source={source} labels={props.labels} />
+    </div>
   ));
   const {
     chrome: c,

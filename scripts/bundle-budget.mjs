@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 67,
+    budgetKB: 72,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -176,14 +176,21 @@ const FIXTURES = [
   // the codec is a separate module so `useFrontendData` does not pull
   // the predicate engine. `core · simple table` is 12.3 KB of a 13 KB
   // ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 98 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 97 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 97 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 93 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 97 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 103 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 99 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 96 },
+  //
+  // The visual AND/OR builder (~4 KB per kit) mounts under the same
+  // filter panel every adapter already imports. The host still opts
+  // in with `filters` — omit the defs and the builder returns null —
+  // but the recursive native UI cannot sit behind a second entry
+  // without breaking a shared `ft=` link that needs editing. The
+  // simple-table fixture stayed at 12.5 KB of a 13 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 103 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 102 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 102 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 98 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 102 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 108 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 104 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 101 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

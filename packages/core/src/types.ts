@@ -493,6 +493,22 @@ export interface TableLabels {
    * (and the `filters-done` part name).
    */
   filtersDone?: string;
+  /** Heading for the AND/OR filter-tree builder. */
+  filterTree?: string;
+  /** Add a leaf condition to the filter tree. */
+  filterAddCondition?: string;
+  /** Add a nested AND/OR group to the filter tree. */
+  filterAddGroup?: string;
+  /** Combinator: every child must match. */
+  filterCombinatorAnd?: string;
+  /** Combinator: any child may match. */
+  filterCombinatorOr?: string;
+  /** Remove one tree condition. */
+  filterRemoveCondition?: string;
+  /** Remove a nested tree group. */
+  filterRemoveGroup?: string;
+  /** Field picker in the filter-tree builder. */
+  filterField?: string;
   sortBy?: string;
   rowsPerPage?: string;
   actions?: string;

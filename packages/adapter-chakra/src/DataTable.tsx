@@ -1,3 +1,4 @@
+import { FilterTreeBuilder } from "@adapttable/core";
 import {
   BatchEditBar,
   FindBar,
@@ -48,13 +49,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
 
   const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      accentColor={accentColor}
-      dir={props.dir}
-      labels={props.labels}
-    />
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        accentColor={accentColor}
+        dir={props.dir}
+        labels={props.labels}
+      />
+      <FilterTreeBuilder defs={defs} source={source} labels={props.labels} />
+    </div>
   ));
   const {
     source,

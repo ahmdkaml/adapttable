@@ -27,6 +27,7 @@ import {
   mergeFilterChips,
   resolveActiveFilterCount,
 } from "./filters/useActiveFilterChips";
+import { useFilterTreeChips } from "./filters/useFilterTreeChips";
 import {
   formatGroupBy,
   type GroupByInput,
@@ -500,9 +501,19 @@ export function useTableChrome<TRow>(
     }
   }, [controlledSelection, selectedIds, notifySelectionChange]);
 
+  const treeChips = useFilterTreeChips({
+    tree: source.filterTree,
+    defs: props.filterDefs ?? [],
+    labels: table.labels,
+    setFilterTree: source.setFilterTree,
+  });
   const mergedChips = useMemo<readonly ActiveFilterChip[]>(
-    () => mergeFilterChips(table.filterChips, extraChips),
-    [table.filterChips, extraChips]
+    () =>
+      mergeFilterChips(
+        mergeFilterChips(table.filterChips, extraChips),
+        treeChips
+      ),
+    [table.filterChips, extraChips, treeChips]
   );
 
   const activeFilterCount = resolveActiveFilterCount(
@@ -534,6 +545,7 @@ export function useTableChrome<TRow>(
   // via `source.clearExtras` instead.)
   const clearFilters = useCallback(() => {
     source.clearExtras();
+    source.setFilterTree?.(undefined);
     onClearFilters?.();
   }, [onClearFilters, source]);
 
