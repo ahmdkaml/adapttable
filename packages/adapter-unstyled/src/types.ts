@@ -133,6 +133,10 @@ export interface DataTableClassNames {
   columnMenuSubmenu?: string;
   /** One action inside the per-column submenu. */
   columnMenuAction?: string;
+  /** Host-provided controls after a header caption. */
+  headerActions?: string;
+  /** Free slot under the table, above the pager. */
+  tableFooter?: string;
   /** The saved-views menu container (trigger + anchored panel). */
   viewsMenu?: string;
   /** The saved-views menu trigger button. */

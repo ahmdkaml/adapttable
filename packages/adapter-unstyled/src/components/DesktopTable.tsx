@@ -2,13 +2,17 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
   type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowPinSide,
   type TableLabels,
@@ -860,6 +864,7 @@ export function DesktopTable<TRow>({
     collapsibleColumnGroups
   );
   const summary = useSummaryCells(summaryRow, rows);
+  const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   const groupPad = (
     <th
       data-adapttable-part="header-group-cell"
@@ -1049,6 +1054,12 @@ export function DesktopTable<TRow>({
             // level). Its `data-sort-index` doubles as the badge content.
             const sortButtonProps = table.getSortButtonProps(column);
             const sortIndex = sortButtonProps["data-sort-index"];
+            const headerController = columnHeaderController(column, {
+              sortDir: effectiveDir,
+              sortIndex: typeof sortIndex === "number" ? sortIndex : undefined,
+              toggleSort: sortButtonProps.onClick,
+            });
+            const headerCaption = resolveColumnHeader(column, headerController);
             return (
               <th
                 key={column.key}
@@ -1067,8 +1078,9 @@ export function DesktopTable<TRow>({
                     {...sortButtonProps}
                     data-adapttable-part="sort-button"
                     className={classNames.sortButton}
+                    title={column.headerTooltip}
                   >
-                    {column.header}
+                    {headerCaption}
                     {typeof sortIndex === "number" && (
                       <span
                         data-adapttable-part="sort-index"
@@ -1080,8 +1092,16 @@ export function DesktopTable<TRow>({
                     <span aria-hidden> {sortGlyph(active, effectiveDir)}</span>
                   </button>
                 ) : (
-                  column.header
+                  <span title={column.headerTooltip}>{headerCaption}</span>
                 )}
+                {column.headerActions ? (
+                  <span
+                    data-adapttable-part="header-actions"
+                    className={classNames.headerActions}
+                  >
+                    {column.headerActions}
+                  </span>
+                ) : null}
                 {setWidth && (
                   <span
                     {...columnResizeHandleProps(
@@ -1360,7 +1380,7 @@ export function DesktopTable<TRow>({
           ))}
         </tbody>
       )}
-      {summary && (
+      {showColumnFooter && (
         <tfoot data-adapttable-part="summary" className={classNames.summary}>
           <tr
             data-adapttable-part="summary-row"
@@ -1375,7 +1395,7 @@ export function DesktopTable<TRow>({
                 data-adapttable-part="summary-cell"
                 className={classNames.summaryCell}
               >
-                {summary[column.key]}
+                {resolveColumnFooter(column, summary?.[column.key])}
               </td>
             ))}
             {showActions && summaryPad}

@@ -4,6 +4,7 @@ import {
   cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
+  columnsHaveFooter,
   type ConfirmHandler,
   type FilterRuntime,
   type GridFocusState,
@@ -17,6 +18,7 @@ import {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowStickyStyle,
+  resolveColumnFooter,
   resolveExportCsv,
   resolveLabels,
   type RowExpansionState,
@@ -655,13 +657,13 @@ function buildSummary<TRow>(
   leadingCells: number,
   hasActions: boolean
 ): TableProps<GroupedDataRecord<TRow>>["summary"] {
-  if (!summaryRow) return undefined;
+  if (!summaryRow && !columnsHaveFooter(columns)) return undefined;
   return function SummaryCells(pageData) {
     const leafRows = pageData.filter(
       (record): record is TRow =>
         !isAdaptTableGroupRow(record) && !isAdaptTableExtraRow(record)
     );
-    const cells = summaryRow(leafRows);
+    const cells = summaryRow?.(leafRows) ?? {};
     return (
       <Table.Summary.Row>
         {Array.from({ length: leadingCells }, (_, i) => (
@@ -670,7 +672,7 @@ function buildSummary<TRow>(
         {columns.map((column, i) => (
           <Table.Summary.Cell key={column.key} index={leadingCells + i}>
             <div style={{ textAlign: logicalAlign(column.align) }}>
-              {cells[column.key]}
+              {resolveColumnFooter(column, cells[column.key])}
             </div>
           </Table.Summary.Cell>
         ))}
@@ -1267,6 +1269,11 @@ function AntdRowReorderAnnouncer<TRow>({
   return <RowReorderAnnouncer announcement={rowReorder.announcement} />;
 }
 
+function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
+  if (children == null) return null;
+  return <div data-adapttable-part="table-footer">{children}</div>;
+}
+
 /**
  * Batteries-included Ant Design data table. Drop in `columns`, a `source`,
  * and a `rowKey` for a fully wired antd `<Table>` — sorting, selection,
@@ -1770,6 +1777,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         <div className={c.body === "desktop" ? classNames?.table : undefined}>
           {bodyRegion}
         </div>
+        <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.isPaged && !source.error && c.body === "desktop" && (
           <div className={classNames?.footer}>
             <PagedFooter

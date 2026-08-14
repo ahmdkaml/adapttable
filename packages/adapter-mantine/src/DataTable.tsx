@@ -320,6 +320,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Group>
         )}
 
+        {props.tableFooter ? (
+          <Box data-adapttable-part="table-footer">{props.tableFooter}</Box>
+        ) : null}
+
         {chrome.showFooter && (
           <Box className={classNames?.footer}>
             <PaginationFooter

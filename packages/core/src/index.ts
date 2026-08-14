@@ -17,6 +17,9 @@ export type {
   CellProps,
   ColorScheme,
   ColumnDef,
+  ColumnFooterContext,
+  ColumnHeaderContext,
+  ColumnHeaderController,
   Direction,
   ExtraFilters,
   FilterValue,
@@ -298,6 +301,13 @@ export { nextSort } from "./sort/cycleSort";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
 export { autoSizeColumns, measureColumnWidth } from "./columns/autoSizeColumns";
+export {
+  columnHeaderController,
+  columnHeaderLabel,
+  columnsHaveFooter,
+  resolveColumnFooter,
+  resolveColumnHeader,
+} from "./columns/columnHeader";
 export {
   ACTIONS_COLUMN_KEY,
   type ColumnMenuAction,

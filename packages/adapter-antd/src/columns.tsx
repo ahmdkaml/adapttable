@@ -1,6 +1,7 @@
 import {
   ACTIONS_COLUMN_KEY,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
   type ConfirmHandler,
   type EditableCellEditing,
@@ -8,6 +9,7 @@ import {
   type GroupCollapseState,
   type PinSide,
   REORDER_COLUMN_KEY,
+  resolveColumnHeader,
   type RowAction,
   runRowAction,
   type SortDirection,
@@ -599,8 +601,20 @@ export function buildColumns<TRow>({
         // dev. The wrapper takes the ref; the absolute resize handle still
         // anchors to the (positioned) header cell, so the layout is unchanged.
         title: (
-          <span>
-            {column.header}
+          <span title={column.headerTooltip}>
+            {resolveColumnHeader(
+              column,
+              columnHeaderController(column, {
+                sortDir: effectiveSortDir,
+                sortIndex:
+                  typeof sortIndex === "number" ? sortIndex : undefined,
+              })
+            )}
+            {column.headerActions ? (
+              <span data-adapttable-part="header-actions">
+                {column.headerActions}
+              </span>
+            ) : null}
             <SortIndexBadge index={sortIndex} />
             {setWidth && (
               <span

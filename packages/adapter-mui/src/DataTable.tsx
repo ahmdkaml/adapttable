@@ -16,6 +16,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -30,6 +31,11 @@ import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
+
+function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
+  if (children == null) return null;
+  return <Box data-adapttable-part="table-footer">{children}</Box>;
+}
 
 /**
  * Map row density to MUI's table `size`, independent of column pinning. An
@@ -227,6 +233,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </Button>
           </Box>
         )}
+        <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.showFooter && (
           <Box className={classNames?.footer}>
             <Footer

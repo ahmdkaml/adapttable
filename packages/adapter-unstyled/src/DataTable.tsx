@@ -479,6 +479,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         </div>
       )}
 
+      {props.tableFooter ? (
+        <div
+          data-adapttable-part="table-footer"
+          className={classNames.tableFooter}
+        >
+          {props.tableFooter}
+        </div>
+      ) : null}
+
       {chrome.showFooter && (
         <Footer
           pagination={table.pagination}

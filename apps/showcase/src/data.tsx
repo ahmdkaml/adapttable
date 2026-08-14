@@ -415,6 +415,7 @@ export function makeColumns(
     {
       key: "person",
       header: s.person,
+      headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
       editable: true,
@@ -442,6 +443,7 @@ export function makeColumns(
     {
       key: "email",
       header: s.email,
+      headerTooltip: s.email,
       // Opt-in cell editing demo — only activates when the host passes
       // `onCellEdit` (Frontend path in DemoBody). Column flag alone is inert.
       editable: true,
@@ -574,6 +576,7 @@ export function makeWideColumns(
     {
       key: "person",
       header: s.person,
+      headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
       editable: true,
@@ -644,6 +647,7 @@ export function makeWideColumns(
     {
       key: "email",
       header: s.email,
+      headerTooltip: s.email,
       editable: true,
       editor: "text",
       accessor: (r) => r.email,

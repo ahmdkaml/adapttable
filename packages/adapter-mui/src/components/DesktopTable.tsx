@@ -2,13 +2,17 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
   type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowPinSide,
   type TableLabels,
@@ -710,6 +714,8 @@ export function DesktopTable<TRow>({
   );
   // Footer summary cells for the CURRENT rows, keyed by column key.
   const summaryCells = useSummaryCells(summaryRow, rows);
+  const showColumnFooter =
+    summaryCells !== undefined || columnsHaveFooter(columns);
   // Expansion is active only when BOTH halves arrived (the chrome supplies
   // `expansion` exactly when `renderRowDetail` is set).
   const isExpanded =
@@ -1022,6 +1028,24 @@ export function DesktopTable<TRow>({
                 ariaSort === "ascending" || ariaSort === "descending";
               // 1-based multi-sort chain position, when the column is in it.
               const sortIndex = headerCellProps["data-sort-index"];
+              const sortProps = table.getSortButtonProps(column);
+              let sortDir: "asc" | "desc" | undefined;
+              if (ariaSort === "descending") sortDir = "desc";
+              else if (ariaSort === "ascending") sortDir = "asc";
+              const caption = resolveColumnHeader(
+                column,
+                columnHeaderController(column, {
+                  sortDir,
+                  sortIndex:
+                    typeof sortIndex === "number" ? sortIndex : undefined,
+                  toggleSort: sortProps.onClick,
+                })
+              );
+              const actions = column.headerActions ? (
+                <span data-adapttable-part="header-actions">
+                  {column.headerActions}
+                </span>
+              ) : null;
               return (
                 <TableCell
                   key={column.key}
@@ -1045,9 +1069,10 @@ export function DesktopTable<TRow>({
                       // Core's handler, with the REAL click event passed
                       // through: it reads `shiftKey` to chain the column when
                       // `multiSort` is on, else single-sorts as before.
-                      onClick={table.getSortButtonProps(column).onClick}
+                      onClick={sortProps.onClick}
+                      title={column.headerTooltip}
                     >
-                      {column.header}
+                      {caption}
                       {sortIndex !== undefined && (
                         <Box component="span" sx={{ fontSize: 10, ml: 0.5 }}>
                           {sortIndex}
@@ -1055,8 +1080,9 @@ export function DesktopTable<TRow>({
                       )}
                     </TableSortLabel>
                   ) : (
-                    column.header
+                    <span title={column.headerTooltip}>{caption}</span>
                   )}
+                  {actions}
                   {setWidth && (
                     <Box
                       component="span"
@@ -1328,7 +1354,7 @@ export function DesktopTable<TRow>({
             {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
           </TableBody>
         )}
-        {summaryCells && (
+        {showColumnFooter && (
           <TableFooter>
             <TableRow>
               {expandActive && <TableCell padding="checkbox" />}
@@ -1341,7 +1367,7 @@ export function DesktopTable<TRow>({
                   key={column.key}
                   sx={{ textAlign: muiAlign(column.align) }}
                 >
-                  {summaryCells[column.key]}
+                  {resolveColumnFooter(column, summaryCells?.[column.key])}
                 </TableCell>
               ))}
               {showActions && <TableCell />}

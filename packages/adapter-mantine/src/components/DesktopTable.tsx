@@ -1,13 +1,17 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
   type GridFocusState,
   PIN_Z,
   pinnedCellStyle,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowPinSide,
   runRowAction,
@@ -212,22 +216,35 @@ function HeaderCell<TRow>({
     ...cellProps.style,
     ...stickyStyle,
   };
+  const buttonProps = table.getSortButtonProps(column);
+  const sortIndex = buttonProps["data-sort-index"];
+  const level = table.source.sortLevels.find((l) => l.key === column.key);
+  const caption = resolveColumnHeader(
+    column,
+    columnHeaderController(column, {
+      sortDir:
+        level?.dir ?? (table.sortBy === column.key ? table.sortDir : undefined),
+      sortIndex: typeof sortIndex === "number" ? sortIndex : undefined,
+      toggleSort: buttonProps.onClick,
+    })
+  );
+  const actions = column.headerActions ? (
+    <span data-adapttable-part="header-actions">{column.headerActions}</span>
+  ) : null;
   if (!column.sortable) {
     return (
       <Table.Th {...cellProps} style={headerStyle}>
-        {column.header}
+        <span title={column.headerTooltip}>{caption}</span>
+        {actions}
         {resizeHandle}
       </Table.Th>
     );
   }
   // Core's onClick receives the click event as-is (no zero-arg wrapper), so
   // shift-clicks reach the multi-sort branch inside `getSortButtonProps`.
-  const buttonProps = table.getSortButtonProps(column);
   // 1-based chain position from core (always > 0 when defined) — drives the
   // multi-sort badge; the chain level also wins the icon's active/dir state,
   // because chaining clears the single-sort `sortBy`.
-  const sortIndex = buttonProps["data-sort-index"];
-  const level = table.source.sortLevels.find((l) => l.key === column.key);
   const active = level !== undefined || table.sortBy === column.key;
   return (
     <Table.Th {...cellProps} style={headerStyle}>
@@ -236,6 +253,7 @@ function HeaderCell<TRow>({
         gap={6}
         wrap="nowrap"
         display="inline-flex"
+        title={column.headerTooltip}
         style={{
           background: "none",
           border: 0,
@@ -246,7 +264,7 @@ function HeaderCell<TRow>({
         }}
         {...buttonProps}
       >
-        <span>{column.header}</span>
+        <span>{caption}</span>
         <SortIcon active={active} dir={level?.dir ?? table.sortDir} />
         {typeof sortIndex === "number" && (
           <Badge component="span" size="xs" variant="light">
@@ -254,6 +272,7 @@ function HeaderCell<TRow>({
           </Badge>
         )}
       </Group>
+      {actions}
       {resizeHandle}
     </Table.Th>
   );
@@ -863,6 +882,8 @@ export function DesktopTable<TRow>({
     collapsibleColumnGroups
   );
   const summaryCells = useSummaryCells(summaryRow, rows);
+  const showColumnFooter =
+    summaryCells !== undefined || columnsHaveFooter(columns);
   const hasEndPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "end"
   );
@@ -1510,7 +1531,7 @@ export function DesktopTable<TRow>({
             {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
           </Table.Tbody>
         )}
-        {summaryCells && (
+        {showColumnFooter && (
           <Table.Tfoot>
             <Table.Tr>
               {expandable && <Table.Td />}
@@ -1525,7 +1546,7 @@ export function DesktopTable<TRow>({
                   fw={600}
                   c="dimmed"
                 >
-                  {summaryCells[column.key]}
+                  {resolveColumnFooter(column, summaryCells?.[column.key])}
                 </Table.Td>
               ))}
               {showActions && <Table.Td />}

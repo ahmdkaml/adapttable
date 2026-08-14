@@ -55,7 +55,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 
 - [Overview](https://orwa-mahmoud.github.io/adapttable/): what AdaptTable is, in one page
 - [Get started with AdaptTable — React table for your UI kit](https://orwa-mahmoud.github.io/adapttable/getting-started/): install (npx @adapttable/cli init), providers, first table
-- [React table columns — ColumnDef, sort, pin, custom cells](https://orwa-mahmoud.github.io/adapttable/columns/): keys, headers, grouped/collapsible headers, Cell, align, responsive, per-locale paths
+- [React table columns — ColumnDef, sort, pin, custom cells](https://orwa-mahmoud.github.io/adapttable/columns/): keys, headers, custom header/footer, grouped/collapsible headers, Cell, align, responsive, per-locale paths
 - [React table sorting — single, multi-column, server-side](https://orwa-mahmoud.github.io/adapttable/sorting/): sortable, sortValue, multi-sort, URL codec
 - [React table filters — chips, operators, URL-synced state](https://orwa-mahmoud.github.io/adapttable/filtering/): five types, operator widgets, option sources, custom JSX
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device

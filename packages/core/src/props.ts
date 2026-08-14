@@ -407,6 +407,11 @@ export interface BaseDataTableProps<TRow> {
    */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /**
+   * Free slot under the table (above the pager). Not the column-aligned
+   * summary row — that is {@link BaseDataTableProps.summaryRow}.
+   */
+  tableFooter?: ReactNode;
+  /**
    * Row grouping by column key — one key, or an ordered list for nested
    * groups: `groupBy={["team", "status"]}` puts each status inside its team,
    * and every header carries the count and aggregates of its whole subtree.

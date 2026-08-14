@@ -223,6 +223,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </Button>
           </Flex>
         )}
+        {props.tableFooter ? (
+          <div data-adapttable-part="table-footer">{props.tableFooter}</div>
+        ) : null}
         {chrome.showFooter && (
           <Footer
             className={props.classNames?.footer}

@@ -2,13 +2,17 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
   type GridFocusState,
   PIN_Z,
   type PinSide,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowExpansionState,
   type RowPinSide,
@@ -884,6 +888,7 @@ export function DesktopTable<TRow>({
     collapsibleColumnGroups
   );
   const summary = useSummaryCells(summaryRow, rows);
+  const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
   // sticky and let the header overlap the first row.
@@ -1173,6 +1178,19 @@ export function DesktopTable<TRow>({
               const sortButton = table.getSortButtonProps(column);
               const sortClick = sortButton.onClick;
               const sortIndex = sortButton["data-sort-index"];
+              const caption = resolveColumnHeader(
+                column,
+                columnHeaderController(column, {
+                  sortIndex:
+                    typeof sortIndex === "number" ? sortIndex : undefined,
+                  toggleSort: sortClick,
+                })
+              );
+              const actions = column.headerActions ? (
+                <span data-adapttable-part="header-actions">
+                  {column.headerActions}
+                </span>
+              ) : null;
               return (
                 <Table.ColumnHeader
                   key={column.key}
@@ -1192,8 +1210,9 @@ export function DesktopTable<TRow>({
                       cursor="pointer"
                       aria-label={`${labels.sortBy}: ${columnName(column)}`}
                       onClick={sortClick}
+                      title={column.headerTooltip}
                     >
-                      {column.header}
+                      {caption}
                       <Text as="span" aria-hidden>
                         {sortGlyph(ariaSort)}
                       </Text>
@@ -1215,8 +1234,9 @@ export function DesktopTable<TRow>({
                       )}
                     </chakra.button>
                   ) : (
-                    column.header
+                    <span title={column.headerTooltip}>{caption}</span>
                   )}
+                  {actions}
                   {setWidth && (
                     <Box
                       as="span"
@@ -1311,7 +1331,7 @@ export function DesktopTable<TRow>({
             {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
           </Table.Body>
         )}
-        {summary && (
+        {showColumnFooter && (
           <Table.Footer>
             <Table.Row>
               {expandable && <Table.Cell px={1} />}
@@ -1324,7 +1344,7 @@ export function DesktopTable<TRow>({
                   key={column.key}
                   textAlign={logicalAlign(column.align)}
                 >
-                  {summary[column.key]}
+                  {resolveColumnFooter(column, summary?.[column.key])}
                 </Table.Cell>
               ))}
               {showActions && <Table.Cell />}

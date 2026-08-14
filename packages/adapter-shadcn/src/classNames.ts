@@ -129,6 +129,8 @@ export const shadcnClassNames = {
   columnMenuSubmenu: "ms-6 flex flex-col gap-0.5 py-1",
   columnMenuAction:
     "w-full rounded-md px-2 py-1.5 text-start text-[13px] font-medium hover:bg-muted/60 disabled:opacity-50",
+  headerActions: "ms-1 inline-flex items-center gap-0.5",
+  tableFooter: "px-3 py-2 text-sm text-muted-foreground",
   resizeHandle: "hover:bg-border",
   card: "mb-2 rounded-lg border border-border p-3 [[data-density=compact]_&]:p-2",
   cardRow: "flex justify-between gap-3 py-0.5 text-sm",

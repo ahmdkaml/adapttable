@@ -2,13 +2,17 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
   type GridFocusState,
   PIN_Z,
   type PinSide,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowExpansionState,
   type RowPinSide,
@@ -662,6 +666,7 @@ export function DesktopTable<TRow>({
     collapsibleColumnGroups
   );
   const summary = useSummaryCells(summaryRow, rows);
+  const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   // End-pinned actions count as a pin too: sticking them needs the wrapper to
   // be the horizontal scroll container, exactly like a pinned data column.
   const { hasPinned, leads, extraMinWidth, expand, selectionLead, reorderSig } =
@@ -961,6 +966,19 @@ export function DesktopTable<TRow>({
               const sortButton = table.getSortButtonProps(column);
               const sortClick = sortButton.onClick;
               const sortIndex = sortButton["data-sort-index"];
+              const caption = resolveColumnHeader(
+                column,
+                columnHeaderController(column, {
+                  sortIndex:
+                    typeof sortIndex === "number" ? sortIndex : undefined,
+                  toggleSort: sortClick,
+                })
+              );
+              const actions = column.headerActions ? (
+                <span data-adapttable-part="header-actions">
+                  {column.headerActions}
+                </span>
+              ) : null;
               return (
                 <Table.ColumnHeaderCell
                   key={column.key}
@@ -988,8 +1006,9 @@ export function DesktopTable<TRow>({
                       }}
                       aria-label={`${labels.sortBy}: ${columnName(column)}`}
                       onClick={sortClick}
+                      title={column.headerTooltip}
                     >
-                      {column.header}
+                      {caption}
                       <Text as="span" aria-hidden>
                         {sortGlyph(ariaSort)}
                       </Text>
@@ -1012,8 +1031,9 @@ export function DesktopTable<TRow>({
                       )}
                     </button>
                   ) : (
-                    column.header
+                    <span title={column.headerTooltip}>{caption}</span>
                   )}
+                  {actions}
                   {setWidth && (
                     <span
                       style={RESIZE_HANDLE_STYLE}
@@ -1244,7 +1264,7 @@ export function DesktopTable<TRow>({
               />
             </Table.Row>
           )}
-          {summary && (
+          {showColumnFooter && (
             <Table.Row data-summary="">
               {expandable && <Table.Cell />}
               <When show={showReorder}>
@@ -1253,7 +1273,7 @@ export function DesktopTable<TRow>({
               {selection && <Table.Cell />}
               {columns.map((column) => (
                 <Table.Cell key={column.key} justify={justifyFor(column.align)}>
-                  {summary[column.key]}
+                  {resolveColumnFooter(column, summary?.[column.key])}
                 </Table.Cell>
               ))}
               {showActions && <Table.Cell />}

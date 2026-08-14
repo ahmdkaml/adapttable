@@ -68,6 +68,21 @@ export interface ColumnDef<TRow> {
    */
   header?: ReactNode;
   /**
+   * Replace the header caption. The surrounding cell still owns sort,
+   * resize and the menu — this callback receives that controller so a
+   * custom caption can stay wired.
+   */
+  renderHeader?: (ctx: ColumnHeaderContext<TRow>) => ReactNode;
+  /**
+   * Replace one summary-row cell. `value` is whatever `summaryRow`
+   * produced for this key (or `undefined` when only this renderer is set).
+   */
+  renderFooter?: (ctx: ColumnFooterContext<TRow>) => ReactNode;
+  /** Native tooltip on the header caption. */
+  headerTooltip?: string;
+  /** Host-provided controls after the caption, before the resize handle. */
+  headerActions?: ReactNode;
+  /**
    * Presentational header group: contiguous columns sharing a `group`
    * render under one spanning header cell. A string is one level; a
    * path (`["Finance", "Q1"]`) stacks rows. Reordering columns apart
@@ -225,6 +240,28 @@ export interface ColumnDef<TRow> {
   lockPin?: boolean;
   /** Arbitrary metadata adapters may read (e.g. a custom renderer flag). */
   meta?: Record<string, unknown>;
+}
+
+/** Sort/resize state a custom header caption can read. */
+export interface ColumnHeaderController {
+  /** Default caption (`header`, else the humanized key). */
+  label: ReactNode;
+  sortDir?: "asc" | "desc";
+  sortIndex?: number;
+  /** Cycle this column's sort. No-op when the column is not sortable. */
+  toggleSort: (event?: { shiftKey?: boolean }) => void;
+}
+
+/** Arguments for {@link ColumnDef.renderHeader}. */
+export interface ColumnHeaderContext<TRow> {
+  column: ColumnDef<TRow>;
+  controller: ColumnHeaderController;
+}
+
+/** Arguments for {@link ColumnDef.renderFooter}. */
+export interface ColumnFooterContext<TRow> {
+  column: ColumnDef<TRow>;
+  value: ReactNode;
 }
 
 /** Confirmation wiring shared by row and bulk actions. */

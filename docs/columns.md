@@ -94,6 +94,7 @@ export function People() {
 ## How it works
 
 - A bare `{ key }` is a complete column: the key doubles as the row's data path (dot paths reach nested values, `"department.name"`), and the header is auto-humanised (`hiredAt` → "Hired At"). An explicit `header` always wins, in any language.
+- `renderHeader` replaces the caption only. The cell still owns sort, resize and the menu, and passes a `controller` (`label`, `sortDir`, `toggleSort`) so a custom caption can stay wired. `headerTooltip` is a native title; `headerActions` sit after the caption. `renderFooter` replaces one summary cell; `tableFooter` is a free slot under the table.
 - Cell content resolves `Cell` → `accessor` → the key's data path. `Cell` is a React component receiving `{ row, rowIndex }`; `accessor` is the lighter function form.
 - `sortable` opts a column into sorting; on frontend data the comparator reads `sortValue`, falling back to the column's accessor. See [sorting](./sorting.md).
 - `i18n` maps locale tags to alternative data paths; the table's `locale` prop picks one (exact tag → primary subtag → `key`). The cell, client-side sort, and the column's filter all follow the resolved path — header text does not.
@@ -106,6 +107,10 @@ export function People() {
 | --------------- | -------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
 | `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.                              |
 | `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                                                     |
+| `renderHeader`  | `(ctx) => ReactNode`             | —                            | Custom caption; receives a controller so sort/resize stay available.                              |
+| `renderFooter`  | `(ctx) => ReactNode`             | —                            | Custom summary-row cell.                                                                          |
+| `headerTooltip` | `string`                         | —                            | Native tooltip on the caption.                                                                    |
+| `headerActions` | `ReactNode`                      | —                            | Host controls after the caption.                                                                  |
 | `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                                        |
 | `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.                            |
 | `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                                                   |

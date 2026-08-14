@@ -95,6 +95,7 @@ const columns: ColumnDef<Row>[] = [
     accessor: (r) => r.name,
     sortable: true,
     group: "Identity",
+    headerActions: <button type="button">info</button>,
     editable: true,
     editor: "text",
   },
@@ -232,6 +233,7 @@ function Harness(props: {
       collapsibleColumnGroups
       resizableColumns
       multiSort
+      tableFooter={<span>Footer slot</span>}
       summaryRow={() => ({ qty: "sum" })}
       groupAggregates={() => ({ qty: "agg" })}
       renderRowDetail={(r) => <div>{r.name}</div>}
@@ -522,6 +524,8 @@ const KEYS = [
   "columnMenuMore",
   "columnMenuSubmenu",
   "columnMenuAction",
+  "headerActions",
+  "tableFooter",
   "viewsMenu",
   "viewsButton",
   "viewsPanel",

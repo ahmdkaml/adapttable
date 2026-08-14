@@ -1059,3 +1059,37 @@ describe("<DataTable> (Mantine) — adapter defect fixes", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 });
+
+describe("custom header and footer", () => {
+  it("renders a custom caption, tooltip, actions and table footer", () => {
+    renderHarness({
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            accessor: (r) => r.name,
+            sortable: true,
+            headerTooltip: "Legal name",
+            headerActions: <button type="button">info</button>,
+            renderHeader: ({ controller }) => {
+              const { label } = controller;
+              if (typeof label !== "string") {
+                throw new Error("expected a string header caption");
+              }
+              return `*${label}*`;
+            },
+            renderFooter: () => "Name foot",
+          },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+        tableFooter: <p>Under the table</p>,
+      },
+    });
+    expect(screen.getByText("*Name*")).toBeInTheDocument();
+    expect(screen.getByTitle("Legal name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "info" })).toBeInTheDocument();
+    expect(screen.getByText("Name foot")).toBeInTheDocument();
+    expect(screen.getByText("Under the table")).toBeInTheDocument();
+  });
+});
