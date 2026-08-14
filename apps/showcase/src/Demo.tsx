@@ -236,8 +236,15 @@ function Frontend({
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
+    // The registry comes along: the demo declares a custom filter type, and
+    // without it the tree falls back to the built-ins and matches every row.
     filterTreeFn: (row, tree) =>
-      evaluateFilterTree(tree, row, DEMO_FILTER_RUNTIME.defs),
+      evaluateFilterTree(
+        tree,
+        row,
+        DEMO_FILTER_RUNTIME.defs,
+        DEMO_FILTER_RUNTIME.registry
+      ),
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
