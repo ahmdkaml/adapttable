@@ -35,7 +35,7 @@ export interface ChecklistFilterProps<TRow> {
   readonly def: FilterDef<TRow>;
   readonly source: Pick<
     TableSource<TRow>,
-    "allFilteredRows" | "extra" | "setExtra"
+    "allFilteredRows" | "extra" | "setExtra" | "facets"
   >;
   readonly labels?: TableLabels;
   readonly classNames?: ChecklistClassNames;

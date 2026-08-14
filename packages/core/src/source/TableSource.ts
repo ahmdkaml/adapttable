@@ -1,3 +1,4 @@
+import type { FacetMap } from "../filters/facets";
 import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
@@ -26,6 +27,19 @@ export interface TableSource<TRow> extends TableStateMutators {
    * current page is loaded). CSV `scope: "all"` prefers this when present.
    */
   readonly allFilteredRows?: readonly TRow[];
+  /**
+   * Rows after search, before extra filters. Facet counts (#281) start
+   * here so a checklist can exclude its own filter and still see the
+   * other values. Frontend sources set this; server sources omit it.
+   */
+  readonly allSearchedRows?: readonly TRow[];
+  /**
+   * Distinct-value counts per filter key. Frontend chrome computes them
+   * from {@link allSearchedRows} with each facet's own filter removed.
+   * A server that declared `supports.facets` supplies the same shape
+   * from `query.facets`.
+   */
+  readonly facets?: FacetMap;
   /** Total row count across all pages (server total or full array length). */
   readonly total: number;
   /**

@@ -356,7 +356,13 @@ function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     defaults: DEFAULTS,
     paginationMode: pageMode,
     urlKey,
-    supports: { filterTree: true },
+    supports: { filterTree: true, facets: true },
+    facetKeys: ["team"],
+    selectPage: (page) => ({
+      rows: page.items,
+      total: page.total,
+      facets: page.facets,
+    }),
   });
   // No onCellEdit — editing stays dormant on the server path.
   return <>{render(source, columns)}</>;

@@ -60,6 +60,12 @@ for (const adapter of ADAPTERS) {
       const table = demo(page).locator(`[data-adapter="${adapter}"]`);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
+      await box.getByLabel("Search values").fill("");
+      await expect(
+        box
+          .locator('[data-adapttable-part="filter-checkbox"]')
+          .filter({ hasText: /Web/ })
+      ).toBeVisible();
     });
 
     test("keeps the checklist under RTL", async ({ page }) => {

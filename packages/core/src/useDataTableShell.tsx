@@ -9,6 +9,7 @@ import {
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
+import type { FacetMap } from "./filters/facets";
 import type { FilterDef } from "./filters/filterDefs";
 import { useFindFocus, useFindInTable } from "./find/useFindInTable";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
@@ -17,6 +18,7 @@ import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
 import { coveredAddressSet } from "./rows/cellSpan";
 import type { RowPinState } from "./rows/rowPinning";
+import type { QuerySupport } from "./source/queryContract";
 import type { TableSource } from "./source/TableSource";
 import {
   type DataModeProps,
@@ -62,6 +64,18 @@ export type DataTableShellProps<TRow> = Omit<
   urlSync?: boolean;
   /** Namespace for this table's URL params. */
   urlKey?: string;
+  /**
+   * Server tier: what this endpoint can answer. `supports.facets`
+   * unlocks `query.facets` for checklist counts.
+   */
+  supports?: QuerySupport;
+  /**
+   * Server tier: keys to send as `query.facets`. Defaults to every
+   * `checklist` definition.
+   */
+  facetKeys?: readonly string[];
+  /** Server tier: distinct-value counts from the last fetch. */
+  facets?: FacetMap;
 } & DataModeProps<TRow>;
 
 /**
@@ -117,6 +131,9 @@ export function useDataTableShell<TRow>(
     filters: props.filters,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
+    supports: props.supports,
+    facetKeys: props.facetKeys,
+    facets: props.facets,
   });
   const { history, onCellEdit: recordingCellEdit } =
     useTableEditHistory<TRow>(props);

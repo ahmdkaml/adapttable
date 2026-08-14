@@ -118,9 +118,9 @@ export function PeopleTable() {
   wins and a development warning points at the duplicate.
 - Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
   `multiSelect` (one of), `checklist` (Excel-style distinct values with
-  search, select-all and counts — frontend only, from
-  `source.allFilteredRows`; a server page that omits that list does not
-  offer the widget), `boolean` (any / true / false — never a checkbox),
+  search, select-all and counts — from `source.facets` when present,
+  otherwise `source.allFilteredRows`; a server page that omits both does
+  not offer the widget), `boolean` (any / true / false — never a checkbox),
   `dateRange`, `numberRange`.
 - Widgets are operator-first. Text offers equals / not equals / contains /
   not contains / starts with / ends with / empty / not empty. Numbers offer
@@ -206,6 +206,14 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `query.filterTree`. The filter panel mounts `FilterTreeBuilder` —
   add condition, add group, AND/OR — over that same model. Tree
   leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
+- **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
+  `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
+  the filtered set with that facet's own filter removed. Frontend
+  `useTableData` computes them from `allSearchedRows` (after search,
+  before extras). A server that declares `supports.facets` receives
+  `query.facets` (checklist keys) and returns the same map on the page;
+  `useQuerySource` / `useServerData` surface it as `source.facets`.
+  `useChecklistFilter` prefers that map over `allFilteredRows`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

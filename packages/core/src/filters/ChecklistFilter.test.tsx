@@ -38,6 +38,29 @@ describe("ChecklistFilter", () => {
     expect(screen.queryByText("Team")).toBeNull();
   });
 
+  it("renders from facets when the page has no allFilteredRows", () => {
+    function FacetHarness() {
+      return (
+        <ChecklistFilter
+          def={DEF}
+          source={{
+            extra: {},
+            setExtra: () => undefined,
+            facets: {
+              team: [
+                { value: "Core", label: "Core", count: 2 },
+                { value: "Web", label: "Web", count: 4 },
+              ],
+            },
+          }}
+        />
+      );
+    }
+    render(<FacetHarness />);
+    expect(screen.getByRole("checkbox", { name: /Web/ })).toBeInTheDocument();
+    expect(screen.getByText("(4)")).toBeInTheDocument();
+  });
+
   it("searches, checks one value, and writes the bag", () => {
     render(<Harness />);
     expect(screen.getByText("(2)")).toBeInTheDocument();

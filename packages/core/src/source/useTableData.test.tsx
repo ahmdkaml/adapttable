@@ -70,6 +70,27 @@ describe("useTableData — frontend tier", () => {
       "Status: active"
     );
   });
+
+  it("facet counts keep other values after this facet is selected", () => {
+    const adapter = createMemoryAdapter("f_team=Core");
+    const { result } = renderHook(() =>
+      useTableData<Row & { team: string }>({
+        data: [
+          { id: "1", name: "Ada", status: "active", budget: 1, team: "Core" },
+          { id: "2", name: "Alan", status: "active", budget: 1, team: "Web" },
+        ],
+        columns: [{ key: "name" }, { key: "team" }],
+        filters: [{ key: "team", type: "checklist" }],
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.source.rows.map((row) => row.name)).toEqual(["Ada"]);
+    expect(result.current.source.facets?.team).toEqual([
+      { value: "Core", label: "Core", count: 1 },
+      { value: "Web", label: "Web", count: 1 },
+    ]);
+  });
 });
 
 describe("useTableData — tier resolution", () => {

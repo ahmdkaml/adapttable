@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { FacetMap } from "../filters/facets";
 import { parseGroupBy } from "../grouping/groupKeys";
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type {
@@ -40,6 +41,7 @@ export interface InfiniteQueryLike<TPage> {
 export type PageSelector<TRow, TPage> = (page: TPage) => {
   rows: readonly TRow[];
   total?: number;
+  facets?: FacetMap;
 };
 
 /** Options for {@link useQuerySource}. */
@@ -109,11 +111,16 @@ export interface UseQuerySourceOptions<
    * the result rather than a distance into it.
    */
   nextCursor?: (page: TPage) => string | null | undefined;
+  /**
+   * Filter keys to ask the server for distinct-value counts. Sent as
+   * `query.facets` only when `supports.facets` is set.
+   */
+  facetKeys?: readonly string[];
 }
 
 const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
   page
-) => ({ rows: page.rows ?? [], total: page.total });
+) => ({ rows: page.rows ?? [], total: page.total, facets: page.facets });
 
 /**
  * Server-paginated {@link TableSource}. Wraps a caller's
@@ -139,6 +146,7 @@ export function useQuerySource<
     aggregates,
     expandedIds,
     nextCursor,
+    facetKeys,
     ...urlOptions
   } = options;
 
@@ -185,6 +193,7 @@ export function useQuerySource<
           aggregates,
           expandedIds,
           filterTree: state.filterTree,
+          facets: facetKeys,
         },
         supports
       )
@@ -206,6 +215,7 @@ export function useQuerySource<
     expandedIds,
     supports,
     state.filterTree,
+    facetKeys,
   ]);
 
   const query = usePaginatedQuery(params);
@@ -246,9 +256,11 @@ export function useQuerySource<
   const selectorRef = useRef(selector);
   selectorRef.current = selector;
 
-  const { rows, total } = useMemo(() => {
+  const { rows, total, facets } = useMemo(() => {
     const pages = query.data?.pages;
-    if (!pages?.length) return { rows: [] as readonly TRow[], total: 0 };
+    if (!pages?.length) {
+      return { rows: [] as readonly TRow[], total: 0, facets: undefined };
+    }
     const project = selectorRef.current;
     if (paged) {
       const lastPage = pages.at(-1)!;
@@ -256,18 +268,21 @@ export function useQuerySource<
       return {
         rows: projected.rows,
         total: projected.total ?? projected.rows.length,
+        facets: projected.facets,
       };
     }
     const acc: TRow[] = [];
     let lastTotal: number | undefined;
+    let lastFacets: FacetMap | undefined;
     for (const pg of pages) {
       const projected = project(pg);
       acc.push(...projected.rows);
       if (projected.total !== undefined) lastTotal = projected.total;
+      if (projected.facets) lastFacets = projected.facets;
     }
     // Mirror the paged branch / useFrontendData: when the source reports no
     // grand total, fall back to the accumulated row count rather than 0.
-    return { rows: acc, total: lastTotal ?? acc.length };
+    return { rows: acc, total: lastTotal ?? acc.length, facets: lastFacets };
   }, [query.data, paged]);
 
   // Clamp out-of-range pages (hand-edited / stale shared links) once the
@@ -331,6 +346,7 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      facets,
       filterTree: state.filterTree,
       setPage,
       setLimit,
@@ -364,6 +380,7 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      facets,
       state.filterTree,
       setPage,
       setLimit,

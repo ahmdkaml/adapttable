@@ -12,10 +12,12 @@ interface Row {
 interface Page {
   items: Row[];
   pagination: { total: number };
+  facets?: { team: { value: string; label: string; count: number }[] };
 }
 interface ListParams extends TableQueryParams {
   status?: string[];
   scopeId?: string;
+  facets?: readonly string[];
 }
 
 const page = (items: Row[], total: number): Page => ({
@@ -407,5 +409,42 @@ describe("useQuerySource — cursor pagination", () => {
     await waitFor(() => {
       expect(last(query.calls).cursor).toBeUndefined();
     });
+  });
+});
+
+describe("useQuerySource — facets", () => {
+  it("sends query.facets when the source declares the capability", () => {
+    const query = makeQuery({ pages: [page([{ id: "1", name: "A" }], 1)] });
+    mount(query, {
+      selectPage,
+      supports: { facets: true },
+      facetKeys: ["team"],
+    });
+    expect(last(query.calls).facets).toEqual(["team"]);
+  });
+
+  it("surfaces page facets on the source", () => {
+    const facets = {
+      team: [{ value: "Core", label: "Core", count: 2 }],
+    };
+    const query = makeQuery({
+      pages: [
+        {
+          items: [{ id: "1", name: "A" }],
+          pagination: { total: 1 },
+          facets,
+        },
+      ],
+    });
+    const { result } = mount(query, {
+      selectPage: (p) => ({
+        rows: p.items,
+        total: p.pagination.total,
+        facets: p.facets,
+      }),
+      supports: { facets: true },
+      facetKeys: ["team"],
+    });
+    expect(result.current.facets).toEqual(facets);
   });
 });

@@ -76,6 +76,12 @@ export {
   type ChecklistFilterProps,
 } from "./filters/ChecklistFilter";
 export {
+  computeFilterFacets,
+  type FacetCounts,
+  type FacetMap,
+  rowsExcludingFilter,
+} from "./filters/facets";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,

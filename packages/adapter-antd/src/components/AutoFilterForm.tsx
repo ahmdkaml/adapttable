@@ -35,7 +35,7 @@ export interface AutoFilterFormProps<TRow> {
   /** The resolved source whose `extra` bag the controls read and write. */
   source: Pick<
     TableSource<TRow>,
-    "extra" | "setExtra" | "setExtras" | "allFilteredRows"
+    "extra" | "setExtra" | "setExtras" | "allFilteredRows" | "facets"
   >;
   /** Localized strings for the operator-first range widgets. */
   labels: RangeFilterLabels;

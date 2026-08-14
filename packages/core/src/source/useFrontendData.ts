@@ -164,26 +164,21 @@ export function useFrontendData<TRow>(
     [data, getSearchText]
   );
 
-  const filtered = useMemo(() => {
+  const searched = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const bySearch = term
+    return term
       ? data.filter((_, index) => searchIndex[index]!.includes(term))
       : data;
+  }, [data, searchIndex, search]);
+
+  const filtered = useMemo(() => {
     const byExtra = filterFn
-      ? bySearch.filter((row) => filterFn(row, state.extra))
-      : bySearch;
+      ? searched.filter((row) => filterFn(row, state.extra))
+      : searched;
     const tree = state.filterTree;
     if (!tree || !filterTreeFn) return byExtra;
     return byExtra.filter((row) => filterTreeFn(row, tree));
-  }, [
-    data,
-    searchIndex,
-    search,
-    filterFn,
-    filterTreeFn,
-    state.extra,
-    state.filterTree,
-  ]);
+  }, [searched, filterFn, filterTreeFn, state.extra, state.filterTree]);
 
   const sortLevels = state.sortLevels;
   const sorted = useMemo(() => {
@@ -241,6 +236,7 @@ export function useFrontendData<TRow>(
   return {
     rows,
     allFilteredRows: sorted,
+    allSearchedRows: searched,
     total,
     isLoading,
     isFetching,

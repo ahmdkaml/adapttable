@@ -1,7 +1,8 @@
 /**
  * Excel-style checklist filter — distinct values, counts, search,
- * select-all. Frontend reads {@link TableSource.allFilteredRows}; a
- * server page that omits that list does not offer the widget.
+ * select-all. Prefers {@link TableSource.facets} (own-filter excluded);
+ * falls back to {@link TableSource.allFilteredRows}. A server page that
+ * omits both does not offer the widget.
  */
 import { useMemo, useState } from "react";
 
@@ -102,22 +103,26 @@ function selectedList(value: FilterValue): string[] {
 }
 
 /**
- * Derive the checklist from `source.allFilteredRows`. Returns
- * `available: false` when that list is missing so a server page never
- * pretends it can count a set it does not hold.
+ * Derive the checklist from `source.facets` or `source.allFilteredRows`.
+ * Returns `available: false` when both are missing so a server page
+ * never pretends it can count a set it does not hold.
  */
 export function useChecklistFilter<TRow>(
   def: FilterDef<TRow>,
-  source: Pick<TableSource<TRow>, "allFilteredRows" | "extra" | "setExtra">
+  source: Pick<
+    TableSource<TRow>,
+    "allFilteredRows" | "extra" | "setExtra" | "facets"
+  >
 ): ChecklistFilterState {
+  const fromFacets = source.facets?.[def.key];
   const rows = source.allFilteredRows;
-  const available = rows !== undefined;
+  const available = fromFacets !== undefined || rows !== undefined;
   const raw = source.extra[def.key];
   const selected = selectedList(raw);
-  const items = useMemo(
-    () => (rows ? collectChecklistValues(def, rows, selectedList(raw)) : []),
-    [def, rows, raw]
-  );
+  const items = useMemo(() => {
+    if (fromFacets) return [...fromFacets];
+    return rows ? collectChecklistValues(def, rows, selectedList(raw)) : [];
+  }, [def, rows, raw, fromFacets]);
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const visible = useMemo(() => {

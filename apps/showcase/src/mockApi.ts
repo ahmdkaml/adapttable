@@ -1,5 +1,9 @@
-import type { FilterValue, QueryFilterGroup } from "@adapttable/core";
-import { evaluateFilterTree } from "@adapttable/core";
+import type {
+  ExtraFilters,
+  FacetMap,
+  QueryFilterGroup,
+} from "@adapttable/core";
+import { computeFilterFacets, evaluateFilterTree } from "@adapttable/core";
 
 import {
   budget,
@@ -17,10 +21,11 @@ export interface PeoplePage {
   items: Person[];
   total: number;
   nextPage: number | null;
+  facets?: FacetMap;
 }
 
 /** Query params the table sends to the "server". */
-export interface PeopleParams extends Record<string, FilterValue> {
+export interface PeopleParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -34,6 +39,9 @@ export interface PeopleParams extends Record<string, FilterValue> {
   allocationsMax?: number;
   budgetMin?: number;
   budgetMax?: number;
+  filters?: ExtraFilters;
+  facets?: readonly string[];
+  filterTree?: QueryFilterGroup;
 }
 
 const padNumber = (value: number): string => String(value).padStart(12, "0");
@@ -53,6 +61,27 @@ function sortValue(row: Person, key: string): string {
     default:
       return String(row[key as keyof Person] ?? "");
   }
+}
+
+const EXTRA_KEYS = [
+  "team",
+  "status",
+  "startFrom",
+  "startTo",
+  "allocationsMin",
+  "allocationsMax",
+  "budgetMin",
+  "budgetMax",
+] as const;
+
+function extraFromParams(params: PeopleParams): ExtraFilters {
+  if (params.filters) return params.filters;
+  const extra: ExtraFilters = {};
+  for (const key of EXTRA_KEYS) {
+    const value = params[key];
+    if (value !== undefined) extra[key] = value;
+  }
+  return extra;
 }
 
 /**
@@ -76,10 +105,29 @@ export async function fetchPeople(
     );
   }
 
-  rows = rows.filter((r) => matchesDemoFilters(r, params));
+  const extra = extraFromParams(params);
+  const searched = rows;
+  rows = rows.filter((r) => matchesDemoFilters(r, extra));
   rows = rows.filter((r) =>
     evaluateFilterTree(params.filterTree, r, DEMO_FILTER_RUNTIME.defs)
   );
+
+  const facets =
+    params.facets && params.facets.length > 0
+      ? computeFilterFacets(
+          DEMO_FILTER_RUNTIME.defs,
+          searched,
+          extra,
+          (row, nextExtra) => {
+            if (!matchesDemoFilters(row, nextExtra)) return false;
+            return evaluateFilterTree(
+              params.filterTree,
+              row,
+              DEMO_FILTER_RUNTIME.defs
+            );
+          }
+        )
+      : undefined;
 
   if (params.sortBy && params.sortDir) {
     const dir = params.sortDir === "asc" ? 1 : -1;
@@ -100,5 +148,5 @@ export async function fetchPeople(
   const items = rows.slice(start, start + limit);
   const nextPage = start + limit < total ? page + 1 : null;
 
-  return { items, total, nextPage };
+  return { items, total, nextPage, facets };
 }

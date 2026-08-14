@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { resolveColumns } from "../columns/resolveColumns";
+import { computeFilterFacets, type FacetMap } from "../filters/facets";
 import {
   buildFilterRuntime,
   type FilterDef,
@@ -20,6 +21,7 @@ import type {
 import type { UseTableUrlStateOptions } from "../url/useTableUrlState";
 import { devWarn } from "../utils/devWarn";
 import { stableKey } from "../utils/stableKey";
+import type { QuerySupport } from "./queryContract";
 import type { TableSource } from "./TableSource";
 import { useFrontendData } from "./useFrontendData";
 import {
@@ -69,6 +71,18 @@ export interface UseTableDataOptions<TRow> extends Pick<
   getSortValue?: (row: TRow, columnKey: string) => SortableValue;
   /** Active locale — drives per-column `i18n` path resolution. */
   locale?: string;
+  /**
+   * Server tier: what this endpoint can answer. `supports.facets`
+   * unlocks `query.facets` (checklist keys, or {@link facetKeys}).
+   */
+  supports?: QuerySupport;
+  /**
+   * Server tier: keys to send as `query.facets`. Defaults to every
+   * `checklist` definition when omitted.
+   */
+  facetKeys?: readonly string[];
+  /** Server tier: distinct-value counts from the last fetch. */
+  facets?: FacetMap;
 }
 
 /** Result of {@link useTableData}. */
@@ -229,6 +243,9 @@ export function useTableData<TRow>(
     getSearchText,
     getSortValue,
     locale,
+    supports,
+    facetKeys,
+    facets: serverFacets,
     ...urlOptions
   } = options;
 
@@ -326,6 +343,13 @@ export function useTableData<TRow>(
     error,
     isLoading: mode === "frontend" ? loading : undefined,
   });
+  const derivedFacetKeys = useMemo(() => {
+    if (facetKeys) return facetKeys;
+    return runtime.defs
+      .filter((def) => def.type === "checklist")
+      .map((def) => def.key);
+  }, [facetKeys, runtime.defs]);
+
   const server = useServerData<TRow>({
     ...urlOptions,
     urlSync: tier === "server" ? urlOptions.urlSync : false,
@@ -337,6 +361,9 @@ export function useTableData<TRow>(
     onQueryChange: tier === "server" ? onQueryChange : undefined,
     arrayExtraKeys: runtime.arrayExtraKeys,
     numberExtraKeys: runtime.numberExtraKeys,
+    supports: tier === "server" ? supports : undefined,
+    facetKeys: tier === "server" ? derivedFacetKeys : undefined,
+    facets: tier === "server" ? serverFacets : undefined,
   });
 
   // Explicit frontend mode turns `onQueryChange` into a pure notification
@@ -351,5 +378,26 @@ export function useTableData<TRow>(
   else if (tier === "server") resolved = server;
   else resolved = frontend;
 
-  return { source: resolved, runtime };
+  const facets = useMemo(() => {
+    if (resolved.facets) return resolved.facets;
+    const rows = resolved.allSearchedRows;
+    if (!rows) return undefined;
+    return computeFilterFacets(
+      runtime.defs,
+      rows,
+      resolved.extra,
+      (row, extra) => {
+        if (!combinedFilterFn(row, extra)) return false;
+        if (!resolved.filterTree) return true;
+        return evaluateFilterTree(resolved.filterTree, row, runtime.defs);
+      }
+    );
+  }, [resolved, runtime.defs, combinedFilterFn]);
+
+  const sourced = useMemo(
+    () => (facets ? { ...resolved, facets } : resolved),
+    [resolved, facets]
+  );
+
+  return { source: sourced, runtime };
 }

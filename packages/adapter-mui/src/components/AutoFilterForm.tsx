@@ -30,7 +30,7 @@ import type { ReactNode } from "react";
 /** The slice of the source the auto-built form reads and writes. */
 type FilterBag<TRow> = Pick<
   TableSource<TRow>,
-  "extra" | "setExtra" | "setExtras" | "allFilteredRows"
+  "extra" | "setExtra" | "setExtras" | "allFilteredRows" | "facets"
 >;
 
 /** Props for {@link AutoFilterForm}. */

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { FacetMap } from "../filters/facets";
 import { useEventCallback } from "../hooks/useEventCallback";
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type { SortLevel } from "../sort/compare";
@@ -95,6 +96,16 @@ export interface UseServerDataOptions<TRow> extends Pick<
    */
   expandedIds?: readonly string[];
   /**
+   * Filter keys to ask the server for distinct-value counts. Sent as
+   * `query.facets` only when `supports.facets` is set.
+   */
+  facetKeys?: readonly string[];
+  /**
+   * Distinct-value counts from the last fetch. Surfaces on the source
+   * so a checklist can render without holding the full result set.
+   */
+  facets?: FacetMap;
+  /**
    * Fired with the consolidated {@link TableQuery} whenever it changes —
    * including once on mount with the URL-restored values. The previous
    * call's `signal` is aborted when a newer query supersedes it; forward it
@@ -134,6 +145,8 @@ export function useServerData<TRow>(
     forceMobile,
     supports,
     expandedIds,
+    facetKeys,
+    facets,
     onQueryChange,
     ...urlOptions
   } = options;
@@ -174,6 +187,7 @@ export function useServerData<TRow>(
           cursor,
           expandedIds,
           filterTree: state.filterTree,
+          facets: facetKeys,
         },
         supports
       ),
@@ -191,6 +205,7 @@ export function useServerData<TRow>(
       supports,
       expandedIds,
       state.filterTree,
+      facetKeys,
     ]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire
@@ -341,6 +356,7 @@ export function useServerData<TRow>(
     sortDir,
     groupBy,
     extra,
+    facets,
     filterTree: state.filterTree,
     isLoading,
     isFetching: loading,

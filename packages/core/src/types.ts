@@ -11,6 +11,7 @@
 import type { ComponentType, ReactNode } from "react";
 
 import type { CellEditor } from "./editing/cellEditing";
+import type { FacetMap } from "./filters/facets";
 import type { ColumnFilter } from "./filters/filterDefs";
 
 /** Sort direction for a column. */
@@ -376,6 +377,11 @@ export interface PaginatedResponse<TRow> {
   limit: number;
   /** Whether a page exists after this one. */
   hasNextPage?: boolean;
+  /**
+   * Distinct-value counts for `query.facets`. Present when the source
+   * declared `supports.facets` and the endpoint answered those keys.
+   */
+  facets?: FacetMap;
 }
 
 /**

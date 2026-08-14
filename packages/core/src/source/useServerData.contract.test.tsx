@@ -23,7 +23,8 @@ interface Row {
 function mount(
   supports?: QuerySupport,
   url = "groupBy=team",
-  expandedIds?: readonly string[]
+  expandedIds?: readonly string[],
+  facetKeys?: readonly string[]
 ) {
   const seen: TableQuery[] = [];
   const adapter = createMemoryAdapter(url);
@@ -35,6 +36,7 @@ function mount(
       forceMobile: false,
       supports,
       expandedIds,
+      facetKeys,
       onQueryChange: (query) => {
         seen.push(query);
       },
@@ -99,5 +101,17 @@ describe("the query a server receives", () => {
     const { seen } = mount(undefined, "", ["src"]);
     await waitFor(() => expect(seen.length).toBeGreaterThan(0));
     expect(seen[0]).not.toHaveProperty("expandedIds");
+  });
+
+  it("sends query.facets once the source says it can count", async () => {
+    const { seen } = mount({ facets: true }, "", undefined, ["team"]);
+    await waitFor(() => expect(seen.length).toBeGreaterThan(0));
+    expect(seen[0]?.facets).toEqual(["team"]);
+  });
+
+  it("keeps facet keys to itself when the source never declared facets", async () => {
+    const { seen } = mount(undefined, "", undefined, ["team"]);
+    await waitFor(() => expect(seen.length).toBeGreaterThan(0));
+    expect(seen[0]).not.toHaveProperty("facets");
   });
 });

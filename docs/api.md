@@ -189,30 +189,37 @@ server that sets `supports.filterTree` receives `query.filterTree`.
 `FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
 the chrome label tree chips. A `checklist` filter is the Excel-style
 distinct-values widget (`ChecklistFilter` / `useChecklistFilter` /
-`collectChecklistValues`); it reads `allFilteredRows` and stays hidden
-on a server page that does not hold the full set.
+`collectChecklistValues`); it prefers `source.facets` (own-filter
+excluded via `computeFilterFacets` / `rowsExcludingFilter` /
+`FacetMap` / `FacetCounts`) and falls back to `allFilteredRows`. A
+server that sets `supports.facets` receives `query.facets` and returns
+the same map on the page (`PaginatedResponse.facets`,
+`PageSelector.facets`). Without either surface the widget stays hidden.
 
 ## Adapter extras
 
 Props beyond the core surface, with per-kit availability.
 
-| Prop            | Type                                            | Default     | Available on                              | Description                                                                                                                                                                             |
-| --------------- | ----------------------------------------------- | ----------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`          | `readonly TRow[]`                               | —           | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                              |
-| `total`         | `number`                                        | —           | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                       |
-| `loading`       | `boolean`                                       | —           | all                                       | Server tier: a request is in flight.                                                                                                                                                    |
-| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —           | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                              |
-| `urlKey`        | `string`                                        | —           | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
-| `urlAdapter`    | `UrlStateAdapter`                               | History API | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
-| `urlSync`       | `boolean`                                       | `true`      | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
-| `savedViews`    | `UseSavedViewsOptions`                          | —           | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                               |
-| `slots`         | `{ skeleton?, empty?, noResults? }`             | —           | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one (see customization).                                                              |
-| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                               |
-| `className`     | `string`                                        | —           | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                 |
-| `animate`       | `boolean`                                       | `false`     | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                   |
-| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`). |
-| `accentColor`   | kit accent union (chakra: `string`)             | —           | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                       |
-| `bordered`      | `boolean`                                       | `false`     | antd                                      | Render the table with cell borders.                                                                                                                                                     |
+| Prop            | Type                                            | Default        | Available on                              | Description                                                                                                                                                                             |
+| --------------- | ----------------------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`          | `readonly TRow[]`                               | —              | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                              |
+| `total`         | `number`                                        | —              | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                       |
+| `loading`       | `boolean`                                       | —              | all                                       | Server tier: a request is in flight.                                                                                                                                                    |
+| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —              | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                              |
+| `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
+| `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
+| `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
+| `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
+| `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
+| `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
+| `savedViews`    | `UseSavedViewsOptions`                          | —              | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                               |
+| `slots`         | `{ skeleton?, empty?, noResults? }`             | —              | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one (see customization).                                                              |
+| `classNames`    | `DataTableClassNames`                           | —              | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                               |
+| `className`     | `string`                                        | —              | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                 |
+| `animate`       | `boolean`                                       | `false`        | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                   |
+| `size`          | kit-specific union                              | —              | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`). |
+| `accentColor`   | kit accent union (chakra: `string`)             | —              | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                       |
+| `bordered`      | `boolean`                                       | `false`        | antd                                      | Render the table with cell borders.                                                                                                                                                     |
 
 Each adapter also re-exports the core source builders and types, so one
 import path covers everything.
@@ -516,7 +523,8 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
 `ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
-`CHECKLIST_LIST_HEIGHT`. The tree is a `QueryFilterGroup` of
+`CHECKLIST_LIST_HEIGHT`. Facets: `computeFilterFacets` /
+`rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).
 
@@ -751,48 +759,48 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 
 ## Types
 
-| Type                                                                      | What it is                                                                                                                        |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, loading flags, state read/write).                                |
-| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                      |
-| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                           |
-| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                    |
-| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                     |
-| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                 |
-| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                      |
-| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                |
-| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                       |
-| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                |
-| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                      |
-| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                             |
-| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                  |
-| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                  |
-| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                    |
-| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                  |
-| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                 |
-| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                        |
-| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                           |
-| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                   |
-| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                    |
-| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                            |
-| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                           |
-| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                     |
-| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                           |
-| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                            |
-| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                 |
-| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                    |
-| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                             |
-| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                       |
-| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                          |
-| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                 |
-| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).              |
-| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md). |
-| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                    |
-| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                   |
-| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                       |
-| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                     |
-| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                            |
-| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                  |
+| Type                                                                      | What it is                                                                                                                                         |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write). |
+| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                       |
+| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                                            |
+| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                     |
+| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                      |
+| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                  |
+| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                       |
+| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                        |
+| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
+| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                       |
+| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                                              |
+| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                   |
+| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                   |
+| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                     |
+| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                   |
+| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                  |
+| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                         |
+| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                            |
+| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                    |
+| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                     |
+| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                             |
+| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                            |
+| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                      |
+| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                            |
+| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                             |
+| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                  |
+| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                                     |
+| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                              |
+| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                        |
+| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                           |
+| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                  |
+| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).                               |
+| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                  |
+| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                     |
+| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                    |
+| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                                        |
+| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                      |
+| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                             |
+| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                                   |
 
 ## Development warnings
 
@@ -855,7 +863,8 @@ shared render prelude from `SharedTableRenderProps`; `TableBodyRegion`
 names which body region renders (desktop rows, mobile cards);
 `VirtualTableRow` is one materialized virtual row/card entry.
 `useResolvedAdapter` resolves the URL backend the way the shell does;
-`PageSelector` projects a fetched page to rows and an optional total, and
+`PageSelector` projects a fetched page to rows, an optional total, and
+optional `facets`, and
 `InfiniteQueryLike` is the minimal `useInfiniteQuery` shape
 `useQuerySource` reads (structural — TanStack Query stays a type-only
 peer).

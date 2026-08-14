@@ -1330,6 +1330,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     filters: props.filters,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
+    supports: props.supports,
+    facetKeys: props.facetKeys,
+    facets: props.facets,
   });
   // A declarative `filters` array becomes the auto-built form; JSX passes
   // through untouched. Column-level `filter` shorthands alone (no `filters`

@@ -44,7 +44,7 @@ describe("collectChecklistValues", () => {
 });
 
 describe("useChecklistFilter", () => {
-  it("does not offer itself without allFilteredRows", () => {
+  it("does not offer itself without allFilteredRows or facets", () => {
     const { result } = renderHook(() =>
       useChecklistFilter(DEF, {
         extra: {},
@@ -53,6 +53,43 @@ describe("useChecklistFilter", () => {
     );
     expect(result.current.available).toBe(false);
     expect(result.current.items).toEqual([]);
+  });
+
+  it("prefers facets so the own filter does not hide other values", () => {
+    const { result } = renderHook(() =>
+      useChecklistFilter(DEF, {
+        allFilteredRows: [{ team: "Core", name: "Ada" }],
+        facets: {
+          team: [
+            { value: "Core", label: "Core team", count: 2 },
+            { value: "Web", label: "Web", count: 1 },
+          ],
+        },
+        extra: { team: ["Core"] },
+        setExtra: vi.fn(),
+      })
+    );
+    expect(result.current.available).toBe(true);
+    expect(result.current.items.map((item) => item.value)).toEqual([
+      "Core",
+      "Web",
+    ]);
+  });
+
+  it("offers itself from facets alone", () => {
+    const { result } = renderHook(() =>
+      useChecklistFilter(DEF, {
+        facets: {
+          team: [{ value: "Web", label: "Web", count: 3 }],
+        },
+        extra: {},
+        setExtra: vi.fn(),
+      })
+    );
+    expect(result.current.available).toBe(true);
+    expect(result.current.items).toEqual([
+      { value: "Web", label: "Web", count: 3 },
+    ]);
   });
 
   it("searches, selects the visible set, and clears", () => {
