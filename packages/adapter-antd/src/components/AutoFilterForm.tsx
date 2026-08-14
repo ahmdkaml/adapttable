@@ -1,12 +1,16 @@
 import {
   ChecklistFilter,
+  defaultFilterRegistry,
   type FilterDef,
   filterLabel,
   filterOpLabel,
+  type FilterTypeRegistry,
   type FilterValue,
+  filterWidgetKind,
   joinRelativeToken,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
+  renderRegisteredFilter,
   splitRelativeToken,
   type TableLabels,
   type TableSource,
@@ -39,6 +43,8 @@ export interface AutoFilterFormProps<TRow> {
   >;
   /** Localized strings for the operator-first range widgets. */
   labels: RangeFilterLabels;
+  /** Type registry; defaults to the built-ins. */
+  registry?: FilterTypeRegistry;
 }
 
 /** A scalar state value as input text (`""` when unset). */
@@ -266,6 +272,7 @@ interface ControlProps<TRow> {
   def: FilterDef<TRow>;
   source: AutoFilterFormProps<TRow>["source"];
   labels: RangeFilterLabels;
+  registry?: FilterTypeRegistry;
 }
 
 /**
@@ -282,11 +289,14 @@ function FilterControl<TRow>({
   def,
   source,
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<ControlProps<TRow>>) {
   const label = filterLabel(def);
   const { options, loading } = useFilterOptions(def);
   const { extra, setExtra } = source;
-  switch (def.type) {
+  const custom = renderRegisteredFilter(def, source, labels, registry);
+  if (custom) return custom;
+  switch (filterWidgetKind(def, registry)) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
     case "boolean":
@@ -331,6 +341,8 @@ function FilterControl<TRow>({
     case "dateRange":
     case "numberRange":
       return <RangeField def={def} source={source} labels={labels} />;
+    default:
+      return null;
   }
 }
 
@@ -344,6 +356,7 @@ export function AutoFilterForm<TRow>({
   defs,
   source,
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
     <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
@@ -357,7 +370,12 @@ export function AutoFilterForm<TRow>({
           <Typography.Text strong style={{ fontSize: 12 }}>
             {filterLabel(def)}
           </Typography.Text>
-          <FilterControl def={def} source={source} labels={labels} />
+          <FilterControl
+            def={def}
+            source={source}
+            labels={labels}
+            registry={registry}
+          />
         </Space>
       ))}
     </Space>

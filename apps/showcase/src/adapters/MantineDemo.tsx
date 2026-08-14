@@ -16,6 +16,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
@@ -168,6 +169,7 @@ export function MantineDemo({
             headerFilters
             stickyTop={8}
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
             forceMobile={forceMobile}
           />
         )}

@@ -17,6 +17,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   initials,
@@ -193,6 +194,7 @@ export function MuiDemo({
             stickyHeader
             headerFilters
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
           />
         )}
       />

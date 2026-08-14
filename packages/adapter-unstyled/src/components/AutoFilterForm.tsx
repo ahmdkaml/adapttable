@@ -1,12 +1,16 @@
 import {
   ChecklistFilter,
+  defaultFilterRegistry,
   type FilterDef,
   filterLabel,
   filterOpLabel,
+  type FilterTypeRegistry,
   type FilterValue,
+  filterWidgetKind,
   joinRelativeToken,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
+  renderRegisteredFilter,
   resolveLabels,
   splitRelativeToken,
   type TableLabels,
@@ -425,6 +429,7 @@ function RangeField<TRow>({
 
 interface FilterFieldProps<TRow> extends DefFieldProps<TRow> {
   labels: Required<TableLabels>;
+  registry: FilterTypeRegistry;
 }
 
 function FilterField<TRow>({
@@ -432,8 +437,12 @@ function FilterField<TRow>({
   source,
   classNames,
   labels,
-}: Readonly<FilterFieldProps<TRow>>): ReactElement {
-  switch (def.type) {
+  registry,
+}: Readonly<FilterFieldProps<TRow>>): ReactElement | null {
+  const spec = registry.get(def.type);
+  const custom = renderRegisteredFilter(def, source, labels, registry);
+  if (custom) return custom;
+  switch (spec?.widget ?? filterWidgetKind(def, registry)) {
     case "text":
       return (
         <TextField
@@ -477,6 +486,8 @@ function FilterField<TRow>({
           labels={labels}
         />
       );
+    default:
+      return null;
   }
 }
 
@@ -493,6 +504,8 @@ export interface AutoFilterFormProps<TRow> {
    * `to`, and the `op*` operator names); English defaults merge in.
    */
   labels?: TableLabels;
+  /** Type registry; defaults to the built-ins. */
+  registry?: FilterTypeRegistry;
 }
 
 /**
@@ -510,6 +523,7 @@ export function AutoFilterForm<TRow>({
   source,
   classNames = {},
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolvedLabels = resolveLabels(labels);
   return (
@@ -521,6 +535,7 @@ export function AutoFilterForm<TRow>({
           source={source}
           classNames={classNames}
           labels={resolvedLabels}
+          registry={registry}
         />
       ))}
     </>

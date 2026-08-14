@@ -147,14 +147,14 @@ export function PeopleTable() {
 `FilterDef` (entries of `filters`, and the column `filter` object minus
 `key`/`label`):
 
-| Prop          | Type                                                                                              | Default               | Description                                                                                      |
-| ------------- | ------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| `key`         | `string`                                                                                          | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
-| `type`        | `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
-| `label`       | `string`                                                                                          | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
-| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`                                       | —                     | Choices for `select` / `multiSelect`.                                                            |
-| `getValue`    | `(row) => unknown`                                                                                | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
-| `placeholder` | `string`                                                                                          | —                     | Placeholder for text-like inputs.                                                                |
+| Prop          | Type                                                        | Default               | Description                                                                                      |
+| ------------- | ----------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `key`         | `string`                                                    | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
+| `type`        | `string`                                                    | —                     | Built-in `FilterType` or a custom type registered on `filterTypes`.                              |
+| `label`       | `string`                                                    | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
+| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>` | —                     | Choices for `select` / `multiSelect`.                                                            |
+| `getValue`    | `(row) => unknown`                                          | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
+| `placeholder` | `string`                                                    | —                     | Placeholder for text-like inputs.                                                                |
 
 `<DataTable>` filter props:
 
@@ -167,6 +167,7 @@ export function PeopleTable() {
 | `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                        |
 | `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                        |
 | `headerFilters`     | `boolean`                           | `false`        | Compact per-column filter row under the header, bound to the same defs and extra bag. Desktop only — mobile cards keep the Filters button. |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                               |
 
 ## Headless filter primitives
 
@@ -215,6 +216,18 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `query.facets` (checklist keys) and returns the same map on the page;
   `useQuerySource` / `useServerData` surface it as `source.facets`.
   `useChecklistFilter` prefers that map over `allFilteredRows`.
+- **Type registry**: `FilterTypeSpec` is one type — widget kind, operators,
+  predicate, chips, tree projection, optional `render`. Built-ins
+  (`builtInFilterSpecs` / `defaultFilterRegistry`) are the first
+  consumers; `filterTypes` on the table merges extras via
+  `resolveFilterRegistry` / `createFilterRegistry` / `register` /
+  `extend`. `filterWidgetKind` / `filterTypeOps` /
+  `filterTypeDefaultOp` / `filterTypeSpec` / `renderRegisteredFilter`
+  look a spec up. A custom type with `widget: "text"` draws the text
+  widget; `extend("text", { ops })` adds operators without forking.
+  `emptyFilterRegistry` seeds a registry from scratch.
+  `FilterTypeRegistry` / `FilterWidgetKind` / `FilterWidgetRenderProps`
+  are the types.
 - **Header filter row**: `headerFilters` mounts `FilterHeaderRow` /
   `FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`
   under the leaf header.

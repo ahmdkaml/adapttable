@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { DataTable } from "./DataTable";
 import type { ColumnDef, FilterDef, FilterOption, TableQuery } from "./index";
-import { defaultLabels } from "./index";
+import { defaultFilterRegistry, defaultLabels } from "./index";
 import { renderMui } from "./test-utils";
 
 interface Person {
@@ -484,6 +484,30 @@ describe("declarative DataTable (MUI)", () => {
 });
 
 describe("<AutoFilterForm> (MUI)", () => {
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    renderMui(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={{ extra: {}, setExtra: vi.fn(), setExtras: vi.fn() }}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
+  });
+
   it("checklist hides without allFilteredRows and checks a counted value", () => {
     const setExtra = vi.fn();
     const source = {

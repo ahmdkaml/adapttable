@@ -11,6 +11,7 @@ import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FacetMap } from "./filters/facets";
 import type { FilterDef } from "./filters/filterDefs";
+import type { FilterTypeRegistry } from "./filters/filterRegistry";
 import { useFindFocus, useFindInTable } from "./find/useFindInTable";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
@@ -99,7 +100,8 @@ export function useDataTableShell<TRow>(
   props: DataTableShellProps<TRow>,
   renderAutoForm: (
     defs: readonly FilterDef<TRow>[],
-    source: TableSource<TRow>
+    source: TableSource<TRow>,
+    registry: FilterTypeRegistry
   ) => ReactNode
 ) {
   // ONE resolved URL backend for everything in this table: the tier hooks
@@ -129,6 +131,7 @@ export function useDataTableShell<TRow>(
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    filterTypes: props.filterTypes,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
     supports: props.supports,
@@ -140,7 +143,9 @@ export function useDataTableShell<TRow>(
 
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
-    runtime.defs.length > 0 ? renderAutoForm(runtime.defs, source) : undefined;
+    runtime.defs.length > 0
+      ? renderAutoForm(runtime.defs, source, runtime.registry)
+      : undefined;
   const filtersNode =
     isDeclarativeFilters(props.filters) || props.filters === undefined
       ? autoForm
@@ -377,6 +382,7 @@ export function useDataTableShell<TRow>(
     stickyTop: props.stickyTop,
     headerFilters: props.headerFilters === true,
     filterDefs: runtime.defs,
+    filterRegistry: runtime.registry,
     pinOffset: chrome.columnLayout.pinOffset,
     maxHeight: props.maxHeight,
     virtualScrollRef,

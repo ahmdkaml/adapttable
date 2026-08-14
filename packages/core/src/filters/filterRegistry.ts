@@ -1,0 +1,147 @@
+/**
+ * Public filter-type registry (#283). A type supplies widget kind, operators,
+ * predicate, chips and tree serialization. Built-ins are the first consumers —
+ * every former `switch (def.type)` looks up a spec instead.
+ */
+import type { ReactElement } from "react";
+
+import type { QueryCondition } from "../source/queryContract";
+import type { ExtraFilters, TableLabels } from "../types";
+import { devWarn } from "../utils/devWarn";
+import type { FilterDef, FilterType } from "./filterDefs";
+import type { FilterFormSource } from "./filterForm";
+import type { ChipLabelResolver } from "./useActiveFilterChips";
+
+/** Built-in widget a kit AutoFilterForm / header row already knows how to draw. */
+export type FilterWidgetKind = FilterType;
+
+/** Props a custom `render` function receives. */
+export interface FilterWidgetRenderProps<TRow = unknown> {
+  readonly def: FilterDef<TRow>;
+  readonly source: FilterFormSource<TRow>;
+  readonly labels: Required<TableLabels>;
+  readonly className?: string;
+}
+
+/**
+ * One registered filter type: widget + operators + predicate + chips +
+ * tree projection. Register a new `type` string, or {@link FilterTypeRegistry.extend}
+ * a built-in to add operators without forking the table.
+ */
+export interface FilterTypeSpec {
+  readonly type: string;
+  /** Which built-in kit widget to draw. Ignored when {@link render} is set. */
+  readonly widget: FilterWidgetKind;
+  readonly ops: readonly string[];
+  readonly defaultOp: string;
+  /** Persist this key as a comma-separated array in the URL. */
+  readonly urlArray?: boolean;
+  /** Persist this type's range bounds as numbers in the URL. */
+  readonly urlNumberKeys?: boolean;
+  stateKeys(def: Pick<FilterDef, "key" | "type">): string[];
+  match<TRow>(def: FilterDef<TRow>, extra: ExtraFilters, row: TRow): boolean;
+  chips<TRow>(def: FilterDef<TRow>): Record<string, ChipLabelResolver>;
+  conditionToExtra<TRow>(
+    def: FilterDef<TRow>,
+    condition: QueryCondition
+  ): ExtraFilters;
+  /** Native renderer — header row and AutoFilterForm use this when set. */
+  render?<TRow>(props: FilterWidgetRenderProps<TRow>): ReactElement;
+}
+
+/** Immutable registry of {@link FilterTypeSpec}s. */
+export interface FilterTypeRegistry {
+  get(type: string): FilterTypeSpec | undefined;
+  has(type: string): boolean;
+  types(): readonly string[];
+  register(spec: FilterTypeSpec): FilterTypeRegistry;
+  extend(type: string, patch: Partial<FilterTypeSpec>): FilterTypeRegistry;
+}
+
+class MapRegistry implements FilterTypeRegistry {
+  constructor(private readonly specs: ReadonlyMap<string, FilterTypeSpec>) {}
+
+  get(type: string): FilterTypeSpec | undefined {
+    return this.specs.get(type);
+  }
+
+  has(type: string): boolean {
+    return this.specs.has(type);
+  }
+
+  types(): readonly string[] {
+    return [...this.specs.keys()];
+  }
+
+  register(spec: FilterTypeSpec): FilterTypeRegistry {
+    const next = new Map(this.specs);
+    next.set(spec.type, spec);
+    return new MapRegistry(next);
+  }
+
+  extend(type: string, patch: Partial<FilterTypeSpec>): FilterTypeRegistry {
+    const current = this.specs.get(type);
+    if (!current) {
+      devWarn(`extendFilterType: unknown type "${type}"`);
+      return this;
+    }
+    return this.register({ ...current, ...patch, type });
+  }
+}
+
+/** Empty registry — used to seed {@link createFilterRegistry}. */
+export function emptyFilterRegistry(): FilterTypeRegistry {
+  return new MapRegistry(new Map());
+}
+
+/** Registry from an explicit spec list (last write wins on a repeated type). */
+export function createFilterRegistry(
+  specs: readonly FilterTypeSpec[]
+): FilterTypeRegistry {
+  const map = new Map<string, FilterTypeSpec>();
+  for (const spec of specs) map.set(spec.type, spec);
+  return new MapRegistry(map);
+}
+
+/** Look up a spec, or `undefined` for an unknown type. */
+export function filterTypeSpec(
+  type: string,
+  registry: FilterTypeRegistry
+): FilterTypeSpec | undefined {
+  return registry.get(type);
+}
+
+/** Widget kind a kit should draw for this def. */
+export function filterWidgetKind(
+  def: Pick<FilterDef, "type">,
+  registry: FilterTypeRegistry
+): FilterWidgetKind | undefined {
+  return registry.get(def.type)?.widget;
+}
+
+/** Operators the tree builder offers for this def. */
+export function filterTypeOps(
+  def: Pick<FilterDef, "type">,
+  registry: FilterTypeRegistry
+): readonly string[] {
+  return registry.get(def.type)?.ops ?? ["eq"];
+}
+
+/** Default operator when a tree condition is first added. */
+export function filterTypeDefaultOp(
+  def: Pick<FilterDef, "type">,
+  registry: FilterTypeRegistry
+): string {
+  return registry.get(def.type)?.defaultOp ?? "eq";
+}
+
+/** Custom `render` for this def, or `undefined` to use the kit widget. */
+export function renderRegisteredFilter<TRow>(
+  def: FilterDef<TRow>,
+  source: FilterFormSource<TRow>,
+  labels: Required<TableLabels>,
+  registry: FilterTypeRegistry,
+  className?: string
+): ReactElement | undefined {
+  return registry.get(def.type)?.render?.({ def, source, labels, className });
+}

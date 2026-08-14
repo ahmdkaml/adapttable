@@ -5,6 +5,7 @@ import type {
   ConfirmHandler,
   ConfirmRequest,
   FilterDef,
+  FilterTypeSpec,
   GroupAggregatesFn,
   RowAction,
   UseSavedViewsOptions,
@@ -13,7 +14,9 @@ import {
   aggregate,
   buildFilterRuntime,
   computed,
+  defaultFilterRegistry,
   resolveFilterDefs,
+  resolveFilterRegistry,
 } from "@adapttable/core";
 import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
@@ -868,7 +871,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     {
       key: "name",
       column: "person",
-      type: "text",
+      type: "personText",
       label: s.person,
       getValue: (row) => row.name,
     },
@@ -922,13 +925,25 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
 }
 
 /**
+ * Alias of the built-in text type. The live demos point the name filter
+ * at `personText` so a missing registry would blank the header widget —
+ * the seam is real, not a special case for `"text"`.
+ */
+export function demoFilterTypes(): FilterTypeSpec[] {
+  const text = defaultFilterRegistry.get("text");
+  if (!text) return [];
+  return [{ ...text, type: "personText" }];
+}
+
+/**
  * The derived filter runtime — predicate, array/number URL keys — shared by
  * BOTH data modes (the frontend hook filters rows with `filterFn`; the mock
  * backend applies the very same predicate server-side). Locale only changes
  * labels, never keys or matching, so one runtime serves every demo.
  */
 export const DEMO_FILTER_RUNTIME = buildFilterRuntime(
-  resolveFilterDefs<Person>([], demoFilterDefs("en"))
+  resolveFilterDefs<Person>([], demoFilterDefs("en")),
+  resolveFilterRegistry(demoFilterTypes())
 );
 
 /** Client-side predicate; the mock API applies the same logic server-side. */

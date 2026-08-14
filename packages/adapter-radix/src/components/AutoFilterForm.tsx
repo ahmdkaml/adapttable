@@ -1,14 +1,18 @@
 import {
   ChecklistFilter,
+  defaultFilterRegistry,
   type Direction,
   type FilterDef,
   type FilterFormSource,
   filterLabel,
   filterOpLabel,
+  type FilterTypeRegistry,
+  filterWidgetKind,
   joinRelativeToken,
   listFilterValues,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
+  renderRegisteredFilter,
   resolveLabels,
   scalarFilterText,
   splitRelativeToken,
@@ -61,6 +65,8 @@ export interface AutoFilterFormProps<TRow> {
   accentColor?: RadixAccentColor;
   /** Pre-translated label overrides (operator names, From/To, …). */
   labels?: TableLabels;
+  /** Type registry; defaults to the built-ins. */
+  registry?: FilterTypeRegistry;
 }
 
 /** Preset select + optional N for last/next. Stores the token. */
@@ -287,11 +293,13 @@ function AutoFilterField<TRow>({
   source,
   labels,
   accentColor,
+  registry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   accentColor?: RadixAccentColor;
+  registry: FilterTypeRegistry;
 }>) {
   const id = useId();
   const { extra, setExtra } = source;
@@ -299,7 +307,9 @@ function AutoFilterField<TRow>({
   // Static arrays resolve instantly; async loaders run once and report
   // `loading` so the select/checkbox controls can show a native affordance.
   const { options, loading } = useFilterOptions(def);
-  switch (def.type) {
+  const custom = renderRegisteredFilter(def, source, labels, registry);
+  if (custom) return custom;
+  switch (filterWidgetKind(def, registry)) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
     case "boolean":
@@ -372,6 +382,8 @@ function AutoFilterField<TRow>({
     case "dateRange":
     case "numberRange":
       return <RangeField def={def} source={source} labels={labels} />;
+    default:
+      return null;
   }
 }
 
@@ -388,6 +400,7 @@ export function AutoFilterForm<TRow>({
   source,
   accentColor,
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
@@ -399,6 +412,7 @@ export function AutoFilterForm<TRow>({
           source={source}
           labels={resolved}
           accentColor={accentColor}
+          registry={registry}
         />
       ))}
     </Flex>

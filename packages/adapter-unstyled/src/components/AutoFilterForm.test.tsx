@@ -1,4 +1,5 @@
 import type { ExtraFilters, FilterOption, TableSource } from "@adapttable/core";
+import { defaultFilterRegistry } from "@adapttable/core";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -254,5 +255,48 @@ describe("<AutoFilterForm> standalone", () => {
       hiredAtTo: "2026-01-01",
       hiredAtOp: "lte",
     });
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    const { source } = stubSource({});
+    render(
+      <AutoFilterForm<Row>
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={source}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
+  });
+
+  it("prefers a spec.render over the kit widget", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "custom",
+      render: () => <button type="button">Custom widget</button>,
+    });
+    const { source } = stubSource({});
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "name", type: "custom", label: "Name" }]}
+        source={source}
+        registry={registry}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Custom widget" })).toBeVisible();
+    expect(screen.queryByRole("searchbox")).toBeNull();
   });
 });

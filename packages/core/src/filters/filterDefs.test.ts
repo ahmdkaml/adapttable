@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import { resetDevWarnings } from "../utils/devWarn";
+import { defaultFilterRegistry } from "./filterBuiltins";
 import {
   buildFilterRuntime,
   clearedFilterExtras,
@@ -12,6 +13,14 @@ import {
   filterStateKeys,
   resolveFilterDefs,
 } from "./filterDefs";
+
+function pred<T>(def: FilterDef<T>) {
+  return filterPredicate(def, defaultFilterRegistry);
+}
+
+function keys(def: Pick<FilterDef, "key" | "type">) {
+  return filterStateKeys(def, defaultFilterRegistry);
+}
 
 interface Row {
   name: string;
@@ -44,19 +53,14 @@ describe("coerceBooleanValue", () => {
 
 describe("filterStateKeys", () => {
   it("single key for scalar types, suffixed pairs for ranges", () => {
-    expect(filterStateKeys({ key: "status", type: "select" })).toEqual([
-      "status",
-    ]);
-    expect(filterStateKeys({ key: "name", type: "text" })).toEqual([
-      "name",
-      "nameOp",
-    ]);
-    expect(filterStateKeys({ key: "hiredAt", type: "dateRange" })).toEqual([
+    expect(keys({ key: "status", type: "select" })).toEqual(["status"]);
+    expect(keys({ key: "name", type: "text" })).toEqual(["name", "nameOp"]);
+    expect(keys({ key: "hiredAt", type: "dateRange" })).toEqual([
       "hiredAtFrom",
       "hiredAtTo",
       "hiredAtOp",
     ]);
-    expect(filterStateKeys({ key: "budget", type: "numberRange" })).toEqual([
+    expect(keys({ key: "budget", type: "numberRange" })).toEqual([
       "budget",
       "budgetMin",
       "budgetMax",
@@ -120,7 +124,7 @@ describe("resolveFilterDefs", () => {
 
 describe("filterPredicate", () => {
   it("text: a null row value never matches an active term", () => {
-    const p = filterPredicate<Row>({
+    const p = pred<Row>({
       key: "nick",
       type: "text",
       getValue: () => null,
@@ -130,14 +134,14 @@ describe("filterPredicate", () => {
   });
 
   it("text: case-insensitive contains; inactive filter matches all", () => {
-    const p = filterPredicate<Row>({ key: "name", type: "text" });
+    const p = pred<Row>({ key: "name", type: "text" });
     expect(p(ROW, {})).toBe(true);
     expect(p(ROW, { name: "ali" })).toBe(true);
     expect(p(ROW, { name: "zzz" })).toBe(false);
   });
 
   it("text: rich operators, including empty and URL-stored tokens", () => {
-    const p = filterPredicate<Row>({ key: "name", type: "text" });
+    const p = pred<Row>({ key: "name", type: "text" });
     expect(p(ROW, { name: "Alice", nameOp: "eq" })).toBe(true);
     expect(p(ROW, { name: "alice", nameOp: "neq" })).toBe(false);
     expect(p(ROW, { name: "Al", nameOp: "startsWith" })).toBe(true);
@@ -151,7 +155,7 @@ describe("filterPredicate", () => {
   });
 
   it("boolean: tri-state, inactive is any", () => {
-    const p = filterPredicate<Row>({
+    const p = pred<Row>({
       key: "lead",
       type: "boolean",
       getValue: (row) => row.name === "Alice",
@@ -164,13 +168,13 @@ describe("filterPredicate", () => {
   });
 
   it("select: strict value match", () => {
-    const p = filterPredicate<Row>({ key: "status", type: "select" });
+    const p = pred<Row>({ key: "status", type: "select" });
     expect(p(ROW, { status: "active" })).toBe(true);
     expect(p(ROW, { status: "blocked" })).toBe(false);
   });
 
   it("multiSelect: membership, tolerating a scalar value from the URL", () => {
-    const p = filterPredicate<Row>({ key: "status", type: "multiSelect" });
+    const p = pred<Row>({ key: "status", type: "multiSelect" });
     expect(p(ROW, { status: ["active", "planned"] })).toBe(true);
     expect(p(ROW, { status: ["blocked"] })).toBe(false);
     expect(p(ROW, { status: "active" })).toBe(true);
@@ -178,7 +182,7 @@ describe("filterPredicate", () => {
   });
 
   it("dateRange: inclusive bounds with end-of-day on the upper edge", () => {
-    const p = filterPredicate<Row>({ key: "hiredAt", type: "dateRange" });
+    const p = pred<Row>({ key: "hiredAt", type: "dateRange" });
     expect(p(ROW, {})).toBe(true);
     expect(p(ROW, { hiredAtFrom: "2026-03-01" })).toBe(true);
     expect(p(ROW, { hiredAtFrom: "2026-04-01" })).toBe(false);
@@ -191,7 +195,7 @@ describe("filterPredicate", () => {
   });
 
   it("dateRange: an unparsable row date never matches an active range", () => {
-    const p = filterPredicate<Row>({ key: "hiredAt", type: "dateRange" });
+    const p = pred<Row>({ key: "hiredAt", type: "dateRange" });
     const bad = { ...ROW, hiredAt: "not-a-date" };
     expect(p(bad, { hiredAtFrom: "2026-01-01" })).toBe(false);
   });
@@ -200,7 +204,7 @@ describe("filterPredicate", () => {
     interface Stamped {
       hiredAt: Date | number | string;
     }
-    const p = filterPredicate<Stamped>({ key: "hiredAt", type: "dateRange" });
+    const p = pred<Stamped>({ key: "hiredAt", type: "dateRange" });
     const range = { hiredAtFrom: "2026-03-01", hiredAtTo: "2026-03-31" };
     // The same instant in three shapes — all must land inside the range.
     const instant = new Date(2026, 2, 10, 14, 30);
@@ -224,7 +228,7 @@ describe("filterPredicate", () => {
         process.env.TZ = originalTZ;
       }
     };
-    const p = filterPredicate<{ hiredAt: Date | string }>({
+    const p = pred<{ hiredAt: Date | string }>({
       key: "hiredAt",
       type: "dateRange",
     });
@@ -249,7 +253,7 @@ describe("filterPredicate", () => {
   });
 
   it("dateRange: inclusivity at both ends — exact datetime bounds included", () => {
-    const p = filterPredicate<{ hiredAt: Date }>({
+    const p = pred<{ hiredAt: Date }>({
       key: "hiredAt",
       type: "dateRange",
     });
@@ -266,7 +270,7 @@ describe("filterPredicate", () => {
   });
 
   it("numberRange: exclusive and list operators honour the stored Op", () => {
-    const p = filterPredicate<Row>({ key: "budget", type: "numberRange" });
+    const p = pred<Row>({ key: "budget", type: "numberRange" });
     expect(p(ROW, { budgetMin: 1200, budgetOp: "gt" })).toBe(false);
     expect(p(ROW, { budgetMin: 1199, budgetOp: "gt" })).toBe(true);
     expect(p(ROW, { budgetMin: 1200, budgetOp: "neq" })).toBe(false);
@@ -280,7 +284,7 @@ describe("filterPredicate", () => {
   });
 
   it("dateRange: before / after / on / empty use the stored Op", () => {
-    const p = filterPredicate<Row>({ key: "hiredAt", type: "dateRange" });
+    const p = pred<Row>({ key: "hiredAt", type: "dateRange" });
     expect(p(ROW, { hiredAtTo: "2026-03-10", hiredAtOp: "before" })).toBe(
       false
     );
@@ -298,7 +302,7 @@ describe("filterPredicate", () => {
   });
 
   it("dateRange: relative tokens resolve at query time, never as a fixed day", () => {
-    const p = filterPredicate<Row>({ key: "hiredAt", type: "dateRange" });
+    const p = pred<Row>({ key: "hiredAt", type: "dateRange" });
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, "0");
@@ -321,7 +325,7 @@ describe("filterPredicate", () => {
   });
 
   it("numberRange: min/max bounds; NaN row values never match", () => {
-    const p = filterPredicate<Row>({ key: "budget", type: "numberRange" });
+    const p = pred<Row>({ key: "budget", type: "numberRange" });
     expect(p(ROW, {})).toBe(true);
     expect(p(ROW, { budgetMin: 1000 })).toBe(true);
     expect(p(ROW, { budgetMin: 1500 })).toBe(false);
@@ -335,7 +339,7 @@ describe("filterPredicate", () => {
     interface Balance {
       balance: number | string | null | undefined;
     }
-    const p = filterPredicate<Balance>({ key: "balance", type: "numberRange" });
+    const p = pred<Balance>({ key: "balance", type: "numberRange" });
     const range = { balanceMin: -5, balanceMax: 100 };
     // Number(null) and Number("") are 0 — none of these may sneak in.
     expect(p({ balance: null }, range)).toBe(false);
@@ -350,7 +354,7 @@ describe("filterPredicate", () => {
   });
 
   it("checklist matches a selected distinct value like multiSelect", () => {
-    const p = filterPredicate<Row>({ key: "status", type: "checklist" });
+    const p = pred<Row>({ key: "status", type: "checklist" });
     expect(p(ROW, {})).toBe(true);
     expect(p(ROW, { status: ["active"] })).toBe(true);
     expect(p(ROW, { status: ["paused"] })).toBe(false);
@@ -359,13 +363,13 @@ describe("filterPredicate", () => {
 
   it("compares primitive row values of every type as text", () => {
     const of = (v: unknown) =>
-      filterPredicate<Row>({ key: "k", type: "text", getValue: () => v });
+      pred<Row>({ key: "k", type: "text", getValue: () => v });
     expect(of(42)(ROW, { k: "4" })).toBe(true);
     expect(of(true)(ROW, { k: "tru" })).toBe(true);
     expect(of(10n)(ROW, { k: "10" })).toBe(true);
     // Non-primitives never match an active filter.
     expect(of({ nested: 1 })(ROW, { k: "nested" })).toBe(false);
-    const selectOn = filterPredicate<Row>({
+    const selectOn = pred<Row>({
       key: "k",
       type: "select",
       getValue: () => 7,
@@ -374,12 +378,12 @@ describe("filterPredicate", () => {
   });
 
   it("reads nested values via dot paths and honors getValue overrides", () => {
-    const byPath = filterPredicate<Row>({
+    const byPath = pred<Row>({
       key: "department.name",
       type: "select",
     });
     expect(byPath(ROW, { "department.name": "Core" })).toBe(true);
-    const byGetter = filterPredicate<Row>({
+    const byGetter = pred<Row>({
       key: "dept",
       type: "select",
       getValue: (r) => r.department.name,
@@ -403,7 +407,7 @@ describe("buildFilterRuntime", () => {
     { key: "hiredAt", type: "dateRange", label: "Hired" },
     { key: "budget", type: "numberRange", label: "Budget" },
   ];
-  const runtime = buildFilterRuntime(defs);
+  const runtime = buildFilterRuntime(defs, defaultFilterRegistry);
 
   it("registers array and number keys for URL parsing", () => {
     expect(runtime.arrayExtraKeys).toEqual(["status", "budget"]);
@@ -452,7 +456,7 @@ describe("buildFilterRuntime", () => {
   });
 
   it("clearedFilterExtras blanks every owned state key", () => {
-    expect(clearedFilterExtras(defs)).toEqual({
+    expect(clearedFilterExtras(defs, defaultFilterRegistry)).toEqual({
       name: undefined,
       nameOp: undefined,
       status: undefined,
@@ -488,7 +492,7 @@ describe("i18n-aware column filters", () => {
       undefined,
       "ar"
     );
-    const p = filterPredicate(defs[0]!);
+    const p = pred(defs[0]!);
     expect(p(ROW_L, { statusEn: "نشط" })).toBe(true);
     expect(p(ROW_L, { statusEn: "active" })).toBe(false);
   });
@@ -505,7 +509,7 @@ describe("i18n-aware column filters", () => {
       undefined,
       "ar"
     );
-    const p = filterPredicate(defs[0]!);
+    const p = pred(defs[0]!);
     expect(p(ROW_L, { statusEn: "custom" })).toBe(true);
   });
 });

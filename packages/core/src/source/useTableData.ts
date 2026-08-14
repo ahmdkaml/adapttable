@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { resolveColumns } from "../columns/resolveColumns";
 import { computeFilterFacets, type FacetMap } from "../filters/facets";
+import { resolveFilterRegistry } from "../filters/filterBuiltins";
 import {
   buildFilterRuntime,
   type FilterDef,
@@ -11,6 +12,7 @@ import {
   materializeAutoOptions,
   resolveFilterDefs,
 } from "../filters/filterDefs";
+import type { FilterTypeSpec } from "../filters/filterRegistry";
 import { evaluateFilterTree } from "../filters/filterTree";
 import type {
   ColumnDef,
@@ -61,6 +63,11 @@ export interface UseTableDataOptions<TRow> extends Pick<
   columns: readonly ColumnDef<TRow>[];
   /** Table-level filters: declarative array, or JSX for a hand-drawn form. */
   filters?: readonly FilterDef<TRow>[] | ReactNode;
+  /**
+   * Extra or replacement filter types merged onto the built-in registry.
+   * A spec whose `type` matches a built-in replaces it.
+   */
+  filterTypes?: readonly FilterTypeSpec[];
   /** Extra client-side predicate AND-ed with the declarative ones. */
   filterFn?: (row: TRow, extra: ExtraFilters) => boolean;
   /** Frontend tier: pagination mode (defaults to `"auto"`). */
@@ -238,6 +245,7 @@ export function useTableData<TRow>(
     onQueryChange,
     columns,
     filters,
+    filterTypes,
     filterFn,
     paginationMode,
     getSearchText,
@@ -283,8 +291,8 @@ export function useTableData<TRow>(
       }
       return { ...def, options: cached };
     });
-    return buildFilterRuntime(withAsync);
-  }, [columns, declaredFilters, locale, data, loadedOptions]);
+    return buildFilterRuntime(withAsync, resolveFilterRegistry(filterTypes));
+  }, [columns, declaredFilters, locale, data, loadedOptions, filterTypes]);
 
   useEffect(() => {
     let alive = true;
@@ -334,7 +342,8 @@ export function useTableData<TRow>(
     data: tier === "frontend" ? (data ?? []) : [],
     columns: resolvedColumns,
     filterFn: combinedFilterFn,
-    filterTreeFn: (row, tree) => evaluateFilterTree(tree, row, runtime.defs),
+    filterTreeFn: (row, tree) =>
+      evaluateFilterTree(tree, row, runtime.defs, runtime.registry),
     arrayExtraKeys: runtime.arrayExtraKeys,
     numberExtraKeys: runtime.numberExtraKeys,
     paginationMode,
@@ -346,9 +355,12 @@ export function useTableData<TRow>(
   const derivedFacetKeys = useMemo(() => {
     if (facetKeys) return facetKeys;
     return runtime.defs
-      .filter((def) => def.type === "checklist")
+      .filter(
+        (def) =>
+          (runtime.registry.get(def.type)?.widget ?? def.type) === "checklist"
+      )
       .map((def) => def.key);
-  }, [facetKeys, runtime.defs]);
+  }, [facetKeys, runtime.defs, runtime.registry]);
 
   const server = useServerData<TRow>({
     ...urlOptions,
@@ -389,10 +401,16 @@ export function useTableData<TRow>(
       (row, extra) => {
         if (!combinedFilterFn(row, extra)) return false;
         if (!resolved.filterTree) return true;
-        return evaluateFilterTree(resolved.filterTree, row, runtime.defs);
-      }
+        return evaluateFilterTree(
+          resolved.filterTree,
+          row,
+          runtime.defs,
+          runtime.registry
+        );
+      },
+      runtime.registry
     );
-  }, [resolved, runtime.defs, combinedFilterFn]);
+  }, [resolved, runtime.defs, runtime.registry, combinedFilterFn]);
 
   const sourced = useMemo(
     () => (facets ? { ...resolved, facets } : resolved),

@@ -82,6 +82,11 @@ export {
   rowsExcludingFilter,
 } from "./filters/facets";
 export {
+  builtInFilterSpecs,
+  defaultFilterRegistry,
+  resolveFilterRegistry,
+} from "./filters/filterBuiltins";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,
@@ -127,6 +132,19 @@ export {
   type FilterHeaderRowProps,
   headerFilterStickTop,
 } from "./filters/FilterHeaderRow";
+export {
+  createFilterRegistry,
+  emptyFilterRegistry,
+  filterTypeDefaultOp,
+  filterTypeOps,
+  type FilterTypeRegistry,
+  type FilterTypeSpec,
+  filterTypeSpec,
+  type FilterWidgetKind,
+  filterWidgetKind,
+  type FilterWidgetRenderProps,
+  renderRegisteredFilter,
+} from "./filters/filterRegistry";
 export {
   conditionToExtra,
   evaluateFilterTree,

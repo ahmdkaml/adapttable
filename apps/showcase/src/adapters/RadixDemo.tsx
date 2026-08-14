@@ -11,6 +11,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
@@ -179,6 +180,7 @@ export function RadixDemo({
             stickyHeader
             headerFilters
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
           />
         )}
       />

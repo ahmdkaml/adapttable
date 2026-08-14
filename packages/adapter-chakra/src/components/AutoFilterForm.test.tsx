@@ -1,12 +1,13 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type {
-  ExtraFilters,
-  FilterDef,
-  FilterOption,
-  FilterValue,
-  TableLabels,
+import {
+  defaultFilterRegistry,
+  type ExtraFilters,
+  type FilterDef,
+  type FilterOption,
+  type FilterValue,
+  type TableLabels,
 } from "../index";
 import { renderChakra } from "../test-utils";
 import { AutoFilterForm } from "./AutoFilterForm";
@@ -394,5 +395,28 @@ describe("<AutoFilterForm> (Chakra)", () => {
     expect(container.querySelector(".chakra-spinner")).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Beta" })).toBeInTheDocument();
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    renderChakra(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={{ extra: {}, setExtra: vi.fn(), setExtras: vi.fn() }}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
   });
 });

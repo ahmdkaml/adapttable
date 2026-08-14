@@ -842,6 +842,7 @@ export function DesktopTable<TRow>({
   getCellSpan,
   headerFilters,
   filterDefs,
+  filterRegistry,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
@@ -1316,6 +1317,7 @@ export function DesktopTable<TRow>({
               { position: "sticky", zIndex: PIN_Z.header }
             )}
             stickyAttr={stickyHeader || undefined}
+            registry={filterRegistry}
           />
         </Table.Thead>
         {pinnedTopRows.length > 0 && (

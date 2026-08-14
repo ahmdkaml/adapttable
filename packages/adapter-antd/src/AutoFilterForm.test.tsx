@@ -1,4 +1,5 @@
 import {
+  defaultFilterRegistry,
   defaultLabels,
   type ExtraFilters,
   type FilterDef,
@@ -385,6 +386,30 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
       budgetOp: "lte",
     });
     expect(screen.getByLabelText("Budget Value")).toHaveValue("30");
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    render(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={staticSource({})}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
   });
 
   it("dateRange keeps the native date input for the single value", () => {

@@ -631,6 +631,7 @@ export function DesktopTable<TRow>({
   getCellSpan,
   headerFilters,
   filterDefs,
+  filterRegistry,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -1095,6 +1096,7 @@ export function DesktopTable<TRow>({
               { position: "sticky", zIndex: PIN_Z.header }
             )}
             stickyAttr={stickyHeader || undefined}
+            registry={filterRegistry}
           />
         </thead>
         {pinnedTopRows.length > 0 && (

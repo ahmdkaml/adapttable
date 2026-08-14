@@ -18,6 +18,7 @@ import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import type { FilterDef } from "./filters/filterDefs";
+import type { FilterTypeRegistry } from "./filters/filterRegistry";
 import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
@@ -186,6 +187,8 @@ export interface SharedTableRenderProps<TRow> {
   headerFilters?: boolean;
   /** Declarative filter defs the header row matches to columns. */
   filterDefs?: readonly FilterDef<TRow>[];
+  /** Type registry the header row and custom widgets read. */
+  filterRegistry?: FilterTypeRegistry;
   /** Whether the header sticks to the top of the scroll box. */
   stickyHeader?: boolean;
   /** Offset (px) applied to the sticky header top. */

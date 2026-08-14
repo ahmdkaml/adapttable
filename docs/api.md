@@ -43,6 +43,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                            |
 | `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                        |
 | `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                              |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                        |
 | `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                       |
 | `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                              |
 
@@ -168,7 +169,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
 | `column`      | `string`                 | `key`           | Column the header filter row places this widget under, when the bag key and the column key differ.                               |
-| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"`.  |
+| `type`        | `string`                 | —               | Built-in `FilterType` or a custom type registered on `filterTypes`.                                                              |
 | `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
 | `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
 | `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                               |
@@ -200,6 +201,14 @@ the same map on the page (`PaginatedResponse.facets`,
 `FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
 `headerFilterStickTop`) as a second header row of compact inputs on the
 same extra bag. Desktop only.
+`filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
+(`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
+`emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
+operators, predicate, chips, tree projection, and optional `render`
+(`FilterWidgetRenderProps`). `FilterTypeRegistry.register` adds a type;
+`extend` patches a built-in. Lookups: `filterTypeSpec` /
+`filterWidgetKind` / `filterTypeOps` / `filterTypeDefaultOp` /
+`renderRegisteredFilter`.
 
 ## Adapter extras
 
@@ -215,6 +224,7 @@ Props beyond the core surface, with per-kit availability.
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
 | `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
+| `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                  |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
 | `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
@@ -760,6 +770,10 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 `PIN_Z`, `tableMinWidth` / `resolveColumnWidth` / `parsePxWidth`,
 `rowClickProps`, `resolveFilterDefs` / `buildFilterRuntime` /
 `filterPredicate` / `materializeAutoOptions` / `clearedFilterExtras`,
+`builtInFilterSpecs` / `defaultFilterRegistry` / `resolveFilterRegistry` /
+`createFilterRegistry` / `emptyFilterRegistry` / `filterTypeSpec` /
+`filterWidgetKind` / `filterTypeOps` / `filterTypeDefaultOp` /
+`renderRegisteredFilter`,
 `mergeProps`, `stableKey`, `getPath`, `humanizeKey`, `resolveLabels` /
 `defaultLabels`, `pageSizeOptions`, and the constants `DEFAULT_LIMIT` (25),
 `PAGE_SIZE_OPTIONS`, `SEARCH_DEBOUNCE_MS` (300), `AUTO_OPTIONS_LIMIT` (50),
@@ -793,6 +807,8 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                             |
 | `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                            |
 | `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                      |
+| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`              | One registered type / the immutable registry / which built-in widget to draw.                                                                      |
+| `FilterWidgetRenderProps`                                                 | Props a custom `FilterTypeSpec.render` receives.                                                                                                   |
 | `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                            |
 | `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                             |
 | `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                  |

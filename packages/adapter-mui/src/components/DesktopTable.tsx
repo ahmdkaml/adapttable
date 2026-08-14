@@ -677,6 +677,7 @@ export function DesktopTable<TRow>({
   getCellSpan,
   headerFilters,
   filterDefs,
+  filterRegistry,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -1145,6 +1146,7 @@ export function DesktopTable<TRow>({
               { position: "sticky", zIndex: PIN_Z.header }
             )}
             stickyAttr={stickyHeader || undefined}
+            registry={filterRegistry}
           />
         </TableHead>
         {pinnedTopRows.length > 0 && (

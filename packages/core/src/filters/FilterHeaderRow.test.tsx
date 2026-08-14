@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultLabels } from "../labels";
 import type { ExtraFilters } from "../types";
+import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
 import {
   filterDefForColumn,
@@ -252,6 +253,32 @@ describe("FilterHeaderRow", () => {
     expect(nameCell.dataset.pinned).toBe("start");
     expect(nameCell.dataset.sticky).toBe("true");
     expect(nameCell.style.top).toBe("40px");
+  });
+
+  it("draws a registered custom type via its widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    render(
+      <table>
+        <thead>
+          <FilterHeaderRow
+            columns={[{ key: "name" }]}
+            defs={[{ key: "name", type: "personText", label: "Name" }]}
+            source={{
+              extra: {},
+              setExtra: () => undefined,
+              setExtras: () => undefined,
+            }}
+            labels={defaultLabels}
+            registry={registry}
+          />
+        </thead>
+      </table>
+    );
+    expect(screen.getByLabelText("Name")).toBeVisible();
   });
 });
 

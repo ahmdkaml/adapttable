@@ -8,6 +8,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
@@ -201,6 +202,7 @@ export function BaseUiDemo({
           stickyHeader
           headerFilters
           filters={demoFilterDefs(locale)}
+          filterTypes={demoFilterTypes()}
           accentColor="blue"
         />
       )}

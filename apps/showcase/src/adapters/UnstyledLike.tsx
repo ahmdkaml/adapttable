@@ -9,6 +9,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   initials,
@@ -213,6 +214,7 @@ export function UnstyledLike({
             headerFilters
             classNames={styled}
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
           />
         );
       }}

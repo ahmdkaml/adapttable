@@ -796,8 +796,18 @@ function autoFilterForm<TRow>(
   if (runtime.defs.length === 0) return undefined;
   return (
     <div data-adapttable-part="filters-form">
-      <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />
-      <FilterTreeBuilder defs={runtime.defs} source={source} labels={labels} />
+      <AutoFilterForm
+        defs={runtime.defs}
+        source={source}
+        labels={labels}
+        registry={runtime.registry}
+      />
+      <FilterTreeBuilder
+        defs={runtime.defs}
+        source={source}
+        labels={labels}
+        registry={runtime.registry}
+      />
     </div>
   );
 }
@@ -1328,6 +1338,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    filterTypes: props.filterTypes,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
     supports: props.supports,
@@ -1599,6 +1610,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     headerFilters: props.headerFilters === true,
     filterDefs: runtime.defs,
     filterSource: resolvedSource,
+    filterRegistry: runtime.registry,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own

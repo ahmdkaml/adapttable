@@ -1,12 +1,16 @@
 import {
   ChecklistFilter,
+  defaultFilterRegistry,
   type FilterDef,
   filterLabel,
   filterOpLabel,
+  type FilterTypeRegistry,
   type FilterValue,
+  filterWidgetKind,
   joinRelativeToken,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
+  renderRegisteredFilter,
   splitRelativeToken,
   type TableLabels,
   type TableSource,
@@ -36,6 +40,8 @@ export interface AutoFilterFormProps<TRow> {
   source: TableSource<TRow>;
   /** Resolved labels — the range widgets read the operator/value strings. */
   labels: Required<TableLabels>;
+  /** Type registry; defaults to the built-ins. */
+  registry?: FilterTypeRegistry;
 }
 
 /** A scalar filter value as input text (`""` when unset). */
@@ -334,12 +340,16 @@ function FilterControl<TRow>({
   def,
   source,
   labels,
+  registry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: TableSource<TRow>;
   labels: Required<TableLabels>;
+  registry: FilterTypeRegistry;
 }>) {
-  switch (def.type) {
+  const custom = renderRegisteredFilter(def, source, labels, registry);
+  if (custom) return custom;
+  switch (filterWidgetKind(def, registry)) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
     case "boolean":
@@ -353,6 +363,8 @@ function FilterControl<TRow>({
     case "dateRange":
     case "numberRange":
       return <RangeField def={def} source={source} labels={labels} />;
+    default:
+      return null;
   }
 }
 
@@ -370,6 +382,7 @@ export function AutoFilterForm<TRow>({
   defs,
   source,
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
     <Stack gap="sm">
@@ -377,6 +390,7 @@ export function AutoFilterForm<TRow>({
         <FilterControl
           key={def.key}
           def={def}
+          registry={registry}
           source={source}
           labels={labels}
         />

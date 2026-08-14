@@ -7,8 +7,8 @@ import type { CSSProperties, ReactElement } from "react";
 import type { ColumnDef } from "../types";
 import type { TableLabels } from "../types";
 import { ColumnSpacer } from "../virtual/ColumnSpacer";
-import type { FilterDef } from "./filterDefs";
-import { filterLabel } from "./filterDefs";
+import { defaultFilterRegistry } from "./filterBuiltins";
+import { type FilterDef, filterLabel } from "./filterDefs";
 import {
   type FilterFormSource,
   listFilterValues,
@@ -16,6 +16,10 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "./filterForm";
+import {
+  type FilterTypeRegistry,
+  renderRegisteredFilter,
+} from "./filterRegistry";
 import { useFilterOptions } from "./useFilterOptions";
 
 /** Class hooks the unstyled adapter maps onto `DataTableClassNames`. */
@@ -48,6 +52,7 @@ export interface FilterHeaderRowProps<TRow> {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly defs: readonly FilterDef<TRow>[];
   readonly source: FilterFormSource<TRow>;
+  readonly registry?: FilterTypeRegistry;
   readonly labels: Required<TableLabels>;
   readonly expandable?: boolean;
   readonly showReorder?: boolean;
@@ -227,11 +232,13 @@ export function FilterHeaderControl<TRow>({
   source,
   labels,
   className,
+  registry = defaultFilterRegistry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
+  registry?: FilterTypeRegistry;
 }>): ReactElement {
   return (
     <FilterHeaderCell
@@ -239,6 +246,7 @@ export function FilterHeaderControl<TRow>({
       source={source}
       labels={labels}
       className={className}
+      registry={registry}
     />
   );
 }
@@ -248,13 +256,24 @@ function FilterHeaderCell<TRow>({
   source,
   labels,
   className,
+  registry = defaultFilterRegistry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
-}>): ReactElement {
-  switch (def.type) {
+  registry?: FilterTypeRegistry;
+}>): ReactElement | null {
+  const spec = registry.get(def.type);
+  const custom = renderRegisteredFilter(
+    def,
+    source,
+    labels,
+    registry,
+    className
+  );
+  if (custom) return custom;
+  switch (spec?.widget ?? def.type) {
     case "text":
       return (
         <TextCell
@@ -297,6 +316,8 @@ function FilterHeaderCell<TRow>({
     case "numberRange":
     case "dateRange":
       return <RangeCell def={def} source={source} className={className} />;
+    default:
+      return null;
   }
 }
 
@@ -320,6 +341,7 @@ export function FilterHeaderRow<TRow>({
   padStyle,
   stickyAttr,
   classNames = {},
+  registry = defaultFilterRegistry,
 }: Readonly<FilterHeaderRowProps<TRow>>): ReactElement | null {
   if (!enabled || defs.length === 0) return null;
   const pad = (part: string, extra?: string) => (
@@ -364,6 +386,7 @@ export function FilterHeaderRow<TRow>({
                 source={source}
                 labels={labels}
                 className={classNames.filterHeaderInput}
+                registry={registry}
               />
             ) : null}
           </th>

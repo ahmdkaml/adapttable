@@ -7,6 +7,7 @@
  */
 import { localizedColumnPath } from "../columns/resolveColumns";
 import { defaultLabels } from "../labels";
+import type { QueryCondition } from "../source/queryContract";
 import type {
   ColumnDef,
   ExtraFilters,
@@ -16,19 +17,23 @@ import type {
 import { devWarn } from "../utils/devWarn";
 import { humanizeKey } from "../utils/humanizeKey";
 import { getPath } from "../utils/path";
+import type { FilterTypeRegistry, FilterTypeSpec } from "./filterRegistry";
 import {
   DATE_OP_LABEL_KEYS,
+  DATE_OPS,
   type DateOp,
   filterOpKey,
   formatFilterChip,
   isEmptyRowValue,
   NUMBER_OP_LABEL_KEYS,
+  NUMBER_OPS,
   type NumberOp,
   parseDateOp,
   parseNumberList,
   parseNumberOp,
   parseTextOp,
   TEXT_OP_LABEL_KEYS,
+  TEXT_OPS,
 } from "./operators";
 import { relativeTokenLabel, resolveRelativeRange } from "./relativeDates";
 import type { ChipLabelResolver } from "./useActiveFilterChips";
@@ -80,8 +85,11 @@ export interface FilterDef<TRow = unknown> {
    * name; set it when they differ (`key: "name"` under `column: "person"`).
    */
   column?: string;
-  /** The widget shape. */
-  type: FilterType;
+  /**
+   * The widget shape. Built-ins are {@link FilterType}; any other string
+   * is a custom type that must be registered on `filterTypes`.
+   */
+  type: string;
   /** Widget + chip label. Defaults to a humanized `key` ("hiredAt" → "Hired At"). */
   label?: string;
   /** Choices for `select` / `multiSelect` — see {@link FilterOptionsSource}. */
@@ -108,16 +116,11 @@ export const RANGE_SUFFIXES = {
 
 /** The state keys a definition reads/writes in the filter bag. */
 export function filterStateKeys(
-  def: Pick<FilterDef, "key" | "type">
+  def: Pick<FilterDef, "key" | "type">,
+  registry?: FilterTypeRegistry
 ): string[] {
-  const opKey = filterOpKey(def.key);
-  if (def.type === "dateRange" || def.type === "numberRange") {
-    const s = RANGE_SUFFIXES[def.type];
-    const pair = [def.key + s.start, def.key + s.end, opKey];
-    // `in` / `notIn` store the list on the bare key.
-    return def.type === "numberRange" ? [def.key, ...pair] : pair;
-  }
-  if (def.type === "text") return [def.key, opKey];
+  const spec = registry?.get(def.type);
+  if (spec) return spec.stateKeys(def);
   return [def.key];
 }
 
@@ -395,71 +398,261 @@ function numberFilterActive(
   return has(extra, minKey) || has(extra, maxKey);
 }
 
-/** Build one definition's client-side predicate (true = row matches). */
-export function filterPredicate<TRow>(
-  def: FilterDef<TRow>
-): (row: TRow, extra: ExtraFilters) => boolean {
-  const value = (row: TRow): unknown =>
-    def.getValue ? def.getValue(row) : getPath(row, def.key);
-  switch (def.type) {
-    case "text":
-      return (row, extra) => {
-        if (!textFilterActive(extra, def.key)) return true;
-        return textRowMatches(
-          parseTextOp(extra[filterOpKey(def.key)]),
-          value(row),
-          String(extra[def.key] ?? "")
-        );
+function rowValue<TRow>(def: FilterDef<TRow>, row: TRow): unknown {
+  return def.getValue ? def.getValue(row) : getPath(row, def.key);
+}
+
+function asConditionScalar(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
+}
+
+function asConditionList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  const one = asConditionScalar(value);
+  return one == null ? [] : [one];
+}
+
+function asConditionPair(value: unknown): {
+  a: string | undefined;
+  b: string | undefined;
+} {
+  if (Array.isArray(value)) {
+    return { a: asConditionScalar(value[0]), b: asConditionScalar(value[1]) };
+  }
+  return { a: asConditionScalar(value), b: undefined };
+}
+
+function rangeConditionToExtra<TRow>(
+  def: FilterDef<TRow>,
+  condition: QueryCondition,
+  flavour: "dateRange" | "numberRange"
+): ExtraFilters {
+  const opKey = filterOpKey(def.key);
+  const op = condition.op;
+  const suffixes = RANGE_SUFFIXES[flavour];
+  const lowKey = def.key + suffixes.start;
+  const highKey = def.key + suffixes.end;
+  if (op === "empty" || op === "notEmpty") return { [opKey]: op };
+  if (op === "in" || op === "notIn") {
+    const list = asConditionList(condition.value);
+    return { [def.key]: list.length > 0 ? list : undefined, [opKey]: op };
+  }
+  if (op === "between") {
+    const { a, b } = asConditionPair(condition.value);
+    return { [lowKey]: a, [highKey]: b, [opKey]: op };
+  }
+  if (op === "before" || op === "lte" || op === "lt") {
+    return { [highKey]: asConditionScalar(condition.value), [opKey]: op };
+  }
+  return { [lowKey]: asConditionScalar(condition.value), [opKey]: op };
+}
+
+function scalarConditionToExtra<TRow>(
+  def: FilterDef<TRow>,
+  condition: QueryCondition
+): ExtraFilters {
+  return {
+    [def.key]: asConditionScalar(condition.value),
+    [filterOpKey(def.key)]: condition.op,
+  };
+}
+
+function listConditionToExtra<TRow>(
+  def: FilterDef<TRow>,
+  condition: QueryCondition
+): ExtraFilters {
+  const list = asConditionList(condition.value);
+  return { [def.key]: list.length > 0 ? list : undefined };
+}
+
+function textStateKeys(def: Pick<FilterDef, "key">): string[] {
+  return [def.key, filterOpKey(def.key)];
+}
+
+function rangeStateKeys(
+  def: Pick<FilterDef, "key">,
+  flavour: "dateRange" | "numberRange"
+): string[] {
+  const s = RANGE_SUFFIXES[flavour];
+  const pair = [def.key + s.start, def.key + s.end, filterOpKey(def.key)];
+  return flavour === "numberRange" ? [def.key, ...pair] : pair;
+}
+
+function textSpec(): FilterTypeSpec {
+  return {
+    type: "text",
+    widget: "text",
+    ops: TEXT_OPS,
+    defaultOp: "contains",
+    stateKeys: textStateKeys,
+    match: (def, extra, row) => {
+      if (!textFilterActive(extra, def.key)) return true;
+      return textRowMatches(
+        parseTextOp(extra[filterOpKey(def.key)]),
+        rowValue(def, row),
+        String(extra[def.key] ?? "")
+      );
+    },
+    chips: (def) => {
+      const label = filterLabel(def);
+      return {
+        [def.key]: (v: string, extra?: ExtraFilters) =>
+          textChipLabel(label, v, extra, def.key),
+        [filterOpKey(def.key)]: (v: string) => emptyOpChip(label, v),
       };
-    case "select":
-      return (row, extra) =>
-        !has(extra, def.key) ||
-        valueText(value(row)) === String(extra[def.key]);
-    case "boolean":
-      return (row, extra) => {
-        if (!has(extra, def.key)) return true;
-        return (
-          coerceBooleanValue(value(row)) === booleanChoiceOn(extra[def.key])
-        );
-      };
-    case "multiSelect":
-    case "checklist":
-      return (row, extra) => {
-        if (!has(extra, def.key)) return true;
-        const selected = extra[def.key];
-        const list = Array.isArray(selected) ? selected : [String(selected)];
-        return list.includes(valueText(value(row)));
-      };
-    case "dateRange": {
-      const fromKey = def.key + RANGE_SUFFIXES.dateRange.start;
-      const toKey = def.key + RANGE_SUFFIXES.dateRange.end;
-      return (row, extra) => {
-        if (!dateFilterActive(extra, def.key, fromKey, toKey)) return true;
+    },
+    conditionToExtra: scalarConditionToExtra,
+  };
+}
+
+function selectSpec(type: "select"): FilterTypeSpec {
+  return {
+    type,
+    widget: type,
+    ops: ["eq"],
+    defaultOp: "eq",
+    stateKeys: (def) => [def.key],
+    match: (def, extra, row) =>
+      !has(extra, def.key) ||
+      valueText(rowValue(def, row)) === String(extra[def.key]),
+    chips: (def) => ({
+      [def.key]: (v: string) => `${filterLabel(def)}: ${optionLabel(def, v)}`,
+    }),
+    conditionToExtra: scalarConditionToExtra,
+  };
+}
+
+function listSpec(type: "multiSelect" | "checklist"): FilterTypeSpec {
+  return {
+    type,
+    widget: type,
+    ops: ["in"],
+    defaultOp: "in",
+    urlArray: true,
+    stateKeys: (def) => [def.key],
+    match: (def, extra, row) => {
+      if (!has(extra, def.key)) return true;
+      const selected = extra[def.key];
+      const list = Array.isArray(selected) ? selected : [String(selected)];
+      return list.includes(valueText(rowValue(def, row)));
+    },
+    chips: (def) => ({
+      [def.key]: (v: string) => `${filterLabel(def)}: ${optionLabel(def, v)}`,
+    }),
+    conditionToExtra: listConditionToExtra,
+  };
+}
+
+function booleanSpec(): FilterTypeSpec {
+  return {
+    type: "boolean",
+    widget: "boolean",
+    ops: ["eq"],
+    defaultOp: "eq",
+    stateKeys: (def) => [def.key],
+    match: (def, extra, row) => {
+      if (!has(extra, def.key)) return true;
+      return (
+        coerceBooleanValue(rowValue(def, row)) ===
+        booleanChoiceOn(extra[def.key])
+      );
+    },
+    chips: (def) => ({
+      [def.key]: (v: string) =>
+        `${filterLabel(def)}: ${
+          booleanChoiceOn(v) ? defaultLabels.boolTrue : defaultLabels.boolFalse
+        }`,
+    }),
+    conditionToExtra: scalarConditionToExtra,
+  };
+}
+
+function rangeSpec(flavour: "dateRange" | "numberRange"): FilterTypeSpec {
+  const isDate = flavour === "dateRange";
+  return {
+    type: flavour,
+    widget: flavour,
+    ops: isDate ? DATE_OPS : NUMBER_OPS,
+    defaultOp: isDate ? "on" : "gte",
+    urlArray: !isDate,
+    urlNumberKeys: !isDate,
+    stateKeys: (def) => rangeStateKeys(def, flavour),
+    match: (def, extra, row) => {
+      const low = def.key + RANGE_SUFFIXES[flavour].start;
+      const high = def.key + RANGE_SUFFIXES[flavour].end;
+      if (isDate) {
+        if (!dateFilterActive(extra, def.key, low, high)) return true;
         return dateRowMatches(
           parseDateOp(extra[filterOpKey(def.key)]),
-          dateValueToEpochMs(value(row)),
+          dateValueToEpochMs(rowValue(def, row)),
           extra,
-          fromKey,
-          toKey
+          low,
+          high
         );
+      }
+      if (!numberFilterActive(extra, def.key, low, high)) return true;
+      return numberRowMatches(
+        parseNumberOp(extra[filterOpKey(def.key)]),
+        numericRowValue(rowValue(def, row)),
+        extra,
+        low,
+        high,
+        def.key
+      );
+    },
+    chips: (def) => {
+      const label = filterLabel(def);
+      const low = def.key + RANGE_SUFFIXES[flavour].start;
+      const high = def.key + RANGE_SUFFIXES[flavour].end;
+      const flavourName = isDate ? "date" : "number";
+      const chips: Record<string, ChipLabelResolver> = {
+        [low]: (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "low", flavourName),
+        [high]: (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "high", flavourName),
+        [filterOpKey(def.key)]: (v) => emptyOpChip(label, v),
       };
-    }
-    case "numberRange": {
-      const minKey = def.key + RANGE_SUFFIXES.numberRange.start;
-      const maxKey = def.key + RANGE_SUFFIXES.numberRange.end;
-      return (row, extra) => {
-        if (!numberFilterActive(extra, def.key, minKey, maxKey)) return true;
-        return numberRowMatches(
-          parseNumberOp(extra[filterOpKey(def.key)]),
-          numericRowValue(value(row)),
-          extra,
-          minKey,
-          maxKey,
-          def.key
-        );
-      };
-    }
+      if (!isDate) {
+        chips[def.key] = (v, extra) =>
+          rangeChipLabel(label, v, extra, def.key, "low", "number");
+      }
+      return chips;
+    },
+    conditionToExtra: (def, condition) =>
+      rangeConditionToExtra(def, condition, flavour),
+  };
+}
+
+/** Built-in types — the registry's first consumers. */
+/** Built-in specs — imported only by {@link defaultFilterRegistry}. */
+export function createBuiltInFilterSpecs(): FilterTypeSpec[] {
+  return [
+    textSpec(),
+    selectSpec("select"),
+    listSpec("multiSelect"),
+    listSpec("checklist"),
+    booleanSpec(),
+    rangeSpec("dateRange"),
+    rangeSpec("numberRange"),
+  ];
+}
+
+/** Build one definition's client-side predicate (true = row matches). */
+export function filterPredicate<TRow>(
+  def: FilterDef<TRow>,
+  registry: FilterTypeRegistry
+): (row: TRow, extra: ExtraFilters) => boolean {
+  const spec = registry.get(def.type);
+  if (!spec) {
+    devWarn(`Unknown filter type "${def.type}"`);
+    return () => true;
   }
+  return (row, extra) => spec.match(def, extra, row);
 }
 
 /** Everything the table engine derives from the resolved definitions. */
@@ -474,6 +667,8 @@ export interface FilterRuntime<TRow> {
   filterLabels: Record<string, ChipLabelResolver>;
   /** AND-composed client-side predicate across every definition. */
   filterFn: (row: TRow, extra: ExtraFilters) => boolean;
+  /** Type registry used to derive this runtime. */
+  registry: FilterTypeRegistry;
 }
 
 const optionLabel = (
@@ -553,63 +748,23 @@ function emptyOpChip(field: string, token: string): string {
 
 /** Derive the full runtime (URL keys, chips, predicate) from definitions. */
 export function buildFilterRuntime<TRow>(
-  defs: readonly FilterDef<TRow>[]
+  defs: readonly FilterDef<TRow>[],
+  registry: FilterTypeRegistry
 ): FilterRuntime<TRow> {
   const arrayExtraKeys: string[] = [];
   const numberExtraKeys: string[] = [];
   const filterLabels: Record<string, ChipLabelResolver> = {};
-  const predicates = defs.map((def) => filterPredicate(def));
+  const predicates = defs.map((def) => filterPredicate(def, registry));
 
   for (const def of defs) {
-    const label = filterLabel(def);
-    const opKey = filterOpKey(def.key);
-    switch (def.type) {
-      case "multiSelect":
-      case "checklist":
-        arrayExtraKeys.push(def.key);
-        filterLabels[def.key] = (v) => `${label}: ${optionLabel(def, v)}`;
-        break;
-      case "select":
-        filterLabels[def.key] = (v) => `${label}: ${optionLabel(def, v)}`;
-        break;
-      case "boolean":
-        filterLabels[def.key] = (v) =>
-          `${label}: ${
-            booleanChoiceOn(v)
-              ? defaultLabels.boolTrue
-              : defaultLabels.boolFalse
-          }`;
-        break;
-      case "text":
-        filterLabels[def.key] = (v, extra) =>
-          textChipLabel(label, v, extra, def.key);
-        filterLabels[opKey] = (v) => emptyOpChip(label, v);
-        break;
-      case "dateRange": {
-        const fromKey = def.key + RANGE_SUFFIXES.dateRange.start;
-        const toKey = def.key + RANGE_SUFFIXES.dateRange.end;
-        filterLabels[fromKey] = (v, extra) =>
-          rangeChipLabel(label, v, extra, def.key, "low", "date");
-        filterLabels[toKey] = (v, extra) =>
-          rangeChipLabel(label, v, extra, def.key, "high", "date");
-        filterLabels[opKey] = (v) => emptyOpChip(label, v);
-        break;
-      }
-      case "numberRange": {
-        const minKey = def.key + RANGE_SUFFIXES.numberRange.start;
-        const maxKey = def.key + RANGE_SUFFIXES.numberRange.end;
-        numberExtraKeys.push(minKey, maxKey);
-        arrayExtraKeys.push(def.key);
-        filterLabels[minKey] = (v, extra) =>
-          rangeChipLabel(label, v, extra, def.key, "low", "number");
-        filterLabels[maxKey] = (v, extra) =>
-          rangeChipLabel(label, v, extra, def.key, "high", "number");
-        filterLabels[def.key] = (v, extra) =>
-          rangeChipLabel(label, v, extra, def.key, "low", "number");
-        filterLabels[opKey] = (v) => emptyOpChip(label, v);
-        break;
-      }
+    const spec = registry.get(def.type);
+    if (!spec) continue;
+    if (spec.urlArray) arrayExtraKeys.push(def.key);
+    if (spec.urlNumberKeys) {
+      const s = RANGE_SUFFIXES.numberRange;
+      numberExtraKeys.push(def.key + s.start, def.key + s.end);
     }
+    Object.assign(filterLabels, spec.chips(def));
   }
 
   return {
@@ -618,16 +773,18 @@ export function buildFilterRuntime<TRow>(
     numberExtraKeys,
     filterLabels,
     filterFn: (row, extra) => predicates.every((p) => p(row, extra)),
+    registry,
   };
 }
 
 /** The cleared state for every key a definition list owns. */
 export function clearedFilterExtras<TRow>(
-  defs: readonly FilterDef<TRow>[]
+  defs: readonly FilterDef<TRow>[],
+  registry?: FilterTypeRegistry
 ): ExtraFilters {
   const out: Record<string, FilterValue> = {};
   for (const def of defs) {
-    for (const key of filterStateKeys(def)) out[key] = undefined;
+    for (const key of filterStateKeys(def, registry)) out[key] = undefined;
   }
   return out;
 }

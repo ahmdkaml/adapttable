@@ -11,6 +11,7 @@ import type { EditEventHandler } from "./editing/editingEvents";
 import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
+import type { FilterTypeSpec } from "./filters/filterRegistry";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
@@ -609,6 +610,12 @@ export interface BaseDataTableProps<TRow> {
    * entry with the same key wins.
    */
   filters?: readonly FilterDef<TRow>[] | ReactNode;
+  /**
+   * Extra or replacement filter types merged onto the built-in registry.
+   * A spec whose `type` matches a built-in replaces it. Omit and only
+   * the built-ins are available.
+   */
+  filterTypes?: readonly FilterTypeSpec[];
   /**
    * Resolved filter definitions, used to label AND/OR tree chips. The
    * shell sets this from the declarative `filters` array; hosts that

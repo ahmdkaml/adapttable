@@ -680,6 +680,7 @@ export function DesktopTable<TRow>({
   extraRows,
   headerFilters,
   filterDefs,
+  filterRegistry,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -1164,6 +1165,7 @@ export function DesktopTable<TRow>({
           )}
           stickyAttr={stickyAttr}
           classNames={classNames}
+          registry={filterRegistry}
         />
       </thead>
       {pinnedTopRows.length > 0 && (

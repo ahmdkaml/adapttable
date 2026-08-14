@@ -9,6 +9,7 @@ import {
   filterDefForColumn,
   type FilterFormSource,
   FilterHeaderControl,
+  type FilterTypeRegistry,
   type GridFocusState,
   type GroupCollapseState,
   type PinSide,
@@ -377,6 +378,8 @@ export interface BuildColumnsOptions<TRow> {
   headerFilters?: boolean;
   filterDefs?: readonly FilterDef<TRow>[];
   filterSource?: FilterFormSource<TRow>;
+  /** Type registry so a custom `filterTypes` entry can render in the header. */
+  filterRegistry?: FilterTypeRegistry;
 }
 
 /**
@@ -582,6 +585,7 @@ export function buildColumns<TRow>({
   headerFilters,
   filterDefs,
   filterSource,
+  filterRegistry,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -650,6 +654,7 @@ export function buildColumns<TRow>({
                   def={headerDef}
                   source={filterSource}
                   labels={labels}
+                  registry={filterRegistry}
                 />
               </span>
             ) : null}

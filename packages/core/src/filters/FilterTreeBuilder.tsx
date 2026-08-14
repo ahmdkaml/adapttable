@@ -10,8 +10,15 @@ import type { QueryCondition, QueryFilterGroup } from "../source/queryContract";
 import { isFilterGroup } from "../source/queryContract";
 import type { TableSource } from "../source/TableSource";
 import type { TableLabels } from "../types";
-import { type FilterDef, filterLabel, type FilterType } from "./filterDefs";
+import { defaultFilterRegistry } from "./filterBuiltins";
+import { type FilterDef, filterLabel } from "./filterDefs";
 import { filterOpLabel } from "./filterForm";
+import {
+  filterTypeDefaultOp,
+  filterTypeOps,
+  type FilterTypeRegistry,
+  filterWidgetKind,
+} from "./filterRegistry";
 import {
   addFilterTreeCondition,
   addFilterTreeGroup,
@@ -22,14 +29,11 @@ import {
 } from "./filterTreeMutations";
 import {
   DATE_OP_LABEL_KEYS,
-  DATE_OPS,
   isBetweenFilterOp,
   isListFilterOp,
   isValuelessFilterOp,
   NUMBER_OP_LABEL_KEYS,
-  NUMBER_OPS,
   TEXT_OP_LABEL_KEYS,
-  TEXT_OPS,
 } from "./operators";
 import {
   joinRelativeToken,
@@ -60,51 +64,46 @@ export interface FilterTreeBuilderProps<TRow> {
   readonly source: Pick<TableSource<TRow>, "filterTree" | "setFilterTree">;
   readonly labels?: TableLabels;
   readonly classNames?: FilterTreeClassNames;
+  readonly registry?: FilterTypeRegistry;
 }
 
-function defaultOp(type: FilterType): string {
-  if (type === "text") return "contains";
-  if (type === "numberRange") return "gte";
-  if (type === "dateRange") return "on";
-  if (type === "checklist" || type === "multiSelect") return "in";
-  return "eq";
-}
-
-function opsFor(type: FilterType): readonly string[] {
-  if (type === "text") return TEXT_OPS;
-  if (type === "numberRange") return NUMBER_OPS;
-  if (type === "dateRange") return DATE_OPS;
-  if (type === "checklist" || type === "multiSelect") return ["in"];
-  return ["eq"];
+function opsFor<TRow>(
+  def: FilterDef<TRow>,
+  registry: FilterTypeRegistry
+): readonly string[] {
+  return filterTypeOps(def, registry);
 }
 
 function opLabelKey(
-  type: FilterType,
+  widget: string | undefined,
   op: string
 ): keyof TableLabels | undefined {
-  if (type === "text" && op in TEXT_OP_LABEL_KEYS) {
+  if (widget === "text" && op in TEXT_OP_LABEL_KEYS) {
     return TEXT_OP_LABEL_KEYS[op as keyof typeof TEXT_OP_LABEL_KEYS];
   }
-  if (type === "numberRange" && op in NUMBER_OP_LABEL_KEYS) {
+  if (widget === "numberRange" && op in NUMBER_OP_LABEL_KEYS) {
     return NUMBER_OP_LABEL_KEYS[op as keyof typeof NUMBER_OP_LABEL_KEYS];
   }
-  if (type === "dateRange" && op in DATE_OP_LABEL_KEYS) {
+  if (widget === "dateRange" && op in DATE_OP_LABEL_KEYS) {
     return DATE_OP_LABEL_KEYS[op as keyof typeof DATE_OP_LABEL_KEYS];
   }
   return undefined;
 }
 
-function newCondition<TRow>(def: FilterDef<TRow>): QueryCondition {
-  return { key: def.key, op: defaultOp(def.type) };
+function newCondition<TRow>(
+  def: FilterDef<TRow>,
+  registry: FilterTypeRegistry
+): QueryCondition {
+  return { key: def.key, op: filterTypeDefaultOp(def, registry) };
 }
 
 function inputTypeFor(
-  type: FilterType,
+  widget: string | undefined,
   op: string
 ): "text" | "number" | "date" {
   if (op === "relative" || isListFilterOp(op)) return "text";
-  if (type === "numberRange") return "number";
-  if (type === "dateRange") return "date";
+  if (widget === "numberRange") return "number";
+  if (widget === "dateRange") return "date";
   return "text";
 }
 
@@ -204,16 +203,18 @@ function ConditionValue<TRow>({
   condition,
   labels,
   classNames,
+  registry,
   onChange,
 }: Readonly<{
   def: FilterDef<TRow>;
   condition: QueryCondition;
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
+  registry: FilterTypeRegistry;
   onChange: (value: unknown) => void;
 }>) {
   if (isValuelessFilterOp(condition.op)) return null;
-  if (def.type === "boolean") {
+  if (filterWidgetKind(def, registry) === "boolean") {
     const choice =
       condition.value === false || condition.value === "false"
         ? "false"
@@ -273,7 +274,7 @@ function ConditionValue<TRow>({
       </>
     );
   }
-  const type = inputTypeFor(def.type, condition.op);
+  const type = inputTypeFor(filterWidgetKind(def, registry), condition.op);
   if (isBetweenFilterOp(condition.op)) {
     const { a, b } = pairOf(condition.value);
     return (
@@ -323,6 +324,7 @@ function ConditionRow<TRow>({
   defs,
   labels,
   classNames,
+  registry,
   onReplace,
   onRemove,
 }: Readonly<{
@@ -331,12 +333,13 @@ function ConditionRow<TRow>({
   defs: readonly FilterDef<TRow>[];
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
+  registry: FilterTypeRegistry;
   onReplace: (path: readonly number[], next: QueryCondition) => void;
   onRemove: (path: readonly number[]) => void;
 }>) {
   const def = defs.find((item) => item.key === condition.key) ?? defs[0];
   if (!def) return null;
-  const ops = opsFor(def.type);
+  const ops = opsFor(def, registry);
   return (
     <div
       data-adapttable-part="filter-tree-condition"
@@ -351,7 +354,7 @@ function ConditionRow<TRow>({
         labelClassName={classNames.filterLabel}
         onChange={(key) => {
           const next = defs.find((item) => item.key === key);
-          if (next) onReplace(path, newCondition(next));
+          if (next) onReplace(path, newCondition(next, registry));
         }}
       >
         {defs.map((item) => (
@@ -373,7 +376,7 @@ function ConditionRow<TRow>({
           }
         >
           {ops.map((op) => {
-            const key = opLabelKey(def.type, op);
+            const key = opLabelKey(filterWidgetKind(def, registry), op);
             return (
               <option key={op} value={op}>
                 {key ? filterOpLabel(labels, key) : op}
@@ -387,6 +390,7 @@ function ConditionRow<TRow>({
         condition={condition}
         labels={labels}
         classNames={classNames}
+        registry={registry}
         onChange={(value) => onReplace(path, { ...condition, value })}
       />
       <button
@@ -433,6 +437,7 @@ function GroupView<TRow>({
   defs,
   labels,
   classNames,
+  registry,
   onCombinator,
   onAddCondition,
   onAddGroup,
@@ -444,6 +449,7 @@ function GroupView<TRow>({
   defs: readonly FilterDef<TRow>[];
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
+  registry: FilterTypeRegistry;
   onCombinator: (path: readonly number[], next: "and" | "or") => void;
   onAddCondition: (path: readonly number[]) => void;
   onAddGroup: (path: readonly number[]) => void;
@@ -490,6 +496,7 @@ function GroupView<TRow>({
               defs={defs}
               labels={labels}
               classNames={classNames}
+              registry={registry}
               onCombinator={onCombinator}
               onAddCondition={onAddCondition}
               onAddGroup={onAddGroup}
@@ -506,6 +513,7 @@ function GroupView<TRow>({
             defs={defs}
             labels={labels}
             classNames={classNames}
+            registry={registry}
             onReplace={onReplace}
             onRemove={onRemove}
           />
@@ -530,6 +538,7 @@ export function FilterTreeBuilder<TRow>({
   source,
   labels: labelOverrides,
   classNames = {},
+  registry = defaultFilterRegistry,
 }: Readonly<FilterTreeBuilderProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const tree = source.filterTree;
@@ -538,7 +547,7 @@ export function FilterTreeBuilder<TRow>({
   if (!commit || !first || defs.length === 0) return null;
 
   const onAddCondition = (path: readonly number[]) => {
-    commit(addFilterTreeCondition(tree, path, newCondition(first)));
+    commit(addFilterTreeCondition(tree, path, newCondition(first, registry)));
   };
   const onAddGroup = (path: readonly number[]) => {
     commit(addFilterTreeGroup(tree ?? emptyFilterTree(), path));
@@ -553,6 +562,7 @@ export function FilterTreeBuilder<TRow>({
           defs={defs}
           labels={labels}
           classNames={classNames}
+          registry={registry}
           onCombinator={(path, next) =>
             commit(setFilterTreeCombinator(tree, path, next))
           }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { computeFilterFacets, rowsExcludingFilter } from "./facets";
+import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
 
 interface Row {
@@ -56,6 +57,22 @@ describe("computeFilterFacets", () => {
   it("skips non-checklist definitions", () => {
     const facets = computeFilterFacets(DEFS, ROWS, {}, () => true);
     expect(facets.status).toBeUndefined();
+    expect(facets.team).toHaveLength(2);
+  });
+
+  it("counts a custom type whose widget is checklist", () => {
+    const checklist = defaultFilterRegistry.get("checklist")!;
+    const registry = defaultFilterRegistry.register({
+      ...checklist,
+      type: "teams",
+    });
+    const facets = computeFilterFacets(
+      [{ key: "team", type: "teams" }],
+      ROWS,
+      {},
+      () => true,
+      registry
+    );
     expect(facets.team).toHaveLength(2);
   });
 });

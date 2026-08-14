@@ -196,10 +196,15 @@ const FIXTURES = [
   // FilterHeaderRow returns null. Ant Design keeps the control in
   // the header cell so its fixture stayed under. `core · simple
   // table` stayed at 12.5 KB of a 13 KB ceiling.
+  //
+  // The public filter-type registry (~0.5 KB on the kit path) lives in
+  // `filterBuiltins` so `useFrontendData` / `useDataTable` do not load
+  // every built-in spec. Ant Design's header-cell control plus the
+  // registry lookup on AutoFilterForm nudged that fixture over 101 KB.
   { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 107 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 107 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 107 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 101 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 102 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 107 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 113 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 109 },

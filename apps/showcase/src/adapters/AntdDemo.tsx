@@ -16,6 +16,7 @@ import {
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
   demoOrders,
   demoSavedViews,
   initials,
@@ -207,6 +208,7 @@ export function AntdDemo({
             animate={animate}
             resizableColumns
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
             headerFilters
           />
         )}

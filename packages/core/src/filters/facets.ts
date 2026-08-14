@@ -6,6 +6,7 @@ import type { ExtraFilters } from "../types";
 import { type ChecklistValue, collectChecklistValues } from "./checklist";
 import type { FilterDef } from "./filterDefs";
 import { listFilterValues } from "./filterForm";
+import type { FilterTypeRegistry } from "./filterRegistry";
 
 /** Distinct values + counts for one filter key. */
 export type FacetCounts = readonly ChecklistValue[];
@@ -36,11 +37,13 @@ export function computeFilterFacets<TRow>(
   defs: readonly FilterDef<TRow>[],
   rows: readonly TRow[],
   extra: ExtraFilters,
-  filterFn: (row: TRow, extra: ExtraFilters) => boolean
+  filterFn: (row: TRow, extra: ExtraFilters) => boolean,
+  registry?: FilterTypeRegistry
 ): FacetMap {
   const out: Record<string, ChecklistValue[]> = {};
   for (const def of defs) {
-    if (def.type !== "checklist") continue;
+    const widget = registry?.get(def.type)?.widget ?? def.type;
+    if (widget !== "checklist") continue;
     const subset = rowsExcludingFilter(rows, extra, def.key, filterFn);
     out[def.key] = collectChecklistValues(
       def,

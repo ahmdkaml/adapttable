@@ -1,4 +1,5 @@
 import {
+  defaultFilterRegistry,
   defaultLabels,
   type ExtraFilters,
   type FilterDef,
@@ -413,5 +414,30 @@ describe("<AutoFilterForm>", () => {
       hiredTo: "2026-03-01",
       hiredOp: "between",
     });
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    const { source } = makeSource();
+    renderMantine(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={source}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
   });
 });
