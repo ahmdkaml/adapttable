@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type FilterDef,
   filterLabel,
   filterOpLabel,
@@ -456,6 +457,15 @@ function FilterField<TRow>({
     case "multiSelect":
       return (
         <MultiSelectField def={def} source={source} classNames={classNames} />
+      );
+    case "checklist":
+      return (
+        <ChecklistFilter
+          def={def}
+          source={source}
+          classNames={classNames}
+          labels={labels}
+        />
       );
     case "dateRange":
     case "numberRange":

@@ -873,7 +873,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "team",
-      type: "multiSelect",
+      type: "checklist",
       label: s.team,
       options: TEAMS.map((team) => ({
         value: team,

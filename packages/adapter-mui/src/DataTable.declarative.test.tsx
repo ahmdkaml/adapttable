@@ -484,6 +484,32 @@ describe("declarative DataTable (MUI)", () => {
 });
 
 describe("<AutoFilterForm> (MUI)", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    const setExtra = vi.fn();
+    const source = {
+      extra: {},
+      setExtra,
+      setExtras: vi.fn(),
+    };
+    renderMui(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={source}
+        labels={defaultLabels}
+      />
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    renderMui(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={{ ...source, allFilteredRows: [{ id: "1" } as Person] }}
+        labels={defaultLabels}
+      />
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("async select options load lazily: disabled placeholder, then choices", async () => {
     const load = vi.fn(() =>
       Promise.resolve<readonly FilterOption[]>([

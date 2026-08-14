@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type Direction,
   type FilterDef,
   type FilterFormSource,
@@ -320,6 +321,8 @@ function AutoFilterField<TRow>({
         </FormField>
       );
     }
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
       // Toggle chips — selected state is the chip chrome, no nested checkbox.
       // Named through the group label via `aria-labelledby`; each chip is a

@@ -1294,9 +1294,12 @@ export function PeopleTable() {
   both inherited from the column) and the table-level `filters: FilterDef[]`
   for filters with no column. On a key collision the standalone definition
   wins and a development warning points at the duplicate.
-- Six built-in types (`FILTER_TYPES`): `text`, `select` (equals),
-  `multiSelect` (one of), `boolean` (any / true / false — never a
-  checkbox), `dateRange`, `numberRange`.
+- Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
+  `multiSelect` (one of), `checklist` (Excel-style distinct values with
+  search, select-all and counts — frontend only, from
+  `source.allFilteredRows`; a server page that omits that list does not
+  offer the widget), `boolean` (any / true / false — never a checkbox),
+  `dateRange`, `numberRange`.
 - Widgets are operator-first. Text offers equals / not equals / contains /
   not contains / starts with / ends with / empty / not empty. Numbers offer
   `=` `≠` `>` `≥` `<` `≤` between / in / not in. Dates offer before / after /
@@ -1322,14 +1325,14 @@ export function PeopleTable() {
 `FilterDef` (entries of `filters`, and the column `filter` object minus
 `key`/`label`):
 
-| Prop          | Type                                                                               | Default               | Description                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| `key`         | `string`                                                                           | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
-| `type`        | `"text" \| "select" \| "multiSelect" \| "boolean" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
-| `label`       | `string`                                                                           | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
-| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`                        | —                     | Choices for `select` / `multiSelect`.                                                            |
-| `getValue`    | `(row) => unknown`                                                                 | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
-| `placeholder` | `string`                                                                           | —                     | Placeholder for text-like inputs.                                                                |
+| Prop          | Type                                                                                              | Default               | Description                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `key`         | `string`                                                                                          | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
+| `type`        | `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
+| `label`       | `string`                                                                                          | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
+| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`                                       | —                     | Choices for `select` / `multiSelect`.                                                            |
+| `getValue`    | `(row) => unknown`                                                                                | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
+| `placeholder` | `string`                                                                                          | —                     | Placeholder for text-like inputs.                                                                |
 
 `<DataTable>` filter props:
 
@@ -4700,25 +4703,26 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                              | Element                                                                                |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `filtersButton`                                   | The Filters trigger button.                                                            |
-| `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
-| `filtersCount`                                    | The active-filter count badge.                                                         |
-| `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
-| `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
-| `cellSelected`                                    | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
-| `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
-| `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
-| `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
-| `filtersPanel`                                    | The drawer panel.                                                                      |
-| `filtersHeader` / `filtersTitle` / `filtersClose` | Panel header, its title, and the close button.                                         |
-| `filtersBody` / `filtersFooter`                   | The panel content area and its action row.                                             |
-| `filtersClear` / `filtersDone`                    | The clear-all and done/apply buttons.                                                  |
-| `filterField` / `filterLabel`                     | One auto-built field's wrapper and its caption.                                        |
-| `filterInput` / `filterSelect` / `filterOperator` | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
-| `filterCheckboxGroup` / `filterCheckbox`          | A `multiSelect` checkbox list and one option.                                          |
-| `filterOptionsLoading`                            | The placeholder shown while async options load.                                        |
+| Part                                                                                                                    | Element                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                            |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                    |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                         |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                      |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                       |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                         |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                   |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                          |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                      |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                         |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                             |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                  |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                        |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
 
 ### Chips
 
@@ -5511,14 +5515,14 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## FilterDef
 
-| Prop          | Type                     | Default         | Description                                                                                                                           |
-| ------------- | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate.      |
-| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "boolean" \| "dateRange" \| "numberRange"`.                      |
-| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                                  |
-| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`: a static `FilterOption[]`, `"auto"` (distinct frontend values, capped at 50), or an async loader. |
-| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                                    |
-| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                     |
+| Prop          | Type                     | Default         | Description                                                                                                                      |
+| ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
+| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"`.  |
+| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
+| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
+| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                               |
+| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                |
 
 Range types persist two inclusive state keys: `dateRange` →
 `${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. Every
@@ -5534,7 +5538,10 @@ An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
 `serializeFilterTree`); the frontend ANDs it with the flat bag, and a
 server that sets `supports.filterTree` receives `query.filterTree`.
 `FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
-the chrome label tree chips.
+the chrome label tree chips. A `checklist` filter is the Excel-style
+distinct-values widget (`ChecklistFilter` / `useChecklistFilter` /
+`collectChecklistValues`); it reads `allFilteredRows` and stays hidden
+on a server page that does not hold the full set.
 
 ## Adapter extras
 
@@ -5856,7 +5863,11 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `FilterTreeNode`. Builder: `FilterTreeBuilder` /
 `FilterTreeBuilderProps` / `FilterTreeClassNames`. Chips:
 `useFilterTreeChips` / `UseFilterTreeChipsOptions` /
-`filterTreeChipLabel`. The tree is a `QueryFilterGroup` of
+`filterTreeChipLabel`. Checklist: `ChecklistFilter` /
+`ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
+`ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
+`CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
+`CHECKLIST_LIST_HEIGHT`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).
 

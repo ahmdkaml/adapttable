@@ -164,14 +164,14 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## FilterDef
 
-| Prop          | Type                     | Default         | Description                                                                                                                           |
-| ------------- | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate.      |
-| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "boolean" \| "dateRange" \| "numberRange"`.                      |
-| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                                  |
-| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`: a static `FilterOption[]`, `"auto"` (distinct frontend values, capped at 50), or an async loader. |
-| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                                    |
-| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                     |
+| Prop          | Type                     | Default         | Description                                                                                                                      |
+| ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
+| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"`.  |
+| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
+| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
+| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                               |
+| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                |
 
 Range types persist two inclusive state keys: `dateRange` →
 `${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. Every
@@ -187,7 +187,10 @@ An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
 `serializeFilterTree`); the frontend ANDs it with the flat bag, and a
 server that sets `supports.filterTree` receives `query.filterTree`.
 `FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
-the chrome label tree chips.
+the chrome label tree chips. A `checklist` filter is the Excel-style
+distinct-values widget (`ChecklistFilter` / `useChecklistFilter` /
+`collectChecklistValues`); it reads `allFilteredRows` and stays hidden
+on a server page that does not hold the full set.
 
 ## Adapter extras
 
@@ -509,7 +512,11 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `FilterTreeNode`. Builder: `FilterTreeBuilder` /
 `FilterTreeBuilderProps` / `FilterTreeClassNames`. Chips:
 `useFilterTreeChips` / `UseFilterTreeChipsOptions` /
-`filterTreeChipLabel`. The tree is a `QueryFilterGroup` of
+`filterTreeChipLabel`. Checklist: `ChecklistFilter` /
+`ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
+`ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
+`CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
+`CHECKLIST_LIST_HEIGHT`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).
 

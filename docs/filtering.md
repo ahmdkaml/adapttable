@@ -116,9 +116,12 @@ export function PeopleTable() {
   both inherited from the column) and the table-level `filters: FilterDef[]`
   for filters with no column. On a key collision the standalone definition
   wins and a development warning points at the duplicate.
-- Six built-in types (`FILTER_TYPES`): `text`, `select` (equals),
-  `multiSelect` (one of), `boolean` (any / true / false — never a
-  checkbox), `dateRange`, `numberRange`.
+- Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
+  `multiSelect` (one of), `checklist` (Excel-style distinct values with
+  search, select-all and counts — frontend only, from
+  `source.allFilteredRows`; a server page that omits that list does not
+  offer the widget), `boolean` (any / true / false — never a checkbox),
+  `dateRange`, `numberRange`.
 - Widgets are operator-first. Text offers equals / not equals / contains /
   not contains / starts with / ends with / empty / not empty. Numbers offer
   `=` `≠` `>` `≥` `<` `≤` between / in / not in. Dates offer before / after /
@@ -144,14 +147,14 @@ export function PeopleTable() {
 `FilterDef` (entries of `filters`, and the column `filter` object minus
 `key`/`label`):
 
-| Prop          | Type                                                                               | Default               | Description                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| `key`         | `string`                                                                           | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
-| `type`        | `"text" \| "select" \| "multiSelect" \| "boolean" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
-| `label`       | `string`                                                                           | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
-| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`                        | —                     | Choices for `select` / `multiSelect`.                                                            |
-| `getValue`    | `(row) => unknown`                                                                 | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
-| `placeholder` | `string`                                                                           | —                     | Placeholder for text-like inputs.                                                                |
+| Prop          | Type                                                                                              | Default               | Description                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `key`         | `string`                                                                                          | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
+| `type`        | `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
+| `label`       | `string`                                                                                          | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
+| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`                                       | —                     | Choices for `select` / `multiSelect`.                                                            |
+| `getValue`    | `(row) => unknown`                                                                                | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
+| `placeholder` | `string`                                                                                          | —                     | Placeholder for text-like inputs.                                                                |
 
 `<DataTable>` filter props:
 

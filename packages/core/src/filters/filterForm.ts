@@ -32,7 +32,7 @@ export type RangeOpArity = "none" | "one" | "two" | "list";
  */
 export type FilterFormSource<TRow> = Pick<
   TableSource<TRow>,
-  "extra" | "setExtra" | "setExtras"
+  "extra" | "setExtra" | "setExtras" | "allFilteredRows"
 >;
 
 /** A scalar filter value as input text ("" when unset; numbers stringify). */

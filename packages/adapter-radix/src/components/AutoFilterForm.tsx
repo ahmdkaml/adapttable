@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type Direction,
   type FilterDef,
   type FilterFormSource,
@@ -325,6 +326,8 @@ function AutoFilterField<TRow>({
         </FormField>
       );
     }
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
       // A multiSelect is a GROUP of checkboxes, named through the group label
       // via `aria-labelledby`; each box self-labels through its own text and

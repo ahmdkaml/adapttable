@@ -349,6 +349,14 @@ describe("filterPredicate", () => {
     expect(p({ balance: "-4.5" }, range)).toBe(true);
   });
 
+  it("checklist matches a selected distinct value like multiSelect", () => {
+    const p = filterPredicate<Row>({ key: "status", type: "checklist" });
+    expect(p(ROW, {})).toBe(true);
+    expect(p(ROW, { status: ["active"] })).toBe(true);
+    expect(p(ROW, { status: ["paused"] })).toBe(false);
+    expect(p(ROW, { status: "active" })).toBe(true);
+  });
+
   it("compares primitive row values of every type as text", () => {
     const of = (v: unknown) =>
       filterPredicate<Row>({ key: "k", type: "text", getValue: () => v });

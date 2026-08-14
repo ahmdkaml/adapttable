@@ -80,6 +80,30 @@ function openOperator(name: string) {
 }
 
 describe("<AutoFilterForm> (Ant Design)", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    render(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={staticSource({})}
+        labels={defaultLabels}
+      />
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const source = {
+      ...staticSource({}),
+      allFilteredRows: [{ id: "1" }],
+    };
+    render(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={source}
+        labels={defaultLabels}
+      />
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(source.setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("boolean: tri-state select writes true and clears", () => {
     const source = staticSource({});
     render(

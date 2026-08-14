@@ -74,6 +74,10 @@ export function conditionToExtra<TRow>(
     }
     return { [lowKey]: asScalar(condition.value), [opKey]: op };
   }
+  if (def.type === "multiSelect" || def.type === "checklist") {
+    const list = asList(condition.value);
+    return { [def.key]: list.length > 0 ? list : undefined };
+  }
   return {
     [def.key]: asScalar(condition.value),
     [opKey]: op,

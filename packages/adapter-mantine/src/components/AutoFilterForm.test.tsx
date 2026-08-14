@@ -15,11 +15,15 @@ interface Row {
   id: string;
 }
 
-function makeSource(extra: ExtraFilters = {}) {
+function makeSource(
+  extra: ExtraFilters = {},
+  allFilteredRows?: readonly Row[]
+) {
   const setExtra = vi.fn();
   const setExtras = vi.fn();
   const source: TableSource<Row> = {
     rows: [],
+    allFilteredRows,
     total: 0,
     isLoading: false,
     isFetching: false,
@@ -88,6 +92,22 @@ const BUDGET_DEF: FilterDef<Row> = {
 const HIRED_DEF: FilterDef<Row> = { key: "hired", type: "dateRange" };
 
 describe("<AutoFilterForm>", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    const hidden = makeSource();
+    renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      hidden.source
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const { source, setExtra } = makeSource({}, [{ id: "1" }]);
+    renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      source
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("text: shows the current value + placeholder and writes the state key", () => {
     const { source, setExtras } = makeSource({ name: "al" });
     renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);

@@ -38,6 +38,7 @@ export const FILTER_TYPES = [
   "text",
   "select",
   "multiSelect",
+  "checklist",
   "boolean",
   "dateRange",
   "numberRange",
@@ -416,6 +417,7 @@ export function filterPredicate<TRow>(
         );
       };
     case "multiSelect":
+    case "checklist":
       return (row, extra) => {
         if (!has(extra, def.key)) return true;
         const selected = extra[def.key];
@@ -557,6 +559,7 @@ export function buildFilterRuntime<TRow>(
     const opKey = filterOpKey(def.key);
     switch (def.type) {
       case "multiSelect":
+      case "checklist":
         arrayExtraKeys.push(def.key);
         filterLabels[def.key] = (v) => `${label}: ${optionLabel(def, v)}`;
         break;

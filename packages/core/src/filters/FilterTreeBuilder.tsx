@@ -66,6 +66,7 @@ function defaultOp(type: FilterType): string {
   if (type === "text") return "contains";
   if (type === "numberRange") return "gte";
   if (type === "dateRange") return "on";
+  if (type === "checklist" || type === "multiSelect") return "in";
   return "eq";
 }
 
@@ -73,6 +74,7 @@ function opsFor(type: FilterType): readonly string[] {
   if (type === "text") return TEXT_OPS;
   if (type === "numberRange") return NUMBER_OPS;
   if (type === "dateRange") return DATE_OPS;
+  if (type === "checklist" || type === "multiSelect") return ["in"];
   return ["eq"];
 }
 

@@ -23,14 +23,15 @@ const TAG_OPTIONS = [
 function renderForm(
   defs: readonly FilterDef[],
   extra: ExtraFilters = {},
-  labels?: TableLabels
+  labels?: TableLabels,
+  allFilteredRows?: readonly { id: string }[]
 ) {
   const setExtra = vi.fn<(key: string, value: FilterValue) => void>();
   const setExtras = vi.fn<(updates: ExtraFilters) => void>();
   const view = renderBaseUi(
     <AutoFilterForm
       defs={defs}
-      source={{ extra, setExtra, setExtras }}
+      source={{ extra, setExtra, setExtras, allFilteredRows }}
       labels={labels}
     />
   );
@@ -61,6 +62,19 @@ function triggerText(name: string): string {
 }
 
 describe("<AutoFilterForm> (Base UI)", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    renderForm([{ key: "team", type: "checklist", getValue: () => "Core" }]);
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const { setExtra } = renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      {},
+      undefined,
+      [{ id: "1" }]
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("text: labels from the humanized key, shows the placeholder, writes the key", () => {
     const { setExtras } = renderForm([
       { key: "firstName", type: "text", placeholder: "Type a name" },

@@ -8,11 +8,12 @@ interface Row {
   id: string;
 }
 
-function stubSource(extra: ExtraFilters) {
+function stubSource(extra: ExtraFilters, allFilteredRows?: readonly Row[]) {
   const setExtra = vi.fn();
   const setExtras = vi.fn();
   const source: TableSource<Row> = {
     rows: [],
+    allFilteredRows,
     total: 0,
     isLoading: false,
     isFetching: false,
@@ -78,6 +79,26 @@ describe("<AutoFilterForm> standalone", () => {
     expect(setExtra).toHaveBeenCalledWith("tags", ["a", "b"]);
     fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
     expect(setExtra).toHaveBeenCalledWith("tags", []);
+  });
+
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    const hidden = stubSource({});
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={hidden.source}
+      />
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const { source, setExtra } = stubSource({}, [{ id: "1" }]);
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={source}
+      />
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
   });
 
   it("boolean: tri-state select writes true / false / clears", () => {

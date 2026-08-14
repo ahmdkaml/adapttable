@@ -119,6 +119,15 @@ describe("evaluateFilterTree", () => {
 });
 
 describe("conditionToExtra", () => {
+  it("projects a checklist list onto the bag without stringifying it", () => {
+    expect(
+      conditionToExtra(
+        { key: "team", type: "checklist" },
+        { key: "team", op: "in", value: ["Core", "Web"] }
+      )
+    ).toEqual({ team: ["Core", "Web"] });
+  });
+
   it("projects range ops onto the From/To or Min/Max pair", () => {
     expect(
       conditionToExtra(DEFS[2]!, {

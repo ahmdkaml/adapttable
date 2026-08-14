@@ -65,6 +65,12 @@ export const shadcnClassNames = {
     "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
   filterSelect:
     "h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterChecklist: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterChecklistSearch:
+    "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterChecklistActions: "flex flex-wrap gap-2",
+  filterChecklistList: "flex max-h-60 flex-col gap-1 overflow-auto",
+  filterChecklistCount: "text-xs text-muted-foreground",
   filterCheckboxGroup: "flex flex-wrap gap-1.5",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",

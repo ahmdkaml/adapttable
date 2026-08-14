@@ -62,6 +62,20 @@ export { columnText } from "./columns/columnText";
 export { computed, type ComputedColumnSpec } from "./columns/computed";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
+  CHECKLIST_ITEM_HEIGHT,
+  CHECKLIST_LIST_HEIGHT,
+  CHECKLIST_VIRTUALIZE_AT,
+  type ChecklistFilterState,
+  type ChecklistValue,
+  collectChecklistValues,
+  useChecklistFilter,
+} from "./filters/checklist";
+export {
+  type ChecklistClassNames,
+  ChecklistFilter,
+  type ChecklistFilterProps,
+} from "./filters/ChecklistFilter";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,

@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type FilterDef,
   filterLabel,
   filterOpLabel,
@@ -29,7 +30,7 @@ import type { ReactNode } from "react";
 /** The slice of the source the auto-built form reads and writes. */
 type FilterBag<TRow> = Pick<
   TableSource<TRow>,
-  "extra" | "setExtra" | "setExtras"
+  "extra" | "setExtra" | "setExtras" | "allFilteredRows"
 >;
 
 /** Props for {@link AutoFilterForm}. */
@@ -363,6 +364,8 @@ function FilterField<TRow>({
       return <SelectFilter def={def} source={source} />;
     case "multiSelect":
       return <MultiSelectFilter def={def} source={source} />;
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "dateRange":
     case "numberRange":
       return <RangeFilter def={def} source={source} labels={labels} />;

@@ -115,6 +115,16 @@ export interface DataTableClassNames {
   filterCheckbox?: string;
   /** The placeholder shown while a field's async options load. */
   filterOptionsLoading?: string;
+  /** Excel-style checklist wrapper. */
+  filterChecklist?: string;
+  /** Search box inside a checklist. */
+  filterChecklistSearch?: string;
+  /** Select-all / clear row on a checklist. */
+  filterChecklistActions?: string;
+  /** Scrollable value list inside a checklist. */
+  filterChecklistList?: string;
+  /** Per-value count in a checklist. */
+  filterChecklistCount?: string;
   chips?: string;
   chip?: string;
   chipRemove?: string;

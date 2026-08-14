@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type FilterDef,
   filterLabel,
   filterOpLabel,
@@ -32,7 +33,10 @@ export interface AutoFilterFormProps<TRow> {
   /** The merged, ordered filter definitions from the filter runtime. */
   defs: readonly FilterDef<TRow>[];
   /** The resolved source whose `extra` bag the controls read and write. */
-  source: Pick<TableSource<TRow>, "extra" | "setExtra" | "setExtras">;
+  source: Pick<
+    TableSource<TRow>,
+    "extra" | "setExtra" | "setExtras" | "allFilteredRows"
+  >;
   /** Localized strings for the operator-first range widgets. */
   labels: RangeFilterLabels;
 }
@@ -310,6 +314,8 @@ function FilterControl<TRow>({
           )}
         </select>
       );
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect":
       if (loading) return <Spin size="small" />;
       return (

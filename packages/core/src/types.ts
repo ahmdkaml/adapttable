@@ -509,6 +509,12 @@ export interface TableLabels {
   filterRemoveGroup?: string;
   /** Field picker in the filter-tree builder. */
   filterField?: string;
+  /** Search box inside an Excel-style checklist filter. */
+  checklistSearch?: string;
+  /** Clear the checklist selection. */
+  checklistClear?: string;
+  /** Empty state when the checklist search matches nothing. */
+  checklistNoValues?: string;
   sortBy?: string;
   rowsPerPage?: string;
   actions?: string;

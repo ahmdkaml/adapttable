@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type FilterDef,
   filterLabel,
   filterOpLabel,
@@ -347,6 +348,8 @@ function FilterControl<TRow>({
       return <SelectControl def={def} source={source} />;
     case "multiSelect":
       return <MultiSelectControl def={def} source={source} />;
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "dateRange":
     case "numberRange":
       return <RangeField def={def} source={source} labels={labels} />;

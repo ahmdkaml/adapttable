@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 72,
+    budgetKB: 74,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -183,14 +183,20 @@ const FIXTURES = [
   // but the recursive native UI cannot sit behind a second entry
   // without breaking a shared `ft=` link that needs editing. The
   // simple-table fixture stayed at 12.5 KB of a 13 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 103 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 102 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 102 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 98 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 102 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 108 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 104 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 101 },
+  //
+  // The Excel-style checklist (~1.5 KB per kit) is another leaf on
+  // that same AutoFilterForm path. Omit `type: "checklist"` and the
+  // widget returns null; a server page without `allFilteredRows`
+  // never offers it. `core · simple table` stayed at 12.5 KB of a
+  // 13 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 105 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 104 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 104 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 101 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 104 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 110 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 107 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 104 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

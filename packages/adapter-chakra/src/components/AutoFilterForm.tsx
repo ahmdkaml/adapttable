@@ -1,4 +1,5 @@
 import {
+  ChecklistFilter,
   type Direction,
   type FilterDef,
   type FilterFormSource,
@@ -342,6 +343,8 @@ function AutoFilterField<TRow>({
           </NativeSelect>
         </FormField>
       );
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
       // A multiSelect is a GROUP of checkboxes, not a single labellable
       // control, so it uses a plain group label (an Ark `Field.Root` would
