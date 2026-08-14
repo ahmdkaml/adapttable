@@ -263,12 +263,17 @@ function nestGroupLevel<TRow>(
     const cellEnd = col + cell.span;
     col = cellEnd;
     if (cellEnd <= start || cellStart >= end) continue;
+    // Clamp to the parent's range. A deeper row merges adjacent unlabelled
+    // cells across the boundaries above it — one gap can span several parents
+    // — so descending on the cell's own range would hand every one of those
+    // parents the whole span, and the leaves inside it would render once per
+    // parent.
     const children = nestGroupLevel(
       rows,
       leaves,
       depth + 1,
-      cellStart,
-      cellEnd,
+      Math.max(cellStart, start),
+      Math.min(cellEnd, end),
       titleFor
     );
     if (cell.label === null) out.push(...children);

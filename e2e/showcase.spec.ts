@@ -110,17 +110,33 @@ for (const adapter of ADAPTERS) {
       await setFiltersMode(page, "Popover");
       const trigger = filtersTrigger(page);
 
+      // Open it with the toolbar already on screen. An anchored popover is
+      // dismissed by a page scroll, and Playwright scrolls on its own before
+      // hovering something out of view — which would close the card under the
+      // very assertions below rather than testing them.
+      await trigger.evaluate((node) => {
+        window.scrollBy(0, node.getBoundingClientRect().top - 60);
+      });
       await trigger.click();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
       // A control inside the open overlay must be hittable — Playwright's
       // actionability throws if a sticky header or pinned cell is stacked over
       // it (the historical bleed-through bug), so a plain hover is the check.
-      const control = page
+      //
+      // Scope the search to the filter form itself. Searching the page finds
+      // whichever control happens to come last in the DOM, and the table's own
+      // inputs qualify — hovering one of those scrolls the page, which
+      // dismisses an anchored popover before Escape is ever pressed.
+      // The FIRST control in the form: the card is taller than this viewport,
+      // so its last field sits below the fold and hovering it would scroll —
+      // and a scroll dismisses an anchored popover.
+      const form = page.locator('[data-adapttable-part="filters-form"]');
+      const control = form
         .getByRole("combobox")
-        .or(page.getByRole("spinbutton"))
-        .or(page.getByRole("radio"))
-        .last();
+        .or(form.getByRole("spinbutton"))
+        .or(form.getByRole("radio"))
+        .first();
       await expect(control).toBeVisible();
       await control.hover();
 
@@ -145,14 +161,16 @@ for (const adapter of ADAPTERS) {
       await openDemo(page, adapter);
       await setFiltersMode(page, "Drawer");
 
-      // A point over the table body before the drawer opens.
-      const point = await demo(page)
-        .locator("[data-stagger]")
-        .first()
-        .evaluate((node) => {
-          const r = node.getBoundingClientRect();
-          return { x: Math.round(r.left + 8), y: Math.round(r.top + 8) };
-        });
+      // A point over the table body before the drawer opens. The row has to be
+      // ON SCREEN to hit-test: `elementFromPoint` answers null for anything
+      // outside the viewport, and the demo's controls push the table below the
+      // fold at this window size.
+      const row = demo(page).locator("[data-stagger]").first();
+      await row.scrollIntoViewIfNeeded();
+      const point = await row.evaluate((node) => {
+        const r = node.getBoundingClientRect();
+        return { x: Math.round(r.left + 8), y: Math.round(r.top + 8) };
+      });
       const behind = await page.evaluate(
         (p) => document.elementFromPoint(p.x, p.y)?.tagName ?? null,
         point
