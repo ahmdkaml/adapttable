@@ -68,6 +68,16 @@
         "default": "./dist/xlsx.cjs"
       }
     },
+    "./pdf": {
+      "import": {
+        "types": "./dist/pdf.d.ts",
+        "default": "./dist/pdf.js"
+      },
+      "require": {
+        "types": "./dist/pdf.d.cts",
+        "default": "./dist/pdf.cjs"
+      }
+    },
     "./sparkline": {
       "import": {
         "types": "./dist/sparkline.d.ts",

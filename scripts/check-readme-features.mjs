@@ -41,6 +41,8 @@ const FEATURES = {
   "row-spanning": /row (and column )?spann|cell spann/i,
   "full-width-rows": /full-width|separator row|extraRows/i,
   "row-styling": /rowStyle|rowHeight|row styl/i,
+  "export-pdf": /pdf export|print layout|pdfWriter/i,
+  formulas: /formula engine|spreadsheet formula/i,
   sparkline: /sparkline/i,
   "saved-views": /saved view/i,
   "tree-data": /tree data|hierarchical rows/i,
