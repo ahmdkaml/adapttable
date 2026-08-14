@@ -470,9 +470,18 @@ into an `ExportPayload`, which `downloadExportFile` hands to the browser.
 caller assembled itself. `exportButtonLabel` gives the button a caption naming
 the format it produces — `labels.exportCsv` for CSV, `labels.exportFile(format)`
 for anything else. `@adapttable/core/xlsx`
-adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
-dependency, and a separate entry so a CSV export never ships it —
-with `buildTableXlsx` underneath for building a workbook by hand. See
+adds `xlsxWriter` for real spreadsheets — typed numbers, booleans and dates,
+basic styling, group/tree outline and aggregate rows, no new dependency, and
+a separate entry so a CSV export never ships it — with `buildTableXlsx`
+underneath for building a workbook by hand. An `ExportTable` may carry
+`rowMeta` (`ExportRowMeta`, `ExportRowRole`) and `widths` when the view is
+grouped or a tree; a flat table omits them. `buildTableXlsx` accepts that
+view as `ExportViewEntry` rows — group headers, leaves and aggregates —
+so a host building a workbook by hand can pass the same shape the table
+does. `viewFromGroupedEntries` and `viewFromTreeEntries` build that view
+from the grouping or tree model, `filterExportView` drops groups a scope
+emptied, `exportViewFromChrome` picks which model is showing, and
+`summaryExportValues` turns a `summaryRow` into file values. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /

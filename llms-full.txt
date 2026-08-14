@@ -5022,12 +5022,23 @@ given a caption for a format nobody planned for (a custom writer calling itself
 `tsv` gets "Export TSV"). CSV keeps `labels.exportCsv`, so its existing
 translations and any wording you overrode are untouched.
 
-Two differences from CSV, both in your favour. Numbers and booleans stay
-**typed**, so a spreadsheet can sum a column instead of showing text that looks
-like a number; and text that looks numeric stays text, so a postal code of
-`01730` arrives as `01730` rather than `1730`. Formula escaping is not needed
+Three differences from CSV, all in your favour. Numbers, booleans and `Date`
+values stay **typed**, so a spreadsheet can sum a column, filter a date, and
+sort a checkbox instead of reading text that looks like one; text that looks
+numeric stays text, so a postal code of `01730` arrives as `01730` rather than
+`1730`; and the sheet is styled for reading — a frozen bold header, column
+widths from the table, group and tree rows outlined at their depth, group
+footers and a `summaryRow` grand total in bold. Formula escaping is not needed
 and is ignored: XLSX keeps formulas in their own element, so a cell reading
 `=CMD()` is displayed, never executed.
+
+A grouped or tree-shaped table exports that structure, not a denormalised
+leaf list: group headers and footers travel with the leaves, collapsed groups
+stay collapsed on `scope: "page"`, and `scope: "all"` / `"selected"` include
+leaves that were folded or paged away — then `"selected"` keeps only the
+groups that still have a selected leaf. A `scope: "range"` export stays a
+rectangle — the selection already named its shape. Mobile cards use the same
+button and the same file; `hideOnMobile` never shrinks an export.
 
 It is a **separate entry point** because a table that exports CSV should not
 ship a ZIP encoder. Import it and you pay for it; do not and none of it reaches
@@ -5853,9 +5864,18 @@ into an `ExportPayload`, which `downloadExportFile` hands to the browser.
 caller assembled itself. `exportButtonLabel` gives the button a caption naming
 the format it produces — `labels.exportCsv` for CSV, `labels.exportFile(format)`
 for anything else. `@adapttable/core/xlsx`
-adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
-dependency, and a separate entry so a CSV export never ships it —
-with `buildTableXlsx` underneath for building a workbook by hand. See
+adds `xlsxWriter` for real spreadsheets — typed numbers, booleans and dates,
+basic styling, group/tree outline and aggregate rows, no new dependency, and
+a separate entry so a CSV export never ships it — with `buildTableXlsx`
+underneath for building a workbook by hand. An `ExportTable` may carry
+`rowMeta` (`ExportRowMeta`, `ExportRowRole`) and `widths` when the view is
+grouped or a tree; a flat table omits them. `buildTableXlsx` accepts that
+view as `ExportViewEntry` rows — group headers, leaves and aggregates —
+so a host building a workbook by hand can pass the same shape the table
+does. `viewFromGroupedEntries` and `viewFromTreeEntries` build that view
+from the grouping or tree model, `filterExportView` drops groups a scope
+emptied, `exportViewFromChrome` picks which model is showing, and
+`summaryExportValues` turns a `summaryRow` into file values. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /

@@ -130,6 +130,77 @@ describe("csvWriter", () => {
     expect(table.rows[0]).toEqual(["Ada", ""]);
     expect(table.rows[1]).toEqual(["Linus", "Linus"]);
   });
+
+  it("keeps a Date from the row when nothing else answers", () => {
+    const due = new Date("2026-08-15T00:00:00.000Z");
+    const table = buildExportTable([{ due }], [{ key: "due", header: "Due" }]);
+    expect(table.rows[0]?.[0]).toBe(due);
+  });
+
+  it("keeps a Date the accessor returned, not a string of it", () => {
+    const due = new Date("2026-08-15T13:45:00.000Z");
+    const table = buildExportTable(
+      [{ due }],
+      [
+        {
+          key: "when",
+          header: "When",
+          exportValue: (row: { due: Date }) => row.due,
+        },
+      ]
+    );
+    expect(table.rows[0]?.[0]).toBe(due);
+  });
+
+  it("sizes columns from a numeric or string width", () => {
+    const table = buildExportTable(ROWS, [
+      { key: "name", header: "Name", width: 160 },
+      { key: "name", header: "Also", width: "80px" },
+      { key: "name", header: "Bare" },
+      { key: "name", header: "Tiny", width: 20 },
+      { key: "name", header: "Huge", width: 400 },
+      { key: "name", header: "Auto", width: "auto" },
+    ]);
+    expect(table.widths?.[0]).toBe(20);
+    expect(table.widths?.[1]).toBe(10);
+    expect(table.widths?.[2]).toBeUndefined();
+    expect(table.widths?.[3]).toBe(8);
+    expect(table.widths?.[4]).toBe(40);
+    expect(table.widths?.[5]).toBeUndefined();
+  });
+
+  it("writes a grouped view and appends a grand total", () => {
+    const table = buildExportTable(ROWS, COLUMNS, {
+      view: [
+        { role: "group", label: "Core", level: 0, labelKey: "name" },
+        { role: "data", row: ROWS[0]!, level: 1 },
+      ],
+      summary: { name: "All" },
+    });
+    expect(table.rowMeta?.map((meta) => meta.role)).toEqual([
+      "group",
+      "data",
+      "aggregate",
+    ]);
+    expect(table.rows[0]?.[0]).toBe("Core");
+    expect(table.rows[2]?.[0]).toBe("All");
+  });
+
+  it("puts a group's own values on the header, not only the label", () => {
+    const table = buildExportTable(ROWS, COLUMNS, {
+      view: [
+        {
+          role: "group",
+          label: "Core",
+          level: 0,
+          labelKey: "name",
+          values: { name: "Core team" },
+        },
+      ],
+    });
+    expect(table.rows[0]).toEqual(["Core team"]);
+    expect(table.rowMeta?.[0]).toEqual({ role: "group", level: 0 });
+  });
 });
 
 describe("a custom writer in the export pipeline", () => {

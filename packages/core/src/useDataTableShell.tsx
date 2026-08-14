@@ -260,6 +260,10 @@ export function useDataTableShell<TRow>(
         range: gridFocus.range,
         firstRowIndex: windowStart,
         getCellSpan: props.getCellSpan,
+        grouping: chrome.grouping,
+        tree: chrome.tree,
+        groupTotal: labels.groupTotal,
+        summaryRow: props.summaryRow,
       }
     ),
     labels,

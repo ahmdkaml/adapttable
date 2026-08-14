@@ -1457,6 +1457,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         // offset, so `scope: "range"` means here what it means everywhere else.
         range: gridFocus.range,
         firstRowIndex: windowStart,
+        getCellSpan: props.getCellSpan,
+        grouping: c.grouping,
+        tree: c.tree,
+        groupTotal: labels.groupTotal,
+        summaryRow: props.summaryRow,
       }
     ),
     c.table.labels,

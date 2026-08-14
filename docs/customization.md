@@ -342,12 +342,23 @@ given a caption for a format nobody planned for (a custom writer calling itself
 `tsv` gets "Export TSV"). CSV keeps `labels.exportCsv`, so its existing
 translations and any wording you overrode are untouched.
 
-Two differences from CSV, both in your favour. Numbers and booleans stay
-**typed**, so a spreadsheet can sum a column instead of showing text that looks
-like a number; and text that looks numeric stays text, so a postal code of
-`01730` arrives as `01730` rather than `1730`. Formula escaping is not needed
+Three differences from CSV, all in your favour. Numbers, booleans and `Date`
+values stay **typed**, so a spreadsheet can sum a column, filter a date, and
+sort a checkbox instead of reading text that looks like one; text that looks
+numeric stays text, so a postal code of `01730` arrives as `01730` rather than
+`1730`; and the sheet is styled for reading — a frozen bold header, column
+widths from the table, group and tree rows outlined at their depth, group
+footers and a `summaryRow` grand total in bold. Formula escaping is not needed
 and is ignored: XLSX keeps formulas in their own element, so a cell reading
 `=CMD()` is displayed, never executed.
+
+A grouped or tree-shaped table exports that structure, not a denormalised
+leaf list: group headers and footers travel with the leaves, collapsed groups
+stay collapsed on `scope: "page"`, and `scope: "all"` / `"selected"` include
+leaves that were folded or paged away — then `"selected"` keeps only the
+groups that still have a selected leaf. A `scope: "range"` export stays a
+rectangle — the selection already named its shape. Mobile cards use the same
+button and the same file; `hideOnMobile` never shrinks an export.
 
 It is a **separate entry point** because a table that exports CSV should not
 ship a ZIP encoder. Import it and you pay for it; do not and none of it reaches

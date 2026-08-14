@@ -1,6 +1,6 @@
 import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
-import { DataTable } from "@adapttable/mantine";
+import { DataTable, type DataTableProps } from "@adapttable/mantine";
 import {
   Avatar,
   Badge,
@@ -97,6 +97,7 @@ export function MantineDemo({
   editing,
   cellNavigation,
   forceMobile,
+  exportCsv,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -120,6 +121,12 @@ export function MantineDemo({
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
+  /**
+   * Export configuration for the toolbar button. Defaults to a plain CSV of
+   * the current page; the grouping demo overrides it to write the grouped
+   * sheet as a spreadsheet.
+   */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
 }>) {
   const s = strings(locale);
   return (
@@ -161,7 +168,7 @@ export function MantineDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
-            exportCsv
+            exportCsv={exportCsv ?? true}
             savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns

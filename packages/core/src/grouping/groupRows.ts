@@ -263,6 +263,217 @@ export function makeGroupRowKey(
 }
 
 /**
+ * One bucket in a grouped partition tree, before it becomes a rendered row.
+ *
+ * Incremental re-evaluation keeps this tree up to date and hands it to
+ * {@link flattenGroupPartitions} so a patched row does not re-hash every
+ * other row's group key.
+ */
+export interface GroupPartition<TRow> {
+  /** The raw bucket value. */
+  value: unknown;
+  /** {@link groupValueKey} of `value`. */
+  valueKey: string;
+  /** Every leaf beneath this node, in source (sorted) order. */
+  rows: readonly TRow[];
+  /** Nested buckets, when another grouping key remains. */
+  children?: readonly GroupPartition<TRow>[];
+}
+
+/**
+ * The grouping keys {@link buildGroupedFlatModel} will actually use — blank
+ * entries dropped, so `["", "team"]` is just `"team"`.
+ *
+ * @param groupBy - A single key or an ordered list.
+ * @returns The non-empty keys, outermost first.
+ */
+export function groupingKeys(groupBy: string | readonly string[]): string[] {
+  return (typeof groupBy === "string" ? [groupBy] : groupBy).filter(
+    (key) => key.length > 0
+  );
+}
+
+/**
+ * Partition rows into the nested bucket tree grouping walks.
+ *
+ * Order is first-seen at each level, which preserves whatever sort the
+ * source already applied.
+ *
+ * @typeParam TRow - The row type.
+ * @param rows - The rows to partition.
+ * @param groupBy - Column key, or an ordered list for nested grouping.
+ * @param columns - The columns, for each key's `sortValue`.
+ * @returns The top-level buckets, or an empty list when there is no key.
+ */
+export function partitionGroupedRows<TRow>(
+  rows: readonly TRow[],
+  groupBy: string | readonly string[],
+  columns: readonly ColumnDef<TRow>[]
+): GroupPartition<TRow>[] {
+  const keys = groupingKeys(groupBy);
+  if (keys.length === 0) return [];
+  return partitionLevel(rows, keys, 0, columns);
+}
+
+function partitionLevel<TRow>(
+  rows: readonly TRow[],
+  keys: readonly string[],
+  level: number,
+  columns: readonly ColumnDef<TRow>[]
+): GroupPartition<TRow>[] {
+  const { order, buckets } = bucketBy(rows, keys[level]!, columns);
+  return order.map((valueKey) => {
+    const bucket = buckets.get(valueKey)!;
+    return {
+      value: bucket.value,
+      valueKey,
+      rows: bucket.rows,
+      children:
+        level + 1 < keys.length
+          ? partitionLevel(bucket.rows, keys, level + 1, columns)
+          : undefined,
+    };
+  });
+}
+
+/**
+ * Turn a partition tree into the flat model adapters render.
+ *
+ * This is the emit half of {@link buildGroupedFlatModel}: filtering, ordering,
+ * paging, collapse, footers. Incremental grouping updates the tree, then
+ * calls this instead of re-bucketing the world.
+ *
+ * @typeParam TRow - The row type.
+ * @param partitions - The tree {@link partitionGroupedRows} (or an
+ *   incremental update) produced.
+ * @param options - The same options as the full builder, minus `rows`.
+ * @returns The entries, in render order.
+ */
+export function flattenGroupPartitions<TRow>(
+  partitions: readonly GroupPartition<TRow>[],
+  options: Omit<BuildGroupedFlatModelOptions<TRow>, "rows">
+): GroupedFlatEntry<TRow>[] {
+  const keys = groupingKeys(options.groupBy);
+  if (keys.length === 0 || partitions.length === 0) return [];
+
+  const {
+    getRowId,
+    collapsedGroupIds,
+    aggregates,
+    blankLabel,
+    footers = false,
+    sort,
+    filter,
+    groupPageSize,
+    rowPageSize,
+    paging,
+  } = options;
+  const flat: GroupedFlatEntry<TRow>[] = [];
+  let leafIndex = 0;
+
+  const walk = (
+    levelPartitions: readonly GroupPartition<TRow>[],
+    level: number,
+    path: readonly string[]
+  ): void => {
+    const key = keys[level]!;
+
+    // Filtering and ordering happen on the whole level at once, before any of
+    // it is emitted: a group dropped here takes its leaves with it, and one
+    // moved here moves its whole subtree.
+    const nodes = levelPartitions.flatMap((part) => {
+      const node: GroupNode<TRow> = {
+        value: part.value,
+        label: formatGroupLabel(part.value, blankLabel),
+        level,
+        groupBy: key,
+        leafRows: part.rows,
+      };
+      return filter && !filter(node)
+        ? []
+        : [{ part, valueKey: part.valueKey, node }];
+    });
+    if (sort) nodes.sort((a, b) => compareGroups(a.node, b.node, sort));
+
+    // Only the top level pages: a nested level is already inside a group the
+    // reader chose to open, and hiding part of what they opened would be a
+    // second "more" to hunt for.
+    const groupLimit = pageLimit(
+      nodes.length,
+      level === 0 ? groupPageSize : undefined,
+      paging?.groups
+    );
+    const shown = nodes.slice(0, groupLimit);
+    const hiddenGroups = nodes.length - shown.length;
+
+    for (const { part, valueKey, node } of shown) {
+      const here = [...path, valueKey];
+      const groupKey = makeGroupRowKey(keys.slice(0, level + 1), here);
+      const collapsed = collapsedGroupIds.has(groupKey);
+      const aggregateCells = aggregates?.(part.rows);
+      const label = node.label;
+
+      flat.push({
+        kind: "group",
+        key: groupKey,
+        value: part.value,
+        label,
+        level,
+        groupBy: key,
+        path: here,
+        leafRows: part.rows,
+        leafIds: part.rows.map((row) => getRowId(row)),
+        aggregateCells,
+        collapsed,
+      });
+      if (collapsed) continue;
+
+      if (level + 1 < keys.length) {
+        walk(part.children ?? [], level + 1, here);
+      } else {
+        leafIndex = emitLeaves(flat, part.rows, {
+          groupKey,
+          level,
+          getRowId,
+          from: leafIndex,
+          limit: pageLimit(
+            part.rows.length,
+            rowPageSize,
+            paging?.rows?.[groupKey]
+          ),
+        });
+      }
+
+      // The footer closes the group AFTER everything inside it, including any
+      // nested groups and their own footers — innermost totals first, exactly
+      // as the indentation reads.
+      if (footers) {
+        flat.push({
+          kind: "groupFooter",
+          key: `${groupKey}:footer`,
+          groupKey,
+          level,
+          groupBy: key,
+          label,
+          leafRows: part.rows,
+          leafIds: part.rows.map((row) => getRowId(row)),
+          aggregateCells,
+        });
+      }
+    }
+
+    if (hiddenGroups > 0) {
+      flat.push(
+        moreEntry("groups", hiddenGroups, level, undefined, path.join(">"))
+      );
+    }
+  };
+
+  walk(partitions, 0, []);
+  return flat;
+}
+
+/**
  * Partition leaf rows into the flat model adapters render: a group header,
  * then whatever sits under it — nested headers first when there is more than
  * one grouping key, then the leaves.
@@ -283,131 +494,10 @@ export function makeGroupRowKey(
 export function buildGroupedFlatModel<TRow>(
   options: BuildGroupedFlatModelOptions<TRow>
 ): GroupedFlatEntry<TRow>[] {
-  const {
-    rows,
-    groupBy,
-    columns,
-    getRowId,
-    collapsedGroupIds,
-    aggregates,
-    blankLabel,
-    footers = false,
-    sort,
-    filter,
-    groupPageSize,
-    rowPageSize,
-    paging,
-  } = options;
-  const keys = (typeof groupBy === "string" ? [groupBy] : groupBy).filter(
-    (key) => key.length > 0
+  return flattenGroupPartitions(
+    partitionGroupedRows(options.rows, options.groupBy, options.columns),
+    options
   );
-  if (keys.length === 0) return [];
-
-  const flat: GroupedFlatEntry<TRow>[] = [];
-  let leafIndex = 0;
-
-  /** One level of the tree; recurses while grouping keys remain. */
-  const walk = (
-    subset: readonly TRow[],
-    level: number,
-    path: readonly string[]
-  ): void => {
-    const key = keys[level]!;
-    const { order, buckets } = bucketBy(subset, key, columns);
-
-    // Filtering and ordering happen on the whole level at once, before any of
-    // it is emitted: a group dropped here takes its leaves with it, and one
-    // moved here moves its whole subtree.
-    const nodes = order.flatMap((valueKey) => {
-      const bucket = buckets.get(valueKey)!;
-      const node: GroupNode<TRow> = {
-        value: bucket.value,
-        label: formatGroupLabel(bucket.value, blankLabel),
-        level,
-        groupBy: key,
-        leafRows: bucket.rows,
-      };
-      return filter && !filter(node) ? [] : [{ valueKey, node }];
-    });
-    if (sort) nodes.sort((a, b) => compareGroups(a.node, b.node, sort));
-
-    // Only the top level pages: a nested level is already inside a group the
-    // reader chose to open, and hiding part of what they opened would be a
-    // second "more" to hunt for.
-    const groupLimit = pageLimit(
-      nodes.length,
-      level === 0 ? groupPageSize : undefined,
-      paging?.groups
-    );
-    const shown = nodes.slice(0, groupLimit);
-    const hiddenGroups = nodes.length - shown.length;
-
-    for (const { valueKey, node } of shown) {
-      const bucket = buckets.get(valueKey)!;
-      const here = [...path, valueKey];
-      const groupKey = makeGroupRowKey(keys.slice(0, level + 1), here);
-      const collapsed = collapsedGroupIds.has(groupKey);
-      const aggregateCells = aggregates?.(bucket.rows);
-      const label = node.label;
-
-      flat.push({
-        kind: "group",
-        key: groupKey,
-        value: bucket.value,
-        label,
-        level,
-        groupBy: key,
-        path: here,
-        leafRows: bucket.rows,
-        leafIds: bucket.rows.map((row) => getRowId(row)),
-        aggregateCells,
-        collapsed,
-      });
-      if (collapsed) continue;
-
-      if (level + 1 < keys.length) {
-        walk(bucket.rows, level + 1, here);
-      } else {
-        leafIndex = emitLeaves(flat, bucket.rows, {
-          groupKey,
-          level,
-          getRowId,
-          from: leafIndex,
-          limit: pageLimit(
-            bucket.rows.length,
-            rowPageSize,
-            paging?.rows?.[groupKey]
-          ),
-        });
-      }
-
-      // The footer closes the group AFTER everything inside it, including any
-      // nested groups and their own footers — innermost totals first, exactly
-      // as the indentation reads.
-      if (footers) {
-        flat.push({
-          kind: "groupFooter",
-          key: `${groupKey}:footer`,
-          groupKey,
-          level,
-          groupBy: key,
-          label,
-          leafRows: bucket.rows,
-          leafIds: bucket.rows.map((row) => getRowId(row)),
-          aggregateCells,
-        });
-      }
-    }
-
-    if (hiddenGroups > 0) {
-      flat.push(
-        moreEntry("groups", hiddenGroups, level, undefined, path.join(">"))
-      );
-    }
-  };
-
-  walk(rows, 0, []);
-  return flat;
 }
 
 /**

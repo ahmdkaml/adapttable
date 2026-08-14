@@ -19,6 +19,7 @@ import type { ColumnDef } from "../types";
 import {
   buildExportTable,
   type ExportTable,
+  type ExportViewEntry,
   type ExportWriter,
 } from "./exportWriter";
 import { buildZip, utf8, type ZipEntry } from "./zip";
@@ -67,6 +68,44 @@ function safeText(text: string): string {
   return out;
 }
 
+/** Style index in `styles.xml`: default, header/total bold, date, datetime. */
+const STYLE = {
+  default: 0,
+  bold: 1,
+  date: 2,
+  datetime: 3,
+} as const;
+
+/** Excel's day-zero, including the 1900 leap-year bug it still ships. */
+const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30);
+
+/** A date with no clock is a day; anything else is a day-and-time. */
+function isDateOnly(date: Date): boolean {
+  return (
+    (date.getUTCHours() === 0 &&
+      date.getUTCMinutes() === 0 &&
+      date.getUTCSeconds() === 0 &&
+      date.getUTCMilliseconds() === 0) ||
+    (date.getHours() === 0 &&
+      date.getMinutes() === 0 &&
+      date.getSeconds() === 0 &&
+      date.getMilliseconds() === 0)
+  );
+}
+
+/** Excel serial: days (and a fraction) since 1899-12-30. */
+function excelSerial(date: Date): number {
+  if (isDateOnly(date) && date.getHours() === 0 && date.getUTCHours() !== 0) {
+    const local = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    return (local - EXCEL_EPOCH_MS) / 86_400_000;
+  }
+  return (date.getTime() - EXCEL_EPOCH_MS) / 86_400_000;
+}
+
+function styleAttr(style: number): string {
+  return style === STYLE.default ? "" : ` s="${String(style)}"`;
+}
+
 /**
  * One `<c>` element, typed by what the value actually is.
  *
@@ -78,45 +117,118 @@ function safeText(text: string): string {
  * Strings need no formula guard here: XLSX keeps formulas in an `<f>` element,
  * so text beginning with `=` is text. That is why `escapeFormulas` is a CSV
  * concern and this format ignores it.
+ *
+ * Dates stay dates: a `Date` becomes an Excel serial with a date or
+ * datetime number format, so a spreadsheet can sort and filter the column
+ * instead of reading a string that looks like one.
  */
-function cellXml(ref: string, value: unknown): string {
+function cellXml(
+  ref: string,
+  value: unknown,
+  style: number = STYLE.default
+): string {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const dateStyle = isDateOnly(value) ? STYLE.date : STYLE.datetime;
+    return `<c r="${ref}"${styleAttr(dateStyle)}><v>${excelSerial(value)}</v></c>`;
+  }
   if (typeof value === "number" && Number.isFinite(value)) {
-    return `<c r="${ref}"><v>${value}</v></c>`;
+    return `<c r="${ref}"${styleAttr(style)}><v>${value}</v></c>`;
   }
   if (typeof value === "boolean") {
-    return `<c r="${ref}" t="b"><v>${value ? 1 : 0}</v></c>`;
+    return `<c r="${ref}"${styleAttr(style)} t="b"><v>${value ? 1 : 0}</v></c>`;
   }
   const text = typeof value === "string" ? value : "";
-  if (text === "") return `<c r="${ref}"/>`;
-  return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xml(
+  if (text === "") return `<c r="${ref}"${styleAttr(style)}/>`;
+  return `<c r="${ref}"${styleAttr(style)} t="inlineStr"><is><t xml:space="preserve">${xml(
     safeText(text)
   )}</t></is></c>`;
+}
+
+function colsXml(table: ExportTable): string {
+  const cols = table.headers.map((header, index) => {
+    const stated = table.widths?.[index];
+    const width = stated ?? Math.min(40, Math.max(8, header.length + 2));
+    return `<col min="${String(index + 1)}" max="${String(index + 1)}" width="${String(width)}" customWidth="1"/>`;
+  });
+  return cols.length > 0 ? `<cols>${cols.join("")}</cols>` : "";
+}
+
+function rowOpen(index: number, level: number): string {
+  return level > 0
+    ? `<row r="${String(index)}" outlineLevel="${String(level)}">`
+    : `<row r="${String(index)}">`;
 }
 
 /** The sheet document: a header row of column names, then the data. */
 function sheetXml(table: ExportTable): string {
   const lines: string[] = [];
   const header = table.headers
-    .map((text, i) => cellXml(`${columnLetter(i)}1`, text))
+    .map((text, i) => cellXml(`${columnLetter(i)}1`, text, STYLE.bold))
     .join("");
-  lines.push(`<row r="1">${header}</row>`);
+  lines.push(`${rowOpen(1, 0)}${header}</row>`);
 
+  let maxLevel = 0;
   table.rows.forEach((row, r) => {
+    const meta = table.rowMeta?.[r];
+    const level = meta?.level ?? 0;
+    if (level > maxLevel) maxLevel = level;
+    const style =
+      meta?.role === "group" || meta?.role === "aggregate"
+        ? STYLE.bold
+        : STYLE.default;
     const cells = row
-      .map((value, c) => cellXml(`${columnLetter(c)}${r + 2}`, value))
+      .map((value, c) => cellXml(`${columnLetter(c)}${r + 2}`, value, style))
       .join("");
-    lines.push(`<row r="${r + 2}">${cells}</row>`);
+    lines.push(`${rowOpen(r + 2, level)}${cells}</row>`);
   });
 
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<sheetPr><outlinePr summaryBelow="0"/></sheetPr>' +
+    `<sheetFormatPr defaultRowHeight="15" outlineLevelRow="${String(maxLevel)}"/>` +
+    '<sheetViews><sheetView workbookViewId="0">' +
+    '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' +
+    "</sheetView></sheetViews>" +
+    colsXml(table) +
     `<sheetData>${lines.join("")}</sheetData>` +
     "</worksheet>"
   );
 }
 
-/** The four fixed documents every workbook needs, plus the sheet. */
+/** Fonts, date formats, and the four cell styles the sheet refers to. */
+function stylesXml(): string {
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2">' +
+    '<numFmt numFmtId="164" formatCode="yyyy-mm-dd"/>' +
+    '<numFmt numFmtId="165" formatCode="yyyy-mm-dd hh:mm"/>' +
+    "</numFmts>" +
+    '<fonts count="2">' +
+    '<font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+    "</fonts>" +
+    '<fills count="3">' +
+    '<fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFD6DCE4"/><bgColor indexed="64"/></patternFill></fill>' +
+    "</fills>" +
+    '<borders count="1"><border/></borders>' +
+    '<cellStyleXfs count="1">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>' +
+    "</cellStyleXfs>" +
+    '<cellXfs count="4">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>' +
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    "</cellXfs>" +
+    "</styleSheet>"
+  );
+}
+
+/** The fixed documents every workbook needs, plus the sheet and its styles. */
 function documents(table: ExportTable, sheetName: string): ZipEntry[] {
   const contentTypes =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -124,6 +236,7 @@ function documents(table: ExportTable, sheetName: string): ZipEntry[] {
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
     '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
     "</Types>";
 
@@ -144,6 +257,7 @@ function documents(table: ExportTable, sheetName: string): ZipEntry[] {
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
     "</Relationships>";
 
   return [
@@ -151,6 +265,7 @@ function documents(table: ExportTable, sheetName: string): ZipEntry[] {
     { name: "_rels/.rels", data: utf8(rootRels) },
     { name: "xl/workbook.xml", data: utf8(workbook) },
     { name: "xl/_rels/workbook.xml.rels", data: utf8(workbookRels) },
+    { name: "xl/styles.xml", data: utf8(stylesXml()) },
     { name: "xl/worksheets/sheet1.xml", data: utf8(sheetXml(table)) },
   ];
 }
@@ -170,8 +285,8 @@ export function safeSheetName(name: string): string {
  *
  * Cell values resolve exactly as they do for CSV — a column's `exportValue`
  * first, then its accessor or `sortValue` — so the same table produces the same
- * data in either format. What differs is that numbers and booleans stay typed,
- * because a spreadsheet that cannot sum a column is a screenshot.
+ * data in either format. What differs is that numbers, booleans and dates stay
+ * typed, because a spreadsheet that cannot sum a column is a screenshot.
  *
  * @typeParam TRow - The row type.
  * @param options - Rows, columns, and the sheet's name.
@@ -181,9 +296,14 @@ export function buildTableXlsx<TRow>(options: {
   rows: readonly TRow[];
   columns: readonly ColumnDef<TRow>[];
   sheetName?: string;
+  view?: readonly ExportViewEntry<TRow>[];
+  summary?: Readonly<Partial<Record<string, unknown>>>;
 }): Uint8Array<ArrayBuffer> {
   return xlsxBytes(
-    buildExportTable(options.rows, options.columns),
+    buildExportTable(options.rows, options.columns, {
+      view: options.view,
+      summary: options.summary,
+    }),
     options.sheetName
   );
 }

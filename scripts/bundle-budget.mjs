@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 76,
+    budgetKB: 79,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -201,14 +201,29 @@ const FIXTURES = [
   // `filterBuiltins` so `useFrontendData` / `useDataTable` do not load
   // every built-in spec. Ant Design's header-cell control plus the
   // registry lookup on AutoFilterForm nudged that fixture over 101 KB.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 107 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 107 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 107 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 102 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 107 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 113 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 109 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 106 },
+  //
+  // XLSX export grew into the shape a spreadsheet actually wants (#316): typed
+  // cells, styling, a frozen header, and the grouped or tree structure the
+  // reader can see rather than a denormalised leaf dump. That work sits in
+  // `exportView` / `exportWriter`, on the CSV path every kit already carries,
+  // and costs ~1.4 KB there. It is genuinely absent from the plain path:
+  // `core · simple table` measured 12.5 KB before this change and 12.5 KB
+  // after, against the same 13 KB ceiling. The PDF writer and the print
+  // layout (#319) are behind `@adapttable/core/pdf` and cost the kits nothing.
+  //
+  // Incremental re-eval (#322) is not imported by `useFrontendData` yet — a
+  // patch still walks the full set. The simple-table fixture is still 12.5 KB
+  // of a 13 KB ceiling and still shakes out toCsv, Blob, download, virtual,
+  // and exportView. When the snapshot sits on that hook so a patch can skip a
+  // 20k walk, this fixture will move and the ceiling should move with it.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 110 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 110 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 110 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 105 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 110 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 116 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 112 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 109 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

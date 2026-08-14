@@ -805,11 +805,21 @@ export {
   type RowsToCsvOptions,
 } from "./export/csv";
 export {
+  exportViewFromChrome,
+  filterExportView,
+  summaryExportValues,
+  viewFromGroupedEntries,
+  viewFromTreeEntries,
+} from "./export/exportView";
+export {
   buildExportTable,
   csvWriter,
   downloadExportFile,
   type ExportPayload,
+  type ExportRowMeta,
+  type ExportRowRole,
   type ExportTable,
+  type ExportViewEntry,
   type ExportWriteContext,
   type ExportWriter,
 } from "./export/exportWriter";
