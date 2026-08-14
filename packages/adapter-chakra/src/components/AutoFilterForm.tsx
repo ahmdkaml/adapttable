@@ -4,9 +4,13 @@ import {
   type FilterFormSource,
   filterLabel,
   filterOpLabel,
+  joinRelativeToken,
   listFilterValues,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
   resolveLabels,
   scalarFilterText,
+  splitRelativeToken,
   type TableLabels,
   useBooleanFilterWidget,
   useFilterOptions,
@@ -60,6 +64,55 @@ export interface AutoFilterFormProps<TRow> {
   labels?: TableLabels;
 }
 
+/** Preset select + optional N for last/next. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <NativeSelect
+        size="sm"
+        flex="1 1 8.5rem"
+        minW="8.5rem"
+        aria-label={labels.opRelative}
+        value={preset}
+        onChange={(e) => {
+          const next = RELATIVE_PRESETS.find((p) => p === e.target.value);
+          if (next) onValue(joinRelativeToken(next, n));
+        }}
+      >
+        {RELATIVE_PRESETS.map((p) => (
+          <option key={p} value={p}>
+            {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
+          </option>
+        ))}
+      </NativeSelect>
+      {counted && (
+        <Input
+          size="sm"
+          flex="0 0 4.5rem"
+          w="4.5rem"
+          type="number"
+          min={1}
+          aria-label={labels.value}
+          value={n}
+          onChange={(e) =>
+            onValue(joinRelativeToken(preset, Number(e.target.value)))
+          }
+        />
+      )}
+    </>
+  );
+}
+
 /**
  * Operator-first range widget (`numberRange` / `dateRange`): a comparison
  * select, then ONE bound input — or a From/To pair for "Between". The widget
@@ -106,7 +159,7 @@ function RangeField<TRow>({
             </option>
           ))}
         </NativeSelect>
-        {arity === "two" ? (
+        {arity === "two" && (
           <>
             <Input
               id={`${id}-a`}
@@ -131,9 +184,18 @@ function RangeField<TRow>({
               onChange={(e) => write(op, a, e.target.value)}
             />
           </>
-        ) : (
-          op &&
-          arity !== "none" && (
+        )}
+        {op === "relative" && (
+          <RelativeTokenField
+            labels={labels}
+            value={a}
+            onValue={(next) => write(op, next, "")}
+          />
+        )}
+        {op !== undefined &&
+          op !== "relative" &&
+          arity !== "none" &&
+          arity !== "two" && (
             <Input
               id={`${id}-a`}
               size="sm"
@@ -145,8 +207,7 @@ function RangeField<TRow>({
               value={a}
               onChange={(e) => write(op, e.target.value, "")}
             />
-          )
-        )}
+          )}
       </HStack>
     </FormField>
   );

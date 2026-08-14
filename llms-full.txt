@@ -1363,7 +1363,12 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `NUMBER_OP_LABEL_KEYS` / `DATE_OP_LABEL_KEYS` map each token to a
   `TableLabels` key. `formatFilterChip` / `filterOpLabel` / `isEmptyRowValue`
   / `parseListOperand` / `parseNumberList` / `isFilterOpKey` are the
-  helpers. `useTextFilterWidget` returns a `TextFieldWidget`.
+  helpers. `useTextFilterWidget` returns a `TextFieldWidget`. Relative
+  windows: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+  `RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+  `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+  `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+  `relativeTokenLabel` / `resolveRelativeRange`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -1407,6 +1412,14 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   and resolves to no options — pass an array or an async loader instead.
 - The `dateRange` upper bound is inclusive end-of-day: "On or before
   2026-01-31" keeps that day's rows.
+- Relative date filters (`DATE_OPS` token `relative`) store a **token**
+  (`today`, `yesterday`, `tomorrow`, `thisWeek`, `thisMonth`,
+  `previousMonth`, `last:N`, `next:N`) in `${key}From` plus
+  `f_<key>Op=relative`. The URL and Saved Views never hold a resolved
+  calendar day — a shared "last 7 days" link stays the last 7 days
+  tomorrow. `resolveRelativeRange` is the only resolver; the frontend
+  predicate and a server query both call it so they agree. Weeks are ISO
+  (Monday–Sunday, local time).
 - `Equal` writes the same value to both range keys; clearing a field clears
   its key, so half-filled widgets never leak stale bounds.
 - Async loaders run once (the promise is cached); until they resolve, chips
@@ -4453,21 +4466,21 @@ modals or drawers where the address bar shouldn't change.
 
 ## Param reference
 
-| Param                       | Example                     | Meaning                                                                                     |
-| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
-| `q`                         | `q=avery`                   | Committed search term.                                                                      |
-| `page`                      | `page=3`                    | 1-based page; omitted at 1.                                                                 |
-| `limit`                     | `limit=50`                  | Page size, clamped to 1–500; omitted at the default (25).                                   |
-| `sortBy` + `sortDir`        | `sortBy=name&sortDir=desc`  | Single-column sort (`sortDir` falls back to `asc`).                                         |
-| `sort`                      | `sort=name:asc,age:desc`    | Multi-sort chain; supersedes `sortBy`/`sortDir` while present.                              |
-| `groupBy`                   | `groupBy=team`              | Active row-grouping column key (frontend tier).                                             |
-| `f_<key>`                   | `f_status=active`           | One filter value; `multiSelect` arrays are comma-separated with each entry percent-encoded. |
-| `f_<key>From` / `f_<key>To` | `f_hiredAtFrom=2026-01-01`  | `dateRange` bounds (inclusive; the end bound keeps that whole day).                         |
-| `f_<key>Min` / `f_<key>Max` | `f_salaryMin=50000`         | `numberRange` bounds (inclusive; parsed as numbers).                                        |
-| `colHide`                   | `colHide=email,phone`       | Hidden columns (keys percent-encoded).                                                      |
-| `colPin`                    | `colPin=name:left`          | Pinned columns and their side.                                                              |
-| `colOrder`                  | `colOrder=name,role,salary` | Explicit column order.                                                                      |
-| `colW`                      | `colW=name:220`             | Per-column pixel widths.                                                                    |
+| Param                       | Example                     | Meaning                                                                                                                                                        |
+| --------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `q`                         | `q=avery`                   | Committed search term.                                                                                                                                         |
+| `page`                      | `page=3`                    | 1-based page; omitted at 1.                                                                                                                                    |
+| `limit`                     | `limit=50`                  | Page size, clamped to 1–500; omitted at the default (25).                                                                                                      |
+| `sortBy` + `sortDir`        | `sortBy=name&sortDir=desc`  | Single-column sort (`sortDir` falls back to `asc`).                                                                                                            |
+| `sort`                      | `sort=name:asc,age:desc`    | Multi-sort chain; supersedes `sortBy`/`sortDir` while present.                                                                                                 |
+| `groupBy`                   | `groupBy=team`              | Active row-grouping column key (frontend tier).                                                                                                                |
+| `f_<key>`                   | `f_status=active`           | One filter value; `multiSelect` arrays are comma-separated with each entry percent-encoded.                                                                    |
+| `f_<key>From` / `f_<key>To` | `f_hiredAtFrom=2026-01-01`  | `dateRange` bounds (inclusive; the end bound keeps that whole day). A `relative` operator stores the token here (`today`, `last:7`) instead of a resolved day. |
+| `f_<key>Min` / `f_<key>Max` | `f_salaryMin=50000`         | `numberRange` bounds (inclusive; parsed as numbers).                                                                                                           |
+| `colHide`                   | `colHide=email,phone`       | Hidden columns (keys percent-encoded).                                                                                                                         |
+| `colPin`                    | `colPin=name:left`          | Pinned columns and their side.                                                                                                                                 |
+| `colOrder`                  | `colOrder=name,role,salary` | Explicit column order.                                                                                                                                         |
+| `colW`                      | `colW=name:220`             | Per-column pixel widths.                                                                                                                                       |
 
 With a `urlKey` every param is prefixed: `people.q`, `people.f_status`,
 `people.colHide`, ….
@@ -5501,7 +5514,9 @@ operator-first widget also writes `f_<key>Op` (`TEXT_OPS` / `NUMBER_OPS` /
 `readRangeWidget`, `writeRangeWidget`, `writeRangeFilter`,
 `useTextFilterWidget`, `useRangeFilterWidget`, `useBooleanFilterWidget`.
 A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
-the param is any.
+the param is any. A `dateRange` `relative` operator stores a token
+(`today`, `last:7`, …) in `${key}From` — never a resolved calendar day —
+and `resolveRelativeRange` is the only place that token becomes a window.
 
 ## Adapter extras
 
@@ -5808,6 +5823,11 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `formatFilterChip` / `filterOpLabel` / `useTextFilterWidget` /
 `TextFieldWidget` / `useBooleanFilterWidget` / `BooleanFieldWidget` /
 `BooleanChoice` / `parseBooleanChoice` / `coerceBooleanValue`.
+Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+`RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+`RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+`countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+`relativeTokenLabel` / `resolveRelativeRange`.
 See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —

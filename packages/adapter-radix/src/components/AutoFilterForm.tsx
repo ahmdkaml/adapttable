@@ -4,9 +4,13 @@ import {
   type FilterFormSource,
   filterLabel,
   filterOpLabel,
+  joinRelativeToken,
   listFilterValues,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
   resolveLabels,
   scalarFilterText,
+  splitRelativeToken,
   type TableLabels,
   useBooleanFilterWidget,
   useFilterOptions,
@@ -58,6 +62,51 @@ export interface AutoFilterFormProps<TRow> {
   labels?: TableLabels;
 }
 
+/** Preset select + optional N for last/next. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <NativeSelect
+        size="1"
+        width="8.5rem"
+        aria-label={labels.opRelative}
+        value={preset}
+        options={RELATIVE_PRESETS.map((p) => ({
+          value: p,
+          label: labels[RELATIVE_PRESET_LABEL_KEYS[p]],
+        }))}
+        onValueChange={(next) => {
+          const found = RELATIVE_PRESETS.find((p) => p === next);
+          if (found) onValue(joinRelativeToken(found, n));
+        }}
+      />
+      {counted && (
+        <TextField.Root
+          size="1"
+          type="number"
+          min={1}
+          aria-label={labels.value}
+          value={String(n)}
+          onChange={(e) =>
+            onValue(joinRelativeToken(preset, Number(e.target.value)))
+          }
+          style={{ flex: "0 0 4.5rem", width: "4.5rem" }}
+        />
+      )}
+    </>
+  );
+}
+
 /**
  * Operator-first range widget (`numberRange` / `dateRange`): a comparison
  * select, then ONE bound input — or a From/To pair for "Between". The widget
@@ -103,7 +152,7 @@ function RangeField<TRow>({
             write(next, a, b);
           }}
         />
-        {arity === "two" ? (
+        {arity === "two" && (
           <>
             <TextField.Root
               id={`${id}-a`}
@@ -126,9 +175,18 @@ function RangeField<TRow>({
               style={{ flex: "1 1 7rem", minWidth: "7rem" }}
             />
           </>
-        ) : (
-          op &&
-          arity !== "none" && (
+        )}
+        {op === "relative" && (
+          <RelativeTokenField
+            labels={labels}
+            value={a}
+            onValue={(next) => write(op, next, "")}
+          />
+        )}
+        {op !== undefined &&
+          op !== "relative" &&
+          arity !== "none" &&
+          arity !== "two" && (
             <TextField.Root
               id={`${id}-a`}
               size="1"
@@ -139,8 +197,7 @@ function RangeField<TRow>({
               onChange={(e) => write(op, e.target.value, "")}
               style={{ flex: "1 1 7rem", minWidth: "7rem" }}
             />
-          )
-        )}
+          )}
       </Flex>
     </FormField>
   );

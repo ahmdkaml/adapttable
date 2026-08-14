@@ -320,11 +320,30 @@ describe("declarative DataTable (MUI)", () => {
       "On or after",
       "On or before",
       "Between",
+      "Relative",
       "Is empty",
     ]);
     // Operator-first: no value input until a comparison is chosen.
     expect(budgetGroup().queryByLabelText("Value")).toBeNull();
     expect(budgetGroup().queryByLabelText("From")).toBeNull();
+  });
+
+  it("dateRange Relative stores the token and exposes last/next N", () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
+      target: { value: "relative" },
+    });
+    expect(param(adapter, "f_hiredAtOp")).toBe("relative");
+    expect(param(adapter, "f_hiredAtFrom")).toBe("today");
+    fireEvent.change(hiredGroup().getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    expect(param(adapter, "f_hiredAtFrom")).toBe("last:7");
+    fireEvent.change(hiredGroup().getByLabelText("Value"), {
+      target: { value: "14" },
+    });
+    expect(param(adapter, "f_hiredAtFrom")).toBe("last:14");
   });
 
   it('"At least" writes only Min — switching to "At most" migrates it to Max', () => {

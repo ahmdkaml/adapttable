@@ -3,6 +3,10 @@ import {
   filterLabel,
   filterOpLabel,
   type FilterValue,
+  joinRelativeToken,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  splitRelativeToken,
   type TableLabels,
   type TableSource,
   useBooleanFilterWidget,
@@ -43,6 +47,51 @@ function listValue(value: FilterValue): string[] {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === "") return [];
   return [String(value)];
+}
+
+/** Preset select + optional N for last/next. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <Select
+        size="small"
+        style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+        aria-label={labels.opRelative}
+        value={preset}
+        onChange={(next) => {
+          const found = RELATIVE_PRESETS.find((p) => p === next);
+          if (found) onValue(joinRelativeToken(found, n));
+        }}
+        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
+        options={RELATIVE_PRESETS.map((p) => ({
+          value: p,
+          label: labels[RELATIVE_PRESET_LABEL_KEYS[p]],
+        }))}
+      />
+      {counted && (
+        <InputNumber
+          size="small"
+          min={1}
+          style={{ flex: "0 0 4.5rem", width: "4.5rem" }}
+          aria-label={labels.value}
+          value={n}
+          onChange={(next) =>
+            onValue(joinRelativeToken(preset, next == null ? 1 : Number(next)))
+          }
+        />
+      )}
+    </>
+  );
 }
 
 /**
@@ -116,7 +165,15 @@ function RangeField<TRow>({
           ),
         }))}
       />
+      {op === "relative" && (
+        <RelativeTokenField
+          labels={labels}
+          value={a}
+          onValue={(next) => write(op, next, "")}
+        />
+      )}
       {op !== undefined &&
+        op !== "relative" &&
         arity !== "none" &&
         arity !== "two" &&
         input(labels.value, a, (next) => write(op, next, ""))}

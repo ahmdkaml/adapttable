@@ -443,6 +443,24 @@ export interface TableLabels {
   opBefore?: string;
   /** Date operator: strictly after the day. */
   opAfter?: string;
+  /** Date operator: a relative window (today, last N days, …). */
+  opRelative?: string;
+  /** Relative date: today. */
+  relToday?: string;
+  /** Relative date: yesterday. */
+  relYesterday?: string;
+  /** Relative date: tomorrow. */
+  relTomorrow?: string;
+  /** Relative date: this ISO week. */
+  relThisWeek?: string;
+  /** Relative date: this calendar month. */
+  relThisMonth?: string;
+  /** Relative date: previous calendar month. */
+  relPreviousMonth?: string;
+  /** Relative date: last N days. */
+  relLastN?: string;
+  /** Relative date: next N days. */
+  relNextN?: string;
   /** Boolean filter: don't care (the default). */
   boolAny?: string;
   /** Boolean filter: require true. */

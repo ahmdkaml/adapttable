@@ -185,7 +185,12 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `NUMBER_OP_LABEL_KEYS` / `DATE_OP_LABEL_KEYS` map each token to a
   `TableLabels` key. `formatFilterChip` / `filterOpLabel` / `isEmptyRowValue`
   / `parseListOperand` / `parseNumberList` / `isFilterOpKey` are the
-  helpers. `useTextFilterWidget` returns a `TextFieldWidget`.
+  helpers. `useTextFilterWidget` returns a `TextFieldWidget`. Relative
+  windows: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+  `RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+  `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+  `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+  `relativeTokenLabel` / `resolveRelativeRange`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -229,6 +234,14 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   and resolves to no options — pass an array or an async loader instead.
 - The `dateRange` upper bound is inclusive end-of-day: "On or before
   2026-01-31" keeps that day's rows.
+- Relative date filters (`DATE_OPS` token `relative`) store a **token**
+  (`today`, `yesterday`, `tomorrow`, `thisWeek`, `thisMonth`,
+  `previousMonth`, `last:N`, `next:N`) in `${key}From` plus
+  `f_<key>Op=relative`. The URL and Saved Views never hold a resolved
+  calendar day — a shared "last 7 days" link stays the last 7 days
+  tomorrow. `resolveRelativeRange` is the only resolver; the frontend
+  predicate and a server query both call it so they agree. Weeks are ISO
+  (Monday–Sunday, local time).
 - `Equal` writes the same value to both range keys; clearing a field clears
   its key, so half-filled widgets never leak stale bounds.
 - Async loaders run once (the promise is cached); until they resolve, chips

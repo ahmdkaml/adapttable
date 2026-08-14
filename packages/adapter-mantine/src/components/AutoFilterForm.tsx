@@ -3,6 +3,10 @@ import {
   filterLabel,
   filterOpLabel,
   type FilterValue,
+  joinRelativeToken,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  splitRelativeToken,
   type TableLabels,
   type TableSource,
   useBooleanFilterWidget,
@@ -42,6 +46,50 @@ const asList = (value: FilterValue): string[] => {
   if (value == null || value === "") return [];
   return Array.isArray(value) ? value : [String(value)];
 };
+
+/** Preset select + optional N for last/next. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <Select
+        size="sm"
+        style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+        aria-label={labels.opRelative}
+        data={RELATIVE_PRESETS.map((p) => ({
+          value: p,
+          label: labels[RELATIVE_PRESET_LABEL_KEYS[p]],
+        }))}
+        value={preset}
+        onChange={(next) => {
+          const found = RELATIVE_PRESETS.find((p) => p === next);
+          if (found) onValue(joinRelativeToken(found, n));
+        }}
+        comboboxProps={{ withinPortal: false }}
+      />
+      {counted && (
+        <NumberInput
+          size="sm"
+          hideControls
+          min={1}
+          style={{ flex: "0 0 4.5rem", width: "4.5rem" }}
+          aria-label={labels.value}
+          value={n}
+          onChange={(next) => onValue(joinRelativeToken(preset, Number(next)))}
+        />
+      )}
+    </>
+  );
+}
 
 /**
  * The operator-first control shared by the `numberRange` / `dateRange`
@@ -105,6 +153,14 @@ function RangeField<TRow>({
         {valueInput(labels.from, a, (next) => write(op, next, b))}
         {valueInput(labels.to, b, (next) => write(op, a, next))}
       </>
+    );
+  } else if (op === "relative") {
+    values = (
+      <RelativeTokenField
+        labels={labels}
+        value={a}
+        onValue={(next) => write(op, next, "")}
+      />
     );
   } else if (op && arity !== "none") {
     values = valueInput(labels.value, a, (next) => write(op, next, ""));

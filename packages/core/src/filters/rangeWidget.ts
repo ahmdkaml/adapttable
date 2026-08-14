@@ -11,6 +11,7 @@ import {
   parseListOperand,
   parseNumberOp,
 } from "./operators";
+import { isRelativeDateToken } from "./relativeDates";
 
 /**
  * Historical four-operator set. New code should use {@link NUMBER_OPS} /
@@ -78,6 +79,9 @@ function inferRangeFromPair(
       ? { op: flavour === "date" ? "on" : "eq", a: low, b: "" }
       : { op: "between", a: low, b: high };
   }
+  if (low !== "" && flavour === "date" && isRelativeDateToken(low)) {
+    return { op: "relative", a: low, b: "" };
+  }
   if (low !== "") return { op: "gte", a: low, b: "" };
   if (high !== "") return { op: "lte", a: high, b: "" };
   return { op: undefined, a: "", b: "" };
@@ -125,6 +129,7 @@ export function writeRangeWidget(
     case "gt":
     case "after":
     case "neq":
+    case "relative":
       return { [lowKey]: asOpValue(a), [highKey]: undefined };
     case "lte":
     case "lt":

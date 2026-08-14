@@ -180,7 +180,9 @@ operator-first widget also writes `f_<key>Op` (`TEXT_OPS` / `NUMBER_OPS` /
 `readRangeWidget`, `writeRangeWidget`, `writeRangeFilter`,
 `useTextFilterWidget`, `useRangeFilterWidget`, `useBooleanFilterWidget`.
 A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
-the param is any.
+the param is any. A `dateRange` `relative` operator stores a token
+(`today`, `last:7`, …) in `${key}From` — never a resolved calendar day —
+and `resolveRelativeRange` is the only place that token becomes a window.
 
 ## Adapter extras
 
@@ -487,6 +489,11 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `formatFilterChip` / `filterOpLabel` / `useTextFilterWidget` /
 `TextFieldWidget` / `useBooleanFilterWidget` / `BooleanFieldWidget` /
 `BooleanChoice` / `parseBooleanChoice` / `coerceBooleanValue`.
+Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+`RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+`RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+`countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+`relativeTokenLabel` / `resolveRelativeRange`.
 See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —

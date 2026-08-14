@@ -3,7 +3,11 @@ import {
   filterLabel,
   filterOpLabel,
   type FilterValue,
+  joinRelativeToken,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
   resolveLabels,
+  splitRelativeToken,
   type TableLabels,
   type TableSource,
   useBooleanFilterWidget,
@@ -273,6 +277,61 @@ function RangeValueInput({
   );
 }
 
+interface RelativeTokenFieldProps {
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+  classNames: DataTableClassNames;
+}
+
+/** Preset select + optional N for `last:N` / `next:N`. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+  classNames,
+}: Readonly<RelativeTokenFieldProps>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <select
+        style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+        aria-label={labels.opRelative}
+        data-adapttable-part="filter-input"
+        className={classNames.filterInput}
+        value={preset}
+        onChange={(e) => {
+          const next = RELATIVE_PRESETS.find(
+            (p) => p === e.currentTarget.value
+          );
+          if (next) onValue(joinRelativeToken(next, n));
+        }}
+      >
+        {RELATIVE_PRESETS.map((p) => (
+          <option key={p} value={p}>
+            {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
+          </option>
+        ))}
+      </select>
+      {counted && (
+        <input
+          type="number"
+          min={1}
+          style={{ flex: "0 0 4.5rem", width: "4.5rem" }}
+          aria-label={labels.value}
+          data-adapttable-part="filter-input"
+          className={classNames.filterInput}
+          value={n}
+          onChange={(e) =>
+            onValue(joinRelativeToken(preset, Number(e.currentTarget.value)))
+          }
+        />
+      )}
+    </>
+  );
+}
+
 interface RangeFieldProps<TRow> extends DefFieldProps<TRow> {
   labels: Required<TableLabels>;
 }
@@ -338,15 +397,26 @@ function RangeField<TRow>({
             />
           </>
         )}
-        {op !== undefined && arity !== "none" && arity !== "two" && (
-          <RangeValueInput
-            type={boundType}
-            label={labels.value}
+        {op === "relative" && (
+          <RelativeTokenField
+            labels={labels}
             value={a}
             onValue={(next) => write(op, next, "")}
             classNames={classNames}
           />
         )}
+        {op !== undefined &&
+          op !== "relative" &&
+          arity !== "none" &&
+          arity !== "two" && (
+            <RangeValueInput
+              type={boundType}
+              label={labels.value}
+              value={a}
+              onValue={(next) => write(op, next, "")}
+              classNames={classNames}
+            />
+          )}
       </div>
     </GroupField>
   );

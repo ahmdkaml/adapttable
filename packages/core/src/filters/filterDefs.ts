@@ -30,6 +30,7 @@ import {
   parseTextOp,
   TEXT_OP_LABEL_KEYS,
 } from "./operators";
+import { relativeTokenLabel, resolveRelativeRange } from "./relativeDates";
 import type { ChipLabelResolver } from "./useActiveFilterChips";
 
 /** Every built-in filter shape, exported so consumers never hand-type them. */
@@ -307,6 +308,11 @@ function dateRowMatches(
   toKey: string
 ): boolean {
   if (op === "empty") return Number.isNaN(time);
+  if (op === "relative") {
+    const range = resolveRelativeRange(String(extra[fromKey] ?? ""));
+    if (!range) return true;
+    return time >= range.startMs && time <= range.endMs;
+  }
   if (Number.isNaN(time)) return false;
   if (op === "before" && has(extra, toKey)) {
     return time < dateValueToEpochMs(extra[toKey]);
@@ -367,6 +373,7 @@ function dateFilterActive(
 ): boolean {
   const op = parseDateOp(extra[filterOpKey(key)]);
   if (op === "empty") return true;
+  if (op === "relative") return has(extra, fromKey);
   return has(extra, fromKey) || has(extra, toKey);
 }
 
@@ -512,6 +519,9 @@ function rangeChipLabel(
     }
   } else {
     const op = parseDateOp(raw);
+    if (op === "relative") {
+      return formatFilterChip(field, relativeTokenLabel(value, defaultLabels));
+    }
     if (op && op !== "between") {
       return formatFilterChip(
         field,

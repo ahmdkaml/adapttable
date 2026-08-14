@@ -183,6 +183,53 @@ describe("useRangeFilterWidget", () => {
   });
 });
 
+describe("useRangeFilterWidget date relative", () => {
+  const def: FilterDef<{ hiredAt: string }> = {
+    key: "hiredAt",
+    type: "dateRange",
+    label: "Hired",
+  };
+
+  function makeSource(extra: ExtraFilters) {
+    const setExtras = vi.fn();
+    const source: FilterFormSource<{ hiredAt: string }> = {
+      extra,
+      setExtra: vi.fn(),
+      setExtras,
+    };
+    return { source, setExtras };
+  }
+
+  it("seeds today when entering relative, and drops the token when leaving", () => {
+    const { source, setExtras } = makeSource({});
+    const { result } = renderHook(() => useRangeFilterWidget(def, source));
+    act(() => result.current.write("relative", "2026-01-01", ""));
+    expect(setExtras).toHaveBeenCalledWith({
+      hiredAtFrom: "today",
+      hiredAtTo: undefined,
+      hiredAtOp: "relative",
+    });
+    act(() => result.current.write("gte", "today", ""));
+    expect(setExtras).toHaveBeenLastCalledWith({
+      hiredAtFrom: undefined,
+      hiredAtTo: undefined,
+      hiredAtOp: undefined,
+    });
+  });
+
+  it("keeps a stored token and uses a text input for relative", () => {
+    const { result } = renderHook(() =>
+      useRangeFilterWidget(
+        def,
+        makeSource({ hiredAtFrom: "last:7", hiredAtOp: "relative" }).source
+      )
+    );
+    expect(result.current.op).toBe("relative");
+    expect(result.current.a).toBe("last:7");
+    expect(result.current.inputType).toBe("text");
+  });
+});
+
 describe("useTextFilterWidget", () => {
   const def: FilterDef<{ name: string }> = {
     key: "name",

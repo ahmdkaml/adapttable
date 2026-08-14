@@ -88,5 +88,6 @@ describe("registries", () => {
     expect(TEXT_OPS).toContain("startsWith");
     expect(NUMBER_OPS).toContain("notIn");
     expect(DATE_OPS).toContain("before");
+    expect(DATE_OPS).toContain("relative");
   });
 });

@@ -20,6 +20,7 @@ import {
   type TextOp,
 } from "./operators";
 import { type RangeOp, readRangeWidget, writeRangeFilter } from "./rangeWidget";
+import { isRelativeDateToken } from "./relativeDates";
 
 /** Operand shape for a selected range operator. */
 export type RangeOpArity = "none" | "one" | "two" | "list";
@@ -55,8 +56,10 @@ function rangeArity(op: RangeOp | undefined): RangeOpArity {
 
 function rangeInputType(
   flavour: "number" | "date",
-  arity: RangeOpArity
+  arity: RangeOpArity,
+  op: RangeOp | undefined
 ): "date" | "number" | "text" {
+  if (op === "relative") return "text";
   if (flavour === "date") return "date";
   if (arity === "list") return "text";
   return "number";
@@ -133,7 +136,7 @@ export function useRangeFilterWidget<TRow>(
   const a = derived.a;
   const b = derived.b;
   const arity = rangeArity(op);
-  const inputType = rangeInputType(flavour, arity);
+  const inputType = rangeInputType(flavour, arity, op);
   const write = (nextOp: RangeOp | undefined, nextA: string, nextB: string) => {
     // Switching into `between` from a single-value comparison copies the
     // current value into both bounds so the pair is never half-empty.
@@ -141,8 +144,16 @@ export function useRangeFilterWidget<TRow>(
       nextOp === "between" && nextB === "" && nextA !== "" && op !== "between"
         ? nextA
         : nextB;
+    // Relative stores a token, never a calendar day. Entering the op seeds
+    // `today`; leaving it drops a leftover token so a date input stays empty.
+    let seededA = nextA;
+    if (nextOp === "relative" && !isRelativeDateToken(nextA)) {
+      seededA = "today";
+    } else if (nextOp !== "relative" && isRelativeDateToken(nextA)) {
+      seededA = "";
+    }
     setExtras(
-      writeRangeFilter(nextOp, nextA, seededB, lowKey, highKey, def.key)
+      writeRangeFilter(nextOp, seededA, seededB, lowKey, highKey, def.key)
     );
   };
   return {

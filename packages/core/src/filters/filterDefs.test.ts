@@ -297,6 +297,29 @@ describe("filterPredicate", () => {
     expect(p(blank, { hiredAtOp: "empty" })).toBe(true);
   });
 
+  it("dateRange: relative tokens resolve at query time, never as a fixed day", () => {
+    const p = filterPredicate<Row>({ key: "hiredAt", type: "dateRange" });
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const todayRow = { ...ROW, hiredAt: `${y}-${m}-${d}` };
+    expect(p(todayRow, { hiredAtFrom: "today", hiredAtOp: "relative" })).toBe(
+      true
+    );
+    expect(
+      p(
+        { ...ROW, hiredAt: "1999-01-01" },
+        { hiredAtFrom: "today", hiredAtOp: "relative" }
+      )
+    ).toBe(false);
+    // Missing / unknown token matches every row — the filter is not active.
+    expect(p(ROW, { hiredAtOp: "relative" })).toBe(true);
+    expect(p(ROW, { hiredAtFrom: "2026-03-10", hiredAtOp: "relative" })).toBe(
+      true
+    );
+  });
+
   it("numberRange: min/max bounds; NaN row values never match", () => {
     const p = filterPredicate<Row>({ key: "budget", type: "numberRange" });
     expect(p(ROW, {})).toBe(true);
@@ -405,6 +428,9 @@ describe("buildFilterRuntime", () => {
     expect(
       runtime.filterLabels.hiredAtFrom!("2026-01-01", { hiredAtOp: "after" })
     ).toBe("Hired After 2026-01-01");
+    expect(
+      runtime.filterLabels.hiredAtFrom!("last:7", { hiredAtOp: "relative" })
+    ).toBe("Hired Last 7 days");
     expect(runtime.filterLabels.nameOp!("notEmpty")).toBe("Name Is not empty");
     expect(runtime.filterLabels.budget!("1, 2", { budgetOp: "in" })).toBe(
       "Budget Is any of 1, 2"

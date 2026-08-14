@@ -268,6 +268,7 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
       "On or after",
       "On or before",
       "Between",
+      "Relative",
       "Is empty",
     ]);
   });
@@ -291,6 +292,22 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     // Carol (hired 2024) drops out on the frontend tier.
     expect(screen.queryByText("Carol")).not.toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("dateRange: Relative stores the token, never a resolved day", () => {
+    const adapter = renderAllTypes();
+    fireEvent.change(rangeOperator("Hired At"), {
+      target: { value: "relative" },
+    });
+    const p = params(adapter);
+    expect(p.get("f_hiredAtOp")).toBe("relative");
+    expect(p.get("f_hiredAtFrom")).toBe("today");
+    expect(p.get("f_hiredAtFrom")).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    fireEvent.change(screen.getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    expect(params(adapter).get("f_hiredAtFrom")).toBe("last:7");
+    expect(chipsStrip()).toHaveTextContent("Hired At Last 7 days");
   });
 
   it("numberRange: At least types into ONE input and writes only the Min key", () => {

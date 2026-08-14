@@ -3,6 +3,10 @@ import {
   filterLabel,
   filterOpLabel,
   type FilterValue,
+  joinRelativeToken,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  splitRelativeToken,
   type TableLabels,
   type TableSource,
   useBooleanFilterWidget,
@@ -207,6 +211,60 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
   );
 }
 
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <TextField
+        select
+        size="small"
+        label={labels.opRelative}
+        value={preset}
+        onChange={(e) => {
+          const found = RELATIVE_PRESETS.find((p) => p === e.target.value);
+          if (found) onValue(joinRelativeToken(found, n));
+        }}
+        slotProps={{
+          select: { native: true },
+          inputLabel: { shrink: true },
+        }}
+        sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      >
+        {RELATIVE_PRESETS.map((p) => (
+          <option key={p} value={p}>
+            {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
+          </option>
+        ))}
+      </TextField>
+      {counted && (
+        <TextField
+          size="small"
+          type="number"
+          label={labels.value}
+          value={n}
+          onChange={(e) =>
+            onValue(joinRelativeToken(preset, Number(e.target.value)))
+          }
+          slotProps={{
+            htmlInput: { min: 1 },
+            inputLabel: { shrink: true },
+          }}
+          sx={{ flex: "0 0 4.5rem", width: "4.5rem" }}
+        />
+      )}
+    </>
+  );
+}
+
 /**
  * Operator-first range widget: a comparison select, then one value input —
  * or a From/To pair for "between". The operator is persisted as `f_<key>Op`.
@@ -241,6 +299,14 @@ function RangeFilter<TRow>({
         {input(labels.from, a, (raw) => write(op, raw, b))}
         {input(labels.to, b, (raw) => write(op, a, raw))}
       </>
+    );
+  } else if (op === "relative") {
+    bounds = (
+      <RelativeTokenField
+        labels={labels}
+        value={a}
+        onValue={(raw) => write(op, raw, "")}
+      />
     );
   } else if (op !== undefined && arity !== "none") {
     bounds = input(labels.value, a, (raw) => write(op, raw, ""));

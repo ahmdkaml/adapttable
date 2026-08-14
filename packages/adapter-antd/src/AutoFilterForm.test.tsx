@@ -226,6 +226,7 @@ describe("<AutoFilterForm> operator-first range widgets (Ant Design)", () => {
       "On or after",
       "On or before",
       "Between",
+      "Relative",
       "Is empty",
     ]) {
       expect(screen.getByTitle(op)).toBeInTheDocument();

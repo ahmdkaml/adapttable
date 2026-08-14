@@ -143,6 +143,7 @@ describe("<AutoFilterForm> (Chakra)", () => {
       "On or after",
       "On or before",
       "Between",
+      "Relative",
       "Is empty",
     ]);
     const input = screen.getByLabelText("Value");
@@ -153,6 +154,26 @@ describe("<AutoFilterForm> (Chakra)", () => {
       hiredAtFrom: "2026-02-01",
       hiredAtTo: undefined,
       hiredAtOp: "gte",
+    });
+  });
+
+  it("dateRange: Relative writes the token, never a calendar day", () => {
+    const { setExtras } = renderForm([{ key: "hiredAt", type: "dateRange" }]);
+    fireEvent.change(screen.getByLabelText("Hired At"), {
+      target: { value: "relative" },
+    });
+    expect(setExtras).toHaveBeenCalledWith({
+      hiredAtFrom: "today",
+      hiredAtTo: undefined,
+      hiredAtOp: "relative",
+    });
+    fireEvent.change(screen.getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    expect(setExtras).toHaveBeenLastCalledWith({
+      hiredAtFrom: "last:7",
+      hiredAtTo: undefined,
+      hiredAtOp: "relative",
     });
   });
 

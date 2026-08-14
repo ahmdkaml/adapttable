@@ -156,6 +156,7 @@ describe("<AutoFilterForm> (Radix)", () => {
       "On or after",
       "On or before",
       "Between",
+      "Relative",
       "Is empty",
     ]);
     // Close the popup before reaching for the value input.

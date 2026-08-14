@@ -163,14 +163,18 @@ const FIXTURES = [
   //
   // Boolean filter (~0.3 KB) adds the tri-state any/true/false widget
   // on that same AutoFilterForm path. `core · simple table` unmoved.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 96 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 95 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 95 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 91 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 95 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 101 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 97 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 94 },
+  //
+  // Relative date tokens (~0.5–1.1 KB) add the preset select + last/next
+  // N on the dateRange widget. `core · simple table` stayed at 11.9 KB
+  // of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 97 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 96 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 96 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 93 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 96 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 102 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 98 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 95 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

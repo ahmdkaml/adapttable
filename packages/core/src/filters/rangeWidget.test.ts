@@ -49,6 +49,14 @@ describe("readRangeWidget", () => {
       readRangeWidget({ hiredOp: "empty" }, "from", "to", "hiredOp")
     ).toEqual({ op: "empty", a: "", b: "" });
     expect(
+      readRangeWidget(
+        { hiredOp: "after", to: "2026-01-01" },
+        "from",
+        "to",
+        "hiredOp"
+      )
+    ).toEqual({ op: "after", a: "2026-01-01", b: "" });
+    expect(
       readRangeWidget({ bOp: "lte", bMax: "9" }, "bMin", "bMax", "bOp")
     ).toEqual({ op: "lte", a: "9", b: "" });
     expect(
@@ -131,6 +139,16 @@ describe("writeRangeWidget", () => {
       hiredAt: undefined,
       hiredAtOp: "empty",
     });
+    expect(
+      writeRangeFilter("relative", "last:7", "", "lo", "hi", "hiredAt")
+    ).toEqual({
+      lo: "last:7",
+      hi: undefined,
+      hiredAtOp: "relative",
+    });
+    expect(
+      readRangeWidget({ lo: "today" }, "lo", "hi", undefined, undefined, "date")
+    ).toEqual({ op: "relative", a: "today", b: "" });
     const extras = writeRangeFilter("gt", "5", "", "bMin", "bMax", "b");
     expect(readRangeWidget(extras, "bMin", "bMax", "bOp").op).toBe("gt");
     expect(writeRangeFilter(undefined, "1", "2", "lo", "hi", "budget")).toEqual(

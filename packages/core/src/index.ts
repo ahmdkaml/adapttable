@@ -132,6 +132,21 @@ export {
   writeRangeWidget,
 } from "./filters/rangeWidget";
 export {
+  countedRelativeToken,
+  isRelativeDateToken,
+  joinRelativeToken,
+  parseRelativeToken,
+  RELATIVE_NAMED,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  type RelativeDateRange,
+  type RelativeDateToken,
+  type RelativePreset,
+  relativeTokenLabel,
+  resolveRelativeRange,
+  splitRelativeToken,
+} from "./filters/relativeDates";
+export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";

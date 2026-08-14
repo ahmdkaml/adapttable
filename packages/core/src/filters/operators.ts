@@ -55,6 +55,7 @@ export const DATE_OPS = [
   "gte",
   "lte",
   "between",
+  "relative",
   "empty",
 ] as const;
 
@@ -119,6 +120,7 @@ export const DATE_OP_LABEL_KEYS = {
   gte: "opOnOrAfter",
   lte: "opOnOrBefore",
   between: "opBetween",
+  relative: "opRelative",
   empty: "opEmpty",
 } as const satisfies Record<DateOp, keyof TableLabels>;
 
