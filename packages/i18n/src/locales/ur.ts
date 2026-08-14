@@ -69,6 +69,7 @@ export const ur: Required<TableLabels> = {
   checklistSearch: "اقدار تلاش کریں",
   checklistClear: "صاف کریں",
   checklistNoValues: "کوئی قدر نہیں ملی",
+  headerFilters: "کالم فلٹرز",
   sortBy: "ترتیب دیں بذریعہ",
   rowsPerPage: "فی صفحہ قطاریں",
   actions: "اقدامات",

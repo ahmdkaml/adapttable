@@ -17,6 +17,7 @@ import { type ReactNode, useMemo, useRef } from "react";
 import type { ConfirmHandler } from "./actions/confirm";
 import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
+import type { FilterDef } from "./filters/filterDefs";
 import type { GridFocusState } from "./focus/useGridFocus";
 import type { GroupByInput } from "./grouping/groupKeys";
 import type { GroupedFlatEntry } from "./grouping/groupRows";
@@ -178,6 +179,13 @@ export interface SharedTableRenderProps<TRow> {
    * widths only mean anything under a fixed table layout.
    */
   fitColumns?: boolean;
+  /**
+   * Compact per-column filter row under the header. Desktop only.
+   * Driven by {@link filterDefs} and the source extra bag.
+   */
+  headerFilters?: boolean;
+  /** Declarative filter defs the header row matches to columns. */
+  filterDefs?: readonly FilterDef<TRow>[];
   /** Whether the header sticks to the top of the scroll box. */
   stickyHeader?: boolean;
   /** Offset (px) applied to the sticky header top. */

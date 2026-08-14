@@ -867,6 +867,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
   return [
     {
       key: "name",
+      column: "person",
       type: "text",
       label: s.person,
       getValue: (row) => row.name,
@@ -900,6 +901,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "start",
+      column: "timeline",
       type: "dateRange",
       label: s.startDate,
       getValue: (row) => startDate(row).toISOString(),

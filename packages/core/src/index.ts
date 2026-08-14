@@ -120,6 +120,14 @@ export {
   useTextFilterWidget,
 } from "./filters/filterForm";
 export {
+  filterDefForColumn,
+  type FilterHeaderClassNames,
+  FilterHeaderControl,
+  FilterHeaderRow,
+  type FilterHeaderRowProps,
+  headerFilterStickTop,
+} from "./filters/FilterHeaderRow";
+export {
   conditionToExtra,
   evaluateFilterTree,
   FILTER_TREE_PARAM,

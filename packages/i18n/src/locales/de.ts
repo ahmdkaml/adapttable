@@ -69,6 +69,7 @@ export const de: Required<TableLabels> = {
   checklistSearch: "Werte suchen",
   checklistClear: "Leeren",
   checklistNoValues: "Keine passenden Werte",
+  headerFilters: "Spaltenfilter",
   sortBy: "Sortieren nach",
   rowsPerPage: "Zeilen pro Seite",
   actions: "Aktionen",

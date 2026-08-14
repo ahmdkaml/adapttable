@@ -191,6 +191,7 @@ export function MuiDemo({
             animate={animate}
             resizableColumns
             stickyHeader
+            headerFilters
             filters={demoFilterDefs(locale)}
           />
         )}

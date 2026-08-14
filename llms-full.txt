@@ -1336,14 +1336,15 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                               |
-| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                            |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| Prop                | Type                                | Default        | Description                                                                                                                                |
+| ------------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                         |
+| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                             |
+| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                       |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label).  |
+| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                        |
+| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                        |
+| `headerFilters`     | `boolean`                           | `false`        | Compact per-column filter row under the header, bound to the same defs and extra bag. Desktop only — mobile cards keep the Filters button. |
 
 ## Headless filter primitives
 
@@ -1392,6 +1393,15 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `query.facets` (checklist keys) and returns the same map on the page;
   `useQuerySource` / `useServerData` surface it as `source.facets`.
   `useChecklistFilter` prefers that map over `allFilteredRows`.
+- **Header filter row**: `headerFilters` mounts `FilterHeaderRow` /
+  `FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`
+  under the leaf header.
+  Pads and column spacers match the header so sticky, pin offsets, and
+  column windowing stay aligned. A def whose bag key differs from the
+  column key sets `column` (`key: "name"` under `column: "person"`). Ant Design keeps the control inside the
+  header cell so `fixed` columns stay on antd's own header. Compact
+  range inputs default the operator to `gte` (no picker in the header);
+  checklist / multiSelect use a native `<select>`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -4730,6 +4740,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
 | `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
 | `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
+| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput`                                                            | Compact header filter row, one cell, and its input.                                    |
 | `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
 
 ### Chips
@@ -5526,6 +5537,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | Prop          | Type                     | Default         | Description                                                                                                                      |
 | ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
+| `column`      | `string`                 | `key`           | Column the header filter row places this widget under, when the bag key and the column key differ.                               |
 | `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"`.  |
 | `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
 | `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
@@ -5554,6 +5566,10 @@ excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
+`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
+`headerFilterStickTop`) as a second header row of compact inputs on the
+same extra bag. Desktop only.
 
 ## Adapter extras
 
@@ -5568,6 +5584,7 @@ Props beyond the core surface, with per-kit availability.
 | `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
 | `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
@@ -5882,7 +5899,9 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
 `ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
-`CHECKLIST_LIST_HEIGHT`. Facets: `computeFilterFacets` /
+`CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
+`FilterHeaderRowProps` / `FilterHeaderClassNames` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

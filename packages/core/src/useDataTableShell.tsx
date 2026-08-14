@@ -375,6 +375,8 @@ export function useDataTableShell<TRow>(
     tree,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
+    headerFilters: props.headerFilters === true,
+    filterDefs: runtime.defs,
     pinOffset: chrome.columnLayout.pinOffset,
     maxHeight: props.maxHeight,
     virtualScrollRef,

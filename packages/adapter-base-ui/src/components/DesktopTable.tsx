@@ -8,8 +8,11 @@ import {
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
+  FilterHeaderRow,
   type GridFocusState,
+  headerFilterStickTop,
   PIN_Z,
+  pinnedCellStyle,
   type PinSide,
   resolveColumnFooter,
   resolveColumnHeader,
@@ -626,6 +629,8 @@ export function DesktopTable<TRow>({
   tree,
   extraRows,
   getCellSpan,
+  headerFilters,
+  filterDefs,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -659,6 +664,7 @@ export function DesktopTable<TRow>({
     tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
+  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
   const expandable = expansion !== undefined;
   const groupRows = headerGroupRows(
     columns,
@@ -909,7 +915,7 @@ export function DesktopTable<TRow>({
               {showActions && <Table.ColumnHeaderCell />}
             </Table.Row>
           ))}
-          <Table.Row>
+          <Table.Row ref={headerRowRef}>
             {expandable && (
               <Table.ColumnHeaderCell
                 aria-label={labels.expandRow}
@@ -1061,6 +1067,35 @@ export function DesktopTable<TRow>({
               </Table.ColumnHeaderCell>
             )}
           </Table.Row>
+          <FilterHeaderRow
+            enabled={headerFilters === true}
+            columns={columns}
+            defs={filterDefs ?? []}
+            source={table.source}
+            labels={labels}
+            expandable={expandable}
+            showReorder={showReorder}
+            selection={Boolean(selection)}
+            showActions={showActions}
+            columnSpacers={columnSpacers}
+            cellStyle={(column) => ({
+              ...headerFilterStickTop(
+                stickyHeader,
+                undefined,
+                headerPinTop + leafHeaderHeight,
+                { position: "sticky", zIndex: PIN_Z.header }
+              ),
+              ...pinnedCellStyle(pinOffset?.(column.key), PIN_Z.headerPinned),
+            })}
+            pinSide={(key) => pinOffset?.(key)?.side}
+            padStyle={headerFilterStickTop(
+              stickyHeader,
+              undefined,
+              headerPinTop + leafHeaderHeight,
+              { position: "sticky", zIndex: PIN_Z.header }
+            )}
+            stickyAttr={stickyHeader || undefined}
+          />
         </thead>
         {pinnedTopRows.length > 0 && (
           <tbody

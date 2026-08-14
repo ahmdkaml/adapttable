@@ -69,6 +69,7 @@ export const zh: Required<TableLabels> = {
   checklistSearch: "搜索值",
   checklistClear: "清除",
   checklistNoValues: "无匹配值",
+  headerFilters: "列筛选",
   sortBy: "排序方式",
   rowsPerPage: "每页行数",
   actions: "操作",

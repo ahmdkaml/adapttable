@@ -167,6 +167,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | Prop          | Type                     | Default         | Description                                                                                                                      |
 | ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
+| `column`      | `string`                 | `key`           | Column the header filter row places this widget under, when the bag key and the column key differ.                               |
 | `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "checklist" \| "boolean" \| "dateRange" \| "numberRange"`.  |
 | `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
 | `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
@@ -195,6 +196,10 @@ excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
+`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
+`headerFilterStickTop`) as a second header row of compact inputs on the
+same extra bag. Desktop only.
 
 ## Adapter extras
 
@@ -209,6 +214,7 @@ Props beyond the core surface, with per-kit availability.
 | `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
 | `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
@@ -523,7 +529,9 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
 `ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
-`CHECKLIST_LIST_HEIGHT`. Facets: `computeFilterFacets` /
+`CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
+`FilterHeaderRowProps` / `FilterHeaderClassNames` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

@@ -69,6 +69,7 @@ export const tr: Required<TableLabels> = {
   checklistSearch: "Değer ara",
   checklistClear: "Temizle",
   checklistNoValues: "Eşleşen değer yok",
+  headerFilters: "Sütun filtreleri",
   sortBy: "Sıralama",
   rowsPerPage: "Sayfa başına satır",
   actions: "İşlemler",

@@ -8,7 +8,9 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  FilterHeaderRow,
   type GridFocusState,
+  headerFilterStickTop,
   PIN_Z,
   pinnedCellStyle,
   resolveColumnFooter,
@@ -673,6 +675,8 @@ export function DesktopTable<TRow>({
   tree,
   extraRows,
   getCellSpan,
+  headerFilters,
+  filterDefs,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -705,6 +709,7 @@ export function DesktopTable<TRow>({
     tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
+  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
   const groupRows = headerGroupRows(
@@ -979,7 +984,7 @@ export function DesktopTable<TRow>({
               {showActions && <TableCell />}
             </TableRow>
           ))}
-          <TableRow>
+          <TableRow ref={headerRowRef}>
             {expandActive && (
               <TableCell
                 padding="checkbox"
@@ -1112,6 +1117,35 @@ export function DesktopTable<TRow>({
               </TableCell>
             )}
           </TableRow>
+          <FilterHeaderRow
+            enabled={headerFilters === true}
+            columns={columns}
+            defs={filterDefs ?? []}
+            source={table.source}
+            labels={labels}
+            expandable={expandActive}
+            showReorder={showReorder}
+            selection={Boolean(selection)}
+            showActions={showActions}
+            columnSpacers={columnSpacers}
+            cellStyle={(column) => ({
+              ...headerFilterStickTop(
+                stickyHeader,
+                undefined,
+                headerPinTop + leafHeaderHeight,
+                { position: "sticky", zIndex: PIN_Z.header }
+              ),
+              ...pinnedCellStyle(pinOffset?.(column.key), PIN_Z.headerPinned),
+            })}
+            pinSide={(key) => pinOffset?.(key)?.side}
+            padStyle={headerFilterStickTop(
+              stickyHeader,
+              undefined,
+              headerPinTop + leafHeaderHeight,
+              { position: "sticky", zIndex: PIN_Z.header }
+            )}
+            stickyAttr={stickyHeader || undefined}
+          />
         </TableHead>
         {pinnedTopRows.length > 0 && (
           <TableBody

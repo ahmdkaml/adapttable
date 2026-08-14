@@ -152,6 +152,11 @@ export const shadcnClassNames = {
   // ── Structure & scroll ──────────────────────────────────────────
   thead: "bg-card",
   headerRow: "align-middle",
+  filterHeaderRow: "align-middle",
+  filterHeaderCell:
+    "border-b border-border bg-card px-1 py-1 text-start [[data-density=compact]_&]:px-1 [[data-density=compact]_&]:py-0.5",
+  filterHeaderInput:
+    "h-7 w-full min-w-0 rounded-md border border-input bg-background px-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring",
   tbody: "align-middle",
   scrollBox: "overscroll-x-contain",
   virtualSpacer: "block",

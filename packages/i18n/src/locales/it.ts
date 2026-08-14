@@ -69,6 +69,7 @@ export const it: Required<TableLabels> = {
   checklistSearch: "Cerca valori",
   checklistClear: "Cancella",
   checklistNoValues: "Nessun valore corrispondente",
+  headerFilters: "Filtri colonna",
   sortBy: "Ordina per",
   rowsPerPage: "Righe per pagina",
   actions: "Azioni",

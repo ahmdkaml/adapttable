@@ -69,6 +69,7 @@ export const ja: Required<TableLabels> = {
   checklistSearch: "値を検索",
   checklistClear: "クリア",
   checklistNoValues: "一致する値がありません",
+  headerFilters: "列フィルター",
   sortBy: "並べ替え",
   rowsPerPage: "1ページの行数",
   actions: "操作",

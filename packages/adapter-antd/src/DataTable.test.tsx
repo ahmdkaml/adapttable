@@ -1913,6 +1913,23 @@ describe("custom header and footer", () => {
   });
 });
 
+describe("header filter row", () => {
+  it("writes a compact name filter under the header cell", () => {
+    renderHarness({
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    const input = screen.getByLabelText("Name");
+    fireEvent.change(input, { target: { value: "Ali" } });
+    expect(input).toHaveValue("Ali");
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-cell"]')
+    ).not.toBeNull();
+  });
+});
+
 describe("sparkline column", () => {
   it("renders an accessible chart from the optional entry", () => {
     renderHarness({

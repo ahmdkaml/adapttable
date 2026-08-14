@@ -177,6 +177,7 @@ export function RadixDemo({
             animate={animate}
             resizableColumns
             stickyHeader
+            headerFilters
             filters={demoFilterDefs(locale)}
           />
         )}

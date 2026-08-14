@@ -194,6 +194,12 @@ export interface DataTableClassNames {
   thead?: string;
   headerRow?: string;
   headerCell?: string;
+  /** Compact per-column filter row under the header. */
+  filterHeaderRow?: string;
+  /** One cell in the header filter row. */
+  filterHeaderCell?: string;
+  /** The input inside a header filter cell. */
+  filterHeaderInput?: string;
   /** The grouped-header `<tr>` rendered above the column headers. */
   headerGroupRow?: string;
   /** One spanning `<th>` (or edge gap) inside the header-group row. */

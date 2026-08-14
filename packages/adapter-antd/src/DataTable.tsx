@@ -1596,6 +1596,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     rowReorder: c.rowReorder,
     windowStart,
     cellsByRow,
+    headerFilters: props.headerFilters === true,
+    filterDefs: runtime.defs,
+    filterSource: resolvedSource,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own

@@ -69,6 +69,7 @@ export const ar: Required<TableLabels> = {
   checklistSearch: "البحث في القيم",
   checklistClear: "مسح",
   checklistNoValues: "لا توجد قيم مطابقة",
+  headerFilters: "عوامل تصفية الأعمدة",
   sortBy: "ترتيب حسب",
   rowsPerPage: "صفوف لكل صفحة",
   actions: "إجراءات",

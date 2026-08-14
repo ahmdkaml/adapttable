@@ -72,6 +72,7 @@ export const defaultLabels: Required<TableLabels> = {
   checklistSearch: "Search values",
   checklistClear: "Clear",
   checklistNoValues: "No matching values",
+  headerFilters: "Column filters",
   sortBy: "Sort by",
   rowsPerPage: "Rows per page",
   actions: "Actions",

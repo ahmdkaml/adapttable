@@ -69,6 +69,7 @@ export const fa: Required<TableLabels> = {
   checklistSearch: "جستجوی مقادیر",
   checklistClear: "پاک کردن",
   checklistNoValues: "مقداری یافت نشد",
+  headerFilters: "فیلترهای ستون",
   sortBy: "مرتب‌سازی بر اساس",
   rowsPerPage: "ردیف در هر صفحه",
   actions: "اقدامات",

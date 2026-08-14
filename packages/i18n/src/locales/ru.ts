@@ -72,6 +72,7 @@ export const ru: Required<TableLabels> = {
   checklistSearch: "Поиск значений",
   checklistClear: "Очистить",
   checklistNoValues: "Нет подходящих значений",
+  headerFilters: "Фильтры столбцов",
   sortBy: "Сортировать по",
   rowsPerPage: "Строк на странице",
   actions: "Действия",

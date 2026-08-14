@@ -636,6 +636,12 @@ export interface BaseDataTableProps<TRow> {
    * full control through `source.clearExtras` instead.
    */
   onClearFilters?: () => void;
+  /**
+   * Render a compact filter row under the header, bound to the same
+   * defs and extra bag as the panel. Desktop only — mobile cards keep
+   * the Filters button. Omit the prop and nothing renders.
+   */
+  headerFilters?: boolean;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
   /** Bulk actions — enabling these turns on row selection. */

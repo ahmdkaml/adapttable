@@ -521,6 +521,8 @@ export interface TableLabels {
   checklistClear?: string;
   /** Empty state when the checklist search matches nothing. */
   checklistNoValues?: string;
+  /** Accessible name of the compact header filter row. */
+  headerFilters?: string;
   sortBy?: string;
   rowsPerPage?: string;
   actions?: string;

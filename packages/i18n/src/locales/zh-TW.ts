@@ -69,6 +69,7 @@ export const zhTW: Required<TableLabels> = {
   checklistSearch: "搜尋值",
   checklistClear: "清除",
   checklistNoValues: "無符合的值",
+  headerFilters: "欄篩選",
   sortBy: "排序依據",
   rowsPerPage: "每頁列數",
   actions: "操作",

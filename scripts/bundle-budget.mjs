@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 74,
+    budgetKB: 76,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -189,14 +189,21 @@ const FIXTURES = [
   // widget returns null; a server page without `allFilteredRows`
   // never offers it. `core · simple table` stayed at 12.5 KB of a
   // 13 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 105 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 104 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 104 },
+  //
+  // The compact header filter row (~0.7 KB on the full export, ~1 KB
+  // per kit) sits under the leaf header every desktop table already
+  // renders. `headerFilters` opts the row in; omit it and
+  // FilterHeaderRow returns null. Ant Design keeps the control in
+  // the header cell so its fixture stayed under. `core · simple
+  // table` stayed at 12.5 KB of a 13 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 107 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 107 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 107 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 101 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 104 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 110 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 107 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 104 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 107 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 113 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 109 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 106 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

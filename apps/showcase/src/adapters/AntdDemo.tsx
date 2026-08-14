@@ -207,6 +207,7 @@ export function AntdDemo({
             animate={animate}
             resizableColumns
             filters={demoFilterDefs(locale)}
+            headerFilters
           />
         )}
       />

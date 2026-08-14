@@ -5,6 +5,10 @@ import {
   columnResizeHandleProps,
   type ConfirmHandler,
   type EditableCellEditing,
+  type FilterDef,
+  filterDefForColumn,
+  type FilterFormSource,
+  FilterHeaderControl,
   type GridFocusState,
   type GroupCollapseState,
   type PinSide,
@@ -366,6 +370,13 @@ export interface BuildColumnsOptions<TRow> {
   collapsedColumnGroups?: readonly string[];
   /** Toggle one column group. No-op unless collapse is armed. */
   onToggleColumnGroup?: (id: string) => void;
+  /**
+   * Compact filter under the caption. antd keeps it in the header cell
+   * so `fixed` columns stay on antd's own header.
+   */
+  headerFilters?: boolean;
+  filterDefs?: readonly FilterDef<TRow>[];
+  filterSource?: FilterFormSource<TRow>;
 }
 
 /**
@@ -568,6 +579,9 @@ export function buildColumns<TRow>({
   collapsibleColumnGroups,
   collapsedColumnGroups,
   onToggleColumnGroup,
+  headerFilters,
+  filterDefs,
+  filterSource,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -594,6 +608,10 @@ export function buildColumns<TRow>({
       const effectiveSortBy = dir ? column.key : sortBy;
       const effectiveSortDir = dir ?? sortDir;
       const sortIndex = chainIndex(sortLevels, column.key);
+      const headerDef =
+        headerFilters && filterSource
+          ? filterDefForColumn(filterDefs ?? [], column.key)
+          : undefined;
       return {
         key: column.key,
         // A real element (not a Fragment): antd v6 attaches a `ref` to the
@@ -626,6 +644,15 @@ export function buildColumns<TRow>({
                 style={RESIZE_HANDLE_STYLE}
               />
             )}
+            {headerDef && filterSource ? (
+              <span data-adapttable-part="filter-header-cell">
+                <FilterHeaderControl
+                  def={headerDef}
+                  source={filterSource}
+                  labels={labels}
+                />
+              </span>
+            ) : null}
           </span>
         ),
         width: columnWidths?.[column.key] ?? column.width,

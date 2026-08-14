@@ -69,6 +69,7 @@ export const hi: Required<TableLabels> = {
   checklistSearch: "मान खोजें",
   checklistClear: "साफ़ करें",
   checklistNoValues: "कोई मान नहीं मिला",
+  headerFilters: "स्तंभ फ़िल्टर",
   sortBy: "इसके अनुसार क्रमबद्ध करें",
   rowsPerPage: "प्रति पृष्ठ पंक्तियाँ",
   actions: "क्रियाएँ",

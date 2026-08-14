@@ -69,6 +69,7 @@ export const ko: Required<TableLabels> = {
   checklistSearch: "값 검색",
   checklistClear: "지우기",
   checklistNoValues: "일치하는 값 없음",
+  headerFilters: "열 필터",
   sortBy: "정렬 기준",
   rowsPerPage: "페이지당 행 수",
   actions: "작업",

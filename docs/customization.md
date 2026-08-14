@@ -73,6 +73,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
 | `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
 | `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
+| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput`                                                            | Compact header filter row, one cell, and its input.                                    |
 | `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
 
 ### Chips

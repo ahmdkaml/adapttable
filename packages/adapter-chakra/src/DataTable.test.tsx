@@ -834,6 +834,34 @@ describe("custom header and footer", () => {
   });
 });
 
+describe("header filter row", () => {
+  it("writes a compact name filter under the header", () => {
+    renderHarness({
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    const input = screen.getByLabelText("Name");
+    fireEvent.change(input, { target: { value: "Ali" } });
+    expect(input).toHaveValue("Ali");
+    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
+  });
+
+  it("hides the header filter row on mobile cards", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-row"]')
+    ).toBeNull();
+  });
+});
+
 describe("sparkline column", () => {
   it("renders an accessible chart from the optional entry", () => {
     renderHarness({

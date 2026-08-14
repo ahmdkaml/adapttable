@@ -220,6 +220,7 @@ function Harness(props: {
       rowKey={(r) => r.id}
       forceMobile={props.isMobile}
       filters={filters}
+      headerFilters
       bulkActions={[
         {
           key: "del",
@@ -563,6 +564,9 @@ const KEYS = [
   "thead",
   "headerRow",
   "headerCell",
+  "filterHeaderRow",
+  "filterHeaderCell",
+  "filterHeaderInput",
   "headerGroupRow",
   "headerGroupCell",
   "columnGroupToggle",

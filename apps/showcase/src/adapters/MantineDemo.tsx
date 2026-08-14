@@ -165,6 +165,7 @@ export function MantineDemo({
             animate={animate}
             resizableColumns
             stickyHeader
+            headerFilters
             stickyTop={8}
             filters={demoFilterDefs(locale)}
             forceMobile={forceMobile}

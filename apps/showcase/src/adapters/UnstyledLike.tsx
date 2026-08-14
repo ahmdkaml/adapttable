@@ -210,6 +210,7 @@ export function UnstyledLike({
             animate={animate}
             resizableColumns
             stickyHeader
+            headerFilters
             classNames={styled}
             filters={demoFilterDefs(locale)}
           />

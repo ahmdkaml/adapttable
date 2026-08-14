@@ -69,6 +69,7 @@ export const he: Required<TableLabels> = {
   checklistSearch: "חיפוש ערכים",
   checklistClear: "נקה",
   checklistNoValues: "אין ערכים תואמים",
+  headerFilters: "מסנני עמודות",
   sortBy: "מיין לפי",
   rowsPerPage: "שורות לעמוד",
   actions: "פעולות",

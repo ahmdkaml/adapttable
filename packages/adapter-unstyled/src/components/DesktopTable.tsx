@@ -8,7 +8,9 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  FilterHeaderRow,
   type GridFocusState,
+  headerFilterStickTop,
   PIN_Z,
   pinnedCellStyle,
   resolveColumnFooter,
@@ -676,6 +678,8 @@ export function DesktopTable<TRow>({
   tree,
   getCellSpan,
   extraRows,
+  headerFilters,
+  filterDefs,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -708,6 +712,7 @@ export function DesktopTable<TRow>({
     tree,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
+  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
   // The actions column sticks when the user end-pins IT in the Columns menu —
   // independently of any data pin on that side (and only while it renders).
   const stickActions = showActions && actionsPinned;
@@ -985,6 +990,7 @@ export function DesktopTable<TRow>({
         ))}
         <tr
           {...table.getHeaderRowProps()}
+          ref={headerRowRef}
           data-adapttable-part="header-row"
           className={classNames.headerRow}
         >
@@ -1132,6 +1138,33 @@ export function DesktopTable<TRow>({
             </th>
           )}
         </tr>
+        <FilterHeaderRow
+          enabled={headerFilters === true}
+          columns={columns}
+          defs={filterDefs ?? []}
+          source={table.source}
+          labels={labels}
+          expandable={expandable}
+          showReorder={showReorder}
+          selection={Boolean(selection)}
+          showActions={showActions}
+          columnSpacers={columnSpacers}
+          cellStyle={(column) =>
+            headerFilterStickTop(
+              stickyHeader,
+              headStyle(column),
+              headerStickTop + leafHeaderHeight
+            )
+          }
+          pinSide={(key) => pinOffset?.(key)?.side}
+          padStyle={headerFilterStickTop(
+            stickyHeader,
+            stickyStyle,
+            headerStickTop + leafHeaderHeight
+          )}
+          stickyAttr={stickyAttr}
+          classNames={classNames}
+        />
       </thead>
       {pinnedTopRows.length > 0 && (
         <tbody

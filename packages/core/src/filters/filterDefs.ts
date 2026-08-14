@@ -74,6 +74,12 @@ export interface FilterDef<TRow = unknown> {
    * nested values (`"department.name"`) — unless `getValue` overrides it.
    */
   key: string;
+  /**
+   * Column key the header filter row places this widget under.
+   * Defaults to {@link key} when the filter bag and the column share a
+   * name; set it when they differ (`key: "name"` under `column: "person"`).
+   */
+  column?: string;
   /** The widget shape. */
   type: FilterType;
   /** Widget + chip label. Defaults to a humanized `key` ("hiredAt" → "Hired At"). */

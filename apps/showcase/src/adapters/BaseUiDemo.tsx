@@ -199,6 +199,7 @@ export function BaseUiDemo({
           animate={animate}
           resizableColumns
           stickyHeader
+          headerFilters
           filters={demoFilterDefs(locale)}
           accentColor="blue"
         />
