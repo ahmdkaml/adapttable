@@ -70,6 +70,12 @@ export function FilterPopover({
           sx={{
             width: 360,
             maxWidth: "calc(100vw - 32px)",
+            // The form grows while open, and with enough filters it outgrows
+            // the window. Pinned below the trigger it has to stop at the
+            // viewport edge, or its lower fields are painted off-screen and
+            // cannot be reached.
+            maxHeight: "min(70vh, 560px)",
+            overflowY: "auto",
             borderRadius: 2,
           }}
         >

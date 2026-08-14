@@ -67,7 +67,16 @@ export function FilterPopover({
   const content = (
     // The card must never claim the whole screen: antd adds its own padding
     // around this content, so leave room for it plus a gutter on both sides.
-    <div style={{ minWidth: 280, maxWidth: "min(360px, calc(100vw - 48px))" }}>
+    <div
+      style={{
+        minWidth: 280,
+        maxWidth: "min(360px, calc(100vw - 48px))",
+        // The form grows while open; a card taller than the window paints its
+        // lower fields off-screen, so it stops at the viewport edge instead.
+        maxHeight: "min(70vh, 560px)",
+        overflowY: "auto",
+      }}
+    >
       <Flex align="center" justify="space-between" gap="small">
         <span style={{ fontWeight: 600, fontSize: 14 }}>{labels.filters}</span>
         <Button
