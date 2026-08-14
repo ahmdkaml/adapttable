@@ -63,9 +63,8 @@ export function SelectionStatsBar({
   ].filter((part): part is string => part !== null);
 
   return (
-    <div
+    <output
       data-adapttable-part="selection-stats"
-      role="status"
       className={className}
       style={{
         display: "flex",
@@ -80,6 +79,6 @@ export function SelectionStatsBar({
           {part}
         </span>
       ))}
-    </div>
+    </output>
   );
 }

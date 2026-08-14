@@ -384,10 +384,9 @@ export function BatchEditBar<TRow>({
     <div
       data-adapttable-part="batch-edit-bar"
       className={className}
-      role="status"
       style={{ display: "flex", alignItems: "center", gap: "0.5em" }}
     >
-      <span data-adapttable-part="batch-edit-count">{count}</span>
+      <output data-adapttable-part="batch-edit-count">{count}</output>
       <button
         type="button"
         data-adapttable-part="batch-edit-save"

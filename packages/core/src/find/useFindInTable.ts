@@ -67,8 +67,8 @@ export function useFindInTable<TRow>(
   options: UseFindInTableOptions<TRow>
 ): FindInTableState {
   const { enabled, rows, columns, firstRowIndex = 0 } = options;
-  const [open, setOpenState] = useState(false);
-  const [query, setQueryState] = useState("");
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [index, setIndex] = useState(-1);
 
   const matches = useMemo(
@@ -80,21 +80,21 @@ export function useFindInTable<TRow>(
   );
   const matchKeys = useMemo(() => matchKeySet(matches), [matches]);
 
-  const setQuery = useCallback((next: string) => {
-    setQueryState(next);
+  const writeQuery = useCallback((next: string) => {
+    setQuery(next);
     // A new query starts the walk again: staying on hit 9 of the last search
     // would land the user somewhere unrelated.
     setIndex(next.trim() === "" ? -1 : 0);
   }, []);
 
-  const setOpen = useCallback(
+  const writeOpen = useCallback(
     (next: boolean) => {
-      setOpenState(next);
+      setOpen(next);
       // Closing clears the query, so reopening starts clean and no cell stays
       // marked behind a bar that is no longer on screen.
-      if (!next) setQuery("");
+      if (!next) writeQuery("");
     },
-    [setQuery]
+    [writeQuery]
   );
 
   const step = useCallback(
@@ -104,8 +104,8 @@ export function useFindInTable<TRow>(
     [matches.length]
   );
   const openBar = useCallback(() => {
-    setOpen(true);
-  }, [setOpen]);
+    writeOpen(true);
+  }, [writeOpen]);
   const next = useCallback(() => {
     step(1);
   }, [step]);
@@ -123,9 +123,9 @@ export function useFindInTable<TRow>(
   return useMemo(
     () => ({
       open: enabled && open,
-      setOpen,
+      setOpen: writeOpen,
       query,
-      setQuery,
+      setQuery: writeQuery,
       matches,
       matchKeys,
       index: safeIndex,
@@ -137,9 +137,9 @@ export function useFindInTable<TRow>(
     [
       enabled,
       open,
-      setOpen,
+      writeOpen,
       query,
-      setQuery,
+      writeQuery,
       matches,
       matchKeys,
       safeIndex,

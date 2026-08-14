@@ -171,17 +171,28 @@ function windowedColSpan(
   return Math.max(1, span);
 }
 
-function originSpan<TRow>(
-  row: TRow,
-  column: ColumnDef<TRow>,
-  localRow: number,
-  col: number,
-  firstRowIndex: number,
-  remainingCols: number,
-  remainingRows: number,
-  getCellSpan: GetCellSpan<TRow> | undefined,
-  armed: boolean
-): { colSpan: number; rowSpan: number } {
+function originSpan<TRow>(options: {
+  row: TRow;
+  column: ColumnDef<TRow>;
+  localRow: number;
+  col: number;
+  firstRowIndex: number;
+  remainingCols: number;
+  remainingRows: number;
+  getCellSpan: GetCellSpan<TRow> | undefined;
+  armed: boolean;
+}): { colSpan: number; rowSpan: number } {
+  const {
+    row,
+    column,
+    localRow,
+    col,
+    firstRowIndex,
+    remainingCols,
+    remainingRows,
+    getCellSpan,
+    armed,
+  } = options;
   if (!armed) return { colSpan: 1, rowSpan: 1 };
   return resolveCellSpan(
     {
@@ -211,17 +222,17 @@ function collectOrigins<TRow>(options: {
     const row = rows[localRow]!;
     for (let col = 0; col < columns.length; col += 1) {
       if (covered.has(keyOf(localRow, col))) continue;
-      const span = originSpan(
+      const span = originSpan({
         row,
-        columns[col]!,
+        column: columns[col]!,
         localRow,
         col,
         firstRowIndex,
-        columns.length - col,
-        rows.length - localRow,
+        remainingCols: columns.length - col,
+        remainingRows: rows.length - localRow,
         getCellSpan,
-        armed
-      );
+        armed,
+      });
       markCoverage(origins, covered, {
         row: localRow,
         col,

@@ -191,38 +191,42 @@ export function columnMenuActions<TRow>(
 ): ColumnMenuAction[] {
   const actions: ColumnMenuAction[] = [];
   if (row.canSort && ctx.onSortColumn) {
-    actions.push({
-      id: "sort-asc",
-      label: ctx.labels.sortAscending,
-      disabled: ctx.sortBy === row.key && ctx.sortDir === "asc",
-      run: () => ctx.onSortColumn?.(row.key, "asc"),
-    });
-    actions.push({
-      id: "sort-desc",
-      label: ctx.labels.sortDescending,
-      disabled: ctx.sortBy === row.key && ctx.sortDir === "desc",
-      run: () => ctx.onSortColumn?.(row.key, "desc"),
-    });
+    actions.push(
+      {
+        id: "sort-asc",
+        label: ctx.labels.sortAscending,
+        disabled: ctx.sortBy === row.key && ctx.sortDir === "asc",
+        run: () => ctx.onSortColumn?.(row.key, "asc"),
+      },
+      {
+        id: "sort-desc",
+        label: ctx.labels.sortDescending,
+        disabled: ctx.sortBy === row.key && ctx.sortDir === "desc",
+        run: () => ctx.onSortColumn?.(row.key, "desc"),
+      }
+    );
   }
   if (row.canPin) {
-    actions.push({
-      id: "pin-start",
-      label: ctx.labels.pinStart,
-      disabled: row.pinned === "start",
-      run: () => ctx.layout.setPinned(row.key, "start"),
-    });
-    actions.push({
-      id: "pin-end",
-      label: ctx.labels.pinEnd,
-      disabled: row.pinned === "end",
-      run: () => ctx.layout.setPinned(row.key, "end"),
-    });
-    actions.push({
-      id: "unpin",
-      label: ctx.labels.unpin,
-      disabled: row.pinned === undefined,
-      run: () => ctx.layout.setPinned(row.key, undefined),
-    });
+    actions.push(
+      {
+        id: "pin-start",
+        label: ctx.labels.pinStart,
+        disabled: row.pinned === "start",
+        run: () => ctx.layout.setPinned(row.key, "start"),
+      },
+      {
+        id: "pin-end",
+        label: ctx.labels.pinEnd,
+        disabled: row.pinned === "end",
+        run: () => ctx.layout.setPinned(row.key, "end"),
+      },
+      {
+        id: "unpin",
+        label: ctx.labels.unpin,
+        disabled: row.pinned === undefined,
+        run: () => ctx.layout.setPinned(row.key, undefined),
+      }
+    );
   }
   if (row.canHide) {
     actions.push({

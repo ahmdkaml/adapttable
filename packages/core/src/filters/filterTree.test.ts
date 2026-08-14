@@ -48,21 +48,21 @@ describe("serializeFilterTree / parseFilterTree", () => {
 
   it("drops empty trees and unknown / broken encodings", () => {
     expect(serializeFilterTree(undefined)).toBeUndefined();
-    expect(serializeFilterTree({ combinator: "and", conditions: [] })).toBe(
-      undefined
-    );
+    expect(
+      serializeFilterTree({ combinator: "and", conditions: [] })
+    ).toBeUndefined();
     expect(parseFilterTree(null)).toBeUndefined();
     expect(parseFilterTree("")).toBeUndefined();
     expect(parseFilterTree("not-versioned")).toBeUndefined();
-    expect(parseFilterTree('2.{"combinator":"and","conditions":[]}')).toBe(
-      undefined
-    );
+    expect(
+      parseFilterTree('2.{"combinator":"and","conditions":[]}')
+    ).toBeUndefined();
     expect(parseFilterTree("1.not-json")).toBeUndefined();
     expect(parseFilterTree("1.null")).toBeUndefined();
     expect(parseFilterTree('1."and"')).toBeUndefined();
-    expect(parseFilterTree('1.{"combinator":"xor","conditions":[]}')).toBe(
-      undefined
-    );
+    expect(
+      parseFilterTree('1.{"combinator":"xor","conditions":[]}')
+    ).toBeUndefined();
     expect(parseFilterTree('1.{"combinator":"and"}')).toBeUndefined();
     expect(isActiveFilterTree({ combinator: "or", conditions: [] })).toBe(
       false

@@ -114,7 +114,7 @@ describe("batch editing (base-ui)", () => {
   it("announces the count where a screen reader hears it", () => {
     table();
     fireEvent.change(editors()[0]!, { target: { value: "Ship it" } });
-    expect(part("batch-edit-bar")).toHaveAttribute("role", "status");
+    expect(part("batch-edit-count")?.tagName).toBe("OUTPUT");
   });
 
   it("takes localized wording for the bar", () => {

@@ -103,7 +103,7 @@ export interface FillRangeOptions<TRow> {
 function continueSeries(seed: readonly string[], step: number): string {
   const delta = arithmeticStep(seed);
   if (delta === null) return seed[(step - 1) % seed.length] ?? "";
-  return String(Number(seed[seed.length - 1]) + delta * step);
+  return String(Number(seed.at(-1)) + delta * step);
 }
 
 /**

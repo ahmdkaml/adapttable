@@ -141,16 +141,16 @@ function When({
   return children;
 }
 
-function pinChrome(
-  expandable: boolean,
-  showReorder: boolean,
-  hasSelection: boolean,
-  showActions: boolean,
-  actionsPinned: boolean,
-  reorderPinned: boolean,
-  columns: readonly { key: string }[],
-  pinOffset?: (key: string) => unknown
-): {
+function pinChrome(options: {
+  expandable: boolean;
+  showReorder: boolean;
+  hasSelection: boolean;
+  showActions: boolean;
+  actionsPinned: boolean;
+  reorderPinned: boolean;
+  columns: readonly { key: string }[];
+  pinOffset?: (key: string) => unknown;
+}): {
   hasPinned: boolean;
   leads: PinLeads;
   extraMinWidth: number;
@@ -158,6 +158,16 @@ function pinChrome(
   selectionLead: number;
   reorderSig: string;
 } {
+  const {
+    expandable,
+    showReorder,
+    hasSelection,
+    showActions,
+    actionsPinned,
+    reorderPinned,
+    columns,
+    pinOffset,
+  } = options;
   const expand = expandable ? EXPANSION_WIDTH : 0;
   const reorder = showReorder ? REORDER_COLUMN_WIDTH : 0;
   const select = hasSelection ? SELECTION_WIDTH : 0;
@@ -677,16 +687,16 @@ export function DesktopTable<TRow>({
   // End-pinned actions count as a pin too: sticking them needs the wrapper to
   // be the horizontal scroll container, exactly like a pinned data column.
   const { hasPinned, leads, extraMinWidth, expand, selectionLead, reorderSig } =
-    pinChrome(
+    pinChrome({
       expandable,
       showReorder,
-      Boolean(selection),
+      hasSelection: Boolean(selection),
       showActions,
       actionsPinned,
       reorderPinned,
-      table.columns,
-      pinOffset
-    );
+      columns: table.columns,
+      pinOffset,
+    });
   // With no maxHeight and no pins the wrapper must stay a NON-scroll container
   // so page-scroll sticky headers keep working — but a table wider than the
   // card would then bleed past it. Measure, and scroll only on real overflow.
@@ -794,7 +804,7 @@ export function DesktopTable<TRow>({
   const renderPinnedRow = (row: TRow, side: RowPinSide) => {
     const id = getRowId(row);
     const found = rows.findIndex((item) => getRowId(item) === id);
-    const sourceIndex = found < 0 ? 0 : found;
+    const sourceIndex = Math.max(0, found);
     return (
       <Row
         key={id}
@@ -890,8 +900,8 @@ export function DesktopTable<TRow>({
         tableStyle={fittedTableStyle(fitColumns)}
       >
         <thead ref={theadRef}>
-          {groupRows?.map((groups, rowIndex) => (
-            <Table.Row key={rowIndex}>
+          {groupRows?.map((groups) => (
+            <Table.Row key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.ColumnHeaderCell />}
               <When show={showReorder}>
                 <Table.ColumnHeaderCell />

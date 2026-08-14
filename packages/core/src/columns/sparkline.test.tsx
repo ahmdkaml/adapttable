@@ -45,7 +45,7 @@ describe("Sparkline", () => {
     const { rerender } = render(<Sparkline values={[1, 2, 3]} kind="bar" />);
     expect(screen.getByRole("img").querySelectorAll("rect")).toHaveLength(3);
     rerender(<Sparkline values={[1, 2, 3]} kind="area" />);
-    expect(screen.getByRole("img").querySelectorAll("path").length).toBe(2);
+    expect(screen.getByRole("img").querySelectorAll("path")).toHaveLength(2);
   });
 
   it("draws a one-point line", () => {

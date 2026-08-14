@@ -153,16 +153,16 @@ const SELECTION_WIDTH = 48;
 const ACTIONS_WIDTH = 120;
 
 /** Pin leads and whether the table needs a horizontal scroll box. */
-function muiPinGeometry(
-  expandActive: boolean,
-  showReorder: boolean,
-  hasSelection: boolean,
-  showActions: boolean,
-  actionsPinned: boolean,
-  reorderPinned: boolean,
-  columns: readonly { key: string }[],
-  pinOffset?: (key: string) => unknown
-): {
+function muiPinGeometry(options: {
+  expandActive: boolean;
+  showReorder: boolean;
+  hasSelection: boolean;
+  showActions: boolean;
+  actionsPinned: boolean;
+  reorderPinned: boolean;
+  columns: readonly { key: string }[];
+  pinOffset?: (key: string) => unknown;
+}): {
   hasPinned: boolean;
   leads: PinLeads;
   leadStart: number;
@@ -170,6 +170,16 @@ function muiPinGeometry(
   selectionLead: number;
   reorderLead: number;
 } {
+  const {
+    expandActive,
+    showReorder,
+    hasSelection,
+    showActions,
+    actionsPinned,
+    reorderPinned,
+    columns,
+    pinOffset,
+  } = options;
   const expand = expandActive ? EXPAND_WIDTH : 0;
   const reorder = showReorder ? REORDER_COLUMN_WIDTH : 0;
   const start = expand + reorder + (hasSelection ? SELECTION_WIDTH : 0);
@@ -741,16 +751,16 @@ export function DesktopTable<TRow>({
   // Inside a maxHeight scroll box the box itself is the sticky context, so
   // the header pins to ITS top — a viewport offset would float it mid-box.
   const { hasPinned, leads, leadStart, leadEnd, selectionLead, reorderLead } =
-    muiPinGeometry(
+    muiPinGeometry({
       expandActive,
       showReorder,
-      Boolean(selection),
+      hasSelection: Boolean(selection),
       showActions,
       actionsPinned,
       reorderPinned,
-      table.columns,
-      pinOffset
-    );
+      columns: table.columns,
+      pinOffset,
+    });
   // Measured (ResizeObserver) horizontal overflow: with no maxHeight and no
   // pins, the wrapper only becomes a scroll container when the table is
   // actually wider than it — an unconditional `overflowX: auto` would trap
@@ -883,7 +893,7 @@ export function DesktopTable<TRow>({
   const renderPinnedRow = (row: TRow, side: RowPinSide) => {
     const id = getRowId(row);
     const found = rows.findIndex((item) => getRowId(item) === id);
-    const sourceIndex = found < 0 ? 0 : found;
+    const sourceIndex = Math.max(0, found);
     return (
       <DesktopRow
         key={id}
@@ -958,11 +968,11 @@ export function DesktopTable<TRow>({
         style={fittedTableStyle(fitColumns)}
       >
         <TableHead ref={theadRef}>
-          {groupRows?.map((groups, rowIndex) => (
+          {groupRows?.map((groups) => (
             // Decorative group rows. They deliberately skip the sticky `headSx`
             // treatment: sticking every header row at the same `top` would
             // overlap them, so only the sortable header row pins.
-            <TableRow key={rowIndex}>
+            <TableRow key={groups.map((cell) => cell.key).join("|")}>
               {expandActive && <TableCell padding="checkbox" />}
               <ExtraCheckboxCell show={showReorder} />
               {selection && <TableCell padding="checkbox" />}

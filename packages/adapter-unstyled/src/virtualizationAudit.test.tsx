@@ -53,8 +53,8 @@ describe("virtualization compatibility (unstyled)", () => {
   it("holds up with grouping armed", () => {
     table({ groupBy: "team", groupAggregates: () => ({ budget: 1 }) });
     expect(
-      document.querySelectorAll('[data-adapttable-part="group-row"]').length
-    ).toBe(3);
+      document.querySelectorAll('[data-adapttable-part="group-row"]')
+    ).toHaveLength(3);
     expect(rows().length).toBeGreaterThan(0);
   });
 
@@ -66,8 +66,7 @@ describe("virtualization compatibility (unstyled)", () => {
     });
     expect(
       document.querySelectorAll('[data-adapttable-part="group-footer-row"]')
-        .length
-    ).toBe(3);
+    ).toHaveLength(3);
   });
 
   it("expands a row without the warning it used to carry", () => {

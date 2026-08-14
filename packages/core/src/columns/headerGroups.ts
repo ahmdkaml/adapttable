@@ -52,7 +52,7 @@ export function applyCollapsedColumnGroups<TRow>(
     const active = new Set(
       path.map((_, index) => columnGroupId(path.slice(0, index + 1)))
     );
-    for (const id of [...seen]) {
+    for (const id of seen) {
       if (!active.has(id)) seen.delete(id);
     }
     for (let depth = 1; depth <= path.length; depth += 1) {

@@ -152,7 +152,7 @@ export function useEditHistory<TRow>(
   );
 
   const undo = useCallback(() => {
-    const entry = past.current[past.current.length - 1];
+    const entry = past.current.at(-1);
     if (!entry) return 0;
     past.current = past.current.slice(0, -1);
     future.current = [...future.current, entry];
@@ -161,7 +161,7 @@ export function useEditHistory<TRow>(
   }, [replay, sync]);
 
   const redo = useCallback(() => {
-    const entry = future.current[future.current.length - 1];
+    const entry = future.current.at(-1);
     if (!entry) return 0;
     future.current = future.current.slice(0, -1);
     past.current = [...past.current, entry];

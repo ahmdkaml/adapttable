@@ -78,7 +78,7 @@ describe("nestedTableDetail", () => {
       parent: { density: "compact" },
     })!;
     render(<>{detail(ADA)}</>);
-    expect(region()).toHaveAttribute("role", "region");
+    expect(region()?.tagName).toBe("SECTION");
     expect(region()).toHaveAttribute("aria-label", "Orders for Ada");
     // The defaults reached the host's own component.
     expect(screen.getByRole("table")).toHaveAttribute(

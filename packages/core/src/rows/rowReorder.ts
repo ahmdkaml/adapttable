@@ -13,14 +13,13 @@
 import type { CSSProperties, DragEvent, KeyboardEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
 
-import { REORDER_COLUMN_KEY } from "../columns/columnMenuModel";
 import { useEventCallback } from "../hooks/useEventCallback";
 import { isRtlElement } from "../layout/writingDirection";
 
 /** MIME type carrying the dragged row id during a reorder drag. */
 export const ROW_DND_MIME = "application/x-adapttable-row";
 
-export { REORDER_COLUMN_KEY };
+export { REORDER_COLUMN_KEY } from "../columns/columnMenuModel";
 
 /** Width (px) of the injected reorder column — shared so pin leads agree. */
 export const REORDER_COLUMN_WIDTH = 40;

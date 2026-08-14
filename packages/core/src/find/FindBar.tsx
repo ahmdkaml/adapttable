@@ -90,9 +90,7 @@ export function FindBar({
         onKeyDown={onKeyDown}
         style={{ font: "inherit", padding: "0.25em 0.5em", minWidth: "12em" }}
       />
-      <span data-adapttable-part="find-count" role="status">
-        {count}
-      </span>
+      <output data-adapttable-part="find-count">{count}</output>
       <button
         type="button"
         data-adapttable-part="find-previous"

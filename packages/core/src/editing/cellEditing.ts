@@ -288,7 +288,7 @@ function stringifyEditSeed(value: unknown): string {
   // A multi-select's stored value is the array it commits, so it seeds its own
   // editor without the host writing an `editValue` for the round trip.
   if (Array.isArray(value)) {
-    return formatMultiDraft(value.map((entry) => String(entry)));
+    return formatMultiDraft(value.map(String));
   }
   // A Date seeds the date editors in the shape their inputs hold. Local parts,
   // not the ISO string: `toISOString` shifts to UTC, which moves the day for

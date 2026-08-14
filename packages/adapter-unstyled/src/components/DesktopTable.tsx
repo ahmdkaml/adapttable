@@ -887,7 +887,7 @@ export function DesktopTable<TRow>({
   const renderPinnedRow = (row: TRow, side: RowPinSide): ReactElement => {
     const id = getRowId(row);
     const found = rows.findIndex((item) => getRowId(item) === id);
-    const sourceIndex = found < 0 ? 0 : found;
+    const sourceIndex = Math.max(0, found);
     return (
       <Row
         gridFocus={gridFocus}
@@ -959,9 +959,9 @@ export function DesktopTable<TRow>({
         data-adapttable-part="thead"
         className={classNames.thead}
       >
-        {groupRows?.map((groups, rowIndex) => (
+        {groupRows?.map((groups) => (
           <tr
-            key={rowIndex}
+            key={groups.map((group) => group.key).join("|")}
             data-adapttable-part="header-group-row"
             className={classNames.headerGroupRow}
           >

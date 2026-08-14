@@ -76,7 +76,7 @@ export function sparklineSummary(values: readonly number[]): string {
     if (value < min) min = value;
     if (value > max) max = value;
   }
-  const last = series[series.length - 1];
+  const last = series.at(-1);
   return `${series.length} values, min ${min}, max ${max}, last ${last}`;
 }
 
@@ -171,7 +171,7 @@ function sparklineAreaPath(
   const line = sparklineLinePath(series, width, height);
   if (line === "") return "";
   const points = sparklinePoints(series, width, height);
-  const last = points[points.length - 1];
+  const last = points.at(-1);
   const first = points[0];
   if (last === undefined || first === undefined) return "";
   const baseline = height - PAD;
@@ -279,7 +279,7 @@ export function sparklineColumn<TRow>(
     sortValue: (row) => {
       const series = finiteSparklineValues(spec.values(row));
       if (series.length === 0) return undefined;
-      return series[series.length - 1];
+      return series.at(-1);
     },
     exportValue: (row) => sparklineExportValue(spec.values(row)),
   };

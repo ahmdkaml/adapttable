@@ -6,14 +6,12 @@ import { type FilterDef, filterLabel, RANGE_SUFFIXES } from "./filterDefs";
 import {
   DATE_OP_LABEL_KEYS,
   DATE_OPS,
-  type DateOp,
   filterOpKey,
   isBetweenFilterOp,
   isListFilterOp,
   isValuelessFilterOp,
   NUMBER_OP_LABEL_KEYS,
   NUMBER_OPS,
-  type NumberOp,
   parseTextOp,
   TEXT_OP_LABEL_KEYS,
   TEXT_OPS,
@@ -241,7 +239,7 @@ export function filterOpLabel(
   return typeof value === "string" ? value : String(key);
 }
 
-export type { DateOp, NumberOp, TextOp };
+export type { DateOp, NumberOp, TextOp } from "./operators";
 
 /** One choice in a tri-state boolean filter (`""` = any). */
 export type BooleanChoice = "" | "true" | "false";

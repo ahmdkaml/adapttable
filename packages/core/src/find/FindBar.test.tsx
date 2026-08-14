@@ -77,7 +77,7 @@ describe("FindBar", () => {
       <FindBar find={stateFor({ index: 2, matches: Array(12).fill({}) })} />
     );
     const count = part("find-count")!;
-    expect(count).toHaveAttribute("role", "status");
+    expect(count.tagName).toBe("OUTPUT");
     // 1-based for the reader: the third match of twelve.
     expect(count).toHaveTextContent("3 of 12");
   });

@@ -721,9 +721,9 @@ export function buildColumns<TRow>({
           );
           return {
             "data-column-key": column.key,
-            ...(gridFocus?.getColumnHeaderProps(columnIndex, {
+            ...gridFocus?.getColumnHeaderProps(columnIndex, {
               sortable: column.sortable,
-            }) ?? {}),
+            }),
             ...head,
             // The sizing merges INTO whatever style the header already has,
             // rather than being overwritten by it.

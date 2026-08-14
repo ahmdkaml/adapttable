@@ -59,7 +59,7 @@ export function setFilterTreeCombinator(
   if (!group) return tree;
   if (path.length === 0) return { ...tree, combinator };
   const parentPath = path.slice(0, -1);
-  const index = path[path.length - 1]!;
+  const index = path.at(-1)!;
   return replaceChild(tree, parentPath, index, { ...group, combinator });
 }
 
@@ -78,7 +78,7 @@ export function appendFilterTreeChild(
   };
   if (path.length === 0) return next;
   const parentPath = path.slice(0, -1);
-  const index = path[path.length - 1]!;
+  const index = path.at(-1)!;
   return replaceChild(root, parentPath, index, next);
 }
 
@@ -109,7 +109,7 @@ export function replaceFilterTreeNode(
     return isFilterGroup(next) ? next : tree;
   }
   const parentPath = path.slice(0, -1);
-  const index = path[path.length - 1]!;
+  const index = path.at(-1)!;
   return replaceChild(tree, parentPath, index, next);
 }
 
@@ -123,7 +123,7 @@ export function removeFilterTreeNode(
 ): QueryFilterGroup | undefined {
   if (path.length === 0) return undefined;
   const parentPath = path.slice(0, -1);
-  const index = path[path.length - 1]!;
+  const index = path.at(-1)!;
   const next = replaceChild(tree, parentPath, index, undefined);
   if (next.conditions.length === 0) return undefined;
   return next;

@@ -91,6 +91,7 @@ import {
   isValidElement,
   type ReactElement,
   type ReactNode,
+  type Ref,
   type UIEventHandler,
   useCallback,
   useMemo,
@@ -1057,18 +1058,13 @@ function DesktopTableBody<TRow>({
   );
   const components = useMemo(() => {
     const header = pinArmed
-      ? {
-          wrapper: (props: HTMLAttributes<HTMLTableSectionElement>) => (
-            <thead ref={theadRef} {...props} />
-          ),
-        }
+      ? { wrapper: pinnedTheadComponent(theadRef) }
       : undefined;
-    const body = {
-      wrapper: (props: HTMLAttributes<HTMLTableSectionElement>) => (
-        <tbody data-adapttable-part="tbody" {...props} />
-      ),
+    return {
+      ...gridComponents,
+      ...(header ? { header } : {}),
+      body: { wrapper: TbodyWrapper },
     };
-    return { ...gridComponents, ...(header ? { header } : {}), body };
   }, [gridComponents, pinArmed, theadRef]);
 
   return (
@@ -1128,6 +1124,20 @@ function DesktopTableBody<TRow>({
 function gridTableComponent(gridProps: Record<string, unknown>) {
   return function GridTable(tableProps: Record<string, unknown>) {
     return <table {...tableProps} {...gridProps} />;
+  };
+}
+
+function TbodyWrapper(
+  props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
+) {
+  return <tbody data-adapttable-part="tbody" {...props} />;
+}
+
+function pinnedTheadComponent(theadRef: Ref<HTMLTableSectionElement | null>) {
+  return function PinnedThead(
+    props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
+  ) {
+    return <thead ref={theadRef} {...props} />;
   };
 }
 

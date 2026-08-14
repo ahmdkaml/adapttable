@@ -133,8 +133,8 @@ function NestedTableRegion({
 }>): ReactElement {
   const label = nested.label ?? DEFAULT_LABEL;
   return (
-    <div data-adapttable-part="nested-table" role="region" aria-label={label}>
+    <section data-adapttable-part="nested-table" aria-label={label}>
       {nested.table(nestedTableDefaults(label, parent))}
-    </div>
+    </section>
   );
 }

@@ -13,9 +13,12 @@
  */
 import type { ReactNode } from "react";
 
-import type { GroupedFlatEntry } from "../grouping/groupRows";
-import { makeGroupRowKey } from "../grouping/groupRows";
-import { formatGroupLabel, groupValueKey } from "../grouping/groupRows";
+import {
+  formatGroupLabel,
+  type GroupedFlatEntry,
+  groupValueKey,
+  makeGroupRowKey,
+} from "../grouping/groupRows";
 
 /**
  * One group row as a server returns it.
@@ -99,7 +102,7 @@ export function serverGroupEntries<TRow>(
     level: number,
     path: readonly string[]
   ): void => {
-    const key = groupBy[level] ?? groupBy[groupBy.length - 1] ?? "";
+    const key = groupBy[level] ?? groupBy.at(-1) ?? "";
     for (const node of nodes) {
       const here = [...path, groupValueKey(node.value)];
       const groupKey = makeGroupRowKey(groupBy.slice(0, level + 1), here);

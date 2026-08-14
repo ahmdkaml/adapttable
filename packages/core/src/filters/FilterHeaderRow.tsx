@@ -4,8 +4,7 @@
  */
 import type { CSSProperties, ReactElement } from "react";
 
-import type { ColumnDef } from "../types";
-import type { TableLabels } from "../types";
+import type { ColumnDef, TableLabels } from "../types";
 import { ColumnSpacer } from "../virtual/ColumnSpacer";
 import { defaultFilterRegistry } from "./filterBuiltins";
 import { type FilterDef, filterLabel } from "./filterDefs";
@@ -86,8 +85,7 @@ function Pad({
   className?: string;
 }>): ReactElement {
   return (
-    <th
-      aria-hidden="true"
+    <td
       data-adapttable-part={part}
       data-sticky={stickyAttr}
       style={style}

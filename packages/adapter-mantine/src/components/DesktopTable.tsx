@@ -1113,7 +1113,7 @@ export function DesktopTable<TRow>({
   const renderPinnedRow = (row: TRow, side: RowPinSide) => {
     const id = getRowId(row);
     const found = rows.findIndex((item) => getRowId(item) === id);
-    const sourceIndex = found < 0 ? 0 : found;
+    const sourceIndex = Math.max(0, found);
     return (
       <Row
         key={id}
@@ -1210,8 +1210,8 @@ export function DesktopTable<TRow>({
         }}
       >
         <Table.Thead ref={theadRef} style={{ background: SURFACE }}>
-          {groupRows?.map((groups, rowIndex) => (
-            <Table.Tr key={rowIndex}>
+          {groupRows?.map((groups) => (
+            <Table.Tr key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.Th />}
               <When show={showReorder}>
                 <Table.Th />
