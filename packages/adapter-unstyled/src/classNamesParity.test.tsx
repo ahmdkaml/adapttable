@@ -394,6 +394,24 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   mount({ override: { onRowReorder: vi.fn() } }).unmount();
   mount({ isMobile: true, override: { onRowReorder: vi.fn() } }).unmount();
 
+  mount({
+    override: {
+      extraRows: [
+        { key: "s", kind: "separator", beforeRowId: "2" },
+        { key: "n", kind: "fullWidth", render: () => "Note" },
+      ],
+    },
+  }).unmount();
+  mount({
+    isMobile: true,
+    override: {
+      extraRows: [
+        { key: "s", kind: "separator", beforeRowId: "2" },
+        { key: "n", kind: "fullWidth", render: () => "Note" },
+      ],
+    },
+  }).unmount();
+
   // Mobile cards with an expanded card detail.
   const mobile = mount({ isMobile: true });
   const cardExpand = part("expand-button");
@@ -565,6 +583,10 @@ const KEYS = [
   "cardValue",
   "scrollBox",
   "virtualSpacer",
+  "separatorRow",
+  "separatorCell",
+  "fullWidthRow",
+  "fullWidthCell",
   "summary",
   "summaryRow",
   "summaryCell",

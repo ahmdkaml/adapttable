@@ -94,6 +94,7 @@ export const ru: Required<TableLabels> = {
   pinToTop: "Закрепить сверху",
   pinToBottom: "Закрепить снизу",
   unpinRow: "Открепить строку",
+  rowSeparator: "Разделитель",
   moreGroups: (remaining) => `Показать ещё групп: ${remaining}`,
   moreRowsInGroup: (remaining) => `Показать ещё в этой группе: ${remaining}`,
   groupTotal: (label) => `Итого: ${label}`,

@@ -19,6 +19,7 @@ import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { GetCellSpan } from "./rows/cellSpan";
+import type { ExtraRow } from "./rows/extraRows";
 import type { RowPinState } from "./rows/rowPinning";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
@@ -368,6 +369,13 @@ export interface BaseDataTableProps<TRow> {
    * derived from data, so nothing is written to the URL.
    */
   getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * Host-injected separator and full-width rows, spliced into the body
+   * by `beforeRowId`. Omit the list and nothing is inserted. Extras are
+   * content, not table state — nothing is written to the URL. Mobile
+   * cards keep the same slots.
+   */
+  extraRows?: readonly ExtraRow[];
   /**
    * Delete without a confirmation dialog. Off by default — a delete is
    * destructive and the table cannot undo it.

@@ -47,6 +47,7 @@ import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
 import type { BaseDataTableProps } from "./props";
+import { insertExtraRows } from "./rows/extraRows";
 import { type RowMutationsState, useRowMutations } from "./rows/rowMutations";
 import {
   partitionPinnedRows,
@@ -833,11 +834,14 @@ export function useTableChrome<TRow>(
     const openGroups = entries.flatMap((entry) =>
       entry.kind === "group" ? [{ key: entry.key, level: entry.level }] : []
     );
+    const withExtras = insertExtraRows(entries, props.extraRows, (entry) =>
+      entry.kind === "row" ? entry.key : undefined
+    );
     return {
       groupBy: groupByKeys,
       collapsed: groupCollapse,
       aggregates: props.groupAggregates,
-      entries,
+      entries: withExtras,
       setGroupBy,
       /**
        * Reveal the next page of groups, or of one group's rows. The table
@@ -876,6 +880,7 @@ export function useTableChrome<TRow>(
     props.groupPageSize,
     props.groupRowPageSize,
     props.onGroupLoadMore,
+    props.extraRows,
     groupPaging,
     setGroupBy,
   ]);

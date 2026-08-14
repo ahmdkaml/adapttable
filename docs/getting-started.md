@@ -243,6 +243,7 @@ The source for each lives in
 - [Row reordering](./row-reordering.md) — opt-in `onRowReorder`, Space-lift
 - [Row pinning](./row-pinning.md) — sticky top and bottom rows, `{ top, bottom }` ids
 - [Row and column spanning](./row-spanning.md) — `getCellSpan`, one cell list per row
+- [Full-width and separator rows](./full-width-rows.md) — `extraRows`, host-injected slots
   keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.

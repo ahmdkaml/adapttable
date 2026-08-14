@@ -10,6 +10,9 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  EXTRA_ROW_PARTS,
+  insertExtraRows,
+  isExtraEntry,
   orderedCardEntries,
   resolveMobileLabel,
   rowClickProps,
@@ -306,6 +309,7 @@ export function MobileCards<TRow>({
   windowStart = 0,
   pinnedTopRows = [],
   pinnedBottomRows = [],
+  extraRows,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = orderedCardEntries(
@@ -383,27 +387,91 @@ export function MobileCards<TRow>({
         />
       )}
       {grouping
-        ? grouping.entries.map((entry) =>
-            entry.kind === "group" ||
-            entry.kind === "groupFooter" ||
-            entry.kind === "groupMore" ? (
-              <li key={entry.key} style={{ display: "block" }}>
-                <GroupHeaderCard
-                  entry={entry}
-                  columns={columns}
-                  selection={selection}
-                  labels={labels}
-                  classNames={classNames}
-                  onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
-                  onShowMore={grouping.showMore}
-                />
+        ? grouping.entries.map((entry) => {
+            if (isExtraEntry(entry)) {
+              return (
+                <li
+                  key={entry.key}
+                  data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].row}
+                  role={entry.kind === "separator" ? "separator" : undefined}
+                  aria-label={
+                    entry.kind === "separator" ? labels.rowSeparator : undefined
+                  }
+                  className={
+                    entry.kind === "separator"
+                      ? classNames.separatorRow
+                      : classNames.fullWidthRow
+                  }
+                  style={{ display: "block" }}
+                >
+                  <div
+                    data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].cell}
+                    className={
+                      entry.kind === "separator"
+                        ? classNames.separatorCell
+                        : classNames.fullWidthCell
+                    }
+                  >
+                    {entry.kind === "fullWidth" ? entry.render?.() : null}
+                  </div>
+                </li>
+              );
+            }
+            if (
+              entry.kind === "group" ||
+              entry.kind === "groupFooter" ||
+              entry.kind === "groupMore"
+            ) {
+              return (
+                <li key={entry.key} style={{ display: "block" }}>
+                  <GroupHeaderCard
+                    entry={entry}
+                    columns={columns}
+                    selection={selection}
+                    labels={labels}
+                    classNames={classNames}
+                    onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                    onShowMore={grouping.showMore}
+                  />
+                </li>
+              );
+            }
+            return renderCard(entry.row, entry.index, entry.key);
+          })
+        : insertExtraRows(
+            bodyRowEntries(entries, tree),
+            extraRows,
+            (e) => e.key
+          ).map((slot) =>
+            isExtraEntry(slot) ? (
+              <li
+                key={slot.key}
+                data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].row}
+                role={slot.kind === "separator" ? "separator" : undefined}
+                aria-label={
+                  slot.kind === "separator" ? labels.rowSeparator : undefined
+                }
+                className={
+                  slot.kind === "separator"
+                    ? classNames.separatorRow
+                    : classNames.fullWidthRow
+                }
+                style={{ display: "block" }}
+              >
+                <div
+                  data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].cell}
+                  className={
+                    slot.kind === "separator"
+                      ? classNames.separatorCell
+                      : classNames.fullWidthCell
+                  }
+                >
+                  {slot.kind === "fullWidth" ? slot.render?.() : null}
+                </div>
               </li>
             ) : (
-              renderCard(entry.row, entry.index, entry.key)
+              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
             )
-          )
-        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
-            renderCard(row, index, key, treeEntry)
           )}
       {paddingBottom > 0 && (
         <li

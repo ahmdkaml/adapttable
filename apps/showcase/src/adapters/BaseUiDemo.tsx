@@ -128,6 +128,7 @@ export function BaseUiDemo({
   rowReorder,
   rowPinning,
   cellSpan,
+  extraRows,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -148,6 +149,7 @@ export function BaseUiDemo({
   rowReorder?: boolean;
   rowPinning?: boolean;
   cellSpan?: boolean;
+  extraRows?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -166,6 +168,7 @@ export function BaseUiDemo({
       rowReorder={rowReorder}
       rowPinning={rowPinning}
       cellSpan={cellSpan}
+      extraRows={extraRows}
       editing={editing}
       render={(source, columns) => (
         <DataTable

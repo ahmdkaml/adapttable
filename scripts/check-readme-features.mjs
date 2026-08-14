@@ -39,6 +39,7 @@ const FEATURES = {
   "row-reordering": /row reorder/i,
   "row-pinning": /row pinn/i,
   "row-spanning": /row (and column )?spann|cell spann/i,
+  "full-width-rows": /full-width|separator row|extraRows/i,
   "saved-views": /saved view/i,
   "tree-data": /tree data|hierarchical rows/i,
   selection: /selection/i,

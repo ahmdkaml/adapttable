@@ -21,6 +21,7 @@ import {
   cellsForRow,
   columnFlexShares,
   columnSizeStyle,
+  EXTRA_ROW_PARTS,
   FillHandle,
   headerGroupRow,
   REORDER_COLUMN_WIDTH,
@@ -45,6 +46,7 @@ import {
   type AdaptTableGroupRow,
   type GroupedDataRecord,
   GroupHeaderCell,
+  isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
 
@@ -471,6 +473,9 @@ function renderDataCell<TRow>(
     tree?: BuildColumnsTree<TRow>;
   }
 ): ReactNode {
+  if (isAdaptTableExtraRow(record)) {
+    return record.extraKind === "fullWidth" ? record.render?.() : null;
+  }
   if (isAdaptTableGroupRow(record)) {
     return renderGroupDataCell(column, columnIndex, record, options);
   }
@@ -558,6 +563,21 @@ export function buildColumns<TRow>({
           : undefined,
         showSorterTooltip: false,
         onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) => {
+          if (isAdaptTableExtraRow(record)) {
+            if (columnIndex === 0) {
+              return {
+                colSpan: grouping?.dataColumnCount ?? columns.length,
+                "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].cell,
+                role:
+                  record.extraKind === "separator" ? "separator" : undefined,
+                "aria-label":
+                  record.extraKind === "separator"
+                    ? labels.rowSeparator
+                    : undefined,
+              };
+            }
+            return { colSpan: 0 };
+          }
           const grouped = groupedOnCell(
             column.key,
             columnIndex,
@@ -636,7 +656,9 @@ export function buildColumns<TRow>({
       width: REORDER_COLUMN_WIDTH,
       fixed: reorderFixed ? "left" : undefined,
       onCell: (record: GroupedDataRecord<TRow>) => {
-        if (isAdaptTableGroupRow(record)) return { colSpan: 0 };
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return { colSpan: 0 };
+        }
         return {};
       },
       onHeaderCell: () => ({
@@ -648,7 +670,9 @@ export function buildColumns<TRow>({
         record: GroupedDataRecord<TRow>,
         index: number
       ) => {
-        if (isAdaptTableGroupRow(record)) return null;
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return null;
+        }
         const row = record;
         const id = getRowId(row);
         return (
@@ -686,12 +710,16 @@ export function buildColumns<TRow>({
       width: 1,
       fixed: actionsFixed ? "right" : undefined,
       onCell: (record: GroupedDataRecord<TRow>) => {
-        if (isAdaptTableGroupRow(record)) return { colSpan: 0 };
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return { colSpan: 0 };
+        }
         return cellStyle("end");
       },
       onHeaderCell: () => cellStyle("end"),
       render: (_value: unknown, record: GroupedDataRecord<TRow>) => {
-        if (isAdaptTableGroupRow(record)) return null;
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return null;
+        }
         const row = record;
         return (
           <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>

@@ -149,6 +149,7 @@ export default defineConfig({
             { label: "Row reordering", slug: "row-reordering" },
             { label: "Row pinning", slug: "row-pinning" },
             { label: "Row and column spanning", slug: "row-spanning" },
+            { label: "Full-width and separator rows", slug: "full-width-rows" },
             { label: "Row grouping", slug: "row-grouping" },
             { label: "Column management", slug: "column-management" },
             { label: "Saved views", slug: "saved-views" },

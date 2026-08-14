@@ -396,6 +396,15 @@ export {
   spanningArmed,
 } from "./rows/cellSpan";
 export {
+  EXTRA_ROW_PARTS,
+  type ExtraEntry,
+  type ExtraRow,
+  type ExtraRowKind,
+  extraRowsArmed,
+  insertExtraRows,
+  isExtraEntry,
+} from "./rows/extraRows";
+export {
   applyRowPatches,
   type InsertPatch,
   insertRow,

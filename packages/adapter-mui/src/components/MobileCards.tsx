@@ -10,6 +10,9 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  EXTRA_ROW_PARTS,
+  insertExtraRows,
+  isExtraEntry,
   orderedCardEntries,
   resolveMobileLabel,
   rowClickProps,
@@ -288,6 +291,7 @@ export function MobileCards<TRow>({
   windowStart = 0,
   pinnedTopRows = [],
   pinnedBottomRows = [],
+  extraRows,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = orderedCardEntries(
@@ -366,26 +370,70 @@ export function MobileCards<TRow>({
     >
       {paddingTop > 0 && <Box aria-hidden sx={{ height: paddingTop }} />}
       {grouping
-        ? grouping.entries.map((entry) =>
-            entry.kind === "group" ||
-            entry.kind === "groupFooter" ||
-            entry.kind === "groupMore" ? (
-              <GroupHeaderCard
-                key={entry.key}
-                entry={entry}
-                columns={columns}
-                selection={selection}
-                labels={labels}
-                compact={compact}
-                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
-                onShowMore={grouping.showMore}
-              />
+        ? grouping.entries.map((entry) => {
+            if (isExtraEntry(entry)) {
+              return (
+                <Card
+                  key={entry.key}
+                  variant="outlined"
+                  role={entry.kind === "separator" ? "separator" : "listitem"}
+                  aria-label={
+                    entry.kind === "separator" ? labels.rowSeparator : undefined
+                  }
+                  data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].row}
+                >
+                  <CardContent
+                    data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].cell}
+                  >
+                    {entry.kind === "fullWidth" ? entry.render?.() : null}
+                  </CardContent>
+                </Card>
+              );
+            }
+            if (
+              entry.kind === "group" ||
+              entry.kind === "groupFooter" ||
+              entry.kind === "groupMore"
+            ) {
+              return (
+                <GroupHeaderCard
+                  key={entry.key}
+                  entry={entry}
+                  columns={columns}
+                  selection={selection}
+                  labels={labels}
+                  compact={compact}
+                  onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                  onShowMore={grouping.showMore}
+                />
+              );
+            }
+            return renderCard(entry.row, entry.index, entry.key);
+          })
+        : insertExtraRows(
+            bodyRowEntries(entries, tree),
+            extraRows,
+            (e) => e.key
+          ).map((slot) =>
+            "kind" in slot ? (
+              <Card
+                key={slot.key}
+                variant="outlined"
+                role={slot.kind === "separator" ? "separator" : "listitem"}
+                aria-label={
+                  slot.kind === "separator" ? labels.rowSeparator : undefined
+                }
+                data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].row}
+              >
+                <CardContent
+                  data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].cell}
+                >
+                  {slot.kind === "fullWidth" ? slot.render?.() : null}
+                </CardContent>
+              </Card>
             ) : (
-              renderCard(entry.row, entry.index, entry.key)
+              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
             )
-          )
-        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
-            renderCard(row, index, key, treeEntry)
           )}
       {summaryCells && (
         <Card variant="outlined" role="listitem">

@@ -89,6 +89,7 @@ export const fa: Required<TableLabels> = {
   pinToTop: "سنجاق به بالا",
   pinToBottom: "سنجاق به پایین",
   unpinRow: "رها کردن ردیف",
+  rowSeparator: "جداکننده",
   moreGroups: (remaining) => `نمایش ${remaining} گروه دیگر`,
   moreRowsInGroup: (remaining) => `نمایش ${remaining} مورد دیگر در این گروه`,
   groupTotal: (label) => `جمع ${label}`,

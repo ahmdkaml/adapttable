@@ -90,6 +90,7 @@ export const ur: Required<TableLabels> = {
   pinToTop: "اوپر پن کریں",
   pinToBottom: "نیچے پن کریں",
   unpinRow: "قطار کا پن ہٹائیں",
+  rowSeparator: "جداکار",
   moreGroups: (remaining) => `${remaining} مزید گروپ دکھائیں`,
   moreRowsInGroup: (remaining) => `اس گروپ میں ${remaining} مزید`,
   groupTotal: (label) => `${label} کا کل`,

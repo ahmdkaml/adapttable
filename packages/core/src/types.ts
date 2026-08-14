@@ -509,6 +509,8 @@ export interface TableLabels {
   pinToBottom?: string;
   /** Release a pinned row back into the scroll window. */
   unpinRow?: string;
+  /** Accessible name of a decorative separator row. */
+  rowSeparator?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

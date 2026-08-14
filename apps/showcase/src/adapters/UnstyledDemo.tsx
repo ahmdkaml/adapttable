@@ -245,6 +245,7 @@ export function UnstyledDemo({
   rowReorder,
   rowPinning,
   cellSpan,
+  extraRows,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -264,6 +265,7 @@ export function UnstyledDemo({
   rowReorder?: boolean;
   rowPinning?: boolean;
   cellSpan?: boolean;
+  extraRows?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -285,6 +287,7 @@ export function UnstyledDemo({
       rowReorder={rowReorder}
       rowPinning={rowPinning}
       cellSpan={cellSpan}
+      extraRows={extraRows}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}

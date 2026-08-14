@@ -494,7 +494,9 @@ describe("buildGroupedFlatModel — footers", () => {
   it("closes the innermost group first", () => {
     const nested = build({ groupBy: ["region", "id"] });
     const shape = nested.map((entry) =>
-      entry.kind === "row" ? "row" : `${entry.kind}:${entry.level}`
+      entry.kind === "row" || !("level" in entry)
+        ? entry.kind
+        : `${entry.kind}:${entry.level}`
     );
     expect(shape).toEqual([
       "group:0",

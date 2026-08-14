@@ -32,6 +32,7 @@ type DemoComponent = ComponentType<
     rowReorder?: boolean;
     rowPinning?: boolean;
     cellSpan?: boolean;
+    extraRows?: boolean;
     editing?: boolean;
   }>
 >;
@@ -136,6 +137,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [rowReorder, setRowReorder] = useState<"on" | "off">("off");
   const [rowPinning, setRowPinning] = useState<"on" | "off">("off");
   const [cellSpan, setCellSpan] = useState<"on" | "off">("off");
+  const [extraRows, setExtraRows] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -348,6 +350,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Extras">
+          <Segmented
+            label="extra rows"
+            value={extraRows}
+            onChange={(v) => {
+              startTransition(() => setExtraRows(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Batch">
           <Segmented
             label="batch"
@@ -401,6 +416,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               rowReorder={rowReorder === "on"}
               rowPinning={rowPinning === "on"}
               cellSpan={cellSpan === "on"}
+              extraRows={extraRows === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

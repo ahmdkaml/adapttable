@@ -14,6 +14,10 @@ import {
   type UseDataTableResult,
 } from "@adapttable/core";
 import {
+  EXTRA_ROW_PARTS,
+  type ExtraRow,
+  insertExtraRows,
+  isExtraEntry,
   orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
@@ -365,6 +369,7 @@ export function MobileCards<TRow>({
   windowStart = 0,
   pinnedTopRows = [],
   pinnedBottomRows = [],
+  extraRows,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   /** Class applied to every card (merged before `rowClassName`). */
@@ -419,6 +424,7 @@ export function MobileCards<TRow>({
   windowStart?: number;
   pinnedTopRows?: readonly TRow[];
   pinnedBottomRows?: readonly TRow[];
+  extraRows?: readonly ExtraRow[];
 }>) {
   const { labels, selection, columns } = table;
   // Either the virtual slice or every source row, resolved to render entries
@@ -532,6 +538,22 @@ export function MobileCards<TRow>({
       {paddingTop > 0 && <li aria-hidden style={{ height: paddingTop }} />}
       {grouping
         ? grouping.entries.map((entry) => {
+            if (isExtraEntry(entry)) {
+              return (
+                <li
+                  key={entry.key}
+                  data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].row}
+                  role={entry.kind === "separator" ? "separator" : undefined}
+                  aria-label={
+                    entry.kind === "separator" ? labels.rowSeparator : undefined
+                  }
+                >
+                  <div data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].cell}>
+                    {entry.kind === "fullWidth" ? entry.render?.() : null}
+                  </div>
+                </li>
+              );
+            }
             if (
               entry.kind === "group" ||
               entry.kind === "groupFooter" ||
@@ -562,8 +584,27 @@ export function MobileCards<TRow>({
             }
             return renderLeafCard(entry.row, entry.index, entry.key);
           })
-        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
-            renderLeafCard(row, index, key, treeEntry)
+        : insertExtraRows(
+            bodyRowEntries(entries, tree),
+            extraRows,
+            (e) => e.key
+          ).map((slot) =>
+            "kind" in slot ? (
+              <li
+                key={slot.key}
+                data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].row}
+                role={slot.kind === "separator" ? "separator" : undefined}
+                aria-label={
+                  slot.kind === "separator" ? labels.rowSeparator : undefined
+                }
+              >
+                <div data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].cell}>
+                  {slot.kind === "fullWidth" ? slot.render?.() : null}
+                </div>
+              </li>
+            ) : (
+              renderLeafCard(slot.row, slot.index, slot.key, slot.treeEntry)
+            )
           )}
       {summaryRow && (
         <li>

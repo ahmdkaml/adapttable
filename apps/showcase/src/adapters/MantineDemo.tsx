@@ -91,6 +91,7 @@ export function MantineDemo({
   rowReorder,
   rowPinning,
   cellSpan,
+  extraRows,
   editing,
   cellNavigation,
   forceMobile,
@@ -112,6 +113,7 @@ export function MantineDemo({
   rowReorder?: boolean;
   rowPinning?: boolean;
   cellSpan?: boolean;
+  extraRows?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -132,6 +134,7 @@ export function MantineDemo({
         rowReorder={rowReorder}
         rowPinning={rowPinning}
         cellSpan={cellSpan}
+        extraRows={extraRows}
         editing={editing}
         render={(source, columns) => (
           <DataTable

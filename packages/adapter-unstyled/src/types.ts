@@ -234,6 +234,14 @@ export interface DataTableClassNames {
   scrollBox?: string;
   /** A virtualization padding spacer (desktop row or mobile card list). */
   virtualSpacer?: string;
+  /** A host-injected separator `<tr>`. */
+  separatorRow?: string;
+  /** The spanning cell inside a separator row. */
+  separatorCell?: string;
+  /** A host-injected full-width `<tr>`. */
+  fullWidthRow?: string;
+  /** The spanning cell inside a full-width row. */
+  fullWidthCell?: string;
   /** The `<tfoot>` holding the summary row. */
   summary?: string;
   /** The summary `<tr>` inside the footer. */

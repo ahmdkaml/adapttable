@@ -90,6 +90,7 @@ export const he: Required<TableLabels> = {
   pinToTop: "הצמד למעלה",
   pinToBottom: "הצמד למטה",
   unpinRow: "בטל הצמדת שורה",
+  rowSeparator: "מפריד",
   moreGroups: (remaining) => `הצגת ${remaining} קבוצות נוספות`,
   moreRowsInGroup: (remaining) => `הצגת ${remaining} נוספות בקבוצה`,
   groupTotal: (label) => `סך הכול ${label}`,

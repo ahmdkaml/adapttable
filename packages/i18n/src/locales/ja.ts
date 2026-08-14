@@ -89,6 +89,7 @@ export const ja: Required<TableLabels> = {
   pinToTop: "上に固定",
   pinToBottom: "下に固定",
   unpinRow: "行の固定を解除",
+  rowSeparator: "区切り",
   moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
   moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,

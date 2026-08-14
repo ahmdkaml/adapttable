@@ -22,9 +22,11 @@ import {
   cellHighlightStyle,
   cellsForRow,
   ColumnSpacer,
+  EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
   headerGroupRow,
+  insertExtraRows,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -59,14 +61,47 @@ import {
   Tooltip,
   VisuallyHidden,
 } from "@mantine/core";
-import type { CSSProperties, MouseEvent, ReactNode, RefObject } from "react";
+import type {
+  CSSProperties,
+  MouseEvent,
+  ReactElement,
+  ReactNode,
+  RefObject,
+} from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { type Density, DENSITY_SPACING } from "../density";
+import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 import { HAIRLINE, SURFACE } from "../surface";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderRow } from "./GroupHeader";
+
+function ExtraSlotRow({
+  kind,
+  colSpan,
+  render,
+  labels,
+}: Readonly<{
+  kind: "separator" | "fullWidth";
+  colSpan: number;
+  render?: () => ReactNode;
+  labels: TableLabels;
+}>): ReactElement {
+  const parts = EXTRA_ROW_PARTS[kind];
+  return (
+    <Table.Tr data-adapttable-part={parts.row}>
+      <Table.Td
+        colSpan={colSpan}
+        data-adapttable-part={parts.cell}
+        role={kind === "separator" ? "separator" : undefined}
+        aria-label={kind === "separator" ? labels.rowSeparator : undefined}
+      >
+        {kind === "fullWidth" ? render?.() : null}
+      </Table.Td>
+    </Table.Tr>
+  );
+}
 
 /** Inline style for an absolutely-positioned column-resize handle. */
 const RESIZE_HANDLE_STYLE: CSSProperties = {
@@ -79,8 +114,6 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
   touchAction: "none",
   userSelect: "none",
 };
-
-import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 
 function When({
   show,
@@ -767,6 +800,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  extraRows,
   getCellSpan,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
@@ -1218,6 +1252,19 @@ export function DesktopTable<TRow>({
           )}
           {grouping
             ? grouping.entries.map((entry) => {
+                if (entry.kind === "separator" || entry.kind === "fullWidth") {
+                  return (
+                    <ExtraSlotRow
+                      key={entry.key}
+                      kind={entry.kind}
+                      colSpan={columnSpan}
+                      render={
+                        entry.kind === "fullWidth" ? entry.render : undefined
+                      }
+                      labels={labels}
+                    />
+                  );
+                }
                 if (
                   entry.kind === "group" ||
                   entry.kind === "groupFooter" ||
@@ -1304,77 +1351,93 @@ export function DesktopTable<TRow>({
               })
             : // A tree renders its own flattened entries; a flat table renders the
               // (possibly windowed) rows. Both carry a row and a key.
-              bodyRowEntries(entries, tree).map(
-                ({ row, index, key, treeEntry, sourceIndex }) => {
-                  const id = getRowId(row);
-                  const focusIndex = sourceIndex ?? index;
+              insertExtraRows(
+                bodyRowEntries(entries, tree),
+                extraRows,
+                (e) => e.key
+              ).map((slot) => {
+                if ("kind" in slot) {
                   return (
-                    <Row
-                      key={key}
-                      row={row}
-                      index={index}
-                      id={id}
-                      columns={columns}
-                      bodyCells={cellsForRow(cellsByRow, id)}
-                      spanSignature={rowSpanSignature(
-                        cellsForRow(cellsByRow, id)
-                      )}
-                      getCellProps={table.getCellProps}
-                      gridFocus={gridFocus}
-                      selected={selection?.isSelected(id)}
-                      selectLabel={labels.selectRow}
-                      onToggleSelect={toggleSelect}
-                      expanded={expansion?.isExpanded(id)}
-                      expandLabel={labels.expandRow}
-                      collapseLabel={labels.collapseRow}
-                      onToggleExpand={expansion?.toggle}
-                      renderRowDetail={renderRowDetail}
-                      columnSpan={columnSpan}
-                      columnSpacers={columnSpacers}
-                      rowActions={rowActions}
-                      confirm={confirm}
-                      cancelLabel={labels.cancel}
-                      editRowLabel={labels.editRow}
-                      saveRowLabel={labels.saveRow}
-                      editLabel={labels.editCell}
-                      undoLabel={labels.undoEdit}
-                      showReorder={showReorder}
-                      rowReorder={rowReorder}
-                      windowStart={windowStart}
-                      rowCount={rows.length}
-                      reorderPinned={reorderPinned}
-                      reorderSignature={rowReorderSignature(
-                        rowReorder,
-                        id,
-                        index
-                      )}
-                      rowPinSide={undefined}
-                      rowPinOffset={rowPinOffset}
-                      rowPinSignature={rowPinSignature(rowPinning, id)}
-                      sourceIndex={focusIndex}
+                    <ExtraSlotRow
+                      key={slot.key}
+                      kind={slot.kind}
+                      colSpan={columnSpan}
+                      render={
+                        slot.kind === "fullWidth" ? slot.render : undefined
+                      }
                       labels={labels}
-                      onRowClick={onRowClick}
-                      prefetch={prefetch}
-                      className={rowClassName?.(row, focusIndex)}
-                      measureElement={measureElement}
-                      measureRowPair={measureRowPair}
-                      pinStyleFor={bodyPinStyle}
-                      selectionCellStyle={selectionCellStyle}
-                      expansionCellStyle={expansionCellStyle}
-                      reorderCellStyle={reorderCellStyle}
-                      actionsCellStyle={actionsCellStyle}
-                      pinSignature={pinSignature}
-                      editing={editing}
-                      rows={rows}
-                      getRowId={getRowId}
-                      treeEntry={treeEntry}
-                      treeColumnKey={tree?.columnKey}
-                      onToggleTree={tree?.expansion.toggle}
-                      editingSignature={rowEditingSignature(editing, id)}
                     />
                   );
                 }
-              )}
+                const { row, index, key, treeEntry, sourceIndex } = slot;
+                const id = getRowId(row);
+                const focusIndex = sourceIndex ?? index;
+                return (
+                  <Row
+                    key={key}
+                    row={row}
+                    index={index}
+                    id={id}
+                    columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
+                    getCellProps={table.getCellProps}
+                    gridFocus={gridFocus}
+                    selected={selection?.isSelected(id)}
+                    selectLabel={labels.selectRow}
+                    onToggleSelect={toggleSelect}
+                    expanded={expansion?.isExpanded(id)}
+                    expandLabel={labels.expandRow}
+                    collapseLabel={labels.collapseRow}
+                    onToggleExpand={expansion?.toggle}
+                    renderRowDetail={renderRowDetail}
+                    columnSpan={columnSpan}
+                    columnSpacers={columnSpacers}
+                    rowActions={rowActions}
+                    confirm={confirm}
+                    cancelLabel={labels.cancel}
+                    editRowLabel={labels.editRow}
+                    saveRowLabel={labels.saveRow}
+                    editLabel={labels.editCell}
+                    undoLabel={labels.undoEdit}
+                    showReorder={showReorder}
+                    rowReorder={rowReorder}
+                    windowStart={windowStart}
+                    rowCount={rows.length}
+                    reorderPinned={reorderPinned}
+                    reorderSignature={rowReorderSignature(
+                      rowReorder,
+                      id,
+                      index
+                    )}
+                    rowPinSide={undefined}
+                    rowPinOffset={rowPinOffset}
+                    rowPinSignature={rowPinSignature(rowPinning, id)}
+                    sourceIndex={focusIndex}
+                    labels={labels}
+                    onRowClick={onRowClick}
+                    prefetch={prefetch}
+                    className={rowClassName?.(row, focusIndex)}
+                    measureElement={measureElement}
+                    measureRowPair={measureRowPair}
+                    pinStyleFor={bodyPinStyle}
+                    selectionCellStyle={selectionCellStyle}
+                    expansionCellStyle={expansionCellStyle}
+                    reorderCellStyle={reorderCellStyle}
+                    actionsCellStyle={actionsCellStyle}
+                    pinSignature={pinSignature}
+                    editing={editing}
+                    rows={rows}
+                    getRowId={getRowId}
+                    treeEntry={treeEntry}
+                    treeColumnKey={tree?.columnKey}
+                    onToggleTree={tree?.expansion.toggle}
+                    editingSignature={rowEditingSignature(editing, id)}
+                  />
+                );
+              })}
           {paddingBottom > 0 && (
             <Table.Tr aria-hidden>
               <Table.Td

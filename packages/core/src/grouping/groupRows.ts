@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { ExtraEntry } from "../rows/extraRows";
 import type { ColumnDef } from "../types";
 import { getPath } from "../utils/path";
 
@@ -100,7 +101,8 @@ export type GroupedFlatEntry<TRow> =
       /** Index among leaves in the flat model (stable for selection chrome). */
       index: number;
       groupKey: string;
-    };
+    }
+  | ExtraEntry;
 
 /**
  * One group, as sorting and filtering see it — before it becomes a row.

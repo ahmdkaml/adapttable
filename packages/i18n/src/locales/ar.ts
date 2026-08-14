@@ -90,6 +90,7 @@ export const ar: Required<TableLabels> = {
   pinToTop: "تثبيت في الأعلى",
   pinToBottom: "تثبيت في الأسفل",
   unpinRow: "إلغاء تثبيت الصف",
+  rowSeparator: "فاصل",
   moreGroups: (remaining) => `عرض ${remaining} مجموعات أخرى`,
   moreRowsInGroup: (remaining) => `عرض ${remaining} أخرى في هذه المجموعة`,
   groupTotal: (label) => `إجمالي ${label}`,

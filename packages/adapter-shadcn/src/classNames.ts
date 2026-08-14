@@ -130,6 +130,11 @@ export const shadcnClassNames = {
   tbody: "align-middle",
   scrollBox: "overscroll-x-contain",
   virtualSpacer: "block",
+  separatorRow: "border-b border-border",
+  separatorCell: "px-3 py-1",
+  fullWidthRow: "border-b border-border bg-muted/30",
+  fullWidthCell:
+    "px-3 py-2.5 text-sm [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
   cards: "p-3",
   cardActions: "mt-2 flex justify-end gap-1 border-t border-border pt-2",
   // ── Header groups (column banding) ──────────────────────────────

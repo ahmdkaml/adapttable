@@ -10,6 +10,9 @@ import {
   type TreeEntry,
 } from "@adapttable/core";
 import {
+  EXTRA_ROW_PARTS,
+  insertExtraRows,
+  isExtraEntry,
   orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
@@ -74,6 +77,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "windowStart"
   | "pinnedTopRows"
   | "pinnedBottomRows"
+  | "extraRows"
 > {
   bodyRef: RefObject<HTMLDivElement | null>;
   className?: string;
@@ -368,6 +372,7 @@ export function MobileCards<TRow>({
   windowStart = 0,
   pinnedTopRows = [],
   pinnedBottomRows = [],
+  extraRows,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -444,26 +449,70 @@ export function MobileCards<TRow>({
     >
       {paddingTop > 0 && <div aria-hidden style={{ height: paddingTop }} />}
       {grouping
-        ? grouping.entries.map((entry) =>
-            entry.kind === "group" ||
-            entry.kind === "groupFooter" ||
-            entry.kind === "groupMore" ? (
-              <GroupHeaderCard
-                key={entry.key}
-                entry={entry}
-                columns={columns}
-                selection={selection}
-                labels={labels}
+        ? grouping.entries.map((entry) => {
+            if (isExtraEntry(entry)) {
+              return (
+                <Card
+                  key={entry.key}
+                  withBorder
+                  radius="md"
+                  padding={cardPadding}
+                  data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].row}
+                  role={entry.kind === "separator" ? "separator" : undefined}
+                  aria-label={
+                    entry.kind === "separator" ? labels.rowSeparator : undefined
+                  }
+                >
+                  <div data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].cell}>
+                    {entry.kind === "fullWidth" ? entry.render?.() : null}
+                  </div>
+                </Card>
+              );
+            }
+            if (
+              entry.kind === "group" ||
+              entry.kind === "groupFooter" ||
+              entry.kind === "groupMore"
+            ) {
+              return (
+                <GroupHeaderCard
+                  key={entry.key}
+                  entry={entry}
+                  columns={columns}
+                  selection={selection}
+                  labels={labels}
+                  padding={cardPadding}
+                  onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                  onShowMore={grouping.showMore}
+                />
+              );
+            }
+            return renderCard(entry.row, entry.index, entry.key);
+          })
+        : insertExtraRows(
+            bodyRowEntries(entries, tree),
+            extraRows,
+            (e) => e.key
+          ).map((slot) =>
+            "kind" in slot ? (
+              <Card
+                key={slot.key}
+                withBorder
+                radius="md"
                 padding={cardPadding}
-                onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
-                onShowMore={grouping.showMore}
-              />
+                data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].row}
+                role={slot.kind === "separator" ? "separator" : undefined}
+                aria-label={
+                  slot.kind === "separator" ? labels.rowSeparator : undefined
+                }
+              >
+                <div data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].cell}>
+                  {slot.kind === "fullWidth" ? slot.render?.() : null}
+                </div>
+              </Card>
             ) : (
-              renderCard(entry.row, entry.index, entry.key)
+              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
             )
-          )
-        : bodyRowEntries(entries, tree).map(({ row, index, key, treeEntry }) =>
-            renderCard(row, index, key, treeEntry)
           )}
       {paddingBottom > 0 && (
         <div aria-hidden style={{ height: paddingBottom }} />

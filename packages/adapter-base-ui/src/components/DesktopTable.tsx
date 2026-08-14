@@ -25,9 +25,11 @@ import {
   columnFlexShares,
   columnSizeStyle,
   ColumnSpacer,
+  EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
   headerGroupRow,
+  insertExtraRows,
   logicalAlign,
   type PinLeads,
   PINNED_BOTTOM_PART,
@@ -75,6 +77,32 @@ import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderRow } from "./GroupHeader";
 import { Checkbox } from "./primitives";
 import { RowActionButtons } from "./RowActionButtons";
+
+function ExtraSlotRow({
+  kind,
+  colSpan,
+  render,
+  labels,
+}: Readonly<{
+  kind: "separator" | "fullWidth";
+  colSpan: number;
+  render?: () => ReactNode;
+  labels: TableLabels;
+}>) {
+  const parts = EXTRA_ROW_PARTS[kind];
+  return (
+    <Table.Row data-adapttable-part={parts.row}>
+      <Table.Cell
+        colSpan={colSpan}
+        data-adapttable-part={parts.cell}
+        role={kind === "separator" ? "separator" : undefined}
+        aria-label={kind === "separator" ? labels.rowSeparator : undefined}
+      >
+        {kind === "fullWidth" ? render?.() : null}
+      </Table.Cell>
+    </Table.Row>
+  );
+}
 
 type TableSize = "1" | "2" | "3";
 
@@ -578,6 +606,7 @@ export function DesktopTable<TRow>({
   columnWindow,
   fitColumns,
   tree,
+  extraRows,
   getCellSpan,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
@@ -1003,6 +1032,19 @@ export function DesktopTable<TRow>({
           )}
           {grouping
             ? grouping.entries.map((entry) => {
+                if (entry.kind === "separator" || entry.kind === "fullWidth") {
+                  return (
+                    <ExtraSlotRow
+                      key={entry.key}
+                      kind={entry.kind}
+                      colSpan={columnSpan}
+                      render={
+                        entry.kind === "fullWidth" ? entry.render : undefined
+                      }
+                      labels={labels}
+                    />
+                  );
+                }
                 if (
                   entry.kind === "group" ||
                   entry.kind === "groupFooter" ||
@@ -1073,59 +1115,75 @@ export function DesktopTable<TRow>({
               })
             : // A tree renders its own flattened entries; a flat table renders the
               // (possibly windowed) rows. Both carry a row and a key.
-              bodyRowEntries(entries, tree).map(
-                ({ row, index, key, treeEntry, sourceIndex }) => {
-                  const id = getRowId(row);
-                  const focusIndex = sourceIndex ?? index;
+              insertExtraRows(
+                bodyRowEntries(entries, tree),
+                extraRows,
+                (e) => e.key
+              ).map((slot) => {
+                if ("kind" in slot) {
                   return (
-                    <Row
-                      gridFocus={gridFocus}
-                      key={key}
-                      row={row}
-                      id={id}
-                      index={index}
-                      selected={selection?.isSelected(id) ?? false}
-                      expanded={expansion?.isExpanded(id) ?? false}
-                      size={size}
-                      accentColor={accentColor}
-                      dir={dir}
-                      columns={columns}
-                      bodyCells={cellsForRow(cellsByRow, id)}
-                      spanSignature={rowSpanSignature(
-                        cellsForRow(cellsByRow, id)
-                      )}
-                      columnWidths={columnWidths}
-                      pinSignature={pinSignature}
-                      className={rowClassName?.(row, focusIndex)}
+                    <ExtraSlotRow
+                      key={slot.key}
+                      kind={slot.kind}
+                      colSpan={columnSpan}
+                      render={
+                        slot.kind === "fullWidth" ? slot.render : undefined
+                      }
                       labels={labels}
-                      hasSelection={Boolean(selection)}
-                      expandable={expandable}
-                      showActions={showActions}
-                      showReorder={showReorder}
-                      reorderSignature={rowReorderSignature(
-                        rowReorder,
-                        id,
-                        index
-                      )}
-                      rowPinSide={undefined}
-                      rowPinOffset={rowPinOffset}
-                      rowPinSignature={rowPinSignature(rowPinning, id)}
-                      sourceIndex={focusIndex}
-                      hasRowClick={Boolean(onRowClick)}
-                      columnSpan={columnSpan}
-                      api={api}
-                      measureRef={measureRef}
-                      editing={editing}
-                      rows={rows}
-                      getRowId={getRowId}
-                      treeEntry={treeEntry}
-                      treeColumnKey={tree?.columnKey}
-                      onToggleTree={tree?.expansion.toggle}
-                      editingSignature={rowEditingSignature(editing, id)}
                     />
                   );
                 }
-              )}
+                const { row, index, key, treeEntry, sourceIndex } = slot;
+                const id = getRowId(row);
+                const focusIndex = sourceIndex ?? index;
+                return (
+                  <Row
+                    gridFocus={gridFocus}
+                    key={key}
+                    row={row}
+                    id={id}
+                    index={index}
+                    selected={selection?.isSelected(id) ?? false}
+                    expanded={expansion?.isExpanded(id) ?? false}
+                    size={size}
+                    accentColor={accentColor}
+                    dir={dir}
+                    columns={columns}
+                    bodyCells={cellsForRow(cellsByRow, id)}
+                    spanSignature={rowSpanSignature(
+                      cellsForRow(cellsByRow, id)
+                    )}
+                    columnWidths={columnWidths}
+                    pinSignature={pinSignature}
+                    className={rowClassName?.(row, focusIndex)}
+                    labels={labels}
+                    hasSelection={Boolean(selection)}
+                    expandable={expandable}
+                    showActions={showActions}
+                    showReorder={showReorder}
+                    reorderSignature={rowReorderSignature(
+                      rowReorder,
+                      id,
+                      index
+                    )}
+                    rowPinSide={undefined}
+                    rowPinOffset={rowPinOffset}
+                    rowPinSignature={rowPinSignature(rowPinning, id)}
+                    sourceIndex={focusIndex}
+                    hasRowClick={Boolean(onRowClick)}
+                    columnSpan={columnSpan}
+                    api={api}
+                    measureRef={measureRef}
+                    editing={editing}
+                    rows={rows}
+                    getRowId={getRowId}
+                    treeEntry={treeEntry}
+                    treeColumnKey={tree?.columnKey}
+                    onToggleTree={tree?.expansion.toggle}
+                    editingSignature={rowEditingSignature(editing, id)}
+                  />
+                );
+              })}
           {paddingBottom > 0 && (
             <Table.Row aria-hidden>
               <Table.Cell

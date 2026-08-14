@@ -21,10 +21,13 @@ import {
   type BodyCell,
   cellsForRow,
   ColumnSpacer,
+  EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
   headerGroupRow,
+  insertExtraRows,
   isCurrentMatchCell,
+  isExtraEntry,
   isMatchedCell,
   isSelectedCell,
   type PinLeads,
@@ -60,6 +63,44 @@ import { EditableDataCell } from "./EditableCell";
 import { ExpandButton } from "./ExpandToggle";
 import { GroupHeaderRow } from "./GroupHeader";
 import { RowActionButtons } from "./RowActionButtons";
+
+function ExtraSlotRow({
+  kind,
+  colSpan,
+  render,
+  labels,
+  classNames,
+}: Readonly<{
+  kind: "separator" | "fullWidth";
+  colSpan: number;
+  render?: () => ReactNode;
+  labels: TableLabels;
+  classNames: DataTableClassNames;
+}>): ReactElement {
+  const parts = EXTRA_ROW_PARTS[kind];
+  return (
+    <tr
+      data-adapttable-part={parts.row}
+      className={
+        kind === "separator" ? classNames.separatorRow : classNames.fullWidthRow
+      }
+    >
+      <td
+        colSpan={colSpan}
+        data-adapttable-part={parts.cell}
+        role={kind === "separator" ? "separator" : undefined}
+        aria-label={kind === "separator" ? labels.rowSeparator : undefined}
+        className={
+          kind === "separator"
+            ? classNames.separatorCell
+            : classNames.fullWidthCell
+        }
+      >
+        {kind === "fullWidth" ? render?.() : null}
+      </td>
+    </tr>
+  );
+}
 
 const RESIZE_HANDLE_STYLE: CSSProperties = {
   position: "absolute",
@@ -614,6 +655,7 @@ export function DesktopTable<TRow>({
   fitColumns,
   tree,
   getCellSpan,
+  extraRows,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -1065,6 +1107,20 @@ export function DesktopTable<TRow>({
         )}
         {grouping
           ? grouping.entries.map((entry) => {
+              if (entry.kind === "separator" || entry.kind === "fullWidth") {
+                return (
+                  <ExtraSlotRow
+                    key={entry.key}
+                    kind={entry.kind}
+                    colSpan={columnSpan}
+                    render={
+                      entry.kind === "fullWidth" ? entry.render : undefined
+                    }
+                    labels={labels}
+                    classNames={classNames}
+                  />
+                );
+              }
               if (
                 entry.kind === "group" ||
                 entry.kind === "groupFooter" ||
@@ -1147,73 +1203,82 @@ export function DesktopTable<TRow>({
             })
           : // A tree renders its own flattened entries; a flat table renders
             // the (possibly windowed) rows. Both carry a row and a key.
-            bodyRowEntries(entries, tree).map(
-              ({ row, index, key, treeEntry, sourceIndex }) => {
-                const id = getRowId(row);
+            insertExtraRows(
+              bodyRowEntries(entries, tree),
+              extraRows,
+              (e) => e.key
+            ).map((slot) => {
+              if (isExtraEntry(slot)) {
                 return (
-                  <Row
-                    gridFocus={gridFocus}
-                    key={key}
-                    row={row}
-                    index={index}
-                    id={id}
-                    table={table}
-                    columns={columns}
-                    bodyCells={cellsForRow(cellsByRow, id)}
-                    spanSignature={rowSpanSignature(
-                      cellsForRow(cellsByRow, id)
-                    )}
+                  <ExtraSlotRow
+                    key={slot.key}
+                    kind={slot.kind}
+                    colSpan={columnSpan}
+                    render={slot.kind === "fullWidth" ? slot.render : undefined}
                     labels={labels}
                     classNames={classNames}
-                    selected={selection ? selection.isSelected(id) : undefined}
-                    expanded={
-                      expansionState ? expansionState.isExpanded(id) : undefined
-                    }
-                    showActions={showActions}
-                    showReorder={showReorder}
-                    rowReorder={rowReorder}
-                    windowStart={windowStart}
-                    rowCount={rows.length}
-                    reorderPinned={reorderPinned}
-                    reorderSignature={rowReorderSignature(
-                      rowReorder,
-                      id,
-                      index
-                    )}
-                    rowPinSide={undefined}
-                    rowPinOffset={rowPinOffset}
-                    rowPinSignature={rowPinSignature(rowPinning, id)}
-                    sourceIndex={sourceIndex ?? index}
-                    rowActions={rowActions}
-                    confirm={confirm}
-                    columnSpan={columnSpan}
-                    columnWidths={columnWidths}
-                    pinOffset={pinOffset}
-                    pinSignature={pinSignature}
-                    hasStartPin={hasStartPin}
-                    hasEndPin={hasEndPin}
-                    actionsPinned={stickActions}
-                    rowClass={rowClassName?.(row, sourceIndex ?? index)}
-                    clickable={Boolean(onRowClick)}
-                    hasPrefetch={Boolean(prefetch)}
-                    onRowClick={handleRowClick}
-                    onPrefetch={handlePrefetch}
-                    onToggleSelect={onToggleSelect}
-                    onToggleExpand={onToggleExpand}
-                    renderDetail={renderDetail}
-                    measureElement={measureElement}
-                    measureRowPair={measureRowPair}
-                    editing={editing}
-                    rows={rows}
-                    getRowId={getRowId}
-                    treeEntry={treeEntry}
-                    treeColumnKey={tree?.columnKey}
-                    onToggleTree={tree?.expansion.toggle}
-                    editingSignature={rowEditingSignature(editing, id)}
                   />
                 );
               }
-            )}
+              const { row, index, key, treeEntry, sourceIndex } = slot;
+              const id = getRowId(row);
+              return (
+                <Row
+                  gridFocus={gridFocus}
+                  key={key}
+                  row={row}
+                  index={index}
+                  id={id}
+                  table={table}
+                  columns={columns}
+                  bodyCells={cellsForRow(cellsByRow, id)}
+                  spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
+                  labels={labels}
+                  classNames={classNames}
+                  selected={selection ? selection.isSelected(id) : undefined}
+                  expanded={
+                    expansionState ? expansionState.isExpanded(id) : undefined
+                  }
+                  showActions={showActions}
+                  showReorder={showReorder}
+                  rowReorder={rowReorder}
+                  windowStart={windowStart}
+                  rowCount={rows.length}
+                  reorderPinned={reorderPinned}
+                  reorderSignature={rowReorderSignature(rowReorder, id, index)}
+                  rowPinSide={undefined}
+                  rowPinOffset={rowPinOffset}
+                  rowPinSignature={rowPinSignature(rowPinning, id)}
+                  sourceIndex={sourceIndex ?? index}
+                  rowActions={rowActions}
+                  confirm={confirm}
+                  columnSpan={columnSpan}
+                  columnWidths={columnWidths}
+                  pinOffset={pinOffset}
+                  pinSignature={pinSignature}
+                  hasStartPin={hasStartPin}
+                  hasEndPin={hasEndPin}
+                  actionsPinned={stickActions}
+                  rowClass={rowClassName?.(row, sourceIndex ?? index)}
+                  clickable={Boolean(onRowClick)}
+                  hasPrefetch={Boolean(prefetch)}
+                  onRowClick={handleRowClick}
+                  onPrefetch={handlePrefetch}
+                  onToggleSelect={onToggleSelect}
+                  onToggleExpand={onToggleExpand}
+                  renderDetail={renderDetail}
+                  measureElement={measureElement}
+                  measureRowPair={measureRowPair}
+                  editing={editing}
+                  rows={rows}
+                  getRowId={getRowId}
+                  treeEntry={treeEntry}
+                  treeColumnKey={tree?.columnKey}
+                  onToggleTree={tree?.expansion.toggle}
+                  editingSignature={rowEditingSignature(editing, id)}
+                />
+              );
+            })}
         {paddingBottom > 0 && (
           <tr
             data-adapttable-part="virtual-spacer"

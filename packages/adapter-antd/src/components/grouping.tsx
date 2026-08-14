@@ -1,10 +1,15 @@
 import {
+  type ExtraEntry,
   type GroupedFlatEntry,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { groupIndentStyle, GroupToggleSpacer } from "@adapttable/core/adapter";
+import {
+  groupIndentStyle,
+  GroupToggleSpacer,
+  isExtraEntry,
+} from "@adapttable/core/adapter";
 import { Button, Checkbox, Space, Typography } from "antd";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
@@ -34,8 +39,33 @@ export interface AdaptTableGroupRow {
   collapsed: boolean;
 }
 
-/** dataSource entry when grouping is armed: group header or leaf row. */
-export type GroupedDataRecord<TRow> = AdaptTableGroupRow | TRow;
+/** Marker field on synthetic antd dataSource rows that represent an extra slot. */
+export const ADAPTTABLE_EXTRA = "__adapttableExtra" as const;
+
+/** Synthetic dataSource record for a separator or full-width extra row. */
+export interface AdaptTableExtraRow {
+  [ADAPTTABLE_EXTRA]: true;
+  key: string;
+  extraKind: "separator" | "fullWidth";
+  render?: () => ReactNode;
+}
+
+/** Type guard for synthetic extra-slot records. */
+export function isAdaptTableExtraRow(
+  record: unknown
+): record is AdaptTableExtraRow {
+  return (
+    typeof record === "object" &&
+    record !== null &&
+    (record as AdaptTableExtraRow)[ADAPTTABLE_EXTRA] === true
+  );
+}
+
+/** dataSource entry when grouping is armed: group header, extra slot, or leaf. */
+export type GroupedDataRecord<TRow> =
+  | AdaptTableGroupRow
+  | AdaptTableExtraRow
+  | TRow;
 
 /** Type guard for synthetic group header records. */
 export function isAdaptTableGroupRow(
@@ -48,46 +78,65 @@ export function isAdaptTableGroupRow(
   );
 }
 
-/** Map a grouped flat entry onto an antd dataSource record. */
-function toGroupedDataRecord<TRow>(
-  entry: GroupedFlatEntry<TRow>
-): GroupedDataRecord<TRow> {
-  const record: GroupedDataRecord<TRow> =
-    entry.kind === "row"
-      ? entry.row
-      : {
-          [ADAPTTABLE_GROUP]: true,
-          key: entry.key,
-          label: entry.label,
-          level: entry.level,
-          footer: entry.kind === "groupFooter",
-          more:
-            entry.kind === "groupMore"
-              ? {
-                  scope: entry.scope,
-                  groupKey: entry.groupKey,
-                  remaining: entry.remaining,
-                }
-              : undefined,
-          count:
-            (entry.kind === "group" ? entry.serverCount : undefined) ??
-            entry.leafIds.length,
-          leafIds: entry.leafIds,
-          aggregateCells:
-            entry.kind === "groupMore" ? undefined : entry.aggregateCells,
-          collapsed: entry.kind === "group" && entry.collapsed,
-        };
-  return record;
+/** Map a host-injected extra onto an antd dataSource record. */
+function toExtraDataRecord(entry: ExtraEntry): AdaptTableExtraRow {
+  return {
+    [ADAPTTABLE_EXTRA]: true,
+    key: entry.key,
+    extraKind: entry.kind,
+    render: entry.kind === "fullWidth" ? entry.render : undefined,
+  };
+}
+
+/** Map a group header, footer, or more-row onto an antd dataSource record. */
+function toGroupDataRecord<TRow>(
+  entry: Exclude<GroupedFlatEntry<TRow>, ExtraEntry | { kind: "row" }>
+): AdaptTableGroupRow {
+  return {
+    [ADAPTTABLE_GROUP]: true,
+    key: entry.key,
+    label: entry.label,
+    level: entry.level,
+    footer: entry.kind === "groupFooter",
+    more:
+      entry.kind === "groupMore"
+        ? {
+            scope: entry.scope,
+            groupKey: entry.groupKey,
+            remaining: entry.remaining,
+          }
+        : undefined,
+    count:
+      (entry.kind === "group" ? entry.serverCount : undefined) ??
+      entry.leafIds.length,
+    leafIds: entry.leafIds,
+    aggregateCells:
+      entry.kind === "groupMore" ? undefined : entry.aggregateCells,
+    collapsed: entry.kind === "group" && entry.collapsed,
+  };
 }
 
 /**
  * Flatten chrome grouping entries into an antd `dataSource`: group headers
- * carry {@link ADAPTTABLE_GROUP}, leaf entries are the plain row objects.
+ * carry {@link ADAPTTABLE_GROUP}, extras carry {@link ADAPTTABLE_EXTRA},
+ * leaf entries are the plain row objects.
  */
 export function buildGroupedDataSource<TRow>(
   entries: readonly GroupedFlatEntry<TRow>[]
 ): GroupedDataRecord<TRow>[] {
-  return entries.map(toGroupedDataRecord);
+  const records: GroupedDataRecord<TRow>[] = [];
+  for (const entry of entries) {
+    if (isExtraEntry(entry)) {
+      records.push(toExtraDataRecord(entry));
+      continue;
+    }
+    if (entry.kind === "row") {
+      records.push(entry.row);
+      continue;
+    }
+    records.push(toGroupDataRecord(entry));
+  }
+  return records;
 }
 
 /** Stable rowKey for grouped or plain records. */
@@ -95,6 +144,7 @@ export function groupedRowKey<TRow>(
   record: GroupedDataRecord<TRow>,
   getRowId: (row: TRow) => string
 ): string {
+  if (isAdaptTableExtraRow(record)) return record.key;
   if (isAdaptTableGroupRow(record)) return record.key;
   return getRowId(record);
 }

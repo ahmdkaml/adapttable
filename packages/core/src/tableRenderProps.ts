@@ -26,6 +26,7 @@ import {
   buildBodyCells,
   type GetCellSpan,
 } from "./rows/cellSpan";
+import type { ExtraRow } from "./rows/extraRows";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowExpansionState } from "./rows/useRowExpansion";
@@ -98,6 +99,8 @@ export interface SharedTableRenderProps<TRow> {
    * {@link TableRenderModel.cellsByRow} omits covered cells.
    */
   getCellSpan?: GetCellSpan<TRow>;
+  /** Host-injected separator / full-width slots. */
+  extraRows?: readonly ExtraRow[];
   /** Expansion state, present when `renderRowDetail` is set. */
   expansion?: RowExpansionState;
   /**

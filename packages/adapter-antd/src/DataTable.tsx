@@ -50,8 +50,11 @@ import {
 import {
   BatchEditBar,
   DEFAULT_CARD_SIZE_PX,
+  EXTRA_ROW_PARTS,
   FindBar,
   GridFocusAnnouncer,
+  insertExtraRows,
+  isExtraEntry,
   REORDER_COLUMN_WIDTH,
   rowClickProps,
   rowIsDirty,
@@ -100,10 +103,12 @@ import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
 import {
+  ADAPTTABLE_EXTRA,
   buildGroupedDataSource,
   type GroupedDataRecord,
   groupedRowKey,
   GroupSelectionCheckbox,
+  isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
 import { MobileCards } from "./components/MobileCards";
@@ -143,6 +148,7 @@ function buildRowClassName<TRow>(
   rowClassName: ((row: TRow, index: number) => string | undefined) | undefined
 ): (record: GroupedDataRecord<TRow>, index: number) => string {
   return (record, index) => {
+    if (isAdaptTableExtraRow(record)) return "adapttable-extra-row";
     if (isAdaptTableGroupRow(record)) return "adapttable-group-row";
     return rowClassName?.(record, index) ?? "";
   };
@@ -286,6 +292,12 @@ function antdOnRow<TRow>(options: {
     editing,
     prefetch,
   } = options;
+  if (isAdaptTableExtraRow(record)) {
+    return {
+      "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].row,
+      role: record.extraKind === "separator" ? "separator" : undefined,
+    };
+  }
   if (isAdaptTableGroupRow(record)) {
     return {
       "data-adapttable-part":
@@ -346,6 +358,34 @@ function antdPinnedDataSource<TRow>(
   };
 }
 
+/** Splice host extras into a flat antd dataSource. Grouping already did this. */
+function resolveAntdDataSource<TRow>(
+  grouping: unknown,
+  rows: readonly GroupedDataRecord<TRow>[],
+  extraRows: DataTableProps<TRow>["extraRows"],
+  getRowId: (row: TRow) => string
+): readonly GroupedDataRecord<TRow>[] {
+  if (grouping) return rows;
+  return insertExtraRows(
+    (rows as readonly TRow[]).map((row) => ({
+      kind: "row" as const,
+      key: getRowId(row),
+      row,
+    })),
+    extraRows,
+    (e) => e.key
+  ).map((slot) =>
+    isExtraEntry(slot)
+      ? {
+          [ADAPTTABLE_EXTRA]: true as const,
+          key: slot.key,
+          extraKind: slot.kind,
+          render: slot.kind === "fullWidth" ? slot.render : undefined,
+        }
+      : slot.row
+  );
+}
+
 /** Same URL/controlled pin wiring the batteries-included shell applies. */
 function useAntdPinChrome<TRow>(props: {
   pinnedRowIds: DataTableProps<TRow>["pinnedRowIds"];
@@ -398,6 +438,7 @@ function selectionCellNode<TRow>(
   labels: Required<TableLabels>,
   originNode: ReactNode
 ): ReactNode {
+  if (isAdaptTableExtraRow(record)) return null;
   if (isAdaptTableGroupRow(record)) {
     return (
       <GroupSelectionCheckbox
@@ -423,15 +464,15 @@ function buildRowSelection<TRow>(
     fixed: fixedLeft ? "left" : undefined,
     selectedRowKeys: [...selection.selectedIds],
     onSelect: (record) => {
-      if (isAdaptTableGroupRow(record)) return;
+      if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) return;
       selection.toggle(getRowId(record));
     },
     getCheckboxProps: (record): RowSelectionCheckboxProps => {
-      const isGroup = isAdaptTableGroupRow(record);
+      const skip = isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record);
       return {
-        disabled: isGroup || undefined,
-        style: isGroup ? { display: "none" } : undefined,
-        title: isGroup ? undefined : labels.selectRow,
+        disabled: skip || undefined,
+        style: skip ? { display: "none" } : undefined,
+        title: skip ? undefined : labels.selectRow,
       };
     },
     // Group headers render a tri-state over leaf ids; leaf rows keep antd's node.
@@ -470,14 +511,19 @@ function buildExpandable<TRow>(
   return {
     expandedRowKeys: [...expansion.expandedIds],
     onExpand: (_open, row) => {
-      if (isAdaptTableGroupRow(row)) return;
+      if (isAdaptTableGroupRow(row) || isAdaptTableExtraRow(row)) return;
       expansion.toggle(getRowId(row));
     },
-    rowExpandable: (row) => !isAdaptTableGroupRow(row),
+    rowExpandable: (row) =>
+      !isAdaptTableGroupRow(row) && !isAdaptTableExtraRow(row),
     expandedRowRender: (row) =>
-      isAdaptTableGroupRow(row) ? null : renderRowDetail(row),
+      isAdaptTableGroupRow(row) || isAdaptTableExtraRow(row)
+        ? null
+        : renderRowDetail(row),
     expandIcon: ({ expanded, onExpand, record }) => {
-      if (isAdaptTableGroupRow(record)) return null;
+      if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+        return null;
+      }
       return (
         <ExpandToggle
           expanded={expanded}
@@ -591,7 +637,8 @@ function buildSummary<TRow>(
   if (!summaryRow) return undefined;
   return function SummaryCells(pageData) {
     const leafRows = pageData.filter(
-      (record): record is TRow => !isAdaptTableGroupRow(record)
+      (record): record is TRow =>
+        !isAdaptTableGroupRow(record) && !isAdaptTableExtraRow(record)
     );
     const cells = summaryRow(leafRows);
     return (
@@ -880,6 +927,7 @@ interface DataTableBodyRegionProps<TRow> {
   rowPinning: RowPinningState<TRow> | undefined;
   pinnedTopRows: readonly TRow[];
   pinnedBottomRows: readonly TRow[];
+  extraRows: DataTableProps<TRow>["extraRows"];
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -970,8 +1018,12 @@ function DesktopTableBody<TRow>({
           ),
         }
       : undefined;
-    if (!gridComponents && !header) return undefined;
-    return { ...gridComponents, ...(header ? { header } : {}) };
+    const body = {
+      wrapper: (props: HTMLAttributes<HTMLTableSectionElement>) => (
+        <tbody data-adapttable-part="tbody" {...props} />
+      ),
+    };
+    return { ...gridComponents, ...(header ? { header } : {}), body };
   }, [gridComponents, pinArmed, theadRef]);
 
   return (
@@ -1085,6 +1137,7 @@ function DataTableBodyRegion<TRow>(
     rowPinning,
     pinnedTopRows,
     pinnedBottomRows,
+    extraRows,
   } = props;
 
   let body: ReactNode;
@@ -1134,6 +1187,7 @@ function DataTableBodyRegion<TRow>(
         windowStart={windowStart}
         pinnedTopRows={pinnedTopRows}
         pinnedBottomRows={pinnedBottomRows}
+        extraRows={extraRows}
       />
     );
   } else {
@@ -1412,13 +1466,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const dataSourceBase: readonly GroupedDataRecord<TRow>[] = grouping
     ? buildGroupedDataSource(grouping.entries)
     : (treeEntries?.map((entry) => entry.row) ?? source.rows);
-  const { dataSource, pinnedTopRows, pinnedBottomRows } = antdPinnedDataSource(
+  const {
+    dataSource: partitionedSource,
+    pinnedTopRows,
+    pinnedBottomRows,
+  } = antdPinnedDataSource(
     grouping,
     treeEntries,
     c.rowPinning,
     source.rows,
     getRowId,
     dataSourceBase
+  );
+  const dataSource = resolveAntdDataSource(
+    grouping,
+    partitionedSource,
+    props.extraRows,
+    getRowId
   );
   const { cellsByRow } = tableRenderModel({
     table,
@@ -1573,6 +1637,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       rowPinning={c.rowPinning}
       pinnedTopRows={pinnedTopRows}
       pinnedBottomRows={pinnedBottomRows}
+      extraRows={props.extraRows}
     />
   );
 

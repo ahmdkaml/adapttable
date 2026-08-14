@@ -93,6 +93,7 @@ export const de: Required<TableLabels> = {
   pinToTop: "Oben anheften",
   pinToBottom: "Unten anheften",
   unpinRow: "Zeile lösen",
+  rowSeparator: "Trennlinie",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

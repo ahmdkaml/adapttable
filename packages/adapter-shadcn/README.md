@@ -66,6 +66,7 @@ change.
 - **Row reordering** (`onRowReorder`) — drag handle, Space-lift keyboard, dataset-relative indices. Grouping and trees refuse it.
 - **Row pinning** (`pinnedRowIds` / `onPinnedRowIdsChange`) — sticky top and bottom rows outside the virtual window. Grouping and trees refuse it.
 - **Row and column spanning** (`getCellSpan`) — one cell list per row; covered cells are omitted.
+- **Full-width and separator rows** (`extraRows`) — host-injected slots spliced in by `beforeRowId`.
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.

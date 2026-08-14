@@ -135,6 +135,13 @@ export {
 } from "./pagination/paginationMath";
 export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
 export {
+  EXTRA_ROW_PARTS,
+  type ExtraEntry,
+  type ExtraRow,
+  insertExtraRows,
+  isExtraEntry,
+} from "./rows/extraRows";
+export {
   orderedCardEntries,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,

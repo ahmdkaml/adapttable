@@ -90,6 +90,7 @@ export const pt: Required<TableLabels> = {
   pinToTop: "Fixar no topo",
   pinToBottom: "Fixar no fundo",
   unpinRow: "Desafixar linha",
+  rowSeparator: "Separador",
   moreGroups: (remaining) => `Mostrar mais ${remaining} grupos`,
   moreRowsInGroup: (remaining) => `Mostrar mais ${remaining} neste grupo`,
   groupTotal: (label) => `Total ${label}`,

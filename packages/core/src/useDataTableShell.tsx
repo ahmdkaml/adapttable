@@ -338,6 +338,7 @@ export function useDataTableShell<TRow>(
     pinnedBottomRows,
     rowPinning: chrome.rowPinning,
     getCellSpan: props.getCellSpan,
+    extraRows: props.extraRows,
     windowStart,
     confirm,
     getRowId,

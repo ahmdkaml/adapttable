@@ -91,6 +91,7 @@ export const hi: Required<TableLabels> = {
   pinToTop: "ऊपर पिन करें",
   pinToBottom: "नीचे पिन करें",
   unpinRow: "पंक्ति अनपिन करें",
+  rowSeparator: "विभाजक",
   moreGroups: (remaining) => `${remaining} और समूह दिखाएँ`,
   moreRowsInGroup: (remaining) => `इस समूह में ${remaining} और दिखाएँ`,
   groupTotal: (label) => `${label} कुल`,
