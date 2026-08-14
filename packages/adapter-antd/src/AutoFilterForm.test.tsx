@@ -80,6 +80,25 @@ function openOperator(name: string) {
 }
 
 describe("<AutoFilterForm> (Ant Design)", () => {
+  it("boolean: tri-state select writes true and clears", () => {
+    const source = staticSource({});
+    render(
+      <AutoFilterForm
+        defs={[{ key: "core", type: "boolean", label: "Core team" }]}
+        source={source}
+        labels={defaultLabels}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Core team"), {
+      target: { value: "true" },
+    });
+    expect(source.setExtra).toHaveBeenCalledWith("core", "true");
+    fireEvent.change(screen.getByLabelText("Core team"), {
+      target: { value: "" },
+    });
+    expect(source.setExtra).toHaveBeenCalledWith("core", undefined);
+  });
+
   it("tolerates a scalar multiSelect value (treats it as one selection)", () => {
     render(
       <AutoFilterForm

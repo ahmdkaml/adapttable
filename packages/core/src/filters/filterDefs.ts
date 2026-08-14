@@ -37,6 +37,7 @@ export const FILTER_TYPES = [
   "text",
   "select",
   "multiSelect",
+  "boolean",
   "dateRange",
   "numberRange",
 ] as const;
@@ -110,6 +111,25 @@ export function filterStateKeys(
   }
   if (def.type === "text") return [def.key, opKey];
   return [def.key];
+}
+
+/** Coerce a row value to a boolean, or `undefined` when it has no truth. */
+export function coerceBooleanValue(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (value === 1 || value === "1") return true;
+  if (value === 0 || value === "0") return false;
+  if (typeof value === "string") {
+    const token = value.trim().toLowerCase();
+    if (token === "true" || token === "yes") return true;
+    if (token === "false" || token === "no") return false;
+    if (token === "") return undefined;
+  }
+  if (value == null) return undefined;
+  return Boolean(value);
+}
+
+function booleanChoiceOn(value: FilterValue): boolean {
+  return value === "true" || value === 1;
 }
 
 /**
@@ -381,6 +401,13 @@ export function filterPredicate<TRow>(
       return (row, extra) =>
         !has(extra, def.key) ||
         valueText(value(row)) === String(extra[def.key]);
+    case "boolean":
+      return (row, extra) => {
+        if (!has(extra, def.key)) return true;
+        return (
+          coerceBooleanValue(value(row)) === booleanChoiceOn(extra[def.key])
+        );
+      };
     case "multiSelect":
       return (row, extra) => {
         if (!has(extra, def.key)) return true;
@@ -525,6 +552,14 @@ export function buildFilterRuntime<TRow>(
         break;
       case "select":
         filterLabels[def.key] = (v) => `${label}: ${optionLabel(def, v)}`;
+        break;
+      case "boolean":
+        filterLabels[def.key] = (v) =>
+          `${label}: ${
+            booleanChoiceOn(v)
+              ? defaultLabels.boolTrue
+              : defaultLabels.boolFalse
+          }`;
         break;
       case "text":
         filterLabels[def.key] = (v, extra) =>

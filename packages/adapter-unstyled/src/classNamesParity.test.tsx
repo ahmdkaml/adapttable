@@ -119,6 +119,7 @@ const columns: ColumnDef<Row>[] = [
 
 const filters: FilterDef<Row>[] = [
   { key: "name", type: "text", label: "Name" },
+  { key: "ok", type: "boolean", label: "Ok" },
   { key: "qty", type: "numberRange", label: "Qty" },
   {
     key: "tag",

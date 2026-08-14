@@ -167,7 +167,7 @@ surface — see [Adapter extras](#adapter-extras) and
 | Prop          | Type                     | Default         | Description                                                                                                                           |
 | ------------- | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate.      |
-| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "dateRange" \| "numberRange"`.                                   |
+| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "boolean" \| "dateRange" \| "numberRange"`.                      |
 | `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                                  |
 | `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`: a static `FilterOption[]`, `"auto"` (distinct frontend values, capped at 50), or an async loader. |
 | `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                                    |
@@ -178,7 +178,9 @@ Range types persist two inclusive state keys: `dateRange` →
 operator-first widget also writes `f_<key>Op` (`TEXT_OPS` / `NUMBER_OPS` /
 `DATE_OPS`) so the comparison survives the URL and Saved Views. Headless:
 `readRangeWidget`, `writeRangeWidget`, `writeRangeFilter`,
-`useTextFilterWidget`, `useRangeFilterWidget`.
+`useTextFilterWidget`, `useRangeFilterWidget`, `useBooleanFilterWidget`.
+A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
+the param is any.
 
 ## Adapter extras
 
@@ -483,7 +485,9 @@ Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
 `parseTextOp` / `parseNumberOp` / `parseDateOp` /
 `readFilterOp` / `parseListOperand` / `parseNumberList` / `isEmptyRowValue` /
 `formatFilterChip` / `filterOpLabel` / `useTextFilterWidget` /
-`TextFieldWidget`. See [filtering](./filtering.md).
+`TextFieldWidget` / `useBooleanFilterWidget` / `BooleanFieldWidget` /
+`BooleanChoice` / `parseBooleanChoice` / `coerceBooleanValue`.
+See [filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,

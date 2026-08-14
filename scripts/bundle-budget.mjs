@@ -160,11 +160,14 @@ const FIXTURES = [
   // `filters` array — omit it and no widget renders — but the
   // comparison tokens ride the same AutoFilterForm path. `core ·
   // simple table` stayed at 11.7 KB of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 95 },
+  //
+  // Boolean filter (~0.3 KB) adds the tri-state any/true/false widget
+  // on that same AutoFilterForm path. `core · simple table` unmoved.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 96 },
   { name: "mui · table", pkg: "adapter-mui", budgetKB: 95 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 94 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 95 },
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 91 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 94 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 95 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 101 },
   { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 97 },
   { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 94 },

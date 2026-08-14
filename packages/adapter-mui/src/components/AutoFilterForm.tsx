@@ -5,6 +5,7 @@ import {
   type FilterValue,
   type TableLabels,
   type TableSource,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
@@ -110,6 +111,35 @@ function TextFilter<TRow>({
         )}
       </Stack>
     </FormControl>
+  );
+}
+
+function BooleanFilter<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<LabeledFieldProps<TRow>>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <TextField
+      select
+      size="small"
+      label={label}
+      value={choice}
+      onChange={(e) => {
+        const next = e.target.value;
+        if (next === "" || next === "true" || next === "false") write(next);
+      }}
+      data-adapttable-part="filter-select"
+      slotProps={{
+        select: { native: true },
+        inputLabel: { shrink: true },
+      }}
+    >
+      <option value="">{labels.boolAny}</option>
+      <option value="true">{labels.boolTrue}</option>
+      <option value="false">{labels.boolFalse}</option>
+    </TextField>
   );
 }
 
@@ -261,6 +291,8 @@ function FilterField<TRow>({
   switch (def.type) {
     case "text":
       return <TextFilter def={def} source={source} labels={labels} />;
+    case "boolean":
+      return <BooleanFilter def={def} source={source} labels={labels} />;
     case "select":
       return <SelectFilter def={def} source={source} />;
     case "multiSelect":

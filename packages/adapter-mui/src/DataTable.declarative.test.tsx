@@ -78,6 +78,12 @@ const FILTERS: FilterDef<Person>[] = [
   },
   { key: "hiredAt", type: "dateRange" },
   { key: "budget", type: "numberRange" },
+  {
+    key: "active",
+    type: "boolean",
+    label: "Active",
+    getValue: (row) => row.status === "active",
+  },
 ];
 
 const theme = createTheme();
@@ -233,6 +239,19 @@ describe("declarative DataTable (MUI)", () => {
     expect(seen.map((s) => s.status)).toEqual([undefined, "blocked"]);
     expect(seen[0]!.aborted).toBe(true);
     expect(seen[1]!.aborted).toBe(false);
+  });
+
+  it("boolean filter writes true and clears", () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(screen.getByLabelText("Active"), {
+      target: { value: "true" },
+    });
+    expect(param(adapter, "f_active")).toBe("true");
+    fireEvent.change(screen.getByLabelText("Active"), {
+      target: { value: "" },
+    });
+    expect(param(adapter, "f_active")).toBeNull();
   });
 
   it("text filter writes its key (and empty clears it)", () => {

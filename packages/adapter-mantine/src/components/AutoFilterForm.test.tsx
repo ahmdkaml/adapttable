@@ -106,6 +106,16 @@ describe("<AutoFilterForm>", () => {
     });
   });
 
+  it("boolean: tri-state select writes true and clears", () => {
+    const { source, setExtra } = makeSource();
+    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
+    const select = screen.getByLabelText("Core team");
+    fireEvent.change(select, { target: { value: "true" } });
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
+    fireEvent.change(select, { target: { value: "" } });
+    expect(setExtra).toHaveBeenCalledWith("core", undefined);
+  });
+
   it("select: prepends a clearing All option and writes the chosen value", () => {
     const { source, setExtra } = makeSource();
     renderForm([{ key: "status", type: "select" }], source);

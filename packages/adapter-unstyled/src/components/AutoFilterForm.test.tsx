@@ -80,6 +80,22 @@ describe("<AutoFilterForm> standalone", () => {
     expect(setExtra).toHaveBeenCalledWith("tags", []);
   });
 
+  it("boolean: tri-state select writes true / false / clears", () => {
+    const { source, setExtra } = stubSource({});
+    render(
+      <AutoFilterForm<Row>
+        defs={[{ key: "core", type: "boolean", label: "Core team" }]}
+        source={source}
+      />
+    );
+    const select = screen.getByLabelText("Core team");
+    expect(select).toHaveValue("");
+    fireEvent.change(select, { target: { value: "true" } });
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
+    fireEvent.change(select, { target: { value: "" } });
+    expect(setExtra).toHaveBeenCalledWith("core", undefined);
+  });
+
   it("treats an empty-string bag value as nothing selected and renders option-less groups", () => {
     const { source } = stubSource({ tags: "" });
     render(

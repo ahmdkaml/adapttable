@@ -134,6 +134,7 @@ interface Strings {
   trend: string;
   allocationFilter: string;
   budgetFilter: string;
+  coreFilter: string;
   edit: string;
   remove: string;
   /** Spanning header over the two assignment columns. */
@@ -166,6 +167,7 @@ const STRINGS: Record<Locale, Strings> = {
     trend: "Trend",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
+    coreFilter: "Core team",
     edit: "Edit",
     remove: "Delete",
     groupAssignment: "Assignment",
@@ -192,6 +194,7 @@ const STRINGS: Record<Locale, Strings> = {
     trend: "الاتجاه",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
+    coreFilter: "الفريق الأساسي",
     edit: "تعديل",
     remove: "حذف",
     groupAssignment: "التعيين",
@@ -906,6 +909,12 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
       type: "numberRange",
       label: s.allocationFilter,
       getValue: allocationCount,
+    },
+    {
+      key: "core",
+      type: "boolean",
+      label: s.coreFilter,
+      getValue: (row) => row.team === "Core",
     },
   ];
 }

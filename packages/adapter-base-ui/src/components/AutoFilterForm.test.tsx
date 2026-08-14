@@ -75,6 +75,14 @@ describe("<AutoFilterForm> (Base UI)", () => {
     });
   });
 
+  it("boolean: tri-state select writes true and clears", () => {
+    const { setExtra } = renderForm([
+      { key: "core", type: "boolean", label: "Core team" },
+    ]);
+    pickOption("Core team", "True");
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
+  });
+
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
     const { setExtra } = renderForm(
       [{ key: "status", type: "select", options: STATUS_OPTIONS }],

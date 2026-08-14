@@ -8,6 +8,7 @@ import {
   resolveLabels,
   scalarFilterText,
   type TableLabels,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
@@ -192,6 +193,36 @@ function TextFilterField<TRow>({
   );
 }
 
+function BooleanFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <FormField label={label}>
+      <NativeSelect
+        size="1"
+        aria-label={label}
+        data-adapttable-part="filter-select"
+        value={choice}
+        options={[
+          { value: "", label: labels.boolAny },
+          { value: "true", label: labels.boolTrue },
+          { value: "false", label: labels.boolFalse },
+        ]}
+        onValueChange={(next) => {
+          if (next === "" || next === "true" || next === "false") write(next);
+        }}
+      />
+    </FormField>
+  );
+}
+
 /** One definition rendered as its kit-native Radix Themes control. */
 function AutoFilterField<TRow>({
   def,
@@ -213,6 +244,8 @@ function AutoFilterField<TRow>({
   switch (def.type) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
+    case "boolean":
+      return <BooleanFilterField def={def} source={source} labels={labels} />;
     case "select": {
       const selectOptions: SelectOption[] = loading
         ? [{ value: "", label: "…", disabled: true }]

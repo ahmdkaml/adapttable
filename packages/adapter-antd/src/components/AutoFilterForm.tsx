@@ -5,6 +5,7 @@ import {
   type FilterValue,
   type TableLabels,
   type TableSource,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
@@ -175,6 +176,31 @@ function TextFilterField<TRow>({
   );
 }
 
+function BooleanFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<ControlProps<TRow>>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <select
+      className="ant-input ant-input-sm"
+      style={{ width: "100%" }}
+      aria-label={label}
+      data-adapttable-part="filter-select"
+      value={choice}
+      onChange={(event) => {
+        const next = event.target.value;
+        if (next === "" || next === "true" || next === "false") write(next);
+      }}
+    >
+      <option value="">{labels.boolAny}</option>
+      <option value="true">{labels.boolTrue}</option>
+      <option value="false">{labels.boolFalse}</option>
+    </select>
+  );
+}
+
 interface ControlProps<TRow> {
   def: FilterDef<TRow>;
   source: AutoFilterFormProps<TRow>["source"];
@@ -202,6 +228,8 @@ function FilterControl<TRow>({
   switch (def.type) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
+    case "boolean":
+      return <BooleanFilterField def={def} source={source} labels={labels} />;
     case "select":
       // A native select (antd-styled) instead of antd's portal-driven
       // <Select>, so the control works anywhere the popover renders.

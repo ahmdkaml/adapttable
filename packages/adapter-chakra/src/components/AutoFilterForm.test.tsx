@@ -52,6 +52,20 @@ describe("<AutoFilterForm> (Chakra)", () => {
     });
   });
 
+  it("boolean: tri-state select writes true and clears", () => {
+    const { setExtra } = renderForm([
+      { key: "core", type: "boolean", label: "Core team" },
+    ]);
+    fireEvent.change(screen.getByLabelText("Core team"), {
+      target: { value: "true" },
+    });
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
+    fireEvent.change(screen.getByLabelText("Core team"), {
+      target: { value: "" },
+    });
+    expect(setExtra).toHaveBeenCalledWith("core", undefined);
+  });
+
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
     const { setExtra } = renderForm(
       [{ key: "status", type: "select", options: STATUS_OPTIONS }],

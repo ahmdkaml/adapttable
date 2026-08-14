@@ -9,7 +9,9 @@ import {
   type FilterFormSource,
   filterOpLabel,
   listFilterValues,
+  parseBooleanChoice,
   scalarFilterText,
+  useBooleanFilterWidget,
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "./filterForm";
@@ -224,6 +226,26 @@ describe("useTextFilterWidget", () => {
   it("resolves operator labels and falls back for non-string keys", () => {
     expect(filterOpLabel(defaultLabels, "opContains")).toBe("Contains");
     expect(filterOpLabel(defaultLabels, "removeFilter")).toBe("removeFilter");
+  });
+
+  it("boolean: any / true / false, clearing writes undefined", () => {
+    expect(parseBooleanChoice("true")).toBe("true");
+    expect(parseBooleanChoice("false")).toBe("false");
+    expect(parseBooleanChoice(undefined)).toBe("");
+    const setExtra = vi.fn();
+    const source: FilterFormSource<{ lead: boolean }> = {
+      extra: { lead: "true" },
+      setExtra,
+      setExtras: vi.fn(),
+    };
+    const { result } = renderHook(() =>
+      useBooleanFilterWidget({ key: "lead", type: "boolean" }, source)
+    );
+    expect(result.current.choice).toBe("true");
+    act(() => result.current.write("false"));
+    expect(setExtra).toHaveBeenCalledWith("lead", "false");
+    act(() => result.current.write(""));
+    expect(setExtra).toHaveBeenCalledWith("lead", undefined);
   });
 
   it("drops the term for empty / notEmpty", () => {

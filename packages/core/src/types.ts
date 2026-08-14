@@ -443,6 +443,12 @@ export interface TableLabels {
   opBefore?: string;
   /** Date operator: strictly after the day. */
   opAfter?: string;
+  /** Boolean filter: don't care (the default). */
+  boolAny?: string;
+  /** Boolean filter: require true. */
+  boolTrue?: string;
+  /** Boolean filter: require false. */
+  boolFalse?: string;
   /** Saved-views menu trigger / list title. */
   savedViews?: string;
   /** Save-current-view action. */

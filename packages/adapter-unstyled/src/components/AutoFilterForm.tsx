@@ -6,6 +6,7 @@ import {
   resolveLabels,
   type TableLabels,
   type TableSource,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
@@ -115,6 +116,39 @@ function TextField<TRow>({
         )}
       </div>
     </fieldset>
+  );
+}
+
+function BooleanField<TRow>({
+  def,
+  source,
+  classNames,
+  labels,
+}: Readonly<DefFieldProps<TRow> & { labels: Required<TableLabels> }>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <label data-adapttable-part={FIELD_PART} className={classNames.filterField}>
+      <span
+        data-adapttable-part={LABEL_PART}
+        className={classNames.filterLabel}
+      >
+        {label}
+      </span>{" "}
+      <select
+        aria-label={label}
+        data-adapttable-part="filter-select"
+        className={classNames.filterSelect}
+        value={choice}
+        onChange={(e) => {
+          const next = e.currentTarget.value;
+          if (next === "" || next === "true" || next === "false") write(next);
+        }}
+      >
+        <option value="">{labels.boolAny}</option>
+        <option value="true">{labels.boolTrue}</option>
+        <option value="false">{labels.boolFalse}</option>
+      </select>
+    </label>
   );
 }
 
@@ -332,6 +366,15 @@ function FilterField<TRow>({
     case "text":
       return (
         <TextField
+          def={def}
+          source={source}
+          classNames={classNames}
+          labels={labels}
+        />
+      );
+    case "boolean":
+      return (
+        <BooleanField
           def={def}
           source={source}
           classNames={classNames}

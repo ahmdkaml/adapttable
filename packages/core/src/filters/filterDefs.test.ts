@@ -5,6 +5,7 @@ import { resetDevWarnings } from "../utils/devWarn";
 import {
   buildFilterRuntime,
   clearedFilterExtras,
+  coerceBooleanValue,
   type FilterDef,
   filterLabel,
   filterPredicate,
@@ -27,6 +28,19 @@ const ROW: Row = {
   hiredAt: "2026-03-10",
   department: { name: "Core" },
 };
+
+describe("coerceBooleanValue", () => {
+  it("reads booleans, common tokens, and leaves empty unknown", () => {
+    expect(coerceBooleanValue(true)).toBe(true);
+    expect(coerceBooleanValue(false)).toBe(false);
+    expect(coerceBooleanValue(1)).toBe(true);
+    expect(coerceBooleanValue(0)).toBe(false);
+    expect(coerceBooleanValue("yes")).toBe(true);
+    expect(coerceBooleanValue("NO")).toBe(false);
+    expect(coerceBooleanValue("")).toBeUndefined();
+    expect(coerceBooleanValue(null)).toBeUndefined();
+  });
+});
 
 describe("filterStateKeys", () => {
   it("single key for scalar types, suffixed pairs for ranges", () => {
@@ -134,6 +148,19 @@ describe("filterPredicate", () => {
     const blank = { ...ROW, name: "" };
     expect(p(blank, { nameOp: "empty" })).toBe(true);
     expect(p(blank, { nameOp: "notEmpty" })).toBe(false);
+  });
+
+  it("boolean: tri-state, inactive is any", () => {
+    const p = filterPredicate<Row>({
+      key: "lead",
+      type: "boolean",
+      getValue: (row) => row.name === "Alice",
+    });
+    expect(p(ROW, {})).toBe(true);
+    expect(p(ROW, { lead: "true" })).toBe(true);
+    expect(p(ROW, { lead: 1 })).toBe(true);
+    expect(p(ROW, { lead: "false" })).toBe(false);
+    expect(p({ ...ROW, name: "Bob" }, { lead: "false" })).toBe(true);
   });
 
   it("select: strict value match", () => {
@@ -341,6 +368,7 @@ describe("buildFilterRuntime", () => {
       options: [{ value: "active", label: "Active" }],
     },
     { key: "team", type: "select", options: [{ value: "c", label: "Core" }] },
+    { key: "lead", type: "boolean", label: "Lead" },
     { key: "hiredAt", type: "dateRange", label: "Hired" },
     { key: "budget", type: "numberRange", label: "Budget" },
   ];
@@ -360,6 +388,8 @@ describe("buildFilterRuntime", () => {
     expect(runtime.filterLabels.nameOp!("contains")).toBe("");
     expect(runtime.filterLabels.status!("active")).toBe("Status: Active");
     expect(runtime.filterLabels.team!("c")).toBe("Team: Core");
+    expect(runtime.filterLabels.lead!("true")).toBe("Lead: True");
+    expect(runtime.filterLabels.lead!("false")).toBe("Lead: False");
     expect(runtime.filterLabels.team!("unknown")).toBe("Team: unknown");
     expect(runtime.filterLabels.hiredAtFrom!("2026-01-01")).toBe(
       "Hired ≥ 2026-01-01"
@@ -393,6 +423,7 @@ describe("buildFilterRuntime", () => {
       nameOp: undefined,
       status: undefined,
       team: undefined,
+      lead: undefined,
       hiredAtFrom: undefined,
       hiredAtTo: undefined,
       hiredAtOp: undefined,

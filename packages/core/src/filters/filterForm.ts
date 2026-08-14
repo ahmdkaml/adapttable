@@ -231,3 +231,39 @@ export function filterOpLabel(
 }
 
 export type { DateOp, NumberOp, TextOp };
+
+/** One choice in a tri-state boolean filter (`""` = any). */
+export type BooleanChoice = "" | "true" | "false";
+
+/** Read a boolean filter slot as a tri-state choice. */
+export function parseBooleanChoice(value: FilterValue): BooleanChoice {
+  if (value === "true" || value === 1) return "true";
+  if (value === "false" || value === 0) return "false";
+  return "";
+}
+
+/** Computed state + writer driving a tri-state boolean field. */
+export interface BooleanFieldWidget {
+  /** The field's display label. */
+  label: string;
+  /** Selected choice (`""` means any / don't care). */
+  choice: BooleanChoice;
+  /** Persist the choice (`""` clears the key). */
+  write: (next: BooleanChoice) => void;
+}
+
+/**
+ * Kit-agnostic logic for a `boolean` filter: any / true / false, never a
+ * checkbox. The token is stored as `f_<key>=true|false`; omitting it is any.
+ */
+export function useBooleanFilterWidget<TRow>(
+  def: FilterDef<TRow>,
+  source: FilterFormSource<TRow>
+): BooleanFieldWidget {
+  const { extra, setExtra } = source;
+  return {
+    label: filterLabel(def),
+    choice: parseBooleanChoice(extra[def.key]),
+    write: (next) => setExtra(def.key, next === "" ? undefined : next),
+  };
+}

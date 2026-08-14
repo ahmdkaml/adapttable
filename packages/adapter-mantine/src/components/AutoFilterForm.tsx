@@ -5,6 +5,7 @@ import {
   type FilterValue,
   type TableLabels,
   type TableSource,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
@@ -138,6 +139,35 @@ function RangeField<TRow>({
  * (static array, async loader, or none); while a loader is in flight the
  * select shows one disabled placeholder option.
  */
+function BooleanControl<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: TableSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <NativeSelect
+      size="sm"
+      label={label}
+      data-adapttable-part="filter-select"
+      data={[
+        { value: "", label: labels.boolAny },
+        { value: "true", label: labels.boolTrue },
+        { value: "false", label: labels.boolFalse },
+      ]}
+      value={choice}
+      onChange={(e) => {
+        const next = e.currentTarget.value;
+        if (next === "" || next === "true" || next === "false") write(next);
+      }}
+    />
+  );
+}
+
 function SelectControl<TRow>({
   def,
   source,
@@ -255,6 +285,8 @@ function FilterControl<TRow>({
   switch (def.type) {
     case "text":
       return <TextFilterField def={def} source={source} labels={labels} />;
+    case "boolean":
+      return <BooleanControl def={def} source={source} labels={labels} />;
     case "select":
       return <SelectControl def={def} source={source} />;
     case "multiSelect":
