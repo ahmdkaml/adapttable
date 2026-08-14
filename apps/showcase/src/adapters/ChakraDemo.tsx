@@ -105,6 +105,7 @@ export function ChakraDemo({
   rowPinning,
   cellSpan,
   extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -126,6 +127,7 @@ export function ChakraDemo({
   rowPinning?: boolean;
   cellSpan?: boolean;
   extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -149,6 +151,7 @@ export function ChakraDemo({
           rowPinning={rowPinning}
           cellSpan={cellSpan}
           extraRows={extraRows}
+          rowStyle={rowStyle}
           editing={editing}
           render={(source, columns) => (
             <DataTable

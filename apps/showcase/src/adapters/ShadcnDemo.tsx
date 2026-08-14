@@ -33,6 +33,7 @@ export function ShadcnDemo({
   rowPinning,
   cellSpan,
   extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -53,6 +54,7 @@ export function ShadcnDemo({
   rowPinning?: boolean;
   cellSpan?: boolean;
   extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -75,6 +77,7 @@ export function ShadcnDemo({
       rowPinning={rowPinning}
       cellSpan={cellSpan}
       extraRows={extraRows}
+      rowStyle={rowStyle}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}

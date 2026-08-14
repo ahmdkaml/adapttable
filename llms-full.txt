@@ -251,6 +251,7 @@ The source for each lives in
 - [Row pinning](./row-pinning.md) — sticky top and bottom rows, `{ top, bottom }` ids
 - [Row and column spanning](./row-spanning.md) — `getCellSpan`, one cell list per row
 - [Full-width and separator rows](./full-width-rows.md) — `extraRows`, host-injected slots
+- [Row styling and heights](./row-styling.md) — `rowStyle`, `rowHeight`, variable-height virtualizer
   keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
@@ -3848,6 +3849,8 @@ real measured sizes (like the `140` above) when your cells differ.
   header above the table).
 - **Element mode** (any `maxHeight` box): the same prop virtualizes inside the
   scroll box instead — the box is the scroller and the window tracks it.
+- `rowHeight` overrides the estimate when set — a function is per row, so
+  a variable-height table still windows. See [row styling and heights](./row-styling.md).
 - Rows/cards are measured after render; `estimateRowSize` (desktop rows) and
   `estimateCardSize` (mobile cards) seed the math, and `virtualOverscan` rows
   are rendered beyond the visible window to keep scrolling smooth.
@@ -3987,6 +3990,8 @@ layouts.
 - **`rowClassName`** applies to desktop rows and mobile cards alike, and the
   [class-hook / `data-adapttable-part` surface](./customization.md) names the
   card regions (`cardDetail`, `group-card`, `summaryCard`) for styling.
+- **`rowStyle` / `rowHeight`** apply the same way — see
+  [row styling and heights](./row-styling.md).
 
 ## It composes with everything else
 
@@ -4340,6 +4345,8 @@ render.
 
 A spectrum, all opt-in: restyle parts with `classNames`, replace parts with
 `slots`, tune the chrome with props, or theme through your kit's provider.
+Per-row colour and height are `rowStyle` / `rowHeight` — see
+[row styling and heights](./row-styling.md).
 
 ## `classNames` — per-part styling
 
@@ -5110,6 +5117,8 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
 | `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
 | `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
+| `rowStyle`                  | `(row: TRow, index: number) => CSSProperties \| undefined`      | —               | Conditional per-row inline style, on desktop rows and mobile cards alike. See [row styling and heights](./row-styling.md).                                                                                                                                                                                                                                                       |
+| `rowHeight`                 | `number \| ((row: TRow, index: number) => number)`              | —               | Row height in px. Sets the row and the virtualizer's `estimateSize`. `measureElement` still reports what the browser laid out. See [row styling and heights](./row-styling.md).                                                                                                                                                                                                  |
 | `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                                                                                                                                                              |
 | `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                                                                                                                                                                    |
 | `onEditStart`               | `EditEventHandler<TRow>`                                        | —               | Observe an editor opening (cell, row or batch). Cannot change the outcome.                                                                                                                                                                                                                                                                                                       |
@@ -5470,6 +5479,8 @@ See [cell editing](./cell-editing.md).
 
 **Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
 
+**Row styling and heights.** `rowStyle` / `rowHeight` resolve through `resolveRowStyle` / `resolveRowHeight`. Height wins over `style.height`. `rowStyleSignature` is the memo digest; `rowStyleArmed` is whether either hook was passed; `estimateFromRowHeight` is the virtualizer estimator. Types: `RowStyle`, `RowHeight`. See [row styling and heights](./row-styling.md).
+
 **Row pinning.** `pinnedRowIds` / `onPinnedRowIdsChange` take a `RowPinState` (`{ top, bottom }` of `RowPinSide`). `applyRowPin(state, rowId, side)` is the in-memory helper; `partitionPinnedRows` splits a list into top / scroll / bottom; `EMPTY_ROW_PIN_STATE` is the empty lists. `useRowPinning` returns `RowPinningState`; `rowPinSignature` is the memo digest. Action keys: `PIN_TOP_ACTION_KEY`, `PIN_BOTTOM_ACTION_KEY`, `UNPIN_ROW_ACTION_KEY`. URL: `useRowPinningUrlState` (`UseRowPinningUrlStateOptions` / `UseRowPinningUrlStateResult`) writes `rowPin=id:top,id:bottom`. Labels: `pinToTop`, `pinToBottom`, `unpinRow` (`RowPinLabels`). `rowSourceIndex(entry)` is the dataset index when pinning remapped the window. From `@adapttable/core/adapter`: `pinnedRowStickyStyle` / `pinnedRowCellStyle`, `orderedCardEntries`, `useOffsetHeight`, `PINNED_TOP_PART` / `PINNED_BOTTOM_PART`. See [row pinning](./row-pinning.md).
 
 **Filter internals.** `FILTER_TYPES` lists the built-in types, `filterLabel`
@@ -5746,6 +5757,9 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).              |
 | `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md). |
 | `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                    |
+| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                   |
+| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                       |
+| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                     |
 | `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                            |
 | `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                  |
 

@@ -459,6 +459,15 @@ export {
   useRowReorder,
 } from "./rows/rowReorder";
 export {
+  estimateFromRowHeight,
+  resolveRowHeight,
+  resolveRowStyle,
+  type RowHeight,
+  type RowStyle,
+  rowStyleArmed,
+  rowStyleSignature,
+} from "./rows/rowStyle";
+export {
   type RowExpansionState,
   useRowExpansion,
 } from "./rows/useRowExpansion";

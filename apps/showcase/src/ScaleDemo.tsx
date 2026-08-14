@@ -142,8 +142,9 @@ const COLUMNS: ColumnDef<BigPerson>[] = [
  *  to turn windowing OFF, `?all=1` to load the whole list up front, `?cols=N`
  *  to pad the table out to N columns, `?tier=server` to answer from a paged
  *  server instead of memory, `?edit=1` to make the cells editable, and
- *  `?patch=N` to apply N row patches after mount. They drive the benchmark
- *  suite (`scripts/bench.mjs`); every default is the demo a visitor sees. */
+ *  `?patch=N` to apply N row patches after mount, `?rowHeight=1` for a
+ *  variable-height virtualizer. They drive the benchmark suite
+ *  (`scripts/bench.mjs`); every default is the demo a visitor sees. */
 function scaleParams(): {
   total: number;
   virtual: boolean;
@@ -154,6 +155,7 @@ function scaleParams(): {
   edit: boolean;
   patches: number;
   tree: boolean;
+  variableHeight: boolean;
 } {
   const DEFAULTS = {
     total: 50000,
@@ -165,6 +167,7 @@ function scaleParams(): {
     patches: 0,
     virtualCols: false,
     tree: false,
+    variableHeight: false,
   };
   if (typeof window === "undefined") return DEFAULTS;
   const p = new URLSearchParams(window.location.search);
@@ -182,6 +185,7 @@ function scaleParams(): {
     edit: p.get("edit") === "1",
     patches: int("patch"),
     tree: p.get("tree") === "1",
+    variableHeight: p.get("rowHeight") === "1",
   };
 }
 
@@ -251,17 +255,23 @@ function serverRow(index: number): BigPerson {
  * browser never holds the set. `total` is what the pager and the ARIA counts
  * report, so 1,000,000 means 1,000,000.
  */
+function variableRowHeight(row: BigPerson): number {
+  return 40 + (row.id % 4) * 12;
+}
+
 function ServerScaleTable({
   total,
   columns,
   virtual,
   virtualCols,
+  variableHeight,
   dark,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
   virtual: boolean;
   virtualCols: boolean;
+  variableHeight: boolean;
   dark: boolean;
 }>) {
   const [page, setPage] = useState({ from: 0, limit: 500 });
@@ -293,6 +303,7 @@ function ServerScaleTable({
         virtualize={virtual}
         virtualizeColumns={virtualCols}
         estimateRowSize={48}
+        rowHeight={variableHeight ? variableRowHeight : undefined}
         stickyHeader
         stickyTop={62}
       />
@@ -312,6 +323,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     edit,
     patches,
     tree,
+    variableHeight,
   } = scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
   if (server) {
@@ -321,6 +333,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
         columns={columns}
         virtual={virtual}
         virtualCols={virtualCols}
+        variableHeight={variableHeight}
         dark={dark}
       />
     );
@@ -331,6 +344,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
       columns={columns}
       virtual={virtual}
       virtualCols={virtualCols}
+      variableHeight={variableHeight}
       all={all}
       edit={edit}
       patches={patches}
@@ -346,6 +360,7 @@ function FrontendScaleTable({
   columns,
   virtual,
   virtualCols,
+  variableHeight,
   all,
   edit,
   patches,
@@ -356,6 +371,7 @@ function FrontendScaleTable({
   columns: ColumnDef<BigPerson>[];
   virtual: boolean;
   virtualCols: boolean;
+  variableHeight: boolean;
   all: boolean;
   edit: boolean;
   patches: number;
@@ -433,6 +449,7 @@ function FrontendScaleTable({
           getParentId={treeShape?.getParentId}
           expandedIds={treeShape?.expandedIds}
           estimateRowSize={48}
+          rowHeight={variableHeight ? variableRowHeight : undefined}
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.
           stickyHeader

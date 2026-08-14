@@ -29,6 +29,7 @@ import {
 import type { ExtraRow } from "./rows/extraRows";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
+import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { RowExpansionState } from "./rows/useRowExpansion";
 import type { SelectionState } from "./selection/useSelection";
 import { bodyRowEntries, type TreeEntry } from "./tree/treeRows";
@@ -65,6 +66,10 @@ export interface SharedTableRenderProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /** Conditional per-row style — see `BaseDataTableProps.rowStyle`. */
+  rowStyle?: RowStyle<TRow>;
+  /** Per-row height — see `BaseDataTableProps.rowHeight`. */
+  rowHeight?: RowHeight<TRow>;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */

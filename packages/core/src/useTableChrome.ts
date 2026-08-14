@@ -57,6 +57,7 @@ import {
   useRowPinning,
 } from "./rows/rowPinning";
 import { type RowReorderState, useRowReorder } from "./rows/rowReorder";
+import { estimateFromRowHeight } from "./rows/rowStyle";
 import {
   type RowExpansionState,
   useRowExpansion,
@@ -1090,7 +1091,14 @@ export function useChromeBodyData<TRow>(
   // virtualizer counts source rows, and a tree's visible list is its own.
   const treeArmed = Boolean(chrome.tree);
   const treeKeys = entryKeys(chrome.tree?.entries);
-  const estimateSize = estimateBodyItemSize(chrome, props);
+  const pinState = chrome.rowPinning?.state;
+  const partitioned = useMemo(() => {
+    if (!pinState) {
+      return { top: [] as TRow[], scroll: source.rows, bottom: [] as TRow[] };
+    }
+    return partitionPinnedRows(source.rows, pinState, rowKey);
+  }, [pinState, rowKey, source.rows]);
+  const estimateSize = estimateBodyItemSize(chrome, props, partitioned.scroll);
   const scrollOpts = {
     overscan: props.virtualOverscan,
     scrollMargin: props.virtualScrollMargin,
@@ -1110,13 +1118,6 @@ export function useChromeBodyData<TRow>(
     enabled: virtualize && treeArmed && !groupingArmed && bodyEligible,
     ...scrollOpts,
   });
-  const pinState = chrome.rowPinning?.state;
-  const partitioned = useMemo(() => {
-    if (!pinState) {
-      return { top: [] as TRow[], scroll: source.rows, bottom: [] as TRow[] };
-    }
-    return partitionPinnedRows(source.rows, pinState, rowKey);
-  }, [pinState, rowKey, source.rows]);
 
   const virtualization = useTableVirtualization({
     rows: partitioned.scroll,
@@ -1213,14 +1214,29 @@ function isBodyEligible<TRow>(chrome: TableChrome<TRow>): boolean {
   );
 }
 
-/** A card's height on a phone, a row's on a desktop. */
+/** A card's height on a phone, a row's on a desktop — or `rowHeight`. */
 function estimateBodyItemSize<TRow>(
   chrome: TableChrome<TRow>,
-  props: BaseDataTableProps<TRow>
-): number {
-  return chrome.isMobile
+  props: BaseDataTableProps<TRow>,
+  scrollRows: readonly TRow[]
+): (index: number) => number {
+  const fallback = chrome.isMobile
     ? (props.estimateCardSize ?? DEFAULT_CARD_SIZE_PX)
     : (props.estimateRowSize ?? DEFAULT_ROW_SIZE_PX);
+  return estimateFromRowHeight(props.rowHeight, fallback, (index) => {
+    if (chrome.grouping) {
+      const entry = chrome.grouping.entries[index];
+      if (entry?.kind === "row") return { row: entry.row, index: entry.index };
+      return undefined;
+    }
+    if (chrome.tree) {
+      const entry = chrome.tree.entries[index];
+      if (entry) return { row: entry.row, index };
+      return undefined;
+    }
+    const row = scrollRows[index];
+    return row === undefined ? undefined : { row, index };
+  });
 }
 
 /** How many items the infinite-scroll sentinel counts as already rendered. */

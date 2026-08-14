@@ -4,6 +4,8 @@
 
 A spectrum, all opt-in: restyle parts with `classNames`, replace parts with
 `slots`, tune the chrome with props, or theme through your kit's provider.
+Per-row colour and height are `rowStyle` / `rowHeight` — see
+[row styling and heights](./row-styling.md).
 
 ## `classNames` — per-part styling
 

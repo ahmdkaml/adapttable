@@ -165,6 +165,13 @@ export {
   RowReorderHandle,
   type RowReorderHandleProps,
 } from "./rows/RowReorderHandle";
+export {
+  resolveRowHeight,
+  resolveRowStyle,
+  type RowHeight,
+  type RowStyle,
+  rowStyleSignature,
+} from "./rows/rowStyle";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";
 export {

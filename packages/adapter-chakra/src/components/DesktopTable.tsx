@@ -41,6 +41,7 @@ import {
   pinnedRowStickyStyle,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -51,6 +52,7 @@ import {
   RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
+  rowStyleSignature,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
@@ -248,6 +250,9 @@ interface DesktopRowProps<TRow> {
   pinSignature: string;
   /** The `rowClassName(row, index)` output, compared as a plain string. */
   className?: string;
+  /** Pre-computed `rowStyle` + `rowHeight` (compared via signature). */
+  rowVisualStyle: CSSProperties | undefined;
+  rowStyleSignature: string;
   labels: Required<TableLabels>;
   hasSelection: boolean;
   expandable: boolean;
@@ -296,6 +301,7 @@ const ROW_VISUAL_KEYS = [
   "rowPinSide",
   "rowPinOffset",
   "sourceIndex",
+  "rowStyleSignature",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -319,6 +325,7 @@ function DesktopRowBase<TRow>({
   columns,
   bodyCells,
   className,
+  rowVisualStyle,
   labels,
   hasSelection,
   expandable,
@@ -376,7 +383,10 @@ function DesktopRowBase<TRow>({
         className={className}
         bg={selected ? "blackAlpha.100" : undefined}
         _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
-        style={rowReorderDropStyle(live.rowReorder?.rowAttrs(id, index))}
+        style={{
+          ...rowVisualStyle,
+          ...rowReorderDropStyle(live.rowReorder?.rowAttrs(id, index)),
+        }}
         onMouseEnter={() => api.current.prefetch?.(row)}
       >
         {expandable && (
@@ -567,6 +577,8 @@ function DesktopTableRows<TRow>({
   columnWidths,
   pinSignature,
   rowClassName,
+  rowStyle,
+  rowHeight,
   labels,
   expandable,
   showActions,
@@ -604,6 +616,8 @@ function DesktopTableRows<TRow>({
   columnWidths?: Readonly<Record<string, number>>;
   pinSignature: string;
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  rowStyle: SharedTableRenderProps<TRow>["rowStyle"];
+  rowHeight: SharedTableRenderProps<TRow>["rowHeight"];
   labels: Required<TableLabels>;
   expandable: boolean;
   showActions: boolean;
@@ -677,6 +691,15 @@ function DesktopTableRows<TRow>({
           columnWidths={columnWidths}
           pinSignature={pinSignature}
           className={rowClassName?.(entry.row, entry.index)}
+          rowVisualStyle={resolveRowStyle(
+            rowStyle,
+            rowHeight,
+            entry.row,
+            entry.index
+          )}
+          rowStyleSignature={rowStyleSignature(
+            resolveRowStyle(rowStyle, rowHeight, entry.row, entry.index)
+          )}
           labels={labels}
           hasSelection={Boolean(selection)}
           expandable={expandable}
@@ -739,6 +762,10 @@ function DesktopTableRows<TRow>({
         columnWidths={columnWidths}
         pinSignature={pinSignature}
         className={rowClassName?.(row, focusIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, focusIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
+        )}
         labels={labels}
         hasSelection={Boolean(selection)}
         expandable={expandable}
@@ -780,6 +807,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -983,6 +1012,10 @@ export function DesktopTable<TRow>({
         columnWidths={columnWidths}
         pinSignature={pinSignature}
         className={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
         labels={labels}
         hasSelection={Boolean(selection)}
         expandable={expandable}
@@ -1229,6 +1262,8 @@ export function DesktopTable<TRow>({
             columnWidths={columnWidths}
             pinSignature={pinSignature}
             rowClassName={rowClassName}
+            rowStyle={rowStyle}
+            rowHeight={rowHeight}
             labels={labels}
             expandable={expandable}
             showActions={showActions}

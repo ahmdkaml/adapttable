@@ -171,6 +171,34 @@ describe("<DataTable> (Mantine)", () => {
     expect(mobile.container.querySelector(".row-a")).not.toBeNull();
   });
 
+  it("applies rowStyle and rowHeight to desktop rows", () => {
+    renderHarness({
+      override: {
+        rowStyle: (row) =>
+          row.id === "a" ? { color: "rgb(255, 0, 0)" } : undefined,
+        rowHeight: 48,
+      },
+    });
+    const alice = screen.getByText("Alice").closest("tr")!;
+    const bob = screen.getByText("Bob").closest("tr")!;
+    expect(alice).toHaveStyle({ color: "rgb(255, 0, 0)", height: "48px" });
+    expect(bob).toHaveStyle({ height: "48px" });
+    expect(bob).not.toHaveStyle({ color: "rgb(255, 0, 0)" });
+  });
+
+  it("applies rowStyle to mobile cards", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowStyle: (_row, index) =>
+          index === 0 ? { backgroundColor: "rgb(0, 128, 0)" } : undefined,
+      },
+    });
+    const cards = container.querySelectorAll('[role="listitem"]');
+    expect(cards[0]).toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+    expect(cards[1]).not.toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+  });
+
   it("drawer mode: the toolbar button opens the slide-in filter drawer", async () => {
     renderHarness({
       override: { filters: <div>drawer body</div>, filtersMode: "drawer" },

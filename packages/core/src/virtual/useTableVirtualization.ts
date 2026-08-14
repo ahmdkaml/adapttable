@@ -29,6 +29,13 @@ export interface VirtualTableRow<TRow> {
   virtualItem?: VirtualItem;
 }
 
+/** Wrap a constant estimate so both virtualizer modes share one shape. */
+function asSizeEstimator(
+  estimateSize: number | ((index: number) => number)
+): (index: number) => number {
+  return typeof estimateSize === "function" ? estimateSize : () => estimateSize;
+}
+
 /** Dataset index for ARIA / focus — the window index when pinning is off. */
 export function rowSourceIndex(
   entry: Pick<VirtualTableRow<unknown>, "index" | "sourceIndex">
@@ -67,8 +74,8 @@ export interface UseTableVirtualizationOptions<TRow> {
   rowKey: (row: TRow) => string;
   /** Master switch; adapters keep this optional. */
   enabled?: boolean;
-  /** Estimated row/card size in px. */
-  estimateSize?: number;
+  /** Estimated row/card size in px, or a per-index reader. */
+  estimateSize?: number | ((index: number) => number);
   /** Extra items rendered before/after the visible window. */
   overscan?: number;
   /** Window virtualizer scroll margin, usually sticky header height. */
@@ -159,7 +166,7 @@ export function useTableVirtualization<TRow>({
   const windowVirtualizer = useWindowVirtualizer({
     count: rows.length,
     enabled: enabled && !elementMode,
-    estimateSize: () => estimateSize,
+    estimateSize: asSizeEstimator(estimateSize),
     getItemKey,
     overscan,
     scrollMargin,
@@ -168,7 +175,7 @@ export function useTableVirtualization<TRow>({
     count: rows.length,
     enabled: enabled && elementMode,
     getScrollElement: getScrollElement ?? (() => null),
-    estimateSize: () => estimateSize,
+    estimateSize: asSizeEstimator(estimateSize),
     getItemKey,
     overscan,
   });
@@ -264,7 +271,7 @@ export interface KeyedVirtualization {
 export function useKeyedVirtualization(options: {
   keys: readonly string[];
   enabled?: boolean;
-  estimateSize?: number;
+  estimateSize?: number | ((index: number) => number);
   overscan?: number;
   scrollMargin?: number;
   getScrollElement?: () => Element | null;
@@ -281,10 +288,11 @@ export function useKeyedVirtualization(options: {
   } = options;
   const elementMode = getScrollElement !== undefined;
   const getItemKey = (index: number): string => keys[index] ?? String(index);
+  const sizeOf = asSizeEstimator(estimateSize);
   const windowVirtualizer = useWindowVirtualizer({
     count: keys.length,
     enabled: enabled && !elementMode,
-    estimateSize: () => estimateSize,
+    estimateSize: sizeOf,
     getItemKey,
     overscan,
     scrollMargin,
@@ -293,7 +301,7 @@ export function useKeyedVirtualization(options: {
     count: keys.length,
     enabled: enabled && elementMode,
     getScrollElement: getScrollElement ?? (() => null),
-    estimateSize: () => estimateSize,
+    estimateSize: sizeOf,
     getItemKey,
     overscan,
   });

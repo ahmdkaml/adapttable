@@ -41,6 +41,7 @@ import {
   pinnedRowStickyStyle,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -51,6 +52,7 @@ import {
   RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
+  rowStyleSignature,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
@@ -263,6 +265,9 @@ interface DesktopRowProps<TRow> {
   pinSignature: string;
   /** The `rowClassName(row, index)` output, compared as a plain string. */
   className?: string;
+  /** Pre-computed `rowStyle` + `rowHeight` (compared via signature). */
+  rowVisualStyle: CSSProperties | undefined;
+  rowStyleSignature: string;
   labels: Required<TableLabels>;
   hasSelection: boolean;
   expandable: boolean;
@@ -311,6 +316,7 @@ const ROW_VISUAL_KEYS = [
   "rowPinSide",
   "rowPinOffset",
   "sourceIndex",
+  "rowStyleSignature",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -334,6 +340,7 @@ function DesktopRowBase<TRow>({
   columns,
   bodyCells,
   className,
+  rowVisualStyle,
   labels,
   hasSelection,
   expandable,
@@ -391,6 +398,7 @@ function DesktopRowBase<TRow>({
         className={className}
         style={{
           background: selected ? "var(--gray-a3)" : undefined,
+          ...rowVisualStyle,
           ...rowReorderDropStyle(live.rowReorder?.rowAttrs(id, index)),
         }}
         onMouseEnter={() => api.current.prefetch?.(row)}
@@ -577,6 +585,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -783,6 +793,10 @@ export function DesktopTable<TRow>({
         columnWidths={columnWidths}
         pinSignature={pinSignature}
         className={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
         labels={labels}
         hasSelection={Boolean(selection)}
         expandable={expandable}
@@ -1088,6 +1102,20 @@ export function DesktopTable<TRow>({
                     columnWidths={columnWidths}
                     pinSignature={pinSignature}
                     className={rowClassName?.(entry.row, entry.index)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      entry.row,
+                      entry.index
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(
+                        rowStyle,
+                        rowHeight,
+                        entry.row,
+                        entry.index
+                      )
+                    )}
                     labels={labels}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}
@@ -1156,6 +1184,15 @@ export function DesktopTable<TRow>({
                     columnWidths={columnWidths}
                     pinSignature={pinSignature}
                     className={rowClassName?.(row, focusIndex)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      row,
+                      focusIndex
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
+                    )}
                     labels={labels}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}

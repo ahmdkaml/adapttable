@@ -21,6 +21,7 @@ import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
 import type { RowPinState } from "./rows/rowPinning";
+import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
 import type {
@@ -184,6 +185,17 @@ export interface BaseDataTableProps<TRow> {
    * adapter's own row classes on desktop rows and mobile cards alike.
    */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /**
+   * Conditional per-row inline style: `(row, index) => ({ background })`.
+   * Applied on desktop rows and mobile cards alike. Omit and nothing is set.
+   */
+  rowStyle?: RowStyle<TRow>;
+  /**
+   * Row height in px — a constant, or `(row, index) => number`. Sets the
+   * row's height and the virtualizer's `estimateSize`. `measureElement`
+   * still reports what the browser laid out.
+   */
+  rowHeight?: RowHeight<TRow>;
   /**
    * Row expansion: render a detail panel under a row. Its presence enables
    * the leading expand chevron on desktop rows and the detail section on

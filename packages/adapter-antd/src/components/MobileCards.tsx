@@ -21,18 +21,20 @@ import {
   orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   RowReorderButtons,
   rowReorderSignature,
+  rowStyleSignature,
   TreeToggle,
   useSummaryCells,
   type VirtualTableRow,
 } from "@adapttable/core/adapter";
 import { Button, Card, Checkbox, Descriptions, Space } from "antd";
-import { memo, type ReactNode, useMemo } from "react";
+import { type CSSProperties, memo, type ReactNode, useMemo } from "react";
 
 import { isDangerColor } from "../colors";
 import { EditableDataCell } from "./EditableCell";
@@ -136,6 +138,9 @@ interface CardItemProps<TRow> {
   rowActions?: readonly RowAction<TRow>[];
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
+  /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
+  style?: CSSProperties;
+  styleSignature: string;
   selected: boolean;
   expanded: boolean;
   /** Selection toggle — present only when selection is enabled. */
@@ -190,6 +195,7 @@ function cardItemPropsEqual<TRow>(
     prev.confirm === next.confirm &&
     prev.rowActions === next.rowActions &&
     prev.className === next.className &&
+    prev.styleSignature === next.styleSignature &&
     prev.selected === next.selected &&
     prev.expanded === next.expanded &&
     prev.onToggleSelect === next.onToggleSelect &&
@@ -217,6 +223,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     confirm,
     rowActions,
     className,
+    style,
     selected,
     expanded,
     onToggleSelect,
@@ -238,6 +245,7 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     <Card
       size="small"
       className={className}
+      style={style}
       data-stagger=""
       data-selected={selected ? "" : undefined}
       data-dirty={rowIsDirty(editing, id) ? "" : undefined}
@@ -353,6 +361,8 @@ export function MobileCards<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   tableLabel,
   compact = false,
   expansion,
@@ -383,6 +393,10 @@ export function MobileCards<TRow>({
   onRowClick?: (row: TRow) => void;
   /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /** Conditional per-row style — see `BaseDataTableProps.rowStyle`. */
+  rowStyle?: (row: TRow, index: number) => CSSProperties | undefined;
+  /** Per-row height — see `BaseDataTableProps.rowHeight`. */
+  rowHeight?: number | ((row: TRow, index: number) => number);
   tableLabel?: string;
   /** Tighter card rhythm for the `"compact"` density. */
   compact?: boolean;
@@ -457,7 +471,10 @@ export function MobileCards<TRow>({
         key={key}
         ref={measureElement}
         data-index={index}
-        style={treeCardStyle(treeEntry?.level ?? 0)}
+        style={{
+          ...treeCardStyle(treeEntry?.level ?? 0),
+          ...resolveRowStyle(rowStyle, rowHeight, row, index),
+        }}
       >
         <CardItem
           row={row}
@@ -472,6 +489,10 @@ export function MobileCards<TRow>({
               .filter(Boolean)
               .join(" ") || undefined
           }
+          style={resolveRowStyle(rowStyle, rowHeight, row, index)}
+          styleSignature={rowStyleSignature(
+            resolveRowStyle(rowStyle, rowHeight, row, index)
+          )}
           selected={selection ? selection.isSelected(id) : false}
           expanded={expansion ? expansion.isExpanded(id) : false}
           onToggleSelect={selection ? selection.toggle : undefined}

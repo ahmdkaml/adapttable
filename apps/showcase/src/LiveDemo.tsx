@@ -33,6 +33,7 @@ type DemoComponent = ComponentType<
     rowPinning?: boolean;
     cellSpan?: boolean;
     extraRows?: boolean;
+    rowStyle?: boolean;
     editing?: boolean;
   }>
 >;
@@ -138,6 +139,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [rowPinning, setRowPinning] = useState<"on" | "off">("off");
   const [cellSpan, setCellSpan] = useState<"on" | "off">("off");
   const [extraRows, setExtraRows] = useState<"on" | "off">("off");
+  const [rowStyle, setRowStyle] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -363,6 +365,19 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Style">
+          <Segmented
+            label="row style"
+            value={rowStyle}
+            onChange={(v) => {
+              startTransition(() => setRowStyle(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Batch">
           <Segmented
             label="batch"
@@ -417,6 +432,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               rowPinning={rowPinning === "on"}
               cellSpan={cellSpan === "on"}
               extraRows={extraRows === "on"}
+              rowStyle={rowStyle === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

@@ -202,6 +202,34 @@ describe("<DataTable> (MUI)", () => {
     );
   });
 
+  it("applies rowStyle and rowHeight to desktop rows", () => {
+    renderHarness({
+      override: {
+        rowStyle: (row) =>
+          row.id === "a" ? { color: "rgb(255, 0, 0)" } : undefined,
+        rowHeight: 48,
+      },
+    });
+    const aliceRow = screen.getByText("Alice").closest("tr")!;
+    expect(aliceRow).toHaveStyle({ color: "rgb(255, 0, 0)", height: "48px" });
+    const bobRow = screen.getByText("Bob").closest("tr")!;
+    expect(bobRow).toHaveStyle({ height: "48px" });
+    expect(bobRow).not.toHaveStyle({ color: "rgb(255, 0, 0)" });
+  });
+
+  it("applies rowStyle to mobile cards", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        rowStyle: (_row, index) =>
+          index === 0 ? { backgroundColor: "rgb(0, 128, 0)" } : undefined,
+      },
+    });
+    const cards = screen.getAllByRole("listitem");
+    expect(cards[0]).toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+    expect(cards[1]).not.toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+  });
+
   it("applies rowClassName to desktop rows, skipping undefined", () => {
     renderHarness({
       override: {

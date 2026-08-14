@@ -35,6 +35,7 @@ import {
   pinnedRowStickyStyle,
   REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -45,6 +46,7 @@ import {
   RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
+  rowStyleSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -395,6 +397,9 @@ interface DesktopRowProps<TRow> {
   prefetch?: (row: TRow) => void;
   /** Resolved `rowClassName(row, index)` output. */
   className?: string;
+  /** Resolved `rowStyle` + `rowHeight`. Compared via `rowStyleSignature`. */
+  rowVisualStyle?: CSSProperties;
+  rowStyleSignature: string;
   measureElement?: (element: Element | null) => void;
   /** Measures a row together with its open detail panel. */
   measureRowPair?: RowPairMeasurer;
@@ -430,7 +435,8 @@ type UncomparedRowProp =
   | "rowReorder"
   | "windowStart"
   | "rowCount"
-  | "bodyCells";
+  | "bodyCells"
+  | "rowVisualStyle";
 
 /** Every row prop the memo comparator checks with `Object.is`. */
 const COMPARED_ROW_PROPS: readonly Exclude<
@@ -472,6 +478,7 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   "onRowClick",
   "prefetch",
   "className",
+  "rowStyleSignature",
   "measureElement",
   "pinSignature",
   "editingSignature",
@@ -568,6 +575,7 @@ function DesktopRowBase<TRow>({
   onRowClick,
   prefetch,
   className,
+  rowVisualStyle,
   measureElement,
   measureRowPair,
   pinStyleFor,
@@ -615,7 +623,10 @@ function DesktopRowBase<TRow>({
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         className={className}
-        style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
+        style={{
+          ...rowVisualStyle,
+          ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
+        }}
         ref={rowMeasureRef}
         data-stagger=""
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
@@ -768,6 +779,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -1108,6 +1121,10 @@ export function DesktopTable<TRow>({
         onRowClick={onRowClick}
         prefetch={prefetch}
         className={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
         pinStyleFor={bodyPinStyle}
         selectionCellStyle={selectionCellStyle}
         expansionCellStyle={expansionCellStyle}
@@ -1334,6 +1351,20 @@ export function DesktopTable<TRow>({
                     onRowClick={onRowClick}
                     prefetch={prefetch}
                     className={rowClassName?.(entry.row, entry.index)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      entry.row,
+                      entry.index
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(
+                        rowStyle,
+                        rowHeight,
+                        entry.row,
+                        entry.index
+                      )
+                    )}
                     measureElement={measureElement}
                     measureRowPair={measureRowPair}
                     pinStyleFor={bodyPinStyle}
@@ -1420,6 +1451,15 @@ export function DesktopTable<TRow>({
                     onRowClick={onRowClick}
                     prefetch={prefetch}
                     className={rowClassName?.(row, focusIndex)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      row,
+                      focusIndex
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
+                    )}
                     measureElement={measureElement}
                     measureRowPair={measureRowPair}
                     pinStyleFor={bodyPinStyle}

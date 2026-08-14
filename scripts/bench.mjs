@@ -61,6 +61,12 @@ const SCENARIOS = [
     expect: { maxDomRows: 60 },
   },
   {
+    name: "variable height · 20k rows, windowed",
+    query: "rows=20000&rowHeight=1",
+    smoke: true,
+    expect: { maxDomRows: 80 },
+  },
+  {
     name: "100k rows, windowed",
     query: "rows=100000",
     smoke: true,

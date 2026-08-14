@@ -119,6 +119,7 @@ export function MuiDemo({
   rowPinning,
   cellSpan,
   extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -140,6 +141,7 @@ export function MuiDemo({
   rowPinning?: boolean;
   cellSpan?: boolean;
   extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -161,6 +163,7 @@ export function MuiDemo({
         rowPinning={rowPinning}
         cellSpan={cellSpan}
         extraRows={extraRows}
+        rowStyle={rowStyle}
         editing={editing}
         render={(source, columns) => (
           <DataTable

@@ -34,6 +34,7 @@ const TITLES = {
   "row-pinning.md": "React table row pinning — sticky top and bottom",
   "row-spanning.md": "React table row and column spanning",
   "full-width-rows.md": "React table full-width and separator rows",
+  "row-styling.md": "React table row styling and heights",
   "cell-navigation.md": "React table keyboard navigation — ARIA grid",
   "row-grouping.md": "React table row grouping with subtotals",
   "column-management.md": "React table column management — pin, resize",
@@ -91,6 +92,8 @@ const DESCRIPTIONS = {
     "Row and column spanning for React data tables — getCellSpan and column.colSpan/rowSpan emit one cell list per row so covered cells never render twice.",
   "full-width-rows.md":
     "Full-width and separator rows for React data tables — extraRows splices host-injected slots into the body by beforeRowId. Mobile cards keep the same slots.",
+  "row-styling.md":
+    "Conditional row styling and heights for React data tables — rowStyle and rowHeight on desktop rows and mobile cards, with a variable-height virtualizer.",
   "cell-navigation.md":
     "Arrow-key cell navigation for a React table: one tab stop, correct ARIA grid semantics, absolute row indices under virtualization, and spoken announcements.",
   "row-grouping.md":

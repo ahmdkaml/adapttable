@@ -111,6 +111,7 @@ export function AntdDemo({
   rowPinning,
   cellSpan,
   extraRows,
+  rowStyle,
   editing,
   cellNavigation,
   wide,
@@ -134,6 +135,7 @@ export function AntdDemo({
   rowPinning?: boolean;
   cellSpan?: boolean;
   extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -173,6 +175,7 @@ export function AntdDemo({
         rowPinning={rowPinning}
         cellSpan={cellSpan}
         extraRows={extraRows}
+        rowStyle={rowStyle}
         editing={editing}
         render={(source, columns) => (
           <DataTable

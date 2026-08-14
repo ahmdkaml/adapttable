@@ -53,6 +53,8 @@ layouts.
 - **`rowClassName`** applies to desktop rows and mobile cards alike, and the
   [class-hook / `data-adapttable-part` surface](./customization.md) names the
   card regions (`cardDetail`, `group-card`, `summaryCard`) for styling.
+- **`rowStyle` / `rowHeight`** apply the same way — see
+  [row styling and heights](./row-styling.md).
 
 ## It composes with everything else
 

@@ -16,12 +16,14 @@ import {
   orderedCardEntries,
   resolveDisabledReason,
   resolveMobileLabel,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   RowReorderButtons,
   rowReorderSignature,
+  rowStyleSignature,
   type SharedTableRenderProps,
   TreeToggle,
   useSummaryCells,
@@ -37,6 +39,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import {
+  type CSSProperties,
   memo,
   type ReactElement,
   type ReactNode,
@@ -63,6 +66,8 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "getRowId"
   | "onRowClick"
   | "rowClassName"
+  | "rowStyle"
+  | "rowHeight"
   | "renderRowDetail"
   | "summaryRow"
   | "expansion"
@@ -100,6 +105,9 @@ interface MobileCardProps<TRow> {
   rowActions?: RowAction<TRow>[];
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
+  /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
+  style?: CSSProperties;
+  styleSignature: string;
   selected: boolean;
   expanded: boolean;
   /** Selection toggle — present only when selection is enabled. */
@@ -131,7 +139,12 @@ interface MobileCardProps<TRow> {
 }
 
 /** The card props the memo comparator deliberately skips (see `editing`). */
-type UncomparedCardProp = "editing" | "rows" | "getRowId" | "rowReorder";
+type UncomparedCardProp =
+  | "editing"
+  | "rows"
+  | "getRowId"
+  | "rowReorder"
+  | "style";
 
 /** Every card prop the memo comparator checks with `Object.is`. */
 const COMPARED_CARD_PROPS: readonly Exclude<
@@ -146,6 +159,7 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "confirm",
   "rowActions",
   "className",
+  "styleSignature",
   "selected",
   "expanded",
   "onToggleSelect",
@@ -186,6 +200,7 @@ function MobileCardBase<TRow>({
   confirm,
   rowActions,
   className,
+  style,
   selected,
   expanded,
   onToggleSelect,
@@ -207,7 +222,7 @@ function MobileCardBase<TRow>({
   return (
     <Card
       {...rowClickProps(row, onRowClick, index)}
-      style={treeCardStyle(treeEntry?.level ?? 0)}
+      style={{ ...treeCardStyle(treeEntry?.level ?? 0), ...style }}
       className={className}
       ref={measureElement}
       data-index={index}
@@ -362,6 +377,8 @@ export function MobileCards<TRow>({
   density = "comfortable",
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -415,6 +432,10 @@ export function MobileCards<TRow>({
         confirm={confirm}
         rowActions={rowActions}
         className={rowClassName?.(row, index)}
+        style={resolveRowStyle(rowStyle, rowHeight, row, index)}
+        styleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, index)
+        )}
         selected={selection ? selection.isSelected(id) : false}
         expanded={expansion ? expansion.isExpanded(id) : false}
         onToggleSelect={selection ? selection.toggle : undefined}

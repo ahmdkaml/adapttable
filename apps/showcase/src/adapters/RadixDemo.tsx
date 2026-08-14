@@ -97,6 +97,7 @@ export function RadixDemo({
   rowPinning,
   cellSpan,
   extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -118,6 +119,7 @@ export function RadixDemo({
   rowPinning?: boolean;
   cellSpan?: boolean;
   extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -147,6 +149,7 @@ export function RadixDemo({
         rowPinning={rowPinning}
         cellSpan={cellSpan}
         extraRows={extraRows}
+        rowStyle={rowStyle}
         editing={editing}
         render={(source, columns) => (
           <DataTable

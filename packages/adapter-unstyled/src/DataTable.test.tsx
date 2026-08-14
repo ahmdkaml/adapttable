@@ -223,6 +223,33 @@ describe("<DataTable> (unstyled)", () => {
     expect(rows[1]).not.toHaveClass("is-alice");
   });
 
+  it("applies rowStyle and rowHeight to desktop rows", () => {
+    const { container } = renderHarness({
+      override: {
+        rowStyle: (row) =>
+          row.id === "a" ? { color: "rgb(255, 0, 0)" } : undefined,
+        rowHeight: 48,
+      },
+    });
+    const rows = container.querySelectorAll('[data-adapttable-part="row"]');
+    expect(rows[0]).toHaveStyle({ color: "rgb(255, 0, 0)", height: "48px" });
+    expect(rows[1]).toHaveStyle({ height: "48px" });
+    expect(rows[1]).not.toHaveStyle({ color: "rgb(255, 0, 0)" });
+  });
+
+  it("applies rowStyle to mobile cards", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowStyle: (_row, index) =>
+          index === 0 ? { backgroundColor: "rgb(0, 128, 0)" } : undefined,
+      },
+    });
+    const cards = container.querySelectorAll('[data-adapttable-part="card"]');
+    expect(cards[0]).toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+    expect(cards[1]).not.toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+  });
+
   it("appends rowClassName output to mobile cards", () => {
     const { container } = renderHarness({
       isMobile: true,

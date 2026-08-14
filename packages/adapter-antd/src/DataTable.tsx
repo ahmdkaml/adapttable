@@ -56,6 +56,7 @@ import {
   insertExtraRows,
   isExtraEntry,
   REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
   rowIsDirty,
   RowReorderAnnouncer,
@@ -278,6 +279,8 @@ function antdOnRow<TRow>(options: {
   onRowClick: DataTableProps<TRow>["onRowClick"];
   editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
   prefetch: DataTableProps<TRow>["prefetch"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
 }): AntdRowHtmlAttrs {
   const {
     record,
@@ -291,6 +294,8 @@ function antdOnRow<TRow>(options: {
     onRowClick,
     editing,
     prefetch,
+    rowStyle,
+    rowHeight,
   } = options;
   if (isAdaptTableExtraRow(record)) {
     return {
@@ -307,6 +312,7 @@ function antdOnRow<TRow>(options: {
   }
   const id = getRowId(record);
   const pin = antdPinnedRowAttrs(rowPinning?.sideOf(id), headerOffset);
+  const visual = resolveRowStyle(rowStyle, rowHeight, record, rowIndex ?? 0);
   const reorderStyle =
     rowReorder && rowIndex !== undefined
       ? rowReorderDropStyle(rowReorder.rowAttrs(id, rowIndex))
@@ -323,7 +329,7 @@ function antdOnRow<TRow>(options: {
     // here rather than through a spread on the element.
     ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
     ...pin,
-    style: { ...reorderStyle, ...pin.style },
+    style: { ...visual, ...reorderStyle, ...pin.style },
     "data-stagger": "",
     // antd builds its own <tr>, so the dirty mark arrives here too.
     "data-dirty": rowIsDirty(editing, getRowId(record)) ? "" : undefined,
@@ -905,6 +911,8 @@ interface DataTableBodyRegionProps<TRow> {
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
   cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
   skeletonRows: number | undefined;
@@ -947,6 +955,8 @@ function DesktopTableBody<TRow>({
   summary,
   handleChange,
   rowClassName,
+  rowStyle,
+  rowHeight,
   editing,
   onRowClick,
   gridFocus,
@@ -976,6 +986,8 @@ function DesktopTableBody<TRow>({
   summary: TableProps<GroupedDataRecord<TRow>>["summary"];
   handleChange: TableProps<TRow>["onChange"];
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
   /** The editing bundle, so a row can carry its dirty mark. */
   editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
@@ -1057,6 +1069,8 @@ function DesktopTableBody<TRow>({
           onRowClick,
           editing,
           prefetch,
+          rowStyle,
+          rowHeight,
         })
       }
       scroll={resolveScroll(
@@ -1115,6 +1129,8 @@ function DataTableBodyRegion<TRow>(
     prefetch,
     onRowClick,
     rowClassName,
+    rowStyle,
+    rowHeight,
     cardClassName,
     summaryRow,
     skeletonRows,
@@ -1174,6 +1190,8 @@ function DataTableBodyRegion<TRow>(
         prefetch={prefetch}
         onRowClick={onRowClick}
         rowClassName={rowClassName}
+        rowStyle={rowStyle}
+        rowHeight={rowHeight}
         tableLabel={tableLabel}
         compact={(density ?? "comfortable") === "compact"}
         expansion={detailExpansion}
@@ -1209,6 +1227,8 @@ function DataTableBodyRegion<TRow>(
         summary={summary}
         handleChange={handleChange}
         rowClassName={rowClassName}
+        rowStyle={rowStyle}
+        rowHeight={rowHeight}
         editing={editing}
         onRowClick={onRowClick}
         prefetch={prefetch}
@@ -1615,6 +1635,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
       rowClassName={props.rowClassName}
+      rowStyle={props.rowStyle}
+      rowHeight={props.rowHeight}
       cardClassName={classNames?.card}
       summaryRow={props.summaryRow}
       skeletonRows={props.skeletonRows}

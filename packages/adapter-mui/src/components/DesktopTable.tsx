@@ -35,6 +35,7 @@ import {
   pinnedRowCellStyle,
   pinnedRowStickyStyle,
   REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -45,13 +46,14 @@ import {
   RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
+  rowStyleSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
   useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { ExpandToggle } from "./ExpandToggle";
@@ -286,6 +288,9 @@ interface DesktopRowProps<TRow> {
   size: "small" | "medium";
   dir?: "ltr" | "rtl";
   className?: string;
+  /** Pre-computed `rowStyle` + `rowHeight` (compared via signature). */
+  rowVisualStyle: CSSProperties | undefined;
+  rowStyleSignature: string;
   hasSelection: boolean;
   hasExpansion: boolean;
   showActions: boolean;
@@ -361,6 +366,7 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "size",
   "dir",
   "className",
+  "rowStyleSignature",
   "hasSelection",
   "hasExpansion",
   "showActions",
@@ -405,6 +411,7 @@ function DesktopRowImpl<TRow>({
   columnSpacers,
   dir,
   className,
+  rowVisualStyle,
   hasSelection,
   hasExpansion,
   showActions,
@@ -451,7 +458,10 @@ function DesktopRowImpl<TRow>({
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         className={className}
-        style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
+        style={{
+          ...rowVisualStyle,
+          ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
+        }}
         data-stagger=""
         data-row-pin={rowPinSide}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
@@ -623,6 +633,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -868,6 +880,10 @@ export function DesktopTable<TRow>({
         size={size}
         dir={dir}
         className={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
         hasSelection={Boolean(selection)}
         hasExpansion={expandActive}
         showActions={showActions}
@@ -1127,6 +1143,20 @@ export function DesktopTable<TRow>({
                     size={size}
                     dir={dir}
                     className={rowClassName?.(entry.row, entry.index)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      entry.row,
+                      entry.index
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(
+                        rowStyle,
+                        rowHeight,
+                        entry.row,
+                        entry.index
+                      )
+                    )}
                     hasSelection={Boolean(selection)}
                     hasExpansion={expandActive}
                     showActions={showActions}
@@ -1211,6 +1241,15 @@ export function DesktopTable<TRow>({
                     size={size}
                     dir={dir}
                     className={rowClassName?.(row, focusIndex)}
+                    rowVisualStyle={resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      row,
+                      focusIndex
+                    )}
+                    rowStyleSignature={rowStyleSignature(
+                      resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
+                    )}
                     hasSelection={Boolean(selection)}
                     hasExpansion={expandActive}
                     showActions={showActions}

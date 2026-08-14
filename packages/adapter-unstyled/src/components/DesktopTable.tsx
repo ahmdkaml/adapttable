@@ -38,6 +38,7 @@ import {
   pinnedRowStickyStyle,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
@@ -48,6 +49,7 @@ import {
   RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
+  rowStyleSignature,
   type SharedTableRenderProps,
   tableRenderModel,
   TreeCell,
@@ -218,6 +220,9 @@ interface DesktopRowProps<TRow> {
   actionsPinned: boolean;
   /** Pre-computed `rowClassName(row, index)` output (value-compared). */
   rowClass: string | undefined;
+  /** Pre-computed `rowStyle` + `rowHeight` (compared via signature). */
+  rowVisualStyle: CSSProperties | undefined;
+  rowStyleSignature: string;
   clickable: boolean;
   hasPrefetch: boolean;
   /**
@@ -281,6 +286,7 @@ function desktopRowPropsEqual<TRow>(
     prev.hasEndPin === next.hasEndPin &&
     prev.actionsPinned === next.actionsPinned &&
     prev.rowClass === next.rowClass &&
+    prev.rowStyleSignature === next.rowStyleSignature &&
     prev.clickable === next.clickable &&
     prev.hasPrefetch === next.hasPrefetch &&
     prev.editingSignature === next.editingSignature &&
@@ -340,6 +346,7 @@ function DesktopRowBase<TRow>(
     hasEndPin,
     actionsPinned,
     rowClass,
+    rowVisualStyle,
     clickable,
     hasPrefetch,
     editing,
@@ -388,7 +395,10 @@ function DesktopRowBase<TRow>(
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         data-clickable={clickable ? "" : undefined}
         className={cx(classNames.row, rowClass)}
-        style={rowReorderDropStyle(rowReorder?.rowAttrs(id, index))}
+        style={{
+          ...rowVisualStyle,
+          ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
+        }}
         onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}
       >
         {expandable && (
@@ -626,6 +636,8 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -893,6 +905,10 @@ export function DesktopTable<TRow>({
         hasEndPin={hasEndPin}
         actionsPinned={stickActions}
         rowClass={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
         clickable={Boolean(onRowClick)}
         hasPrefetch={Boolean(prefetch)}
         onRowClick={handleRowClick}
@@ -1185,6 +1201,15 @@ export function DesktopTable<TRow>({
                   hasEndPin={hasEndPin}
                   actionsPinned={stickActions}
                   rowClass={rowClassName?.(entry.row, entry.index)}
+                  rowVisualStyle={resolveRowStyle(
+                    rowStyle,
+                    rowHeight,
+                    entry.row,
+                    entry.index
+                  )}
+                  rowStyleSignature={rowStyleSignature(
+                    resolveRowStyle(rowStyle, rowHeight, entry.row, entry.index)
+                  )}
                   clickable={Boolean(onRowClick)}
                   hasPrefetch={Boolean(prefetch)}
                   onRowClick={handleRowClick}
@@ -1260,6 +1285,20 @@ export function DesktopTable<TRow>({
                   hasEndPin={hasEndPin}
                   actionsPinned={stickActions}
                   rowClass={rowClassName?.(row, sourceIndex ?? index)}
+                  rowVisualStyle={resolveRowStyle(
+                    rowStyle,
+                    rowHeight,
+                    row,
+                    sourceIndex ?? index
+                  )}
+                  rowStyleSignature={rowStyleSignature(
+                    resolveRowStyle(
+                      rowStyle,
+                      rowHeight,
+                      row,
+                      sourceIndex ?? index
+                    )
+                  )}
                   clickable={Boolean(onRowClick)}
                   hasPrefetch={Boolean(prefetch)}
                   onRowClick={handleRowClick}

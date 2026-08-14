@@ -218,3 +218,129 @@ describe("useChromeBodyData with tree data", () => {
     expect(result.current.treeEntries).toBeUndefined();
   });
 });
+
+describe("useChromeBodyData rowHeight estimate", () => {
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    vi.mocked(useVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useVirtualizer>
+    );
+  });
+
+  it("reads a per-row height on a flat table", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        rowHeight: (row: Row) => (row.id === "0" ? 80 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(80);
+    expect(estimate(1)).toBe(40);
+    expect(estimate(999)).toBe(56);
+  });
+
+  it("uses a constant height for every slot", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        rowHeight: 48,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(48);
+    expect(estimate(9)).toBe(48);
+  });
+
+  it("skips group headers and extras when grouping is on", () => {
+    const groupedRows: Row[] = [
+      { id: "1", name: "Alice" },
+      { id: "2", name: "Bob" },
+    ];
+    const groupCols: ColumnDef<Row>[] = [
+      { key: "name" },
+      { key: "team", accessor: () => "A" },
+    ];
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: groupedRows,
+        columns: groupCols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: groupCols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        groupBy: "team",
+        rowHeight: (row: Row) => (row.id === "1" ? 90 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    // Index 0 is the group header — not a data row.
+    expect(estimate(0)).toBe(56);
+    expect(estimate(1)).toBe(90);
+  });
+
+  it("reads the walked tree entry at the virtualizer index", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS.slice(0, 3),
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        getParentId: (row: Row) =>
+          row.id === "0" ? undefined : String(Number(row.id) - 1),
+        expandedIds: ["0", "1", "2"],
+        rowHeight: (row: Row) => (row.id === "1" ? 72 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(40);
+    expect(estimate(1)).toBe(72);
+    expect(estimate(99)).toBe(56);
+  });
+});

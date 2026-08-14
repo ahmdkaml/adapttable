@@ -54,6 +54,20 @@ describe("useTableVirtualization", () => {
     expect(options.getItemKey!(99)).toBe("99");
   });
 
+  it("passes a per-index estimator through when the host varies height", () => {
+    renderHook(() =>
+      useTableVirtualization({
+        rows,
+        rowKey,
+        enabled: true,
+        estimateSize: (index) => (index === 0 ? 80 : 40),
+      })
+    );
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(options.estimateSize(0)).toBe(80);
+    expect(options.estimateSize(1)).toBe(40);
+  });
+
   it("keeps getItemKey identity stable across unrelated re-renders", () => {
     // Callers routinely pass `rowKey` as an inline arrow (fresh identity
     // every render). The virtualizer memoises its measurements on

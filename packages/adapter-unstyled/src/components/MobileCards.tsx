@@ -15,16 +15,18 @@ import {
   isExtraEntry,
   orderedCardEntries,
   resolveMobileLabel,
+  resolveRowStyle,
   rowClickProps,
   RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   RowReorderButtons,
   rowReorderSignature,
+  rowStyleSignature,
   TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import type { ReactElement, ReactNode } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { memo, useMemo } from "react";
 
 import { cx } from "../cx";
@@ -52,6 +54,9 @@ interface MobileCardProps<TRow> {
   classNames: DataTableClassNames;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
+  /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
+  style?: CSSProperties;
+  styleSignature: string;
   selected: boolean;
   expanded: boolean;
   /** Selection toggle — present only when selection is enabled. */
@@ -82,7 +87,12 @@ interface MobileCardProps<TRow> {
 }
 
 /** The card props the memo comparator deliberately skips (see `editing`). */
-type UncomparedCardProp = "editing" | "rows" | "getRowId" | "rowReorder";
+type UncomparedCardProp =
+  | "editing"
+  | "rows"
+  | "getRowId"
+  | "rowReorder"
+  | "style";
 
 /** Every card prop the memo comparator checks with `Object.is`. */
 const COMPARED_CARD_PROPS: readonly Exclude<
@@ -98,6 +108,7 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "rowActions",
   "classNames",
   "className",
+  "styleSignature",
   "selected",
   "expanded",
   "onToggleSelect",
@@ -137,6 +148,7 @@ function MobileCardBase<TRow>({
   rowActions,
   classNames,
   className,
+  style,
   selected,
   expanded,
   onToggleSelect,
@@ -157,7 +169,7 @@ function MobileCardBase<TRow>({
   return (
     <li
       {...rowClickProps(row, onRowClick, index)}
-      style={treeCardStyle(treeEntry?.level ?? 0)}
+      style={{ ...treeCardStyle(treeEntry?.level ?? 0), ...style }}
       ref={measureElement}
       data-index={index}
       data-adapttable-part="card"
@@ -295,6 +307,8 @@ export function MobileCards<TRow>({
   classNames,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -348,6 +362,10 @@ export function MobileCards<TRow>({
         rowActions={rowActions}
         classNames={classNames}
         className={rowClassName?.(row, index)}
+        style={resolveRowStyle(rowStyle, rowHeight, row, index)}
+        styleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, index)
+        )}
         selected={selection ? selection.isSelected(id) : false}
         expanded={expansionState ? expansionState.isExpanded(id) : false}
         onToggleSelect={selection ? selection.toggle : undefined}
