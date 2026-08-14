@@ -1,8 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { defaultLabels } from "../labels";
 import type { ColumnDef } from "../types";
-import { nextPinSide, pinActionLabel } from "./columnMenuModel";
-import { columnMenuLabel, columnMenuRows } from "./columnMenuModel";
+import {
+  columnMenuActions,
+  columnMenuLabel,
+  columnMenuRows,
+  filterColumnMenuRows,
+  hideAllColumns,
+  nextPinSide,
+  pinActionLabel,
+  resetColumnLayout,
+  showAllColumns,
+  unpinAllColumns,
+} from "./columnMenuModel";
 import type { UseColumnLayoutResult } from "./useColumnLayout";
 
 interface Row {
@@ -31,6 +42,7 @@ function layout(
     setWidth: () => undefined,
     pinOffset: () => undefined,
     reset: () => undefined,
+    toggleColumnGroup: () => undefined,
   };
 }
 
@@ -76,5 +88,140 @@ describe("pin toggle helpers", () => {
   it("labels the NEXT action so the accessible name matches behaviour", () => {
     expect(pinActionLabel(undefined, labels)).toBe("Pin to start");
     expect(pinActionLabel("start", labels)).toBe("Unpin");
+  });
+});
+
+describe("column menu 2.0", () => {
+  const locked: ColumnDef<Row>[] = [
+    {
+      key: "a",
+      header: "Alpha",
+      accessor: (r) => r.id,
+      lockVisibility: true,
+      lockPin: true,
+      lockPosition: true,
+      lockWidth: true,
+    },
+    { key: "b", header: "Bravo", accessor: (r) => r.id, sortable: true },
+    { key: "c", header: "Charlie", accessor: (r) => r.id, filter: "text" },
+  ];
+
+  it("marks lock and capability flags on each row", () => {
+    const rows = columnMenuRows(locked, layout([]));
+    expect(rows[0]).toMatchObject({
+      canMove: false,
+      canHide: false,
+      canPin: false,
+      canResize: false,
+    });
+    expect(rows[1]).toMatchObject({ canSort: true, canFilter: false });
+    expect(rows[2]).toMatchObject({ canSort: false, canFilter: true });
+  });
+
+  it("filters the chooser by name or key", () => {
+    const rows = columnMenuRows(cols, layout([]));
+    expect(filterColumnMenuRows(rows, "br").map((r) => r.key)).toEqual(["b"]);
+    expect(filterColumnMenuRows(rows, "d").map((r) => r.key)).toEqual(["d"]);
+    expect(filterColumnMenuRows(rows, "  ").map((r) => r.key)).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+    ]);
+  });
+
+  it("bulk show/hide/unpin skip locked columns", () => {
+    const setHidden = vi.fn();
+    const setPinned = vi.fn();
+    const hidden = layout(["b"], { a: "start", b: "start" });
+    hidden.setHidden = setHidden;
+    const shown = layout([], { a: "start", b: "start" });
+    shown.setHidden = setHidden;
+    shown.setPinned = setPinned;
+    showAllColumns(columnMenuRows(locked, hidden), hidden);
+    expect(setHidden).toHaveBeenCalledWith("b", false);
+    expect(setHidden).not.toHaveBeenCalledWith("a", false);
+    hideAllColumns(columnMenuRows(locked, shown), shown);
+    expect(setHidden).toHaveBeenCalledWith("b", true);
+    expect(setHidden).not.toHaveBeenCalledWith("a", true);
+    unpinAllColumns(columnMenuRows(locked, shown), shown);
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    expect(setPinned).not.toHaveBeenCalledWith("a", undefined);
+  });
+
+  it("reset one column clears hide, pin and width when unlocked", () => {
+    const setHidden = vi.fn();
+    const setPinned = vi.fn();
+    const setWidth = vi.fn();
+    const l = layout(["b"], { b: "start" });
+    l.setHidden = setHidden;
+    l.setPinned = setPinned;
+    l.setWidth = setWidth;
+    const row = columnMenuRows(locked, l)[1]!;
+    resetColumnLayout(row, l);
+    expect(setHidden).toHaveBeenCalledWith("b", false);
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    expect(setWidth).toHaveBeenCalledWith("b", undefined);
+  });
+
+  it("builds a submenu that sorts, filters and resets", () => {
+    const onSortColumn = vi.fn();
+    const onFilterColumn = vi.fn();
+    const onAutoSizeColumn = vi.fn();
+    const l = layout([]);
+    const rows = columnMenuRows(locked, l);
+    const sortActs = columnMenuActions(rows[1]!, {
+      labels: defaultLabels,
+      layout: l,
+      onSortColumn,
+      onAutoSizeColumn,
+    });
+    expect(sortActs.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["sort-asc", "pin-start", "pin-end", "reset"])
+    );
+    sortActs.find((a) => a.id === "sort-asc")!.run();
+    expect(onSortColumn).toHaveBeenCalledWith("b", "asc");
+    sortActs.find((a) => a.id === "sort-desc")!.run();
+    expect(onSortColumn).toHaveBeenCalledWith("b", "desc");
+    const filterActs = columnMenuActions(rows[2]!, {
+      labels: defaultLabels,
+      layout: l,
+      onFilterColumn,
+    });
+    filterActs.find((a) => a.id === "filter")!.run();
+    expect(onFilterColumn).toHaveBeenCalledWith("c");
+  });
+
+  it("runs pin, hide, autosize and reset from the submenu", () => {
+    const setPinned = vi.fn();
+    const toggleVisible = vi.fn();
+    const setHidden = vi.fn();
+    const setWidth = vi.fn();
+    const onAutoSizeColumn = vi.fn();
+    const l = layout(["b"], { b: "start" });
+    l.setPinned = setPinned;
+    l.toggleVisible = toggleVisible;
+    l.setHidden = setHidden;
+    l.setWidth = setWidth;
+    const row = columnMenuRows(locked, l)[1]!;
+    const acts = columnMenuActions(row, {
+      labels: defaultLabels,
+      layout: l,
+      onAutoSizeColumn,
+    });
+    acts.find((a) => a.id === "pin-start")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", "start");
+    acts.find((a) => a.id === "pin-end")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", "end");
+    acts.find((a) => a.id === "unpin")!.run();
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    acts.find((a) => a.id === "show")!.run();
+    expect(toggleVisible).toHaveBeenCalledWith("b");
+    acts.find((a) => a.id === "auto-size")!.run();
+    expect(onAutoSizeColumn).toHaveBeenCalledWith("b");
+    acts.find((a) => a.id === "reset")!.run();
+    expect(setHidden).toHaveBeenCalledWith("b", false);
+    expect(setPinned).toHaveBeenCalledWith("b", undefined);
+    expect(setWidth).toHaveBeenCalledWith("b", undefined);
   });
 });

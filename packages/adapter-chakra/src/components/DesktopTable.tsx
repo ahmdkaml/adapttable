@@ -1,35 +1,73 @@
 /** The desktop `<table>`: header, pinned columns, rows and summary. */
 import {
+  bodyRowEntries,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
+  columnsHaveFooter,
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
+  FilterHeaderRow,
   type GridFocusState,
+  headerFilterStickTop,
   PIN_Z,
+  pinnedCellStyle,
   type PinSide,
+  resolveColumnFooter,
+  resolveColumnHeader,
   type RowAction,
   type RowExpansionState,
+  type RowPinSide,
   type SelectionState,
   type TableLabels,
   tableMinWidth,
+  type TreeEntry,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
-  headerGroupRow,
+  type BodyCell,
+  cellHighlightStyle,
+  cellsForRow,
+  columnFlexShares,
+  ColumnGroupToggle,
+  columnSizeStyle,
+  ColumnSpacer,
+  EXTRA_ROW_PARTS,
+  FillHandle,
+  fittedTableStyle,
+  headerGroupRows,
+  insertExtraRows,
   logicalAlign,
   type PinLeads,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
   type PinOffset,
+  REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
+  rowIsDirty,
+  type RowPairMeasurer,
+  rowPinSignature,
+  rowReorderDropStyle,
+  RowReorderHandle,
+  rowReorderSignature,
+  rowSpanSignature,
+  rowStyleSignature,
   shallowEqualByKeys,
   SHARED_DESKTOP_ROW_KEYS,
   type SharedTableRenderProps,
   sortArrow,
   tableRenderModel,
+  TreeCell,
+  useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import { Box, chakra, Table, Text } from "@chakra-ui/react";
@@ -49,6 +87,32 @@ import { GroupHeaderRow } from "./GroupHeader";
 import { Checkbox } from "./primitives";
 import { RowActionButtons } from "./RowActionButtons";
 
+function ExtraSlotRow({
+  kind,
+  colSpan,
+  render,
+  labels,
+}: Readonly<{
+  kind: "separator" | "fullWidth";
+  colSpan: number;
+  render?: () => ReactNode;
+  labels: TableLabels;
+}>) {
+  const parts = EXTRA_ROW_PARTS[kind];
+  return (
+    <Table.Row data-adapttable-part={parts.row}>
+      <Table.Cell
+        colSpan={colSpan}
+        data-adapttable-part={parts.cell}
+        role={kind === "separator" ? "separator" : undefined}
+        aria-label={kind === "separator" ? labels.rowSeparator : undefined}
+      >
+        {kind === "fullWidth" ? render?.() : null}
+      </Table.Cell>
+    </Table.Row>
+  );
+}
+
 const RESIZE_HANDLE_STYLE: CSSProperties = {
   position: "absolute",
   insetInlineEnd: 0,
@@ -62,6 +126,60 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
 
 /** Width (px) reserved for the leading expand-chevron column. */
 const EXPANSION_WIDTH = 32;
+const SELECTION_WIDTH = 48;
+const ACTIONS_WIDTH = 120;
+
+function When({
+  show,
+  children,
+}: Readonly<{ show: boolean; children: ReactNode }>) {
+  if (!show) return null;
+  return children;
+}
+
+function pinChrome(options: {
+  expandable: boolean;
+  showReorder: boolean;
+  hasSelection: boolean;
+  showActions: boolean;
+  actionsPinned: boolean;
+  reorderPinned: boolean;
+  columns: readonly { key: string }[];
+  pinOffset?: (key: string) => unknown;
+}): {
+  hasPinned: boolean;
+  leads: PinLeads;
+  extraMinWidth: number;
+  expand: number;
+  selectionLead: number;
+  reorderSig: string;
+} {
+  const {
+    expandable,
+    showReorder,
+    hasSelection,
+    showActions,
+    actionsPinned,
+    reorderPinned,
+    columns,
+    pinOffset,
+  } = options;
+  const expand = expandable ? EXPANSION_WIDTH : 0;
+  const reorder = showReorder ? REORDER_COLUMN_WIDTH : 0;
+  const select = hasSelection ? SELECTION_WIDTH : 0;
+  const actions = showActions ? ACTIONS_WIDTH : 0;
+  return {
+    hasPinned:
+      actionsPinned ||
+      (showReorder && reorderPinned) ||
+      columns.some((c) => pinOffset?.(c.key) != null),
+    leads: { start: expand + reorder + select, end: actions },
+    extraMinWidth: expand + reorder + select + actions,
+    expand,
+    selectionLead: expand + reorder,
+    reorderSig: showReorder && reorderPinned ? "reorder:start" : "",
+  };
+}
 
 /**
  * Opaque background for sticky/pinned cells — the Chakra v3 body-background
@@ -115,10 +233,17 @@ interface DesktopRowApi<TRow> {
   renderRowDetail?: (row: TRow) => ReactNode;
   pinOffset?: (key: string) => PinOffset | undefined;
   measureElement?: (element: Element | null) => void;
+  /** Measures a row together with its open detail panel. */
+  measureRowPair?: RowPairMeasurer;
   leads: PinLeads;
   hasStartPin: boolean;
   /** Actions cells stick: a data column is right-pinned OR actions are end-pinned. */
   actionsStick: boolean;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: SharedTableRenderProps<TRow>["rowReorder"];
+  windowStart: number;
+  rowCount: number;
+  reorderPinned: boolean;
 }
 
 /** The visual inputs of one desktop row — exactly what the memo compares. */
@@ -133,19 +258,45 @@ interface DesktopRowProps<TRow> {
   size: "sm" | "md" | "lg";
   accentColor?: string;
   dir?: Direction;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
+  /** This row's cells — covered neighbours already omitted. */
+  bodyCells: readonly BodyCell<TRow>[];
+  /** Memo digest from {@link rowSpanSignature}. */
+  spanSignature: string;
   columnWidths?: Readonly<Record<string, number>>;
   /** Serialized pin geometry — stands in for the `pinOffset` closure. */
   pinSignature: string;
   /** The `rowClassName(row, index)` output, compared as a plain string. */
   className?: string;
+  /** Pre-computed `rowStyle` + `rowHeight` (compared via signature). */
+  rowVisualStyle: CSSProperties | undefined;
+  rowStyleSignature: string;
   labels: Required<TableLabels>;
   hasSelection: boolean;
   expandable: boolean;
   showActions: boolean;
+  showReorder: boolean;
+  /** Memo digest from {@link rowReorderSignature}. */
+  reorderSignature: string | null;
+  /** Which edge this row is pinned to, if any. */
+  rowPinSide?: RowPinSide;
+  /** Sticky header offset for a pinned row's cells. */
+  rowPinOffset: number;
+  /** Memo digest from {@link rowPinSignature}. */
+  rowPinSignature: string | null;
+  /** Dataset index for ARIA / focus when pinning remapped the window. */
+  sourceIndex: number;
   hasRowClick: boolean;
   /** Spacer/detail colSpan (selection + data + actions + expansion). */
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
+  /** This row's place in the tree, when the table has one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Which column carries the chevron and the indent. */
+  treeColumnKey?: string;
+  /** Open or close a tree node. */
+  onToggleTree?: (id: string) => void;
   /** Identity-stable ref to the latest callbacks — see {@link DesktopRowApi}. */
   api: RefObject<DesktopRowApi<TRow>>;
   /** Identity-stable ref-callback forwarding to the virtualizer's measure. */
@@ -165,6 +316,10 @@ const ROW_VISUAL_KEYS = [
   ...SHARED_DESKTOP_ROW_KEYS,
   "accentColor",
   "editingSignature",
+  "rowPinSide",
+  "rowPinOffset",
+  "sourceIndex",
+  "rowStyleSignature",
 ] as const satisfies readonly (keyof DesktopRowProps<unknown>)[];
 
 /** Re-render a row only when one of its visual inputs changes. */
@@ -186,18 +341,28 @@ function DesktopRowBase<TRow>({
   accentColor,
   dir,
   columns,
+  bodyCells,
   className,
+  rowVisualStyle,
   labels,
   hasSelection,
   expandable,
   showActions,
+  showReorder,
+  rowPinSide,
+  rowPinOffset,
+  sourceIndex,
   hasRowClick,
   columnSpan,
+  columnSpacers,
   api,
   measureRef,
   editing,
   rows,
   getRowId,
+  treeEntry,
+  treeColumnKey: treeKey,
+  onToggleTree,
 }: Readonly<DesktopRowProps<TRow>>) {
   // Render-time geometry reads the latest ref values: whenever they change,
   // a compared prop (pinSignature / hasSelection / …) changes with them.
@@ -205,23 +370,50 @@ function DesktopRowBase<TRow>({
   const activateRow = (r: TRow): void => {
     api.current.onRowClick?.(r);
   };
+  const edgeRowPin = pinnedRowCellStyle(rowPinSide, rowPinOffset, true);
+  const dataPinStyle = (key: string) => {
+    const column = pinCellStyle(live.pinOffset?.(key), 1, live.leads);
+    const rowPin = pinnedRowCellStyle(
+      rowPinSide,
+      rowPinOffset,
+      column !== undefined
+    );
+    if (!column && !rowPin.position) return undefined;
+    return { ...column, ...rowPin };
+  };
+  const focusIndex = sourceIndex;
   return (
     <>
       <Table.Row
-        {...rowClickProps(row, hasRowClick ? activateRow : undefined, index)}
-        ref={measureRef}
+        {...rowClickProps(
+          row,
+          hasRowClick ? activateRow : undefined,
+          focusIndex
+        )}
+        {...(live.rowReorder?.dropProps(index, row, live.windowStart) ?? {})}
+        {...(live.rowReorder?.rowAttrs(id, index) ?? {})}
+        ref={rowPinSide ? undefined : measureRef}
         data-index={index}
-        {...gridFocus?.getRowPropsAt(index)}
+        data-row-pin={rowPinSide}
+        {...gridFocus?.getRowPropsAt(focusIndex)}
         data-stagger=""
+        data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}
         bg={selected ? "blackAlpha.100" : undefined}
         _dark={{ bg: selected ? "whiteAlpha.200" : undefined }}
+        style={{
+          ...rowVisualStyle,
+          ...rowReorderDropStyle(live.rowReorder?.rowAttrs(id, index)),
+        }}
         onMouseEnter={() => api.current.prefetch?.(row)}
       >
         {expandable && (
           <Table.Cell
             px={1}
-            style={edgeCellStyle("start", live.hasStartPin, PIN_Z.body)}
+            style={{
+              ...edgeCellStyle("start", live.hasStartPin, PIN_Z.body),
+              ...edgeRowPin,
+            }}
           >
             <ExpandToggle
               open={expanded}
@@ -231,14 +423,43 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
+        {showReorder && live.rowReorder && (
+          <Table.Cell
+            data-adapttable-part="reorder-cell"
+            px={1}
+            style={{
+              ...edgeCellStyle(
+                "start",
+                live.hasStartPin || live.reorderPinned,
+                PIN_Z.body,
+                expandable ? EXPANSION_WIDTH : 0
+              ),
+              ...edgeRowPin,
+            }}
+          >
+            <RowReorderHandle
+              reorder={live.rowReorder}
+              labels={labels}
+              rowId={id}
+              localIndex={index}
+              row={row}
+              windowStart={live.windowStart}
+              rowCount={live.rowCount}
+            />
+          </Table.Cell>
+        )}
         {hasSelection && (
           <Table.Cell
-            style={edgeCellStyle(
-              "start",
-              live.hasStartPin,
-              PIN_Z.body,
-              expandable ? EXPANSION_WIDTH : 0
-            )}
+            style={{
+              ...edgeCellStyle(
+                "start",
+                live.hasStartPin,
+                PIN_Z.body,
+                (expandable ? EXPANSION_WIDTH : 0) +
+                  (showReorder ? REORDER_COLUMN_WIDTH : 0)
+              ),
+              ...edgeRowPin,
+            }}
           >
             <Checkbox
               aria-label={labels.selectRow}
@@ -247,44 +468,91 @@ function DesktopRowBase<TRow>({
             />
           </Table.Cell>
         )}
-        {columns.map((column, colIndex) => (
-          <Table.Cell
-            key={column.key}
-            {...gridFocus?.getCellPropsAt(index, colIndex)}
-            textAlign={logicalAlign(column.align)}
-            style={pinCellStyle(live.pinOffset?.(column.key), 1, live.leads)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={labels.editCell}
-              display={
-                column.Cell ? (
-                  <column.Cell row={row} rowIndex={index} />
-                ) : (
-                  column.accessor?.(row)
-                )
+        {columnSpacers && (
+          <ColumnSpacer width={columnSpacers.start} side="start" />
+        )}
+        {bodyCells.map((cell) => {
+          const { column, columnIndex, colSpan, rowSpan } = cell;
+          const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
+          return (
+            <Table.Cell
+              key={column.key}
+              colSpan={colSpan > 1 ? colSpan : undefined}
+              rowSpan={rowSpan > 1 ? rowSpan : undefined}
+              data-column-key={column.key}
+              data-adapttable-part="cell"
+              {...focusProps}
+              textAlign={logicalAlign(column.align)}
+              style={
+                // This kit's own subtle fill for a selected cell, applied over the
+                // pinned background so a pinned column still shows the selection.
+                cellHighlightStyle(focusProps, dataPinStyle(column.key), {
+                  background: "var(--chakra-colors-bg-subtle)",
+                })
               }
-            />
-          </Table.Cell>
-        ))}
+            >
+              <TreeCell
+                entry={treeEntry}
+                columnKey={column.key}
+                treeColumnKey={treeKey}
+                labels={labels}
+                onToggle={onToggleTree}
+              >
+                <EditableDataCell
+                  editing={editing}
+                  row={row}
+                  column={column}
+                  rowId={id}
+                  rows={rows}
+                  columns={columns}
+                  rowKey={getRowId}
+                  editLabel={labels.editCell}
+                  undoLabel={labels.undoEdit}
+                  display={
+                    column.Cell ? (
+                      <column.Cell row={row} rowIndex={focusIndex} />
+                    ) : (
+                      column.accessor?.(row)
+                    )
+                  }
+                />
+              </TreeCell>
+              <FillHandle
+                focus={gridFocus}
+                windowIndex={focusIndex}
+                col={columnIndex}
+              />
+            </Table.Cell>
+          );
+        })}
+        {columnSpacers && <ColumnSpacer width={columnSpacers.end} side="end" />}
         {showActions && (
           <Table.Cell
             textAlign="end"
-            style={edgeCellStyle("end", live.actionsStick, PIN_Z.body)}
+            style={{
+              ...edgeCellStyle("end", live.actionsStick, PIN_Z.body),
+              ...edgeRowPin,
+            }}
           >
-            <RowActionButtons
-              row={row}
-              actions={live.rowActions!}
-              confirm={live.confirm}
-              cancelLabel={labels.cancel}
-              accentColor={accentColor}
-            />
+            {editing?.rowEditing && (
+              <RowEditActions
+                rowEditing={editing.rowEditing}
+                row={row}
+                rowId={id}
+                labels={labels}
+              />
+            )}
+            {/* The control column also exists for row mode alone, so this is
+                not the same question as `showActions`. */}
+            {live.rowActions && live.rowActions.length > 0 && (
+              <RowActionButtons
+                row={row}
+                actions={live.rowActions}
+                confirm={live.confirm}
+                cancelLabel={labels.cancel}
+                accentColor={accentColor}
+              />
+            )}
           </Table.Cell>
         )}
       </Table.Row>
@@ -314,6 +582,8 @@ function DesktopTableRows<TRow>({
   gridFocus,
   grouping,
   entries,
+  extraRows,
+  tree,
   getRowId,
   selection,
   expansion,
@@ -321,14 +591,23 @@ function DesktopTableRows<TRow>({
   accentColor,
   dir,
   columns,
+  cellsByRow,
   columnWidths,
   pinSignature,
   rowClassName,
+  rowStyle,
+  rowHeight,
   labels,
   expandable,
   showActions,
+  showReorder,
+  leadingCells,
+  rowReorder,
+  rowPinning,
+  rowPinOffset,
   onRowClick,
   columnSpan,
+  columnSpacers,
   api,
   measureRef,
   editing,
@@ -341,6 +620,8 @@ function DesktopTableRows<TRow>({
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   grouping: SharedTableRenderProps<TRow>["grouping"];
+  extraRows: SharedTableRenderProps<TRow>["extraRows"];
+  tree: SharedTableRenderProps<TRow>["tree"];
   entries: ReturnType<typeof tableRenderModel<TRow>>["entries"];
   getRowId: (row: TRow) => string;
   selection: SelectionState | null;
@@ -348,15 +629,25 @@ function DesktopTableRows<TRow>({
   size: SharedProps<TRow>["size"];
   accentColor?: string;
   dir?: Direction;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
+  cellsByRow: ReturnType<typeof tableRenderModel<TRow>>["cellsByRow"];
   columnWidths?: Readonly<Record<string, number>>;
   pinSignature: string;
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  rowStyle: SharedTableRenderProps<TRow>["rowStyle"];
+  rowHeight: SharedTableRenderProps<TRow>["rowHeight"];
   labels: Required<TableLabels>;
   expandable: boolean;
   showActions: boolean;
+  showReorder: boolean;
+  leadingCells: number;
+  rowReorder: SharedTableRenderProps<TRow>["rowReorder"];
+  rowPinning: SharedTableRenderProps<TRow>["rowPinning"];
+  rowPinOffset: number;
   onRowClick?: (row: TRow) => void;
   columnSpan: number;
+  /** Widths holding open the columns outside the horizontal window. */
+  columnSpacers?: { start: number; end: number };
   api: RefObject<DesktopRowApi<TRow>>;
   measureRef: (element: HTMLTableRowElement | null) => void;
   editing?: EditableCellEditing<TRow>;
@@ -366,13 +657,28 @@ function DesktopTableRows<TRow>({
 }>): ReactNode {
   if (grouping) {
     return grouping.entries.map((entry) => {
-      if (entry.kind === "group") {
+      if (entry.kind === "separator" || entry.kind === "fullWidth") {
+        return (
+          <ExtraSlotRow
+            key={entry.key}
+            kind={entry.kind}
+            colSpan={columnSpan}
+            render={entry.kind === "fullWidth" ? entry.render : undefined}
+            labels={labels}
+          />
+        );
+      }
+      if (
+        entry.kind === "group" ||
+        entry.kind === "groupFooter" ||
+        entry.kind === "groupMore"
+      ) {
         return (
           <GroupHeaderRow
             key={entry.key}
             entry={entry}
             columns={columns}
-            leadingCells={(expandable ? 1 : 0) + (selection ? 1 : 0)}
+            leadingCells={leadingCells}
             showActions={showActions}
             getCellProps={getCellProps}
             selection={selection}
@@ -380,6 +686,7 @@ function DesktopTableRows<TRow>({
             dir={dir}
             accentColor={accentColor}
             onToggleCollapse={onToggleGroup}
+            onShowMore={grouping.showMore}
           />
         );
       }
@@ -397,15 +704,33 @@ function DesktopTableRows<TRow>({
           accentColor={accentColor}
           dir={dir}
           columns={columns}
+          bodyCells={cellsForRow(cellsByRow, id)}
+          spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
           columnWidths={columnWidths}
           pinSignature={pinSignature}
           className={rowClassName?.(entry.row, entry.index)}
+          rowVisualStyle={resolveRowStyle(
+            rowStyle,
+            rowHeight,
+            entry.row,
+            entry.index
+          )}
+          rowStyleSignature={rowStyleSignature(
+            resolveRowStyle(rowStyle, rowHeight, entry.row, entry.index)
+          )}
           labels={labels}
           hasSelection={Boolean(selection)}
           expandable={expandable}
           showActions={showActions}
+          showReorder={showReorder}
+          reorderSignature={rowReorderSignature(rowReorder, id, entry.index)}
+          rowPinSide={undefined}
+          rowPinOffset={rowPinOffset}
+          rowPinSignature={rowPinSignature(rowPinning, id)}
+          sourceIndex={entry.index}
           hasRowClick={Boolean(onRowClick)}
           columnSpan={columnSpan}
+          columnSpacers={columnSpacers}
           api={api}
           measureRef={measureRef}
           editing={editing}
@@ -416,8 +741,27 @@ function DesktopTableRows<TRow>({
       );
     });
   }
-  return entries.map(({ row, index, key }) => {
+  // A tree renders its own flattened entries; a flat table renders the
+  // (possibly windowed) rows. Both carry a row and a key.
+  return insertExtraRows(
+    bodyRowEntries(entries, tree),
+    extraRows,
+    (e) => e.key
+  ).map((slot) => {
+    if ("kind" in slot) {
+      return (
+        <ExtraSlotRow
+          key={slot.key}
+          kind={slot.kind}
+          colSpan={columnSpan}
+          render={slot.kind === "fullWidth" ? slot.render : undefined}
+          labels={labels}
+        />
+      );
+    }
+    const { row, index, key, treeEntry, sourceIndex } = slot;
     const id = getRowId(row);
+    const focusIndex = sourceIndex ?? index;
     return (
       <Row
         gridFocus={gridFocus}
@@ -431,20 +775,36 @@ function DesktopTableRows<TRow>({
         accentColor={accentColor}
         dir={dir}
         columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         columnWidths={columnWidths}
         pinSignature={pinSignature}
-        className={rowClassName?.(row, index)}
+        className={rowClassName?.(row, focusIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, focusIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
+        )}
         labels={labels}
         hasSelection={Boolean(selection)}
         expandable={expandable}
         showActions={showActions}
+        showReorder={showReorder}
+        reorderSignature={rowReorderSignature(rowReorder, id, index)}
+        rowPinSide={undefined}
+        rowPinOffset={rowPinOffset}
+        rowPinSignature={rowPinSignature(rowPinning, id)}
+        sourceIndex={focusIndex}
         hasRowClick={Boolean(onRowClick)}
         columnSpan={columnSpan}
+        columnSpacers={columnSpacers}
         api={api}
         measureRef={measureRef}
         editing={editing}
         rows={rows}
         getRowId={getRowId}
+        treeEntry={treeEntry}
+        treeColumnKey={tree?.columnKey}
+        onToggleTree={tree?.expansion.toggle}
         editingSignature={rowEditingSignature(editing, id)}
       />
     );
@@ -465,6 +825,11 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
@@ -475,6 +840,7 @@ export function DesktopTable<TRow>({
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  measureRowPair,
   stickyHeader = false,
   stickyTop = 0,
   pinOffset,
@@ -484,23 +850,63 @@ export function DesktopTable<TRow>({
   columnWidths,
   resizeLabel = "Resize column",
   actionsPinned = false,
+  reorderPinned = false,
+  rowReorder,
+  windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
+  rowPinning,
+  columnWindow,
+  fitColumns,
+  tree,
+  extraRows,
+  getCellSpan,
+  headerFilters,
+  filterDefs,
+  filterRegistry,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
   // so spacer and detail rows span it without local `+ 1` math.
-  const { columns, selection, labels, showActions, entries, columnSpan } =
-    tableRenderModel({
-      table,
-      rows,
-      rowActions,
-      getRowId,
-      rowEntries,
-      renderRowDetail,
-      expansion,
-    });
+  const {
+    columns,
+    selection,
+    labels,
+    showActions,
+    showReorder,
+    leadingCells,
+    entries,
+    columnSpan,
+    columnSpacers,
+    cellsByRow,
+  } = tableRenderModel({
+    table,
+    rows,
+    columnWindow,
+    rowActions,
+    getRowId,
+    rowEntries,
+    renderRowDetail,
+    expansion,
+    editing,
+    rowReorder,
+    pinnedTopRows,
+    pinnedBottomRows,
+    getCellSpan,
+    pinOffset,
+    tree,
+    grouping,
+  });
+  const [theadRef, headerHeight] = useOffsetHeight();
+  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
   const expandable = expansion !== undefined;
-  const groups = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   const summary = useSummaryCells(summaryRow, rows);
+  const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
   // sticky and let the header overlap the first row.
@@ -508,8 +914,17 @@ export function DesktopTable<TRow>({
   // the header pins to ITS top — a viewport offset would float it mid-box.
   // End-pinned actions count as a pin too: sticking them needs the wrapper
   // to be the horizontal scroll container, exactly like a pinned data column.
-  const hasPinned =
-    actionsPinned || table.columns.some((c) => pinOffset?.(c.key) != null);
+  const { hasPinned, leads, extraMinWidth, expand, selectionLead, reorderSig } =
+    pinChrome({
+      expandable,
+      showReorder,
+      hasSelection: Boolean(selection),
+      showActions,
+      actionsPinned,
+      reorderPinned,
+      columns: table.columns,
+      pinOffset,
+    });
   // With no maxHeight and no pins the wrapper must stay a NON-scroll
   // container so page-scroll sticky headers keep working — but a table wider
   // than the card would then bleed past it. Measure, and scroll only when the
@@ -520,6 +935,8 @@ export function DesktopTable<TRow>({
   // sticky context: the header must pin to ITS top — a viewport offset
   // would shove it down into the rows.
   const inScrollBox = maxHeight != null || hasPinned || overflowing;
+  const headerPinTop = inScrollBox ? 0 : stickyTop;
+  const rowPinOffset = stickyHeader ? headerPinTop + headerHeight : 0;
   const stickyTh = stickyHeader
     ? {
         position: "sticky" as const,
@@ -528,16 +945,6 @@ export function DesktopTable<TRow>({
         bg: "bg",
       }
     : {};
-  // The leading expansion (32px) / checkbox (48px) and trailing actions
-  // (120px) columns pin to the edge alongside the data columns, which
-  // therefore start past them.
-  const selectionWidth = 48;
-  const actionsWidth = 120;
-  const leads: PinLeads = {
-    start:
-      (expandable ? EXPANSION_WIDTH : 0) + (selection ? selectionWidth : 0),
-    end: showActions ? actionsWidth : 0,
-  };
   const hasStartPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "start"
   );
@@ -560,8 +967,9 @@ export function DesktopTable<TRow>({
     const width = pin
       ? pinnedColumnWidth(column, columnWidths)
       : columnWidths?.[key];
-    if (!pin && width == null && !setWidth) return undefined;
-    const style: CSSProperties = { ...pin };
+    const sizing = columnSizeStyle(column, flexShares, columnWidths?.[key]);
+    if (!pin && width == null && !setWidth && !sizing) return undefined;
+    const style: CSSProperties = { ...pin, ...sizing };
     if (width != null) style.width = width;
     if (setWidth && !stickyHeader && !pin) style.position = "relative";
     return style;
@@ -571,12 +979,17 @@ export function DesktopTable<TRow>({
 
   // Fixed-width columns get a real table min-width (their sum), so the table
   // overflows and scrolls horizontally instead of squishing columns to fit.
+  // Each flexible column's share, from the same rule core's prop-getters
+  // use — so a kit that styles its own header still sizes identically.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const minWidth = tableMinWidth(columns, {
     widths: columnWidths,
-    extra:
-      (expandable ? EXPANSION_WIDTH : 0) +
-      (selection ? selectionWidth : 0) +
-      (showActions ? actionsWidth : 0),
+    extra: extraMinWidth,
   });
 
   // The memoized row reads everything non-visual through this single ref,
@@ -592,9 +1005,14 @@ export function DesktopTable<TRow>({
     renderRowDetail,
     pinOffset,
     measureElement,
+    measureRowPair,
     leads,
     hasStartPin,
     actionsStick,
+    rowReorder,
+    windowStart,
+    rowCount: rows.length,
+    reorderPinned,
   };
   const api = useRef(rowApi);
   api.current = rowApi;
@@ -603,12 +1021,61 @@ export function DesktopTable<TRow>({
   }, []);
   // One memoized row component per table instance — see createDesktopRow.
   const Row = useMemo(() => createDesktopRow<TRow>(), []);
+  const renderPinnedRow = (row: TRow, side: RowPinSide) => {
+    const id = getRowId(row);
+    const found = rows.findIndex((item) => getRowId(item) === id);
+    const sourceIndex = Math.max(0, found);
+    return (
+      <Row
+        key={id}
+        row={row}
+        id={id}
+        index={sourceIndex}
+        gridFocus={gridFocus}
+        selected={selection?.isSelected(id) ?? false}
+        expanded={expansion?.isExpanded(id) ?? false}
+        size={size}
+        accentColor={accentColor}
+        dir={dir}
+        columns={columns}
+        bodyCells={cellsForRow(cellsByRow, id)}
+        spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
+        columnWidths={columnWidths}
+        pinSignature={pinSignature}
+        className={rowClassName?.(row, sourceIndex)}
+        rowVisualStyle={resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)}
+        rowStyleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
+        )}
+        labels={labels}
+        hasSelection={Boolean(selection)}
+        expandable={expandable}
+        showActions={showActions}
+        showReorder={showReorder}
+        reorderSignature={rowReorderSignature(rowReorder, id, sourceIndex)}
+        rowPinSide={side}
+        rowPinOffset={rowPinOffset}
+        rowPinSignature={rowPinSignature(rowPinning, id)}
+        sourceIndex={sourceIndex}
+        hasRowClick={Boolean(onRowClick)}
+        columnSpan={columnSpan}
+        columnSpacers={columnSpacers}
+        api={api}
+        measureRef={measureRef}
+        editing={editing}
+        rows={rows}
+        getRowId={getRowId}
+        editingSignature={rowEditingSignature(editing, id)}
+      />
+    );
+  };
   // `pinOffset` is a fresh closure whenever the layout changes, so rows
   // compare this serialized pin geometry instead of a function identity.
   // The actions edge is part of the geometry: end-pinning the actions column
   // must re-render the memoized rows so their actions cells turn sticky.
   const pinSignature = [
     actionsStick ? "actions:end" : "",
+    reorderSig,
     ...columns.map((column) => {
       const pin = pinOffset?.(column.key);
       return pin ? `${column.key}:${pin.side}:${pin.inset}` : "";
@@ -640,11 +1107,15 @@ export function DesktopTable<TRow>({
         minW={minWidth > 0 ? `${minWidth}px` : undefined}
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
+        style={fittedTableStyle(fitColumns)}
       >
-        <Table.Header>
-          {groups && (
-            <Table.Row>
+        <Table.Header ref={theadRef}>
+          {groupRows?.map((groups) => (
+            <Table.Row key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.ColumnHeader px={1} />}
+              <When show={showReorder}>
+                <Table.ColumnHeader px={1} />
+              </When>
               {selection && <Table.ColumnHeader />}
               {groups.map((cell) => (
                 <Table.ColumnHeader
@@ -654,13 +1125,20 @@ export function DesktopTable<TRow>({
                   fontWeight="semibold"
                   textTransform="none"
                 >
+                  {onToggleColumnGroup ? (
+                    <ColumnGroupToggle
+                      cell={cell}
+                      labels={labels}
+                      onToggle={onToggleColumnGroup}
+                    />
+                  ) : null}
                   {cell.label}
                 </Table.ColumnHeader>
               ))}
               {showActions && <Table.ColumnHeader />}
             </Table.Row>
-          )}
-          <Table.Row>
+          ))}
+          <Table.Row ref={headerRowRef}>
             {expandable && (
               <Table.ColumnHeader
                 {...stickyTh}
@@ -670,6 +1148,21 @@ export function DesktopTable<TRow>({
                 style={edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)}
               />
             )}
+            <When show={showReorder}>
+              <Table.ColumnHeader
+                {...stickyTh}
+                aria-label={labels.reorderRow}
+                data-adapttable-part="reorder-header"
+                width={`${REORDER_COLUMN_WIDTH}px`}
+                px={1}
+                style={edgeCellStyle(
+                  "start",
+                  hasStartPin || reorderPinned,
+                  PIN_Z.headerPinned,
+                  expand
+                )}
+              />
+            </When>
             {selection && (
               <Table.ColumnHeader
                 {...stickyTh}
@@ -677,7 +1170,7 @@ export function DesktopTable<TRow>({
                   "start",
                   hasStartPin,
                   PIN_Z.headerPinned,
-                  expandable ? EXPANSION_WIDTH : 0
+                  selectionLead
                 )}
               >
                 <Checkbox
@@ -688,7 +1181,10 @@ export function DesktopTable<TRow>({
                 />
               </Table.ColumnHeader>
             )}
-            {columns.map((column) => {
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
+            )}
+            {columns.map((column, headerIndex) => {
               const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
                 | "ascending"
                 | "descending"
@@ -700,12 +1196,29 @@ export function DesktopTable<TRow>({
               const sortButton = table.getSortButtonProps(column);
               const sortClick = sortButton.onClick;
               const sortIndex = sortButton["data-sort-index"];
+              const caption = resolveColumnHeader(
+                column,
+                columnHeaderController(column, {
+                  sortIndex:
+                    typeof sortIndex === "number" ? sortIndex : undefined,
+                  toggleSort: sortClick,
+                })
+              );
+              const actions = column.headerActions ? (
+                <span data-adapttable-part="header-actions">
+                  {column.headerActions}
+                </span>
+              ) : null;
               return (
                 <Table.ColumnHeader
                   key={column.key}
+                  {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+                    sortable: column.sortable,
+                  }) ?? {})}
                   textAlign={logicalAlign(column.align)}
                   width={column.width}
                   aria-sort={ariaSort}
+                  data-column-key={column.key}
                   {...stickyTh}
                   style={headCellStyle(column)}
                 >
@@ -715,8 +1228,9 @@ export function DesktopTable<TRow>({
                       cursor="pointer"
                       aria-label={`${labels.sortBy}: ${columnName(column)}`}
                       onClick={sortClick}
+                      title={column.headerTooltip}
                     >
-                      {column.header}
+                      {caption}
                       <Text as="span" aria-hidden>
                         {sortGlyph(ariaSort)}
                       </Text>
@@ -738,8 +1252,9 @@ export function DesktopTable<TRow>({
                       )}
                     </chakra.button>
                   ) : (
-                    column.header
+                    <span title={column.headerTooltip}>{caption}</span>
                   )}
+                  {actions}
                   {setWidth && (
                     <Box
                       as="span"
@@ -754,6 +1269,9 @@ export function DesktopTable<TRow>({
                 </Table.ColumnHeader>
               );
             })}
+            {columnSpacers && (
+              <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+            )}
             {showActions && (
               <Table.ColumnHeader
                 textAlign="end"
@@ -764,8 +1282,46 @@ export function DesktopTable<TRow>({
               </Table.ColumnHeader>
             )}
           </Table.Row>
+          <FilterHeaderRow
+            enabled={headerFilters === true}
+            columns={columns}
+            defs={filterDefs ?? []}
+            source={table.source}
+            labels={labels}
+            expandable={expandable}
+            showReorder={showReorder}
+            selection={Boolean(selection)}
+            showActions={showActions}
+            columnSpacers={columnSpacers}
+            cellStyle={(column) => ({
+              ...headerFilterStickTop(
+                stickyHeader,
+                undefined,
+                headerPinTop + leafHeaderHeight,
+                { position: "sticky", zIndex: PIN_Z.header }
+              ),
+              ...pinnedCellStyle(pinOffset?.(column.key), PIN_Z.headerPinned),
+            })}
+            pinSide={(key) => pinOffset?.(key)?.side}
+            padStyle={headerFilterStickTop(
+              stickyHeader,
+              undefined,
+              headerPinTop + leafHeaderHeight,
+              { position: "sticky", zIndex: PIN_Z.header }
+            )}
+            stickyAttr={stickyHeader || undefined}
+            registry={filterRegistry}
+          />
         </Table.Header>
-        <Table.Body>
+        {pinnedTopRows.length > 0 && (
+          <Table.Body
+            data-adapttable-part={PINNED_TOP_PART}
+            style={pinnedRowStickyStyle("top", rowPinOffset)}
+          >
+            {pinnedTopRows.map((row) => renderPinnedRow(row, "top"))}
+          </Table.Body>
+        )}
+        <Table.Body data-adapttable-part="tbody">
           {paddingTop > 0 && (
             <Table.Row aria-hidden>
               <Table.Cell colSpan={columnSpan} h={`${paddingTop}px`} p={0} />
@@ -776,6 +1332,8 @@ export function DesktopTable<TRow>({
             gridFocus={gridFocus}
             grouping={grouping}
             entries={entries}
+            extraRows={extraRows}
+            tree={tree}
             getRowId={getRowId}
             selection={selection}
             expansion={expansion}
@@ -783,14 +1341,23 @@ export function DesktopTable<TRow>({
             accentColor={accentColor}
             dir={dir}
             columns={columns}
+            cellsByRow={cellsByRow}
             columnWidths={columnWidths}
             pinSignature={pinSignature}
             rowClassName={rowClassName}
+            rowStyle={rowStyle}
+            rowHeight={rowHeight}
             labels={labels}
             expandable={expandable}
             showActions={showActions}
+            showReorder={showReorder}
+            leadingCells={leadingCells}
+            rowReorder={rowReorder}
+            rowPinning={rowPinning}
+            rowPinOffset={rowPinOffset}
             onRowClick={onRowClick}
             columnSpan={columnSpan}
+            columnSpacers={columnSpacers}
             api={api}
             measureRef={measureRef}
             editing={editing}
@@ -804,17 +1371,28 @@ export function DesktopTable<TRow>({
             </Table.Row>
           )}
         </Table.Body>
-        {summary && (
+        {pinnedBottomRows.length > 0 && (
+          <Table.Body
+            data-adapttable-part={PINNED_BOTTOM_PART}
+            style={pinnedRowStickyStyle("bottom", 0)}
+          >
+            {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
+          </Table.Body>
+        )}
+        {showColumnFooter && (
           <Table.Footer>
             <Table.Row>
               {expandable && <Table.Cell px={1} />}
+              <When show={showReorder}>
+                <Table.Cell px={1} />
+              </When>
               {selection && <Table.Cell />}
               {columns.map((column) => (
                 <Table.Cell
                   key={column.key}
                   textAlign={logicalAlign(column.align)}
                 >
-                  {summary[column.key]}
+                  {resolveColumnFooter(column, summary?.[column.key])}
                 </Table.Cell>
               ))}
               {showActions && <Table.Cell />}

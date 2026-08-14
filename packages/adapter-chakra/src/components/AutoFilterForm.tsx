@@ -1,15 +1,26 @@
 import {
+  ChecklistFilter,
+  defaultFilterRegistry,
   type Direction,
   type FilterDef,
   type FilterFormSource,
   filterLabel,
+  filterOpLabel,
+  type FilterTypeRegistry,
+  filterWidgetKind,
+  joinRelativeToken,
   listFilterValues,
-  RANGE_OPS,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  renderRegisteredFilter,
   resolveLabels,
   scalarFilterText,
+  splitRelativeToken,
   type TableLabels,
+  useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
+  useTextFilterWidget,
 } from "@adapttable/core";
 import {
   Checkbox,
@@ -56,6 +67,57 @@ export interface AutoFilterFormProps<TRow> {
   accentColor?: string;
   /** Pre-translated label overrides (operator names, From/To, …). */
   labels?: TableLabels;
+  /** Type registry; defaults to the built-ins. */
+  registry?: FilterTypeRegistry;
+}
+
+/** Preset select + optional N for last/next. Stores the token. */
+function RelativeTokenField({
+  labels,
+  value,
+  onValue,
+}: Readonly<{
+  labels: Required<TableLabels>;
+  value: string;
+  onValue: (next: string) => void;
+}>) {
+  const { preset, n } = splitRelativeToken(value);
+  const counted = preset === "last" || preset === "next";
+  return (
+    <>
+      <NativeSelect
+        size="sm"
+        flex="1 1 8.5rem"
+        minW="8.5rem"
+        aria-label={labels.opRelative}
+        value={preset}
+        onChange={(e) => {
+          const next = RELATIVE_PRESETS.find((p) => p === e.target.value);
+          if (next) onValue(joinRelativeToken(next, n));
+        }}
+      >
+        {RELATIVE_PRESETS.map((p) => (
+          <option key={p} value={p}>
+            {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
+          </option>
+        ))}
+      </NativeSelect>
+      {counted && (
+        <Input
+          size="sm"
+          flex="0 0 4.5rem"
+          w="4.5rem"
+          type="number"
+          min={1}
+          aria-label={labels.value}
+          value={n}
+          onChange={(e) =>
+            onValue(joinRelativeToken(preset, Number(e.target.value)))
+          }
+        />
+      )}
+    </>
+  );
 }
 
 /**
@@ -74,7 +136,7 @@ function RangeField<TRow>({
   labels: Required<TableLabels>;
 }>) {
   const id = useId();
-  const { label, opLabelKeys, inputType, op, setOp, a, b, write } =
+  const { label, ops, opLabelKeys, inputType, arity, op, setOp, a, b, write } =
     useRangeFilterWidget(def, source);
   return (
     <FormField label={label}>
@@ -90,18 +152,21 @@ function RangeField<TRow>({
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
-            const next = RANGE_OPS.find((o) => o === e.target.value);
+            const next = ops.find((o) => o === e.target.value);
             setOp(next);
             write(next, a, b);
           }}
         >
-          {RANGE_OPS.map((o) => (
+          {ops.map((o) => (
             <option key={o} value={o}>
-              {labels[opLabelKeys[o]]}
+              {filterOpLabel(
+                labels,
+                opLabelKeys[o as keyof typeof opLabelKeys]
+              )}
             </option>
           ))}
         </NativeSelect>
-        {op === "between" ? (
+        {arity === "two" && (
           <>
             <Input
               id={`${id}-a`}
@@ -126,8 +191,18 @@ function RangeField<TRow>({
               onChange={(e) => write(op, a, e.target.value)}
             />
           </>
-        ) : (
-          op && (
+        )}
+        {op === "relative" && (
+          <RelativeTokenField
+            labels={labels}
+            value={a}
+            onValue={(next) => write(op, next, "")}
+          />
+        )}
+        {op !== undefined &&
+          op !== "relative" &&
+          arity !== "none" &&
+          arity !== "two" && (
             <Input
               id={`${id}-a`}
               size="sm"
@@ -139,9 +214,89 @@ function RangeField<TRow>({
               value={a}
               onChange={(e) => write(op, e.target.value, "")}
             />
-          )
+          )}
+      </HStack>
+    </FormField>
+  );
+}
+
+/** Operator-first text filter: comparison select, then the term (if needed). */
+function TextFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, ops, opLabelKeys, op, value, needsValue, write } =
+    useTextFilterWidget(def, source);
+  return (
+    <FormField label={label}>
+      <HStack gap={2} align="flex-start" flexWrap="wrap" rowGap={2}>
+        <NativeSelect
+          size="sm"
+          flex="0 0 8.5rem"
+          w="8.5rem"
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
+          value={op}
+          onChange={(e) => {
+            const found = ops.find((choice) => choice === e.target.value);
+            if (found) write(found, value);
+          }}
+        >
+          {ops.map((choice) => (
+            <option key={choice} value={choice}>
+              {filterOpLabel(labels, opLabelKeys[choice])}
+            </option>
+          ))}
+        </NativeSelect>
+        {needsValue && (
+          <Input
+            size="sm"
+            flex="1 1 7rem"
+            minW="7rem"
+            aria-label={label}
+            data-adapttable-part="filter-input"
+            value={value}
+            placeholder={def.placeholder}
+            onChange={(e) => write(op, e.target.value)}
+          />
         )}
       </HStack>
+    </FormField>
+  );
+}
+
+/** Tri-state boolean: Any / True / False — never a checkbox. */
+function BooleanFilterField<TRow>({
+  def,
+  source,
+  labels,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+}>) {
+  const { label, choice, write } = useBooleanFilterWidget(def, source);
+  return (
+    <FormField label={label}>
+      <NativeSelect
+        size="sm"
+        aria-label={label}
+        data-adapttable-part="filter-select"
+        value={choice}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (next === "" || next === "true" || next === "false") write(next);
+        }}
+      >
+        <option value="">{labels.boolAny}</option>
+        <option value="true">{labels.boolTrue}</option>
+        <option value="false">{labels.boolFalse}</option>
+      </NativeSelect>
     </FormField>
   );
 }
@@ -152,11 +307,13 @@ function AutoFilterField<TRow>({
   source,
   labels,
   accentColor,
+  registry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   accentColor?: string;
+  registry: FilterTypeRegistry;
 }>) {
   const id = useId();
   const { extra, setExtra } = source;
@@ -164,18 +321,13 @@ function AutoFilterField<TRow>({
   // Static arrays resolve instantly; async loaders run once and report
   // `loading` so the select/checkbox controls can show a native affordance.
   const { options, loading } = useFilterOptions(def);
-  switch (def.type) {
+  const custom = renderRegisteredFilter(def, source, labels, registry);
+  if (custom) return custom;
+  switch (filterWidgetKind(def, registry)) {
     case "text":
-      return (
-        <FormField label={label}>
-          <Input
-            size="sm"
-            value={scalarFilterText(extra[def.key])}
-            placeholder={def.placeholder}
-            onChange={(e) => setExtra(def.key, e.target.value)}
-          />
-        </FormField>
-      );
+      return <TextFilterField def={def} source={source} labels={labels} />;
+    case "boolean":
+      return <BooleanFilterField def={def} source={source} labels={labels} />;
     case "select":
       return (
         <FormField label={label}>
@@ -201,6 +353,8 @@ function AutoFilterField<TRow>({
           </NativeSelect>
         </FormField>
       );
+    case "checklist":
+      return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
       // A multiSelect is a GROUP of checkboxes, not a single labellable
       // control, so it uses a plain group label (an Ark `Field.Root` would
@@ -252,6 +406,8 @@ function AutoFilterField<TRow>({
     case "dateRange":
     case "numberRange":
       return <RangeField def={def} source={source} labels={labels} />;
+    default:
+      return null;
   }
 }
 
@@ -268,6 +424,7 @@ export function AutoFilterForm<TRow>({
   source,
   accentColor,
   labels,
+  registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
@@ -279,6 +436,7 @@ export function AutoFilterForm<TRow>({
           source={source}
           labels={resolved}
           accentColor={accentColor}
+          registry={registry}
         />
       ))}
     </Stack>

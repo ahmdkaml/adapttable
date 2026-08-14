@@ -3,8 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
+} from "@adapttable/core/adapter";
 import { TextField } from "@radix-ui/themes";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -29,7 +37,23 @@ export function RadixCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <NativeSelect
         size="1"
@@ -47,11 +71,12 @@ export function RadixCellEditor({
 
   return (
     <TextField.Root
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       aria-label={label}
       size="1"
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
@@ -73,6 +98,8 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
   readonly display: ReactNode;
 }): ReactElement {
   return (
@@ -85,6 +112,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={props.display}
       renderEditor={(ctrl) => (
         <RadixCellEditor ctrl={ctrl} label={props.editLabel} />

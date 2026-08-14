@@ -1,9 +1,12 @@
+import type { FacetMap } from "../filters/facets";
 import type { TableStateMutators } from "../tableStateMutators";
 import type {
   ExtraFilters,
   ResolvedPaginationMode,
   SortDirection,
 } from "../types";
+import type { QueryFilterGroup } from "./queryContract";
+import type { QueryGroupRow } from "./queryGroups";
 
 /**
  * The uniform contract a table consumes regardless of whether its rows
@@ -24,6 +27,19 @@ export interface TableSource<TRow> extends TableStateMutators {
    * current page is loaded). CSV `scope: "all"` prefers this when present.
    */
   readonly allFilteredRows?: readonly TRow[];
+  /**
+   * Rows after search, before extra filters. Facet counts (#281) start
+   * here so a checklist can exclude its own filter and still see the
+   * other values. Frontend sources set this; server sources omit it.
+   */
+  readonly allSearchedRows?: readonly TRow[];
+  /**
+   * Distinct-value counts per filter key. Frontend chrome computes them
+   * from {@link allSearchedRows} with each facet's own filter removed.
+   * A server that declared `supports.facets` supplies the same shape
+   * from `query.facets`.
+   */
+  readonly facets?: FacetMap;
   /** Total row count across all pages (server total or full array length). */
   readonly total: number;
   /**
@@ -70,12 +86,21 @@ export interface TableSource<TRow> extends TableStateMutators {
   readonly sortDir: SortDirection | undefined;
   /** The extra-filter bag. */
   readonly extra: ExtraFilters;
+  /** Nested AND/OR filter tree, when one is active. */
+  readonly filterTree?: QueryFilterGroup;
   /**
    * Active single-level row-grouping column key, if any. Frontend chrome
    * builds the grouped flat model when set; server sources may echo the URL
    * param but grouping stays dormant without `allFilteredRows`.
    */
   readonly groupBy: string | undefined;
+  /**
+   * Groups the SERVER computed, when it answered `query.groupBy` itself.
+   * Present only on a server tier that declared `supports.grouping`; the table
+   * then renders these instead of grouping the page it holds, which it could
+   * not do correctly anyway with one page of the data.
+   */
+  readonly groups?: readonly QueryGroupRow<TRow>[];
 
   /* State (write) is the shared {@link TableStateMutators} contract. */
 }

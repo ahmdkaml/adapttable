@@ -54,6 +54,8 @@ export function Toolbar<TRow>({
   onClearFilters,
   savedViewsMenu,
   columnMenu,
+  onAddRow,
+  addRowLabel,
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
@@ -167,6 +169,16 @@ export function Toolbar<TRow>({
           </Button>
         )}
         {onExportCsv && <ExportAnnouncer announcement={exportAnnouncement} />}
+        {onAddRow && (
+          <Button
+            size="2"
+            color={accentColor}
+            data-adapttable-part="add-row"
+            onClick={onAddRow}
+          >
+            {addRowLabel}
+          </Button>
+        )}
         {showRowsPerPage && (
           <NativeSelect
             size="2"

@@ -17,6 +17,9 @@ export type {
   CellProps,
   ColorScheme,
   ColumnDef,
+  ColumnFooterContext,
+  ColumnHeaderContext,
+  ColumnHeaderController,
   Direction,
   ExtraFilters,
   FilterValue,
@@ -59,9 +62,35 @@ export { columnText } from "./columns/columnText";
 export { computed, type ComputedColumnSpec } from "./columns/computed";
 export { localizedColumnPath, resolveColumns } from "./columns/resolveColumns";
 export {
+  CHECKLIST_ITEM_HEIGHT,
+  CHECKLIST_LIST_HEIGHT,
+  CHECKLIST_VIRTUALIZE_AT,
+  type ChecklistFilterState,
+  type ChecklistValue,
+  collectChecklistValues,
+  useChecklistFilter,
+} from "./filters/checklist";
+export {
+  type ChecklistClassNames,
+  ChecklistFilter,
+  type ChecklistFilterProps,
+} from "./filters/ChecklistFilter";
+export {
+  computeFilterFacets,
+  type FacetCounts,
+  type FacetMap,
+  rowsExcludingFilter,
+} from "./filters/facets";
+export {
+  builtInFilterSpecs,
+  defaultFilterRegistry,
+  resolveFilterRegistry,
+} from "./filters/filterBuiltins";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,
+  coerceBooleanValue,
   type ColumnFilter,
   FILTER_TYPES,
   type FilterDef,
@@ -77,25 +106,139 @@ export {
   resolveFilterDefs,
 } from "./filters/filterDefs";
 export {
+  type BooleanChoice,
+  type BooleanFieldWidget,
+  type DateOp,
   type FilterFormSource,
+  filterOpLabel,
   listFilterValues,
+  type NumberOp,
+  parseBooleanChoice,
   type RangeFieldWidget,
+  type RangeOpArity,
   type RangeOpLabelKeys,
   scalarFilterText,
+  type TextFieldWidget,
+  type TextOp,
+  useBooleanFilterWidget,
   useRangeFilterWidget,
+  useTextFilterWidget,
 } from "./filters/filterForm";
+export {
+  filterDefForColumn,
+  type FilterHeaderClassNames,
+  FilterHeaderControl,
+  FilterHeaderRow,
+  type FilterHeaderRowProps,
+  headerFilterStickTop,
+} from "./filters/FilterHeaderRow";
+export {
+  createFilterRegistry,
+  emptyFilterRegistry,
+  filterTypeDefaultOp,
+  filterTypeOps,
+  type FilterTypeRegistry,
+  type FilterTypeSpec,
+  filterTypeSpec,
+  type FilterWidgetKind,
+  filterWidgetKind,
+  type FilterWidgetRenderProps,
+  renderRegisteredFilter,
+} from "./filters/filterRegistry";
+export {
+  conditionToExtra,
+  evaluateFilterTree,
+  FILTER_TREE_PARAM,
+  FILTER_TREE_VERSION,
+  isActiveFilterTree,
+  parseFilterTree,
+  serializeFilterTree,
+} from "./filters/filterTree";
+export {
+  FilterTreeBuilder,
+  type FilterTreeBuilderProps,
+  type FilterTreeClassNames,
+} from "./filters/FilterTreeBuilder";
+export {
+  addFilterTreeCondition,
+  addFilterTreeGroup,
+  emptyFilterTree,
+  type FilterTreeNode,
+  removeFilterTreeNode,
+  replaceFilterTreeNode,
+  setFilterTreeCombinator,
+  walkFilterTreeConditions,
+} from "./filters/filterTreeMutations";
+export {
+  DATE_OP_LABEL_KEYS,
+  DATE_OPS,
+  FILTER_OP_SUFFIX,
+  type FilterOp,
+  filterOpKey,
+  formatFilterChip,
+  isBetweenFilterOp,
+  isEmptyRowValue,
+  isFilterOpKey,
+  isListFilterOp,
+  isValuelessFilterOp,
+  NUMBER_OP_LABEL_KEYS,
+  NUMBER_OPS,
+  parseDateOp,
+  parseListOperand,
+  parseNumberList,
+  parseNumberOp,
+  parseTextOp,
+  readFilterOp,
+  TEXT_OP_LABEL_KEYS,
+  TEXT_OPS,
+} from "./filters/operators";
 export {
   RANGE_OP_LABEL_KEYS,
   RANGE_OPS,
   type RangeOp,
   type RangeWidgetState,
   readRangeWidget,
+  writeRangeFilter,
   writeRangeWidget,
 } from "./filters/rangeWidget";
+export {
+  countedRelativeToken,
+  isRelativeDateToken,
+  joinRelativeToken,
+  parseRelativeToken,
+  RELATIVE_NAMED,
+  RELATIVE_PRESET_LABEL_KEYS,
+  RELATIVE_PRESETS,
+  type RelativeDateRange,
+  type RelativeDateToken,
+  type RelativePreset,
+  relativeTokenLabel,
+  resolveRelativeRange,
+  splitRelativeToken,
+} from "./filters/relativeDates";
 export {
   type ResolvedFilterOptions,
   useFilterOptions,
 } from "./filters/useFilterOptions";
+export {
+  filterTreeChipLabel,
+  useFilterTreeChips,
+  type UseFilterTreeChipsOptions,
+} from "./filters/useFilterTreeChips";
+export {
+  findMatches,
+  type FindMatchesOptions,
+  matchKey,
+  matchKeySet,
+  stepMatch,
+} from "./find/findMatches";
+export {
+  type FindInTableState,
+  useFindFocus,
+  useFindInTable,
+  type UseFindInTableOptions,
+} from "./find/useFindInTable";
+export { batchEditHandler, type CellEdit } from "./focus/cellEdits";
 export {
   type CellRange,
   type CellRangeBounds,
@@ -108,6 +251,19 @@ export {
   singleCellRange,
 } from "./focus/cellRange";
 export {
+  type ClipboardRangeOptions,
+  clipboardRangeText,
+  readClipboardText,
+  writeClipboardText,
+} from "./focus/clipboardRange";
+export {
+  type FillDirection,
+  fillDirection,
+  fillRangeEdits,
+  type FillRangeOptions,
+  fillTargetRange,
+} from "./focus/fillRange";
+export {
   type GridBounds,
   type GridCell,
   type GridFocusMove,
@@ -116,6 +272,20 @@ export {
   moveGridFocus,
   sameGridCell,
 } from "./focus/gridFocus";
+export {
+  cellFillHandler,
+  type CellFillHandlerOptions,
+  cellPasteHandler,
+  type CellPasteHandlerOptions,
+  parseClipboardTable,
+  pasteRangeEdits,
+  type PasteRangeOptions,
+} from "./focus/pasteRange";
+export {
+  type SelectionStats,
+  selectionStats,
+  type SelectionStatsOptions,
+} from "./focus/selectionStats";
 export {
   GRID_CELL_ATTR,
   gridCellAttr,
@@ -256,10 +426,27 @@ export {
 export { nextSort } from "./sort/cycleSort";
 
 /* ── Columns ───────────────────────────────────────────────────────── */
+export { autoSizeColumns, measureColumnWidth } from "./columns/autoSizeColumns";
+export {
+  columnHeaderController,
+  columnHeaderLabel,
+  columnsHaveFooter,
+  resolveColumnFooter,
+  resolveColumnHeader,
+} from "./columns/columnHeader";
 export {
   ACTIONS_COLUMN_KEY,
+  type ColumnMenuAction,
+  type ColumnMenuActionContext,
+  columnMenuActions,
   columnMenuLabel,
   columnMenuRows,
+  filterColumnMenuRows,
+  hideAllColumns,
+  REORDER_COLUMN_KEY,
+  resetColumnLayout,
+  showAllColumns,
+  unpinAllColumns,
 } from "./columns/columnMenuModel";
 export {
   columnDropProps,
@@ -273,6 +460,16 @@ export {
   resolveColumnWidth,
   tableMinWidth,
 } from "./columns/columnWidths";
+export {
+  applyCollapsedColumnGroups,
+  COLUMN_GROUP_ID_SEP,
+  columnGroupId,
+  columnGroupPath,
+  type HeaderGroupCell,
+  headerGroupRow,
+  headerGroupRows,
+  toggleCollapsedColumnGroup,
+} from "./columns/headerGroups";
 export {
   type ColumnLayoutState,
   edgePinStyle,
@@ -328,6 +525,7 @@ export { useSearchInput } from "./useDataTable/useSearchInput";
 
 /* ── Virtualization ───────────────────────────────────────────────── */
 export {
+  rowSourceIndex,
   type TableVirtualization,
   useTableVirtualization,
   type UseTableVirtualizationOptions,
@@ -341,6 +539,26 @@ export { stableKey } from "./utils/stableKey";
 /* ── Rows ──────────────────────────────────────────────────────────── */
 
 export {
+  type BodyCell,
+  buildBodyCells,
+  cellsForRow,
+  type CellSpanRequest,
+  coveredAddressSet,
+  type GetCellSpan,
+  type GetCellSpanArgs,
+  rowSpanSignature,
+  spanningArmed,
+} from "./rows/cellSpan";
+export {
+  EXTRA_ROW_PARTS,
+  type ExtraEntry,
+  type ExtraRow,
+  type ExtraRowKind,
+  extraRowsArmed,
+  insertExtraRows,
+  isExtraEntry,
+} from "./rows/extraRows";
+export {
   applyRowPatches,
   type InsertPatch,
   insertRow,
@@ -353,23 +571,125 @@ export {
   upsertRow,
 } from "./rows/patch";
 export {
+  orderedCardEntries,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
+  useOffsetHeight,
+} from "./rows/pinnedRowChrome";
+export {
+  DELETE_ROW_ACTION_KEY,
+  DUPLICATE_ROW_ACTION_KEY,
+  type RowMutationHandlers,
+  type RowMutationsState,
+  useRowMutations,
+  type UseRowMutationsOptions,
+} from "./rows/rowMutations";
+export {
+  applyRowPin,
+  EMPTY_ROW_PIN_STATE,
+  partitionPinnedRows,
+  PIN_BOTTOM_ACTION_KEY,
+  PIN_TOP_ACTION_KEY,
+  type RowPinLabels,
+  type RowPinningState,
+  type RowPinSide,
+  rowPinSignature,
+  type RowPinState,
+  UNPIN_ROW_ACTION_KEY,
+  useRowPinning,
+} from "./rows/rowPinning";
+export {
+  applyRowReorder,
+  datasetIndex,
+  REORDER_COLUMN_WIDTH,
+  ROW_DND_MIME,
+  rowReorderDropStyle,
+  type RowReorderHandler,
+  type RowReorderLabels,
+  rowReorderSignature,
+  type RowReorderState,
+  useRowReorder,
+} from "./rows/rowReorder";
+export {
+  estimateFromRowHeight,
+  resolveRowHeight,
+  resolveRowStyle,
+  type RowHeight,
+  type RowStyle,
+  rowStyleArmed,
+  rowStyleSignature,
+} from "./rows/rowStyle";
+export {
   type RowExpansionState,
   useRowExpansion,
 } from "./rows/useRowExpansion";
 
+/* ── Hierarchical (tree) rows ──────────────────────────────────────── */
+export {
+  type NestedTable,
+  type NestedTableDefaults,
+  type NestedTableFor,
+} from "./tree/nestedTable";
+export {
+  bodyRowEntries,
+  type BodyRowEntry,
+  buildTreeEntries,
+  type BuildTreeEntriesOptions,
+  filterTreeRows,
+  treeCardStyle,
+  treeColumnKey,
+  type TreeEntry,
+  treeIndentStyle,
+  type TreeShape,
+} from "./tree/treeRows";
+export {
+  type LazyChildrenState,
+  useLazyChildren,
+  type UseLazyChildrenOptions,
+} from "./tree/useLazyChildren";
+export {
+  type TreeExpansionState,
+  useTreeExpansion,
+} from "./tree/useTreeExpansion";
+
 /* ── Inline cell editing ───────────────────────────────────────────── */
 export {
+  type BatchEditingState,
+  type BatchRowEdit,
+  useBatchEditing,
+  type UseBatchEditingOptions,
+} from "./editing/batchEditing";
+export {
+  booleanDraft,
   type CellEditCommit,
   type CellEditor,
   type CellEditorOption,
   type CellEditTarget,
+  type CustomCellEditorCtrl,
+  type CustomCellEditorRender,
   type EditableColumnLike,
+  editorInputType,
+  formatMultiDraft,
   hasEditableColumns,
+  isBooleanEditor,
   isCellEditable,
+  isCustomEditor,
+  isDraftChecked,
+  isMultiSelectEditor,
+  isSelectEditor,
+  MULTI_SEPARATOR,
   normalizeEditorOptions,
   parseCellEditValue,
+  readMultiDraft,
   resolveCellEditor,
 } from "./editing/cellEditing";
+export {
+  type DirtyCellState,
+  useDirtyCells,
+  type UseDirtyCellsOptions,
+} from "./editing/dirtyCells";
 export {
   type EditableCellController,
   type EditableCellEditing,
@@ -381,16 +701,62 @@ export {
   type EditableCellGateProps,
 } from "./editing/EditableCellGate";
 export {
+  type EditConflict,
+  type EditConflictChoice,
+  type EditConflictHandler,
+  type EditConflictPolicy,
+  type EditConflictState,
+  liveRowChanged,
+  type ReconcileLiveEdit,
+  useEditConflict,
+} from "./editing/editConflict";
+export {
+  asGesture,
+  type EditHistoryEntry,
+  type EditHistoryState,
+  readCellValue,
+  type TableEditHistoryProps,
+  useEditHistory,
+  type UseEditHistoryOptions,
+  useTableEditHistory,
+} from "./editing/editHistory";
+export {
+  type EditEvent,
+  type EditEventHandler,
+  type EditLifecycle,
+  type EditUnit,
+} from "./editing/editingEvents";
+export {
+  type RowEditDrafts,
+  type RowEditingState,
+  useRowEditing,
+  type UseRowEditingOptions,
+} from "./editing/rowEditing";
+export {
+  type CellSaveState,
+  type CellSaveStatus,
+  type FailedCellSave,
+  useCellSaveState,
+  type UseCellSaveStateOptions,
+} from "./editing/saveState";
+export {
   type CellEditingState,
   type CellEditKeyAction,
   type CellEditKeyOutcome,
   type CellEditNavigation,
   useCellEditing,
+  type UseCellEditingOptions,
 } from "./editing/useCellEditing";
 
 /* ── Row grouping ──────────────────────────────────────────────────── */
 export {
+  formatGroupBy,
+  type GroupByInput,
+  parseGroupBy,
+} from "./grouping/groupKeys";
+export {
   groupAggregateEntries,
+  groupLeafCount,
   type GroupRowCell,
   type GroupRowLayout,
   groupRowLayout,
@@ -400,6 +766,9 @@ export {
   formatGroupLabel,
   type GroupAggregatesFn,
   type GroupedFlatEntry,
+  type GroupNode,
+  type GroupPaging,
+  type GroupSort,
   groupValueKey,
 } from "./grouping/groupRows";
 export { groupSelectionState } from "./grouping/groupSelection";
@@ -407,6 +776,26 @@ export {
   type GroupCollapseState,
   useGroupCollapse,
 } from "./grouping/useGroupCollapse";
+export {
+  type GroupPagingState,
+  useGroupPaging,
+} from "./grouping/useGroupPaging";
+export {
+  type QueryGroupRow,
+  type QueryGroupsPage,
+  serverGroupEntries,
+  type ServerGroupEntriesOptions,
+} from "./source/queryGroups";
+export {
+  useGroupCollapseUrlState,
+  type UseGroupCollapseUrlStateOptions,
+  type UseGroupCollapseUrlStateResult,
+} from "./url/useGroupCollapseUrlState";
+export {
+  useRowPinningUrlState,
+  type UseRowPinningUrlStateOptions,
+  type UseRowPinningUrlStateResult,
+} from "./url/useRowPinningUrlState";
 
 /* ── Export (CSV, and any format a writer adds) ────────────────────── */
 export {

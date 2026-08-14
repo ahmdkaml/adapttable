@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { FacetMap } from "../filters/facets";
+import { parseGroupBy } from "../grouping/groupKeys";
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type {
   PaginatedResponse,
@@ -10,6 +12,11 @@ import {
   useTableUrlState,
   type UseTableUrlStateOptions,
 } from "../url/useTableUrlState";
+import {
+  applyQuerySupport,
+  type QueryAggregate,
+  type QuerySupport,
+} from "./queryContract";
 import type { TableSource } from "./TableSource";
 
 /**
@@ -34,6 +41,7 @@ export interface InfiniteQueryLike<TPage> {
 export type PageSelector<TRow, TPage> = (page: TPage) => {
   rows: readonly TRow[];
   total?: number;
+  facets?: FacetMap;
 };
 
 /** Options for {@link useQuerySource}. */
@@ -71,11 +79,48 @@ export interface UseQuerySourceOptions<
   sanitizeParams?: (params: Partial<TParams>) => Partial<TParams>;
   /** Force the resolved mobile state instead of a media query (test/SSR seam). */
   forceMobile?: boolean;
+  /**
+   * What the endpoint can answer, exactly as {@link useServerData} takes it.
+   * Only a declared capability is ever sent; an undeclared one is dropped
+   * before the request rather than sent and ignored.
+   */
+  supports?: QuerySupport;
+  /**
+   * Aggregates to ask the server for — `[{ key: "budget", fn: "sum" }]`.
+   *
+   * Sent only when the source declares `supports.aggregates`. With grouping
+   * armed the server computes them per group; without it, over the whole
+   * result set.
+   */
+  aggregates?: readonly QueryAggregate[];
+  /**
+   * The tree nodes the reader has open, when the hierarchy lives on the server.
+   * Sent as `expandedIds` only if the source declares
+   * `supports: { tree: true }`, so the response can carry the children of every
+   * open branch alongside the page. Hold the same array in the table's
+   * `expandedIds` and one piece of state drives both.
+   */
+  expandedIds?: readonly string[];
+  /**
+   * The token that opens the NEXT page, read from the page the query just
+   * returned — pass it and declare `supports: { cursor: true }` to page by
+   * cursor instead of by offset.
+   *
+   * Rows inserted or deleted mid-read shift every offset after them, which is
+   * how an offset pager duplicates or skips rows; a cursor names a position in
+   * the result rather than a distance into it.
+   */
+  nextCursor?: (page: TPage) => string | null | undefined;
+  /**
+   * Filter keys to ask the server for distinct-value counts. Sent as
+   * `query.facets` only when `supports.facets` is set.
+   */
+  facetKeys?: readonly string[];
 }
 
 const defaultSelectPage: PageSelector<unknown, PaginatedResponse<unknown>> = (
   page
-) => ({ rows: page.rows ?? [], total: page.total });
+) => ({ rows: page.rows ?? [], total: page.total, facets: page.facets });
 
 /**
  * Server-paginated {@link TableSource}. Wraps a caller's
@@ -97,6 +142,11 @@ export function useQuerySource<
     paginationMode = "auto",
     sanitizeParams,
     forceMobile,
+    supports,
+    aggregates,
+    expandedIds,
+    nextCursor,
+    facetKeys,
     ...urlOptions
   } = options;
 
@@ -107,6 +157,16 @@ export function useQuerySource<
 
   const state = useTableUrlState(urlOptions);
   const { page, limit, search, sortBy, sortDir, groupBy, extra } = state;
+
+  // Cursor mode keeps every token the server has handed out, indexed by the
+  // page it opens: `cursors[0]` is always `undefined` (page 1 needs no token)
+  // and `cursors[n]` opens page n+1. The trail is what lets the user page BACK
+  // through what they have already seen — a single "next cursor" cannot.
+  const cursorMode = supports?.cursor === true;
+  const [cursors, setCursors] = useState<readonly (string | undefined)[]>([
+    undefined,
+  ]);
+  const cursor = cursorMode ? cursors[page - 1] : undefined;
 
   const params = useMemo(() => {
     // baseParams are DEFAULTS: everything live is written after them, so a
@@ -121,6 +181,23 @@ export function useQuerySource<
     merged.sortDir = sortDir;
     merged.groupBy = groupBy;
     merged.filters = extra;
+    // Everything past the baseline is gated on what the source declared. The
+    // grouping keys travel as a LIST even when there is one — the contract has
+    // always been an array, so nesting needed no new field.
+    Object.assign(
+      merged,
+      applyQuerySupport(
+        {
+          cursor,
+          groupBy: parseGroupBy(groupBy),
+          aggregates,
+          expandedIds,
+          filterTree: state.filterTree,
+          facets: facetKeys,
+        },
+        supports
+      )
+    );
     const next = merged as Partial<TParams>;
     return sanitizeParams ? sanitizeParams(next) : next;
   }, [
@@ -133,9 +210,41 @@ export function useQuerySource<
     sortDir,
     groupBy,
     sanitizeParams,
+    cursor,
+    aggregates,
+    expandedIds,
+    supports,
+    state.filterTree,
+    facetKeys,
   ]);
 
   const query = usePaginatedQuery(params);
+
+  // Record the token the CURRENT page handed back, so "next" has something to
+  // send and a later "back" can retrace the trail. Read from the last page the
+  // infinite query holds, which is the one the table is showing.
+  const lastPage = query.data?.pages.at(-1);
+  const token = cursorMode && lastPage ? nextCursor?.(lastPage) : undefined;
+  useEffect(() => {
+    if (!cursorMode || token === undefined || token === null) return;
+    setCursors((prev) => {
+      if (prev[page] === token) return prev;
+      const next = [...prev];
+      next[page] = token;
+      return next;
+    });
+  }, [cursorMode, token, page]);
+
+  // A query whose cursor trail is stale must start over rather than page into
+  // a position that no longer exists: any change to what the query MEANS
+  // (search, sort, filters, page size) invalidates every token already held.
+  const trailKey = `${limit}|${search}|${sortBy ?? ""}|${sortDir ?? ""}|${groupBy ?? ""}|${JSON.stringify(extra)}`;
+  const previousTrailKey = useRef(trailKey);
+  useEffect(() => {
+    if (!cursorMode || previousTrailKey.current === trailKey) return;
+    previousTrailKey.current = trailKey;
+    setCursors([undefined]);
+  }, [cursorMode, trailKey]);
 
   // Route the selector through a ref so the rows memo only refires when
   // upstream data changes, not on every parent render (inline selectors
@@ -147,9 +256,11 @@ export function useQuerySource<
   const selectorRef = useRef(selector);
   selectorRef.current = selector;
 
-  const { rows, total } = useMemo(() => {
+  const { rows, total, facets } = useMemo(() => {
     const pages = query.data?.pages;
-    if (!pages?.length) return { rows: [] as readonly TRow[], total: 0 };
+    if (!pages?.length) {
+      return { rows: [] as readonly TRow[], total: 0, facets: undefined };
+    }
     const project = selectorRef.current;
     if (paged) {
       const lastPage = pages.at(-1)!;
@@ -157,18 +268,21 @@ export function useQuerySource<
       return {
         rows: projected.rows,
         total: projected.total ?? projected.rows.length,
+        facets: projected.facets,
       };
     }
     const acc: TRow[] = [];
     let lastTotal: number | undefined;
+    let lastFacets: FacetMap | undefined;
     for (const pg of pages) {
       const projected = project(pg);
       acc.push(...projected.rows);
       if (projected.total !== undefined) lastTotal = projected.total;
+      if (projected.facets) lastFacets = projected.facets;
     }
     // Mirror the paged branch / useFrontendData: when the source reports no
     // grand total, fall back to the accumulated row count rather than 0.
-    return { rows: acc, total: lastTotal ?? acc.length };
+    return { rows: acc, total: lastTotal ?? acc.length, facets: lastFacets };
   }, [query.data, paged]);
 
   // Clamp out-of-range pages (hand-edited / stale shared links) once the
@@ -209,6 +323,7 @@ export function useQuerySource<
     setSearch,
     setExtra,
     setExtras,
+    setFilterTree,
     clearExtras,
     clearAll,
   } = state;
@@ -231,6 +346,8 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      facets,
+      filterTree: state.filterTree,
       setPage,
       setLimit,
       setSort,
@@ -240,6 +357,7 @@ export function useQuerySource<
       setSearch,
       setExtra,
       setExtras,
+      setFilterTree,
       clearExtras,
       clearAll,
     }),
@@ -262,6 +380,8 @@ export function useQuerySource<
       sortDir,
       groupBy,
       extra,
+      facets,
+      state.filterTree,
       setPage,
       setLimit,
       setSort,
@@ -271,6 +391,7 @@ export function useQuerySource<
       setSearch,
       setExtra,
       setExtras,
+      setFilterTree,
       clearExtras,
       clearAll,
     ]

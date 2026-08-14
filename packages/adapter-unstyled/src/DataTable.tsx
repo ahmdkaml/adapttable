@@ -1,7 +1,11 @@
-import type { TableSource } from "@adapttable/core";
+import { FilterTreeBuilder, type TableSource } from "@adapttable/core";
 import {
+  BatchEditBar,
   ExportAnnouncer,
+  FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -132,13 +136,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core's shell; this file renders
   // only semantic markup with class hooks over it.
-  const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      classNames={classNames}
-      labels={props.labels}
-    />
+  const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
+    <div data-adapttable-part="filters-form" className={classNames.filtersForm}>
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        classNames={classNames}
+        labels={props.labels}
+        registry={registry}
+      />
+      <FilterTreeBuilder
+        defs={defs}
+        source={source}
+        labels={props.labels}
+        classNames={classNames}
+        registry={registry}
+      />
+    </div>
   ));
   const {
     chrome,
@@ -209,8 +223,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // carrying the selection, the full column set and the highlighted range. It
   // used to be rebuilt here from the same parts, which is precisely how a new
   // scope can work in seven kits and silently fall back in the eighth.
-  const { onExportCsv, exportBusy, exportAnnouncement, exportLabel } =
-    shell.toolbarProps;
+  const {
+    onExportCsv,
+    exportBusy,
+    exportAnnouncement,
+    exportLabel,
+    onAddRow,
+    addRowLabel,
+  } = shell.toolbarProps;
 
   return (
     <div
@@ -226,6 +246,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={cx("adapttable", classNames.root)}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
+      <FindBar find={shell.find} labels={labels} />
       <div
         data-adapttable-part="toolbar"
         className={classNames.toolbar}
@@ -321,10 +347,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         {props.enableColumnMenu && !chrome.isMobile && (
           <ColumnMenu
             allColumns={chrome.allColumns}
+            onAutoSize={shell.autoSizeColumns}
             layout={chrome.columnLayout}
             labels={labels}
             classNames={classNames}
-            hasRowActions={(props.rowActions?.length ?? 0) > 0}
+            hasRowActions={shell.hasRowActions}
+            hasRowReorder={shell.hasRowReorder}
+            onAutoSizeColumn={shell.autoSizeColumn}
+            onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+            onFilterColumn={() => shell.setFiltersOpen(true)}
+            sortBy={viewSource.sortBy}
+            sortDir={viewSource.sortDir}
           />
         )}
         {onExportCsv && (
@@ -354,6 +387,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>
         )}
+        {onAddRow && (
+          <button
+            type="button"
+            data-adapttable-part="add-row"
+            className={classNames.addRow}
+            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+            onClick={onAddRow}
+          >
+            {addRowLabel}
+          </button>
+        )}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
             source={viewSource}
@@ -382,6 +426,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         labels={labels}
         classNames={classNames}
       />
+
+      {chrome.editing?.batch && (
+        <BatchEditBar batch={chrome.editing.batch} labels={labels} />
+      )}
 
       {table.selection && bulkActions && (
         <BulkBar
@@ -441,6 +489,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         </div>
       )}
 
+      {props.tableFooter ? (
+        <div
+          data-adapttable-part="table-footer"
+          className={classNames.tableFooter}
+        >
+          {props.tableFooter}
+        </div>
+      ) : null}
+
       {chrome.showFooter && (
         <Footer
           pagination={table.pagination}
@@ -450,6 +507,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           showRowsPerPage={!chrome.grouping}
         />
       )}
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
     </div>
   );
 }

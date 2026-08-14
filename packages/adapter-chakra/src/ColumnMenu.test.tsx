@@ -26,6 +26,7 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
   };
 }
 
@@ -37,9 +38,21 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
 const byLabel = (name: string) =>
@@ -49,7 +62,12 @@ describe("chakra ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
     renderChakra(
-      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -91,7 +109,12 @@ describe("chakra ColumnMenu", () => {
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
     renderChakra(
-      <ColumnMenu allColumns={cols} layout={layout} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -121,6 +144,7 @@ describe("chakra ColumnMenu", () => {
     renderChakra(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -153,6 +177,7 @@ describe("chakra ColumnMenu", () => {
     renderChakra(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -169,5 +194,44 @@ describe("chakra ColumnMenu", () => {
     // Pinned → ONE click unpins (the right↔unpinned toggle, no cycle).
     fireEvent.click(byLabel("Unpin: Actions"));
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
+  });
+
+  it("lists a leading reorder row with an eye and a start pin", async () => {
+    const layout = fakeLayout();
+    renderChakra(
+      <ColumnMenu
+        allColumns={cols}
+        onAutoSize={() => undefined}
+        layout={layout}
+        labels={labels}
+        hasRowReorder
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(byLabel("Hide column: Reorder"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(byLabel("Pin to start: Reorder"));
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
+  });
+
+  it("filters the chooser by the search box", async () => {
+    renderChakra(
+      <ColumnMenu
+        allColumns={cols}
+        onAutoSize={() => undefined}
+        layout={fakeLayout()}
+        labels={labels}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.change(
+      document.querySelector('[data-adapttable-part="column-menu-search"]')!,
+      { target: { value: "bravo" } }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
   });
 });

@@ -75,6 +75,19 @@ const ROWS: Row[] = Array.from({ length: 30 }, (_, i) => ({
   qty: i,
 }));
 
+/** The same columns, with a rule the empty string breaks. */
+const VALIDATED_COLUMNS: ColumnDef<Row>[] = [
+  {
+    key: "name",
+    header: "Name",
+    accessor: (r) => r.name,
+    editable: true,
+    editor: "text",
+    validate: (value) =>
+      String(value).trim() === "" ? "A name is required" : undefined,
+  },
+];
+
 const columns: ColumnDef<Row>[] = [
   {
     key: "name",
@@ -82,6 +95,7 @@ const columns: ColumnDef<Row>[] = [
     accessor: (r) => r.name,
     sortable: true,
     group: "Identity",
+    headerActions: <button type="button">info</button>,
     editable: true,
     editor: "text",
   },
@@ -105,7 +119,9 @@ const columns: ColumnDef<Row>[] = [
 
 const filters: FilterDef<Row>[] = [
   { key: "name", type: "text", label: "Name" },
+  { key: "ok", type: "boolean", label: "Ok" },
   { key: "qty", type: "numberRange", label: "Qty" },
+  { key: "team", type: "checklist", label: "Team" },
   {
     key: "tag",
     type: "multiSelect",
@@ -139,7 +155,31 @@ const camel = (part: string): string =>
  * it to a host is handing over a way to silence the table. Anything visible
  * belongs in the contract; these do not.
  */
-const A11Y_PARTS = new Set(["export-announcer", "grid-announcer"]);
+const A11Y_PARTS = new Set([
+  "export-announcer",
+  "grid-announcer",
+  "row-reorder-announcer",
+]);
+
+/**
+ * Class hooks that modify an existing part rather than naming one of their own.
+ * `cellSelected` is a second class on `data-adapttable-part="cell"` when the cell
+ * sits inside the selected range, so direction 2 below — "every key rendered as
+ * a part" — can never see it, and inventing a `cell-selected` part to satisfy
+ * the test would put two parts on one element. It is verified in
+ * `selectedCells.test.tsx`, which drives a real Shift+arrow selection;
+ * `cellMatch` / `cellMatchCurrent` are the same shape for find hits and are
+ * verified in `findInTable.test.tsx`.
+ */
+const STATE_CLASSES = new Set([
+  "cellSelected",
+  "groupFooterRow",
+  "groupFooterCell",
+  "groupMoreRow",
+  "groupMoreCell",
+  "cellMatch",
+  "cellMatchCurrent",
+]);
 
 function collectParts(): Map<string, Element[]> {
   const map = new Map<string, Element[]>();
@@ -180,6 +220,7 @@ function Harness(props: {
       rowKey={(r) => r.id}
       forceMobile={props.isMobile}
       filters={filters}
+      headerFilters
       bulkActions={[
         {
           key: "del",
@@ -190,9 +231,12 @@ function Harness(props: {
       rowActions={[{ key: "open", label: "Open", onClick: vi.fn() }]}
       savedViews={{ storageKey: "parity" }}
       exportCsv
+      onAddRow={vi.fn()}
       enableColumnMenu
+      collapsibleColumnGroups
       resizableColumns
       multiSort
+      tableFooter={<span>Footer slot</span>}
       summaryRow={() => ({ qty: "sum" })}
       groupAggregates={() => ({ qty: "agg" })}
       renderRowDetail={(r) => <div>{r.name}</div>}
@@ -225,6 +269,9 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   const desktop = mount({});
   fireEvent.click(part("filters-button")!);
   absorb();
+  const addCondition = desktop.getByRole("button", { name: "Add condition" });
+  fireEvent.click(addCondition);
+  absorb();
   fireEvent.click(part("selection-cell")!.querySelector("input")!);
   absorb();
   // Bulk failure surfaces the bulk error message.
@@ -240,6 +287,11 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   }
   fireEvent.click(part("column-menu-button")!);
   absorb();
+  const more = part("column-menu-more");
+  if (more) {
+    fireEvent.click(more);
+    absorb();
+  }
   // Saved views: open, name one, save — the list + delete render.
   fireEvent.click(part("views-button")!);
   absorb();
@@ -289,11 +341,90 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   absorb();
   drawer.unmount();
 
+  // A rejected save: the cell carries the reason and the undo it offers.
+  const rejected = mount({
+    override: {
+      onCellEdit: () => Promise.reject(new Error("Could not save")),
+      onEditRollback: () => undefined,
+    },
+  });
+  const saveActivate = part("edit-cell-activate");
+  if (saveActivate) {
+    fireEvent.doubleClick(saveActivate);
+    const saveEditor = part("edit-cell-editor");
+    if (saveEditor) {
+      fireEvent.change(saveEditor, { target: { value: "Item 99" } });
+      fireEvent.keyDown(saveEditor, { key: "Enter" });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      absorb();
+    }
+  }
+  rejected.unmount();
+
+  // A rejected commit: the editor stays open with its message beside it.
+  const invalid = mount({
+    override: {
+      onCellEdit: () => undefined,
+      columns: VALIDATED_COLUMNS,
+    },
+  });
+  const activate = part("edit-cell-activate");
+  if (activate) {
+    fireEvent.doubleClick(activate);
+    absorb();
+    const editor = part("edit-cell-editor");
+    if (editor) {
+      fireEvent.change(editor, { target: { value: "" } });
+      await act(async () => {
+        fireEvent.keyDown(editor, { key: "Enter" });
+        await Promise.resolve();
+      });
+      absorb();
+    }
+  }
+  invalid.unmount();
+
+  // Tree data: an open parent renders the chevron, an indented cell and — on
+  // the leaf beside it — the spacer that holds a chevron's width.
+  const tree = mount({
+    override: {
+      getParentId: (row: Row) => (row.id === "2" ? "1" : undefined),
+      expandedIds: ["1"],
+    },
+  });
+  absorb();
+  tree.unmount();
+
   // Row grouping (desktop + mobile cards).
   mount({ url: "groupBy=team" }).unmount();
   const groupedMobile = mount({ url: "groupBy=team", isMobile: true });
   absorb();
   groupedMobile.unmount();
+
+  // Row reorder: desktop grip + header, mobile up/down. Isolated so grouping
+  // does not refuse the column and fire a devWarn in the kitchen-sink mounts.
+  mount({ override: { onRowReorder: vi.fn() } }).unmount();
+  mount({ isMobile: true, override: { onRowReorder: vi.fn() } }).unmount();
+
+  mount({
+    override: {
+      extraRows: [
+        { key: "s", kind: "separator", beforeRowId: "2" },
+        { key: "n", kind: "fullWidth", render: () => "Note" },
+      ],
+    },
+  }).unmount();
+  mount({
+    isMobile: true,
+    override: {
+      extraRows: [
+        { key: "s", kind: "separator", beforeRowId: "2" },
+        { key: "n", kind: "fullWidth", render: () => "Note" },
+      ],
+    },
+  }).unmount();
 
   // Mobile cards with an expanded card detail.
   const mobile = mount({ isMobile: true });
@@ -349,6 +480,13 @@ const KEYS = [
   "filtersButton",
   "filtersIcon",
   "filtersCount",
+  "editCellError",
+  "editCellSaveError",
+  "editCellRollback",
+  "treeCell",
+  "treeToggle",
+  "treeSpacer",
+  "addRow",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",
@@ -362,6 +500,12 @@ const KEYS = [
   "filtersFooter",
   "filtersClear",
   "filtersDone",
+  "filtersForm",
+  "filterTree",
+  "filterTreeGroup",
+  "filterTreeCondition",
+  "filterTreeActions",
+  "filterTreeRemove",
   "filterField",
   "filterLabel",
   "filterInput",
@@ -370,6 +514,11 @@ const KEYS = [
   "filterCheckboxGroup",
   "filterCheckbox",
   "filterOptionsLoading",
+  "filterChecklist",
+  "filterChecklistSearch",
+  "filterChecklistActions",
+  "filterChecklistList",
+  "filterChecklistCount",
   "chips",
   "chip",
   "chipRemove",
@@ -385,6 +534,15 @@ const KEYS = [
   "columnMenuPin",
   "columnMenuSeparator",
   "columnMenuReset",
+  "columnMenuAutoSize",
+  "columnMenuSearch",
+  "columnMenuBulk",
+  "columnMenuBulkButton",
+  "columnMenuMore",
+  "columnMenuSubmenu",
+  "columnMenuAction",
+  "headerActions",
+  "tableFooter",
   "viewsMenu",
   "viewsButton",
   "viewsPanel",
@@ -406,13 +564,24 @@ const KEYS = [
   "thead",
   "headerRow",
   "headerCell",
+  "filterHeaderRow",
+  "filterHeaderCell",
+  "filterHeaderInput",
   "headerGroupRow",
   "headerGroupCell",
+  "columnGroupToggle",
   "sortButton",
   "sortIndex",
   "tbody",
   "row",
   "cell",
+  "cellSelected",
+  "groupFooterRow",
+  "groupFooterCell",
+  "groupMoreRow",
+  "groupMoreCell",
+  "cellMatch",
+  "cellMatchCurrent",
   "expandHeader",
   "expandCell",
   "expandButton",
@@ -422,6 +591,12 @@ const KEYS = [
   "actionsHeader",
   "actionsCell",
   "actionButton",
+  "reorderHeader",
+  "reorderCell",
+  "rowReorderHandle",
+  "rowReorderButtons",
+  "rowReorderUp",
+  "rowReorderDown",
   "selectionHeader",
   "selectionCell",
   "checkbox",
@@ -445,6 +620,10 @@ const KEYS = [
   "cardValue",
   "scrollBox",
   "virtualSpacer",
+  "separatorRow",
+  "separatorCell",
+  "fullWidthRow",
+  "fullWidthCell",
   "summary",
   "summaryRow",
   "summaryCell",
@@ -511,7 +690,9 @@ describe("classNames \u2194 part parity (unstyled)", () => {
     // Direction 2 — key → part: every declared key showed up as a rendered
     // part in at least one state.
     const renderedKeys = new Set([...seen.keys()].map(camel));
-    const neverRendered = KEYS.filter((key) => !renderedKeys.has(key));
+    const neverRendered = KEYS.filter(
+      (key) => !renderedKeys.has(key) && !STATE_CLASSES.has(key)
+    );
     expect(neverRendered).toEqual([]);
   });
 });

@@ -127,13 +127,13 @@ field it never agreed to read — and development logs which capability would
 unlock it. That warning is the intended way to discover the next thing your
 backend could do, not an error.
 
-| Field        | Capability   | Carries                                   |
-| ------------ | ------------ | ----------------------------------------- |
-| `groupBy`    | `grouping`   | Grouping keys, outermost first            |
-| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute            |
-| `filterTree` | `filterTree` | Nested AND/OR condition tree              |
-| `facets`     | `facets`     | Column keys needing distinct-value counts |
-| `cursor`     | `cursor`     | Opaque cursor from the previous response  |
+| Field        | Capability   | Carries                                                                                                                                                                                                                        |
+| ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `groupBy`    | `grouping`   | Grouping keys, outermost first                                                                                                                                                                                                 |
+| `aggregates` | `aggregates` | `{ key, fn }` pairs to compute                                                                                                                                                                                                 |
+| `filterTree` | `filterTree` | Nested AND/OR condition tree                                                                                                                                                                                                   |
+| `facets`     | `facets`     | Column keys needing distinct-value counts. The response returns the same keys as `facets` on the page (`PaginatedResponse.facets` / `PageSelector.facets`) — counts for the filtered set with each facet's own filter removed. |
+| `cursor`     | `cursor`     | Opaque cursor from the previous response                                                                                                                                                                                       |
 
 The flat `filters` bag is always populated, including when `filterTree` is
 sent, so a server that only reads the simple form keeps working.

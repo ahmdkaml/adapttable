@@ -11,6 +11,12 @@
  */
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from "../columns/columnResize";
 import type { ColumnLayoutState } from "../columns/useColumnLayout";
+import {
+  parseFilterTree,
+  serializeFilterTree,
+} from "../filters/filterTreeCodec";
+import { type RowPinSide, type RowPinState } from "../rows/rowPinning";
+import type { QueryFilterGroup } from "../source/queryContract";
 import type { ExtraFilters, FilterValue, SortDirection } from "../types";
 
 /** Decode a URI component, tolerating malformed input from hand-edited URLs. */
@@ -42,11 +48,18 @@ export const PARAM_SORT = "sort";
 export const PARAM_GROUP_BY = "groupBy";
 /** Keys under this prefix flow through as-is into the `extra` bag. */
 export const FILTER_PREFIX = "f_";
+/** Versioned AND/OR filter tree (`ft=1.{…}`). */
+export const PARAM_FILTER_TREE = "ft";
 /** Column-layout params (hidden / pinned / order / widths). */
+/** Collapsed group keys, comma-separated. */
+export const PARAM_GROUP_CLOSED = "groupClosed";
 export const PARAM_COL_HIDDEN = "colHide";
 export const PARAM_COL_PINNED = "colPin";
 export const PARAM_COL_ORDER = "colOrder";
 export const PARAM_COL_WIDTHS = "colW";
+export const PARAM_COL_GROUPS = "colGroupCollapse";
+/** Pinned rows: `rowPin=id1:top,id2:bottom`. */
+export const PARAM_ROW_PIN = "rowPin";
 
 /** Read a 1-based page number, falling back when absent/invalid. */
 export function readPage(
@@ -152,6 +165,26 @@ export function writeExtra(
   }
 }
 
+/** Read the versioned filter tree; unknown versions are dropped. */
+export function readFilterTreeParam(
+  params: URLSearchParams,
+  prefix = ""
+): QueryFilterGroup | undefined {
+  return parseFilterTree(params.get(prefix + PARAM_FILTER_TREE));
+}
+
+/** Write or clear the versioned filter tree. */
+export function writeFilterTreeParam(
+  params: URLSearchParams,
+  tree: QueryFilterGroup | undefined,
+  prefix = ""
+): void {
+  const key = prefix + PARAM_FILTER_TREE;
+  const raw = serializeFilterTree(tree);
+  if (raw) params.set(key, raw);
+  else params.delete(key);
+}
+
 /**
  * Read the column layout (hidden / pinned / order / widths) from the URL.
  * Each column key is percent-encoded so `:` and `,` (the field/pair
@@ -166,11 +199,13 @@ export function readColumnLayout(
   const pinRaw = params.get(prefix + PARAM_COL_PINNED);
   const orderRaw = params.get(prefix + PARAM_COL_ORDER);
   const widthRaw = params.get(prefix + PARAM_COL_WIDTHS);
+  const groupRaw = params.get(prefix + PARAM_COL_GROUPS);
   if (
     hideRaw === null &&
     pinRaw === null &&
     orderRaw === null &&
-    widthRaw === null
+    widthRaw === null &&
+    groupRaw === null
   ) {
     return undefined;
   }
@@ -197,11 +232,13 @@ export function readColumnLayout(
     }
   }
 
+  const collapsedGroups = splitRaw(groupRaw).map(safeDecode);
   return {
     hidden: splitRaw(hideRaw).map(safeDecode),
     order: splitRaw(orderRaw).map(safeDecode),
     pinned,
     widths,
+    ...(collapsedGroups.length > 0 ? { collapsedGroups } : {}),
   };
 }
 
@@ -238,6 +275,10 @@ export function writeColumnLayout(
       .map(([key, px]) => `${encodeURIComponent(key)}:${Math.round(px)}`)
       .join(",")
   );
+  setOrDelete(
+    PARAM_COL_GROUPS,
+    (layout.collapsedGroups ?? []).map((id) => encodeURIComponent(id)).join(",")
+  );
 }
 
 /** Read the multi-sort chain (`sort=key:dir,key2:dir2`). */
@@ -269,4 +310,90 @@ export function writeSortLevels(
     prefix + PARAM_SORT,
     levels.map((l) => `${encodeURIComponent(l.key)}:${l.dir}`).join(",")
   );
+}
+
+/**
+ * Read the collapsed group keys.
+ *
+ * @param params - The URL parameters.
+ * @param prefix - The table's namespace, when it has one.
+ * @returns The keys, or `undefined` when the parameter is absent — which means
+ *   "nothing has been said", not "nothing is collapsed".
+ */
+export function readCollapsedGroups(
+  params: URLSearchParams,
+  prefix = ""
+): string[] | undefined {
+  const raw = params.get(prefix + PARAM_GROUP_CLOSED);
+  if (raw === null) return undefined;
+  return raw
+    .split(",")
+    .filter((key) => key.length > 0)
+    .map((key) => decodeURIComponent(key));
+}
+
+/**
+ * Write the collapsed group keys, dropping the parameter when none are.
+ *
+ * @param params - The URL parameters, mutated in place.
+ * @param keys - The collapsed group keys.
+ * @param prefix - The table's namespace, when it has one.
+ */
+export function writeCollapsedGroups(
+  params: URLSearchParams,
+  keys: readonly string[],
+  prefix = ""
+): void {
+  const value = keys.map((key) => encodeURIComponent(key)).join(",");
+  if (value) params.set(prefix + PARAM_GROUP_CLOSED, value);
+  else params.delete(prefix + PARAM_GROUP_CLOSED);
+}
+
+/**
+ * Read pinned row ids (`rowPin=id1:top,id2:bottom`).
+ *
+ * @param params - The URL parameters.
+ * @param prefix - The table's namespace, when it has one.
+ * @returns The lists, or `undefined` when the parameter is absent.
+ */
+export function readRowPins(
+  params: URLSearchParams,
+  prefix = ""
+): RowPinState | undefined {
+  const raw = params.get(prefix + PARAM_ROW_PIN);
+  if (raw === null) return undefined;
+  const top: string[] = [];
+  const bottom: string[] = [];
+  for (const pair of splitRaw(raw)) {
+    const colon = pair.lastIndexOf(":");
+    if (colon <= 0) continue;
+    const id = safeDecode(pair.slice(0, colon));
+    const side = pair.slice(colon + 1);
+    if (!id) continue;
+    if (side === "top") top.push(id);
+    else if (side === "bottom") bottom.push(id);
+  }
+  return { top, bottom };
+}
+
+/**
+ * Write pinned row ids, dropping the parameter when both lists are empty.
+ *
+ * @param params - The URL parameters, mutated in place.
+ * @param state - The pin lists.
+ * @param prefix - The table's namespace, when it has one.
+ */
+export function writeRowPins(
+  params: URLSearchParams,
+  state: RowPinState,
+  prefix = ""
+): void {
+  const pairs: string[] = [];
+  const push = (id: string, side: RowPinSide): void => {
+    pairs.push(`${encodeURIComponent(id)}:${side}`);
+  };
+  for (const id of state.top) push(id, "top");
+  for (const id of state.bottom) push(id, "bottom");
+  if (pairs.length > 0) params.set(prefix + PARAM_ROW_PIN, pairs.join(","));
+  else params.delete(prefix + PARAM_ROW_PIN);
 }

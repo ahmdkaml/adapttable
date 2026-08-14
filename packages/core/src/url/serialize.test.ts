@@ -6,11 +6,15 @@ import {
   isEmptyFilterValue,
   readColumnLayout,
   readExtra,
+  readFilterTreeParam,
   readLimit,
   readPage,
+  readRowPins,
   readSortDir,
   writeColumnLayout,
   writeExtra,
+  writeFilterTreeParam,
+  writeRowPins,
 } from "./serialize";
 
 const ps = (s: string) => new URLSearchParams(s);
@@ -122,6 +126,22 @@ describe("writeExtra", () => {
   });
 });
 
+describe("filter-tree param", () => {
+  it("round-trips a v1 tree and drops an unknown version", () => {
+    const tree = {
+      combinator: "and" as const,
+      conditions: [{ key: "name", op: "eq", value: "Ada" }],
+    };
+    const p = new URLSearchParams();
+    writeFilterTreeParam(p, tree);
+    expect(p.get("ft")?.startsWith("1.")).toBe(true);
+    expect(readFilterTreeParam(p)).toEqual(tree);
+    expect(readFilterTreeParam(ps("ft=9.nope"))).toBeUndefined();
+    writeFilterTreeParam(p, undefined);
+    expect(p.has("ft")).toBe(false);
+  });
+});
+
 describe("extra-filter round-trips", () => {
   // Simulate the real URLSearchParams encode/decode the adapter performs.
   const roundTrip = (
@@ -156,6 +176,16 @@ describe("extra-filter round-trips", () => {
 describe("readColumnLayout", () => {
   it("returns undefined when no layout params are present", () => {
     expect(readColumnLayout(ps("page=2&q=foo"))).toBeUndefined();
+  });
+
+  it("reads collapsed groups as a layout even when they are the only param", () => {
+    expect(readColumnLayout(ps("colGroupCollapse=People"))).toEqual({
+      hidden: [],
+      order: [],
+      pinned: {},
+      widths: {},
+      collapsedGroups: ["People"],
+    });
   });
 
   it("reads hidden, pinned, order, and widths", () => {
@@ -218,6 +248,19 @@ describe("writeColumnLayout", () => {
     return params.toString();
   };
 
+  it("round-trips collapsed groups through read", () => {
+    const layout: ColumnLayoutState = {
+      hidden: [],
+      order: [],
+      pinned: {},
+      widths: {},
+      collapsedGroups: ["Finance\u001fQ1"],
+    };
+    const params = ps("");
+    writeColumnLayout(params, layout);
+    expect(readColumnLayout(params)).toEqual(layout);
+  });
+
   it("round-trips a full layout through read", () => {
     const layout: ColumnLayoutState = {
       hidden: ["email"],
@@ -255,5 +298,22 @@ describe("writeColumnLayout", () => {
       widths: { person: 240.6 },
     });
     expect(params.get("colW")).toBe("person:241");
+  });
+});
+
+describe("row pins", () => {
+  it("reads top and bottom pairs and skips junk", () => {
+    expect(
+      readRowPins(ps("rowPin=ada:top,alan:bottom,x:sideways,:top"))
+    ).toEqual({ top: ["ada"], bottom: ["alan"] });
+    expect(readRowPins(ps(""))).toBeUndefined();
+  });
+
+  it("writes and clears the parameter", () => {
+    const params = ps("");
+    writeRowPins(params, { top: ["ada"], bottom: ["alan"] });
+    expect(params.get("rowPin")).toBe("ada:top,alan:bottom");
+    writeRowPins(params, { top: [], bottom: [] });
+    expect(params.get("rowPin")).toBeNull();
   });
 });

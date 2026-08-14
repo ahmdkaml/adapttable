@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { FacetMap } from "../filters/facets";
 import { useEventCallback } from "../hooks/useEventCallback";
 import { resolvePaginationMode, useIsMobile } from "../hooks/useIsMobile";
 import type { SortLevel } from "../sort/compare";
@@ -87,6 +88,24 @@ export interface UseServerDataOptions<TRow> extends Pick<
    */
   supports?: QuerySupport;
   /**
+   * The tree nodes the reader has open, when the hierarchy lives on the server.
+   * Sent as `query.expandedIds` only if the source declares
+   * `supports: { tree: true }`, so the response can carry the children of every
+   * open branch alongside the page. Hold the same array in the table's
+   * `expandedIds` and one piece of state drives both.
+   */
+  expandedIds?: readonly string[];
+  /**
+   * Filter keys to ask the server for distinct-value counts. Sent as
+   * `query.facets` only when `supports.facets` is set.
+   */
+  facetKeys?: readonly string[];
+  /**
+   * Distinct-value counts from the last fetch. Surfaces on the source
+   * so a checklist can render without holding the full result set.
+   */
+  facets?: FacetMap;
+  /**
    * Fired with the consolidated {@link TableQuery} whenever it changes —
    * including once on mount with the URL-restored values. The previous
    * call's `signal` is aborted when a newer query supersedes it; forward it
@@ -125,6 +144,9 @@ export function useServerData<TRow>(
     paginationMode = "auto",
     forceMobile,
     supports,
+    expandedIds,
+    facetKeys,
+    facets,
     onQueryChange,
     ...urlOptions
   } = options;
@@ -160,7 +182,13 @@ export function useServerData<TRow>(
       // Everything past the baseline is gated on what the source declared —
       // an undeclared capability is dropped here, never sent and ignored.
       ...applyQuerySupport(
-        { groupBy: groupBy ? [groupBy] : undefined, cursor },
+        {
+          groupBy: groupBy ? [groupBy] : undefined,
+          cursor,
+          expandedIds,
+          filterTree: state.filterTree,
+          facets: facetKeys,
+        },
         supports
       ),
     }),
@@ -175,6 +203,9 @@ export function useServerData<TRow>(
       groupBy,
       cursor,
       supports,
+      expandedIds,
+      state.filterTree,
+      facetKeys,
     ]
   );
   // Value-keyed, so re-renders and StrictMode double-mounts never re-fire
@@ -325,6 +356,8 @@ export function useServerData<TRow>(
     sortDir,
     groupBy,
     extra,
+    facets,
+    filterTree: state.filterTree,
     isLoading,
     isFetching: loading,
     isFetchingNextPage: appendPending,
@@ -340,6 +373,7 @@ export function useServerData<TRow>(
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,
+    setFilterTree: state.setFilterTree,
     clearExtras: state.clearExtras,
     clearAll: state.clearAll,
     fetchNextPage,

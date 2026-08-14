@@ -1,30 +1,38 @@
-import type { UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
+  columnMenuActions,
   columnMenuRows,
   columnReorderKeyProps,
+  filterColumnMenuRows,
+  hideAllColumns,
+  REORDER_COLUMN_KEY,
+  showAllColumns,
+  unpinAllColumns,
   useColumnDragState,
+  type UseColumnLayoutResult,
 } from "@adapttable/core";
-import type {
-  ColumnDragState,
-  ColumnMenuChromeProps,
-  ColumnMenuLabels,
-  ColumnMenuRow,
-} from "@adapttable/core/adapter";
 import {
+  type ColumnDragState,
+  type ColumnMenuChromeProps,
+  type ColumnMenuLabels,
+  type ColumnMenuRow,
   EyeIcon,
   GripIcon,
   nextPinSide,
   pinActionLabel,
   PinIcon,
 } from "@adapttable/core/adapter";
+import { useState } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
 import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
 
 /** Menu labels: the shared chrome contract plus the actions row's name. */
-type ColumnMenuRowLabels = ColumnMenuLabels & { actions: string };
+type ColumnMenuRowLabels = ColumnMenuLabels & {
+  actions: string;
+  reorderRow: string;
+};
 
 /** The eye toggle shared by data-column rows and the actions row. */
 function VisibilityToggle({
@@ -33,12 +41,14 @@ function VisibilityToggle({
   labels,
   classNames,
   onToggle,
+  disabled = false,
 }: Readonly<{
   hidden: boolean;
   name: string;
   labels: Pick<ColumnMenuLabels, "showColumn" | "hideColumn">;
   classNames: DataTableClassNames;
   onToggle: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <button
@@ -48,6 +58,7 @@ function VisibilityToggle({
       aria-pressed={!hidden}
       aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
       className={classNames.columnMenuVisibility}
+      disabled={disabled}
       onClick={onToggle}
     >
       <EyeIcon off={hidden} />
@@ -82,12 +93,14 @@ function PinToggle({
   actionLabel,
   classNames,
   onClick,
+  disabled = false,
 }: Readonly<{
   active: boolean;
   /** What clicking will DO next (e.g. "Pin right: Actions"). */
   actionLabel: string;
   classNames: DataTableClassNames;
   onClick: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <button
@@ -97,6 +110,7 @@ function PinToggle({
       aria-pressed={active}
       aria-label={actionLabel}
       className={classNames.columnMenuPin}
+      disabled={disabled}
       onClick={onClick}
     >
       <PinIcon />
@@ -110,6 +124,11 @@ interface ColumnMenuRowProps<TRow> {
   labels: ColumnMenuLabels;
   classNames: DataTableClassNames;
   drag: ColumnDragState;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onFilterColumn?: (key: string) => void;
 }
 
 function ColumnMenuRowItem<TRow>({
@@ -118,28 +137,50 @@ function ColumnMenuRowItem<TRow>({
   labels,
   classNames,
   drag,
+  sortBy,
+  sortDir,
+  onSortColumn,
+  onAutoSizeColumn,
+  onFilterColumn,
 }: Readonly<ColumnMenuRowProps<TRow>>) {
-  const { key, name, hidden, pinned, index } = row;
+  const { key, name, hidden, pinned, index, canMove, canHide, canPin } = row;
+  const [open, setOpen] = useState(false);
+  const actions = columnMenuActions(row, {
+    labels,
+    layout,
+    sortBy,
+    sortDir,
+    onSortColumn,
+    onAutoSizeColumn,
+    onFilterColumn,
+  });
   return (
     <div
       data-adapttable-part="column-menu-item"
       data-hidden={hidden || undefined}
       data-pinned={pinned}
       className={classNames.columnMenuItem}
-      style={{ cursor: "grab" }}
-      {...drag.rowDragProps(key, index)}
-      {...drag.dropProps(index, layout.move)}
-      {...drag.rowAttrs(key, index)}
+      style={{ cursor: canMove ? "grab" : "default" }}
+      {...(canMove
+        ? {
+            ...drag.rowDragProps(key, index),
+            ...drag.dropProps(index, layout.move),
+            ...drag.rowAttrs(key, index),
+          }
+        : {})}
     >
       <span
         data-adapttable-part="column-menu-grip"
         className={classNames.columnMenuGrip}
-        {...columnReorderKeyProps(
-          key,
-          index,
-          layout.move,
-          `${labels.moveStart} / ${labels.moveEnd}: ${name}`
-        )}
+        aria-disabled={!canMove || undefined}
+        {...(canMove
+          ? columnReorderKeyProps(
+              key,
+              index,
+              layout.move,
+              `${labels.moveStart} / ${labels.moveEnd}: ${name}`
+            )
+          : {})}
       >
         <GripIcon />
       </span>
@@ -148,6 +189,7 @@ function ColumnMenuRowItem<TRow>({
         name={name}
         labels={labels}
         classNames={classNames}
+        disabled={!canHide}
         onToggle={() => layout.toggleVisible(key)}
       />
       <RowName hidden={hidden} name={name} classNames={classNames} />
@@ -155,8 +197,41 @@ function ColumnMenuRowItem<TRow>({
         active={pinned !== undefined}
         actionLabel={`${pinActionLabel(pinned, labels)}: ${name}`}
         classNames={classNames}
+        disabled={!canPin}
         onClick={() => layout.setPinned(key, nextPinSide(pinned))}
       />
+      <button
+        type="button"
+        data-adapttable-part="column-menu-more"
+        aria-expanded={open}
+        aria-label={`${labels.columnActions}: ${name}`}
+        className={classNames.columnMenuMore}
+        onClick={() => setOpen((value) => !value)}
+      >
+        ⋯
+      </button>
+      {open ? (
+        <div
+          data-adapttable-part="column-menu-submenu"
+          className={classNames.columnMenuSubmenu}
+        >
+          {actions.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              data-adapttable-part="column-menu-action"
+              className={classNames.columnMenuAction}
+              disabled={action.disabled}
+              onClick={() => {
+                action.run();
+                setOpen(false);
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -208,6 +283,47 @@ function ActionsMenuRowItem<TRow>({
   );
 }
 
+/**
+ * The injected row-reorder column as a first-class menu row: the same eye
+ * toggle as a data column plus a one-click start-pin toggle. The column
+ * always leads, so there is no end pin and no reorder grip.
+ */
+function ReorderMenuRowItem<TRow>({
+  layout,
+  labels,
+  classNames,
+}: Readonly<ActionsMenuRowProps<TRow>>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  const name = labels.reorderRow;
+  return (
+    <div
+      data-adapttable-part="column-menu-item"
+      data-reorder=""
+      data-hidden={hidden || undefined}
+      data-pinned={pinned ? "start" : undefined}
+      className={classNames.columnMenuItem}
+    >
+      <VisibilityToggle
+        hidden={hidden}
+        name={name}
+        labels={labels}
+        classNames={classNames}
+        onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+      />
+      <RowName hidden={hidden} name={name} classNames={classNames} />
+      <PinToggle
+        active={pinned}
+        actionLabel={`${pinned ? labels.unpin : labels.pinStart}: ${name}`}
+        classNames={classNames}
+        onClick={() =>
+          layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+        }
+      />
+    </div>
+  );
+}
+
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   classNames: DataTableClassNames;
   /** Resolved labels — the shared contract plus the actions row's name. */
@@ -218,6 +334,21 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
    * end-pins like any data column.
    */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
+  /** Size one column to its content. */
+  onAutoSizeColumn?: (key: string) => void;
+  /** Sort one column from the submenu. */
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  /** Open the filter UI from the submenu. */
+  onFilterColumn?: (key: string) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }
 
 /**
@@ -232,9 +363,18 @@ export function ColumnMenu<TRow>({
   labels,
   classNames,
   hasRowActions,
+  hasRowReorder,
+  onAutoSize,
+  onAutoSizeColumn,
+  onSortColumn,
+  onFilterColumn,
+  sortBy,
+  sortDir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
+  const [query, setQuery] = useState("");
+  const rows = filterColumnMenuRows(columnMenuRows(allColumns, layout), query);
 
   return (
     <div
@@ -274,7 +414,45 @@ export function ColumnMenu<TRow>({
               {labels.columns}
             </span>
           </div>
-          {columnMenuRows(allColumns, layout).map((row) => (
+          <input
+            type="search"
+            data-adapttable-part="column-menu-search"
+            className={classNames.columnMenuSearch}
+            placeholder={labels.searchColumns}
+            aria-label={labels.searchColumns}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <div
+            data-adapttable-part="column-menu-bulk"
+            className={classNames.columnMenuBulk}
+          >
+            <button
+              type="button"
+              data-adapttable-part="column-menu-bulk-button"
+              className={classNames.columnMenuBulkButton}
+              onClick={() => showAllColumns(rows, layout)}
+            >
+              {labels.showAllColumns}
+            </button>
+            <button
+              type="button"
+              data-adapttable-part="column-menu-bulk-button"
+              className={classNames.columnMenuBulkButton}
+              onClick={() => hideAllColumns(rows, layout)}
+            >
+              {labels.hideAllColumns}
+            </button>
+            <button
+              type="button"
+              data-adapttable-part="column-menu-bulk-button"
+              className={classNames.columnMenuBulkButton}
+              onClick={() => unpinAllColumns(rows, layout)}
+            >
+              {labels.unpinAllColumns}
+            </button>
+          </div>
+          {rows.map((row) => (
             <ColumnMenuRowItem
               key={row.key}
               row={row}
@@ -282,21 +460,41 @@ export function ColumnMenu<TRow>({
               labels={labels}
               classNames={classNames}
               drag={drag}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortColumn={onSortColumn}
+              onAutoSizeColumn={onAutoSizeColumn}
+              onFilterColumn={onFilterColumn}
             />
           ))}
-          {hasRowActions && (
-            <>
-              <hr
-                data-adapttable-part="column-menu-separator"
-                className={classNames.columnMenuSeparator}
-              />
-              <ActionsMenuRowItem
-                layout={layout}
-                labels={labels}
-                classNames={classNames}
-              />
-            </>
+          {(hasRowReorder === true || hasRowActions === true) && (
+            <hr
+              data-adapttable-part="column-menu-separator"
+              className={classNames.columnMenuSeparator}
+            />
           )}
+          {hasRowReorder && (
+            <ReorderMenuRowItem
+              layout={layout}
+              labels={labels}
+              classNames={classNames}
+            />
+          )}
+          {hasRowActions && (
+            <ActionsMenuRowItem
+              layout={layout}
+              labels={labels}
+              classNames={classNames}
+            />
+          )}
+          <button
+            type="button"
+            data-adapttable-part="column-menu-auto-size"
+            className={cx(classNames.columnMenuAutoSize)}
+            onClick={onAutoSize}
+          >
+            {labels.autoSizeColumns}
+          </button>
           <button
             type="button"
             data-adapttable-part="column-menu-reset"

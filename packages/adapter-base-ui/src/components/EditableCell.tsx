@@ -3,7 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
+import {
+  editorValidationProps,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
+} from "@adapttable/core/adapter";
 import {
   type KeyboardEvent,
   type ReactElement,
@@ -21,16 +30,28 @@ function stopEditKeys(event: KeyboardEvent): void {
   }
 }
 
-/** Focus the first focusable control inside when the editor mounts. */
+/**
+ * Hand the control inside to the table's focus ref.
+ *
+ * Base UI's fields do not forward a ref to their input, so the wrapper finds it
+ * — and whether it actually takes focus is the table's call: in row mode only
+ * the first field should, or the reader ends up at the last column of the row
+ * they just opened.
+ */
 function FocusOnMount({
+  focusRef,
   children,
-}: Readonly<{ children: ReactNode }>): ReactElement {
+}: Readonly<{
+  focusRef: (node: { focus: () => void } | null) => void;
+  children: ReactNode;
+}>): ReactElement {
   const rootRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
-    rootRef.current
-      ?.querySelector<HTMLElement>("input, select, textarea, button")
-      ?.focus();
-  }, []);
+    const control = rootRef.current?.querySelector<HTMLElement>(
+      "input, select, textarea, button"
+    );
+    focusRef(control ?? null);
+  }, [focusRef]);
   return (
     <span ref={rootRef} style={{ display: "contents" }}>
       {children}
@@ -51,9 +72,25 @@ export function BaseUiCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
     return (
-      <FocusOnMount>
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
+    return (
+      <FocusOnMount focusRef={ctrl.focusRef}>
         <NativeSelect
           size="1"
           width="100%"
@@ -70,12 +107,13 @@ export function BaseUiCellEditor({
   }
 
   return (
-    <FocusOnMount>
+    <FocusOnMount focusRef={ctrl.focusRef}>
       <TextField.Root
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         aria-label={label}
         size="1"
-        type={ctrl.editor === "number" ? "number" : "text"}
+        type={editorInputType(ctrl.editor)}
         value={ctrl.draft}
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
@@ -98,6 +136,8 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
   readonly display: ReactNode;
 }): ReactElement {
   return (
@@ -110,6 +150,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={props.display}
       renderEditor={(ctrl) => (
         <BaseUiCellEditor ctrl={ctrl} label={props.editLabel} />

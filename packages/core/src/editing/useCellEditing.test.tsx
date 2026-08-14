@@ -182,6 +182,39 @@ describe("useCellEditing", () => {
       draft: "Augusta",
     });
   });
+
+  it("keepLive accepts the incoming row and leaves the draft", () => {
+    const { result } = renderHook(() => useCellEditing());
+    act(() => result.current.begin("1", "name", "Ada", ROWS[0]));
+    act(() => result.current.setDraft("typed"));
+    const live = { ...ROWS[0]!, name: "Arrived" };
+    act(() => result.current.keepLive(live));
+    expect(result.current.draft).toBe("typed");
+    expect(result.current.openedRow()).toBe(live);
+    expect(result.current.active).not.toBeNull();
+  });
+
+  it("keepLive and takeLive do nothing while idle", () => {
+    const { result } = renderHook(() => useCellEditing());
+    act(() => result.current.keepLive(ROWS[0]!));
+    act(() => result.current.takeLive(ROWS[0]!, "x"));
+    expect(result.current.openedRow()).toBeUndefined();
+    expect(result.current.draft).toBe("");
+  });
+
+  it("takeLive replaces the draft with the incoming value", () => {
+    const { result } = renderHook(() => useCellEditing());
+    act(() => result.current.begin("1", "name", "Ada", ROWS[0]));
+    act(() => result.current.setDraft("typed"));
+    const live = { ...ROWS[0]!, name: "Arrived" };
+    act(() => result.current.takeLive(live, "Arrived"));
+    expect(result.current.draft).toBe("Arrived");
+    expect(result.current.openedRow()).toBe(live);
+    act(() => result.current.cancel());
+    act(() => result.current.takeLive(live, "gone"));
+    expect(result.current.draft).toBe("");
+    expect(result.current.openedRow()).toBeUndefined();
+  });
 });
 
 describe("beginCellEdit", () => {

@@ -23,6 +23,7 @@ const ALL: QueryExtensions = {
   },
   facets: ["status"],
   cursor: "opaque-token",
+  expandedIds: ["src", "lib"],
 };
 
 describe("applyQuerySupport", () => {
@@ -54,8 +55,25 @@ describe("applyQuerySupport", () => {
       filterTree: true,
       facets: true,
       cursor: true,
+      tree: true,
     };
     expect(applyQuerySupport(ALL, support)).toEqual(ALL);
+  });
+
+  it("sends the open tree nodes only to a source that answers trees", () => {
+    // A browser holding one page cannot know what is under a branch it has
+    // never seen, so a large tree is the server's to walk — but only if it
+    // said it could.
+    expect(applyQuerySupport(ALL, { tree: true })).toEqual({
+      expandedIds: ["src", "lib"],
+    });
+  });
+
+  it("names the tree remedy when the capability is missing", () => {
+    applyQuerySupport({ expandedIds: ["src"] }, {});
+    expect(vi.mocked(console.warn).mock.calls[0]?.[0]).toContain(
+      "supports.tree"
+    );
   });
 
   it("omits fields the caller never set, without warning about them", () => {

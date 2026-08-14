@@ -43,3 +43,48 @@ it("formats the select-all-matching banner labels", () => {
     "All 57 matching selected"
   );
 });
+
+describe("defaultLabels — every function label", () => {
+  /** One argument per label whose shape is not a plain count. */
+  const ARGS: Record<string, unknown[]> = {
+    showing: [{ from: 1, to: 10, total: 42 }],
+    page: [{ page: 3, total: 9 }],
+    removeFilter: ["Status"],
+    exportFile: ["xlsx"],
+    gridCellPosition: [4, 100],
+    gridRangeSelection: [
+      { fromRow: 1, toRow: 2, fromColumn: 3, toColumn: 4, cells: 8 },
+    ],
+    findMatchCount: [2, 7],
+    groupTotal: ["Core"],
+  };
+
+  it("returns a real string for the arguments it is given", () => {
+    for (const [key, value] of Object.entries(defaultLabels)) {
+      if (typeof value !== "function") continue;
+      const args = ARGS[key] ?? [3];
+      const out = (value as (...a: unknown[]) => string)(...args);
+      expect(out, key).toBeTypeOf("string");
+      expect(out.length, key).toBeGreaterThan(0);
+    }
+  });
+
+  it("says one cell, not one cells", () => {
+    // Counting labels read as English at 1 as well as at 12.
+    for (const key of [
+      "gridRangeCopied",
+      "gridRangePasted",
+      "gridRangeFilled",
+      "editUndone",
+      "editRedone",
+    ] as const) {
+      const label = defaultLabels[key];
+      expect(label(1), key).toContain("1 cell ");
+      expect(label(4), key).toContain("4 cells ");
+    }
+  });
+
+  it("says No matches when a find turns up nothing", () => {
+    expect(defaultLabels.findMatchCount(1, 0)).toBe("No matches");
+  });
+});

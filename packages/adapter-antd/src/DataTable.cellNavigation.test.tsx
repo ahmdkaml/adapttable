@@ -6,8 +6,8 @@
  * tab stop and their ABSOLUTE column index, that a row carries its absolute
  * row index, and that omitting the prop leaves all of it absent.
  */
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
@@ -94,5 +94,35 @@ describe("antd cell navigation", () => {
     // No grid role, no focusable cells, no key handling.
     expect(screen.queryByRole("grid")).toBeNull();
     expect(cellAt(0, 0)).toBeNull();
+  });
+});
+
+/**
+ * antd builds its own chrome instead of using the shell, so its clipboard
+ * wiring is a second place that has to be right — and the only way to know is
+ * to paste into the real table.
+ */
+describe("antd — paste reaches the edit channel", () => {
+  it("commits a pasted block through onCellEdit", async () => {
+    vi.stubGlobal("navigator", {
+      clipboard: { readText: vi.fn().mockResolvedValue("P\tQ") },
+    });
+    const onCellEdit = vi.fn();
+    render(
+      <DataTable
+        data={ROWS}
+        columns={columns.map((c) => ({ ...c, editable: true }))}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        forceMobile={false}
+        cellNavigation
+        onCellEdit={onCellEdit}
+      />
+    );
+    cellAt(0, 0)!.focus();
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "v", ctrlKey: true });
+    await waitFor(() => expect(onCellEdit).toHaveBeenCalledTimes(2));
+    expect(onCellEdit).toHaveBeenNthCalledWith(1, ROWS[0], "name", "P");
+    vi.unstubAllGlobals();
   });
 });

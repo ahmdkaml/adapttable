@@ -34,6 +34,9 @@ const labels = defaultLabels;
 function makeGroupEntry(overrides: Partial<GroupEntry> = {}): GroupEntry {
   return {
     kind: "group",
+    level: 0,
+    groupBy: "team",
+    path: ["s:Core"],
     key: GROUP_KEY,
     value: "Core",
     label: "Core",
@@ -81,6 +84,7 @@ function renderRow(
           selection={null}
           labels={labels}
           onToggleCollapse={onToggleCollapse}
+          onShowMore={() => undefined}
           {...props}
         />
       </Table.Body>
@@ -187,6 +191,7 @@ describe("GroupHeaderCard (base-ui)", () => {
         selection={selection}
         labels={labels}
         onToggleCollapse={onToggleCollapse}
+        onShowMore={() => undefined}
       />
     );
     expect(

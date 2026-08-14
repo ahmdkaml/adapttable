@@ -1,5 +1,10 @@
+import { FilterTreeBuilder } from "@adapttable/core";
 import {
+  BatchEditBar,
+  FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
+  SelectionStatsBar,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -43,14 +48,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
 
-  const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      accentColor={accentColor}
-      dir={props.dir}
-      labels={props.labels}
-    />
+  const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        accentColor={accentColor}
+        dir={props.dir}
+        labels={props.labels}
+        registry={registry}
+      />
+      <FilterTreeBuilder
+        defs={defs}
+        source={source}
+        labels={props.labels}
+        registry={registry}
+      />
+    </div>
   ));
   const {
     source,
@@ -65,6 +79,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     toolbarProps,
   } = shell;
   const tableProps = { ...shell.tableProps, size, accentColor };
@@ -121,6 +136,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       p={3}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
+      <FindBar find={shell.find} labels={labels} />
       <Stack gap={3}>
         <Toolbar
           {...toolbarProps}
@@ -148,9 +169,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             props.enableColumnMenu && !chrome.isMobile ? (
               <ColumnMenu
                 allColumns={chrome.allColumns}
+                onAutoSize={shell.autoSizeColumns}
+                onAutoSizeColumn={shell.autoSizeColumn}
+                onSortColumn={(key, dir) => source.setSort(key, dir)}
+                onFilterColumn={() => setFiltersOpen(true)}
+                sortBy={source.sortBy}
+                sortDir={source.sortDir}
                 layout={chrome.columnLayout}
                 labels={table.labels}
                 hasRowActions={hasRowActions}
+                hasRowReorder={hasRowReorder}
                 dir={props.dir}
               />
             ) : undefined
@@ -169,6 +197,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={chrome.clearFilters}
           labels={labels}
         />
+        {chrome.editing?.batch && (
+          <BatchEditBar batch={chrome.editing.batch} labels={labels} />
+        )}
+
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}
@@ -200,6 +232,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </Button>
           </Flex>
         )}
+        {props.tableFooter ? (
+          <div data-adapttable-part="table-footer">{props.tableFooter}</div>
+        ) : null}
         {chrome.showFooter && (
           <Footer
             className={props.classNames?.footer}
@@ -225,6 +260,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
     </Box>
   );
 }

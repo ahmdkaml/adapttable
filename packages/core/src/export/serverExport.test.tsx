@@ -7,7 +7,13 @@
  * be started twice by an impatient second click, and the outcome is announced —
  * a download is silent, and so is a failed one.
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { TableSource } from "../source/TableSource";
@@ -311,6 +317,25 @@ describe("useExportHandler", () => {
       button.click();
     });
     expect(button).toHaveAttribute("data-status", "done");
+  });
+
+  it("marks the export failed when the handler throws before returning", () => {
+    const { result } = renderHook(() =>
+      useExportHandler(() => {
+        throw new Error("disk full");
+      })
+    );
+    let thrown: unknown;
+    act(() => {
+      try {
+        result.current.onExportCsv?.();
+      } catch (error) {
+        thrown = error;
+      }
+    });
+    expect(thrown).toEqual(expect.objectContaining({ message: "disk full" }));
+    expect(result.current.exportStatus).toBe("failed");
+    expect(result.current.exportAnnouncement).toContain("Export failed");
   });
 
   it("stays synchronous, and never busy, for the built-in export", () => {

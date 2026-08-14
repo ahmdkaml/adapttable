@@ -450,6 +450,7 @@ export const Table = {
     variant: _variant,
     className,
     children,
+    tableStyle,
     ...rest
   }: Readonly<
     {
@@ -457,6 +458,8 @@ export const Table = {
       variant?: string;
       className?: string;
       children?: ReactNode;
+      /** Style for the inner `<table>` — the element a fitted layout needs. */
+      tableStyle?: CSSProperties;
     } & HTMLAttributes<HTMLDivElement>
   >) {
     return (
@@ -465,7 +468,7 @@ export const Table = {
         data-size={size}
         {...rest}
       >
-        <table>{children}</table>
+        <table style={tableStyle}>{children}</table>
       </div>
     );
   },
@@ -499,6 +502,7 @@ export const Table = {
     children,
     justify,
     colSpan,
+    rowSpan,
     style,
     className,
     ...rest
@@ -507,6 +511,7 @@ export const Table = {
       children?: ReactNode;
       justify?: Justify;
       colSpan?: number;
+      rowSpan?: number;
       style?: CSSProperties;
       className?: string;
     } & HTMLAttributes<HTMLTableCellElement>
@@ -516,6 +521,7 @@ export const Table = {
         className={className}
         data-justify={justify}
         colSpan={colSpan}
+        rowSpan={rowSpan}
         style={style}
         {...rest}
       >

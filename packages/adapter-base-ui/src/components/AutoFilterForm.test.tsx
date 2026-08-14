@@ -1,12 +1,13 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type {
-  ExtraFilters,
-  FilterDef,
-  FilterOption,
-  FilterValue,
-  TableLabels,
+import {
+  defaultFilterRegistry,
+  type ExtraFilters,
+  type FilterDef,
+  type FilterOption,
+  type FilterValue,
+  type TableLabels,
 } from "../index";
 import { renderBaseUi } from "../test-utils";
 import { AutoFilterForm } from "./AutoFilterForm";
@@ -23,14 +24,15 @@ const TAG_OPTIONS = [
 function renderForm(
   defs: readonly FilterDef[],
   extra: ExtraFilters = {},
-  labels?: TableLabels
+  labels?: TableLabels,
+  allFilteredRows?: readonly { id: string }[]
 ) {
   const setExtra = vi.fn<(key: string, value: FilterValue) => void>();
   const setExtras = vi.fn<(updates: ExtraFilters) => void>();
   const view = renderBaseUi(
     <AutoFilterForm
       defs={defs}
-      source={{ extra, setExtra, setExtras }}
+      source={{ extra, setExtra, setExtras, allFilteredRows }}
       labels={labels}
     />
   );
@@ -61,15 +63,39 @@ function triggerText(name: string): string {
 }
 
 describe("<AutoFilterForm> (Base UI)", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    renderForm([{ key: "team", type: "checklist", getValue: () => "Core" }]);
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const { setExtra } = renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      {},
+      undefined,
+      [{ id: "1" }]
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("text: labels from the humanized key, shows the placeholder, writes the key", () => {
-    const { setExtra } = renderForm([
+    const { setExtras } = renderForm([
       { key: "firstName", type: "text", placeholder: "Type a name" },
     ]);
     const input = screen.getByLabelText("First Name");
     expect(input).toHaveAttribute("placeholder", "Type a name");
     expect(input).toHaveValue("");
     fireEvent.change(input, { target: { value: "ali" } });
-    expect(setExtra).toHaveBeenCalledWith("firstName", "ali");
+    expect(setExtras).toHaveBeenCalledWith({
+      firstName: "ali",
+      firstNameOp: "contains",
+    });
+  });
+
+  it("boolean: tri-state select writes true and clears", () => {
+    const { setExtra } = renderForm([
+      { key: "core", type: "boolean", label: "Core team" },
+    ]);
+    pickOption("Core team", "True");
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
   });
 
   it("select: renders an empty All option, reads the value, writes the key, '' clears", () => {
@@ -145,10 +171,14 @@ describe("<AutoFilterForm> (Base UI)", () => {
     // placeholder doubling as the clear option.
     expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Operator",
+      "Before",
+      "After",
       "On",
       "On or after",
       "On or before",
       "Between",
+      "Relative",
+      "Is empty",
     ]);
     // Close the popup before reaching for the value input.
     fireEvent.keyDown(document.body, { key: "Escape" });
@@ -159,6 +189,7 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       hiredAtFrom: "2026-02-01",
       hiredAtTo: undefined,
+      hiredAtOp: "gte",
     });
   });
 
@@ -179,9 +210,14 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Vergleich",
       "Gleich",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "Höchstens",
       "Zwischen",
+      "Is any of",
+      "Is none of",
     ]);
     fireEvent.keyDown(document.body, { key: "Escape" });
     // No operator picked yet → no value input.
@@ -198,6 +234,7 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -210,6 +247,7 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "10",
       budgetMax: "10",
+      budgetOp: "eq",
     });
   });
 
@@ -225,6 +263,7 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: "7",
+      budgetOp: "lte",
     });
   });
 
@@ -242,11 +281,13 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "2",
       budgetMax: "9",
+      budgetOp: "between",
     });
     fireEvent.change(from, { target: { value: "3" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "3",
       budgetMax: "8",
+      budgetOp: "between",
     });
   });
 
@@ -271,6 +312,7 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(setExtras).toHaveBeenCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     // Back to the untouched widget: operator placeholder, no value input.
     expect(triggerText("Operator")).toBe("Operator");
@@ -283,7 +325,11 @@ describe("<AutoFilterForm> (Base UI)", () => {
       budgetMax: 5,
     });
     pickOption("Operator", "Between");
-    expect(setExtras).toHaveBeenCalledWith({ budgetMin: "5", budgetMax: "5" });
+    expect(setExtras).toHaveBeenCalledWith({
+      budgetMin: "5",
+      budgetMax: "5",
+      budgetOp: "between",
+    });
   });
 
   it("select: shows one disabled placeholder option while async options load", async () => {
@@ -344,5 +390,28 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(container.querySelector(".adapttable-spinner")).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Beta" })).toBeInTheDocument();
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    renderBaseUi(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={{ extra: {}, setExtra: vi.fn(), setExtras: vi.fn() }}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
   });
 });

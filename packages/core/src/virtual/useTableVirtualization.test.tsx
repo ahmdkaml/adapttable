@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   resolveVirtualRows,
+  rowSourceIndex,
   useKeyedVirtualization,
   useTableVirtualization,
   virtualColumnSpan,
@@ -26,6 +27,13 @@ const rows: Row[] = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 const rowKey = (row: Row) => row.id;
+
+describe("rowSourceIndex", () => {
+  it("uses the pinned source index and otherwise the window index", () => {
+    expect(rowSourceIndex({ index: 7 })).toBe(7);
+    expect(rowSourceIndex({ index: 0, sourceIndex: 3 })).toBe(3);
+  });
+});
 
 describe("useTableVirtualization", () => {
   beforeEach(() => {
@@ -52,6 +60,20 @@ describe("useTableVirtualization", () => {
     // Item keys come from rowKey; an out-of-range index degrades gracefully.
     expect(options.getItemKey!(1)).toBe("1");
     expect(options.getItemKey!(99)).toBe("99");
+  });
+
+  it("passes a per-index estimator through when the host varies height", () => {
+    renderHook(() =>
+      useTableVirtualization({
+        rows,
+        rowKey,
+        enabled: true,
+        estimateSize: (index) => (index === 0 ? 80 : 40),
+      })
+    );
+    const options = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0];
+    expect(options.estimateSize(0)).toBe(80);
+    expect(options.estimateSize(1)).toBe(40);
   });
 
   it("keeps getItemKey identity stable across unrelated re-renders", () => {
@@ -291,6 +313,7 @@ describe("useTableVirtualization", () => {
   it("computes table spacer column spans", () => {
     expect(virtualColumnSpan(3, false, false)).toBe(3);
     expect(virtualColumnSpan(3, true, true)).toBe(5);
+    expect(virtualColumnSpan(3, false, false, true, true)).toBe(5);
   });
 });
 

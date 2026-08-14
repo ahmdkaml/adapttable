@@ -24,6 +24,16 @@ type DemoComponent = ComponentType<
     density?: Density;
     animate?: boolean;
     grouping?: boolean;
+    tree?: boolean;
+    nested?: boolean;
+    rowMode?: boolean;
+    batch?: boolean;
+    rowMutations?: boolean;
+    rowReorder?: boolean;
+    rowPinning?: boolean;
+    cellSpan?: boolean;
+    extraRows?: boolean;
+    rowStyle?: boolean;
     editing?: boolean;
   }>
 >;
@@ -120,6 +130,16 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [filtersUi, setFiltersUi] = useState<FiltersUi>("popover");
   const [motion, setMotion] = useState<"on" | "off">("on");
   const [grouping, setGrouping] = useState<"on" | "off">("off");
+  const [tree, setTree] = useState<"on" | "off">("off");
+  const [nested, setNested] = useState<"on" | "off">("off");
+  const [rowMode, setRowMode] = useState<"on" | "off">("off");
+  const [batch, setBatch] = useState<"on" | "off">("off");
+  const [rowMutations, setRowMutations] = useState<"on" | "off">("off");
+  const [rowReorder, setRowReorder] = useState<"on" | "off">("off");
+  const [rowPinning, setRowPinning] = useState<"on" | "off">("off");
+  const [cellSpan, setCellSpan] = useState<"on" | "off">("off");
+  const [extraRows, setExtraRows] = useState<"on" | "off">("off");
+  const [rowStyle, setRowStyle] = useState<"on" | "off">("off");
   const [editing, setEditing] = useState<"on" | "off">("off");
   const token =
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
@@ -228,12 +248,142 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             ]}
           />
         </Control>
+        <Control label="Tree">
+          <Segmented
+            label="tree"
+            value={tree}
+            onChange={(v) => {
+              startTransition(() => setTree(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Nested">
+          <Segmented
+            label="nested"
+            value={nested}
+            onChange={(v) => {
+              startTransition(() => setNested(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
         <Control label="Editing">
           <Segmented
             label="editing"
             value={editing}
             onChange={(v) => {
               startTransition(() => setEditing(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Row edit">
+          <Segmented
+            label="row edit"
+            value={rowMode}
+            onChange={(v) => {
+              startTransition(() => setRowMode(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Add / delete">
+          <Segmented
+            label="add / delete"
+            value={rowMutations}
+            onChange={(v) => {
+              startTransition(() => setRowMutations(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Reorder">
+          <Segmented
+            label="reorder"
+            value={rowReorder}
+            onChange={(v) => {
+              startTransition(() => setRowReorder(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Pin rows">
+          <Segmented
+            label="pin rows"
+            value={rowPinning}
+            onChange={(v) => {
+              startTransition(() => setRowPinning(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Span">
+          <Segmented
+            label="span cells"
+            value={cellSpan}
+            onChange={(v) => {
+              startTransition(() => setCellSpan(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Extras">
+          <Segmented
+            label="extra rows"
+            value={extraRows}
+            onChange={(v) => {
+              startTransition(() => setExtraRows(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Style">
+          <Segmented
+            label="row style"
+            value={rowStyle}
+            onChange={(v) => {
+              startTransition(() => setRowStyle(v));
+            }}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "on", label: "On" },
+            ]}
+          />
+        </Control>
+        <Control label="Batch">
+          <Segmented
+            label="batch"
+            value={batch}
+            onChange={(v) => {
+              startTransition(() => setBatch(v));
             }}
             options={[
               { value: "off", label: "Off" },
@@ -273,6 +423,16 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
               filtersUi={filtersUi}
               animate={motion === "on"}
               grouping={grouping === "on"}
+              tree={tree === "on"}
+              nested={nested === "on"}
+              rowMode={rowMode === "on"}
+              batch={batch === "on"}
+              rowMutations={rowMutations === "on"}
+              rowReorder={rowReorder === "on"}
+              rowPinning={rowPinning === "on"}
+              cellSpan={cellSpan === "on"}
+              extraRows={extraRows === "on"}
+              rowStyle={rowStyle === "on"}
               editing={editing === "on"}
               urlKey="live"
             />

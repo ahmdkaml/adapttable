@@ -250,17 +250,26 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     expect(optionTexts("Age")).toEqual([
       "Vergleich",
       "Equal",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "At most",
       "Between",
+      "Is any of",
+      "Is none of",
     ]);
     // …and the date flavour swaps in the On/On-or wordings.
     expect(optionTexts("Hired At")).toEqual([
       "Vergleich",
+      "Before",
+      "After",
       "Am",
       "On or after",
       "On or before",
       "Between",
+      "Relative",
+      "Is empty",
     ]);
   });
 
@@ -283,6 +292,22 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     // Carol (hired 2024) drops out on the frontend tier.
     expect(screen.queryByText("Carol")).not.toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("dateRange: Relative stores the token, never a resolved day", () => {
+    const adapter = renderAllTypes();
+    fireEvent.change(rangeOperator("Hired At"), {
+      target: { value: "relative" },
+    });
+    const p = params(adapter);
+    expect(p.get("f_hiredAtOp")).toBe("relative");
+    expect(p.get("f_hiredAtFrom")).toBe("today");
+    expect(p.get("f_hiredAtFrom")).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    fireEvent.change(screen.getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    expect(params(adapter).get("f_hiredAtFrom")).toBe("last:7");
+    expect(chipsStrip()).toHaveTextContent("Hired At Last 7 days");
   });
 
   it("numberRange: At least types into ONE input and writes only the Min key", () => {
@@ -386,8 +411,8 @@ describe("<DataTable> declarative columns + filters (unstyled)", () => {
     // One text input + the URL-restored Between pair on the number range.
     expect(count('[data-adapttable-part="filter-input"].c-input')).toBe(3);
     expect(count('[data-adapttable-part="filter-select"].c-select')).toBe(1);
-    // One operator select per range definition.
-    expect(count('[data-adapttable-part="filter-operator"].c-op')).toBe(2);
+    // One operator select per text + range definition.
+    expect(count('[data-adapttable-part="filter-operator"].c-op')).toBe(3);
     expect(
       count('[data-adapttable-part="filter-checkbox-group"].c-group')
     ).toBe(1);

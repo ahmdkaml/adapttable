@@ -3,8 +3,18 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isDraftChecked,
+  isMultiSelectEditor,
+  isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  commitBooleanDraft,
+  editorValidationProps,
+  multiDraftFromSelect,
+} from "@adapttable/core/adapter";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 /** Native text / number / select editor for the unstyled adapter. */
@@ -28,11 +38,52 @@ export function NativeCellEditor({
     }
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <input
+        ref={ctrl.focusRef}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        className={className}
+        aria-label={label}
+        type="checkbox"
+        checked={isDraftChecked(ctrl.draft)}
+        // One gesture: a ticked box that changed nothing is a bug, not a draft.
+        onChange={(event) => commitBooleanDraft(ctrl, event.target.checked)}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
     return (
       <select
-        ref={focusEditorOnMount}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        className={className}
+        aria-label={label}
+        multiple
+        value={readMultiDraft(ctrl.draft)}
+        onChange={(event) => ctrl.setDraft(multiDraftFromSelect(event.target))}
+        onKeyDown={onKeyDown}
+        onBlur={ctrl.commitOnBlur}
+      >
+        {ctrl.selectOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
+    return (
+      <select
+        ref={ctrl.focusRef}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         className={className}
         aria-label={label}
         value={ctrl.draft}
@@ -51,11 +102,12 @@ export function NativeCellEditor({
 
   return (
     <input
-      ref={focusEditorOnMount}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       className={className}
       aria-label={label}
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
@@ -78,15 +130,23 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
   readonly display: ReactNode;
   /** Class for the invisible activate button. */
   readonly activateClassName?: string;
+  readonly errorClassName?: string;
+  readonly saveErrorClassName?: string;
+  readonly rollbackClassName?: string;
   /** Class for the active inline editor. */
   readonly editorClassName?: string;
 }): ReactElement {
   return (
     <EditableCellGate
       activateClassName={props.activateClassName}
+      errorClassName={props.errorClassName}
+      saveErrorClassName={props.saveErrorClassName}
+      rollbackClassName={props.rollbackClassName}
       editing={props.editing}
       row={props.row}
       column={props.column}
@@ -95,6 +155,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={props.display}
       renderEditor={(ctrl) => (
         <NativeCellEditor

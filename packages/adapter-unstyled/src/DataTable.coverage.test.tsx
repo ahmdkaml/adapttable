@@ -160,10 +160,13 @@ describe("<DataTable> (unstyled) branch coverage", () => {
   // than it (many visible columns must scroll sideways, not bleed over the
   // card border), and drops the style again once the table fits.
   it("scrolls sideways only while the measured table overflows the wrapper", () => {
-    let measure: (() => void) | undefined;
+    const observers: (() => void)[] = [];
+    const measure = (): void => {
+      for (const cb of observers) cb();
+    };
     class FakeResizeObserver {
       constructor(cb: () => void) {
-        measure = cb;
+        observers.push(cb);
       }
       observe() {
         // measurement is driven manually via `measure`
@@ -193,7 +196,9 @@ describe("<DataTable> (unstyled) branch coverage", () => {
       // The table fits again (columns hidden/resized): the ResizeObserver
       // re-measure clears every overflow style from the wrapper.
       scrollWidth.mockReturnValue(600);
-      act(() => measure?.());
+      act(() => {
+        measure();
+      });
       expect(box?.getAttribute("style") ?? "").not.toContain("overflow");
     } finally {
       scrollWidth.mockRestore();
@@ -217,10 +222,13 @@ describe("<DataTable> (unstyled) branch coverage", () => {
   // header must then pin to the BOX top, not the viewport offset, or it
   // floats down over the first rows.
   it("re-binds a page-sticky header to the box top once the table overflows", () => {
-    let measure: (() => void) | undefined;
+    const observers: (() => void)[] = [];
+    const measure = (): void => {
+      for (const cb of observers) cb();
+    };
     class FakeResizeObserver {
       constructor(cb: () => void) {
-        measure = cb;
+        observers.push(cb);
       }
       observe() {
         // measurement is driven manually via `measure`
@@ -241,7 +249,9 @@ describe("<DataTable> (unstyled) branch coverage", () => {
       .mockReturnValue(600);
     try {
       renderHarness({ override: { stickyHeader: true, stickyTop: 120 } });
-      act(() => measure?.());
+      act(() => {
+        measure();
+      });
       const th = screen.getByRole("columnheader", { name: /name/i });
       expect(th).toHaveStyle({ top: "0" });
     } finally {

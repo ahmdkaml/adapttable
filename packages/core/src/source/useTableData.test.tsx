@@ -70,6 +70,68 @@ describe("useTableData — frontend tier", () => {
       "Status: active"
     );
   });
+
+  it("facet counts keep other values after this facet is selected", () => {
+    const adapter = createMemoryAdapter("f_team=Core");
+    const { result } = renderHook(() =>
+      useTableData<Row & { team: string }>({
+        data: [
+          { id: "1", name: "Ada", status: "active", budget: 1, team: "Core" },
+          { id: "2", name: "Alan", status: "active", budget: 1, team: "Web" },
+        ],
+        columns: [{ key: "name" }, { key: "team" }],
+        filters: [{ key: "team", type: "checklist" }],
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.source.rows.map((row) => row.name)).toEqual(["Ada"]);
+    expect(result.current.source.facets?.team).toEqual([
+      { value: "Core", label: "Core", count: 1 },
+      { value: "Web", label: "Web", count: 1 },
+    ]);
+  });
+
+  it("evaluates a URL-restored filter tree against the rows", () => {
+    const tree = {
+      combinator: "or" as const,
+      conditions: [{ key: "name", op: "eq", value: "Bob" }],
+    };
+    const adapter = createMemoryAdapter(`ft=1.${JSON.stringify(tree)}`);
+    const { result } = renderHook(() =>
+      useTableData<Row>({
+        data: ROWS,
+        columns: [{ key: "name", filter: "text" }],
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.source.rows.map((row) => row.name)).toEqual(["Bob"]);
+  });
+
+  it("facet counts respect the active filter tree", () => {
+    const tree = {
+      combinator: "and" as const,
+      conditions: [{ key: "name", op: "eq", value: "Ada" }],
+    };
+    const adapter = createMemoryAdapter(`ft=1.${JSON.stringify(tree)}`);
+    const { result } = renderHook(() =>
+      useTableData<Row & { team: string }>({
+        data: [
+          { id: "1", name: "Ada", status: "active", budget: 1, team: "Core" },
+          { id: "2", name: "Alan", status: "active", budget: 1, team: "Web" },
+        ],
+        columns: [{ key: "name", filter: "text" }, { key: "team" }],
+        filters: [{ key: "team", type: "checklist" }],
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      })
+    );
+    expect(result.current.source.rows.map((row) => row.name)).toEqual(["Ada"]);
+    expect(result.current.source.facets?.team).toEqual([
+      { value: "Core", label: "Core", count: 1 },
+    ]);
+  });
 });
 
 describe("useTableData — tier resolution", () => {
@@ -437,11 +499,44 @@ describe("useTableData / useServerData — server tier", () => {
   });
 
   it("stays silent without an onQueryChange emitter", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>
       useServerData<Row>({ rows: ROWS, total: 3, urlAdapter: adapter })
     );
     expect(result.current.rows).toBe(ROWS);
+    act(() => {
+      result.current.refetch?.();
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("refetch() has nothing to re-run")
+    );
+  });
+
+  it("drops a pending infinite append when the query changes", () => {
+    const page1 = ROWS.slice(0, 2);
+    const adapter = createMemoryAdapter("limit=2");
+    const { result } = renderHook(() =>
+      useServerData<Row>({
+        rows: page1,
+        total: 3,
+        paginationMode: "infinite",
+        urlAdapter: adapter,
+        onQueryChange: vi.fn(),
+        defaults: { limit: 2 },
+      })
+    );
+    expect(result.current.rows).toEqual(page1);
+    act(() => {
+      result.current.fetchNextPage();
+    });
+    expect(result.current.isFetchingNextPage).toBe(true);
+    expect(result.current.rows).toEqual(page1);
+    act(() => {
+      result.current.setSearch("alice");
+    });
+    expect(result.current.isFetchingNextPage).toBe(false);
+    expect(result.current.rows).toEqual(page1);
   });
 });
 

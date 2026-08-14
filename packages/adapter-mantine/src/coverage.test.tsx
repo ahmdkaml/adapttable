@@ -134,6 +134,7 @@ function hiddenLayout(): UseColumnLayoutResult<MenuRow> {
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
   };
 }
 
@@ -146,8 +147,20 @@ const menuLabels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
+  reorderRow: "Reorder",
 };
 
 describe("ColumnMenu hidden column", () => {
@@ -156,7 +169,12 @@ describe("ColumnMenu hidden column", () => {
     const layout = hiddenLayout();
     render(
       <MantineProvider>
-        <ColumnMenu allColumns={menuCols} layout={layout} labels={menuLabels} />
+        <ColumnMenu
+          allColumns={menuCols}
+          layout={layout}
+          labels={menuLabels}
+          onAutoSize={() => undefined}
+        />
       </MantineProvider>
     );
     await user.click(screen.getByRole("button", { name: "Columns" }));

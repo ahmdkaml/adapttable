@@ -1,5 +1,9 @@
-import { ACTIONS_COLUMN_KEY } from "../columns/columnMenuModel";
+import {
+  ACTIONS_COLUMN_KEY,
+  REORDER_COLUMN_KEY,
+} from "../columns/columnMenuModel";
 import { type CellRange, cellRangeIndices } from "../focus/cellRange";
+import type { GetCellSpan } from "../rows/cellSpan";
 import type { TableSource } from "../source/TableSource";
 import type { ColumnDef, ExtraFilters, SortDirection } from "../types";
 import { devWarn } from "../utils/devWarn";
@@ -157,11 +161,14 @@ export function resolveExportCsv<TRow = unknown>(
   return value;
 }
 
-/** Columns that belong in a CSV (drop the synthetic actions column). */
+/** Columns that belong in a CSV (drop synthetic actions and reorder columns). */
 export function exportableColumns<TRow>(
   columns: readonly ColumnDef<TRow>[]
 ): ColumnDef<TRow>[] {
-  return columns.filter((column) => column.key !== ACTIONS_COLUMN_KEY);
+  return columns.filter(
+    (column) =>
+      column.key !== ACTIONS_COLUMN_KEY && column.key !== REORDER_COLUMN_KEY
+  );
 }
 
 /**
@@ -186,6 +193,8 @@ export interface ExportContext<TRow> {
    * unless the table is paged.
    */
   firstRowIndex?: number;
+  /** Omit covered cells from the file — a span exports its value once. */
+  getCellSpan?: GetCellSpan<TRow>;
 }
 
 /** Pick the column set an export scope asks for, minus the actions column. */
@@ -332,7 +341,10 @@ export function buildTableCsv<TRow>(options: {
 }): string {
   const { rows, columns } = resolveExport(options);
   return csvWriter.build({
-    table: buildExportTable(rows, columns),
+    table: buildExportTable(rows, columns, {
+      getCellSpan: options.context?.getCellSpan,
+      firstRowIndex: options.context?.firstRowIndex,
+    }),
     filename: "export.csv",
     escapeFormulas: options.escapeFormulas,
   }).text;
@@ -369,7 +381,10 @@ export function downloadTableCsv<TRow>(options: {
   // Built after the hook, so a filename the hook chose reaches a writer that
   // embeds it — and so a cancelled export builds nothing at all.
   const file = writer.build({
-    table: buildExportTable(rows, columns),
+    table: buildExportTable(rows, columns, {
+      getCellSpan: options.context?.getCellSpan,
+      firstRowIndex: options.context?.firstRowIndex,
+    }),
     filename,
     escapeFormulas: options.escapeFormulas,
   });

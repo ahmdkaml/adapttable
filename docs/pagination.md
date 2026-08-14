@@ -96,6 +96,29 @@ What the table guarantees:
   sending none would silently re-serve page 1. This is the honest shape of
   cursor pagination rather than a limitation to route around — use infinite
   scroll (`paginationMode="infinite"`) where arbitrary jumps matter.
+- **A trail that no longer means anything is thrown away.** Change the search,
+  the sort, a filter or the page size and every held token points into a result
+  that no longer exists, so the trail resets to page 1 rather than paging into
+  the previous query's rows.
+
+### With a query library
+
+`useQuerySource` takes the same two options, so cursor mode is not tied to the
+hand-rolled tier: declare the capability and say where the token lives on your
+page.
+
+```tsx
+const source = useQuerySource<Person, PeopleParams, PeoplePage>({
+  usePaginatedQuery: usePeopleQuery,
+  selectPage: (page) => ({ rows: page.items, total: 0 }),
+  supports: { cursor: true },
+  nextCursor: (page) => page.next, // the token that opens the NEXT page
+});
+```
+
+The token reaches your query function as `params.cursor`, alongside the params
+it already receives — nothing else about the hook changes.
+
 - **A new sort, filter, search, or page size resets to the first page.** Those
   tokens describe a position in a result set that no longer exists.
 - **The URL keeps everything except the cursor.** Sort, filters, search and

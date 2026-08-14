@@ -3,8 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorValidationProps,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
+} from "@adapttable/core/adapter";
 import { Input, Select } from "antd";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -27,11 +35,29 @@ export function AntdCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <Select
-        ref={focusEditorOnMount}
+        status={ctrl.error === undefined ? undefined : "error"}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
         aria-label={label}
         size="small"
         style={{ width: "100%" }}
@@ -49,11 +75,13 @@ export function AntdCellEditor({
 
   return (
     <Input
-      ref={focusEditorOnMount}
+      status={ctrl.error === undefined ? undefined : "error"}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
+      {...editorValidationProps(ctrl)}
       aria-label={label}
       size="small"
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
@@ -73,6 +101,8 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
 }): ReactElement {
   const display: ReactNode = props.column.Cell ? (
     <props.column.Cell row={props.row} rowIndex={props.rowIndex} />
@@ -90,6 +120,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={display}
       renderEditor={(ctrl) => (
         <AntdCellEditor ctrl={ctrl} label={props.editLabel} />

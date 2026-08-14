@@ -160,6 +160,25 @@ describe("group header row", () => {
     expect(cells[3]).toHaveAttribute("colspan", "2");
   });
 
+  it("collapses a group to its summary column when armed", () => {
+    const { container } = renderHarness({
+      columns: grouped,
+      override: { collapsibleColumnGroups: true },
+    });
+    const toggle = container.querySelector(
+      '[data-adapttable-part="column-group-toggle"]'
+    );
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggle!);
+    expect(
+      container.querySelector('[data-adapttable-part="column-group-toggle"]')
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
+    expect(
+      screen.getByRole("columnheader", { name: "City" })
+    ).toBeInTheDocument();
+  });
+
   it("renders no group row when no column declares a group", () => {
     const { container } = renderHarness();
     expect(

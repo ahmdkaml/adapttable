@@ -13,6 +13,278 @@ Group rows by one column with `groupBy` and optional per-group subtotals via
 `groupAggregates` — the **same mapper signature as `summaryRow`**. Omit
 `groupBy` and the table never inserts group header rows (package DNA: opt-in).
 
+## Paging groups, and paging inside one
+
+A table grouped by customer can have ten thousand groups. `groupPageSize` shows
+a screenful and offers the rest; `groupRowPageSize` does the same for the rows
+inside each group:
+
+```tsx
+<DataTable
+  data={ORDERS}
+  columns={columns}
+  rowKey={rowKey}
+  groupBy="customer"
+  groupPageSize={25}
+  groupRowPageSize={10}
+/>
+```
+
+Each limit adds one row — "Show 42 more groups", "Show 8 more in this group" —
+that reveals the next page when clicked. Only the **top level** pages: a nested
+level is already inside a group the reader opened, and hiding part of what they
+just opened would be a second "more" to hunt for.
+
+On a **server tier** the rest of a group is not in the browser yet, so
+`onGroupLoadMore(groupKey)` fires with the group that needs filling. Fetch it,
+hand back a longer `rows` for that group, and the next render shows them; the
+table reveals whatever it already holds either way. Both labels are localizable
+(`labels.moreGroups`, `labels.moreRowsInGroup`) in all seventeen locales, and the
+rows carry `group-more-row` / `group-more-cell` / `group-more` parts (with
+`groupMoreRow` / `groupMoreCell` class hooks in `@adapttable/unstyled`).
+
+## Grouping on the server
+
+A backend that can group is usually the only thing that can: it has the whole
+dataset, and the browser has a page of it. Declare the capability and the table
+sends the grouping keys with every query:
+
+```tsx
+const source = useQuerySource<Person, Params, Page>({
+  queryKey: ["people"],
+  queryFn: fetchPeople,
+  select: (page) => ({
+    rows: page.rows,
+    total: page.total,
+    groups: page.groups,
+  }),
+  supports: { grouping: true, aggregates: true },
+  aggregates: [{ key: "budget", fn: "sum" }],
+});
+
+<DataTable source={source} columns={columns} rowKey={rowKey} groupBy="team" />;
+```
+
+`query.groupBy` arrives as an **array**, outermost key first — one entry for a
+flat grouping, more for nested — and `query.aggregates` as
+`[{ key, fn }]`. Neither is sent unless the source declared the matching
+capability, so an endpoint that predates this never sees a field it does not
+understand.
+
+### The response shape
+
+```ts
+interface QueryGroupRow<TRow> {
+  value: unknown; // the group's value, shown as its label
+  count: number; // leaves beneath it, across the dataset
+  aggregates?: Record<string, unknown>; // by column key
+  groups?: QueryGroupRow<TRow>[]; // nested levels, when asked for
+  rows?: TRow[]; // leaves, when the server includes them
+}
+```
+
+Return them as `groups` on the source and the table renders them exactly as it
+renders local groups — same headers, same collapsing, same footers, same
+selection. **The counts and aggregates are the server's**: a group of 4,000
+whose response carried 20 rows says 4,000, because counting what arrived would
+be a number the user can see is wrong.
+
+A reference endpoint, grouping one level and returning the first page of each
+group's rows:
+
+```ts
+app.get("/people", async (req, res) => {
+  const groupBy = [req.query.groupBy ?? []].flat(); // e.g. ["team"]
+  if (groupBy.length === 0) return res.json(await plainPage(req));
+
+  const key = groupBy[0];
+  const rows = await db
+    .select(key, db.raw("count(*) as count"), db.raw("sum(budget) as budget"))
+    .from("people")
+    .groupBy(key)
+    .orderBy("count", "desc");
+
+  res.json({
+    total: rows.reduce((sum, row) => sum + Number(row.count), 0),
+    groups: await Promise.all(
+      rows.map(async (row) => ({
+        value: row[key],
+        count: Number(row.count),
+        aggregates: { budget: Number(row.budget) },
+        rows: await db
+          .select("*")
+          .from("people")
+          .where(key, row[key])
+          .limit(20),
+      }))
+    ),
+  });
+});
+```
+
+Leave `rows` out to send counts only — the headers render with their counts and
+nothing beneath them, which is the right answer for a table of a million rows
+in a hundred groups. Fetch a group's rows when it opens by reacting to
+`onCollapsedGroupIdsChange`: it tells you exactly which group the user just
+expanded, and the next response fills it in.
+
+**Without the capability**, a server tier that is asked to group says so in
+development — "grouping is only supported on the frontend data tier" — and
+renders ungrouped rather than grouping the page it happens to hold, which would
+be one page's worth of groups presented as the whole set.
+
+## Controlling what is open
+
+Groups start expanded and collapse on their own. To hold that state yourself,
+pass the pair:
+
+```tsx
+const [closed, setClosed] = useState<string[]>([]);
+
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy={["team", "status"]}
+  collapsedGroupIds={closed}
+  onCollapsedGroupIdsChange={setClosed}
+/>;
+```
+
+The set names what is **closed**, because groups default to open — so an empty
+set is a fully expanded table, and the state stays small no matter how many
+groups there are. Each key carries the group's whole path, so nesting needs no
+extra bookkeeping.
+
+**In the URL**, with `useGroupCollapseUrlState`:
+
+```tsx
+const groups = useGroupCollapseUrlState({ urlKey: "people" });
+
+<DataTable {...groups} groupBy="team" columns={columns} rowKey={rowKey} />;
+```
+
+A link then carries which groups were folded — part of what someone means when
+they send one. Keys are percent-encoded, so a label containing a comma cannot
+split the list, and the parameter disappears when everything is open again.
+
+**Whole-tree actions** live on the table's grouping bundle, for a host that
+wants its own buttons: `expandAll()`, `collapseAll()`, and
+`collapseToDepth(depth)` — depth `0` leaves only the outermost headers showing,
+`1` opens the first level inside them.
+
+## Ordering and filtering groups
+
+`groupSort` orders the groups inside their parent, and `groupFilter` decides
+which of them are worth showing:
+
+```tsx
+<DataTable
+  data={SALES}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy="region"
+  groupAggregates={(rows) => ({ amount: sum(rows) })}
+  // Biggest region first — the same rows the aggregate is computed from.
+  groupSort={(a, b) => sum(b.leafRows) - sum(a.leafRows)}
+  // And only the regions worth a line.
+  groupFilter={(group) => sum(group.leafRows) >= 10_000}
+/>
+```
+
+`groupSort` also takes `"label"`, `"label-desc"`, `"count"` and `"count-desc"`.
+**To sort by an aggregate, compare the leaves** — an aggregate is a function of
+its rows, and comparing the rendered aggregate cell would mean comparing
+ReactNodes, which is not an ordering. Both props apply at every level of a
+nested group.
+
+### The order things happen in
+
+1. **Row filters and search** run on the source, exactly as they do without
+   grouping. Grouping never sees a row a filter removed.
+2. **Grouping** partitions what survived, one level per `groupBy` key.
+3. **`groupFilter`** drops whole groups — a dropped group takes its leaves with
+   it, so the counts and totals that remain describe what is on screen.
+4. **`groupSort`** orders the groups within each parent. Without it they keep
+   the order the source's own sort produced.
+5. **Leaf order inside a group is the source's**, always. Sorting a column sorts
+   the rows within each group; it does not reorder the groups themselves —
+   that is `groupSort`'s job, and keeping them separate is what lets you sort
+   rows by name inside groups ordered by total.
+
+Collapsed state is keyed by the group's path, so reordering or filtering groups
+never opens or closes anything by accident.
+
+## Footers and grand totals
+
+`groupFooters` closes every group with a row carrying the same aggregates its
+header carries:
+
+```tsx
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy="team"
+  groupAggregates={(rows) => ({ budget: sum(rows) })}
+  groupFooters
+  summaryRow={(rows) => ({ budget: sum(rows) })}
+/>
+```
+
+The totals then read at the bottom of a group as well as the top — which is
+where the reader of a long group is by the time they want them. A footer shows
+no chevron and no checkbox: the header already owns both. Nested groups each get
+their own, innermost first, and a **collapsed** group shows none at all — its
+header is already carrying the numbers, with nothing between them.
+
+`summaryRow` is the table's grand total, and under grouping it totals the whole
+filtered set rather than a page of it. The two compose: per-group footers, one
+grand total.
+
+On mobile the footer is a card of its own after the group's cards, captioned the
+same way. Exports are unaffected — a footer is chrome, not a row, so a CSV
+carries the data and nothing else.
+
+Each footer is captioned through `labels.groupTotal`, translated in all
+seventeen locales, and carries `data-adapttable-part="group-footer-row"` /
+`group-footer-cell` (plus the `groupFooterRow` / `groupFooterCell` class hooks
+in `@adapttable/unstyled`).
+
+## Nested groups
+
+`groupBy` also takes an ordered list, and each key nests inside the one before
+it:
+
+```tsx
+<DataTable
+  data={PEOPLE}
+  columns={columns}
+  rowKey={(r) => r.id}
+  groupBy={["team", "status"]}
+/>
+```
+
+> Core (12)
+> &nbsp;&nbsp;active (7)
+> &nbsp;&nbsp;blocked (5)
+> Platform (9)
+> &nbsp;&nbsp;active (9)
+
+Every header describes its **whole subtree**: the count beside "Core" is all
+twelve of its people, and its `groupAggregates` cells total the same twelve.
+Deeper levels indent by logical padding, so nesting mirrors in Arabic and
+Hebrew without a second rule.
+
+Each node collapses on its own — "Core > blocked" and "Platform > blocked" are
+different groups with different keys, so closing one leaves the other open, and
+closing a parent hides its whole subtree in one step. Collapsed keys serialize
+exactly as they did with one level.
+
+In the URL and in saved views the keys travel as one comma-separated value —
+`?groupBy=team,status` — so a link built before nesting existed still works,
+and `onGroupByChange` reports the keys as a list.
+
 ## Example
 
 ```tsx

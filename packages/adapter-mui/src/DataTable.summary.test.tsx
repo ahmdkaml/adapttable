@@ -163,6 +163,22 @@ describe("header groups (desktop)", () => {
     expect(groupCells[4]).toBeEmptyDOMElement();
   });
 
+  it("collapses a group to its summary column when armed", () => {
+    const { container } = renderHarness({
+      columns: GROUPED,
+      override: { collapsibleColumnGroups: true },
+    });
+    const toggle = container.querySelector(
+      '[data-adapttable-part="column-group-toggle"]'
+    );
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggle!);
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
+    expect(
+      screen.getByRole("columnheader", { name: "City" })
+    ).toBeInTheDocument();
+  });
+
   it("renders a single header row when no column declares a group", () => {
     const { container } = renderHarness();
     expect(container.querySelectorAll("thead tr")).toHaveLength(1);

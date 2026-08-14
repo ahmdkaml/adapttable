@@ -21,12 +21,24 @@ export {
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
 export {
+  ColumnGroupToggle,
+  type ColumnGroupToggleProps,
+} from "./columns/ColumnGroupToggle";
+export {
+  type ColumnMenuAction,
+  type ColumnMenuActionContext,
+  columnMenuActions,
   type ColumnMenuChromeProps,
   type ColumnMenuLabels,
   type ColumnMenuRow,
+  filterColumnMenuRows,
+  hideAllColumns,
   nextPinSide,
   pinActionLabel,
   type PinnedSide,
+  resetColumnLayout,
+  showAllColumns,
+  unpinAllColumns,
 } from "./columns/columnMenuModel";
 export {
   COLUMN_DND_MIME,
@@ -37,8 +49,23 @@ export {
   type ColumnRowDragProps,
 } from "./columns/columnReorder";
 export { type ColumnResizeHandleProps } from "./columns/columnResize";
+export {
+  columnFlexShares,
+  columnSizeStyle,
+  type ColumnSizingOptions,
+  fittedTableStyle,
+} from "./columns/columnSizing";
 export { pinnedColumnWidth } from "./columns/columnWidths";
-export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
+export {
+  applyCollapsedColumnGroups,
+  COLUMN_GROUP_ID_SEP,
+  columnGroupId,
+  columnGroupPath,
+  type HeaderGroupCell,
+  headerGroupRow,
+  headerGroupRows,
+  toggleCollapsedColumnGroup,
+} from "./columns/headerGroups";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
 export {
   type PinLeads,
@@ -47,6 +74,13 @@ export {
 } from "./columns/useColumnLayout";
 export { DEFAULT_CARD_SIZE_PX } from "./constants";
 export {
+  cellHighlightStyle,
+  groupIndentStyle,
+  type GroupRowKind,
+  groupRowParts,
+  isCurrentMatchCell,
+  isMatchedCell,
+  isSelectedCell,
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
@@ -58,7 +92,32 @@ export {
 export {
   focusEditorOnMount,
   rowEditingSignature,
+  rowIsDirty,
 } from "./editing/editableCellController";
+export {
+  commitBooleanDraft,
+  editorBusyProps,
+  editorValidationProps,
+  multiDraftFromSelect,
+} from "./editing/EditableCellGate";
+export {
+  NativeBooleanEditor,
+  type NativeEditorProps,
+  NativeMultiSelectEditor,
+} from "./editing/nativeEditors";
+export {
+  BatchEditBar,
+  type BatchEditBarProps,
+  BatchEditCell,
+  type BatchEditCellProps,
+  RowEditActions,
+  type RowEditActionsProps,
+  RowEditCell,
+  type RowEditCellProps,
+  type RowEditControls,
+  rowEditControls,
+  type RowEditControlsOptions,
+} from "./editing/RowEditGate";
 export {
   ExportAnnouncer,
   type ExportAnnouncerProps,
@@ -69,10 +128,21 @@ export {
   type ExportStatus,
   useExportHandler,
 } from "./export/useExportHandler";
+export { FindBar, type FindBarProps } from "./find/FindBar";
+export { FillHandle, type FillHandleProps } from "./focus/FillHandle";
 export {
   GridFocusAnnouncer,
   type GridFocusAnnouncerProps,
 } from "./focus/GridFocusAnnouncer";
+export {
+  SelectionStatsBar,
+  type SelectionStatsBarProps,
+} from "./focus/SelectionStatsBar";
+export {
+  GroupMoreButton,
+  type GroupMoreButtonProps,
+} from "./grouping/GroupMoreButton";
+export { GroupToggleSpacer } from "./grouping/GroupToggleSpacer";
 export {
   type MountStaggerOptions,
   useMountStagger,
@@ -84,7 +154,45 @@ export {
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
+export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
+export {
+  EXTRA_ROW_PARTS,
+  type ExtraEntry,
+  type ExtraRow,
+  insertExtraRows,
+  isExtraEntry,
+} from "./rows/extraRows";
+export {
+  orderedCardEntries,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowCellStyle,
+  pinnedRowStickyStyle,
+  useOffsetHeight,
+} from "./rows/pinnedRowChrome";
 export { type RowClickProps, rowClickProps } from "./rows/rowClickProps";
+export { rowPinSignature } from "./rows/rowPinning";
+export {
+  REORDER_COLUMN_WIDTH,
+  ROW_DND_MIME,
+  rowReorderDropStyle,
+  rowReorderSignature,
+  type RowReorderState,
+} from "./rows/rowReorder";
+export {
+  RowReorderAnnouncer,
+  RowReorderButtons,
+  type RowReorderButtonsProps,
+  RowReorderHandle,
+  type RowReorderHandleProps,
+} from "./rows/RowReorderHandle";
+export {
+  resolveRowHeight,
+  resolveRowStyle,
+  type RowHeight,
+  type RowStyle,
+  rowStyleSignature,
+} from "./rows/rowStyle";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";
 export {
@@ -93,6 +201,13 @@ export {
   tableRenderModel,
   useSummaryCells,
 } from "./tableRenderProps";
+export {
+  nestedTableDefaults,
+  nestedTableDetail,
+  type NestedTableParent,
+} from "./tree/nestedTable";
+export { TreeCell, type TreeCellProps } from "./tree/TreeCell";
+export { TreeToggle, type TreeToggleProps } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
 export { type SearchInputState } from "./useDataTable/useSearchInput";
 export {
@@ -105,9 +220,21 @@ export {
   type TableBodyRegion,
   type ToolbarChromeProps,
 } from "./useTableChrome";
+export { ColumnSpacer, type ColumnSpacerProps } from "./virtual/ColumnSpacer";
+export {
+  type ResizableVirtualizer,
+  type RowPairMeasurer,
+  useRowPairMeasurer,
+} from "./virtual/measureRowPair";
+export {
+  type ColumnWindow,
+  useColumnWindow,
+  type UseColumnWindowOptions,
+} from "./virtual/useColumnWindow";
 export {
   type KeyedVirtualization,
   resolveVirtualRows,
+  rowSourceIndex,
   useKeyedVirtualization,
   type VirtualTableRow,
 } from "./virtual/useTableVirtualization";

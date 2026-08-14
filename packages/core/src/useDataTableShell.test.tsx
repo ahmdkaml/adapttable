@@ -102,6 +102,57 @@ describe("useDataTableShell", () => {
     expect(result.current.tableProps.setWidth).toBeTypeOf("function");
   });
 
+  it("writes uncontrolled pins to the URL and still notifies the host", () => {
+    const adapter = createMemoryAdapter("");
+    const onPinnedRowIdsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlAdapter: adapter,
+          onPinnedRowIdsChange,
+        },
+        noForm
+      )
+    );
+    act(() => {
+      result.current.tableProps.rowPinning?.pin("a", "top");
+    });
+    expect(onPinnedRowIdsChange).toHaveBeenCalledExactlyOnceWith({
+      top: ["a"],
+      bottom: [],
+    });
+    expect(adapter.getSearch()).toContain("rowPin=");
+  });
+
+  it("leaves the URL alone when the host owns the pin lists", () => {
+    const adapter = createMemoryAdapter("");
+    const onPinnedRowIdsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlAdapter: adapter,
+          pinnedRowIds: { top: ["b"], bottom: [] },
+          onPinnedRowIdsChange,
+        },
+        noForm
+      )
+    );
+    act(() => {
+      result.current.tableProps.rowPinning?.pin("a", "bottom");
+    });
+    expect(onPinnedRowIdsChange).toHaveBeenCalledExactlyOnceWith({
+      top: ["b"],
+      bottom: ["a"],
+    });
+    expect(adapter.getSearch()).toBe("");
+  });
+
   it("forwards a virtual window into tableProps", () => {
     vi.mocked(useChromeBodyData).mockReturnValue({
       virtualization: {
@@ -114,6 +165,8 @@ describe("useDataTableShell", () => {
       loadMoreRef: { current: null },
       canLoadMore: true,
       virtualScrollRef: () => undefined,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
     });
     const { result } = renderHook(() =>
       useDataTableShell({ data: ROWS, columns, rowKey, urlSync: false }, noForm)
@@ -289,11 +342,63 @@ describe("useDataTableShell", () => {
       loadMoreRef: { current: null },
       canLoadMore: false,
       virtualScrollRef: () => undefined,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
     });
     const { result } = renderHook(() =>
       useDataTableShell({ data: ROWS, columns, rowKey, urlSync: false }, noForm)
     );
     expect(result.current.canLoadMore).toBe(false);
     expect(result.current.tableProps.rowEntries).toBeUndefined();
+  });
+});
+
+describe("useDataTableShell — the scroll box and column sizing", () => {
+  it("names the scroll box so both windows can find it", () => {
+    // Every kit calls its scroll container something different; core names it,
+    // and the row and column windows both read that one element.
+    const { result } = renderHook(() =>
+      useDataTableShell({ data: ROWS, columns, rowKey }, noForm)
+    );
+    const box = document.createElement("div");
+    result.current.tableProps.virtualScrollRef(box);
+    expect(box.getAttribute("data-adapttable-part")).toBe("scroll-box");
+  });
+
+  it("sizes every rendered column to its content", () => {
+    const onColumnLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        { data: ROWS, columns, rowKey, onColumnLayoutChange },
+        noForm
+      )
+    );
+    // A root with one measurable cell per column is all the action needs.
+    const root = document.createElement("div");
+    const cell = document.createElement("div");
+    cell.setAttribute("data-column-key", "name");
+    Object.defineProperty(cell, "scrollWidth", { value: 200 });
+    root.append(cell);
+    document.body.append(root);
+    result.current.rootRef.current = root;
+
+    result.current.autoSizeColumns();
+    expect(onColumnLayoutChange).toHaveBeenCalledOnce();
+    expect(onColumnLayoutChange.mock.calls[0]?.[0].widths).toMatchObject({
+      name: 224,
+    });
+    root.remove();
+  });
+
+  it("sizes nothing when there is nothing rendered to measure", () => {
+    const onColumnLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        { data: ROWS, columns, rowKey, onColumnLayoutChange },
+        noForm
+      )
+    );
+    result.current.autoSizeColumns();
+    expect(onColumnLayoutChange).not.toHaveBeenCalled();
   });
 });

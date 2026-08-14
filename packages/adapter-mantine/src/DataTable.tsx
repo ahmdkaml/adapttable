@@ -1,10 +1,15 @@
 import {
+  FilterTreeBuilder,
   resolveLabels,
   type TableLabels,
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
+  BatchEditBar,
+  FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
@@ -100,12 +105,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core. Mantine adds only what its
   // kit needs: a measured sticky toolbar, per-body stagger refs, and density.
-  const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      labels={resolveLabels(props.labels)}
-    />
+  const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        labels={resolveLabels(props.labels)}
+        registry={registry}
+      />
+      <FilterTreeBuilder
+        defs={defs}
+        source={source}
+        labels={props.labels}
+        registry={registry}
+      />
+    </div>
   ));
   const {
     chrome,
@@ -118,6 +132,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     toolbarProps,
   } = shell;
   // Everything rendered below reads the chrome's VIEW facade — identical to
@@ -201,6 +216,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={classNames?.root}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
+      <FindBar find={shell.find} labels={table.labels} />
       <Stack gap="xs">
         <Box
           ref={toolbarRef}
@@ -232,10 +253,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               columnMenu={
                 <ColumnMenuSlot
                   enabled={enableColumnMenu && !isMobile}
+                  onAutoSize={shell.autoSizeColumns}
+                  onAutoSizeColumn={shell.autoSizeColumn}
+                  onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+                  onFilterColumn={() => setDrawerOpened(true)}
+                  sortBy={viewSource.sortBy}
+                  sortDir={viewSource.sortDir}
                   allColumns={chrome.allColumns}
                   layout={chrome.columnLayout}
                   labels={table.labels}
                   hasRowActions={hasRowActions}
+                  hasRowReorder={hasRowReorder}
                   dir={dir}
                 />
               }
@@ -246,6 +274,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               label={table.labels.filters}
               clearAllLabel={table.labels.clearAll}
             />
+            {chrome.editing?.batch && (
+              <BatchEditBar
+                batch={chrome.editing.batch}
+                labels={table.labels}
+              />
+            )}
+
             {table.selection && bulkActions && (
               <BulkActionBar
                 selection={table.selection}
@@ -295,6 +330,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           </Group>
         )}
 
+        {props.tableFooter ? (
+          <Box data-adapttable-part="table-footer">{props.tableFooter}</Box>
+        ) : null}
+
         {chrome.showFooter && (
           <Box className={classNames?.footer}>
             <PaginationFooter
@@ -324,6 +363,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={dir}
         />
       )}
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={table.labels}
+        locale={props.locale}
+      />
     </Paper>
   );
 }

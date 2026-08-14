@@ -3,8 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorBusyProps,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
+} from "@adapttable/core/adapter";
 import { MenuItem, TextField } from "@mui/material";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -27,10 +35,26 @@ export function MuiCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <TextField
-        inputRef={focusEditorOnMount}
+        inputRef={ctrl.focusRef}
         select
         size="small"
         fullWidth
@@ -38,10 +62,13 @@ export function MuiCellEditor({
         onChange={(event) => ctrl.setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
+        error={ctrl.conflict === true ? false : ctrl.error !== undefined}
+        helperText={ctrl.conflict === true ? undefined : ctrl.error}
         slotProps={{
           htmlInput: {
             "aria-label": label,
             "data-adapttable-part": "edit-cell-editor",
+            ...editorBusyProps(ctrl),
           },
         }}
       >
@@ -56,18 +83,21 @@ export function MuiCellEditor({
 
   return (
     <TextField
-      inputRef={focusEditorOnMount}
+      inputRef={ctrl.focusRef}
       size="small"
       fullWidth
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.target.value)}
       onKeyDown={onKeyDown}
       onBlur={ctrl.commitOnBlur}
+      error={ctrl.conflict === true ? false : ctrl.error !== undefined}
+      helperText={ctrl.conflict === true ? undefined : ctrl.error}
       slotProps={{
         htmlInput: {
           "aria-label": label,
           "data-adapttable-part": "edit-cell-editor",
+          ...editorBusyProps(ctrl),
         },
       }}
     />
@@ -85,6 +115,8 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
 }): ReactElement {
   const display: ReactNode = props.column.Cell ? (
     <props.column.Cell row={props.row} rowIndex={props.rowIndex} />
@@ -94,6 +126,7 @@ export function EditableDataCell<TRow>(props: {
 
   return (
     <EditableCellGate
+      kitRendersError
       editing={props.editing}
       row={props.row}
       column={props.column}
@@ -102,6 +135,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={display}
       renderEditor={(ctrl) => (
         <MuiCellEditor ctrl={ctrl} label={props.editLabel} />

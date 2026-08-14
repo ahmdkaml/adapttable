@@ -2,6 +2,10 @@ import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ColumnDef } from "../types";
 import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
+import {
+  applyCollapsedColumnGroups,
+  toggleCollapsedColumnGroup,
+} from "./headerGroups";
 
 /** Edge a column can be pinned to — logical, so it follows the writing
  *  direction (`"start"` is the right edge under `dir="rtl"`). */
@@ -20,6 +24,8 @@ export interface ColumnLayoutState {
   pinned: Readonly<Record<string, PinSide>>;
   /** Per-column pixel widths. */
   widths: Readonly<Record<string, number>>;
+  /** Collapsed column-group ids. Omit or empty — every group is open. */
+  collapsedGroups?: readonly string[];
 }
 
 /** An empty layout — declared order, nothing hidden/pinned/resized. */
@@ -40,6 +46,11 @@ export interface UseColumnLayoutOptions<TRow> {
   onLayoutChange?: (next: ColumnLayoutState) => void;
   /** Initial layout for the uncontrolled mode. */
   defaultColumnLayout?: Partial<ColumnLayoutState>;
+  /**
+   * When true, `visibleColumns` hides leaves under a collapsed group
+   * except the summary column. Omit and collapse is inert.
+   */
+  collapsibleColumnGroups?: boolean;
 }
 
 /** Result of {@link useColumnLayout}. */
@@ -64,6 +75,8 @@ export interface UseColumnLayoutResult<TRow> {
   pinOffset: (key: string) => PinOffset | undefined;
   /** Restore the empty layout (all visible, declared order). */
   reset: () => void;
+  /** Collapse or expand a column group by id. No-op unless collapse is armed. */
+  toggleColumnGroup: (id: string) => void;
 }
 
 /** A pinned column's side plus its sticky inset in px. */
@@ -94,8 +107,12 @@ export interface PinnedCellStyle {
  */
 export const PIN_Z = {
   body: 1,
-  header: 2,
-  headerPinned: 3,
+  /** Sticky pinned rows — above scrolled body, below the header. */
+  rowPinned: 2,
+  /** A pinned column cell inside a pinned row. */
+  rowPinnedColumn: 3,
+  header: 4,
+  headerPinned: 5,
 } as const;
 
 /**
@@ -182,6 +199,7 @@ export function useColumnLayout<TRow>({
   layout,
   onLayoutChange,
   defaultColumnLayout,
+  collapsibleColumnGroups = false,
 }: UseColumnLayoutOptions<TRow>): UseColumnLayoutResult<TRow> {
   const [internal, setInternal] = useState<ColumnLayoutState>(() => ({
     ...EMPTY_COLUMN_LAYOUT,
@@ -249,12 +267,36 @@ export function useColumnLayout<TRow>({
     [commit]
   );
 
-  const visibleColumns = useMemo(
-    () =>
-      applyColumnOrder(columns, state.order).filter(
-        (c) => !state.hidden.includes(c.key)
-      ),
-    [columns, state.order, state.hidden]
+  const visibleColumns = useMemo(() => {
+    const ordered = applyColumnOrder(columns, state.order).filter(
+      (c) => !state.hidden.includes(c.key)
+    );
+    if (!collapsibleColumnGroups) return ordered;
+    return [
+      ...applyCollapsedColumnGroups(ordered, state.collapsedGroups ?? []),
+    ];
+  }, [
+    columns,
+    state.order,
+    state.hidden,
+    state.collapsedGroups,
+    collapsibleColumnGroups,
+  ]);
+
+  const toggleColumnGroup = useCallback(
+    (id: string) => {
+      if (!collapsibleColumnGroups) return;
+      const current = stateRef.current;
+      const nextIds = toggleCollapsedColumnGroup(
+        current.collapsedGroups ?? [],
+        id
+      );
+      commit({
+        ...current,
+        collapsedGroups: nextIds.length > 0 ? nextIds : undefined,
+      });
+    },
+    [collapsibleColumnGroups, commit]
   );
 
   const move = useCallback(
@@ -321,5 +363,6 @@ export function useColumnLayout<TRow>({
     setWidth,
     pinOffset,
     reset,
+    toggleColumnGroup,
   };
 }

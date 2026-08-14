@@ -2,13 +2,29 @@ import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { BatchRowEdit } from "./editing/batchEditing";
+import type {
+  EditConflictHandler,
+  EditConflictPolicy,
+} from "./editing/editConflict";
+import type { EditEventHandler } from "./editing/editingEvents";
+import type { RowValidator } from "./editing/validation";
 import type { ExportCsvOptions } from "./export/tableCsv";
 import type { FilterDef } from "./filters/filterDefs";
+import type { FilterTypeSpec } from "./filters/filterRegistry";
 import type {
   ActiveFilterChip,
   ChipLabelResolver,
 } from "./filters/useActiveFilterChips";
+import type { CellEdit } from "./focus/cellEdits";
+import type { CellRange } from "./focus/cellRange";
+import type { GroupNode, GroupSort } from "./grouping/groupRows";
+import type { GetCellSpan } from "./rows/cellSpan";
+import type { ExtraRow } from "./rows/extraRows";
+import type { RowPinState } from "./rows/rowPinning";
+import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
+import type { NestedTableFor } from "./tree/nestedTable";
 import type {
   BulkAction,
   ColumnDef,
@@ -100,13 +116,87 @@ export interface BaseDataTableProps<TRow> {
    * `editable`) activates editing — omit it and the table never opens an
    * editor, even if columns declare `editable`. The table never mutates
    * rows; apply `nextValue` in your own state / mutation.
+   *
+   * Return a promise and the cell shows it is saving until that promise
+   * settles, and shows why if it rejects — with an undo when
+   * {@link BaseDataTableProps.onEditRollback} says how to put the row back.
    */
-  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => void;
+  onCellEdit?: (row: TRow, key: string, nextValue: unknown) => unknown;
+  /**
+   * Cut — Ctrl/Cmd+X, after the clipboard has accepted the copy. Requires
+   * `cellNavigation`.
+   *
+   * The table clears nothing itself: what a cut removes is your decision, and
+   * emptying cells before the clipboard took them would lose the data outright.
+   */
+  onCellCut?: (range: CellRange) => void;
+  /**
+   * Paste — Ctrl/Cmd+V, with the clipboard already parsed into ordinary cell
+   * edits. Requires `cellNavigation`.
+   *
+   * Omit it and every edit goes through `onCellEdit`, so a table that can be
+   * edited can be pasted into with nothing extra wired. Provide it to take the
+   * batch whole — one server round trip, one undo entry.
+   *
+   * Cells landing outside the loaded rows or the rendered columns are dropped
+   * rather than invented, and a column that is not `editable` is skipped.
+   */
+  onCellPaste?: (edits: CellEdit<TRow>[]) => void;
+  /**
+   * Fill — the handle dragged from the selection's corner, or Ctrl/Cmd+D.
+   * Requires `cellNavigation`.
+   *
+   * Same contract as `onCellPaste`: omit it and every edit goes through
+   * `onCellEdit`, so the handle appears as soon as the table can be edited.
+   * Provide it to take the batch whole.
+   */
+  onCellFill?: (edits: CellEdit<TRow>[]) => void;
+  /**
+   * Show what the selected cells add up to — count, sum, average, min and max
+   * — in a strip below the table. Requires `cellNavigation`.
+   *
+   * The count covers every selected cell; the arithmetic covers the numeric
+   * ones, so a rectangle spanning a name and a budget still has a sum. A
+   * single cell shows nothing: it has no total worth reading.
+   */
+  selectionStats?: boolean;
+  /**
+   * Remember edits so they can be undone — Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z or
+   * Ctrl+Y with `cellNavigation`, and `table.editHistory` for your own buttons.
+   * Pass `{ depth }` to change how many gestures are kept (50 by default).
+   *
+   * An undo does not rewrite your data: it COMMITS the previous value back
+   * through `onCellEdit`, so whatever you wrapped around editing runs on the
+   * way back exactly as it ran on the way out. One gesture is one entry, so a
+   * paste of two hundred cells undoes in a single press.
+   */
+  editHistory?: boolean | { depth?: number };
+  /**
+   * Show a find bar over the table — Ctrl/Cmd+F with `cellNavigation`, or
+   * `table.find.setOpen(true)` from a control of your own.
+   *
+   * Find is not search: it leaves every row where it is and walks the cells
+   * whose text contains the query, marking them for the kit to paint. It reads
+   * what a cell SHOWS, and searches the loaded rows only — a hit it cannot take
+   * you to would be a lie.
+   */
+  findInTable?: boolean;
   /**
    * Conditional per-row class: `(row, index) => "overdue"` — appended to the
    * adapter's own row classes on desktop rows and mobile cards alike.
    */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /**
+   * Conditional per-row inline style: `(row, index) => ({ background })`.
+   * Applied on desktop rows and mobile cards alike. Omit and nothing is set.
+   */
+  rowStyle?: RowStyle<TRow>;
+  /**
+   * Row height in px — a constant, or `(row, index) => number`. Sets the
+   * row's height and the virtualizer's `estimateSize`. `measureElement`
+   * still reports what the browser laid out.
+   */
+  rowHeight?: RowHeight<TRow>;
   /**
    * Row expansion: render a detail panel under a row. Its presence enables
    * the leading expand chevron on desktop rows and the detail section on
@@ -114,28 +204,321 @@ export interface BaseDataTableProps<TRow> {
    */
   renderRowDetail?: (row: TRow) => ReactNode;
   /**
+   * A real table under a row instead of a blank panel. Name it after the row
+   * and mount the kit's own `<DataTable>` with the defaults handed in:
+   *
+   * ```tsx
+   * nestedTable={(row) => ({
+   *   label: `Orders for ${row.name}`,
+   *   table: (defaults) => (
+   *     <DataTable
+   *       {...defaults}
+   *       data={row.orders}
+   *       columns={orderColumns}
+   *       rowKey={(order) => order.id}
+   *     />
+   *   ),
+   * })}
+   * ```
+   *
+   * It is the same component the page uses, so sorting, selection, keyboard
+   * navigation and accessibility come with it. The defaults are the ones a
+   * table inside a row cannot do without — no URL state to fight its parent's
+   * over, no second search box, the parent's density and labels.
+   *
+   * Return `undefined` for a row that has no nested table; with
+   * `renderRowDetail` also set, those rows fall back to it.
+   */
+  nestedTable?: NestedTableFor<TRow>;
+  /**
+   * Gate a commit on a rule no single cell can answer — an end date before its
+   * start, a total that must match its parts. Receives the row the edit WOULD
+   * produce, not the stored one; return a message for a row-level problem, a map
+   * of column key → message to mark individual cells, or nothing to allow it.
+   * May be async.
+   */
+  validateRow?: RowValidator<TRow>;
+  /**
+   * Put a row back the way it was after a rejected save.
+   *
+   * A table that applies an edit optimistically has already shown the new
+   * value, so a rejection has to restore the old one — and only the host can
+   * write to its own rows. Without this the cell is marked failed and the value
+   * stays put, which is right for a table that refetches instead.
+   */
+  onEditRollback?: (previous: TRow, columnKey: string) => void;
+  /** Turn a rejected save into the sentence its cell shows. */
+  formatEditError?: (error: unknown) => string;
+  /**
+   * Mark cells whose change nobody has confirmed yet — `data-dirty` on the cell
+   * and on its row, so a reader can see what is still at risk. A cell clears
+   * when its save resolves, when a rollback undoes it, or when the table is told
+   * the value settled (`table.editing.dirty.confirm`).
+   *
+   * Off by default: a mark is a claim about what the server has agreed to, and a
+   * table whose host never says would be guessing.
+   */
+  dirtyIndicators?: boolean;
+  /**
+   * Edit a whole row at once instead of a cell at a time: every field opens
+   * together, holds its draft, and reaches the host as ONE patch when the reader
+   * saves. Requires {@link BaseDataTableProps.onRowEdit}.
+   *
+   * The right unit for a row whose fields constrain each other — a start and an
+   * end date cannot be edited one at a time without passing through a state that
+   * is invalid on the way.
+   */
+  rowEditing?: boolean;
+  /**
+   * Take everything a row edit changed, as one patch of parsed values keyed by
+   * column. The table never writes to a row.
+   *
+   * Return a promise and the row's controls show it is saving, exactly as a cell
+   * does.
+   */
+  onRowEdit?: (row: TRow, patch: Readonly<Record<string, unknown>>) => unknown;
+  /**
+   * Change many rows and save them together: every editable cell is a field,
+   * nothing is sent until the reader saves, and one Cancel puts it all back.
+   * The shape of a review pass — walk a list correcting values, write once.
+   * Requires {@link BaseDataTableProps.onBatchEdit}.
+   */
+  batchEditing?: boolean;
+  /**
+   * Take every pending row at once, as a list of `{ row, rowId, patch }`. Called
+   * once per save, which is what lets a host make the whole batch one request.
+   */
+  onBatchEdit?: (edits: readonly BatchRowEdit<TRow>[]) => unknown;
+  /**
+   * Observe an editor opening. Fires for cell, row and batch units. The
+   * handler cannot change the outcome — throwing is swallowed.
+   */
+  onEditStart?: EditEventHandler<TRow>;
+  /**
+   * Observe a cancel (Escape, Cancel, throwing a batch away). Not fired when
+   * a successful commit merely closes the editor.
+   */
+  onEditCancel?: EditEventHandler<TRow>;
+  /**
+   * Observe a value reaching the host. Fires after parse and validation, at
+   * the same moment as `onCellEdit` / `onRowEdit` / `onBatchEdit`.
+   */
+  onEditCommit?: EditEventHandler<TRow>;
+  /**
+   * Observe a validator refusing a value. The editor stays open with the
+   * message; this is how analytics hears about it.
+   */
+  onValidationFail?: EditEventHandler<TRow>;
+  /**
+   * Observe a save promise rejecting. The cell is already marked failed;
+   * this is the side-effect channel.
+   */
+  onEditError?: EditEventHandler<TRow>;
+  /**
+   * A row changed underneath an open editor. Return `"keep"` or `"take"` to
+   * resolve it; return nothing and {@link BaseDataTableProps.editConflictPolicy}
+   * decides. The default policy is `"ask"`.
+   */
+  onEditConflict?: EditConflictHandler<TRow>;
+  /**
+   * What to do when a live update disagrees with an open editor and the host
+   * did not choose. `"ask"` (default) surfaces Keep mine / Take theirs.
+   */
+  editConflictPolicy?: EditConflictPolicy;
+  /**
+   * Host version of a row. When set, any version change under an open editor
+   * is a conflict, not only a change to the edited column.
+   */
+  rowVersion?: (row: TRow) => string | number;
+  /**
+   * Add a row — an Add control appears in the toolbar as soon as this is set.
+   * The host makes the row and stores it; it reaches the table through the
+   * source like every other row, so it is editable, filterable and counted
+   * from the moment it lands.
+   */
+  onAddRow?: () => unknown;
+  /**
+   * Copy a row — a Duplicate action appears on every row. What a copy means
+   * (which fields carry over, which reset, what id it gets) is the host's.
+   */
+  onDuplicateRow?: (row: TRow) => unknown;
+  /** Remove a row. A Delete row action appears as soon as this is set. */
+  onDeleteRow?: (row: TRow) => unknown;
+  /**
+   * Reorder a row — a drag handle appears in a reserved leading column as
+   * soon as this is set. `from` / `to` are dataset-relative (page offset
+   * included), and `row` is the one that moved. The table never mutates the
+   * array; apply the move with `applyRowReorder` or your own write.
+   *
+   * Keyboard: Space lifts, arrows move, Space drops, Escape cancels.
+   * Grouping or a tree refuses this with a `devWarn` — nested order is not
+   * a flat splice. Mobile cards get up/down buttons rather than a grip.
+   */
+  onRowReorder?: (from: number, to: number, row: TRow) => void;
+  /**
+   * Controlled row pins. `{ top, bottom }` lists of row ids that render
+   * outside the virtual window — sticky above and below the scroll box —
+   * so they are not drawn twice. Omit for the internal (uncontrolled)
+   * lists. Grouping or a tree refuses this with a `devWarn`.
+   *
+   * Mobile cards get the same pin actions but no sticky chrome: a card
+   * list is not a grid.
+   */
+  pinnedRowIds?: RowPinState;
+  /**
+   * Pin-list change channel. Uncontrolled: an observer. Controlled: apply
+   * the next lists to accept. Setting this (or {@link BaseDataTableProps.pinnedRowIds})
+   * is what arms the feature — omit both and nothing renders.
+   */
+  onPinnedRowIdsChange?: (next: RowPinState) => void;
+  /**
+   * Per-cell row/column span. Return `{ colSpan, rowSpan }` for the origin;
+   * covered cells are omitted from the row's cell list. Column-level
+   * {@link ColumnDef.colSpan} / {@link ColumnDef.rowSpan} are the same
+   * thing when every row of a column shares a rule. Omit both and every
+   * kit still maps one cell per column.
+   *
+   * Mobile cards ignore geometry — a card is a list of fields. Spans are
+   * derived from data, so nothing is written to the URL.
+   */
+  getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * Host-injected separator and full-width rows, spliced into the body
+   * by `beforeRowId`. Omit the list and nothing is inserted. Extras are
+   * content, not table state — nothing is written to the URL. Mobile
+   * cards keep the same slots.
+   */
+  extraRows?: readonly ExtraRow[];
+  /**
+   * Delete without a confirmation dialog. Off by default — a delete is
+   * destructive and the table cannot undo it.
+   */
+  confirmDeleteRow?: boolean;
+  /**
+   * How an edit is applied to a row for {@link BaseDataTableProps.validateRow}
+   * to judge. Defaults to a shallow spread keyed by the column key, which is
+   * right when a column key IS the field; pass this when a column reads a
+   * nested path.
+   */
+  applyEdit?: (row: TRow, columnKey: string, value: unknown) => TRow;
+  /**
    * Footer summary: map the CURRENT page's rows to per-column summary cells
    * (`{ budget: <b>{total}</b> }`). Rendered as a table footer row aligned
    * under its columns; keys absent from the result render empty cells.
    */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /**
-   * Single-level row grouping by column key. Its presence (or
-   * `source.groupBy`) arms grouping chrome — omit it and the table never
-   * inserts group header rows (package DNA: opt-in). Frontend tier only;
-   * server-paginated sources get a devWarn and grouping is ignored.
+   * Free slot under the table (above the pager). Not the column-aligned
+   * summary row — that is {@link BaseDataTableProps.summaryRow}.
    */
-  groupBy?: string | null;
+  tableFooter?: ReactNode;
+  /**
+   * Row grouping by column key — one key, or an ordered list for nested
+   * groups: `groupBy={["team", "status"]}` puts each status inside its team,
+   * and every header carries the count and aggregates of its whole subtree.
+   *
+   * Its presence (or `source.groupBy`) arms grouping chrome — omit it and the
+   * table never inserts group header rows (package DNA: opt-in). Frontend tier
+   * only; server-paginated sources get a devWarn and grouping is ignored.
+   */
+  /**
+   * Hierarchical rows: a row's children, for nested data.
+   *
+   * A tree is declared by the DATA — a folder contains files, a task has
+   * subtasks — which is why it is not grouping: grouping answers a question
+   * the reader asked and re-answers it when they change the question.
+   *
+   * Its presence arms the tree; omit it (and `getParentId`) and the table
+   * renders a flat list exactly as before.
+   */
+  getChildren?: (row: TRow) => readonly TRow[] | undefined;
+  /** Hierarchical rows the other way round: a flat table with a parent column. */
+  getParentId?: (row: TRow) => string | undefined;
+  /**
+   * Whether a row has children that have not been fetched yet — a server tree
+   * knows there is more before the browser does.
+   */
+  hasChildren?: (row: TRow) => boolean;
+  /**
+   * Which column carries the chevron and the indent. Defaults to the first
+   * rendered column, which is where a reader looks for a tree.
+   */
+  treeColumn?: string;
+  /**
+   * Fetch a node's children when the reader opens it — a tree of any size
+   * arrives one branch at a time. Pair it with `hasChildren` so a node the
+   * browser has not fetched still shows a chevron. Resolve once the children
+   * are in the data the table reads; the table re-walks the hierarchy itself
+   * and needs nothing back. Its node carries a loading flag until then, and a
+   * rejection leaves the node closed and clickable so a retry is the same
+   * gesture as the first attempt.
+   */
+  onLoadChildren?: (row: TRow) => void | Promise<void>;
+  /** Controlled tree expansion: the ids currently open. */
+  expandedIds?: readonly string[];
+  /** Fired after the table opens or closes a node. */
+  onExpandedIdsChange?: (ids: string[]) => void;
+  groupBy?: string | readonly string[] | null;
   /**
    * Notification fired AFTER the grouping change is applied — the table
    * always performs the change itself. Take full control (e.g. a fully
    * controlled `groupBy`) through `source.setGroupBy` instead.
+   *
+   * Receives the keys as a list, empty when grouping was cleared.
    */
-  onGroupByChange?: (groupBy: string | null) => void;
+  onGroupByChange?: (groupBy: readonly string[]) => void;
   /**
    * Per-group aggregate cells — **same signature as {@link summaryRow}**.
    * Called with each group's leaf rows. Omit for headers without subtotals.
    */
+  /**
+   * Close every group with a footer row carrying its aggregates — the totals
+   * read at the bottom of the group as well as the top, which is where a long
+   * group's reader is by the time they need them.
+   *
+   * Needs `groupAggregates`: a footer with nothing to total is a blank row.
+   * Nested groups each get their own, innermost first. The table's own
+   * grand total is `summaryRow`, which already totals the whole set.
+   */
+  groupFooters?: boolean;
+  /**
+   * Order groups within their parent: `"label"`, `"label-desc"`, `"count"`,
+   * `"count-desc"`, or your own comparator over `{ value, label, level,
+   * groupBy, leafRows }`.
+   *
+   * To sort groups by an aggregate, compare the same rows the aggregate reads
+   * — `(a, b) => total(b.leafRows) - total(a.leafRows)` sorts by total
+   * descending. Without this, groups keep the order the source's own sort
+   * produced.
+   */
+  groupSort?: GroupSort<TRow>;
+  /**
+   * Show at most this many top-level groups at a time, with a row offering the
+   * rest. A table grouped by customer can have ten thousand groups, and
+   * rendering all of them to fill one screen is the mistake virtualization
+   * exists to avoid.
+   */
+  groupPageSize?: number;
+  /**
+   * Show at most this many rows inside each group, with a "load more in this
+   * group" row beneath them.
+   */
+  groupRowPageSize?: number;
+  /**
+   * Called when a reader asks for more rows inside a group — the hook a server
+   * tier needs, since the rest of that group is not in the browser yet. The
+   * table reveals what it already holds either way.
+   */
+  onGroupLoadMore?: (groupKey: string) => void;
+  /**
+   * Keep only the groups this answers true for, at every level — the group
+   * equivalent of a filter, working on aggregates rather than cells:
+   * `(g) => total(g.leafRows) > 10_000`.
+   *
+   * A dropped group takes its leaves with it. Row filters still run first, so
+   * this decides which of the SURVIVING rows' groups are worth showing.
+   */
+  groupFilter?: (group: GroupNode<TRow>) => boolean;
   groupAggregates?: (
     rows: readonly TRow[]
   ) => Partial<Record<string, ReactNode>>;
@@ -170,6 +553,13 @@ export interface BaseDataTableProps<TRow> {
   /** Initial column layout for the uncontrolled mode. */
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
+   * Column-group headers gain a collapse toggle. A collapsed group keeps
+   * its first leaf as the summary column. State lives on
+   * `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
+   * Omit and group headers stay static.
+   */
+  collapsibleColumnGroups?: boolean;
+  /**
    * Fixed-height scroll box (px). Enables sideways scrolling + column pinning;
    * the header and pinned columns pin within this box. Omit for page scroll.
    */
@@ -178,6 +568,30 @@ export interface BaseDataTableProps<TRow> {
   /* ── Virtualization ──────────────────────────────────────────────── */
   /** Virtualize long infinite lists. Defaults to false. */
   virtualize?: boolean;
+  /**
+   * Window the COLUMNS as well as the rows, for tables that are wide rather
+   * than long: a hundred columns render as the two dozen a reader can see,
+   * plus a margin, with the rest held open by two spacer cells.
+   *
+   * Needs a horizontal scroll container, so it applies with `maxHeight` or
+   * pinned columns. Pinned columns are never windowed out — they are on screen
+   * by definition — and the spacers are logical, so a wide RTL table scrolls
+   * the right way.
+   *
+   * Not available in the Ant Design adapter, which renders through antd's own
+   * `<Table>`: that component owns its column rendering, and windowing it from
+   * outside would fight it rather than help.
+   */
+  virtualizeColumns?: boolean;
+  /**
+   * Make the columns share the container's width instead of overflowing it.
+   *
+   * Columns with a `flex` take that share of the space; columns with a `width`
+   * keep it; everything else divides what is left equally. `minWidth` and
+   * `maxWidth` are respected either way, so a column never shrinks below what
+   * it needs to be read.
+   */
+  fitColumns?: boolean;
   /** Desktop row-size estimate in px. */
   estimateRowSize?: number;
   /** Mobile card-size estimate in px. */
@@ -196,6 +610,19 @@ export interface BaseDataTableProps<TRow> {
    * entry with the same key wins.
    */
   filters?: readonly FilterDef<TRow>[] | ReactNode;
+  /**
+   * Extra or replacement filter types merged onto the built-in registry.
+   * A spec whose `type` matches a built-in replaces it. Omit and only
+   * the built-ins are available.
+   */
+  filterTypes?: readonly FilterTypeSpec[];
+  /**
+   * Resolved filter definitions, used to label AND/OR tree chips. The
+   * shell sets this from the declarative `filters` array; hosts that
+   * call `useTableChrome` directly can pass the same defs the builder
+   * receives.
+   */
+  filterDefs?: readonly FilterDef<TRow>[];
   /**
    * How the filter container opens. `"popover"` (default) anchors a light
    * card under the Filters button — no backdrop, closing on Escape and
@@ -216,6 +643,12 @@ export interface BaseDataTableProps<TRow> {
    * full control through `source.clearExtras` instead.
    */
   onClearFilters?: () => void;
+  /**
+   * Render a compact filter row under the header, bound to the same
+   * defs and extra bag as the panel. Desktop only — mobile cards keep
+   * the Filters button. Omit the prop and nothing renders.
+   */
+  headerFilters?: boolean;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
   /** Bulk actions — enabling these turns on row selection. */

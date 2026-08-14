@@ -1,11 +1,15 @@
 import { DataTable } from "@adapttable/base-ui";
+import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 
 import {
   type AvatarCellProps,
+  DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
+  demoOrders,
   demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
@@ -13,6 +17,7 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
+  type Person,
   type StatusCellProps,
   strings,
 } from "../data";
@@ -91,6 +96,22 @@ const BASE_UI_CELLS: DemoCells = {
   ),
 };
 
+/**
+ * The orders under one person, as a nested table — the kit's own `<DataTable>`
+ * inside a row, so the reader gets the same table twice over.
+ */
+const nestedOrders = (row: Person) => ({
+  label: `${row.name} — recent orders`,
+  table: (defaults: NestedTableDefaults) => (
+    <DataTable
+      {...defaults}
+      data={demoOrders(row)}
+      columns={DEMO_ORDER_COLUMNS}
+      rowKey={(order) => order.id}
+    />
+  ),
+});
+
 export function BaseUiDemo({
   mode,
   locale,
@@ -100,6 +121,16 @@ export function BaseUiDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
+  nested,
+  rowMode,
+  batch,
+  rowMutations,
+  rowReorder,
+  rowPinning,
+  cellSpan,
+  extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -112,6 +143,16 @@ export function BaseUiDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
+  nested?: boolean;
+  rowMode?: boolean;
+  batch?: boolean;
+  rowMutations?: boolean;
+  rowReorder?: boolean;
+  rowPinning?: boolean;
+  cellSpan?: boolean;
+  extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -123,13 +164,26 @@ export function BaseUiDemo({
       urlKey={urlKey}
       defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
       grouping={grouping}
+      tree={tree}
+      rowMode={rowMode}
+      batch={batch}
+      rowMutations={rowMutations}
+      rowReorder={rowReorder}
+      rowPinning={rowPinning}
+      cellSpan={cellSpan}
+      extraRows={extraRows}
+      rowStyle={rowStyle}
       editing={editing}
       render={(source, columns) => (
         <DataTable
           source={source}
           columns={makeColumns(locale, BASE_UI_CELLS)}
           rowKey={(r) => r.id}
-          cellNavigation={cellNavigation}
+          nestedTable={nested ? nestedOrders : undefined}
+          cellNavigation={cellNavigation ?? editing}
+          selectionStats={editing}
+          editHistory={editing}
+          findInTable={editing}
           {...columns}
           density={density}
           filtersMode={filtersUi}
@@ -146,7 +200,9 @@ export function BaseUiDemo({
           animate={animate}
           resizableColumns
           stickyHeader
+          headerFilters
           filters={demoFilterDefs(locale)}
+          filterTypes={demoFilterTypes()}
           accentColor="blue"
         />
       )}

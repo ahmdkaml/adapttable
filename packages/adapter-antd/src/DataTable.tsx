@@ -1,41 +1,75 @@
 import {
-  ACTIONS_COLUMN_KEY,
+  asGesture,
+  autoSizeColumns as autoSizeAllColumns,
+  cellFillHandler,
+  cellPasteHandler,
   type ColumnDef,
+  columnsHaveFooter,
   type ConfirmHandler,
   type FilterRuntime,
+  FilterTreeBuilder,
   type GridFocusState,
+  type GroupByInput,
   type GroupCollapseState,
   type GroupedFlatEntry,
   isDeclarativeFilters,
   makeExportCsvHandler,
   pageSizeOptions,
+  partitionPinnedRows,
+  PINNED_BOTTOM_PART,
+  PINNED_TOP_PART,
+  pinnedRowStickyStyle,
+  resolveColumnFooter,
   resolveExportCsv,
   resolveLabels,
   type RowExpansionState,
+  type RowPinningState,
+  type RowPinSide,
+  type RowPinState,
+  type RowReorderState,
   type SelectionState,
+  selectionStats,
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  type TreeEntry,
   type UrlStateAdapter,
   useChromeScrollReset,
   type UseColumnLayoutResult,
   type UseDataTableResult,
   useFilterTriggerToggle,
+  useFindFocus,
+  useFindInTable,
   useGridFocus,
   useInfiniteScroll,
+  useRowPinningUrlState,
   type UseSavedViewsOptions,
   useTableChrome,
   useTableData,
+  useTableEditHistory,
   useTableVirtualization,
   windowGroupedEntries,
 } from "@adapttable/core";
 import {
+  BatchEditBar,
   DEFAULT_CARD_SIZE_PX,
+  EXTRA_ROW_PARTS,
+  FindBar,
   GridFocusAnnouncer,
+  insertExtraRows,
+  isExtraEntry,
+  REORDER_COLUMN_WIDTH,
+  resolveRowStyle,
   rowClickProps,
+  rowIsDirty,
+  RowReorderAnnouncer,
+  rowReorderDropStyle,
+  SelectionStatsBar,
+  tableRenderModel,
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
+  useOffsetHeight,
   useResolvedAdapter,
 } from "@adapttable/core/adapter";
 import {
@@ -57,7 +91,9 @@ import {
   isValidElement,
   type ReactElement,
   type ReactNode,
+  type Ref,
   type UIEventHandler,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -72,10 +108,12 @@ import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
 import {
+  ADAPTTABLE_EXTRA,
   buildGroupedDataSource,
   type GroupedDataRecord,
   groupedRowKey,
   GroupSelectionCheckbox,
+  isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
 import { MobileCards } from "./components/MobileCards";
@@ -115,6 +153,7 @@ function buildRowClassName<TRow>(
   rowClassName: ((row: TRow, index: number) => string | undefined) | undefined
 ): (record: GroupedDataRecord<TRow>, index: number) => string {
   return (record, index) => {
+    if (isAdaptTableExtraRow(record)) return "adapttable-extra-row";
     if (isAdaptTableGroupRow(record)) return "adapttable-group-row";
     return rowClassName?.(record, index) ?? "";
   };
@@ -167,11 +206,15 @@ function antdMinWidth<TRow>(
   columns: readonly ColumnDef<TRow>[],
   widths: Readonly<Record<string, number>>,
   hasSelection: boolean,
-  hasActions: boolean
+  hasActions: boolean,
+  hasReorder: boolean
 ): number {
   return tableMinWidth(columns, {
     widths,
-    extra: (hasSelection ? 48 : 0) + (hasActions ? 120 : 0),
+    extra:
+      (hasSelection ? 48 : 0) +
+      (hasActions ? 120 : 0) +
+      (hasReorder ? REORDER_COLUMN_WIDTH : 0),
   });
 }
 
@@ -203,6 +246,194 @@ function resolveScroll(
   return { x, y: maxHeight };
 }
 
+/**
+ * antd owns a single tbody, so pin chrome lives on the row: sticky style,
+ * `data-row-pin`, and the section marker tests query via `part(...)`.
+ */
+type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
+  "data-row-pin"?: RowPinSide;
+  "data-adapttable-part"?: string;
+  "data-stagger"?: string;
+  "data-dirty"?: string;
+  "data-collapsed"?: string;
+};
+
+function antdPinnedRowAttrs(
+  pinSide: RowPinSide | undefined,
+  headerOffset: number
+): AntdRowHtmlAttrs {
+  if (!pinSide) return {};
+  return {
+    style: pinnedRowStickyStyle(pinSide, headerOffset),
+    "data-row-pin": pinSide,
+    "data-adapttable-part":
+      pinSide === "top" ? PINNED_TOP_PART : PINNED_BOTTOM_PART,
+  };
+}
+
+function antdOnRow<TRow>(options: {
+  record: GroupedDataRecord<TRow>;
+  rowIndex: number | undefined;
+  getRowId: (row: TRow) => string;
+  rowPinning: RowPinningState<TRow> | undefined;
+  headerOffset: number;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
+  gridFocus: GridFocusState | undefined;
+  onRowClick: DataTableProps<TRow>["onRowClick"];
+  editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
+  prefetch: DataTableProps<TRow>["prefetch"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
+}): AntdRowHtmlAttrs {
+  const {
+    record,
+    rowIndex,
+    getRowId,
+    rowPinning,
+    headerOffset,
+    rowReorder,
+    windowStart,
+    gridFocus,
+    onRowClick,
+    editing,
+    prefetch,
+    rowStyle,
+    rowHeight,
+  } = options;
+  if (isAdaptTableExtraRow(record)) {
+    return {
+      "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].row,
+      role: record.extraKind === "separator" ? "separator" : undefined,
+    };
+  }
+  if (isAdaptTableGroupRow(record)) {
+    return {
+      "data-adapttable-part":
+        record.footer === true ? "group-footer-row" : "group-row",
+      "data-collapsed": record.collapsed ? "true" : undefined,
+    };
+  }
+  const id = getRowId(record);
+  const pin = antdPinnedRowAttrs(rowPinning?.sideOf(id), headerOffset);
+  const visual = resolveRowStyle(rowStyle, rowHeight, record, rowIndex ?? 0);
+  const reorderStyle =
+    rowReorder && rowIndex !== undefined
+      ? rowReorderDropStyle(rowReorder.rowAttrs(id, rowIndex))
+      : undefined;
+  return {
+    ...rowClickProps(record, onRowClick, rowIndex),
+    ...(rowReorder && rowIndex !== undefined
+      ? {
+          ...rowReorder.dropProps(rowIndex, record, windowStart),
+          ...rowReorder.rowAttrs(id, rowIndex),
+        }
+      : {}),
+    // antd builds its own <tr>, so the absolute aria-rowindex arrives
+    // here rather than through a spread on the element.
+    ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
+    ...pin,
+    style: { ...visual, ...reorderStyle, ...pin.style },
+    "data-stagger": "",
+    // antd builds its own <tr>, so the dirty mark arrives here too.
+    "data-dirty": rowIsDirty(editing, getRowId(record)) ? "" : undefined,
+    onMouseEnter: prefetch ? () => prefetch(record) : undefined,
+  };
+}
+
+function antdPinnedDataSource<TRow>(
+  grouping: unknown,
+  treeEntries: unknown,
+  rowPinning: RowPinningState<TRow> | undefined,
+  rows: readonly TRow[],
+  getRowId: (row: TRow) => string,
+  dataSourceBase: readonly GroupedDataRecord<TRow>[]
+): {
+  dataSource: readonly GroupedDataRecord<TRow>[];
+  pinnedTopRows: readonly TRow[];
+  pinnedBottomRows: readonly TRow[];
+} {
+  if (grouping || treeEntries || !rowPinning) {
+    return {
+      dataSource: dataSourceBase,
+      pinnedTopRows: [],
+      pinnedBottomRows: [],
+    };
+  }
+  const parts = partitionPinnedRows(rows, rowPinning.state, getRowId);
+  return {
+    dataSource: [...parts.top, ...parts.scroll, ...parts.bottom],
+    pinnedTopRows: parts.top,
+    pinnedBottomRows: parts.bottom,
+  };
+}
+
+/** Splice host extras into a flat antd dataSource. Grouping already did this. */
+function resolveAntdDataSource<TRow>(
+  grouping: unknown,
+  rows: readonly GroupedDataRecord<TRow>[],
+  extraRows: DataTableProps<TRow>["extraRows"],
+  getRowId: (row: TRow) => string
+): readonly GroupedDataRecord<TRow>[] {
+  if (grouping) return rows;
+  return insertExtraRows(
+    (rows as readonly TRow[]).map((row) => ({
+      kind: "row" as const,
+      key: getRowId(row),
+      row,
+    })),
+    extraRows,
+    (e) => e.key
+  ).map((slot) =>
+    isExtraEntry(slot)
+      ? {
+          [ADAPTTABLE_EXTRA]: true as const,
+          key: slot.key,
+          extraKind: slot.kind,
+          render: slot.kind === "fullWidth" ? slot.render : undefined,
+        }
+      : slot.row
+  );
+}
+
+/** Same URL/controlled pin wiring the batteries-included shell applies. */
+function useAntdPinChrome<TRow>(props: {
+  pinnedRowIds: DataTableProps<TRow>["pinnedRowIds"];
+  onPinnedRowIdsChange: DataTableProps<TRow>["onPinnedRowIdsChange"];
+  urlSync: DataTableProps<TRow>["urlSync"];
+  urlKey: DataTableProps<TRow>["urlKey"];
+  urlAdapter: UrlStateAdapter | undefined;
+}): {
+  pinnedRowIds: RowPinState | undefined;
+  onPinnedRowIdsChange: ((next: RowPinState) => void) | undefined;
+} {
+  const pinningRequested =
+    props.pinnedRowIds !== undefined ||
+    props.onPinnedRowIdsChange !== undefined;
+  const pinUrl = useRowPinningUrlState({
+    urlAdapter: props.urlAdapter,
+    urlSync:
+      props.urlSync !== false &&
+      pinningRequested &&
+      props.pinnedRowIds === undefined,
+    urlKey: props.urlKey,
+  });
+  if (!pinningRequested) {
+    return { pinnedRowIds: undefined, onPinnedRowIdsChange: undefined };
+  }
+  const pinnedRowIds = props.pinnedRowIds ?? pinUrl.pinnedRowIds;
+  const onPinnedRowIdsChange = props.onPinnedRowIdsChange;
+  return {
+    pinnedRowIds,
+    onPinnedRowIdsChange: (next: RowPinState) => {
+      if (props.pinnedRowIds === undefined) {
+        pinUrl.onPinnedRowIdsChange(next);
+      }
+      onPinnedRowIdsChange?.(next);
+    },
+  };
+}
+
 /** Uniform shape for antd row-selection checkbox props. */
 interface RowSelectionCheckboxProps {
   disabled?: boolean;
@@ -217,6 +448,7 @@ function selectionCellNode<TRow>(
   labels: Required<TableLabels>,
   originNode: ReactNode
 ): ReactNode {
+  if (isAdaptTableExtraRow(record)) return null;
   if (isAdaptTableGroupRow(record)) {
     return (
       <GroupSelectionCheckbox
@@ -242,15 +474,15 @@ function buildRowSelection<TRow>(
     fixed: fixedLeft ? "left" : undefined,
     selectedRowKeys: [...selection.selectedIds],
     onSelect: (record) => {
-      if (isAdaptTableGroupRow(record)) return;
+      if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) return;
       selection.toggle(getRowId(record));
     },
     getCheckboxProps: (record): RowSelectionCheckboxProps => {
-      const isGroup = isAdaptTableGroupRow(record);
+      const skip = isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record);
       return {
-        disabled: isGroup || undefined,
-        style: isGroup ? { display: "none" } : undefined,
-        title: isGroup ? undefined : labels.selectRow,
+        disabled: skip || undefined,
+        style: skip ? { display: "none" } : undefined,
+        title: skip ? undefined : labels.selectRow,
       };
     },
     // Group headers render a tri-state over leaf ids; leaf rows keep antd's node.
@@ -289,14 +521,19 @@ function buildExpandable<TRow>(
   return {
     expandedRowKeys: [...expansion.expandedIds],
     onExpand: (_open, row) => {
-      if (isAdaptTableGroupRow(row)) return;
+      if (isAdaptTableGroupRow(row) || isAdaptTableExtraRow(row)) return;
       expansion.toggle(getRowId(row));
     },
-    rowExpandable: (row) => !isAdaptTableGroupRow(row),
+    rowExpandable: (row) =>
+      !isAdaptTableGroupRow(row) && !isAdaptTableExtraRow(row),
     expandedRowRender: (row) =>
-      isAdaptTableGroupRow(row) ? null : renderRowDetail(row),
+      isAdaptTableGroupRow(row) || isAdaptTableExtraRow(row)
+        ? null
+        : renderRowDetail(row),
     expandIcon: ({ expanded, onExpand, record }) => {
-      if (isAdaptTableGroupRow(record)) return null;
+      if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+        return null;
+      }
       return (
         <ExpandToggle
           expanded={expanded}
@@ -319,6 +556,13 @@ function ColumnMenuSlot<TRow>({
   labels,
   dir,
   hasRowActions,
+  hasRowReorder,
+  onAutoSize,
+  onAutoSizeColumn,
+  onSortColumn,
+  onFilterColumn,
+  sortBy,
+  sortDir,
 }: Readonly<{
   enabled: boolean;
   allColumns: ColumnDef<TRow>[];
@@ -326,6 +570,14 @@ function ColumnMenuSlot<TRow>({
   labels: Required<TableLabels>;
   dir?: "ltr" | "rtl";
   hasRowActions: boolean;
+  hasRowReorder: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onFilterColumn?: (key: string) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }>) {
   if (!enabled) return null;
   return (
@@ -335,6 +587,13 @@ function ColumnMenuSlot<TRow>({
       labels={labels}
       dir={dir}
       hasRowActions={hasRowActions}
+      hasRowReorder={hasRowReorder}
+      onAutoSize={onAutoSize}
+      onAutoSizeColumn={onAutoSizeColumn}
+      onSortColumn={onSortColumn}
+      onFilterColumn={onFilterColumn}
+      sortBy={sortBy}
+      sortDir={sortDir}
     />
   );
 }
@@ -400,12 +659,13 @@ function buildSummary<TRow>(
   leadingCells: number,
   hasActions: boolean
 ): TableProps<GroupedDataRecord<TRow>>["summary"] {
-  if (!summaryRow) return undefined;
+  if (!summaryRow && !columnsHaveFooter(columns)) return undefined;
   return function SummaryCells(pageData) {
     const leafRows = pageData.filter(
-      (record): record is TRow => !isAdaptTableGroupRow(record)
+      (record): record is TRow =>
+        !isAdaptTableGroupRow(record) && !isAdaptTableExtraRow(record)
     );
-    const cells = summaryRow(leafRows);
+    const cells = summaryRow?.(leafRows) ?? {};
     return (
       <Table.Summary.Row>
         {Array.from({ length: leadingCells }, (_, i) => (
@@ -414,7 +674,7 @@ function buildSummary<TRow>(
         {columns.map((column, i) => (
           <Table.Summary.Cell key={column.key} index={leadingCells + i}>
             <div style={{ textAlign: logicalAlign(column.align) }}>
-              {cells[column.key]}
+              {resolveColumnFooter(column, cells[column.key])}
             </div>
           </Table.Summary.Cell>
         ))}
@@ -427,8 +687,12 @@ function buildSummary<TRow>(
 }
 
 /** How many non-data columns antd injects ahead of ours (expand, selection). */
-function summaryLeadingCells(rowSelection: unknown, expandable: unknown) {
-  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0);
+function summaryLeadingCells(
+  rowSelection: unknown,
+  expandable: unknown,
+  hasReorder: boolean
+) {
+  return (rowSelection ? 1 : 0) + (expandable ? 1 : 0) + (hasReorder ? 1 : 0);
 }
 
 /** The shift-click chain toggler — only when `multiSort` is opted in. */
@@ -531,7 +795,22 @@ function autoFilterForm<TRow>(
   labels: Required<TableLabels>
 ) {
   if (runtime.defs.length === 0) return undefined;
-  return <AutoFilterForm defs={runtime.defs} source={source} labels={labels} />;
+  return (
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={runtime.defs}
+        source={source}
+        labels={labels}
+        registry={runtime.registry}
+      />
+      <FilterTreeBuilder
+        defs={runtime.defs}
+        source={source}
+        labels={labels}
+        registry={runtime.registry}
+      />
+    </div>
+  );
 }
 
 /** antd `<Table>` size tokens. */
@@ -590,10 +869,12 @@ function useCardWindowing<TRow>(options: {
 
 /** Row-grouping bundle from `useTableChrome` (opt-in when `groupBy` is set). */
 interface GroupingBundle<TRow> {
-  groupBy: string;
+  groupBy: readonly string[];
+  /** Reveal the next page of groups, or of one group's rows. */
+  showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
   collapsed: GroupCollapseState;
   entries: readonly GroupedFlatEntry<TRow>[];
-  setGroupBy: (key: string | null) => void;
+  setGroupBy: (key: GroupByInput) => void;
 }
 
 /**
@@ -652,6 +933,7 @@ interface DataTableBodyRegionProps<TRow> {
   labels: Required<TableLabels>;
   emptyNode: ReactNode;
   grouping: GroupingBundle<TRow> | undefined;
+  tree: ReturnType<typeof useTableChrome<TRow>>["tree"];
   detailRender: ((row: TRow) => ReactNode) | undefined;
   detailExpansion: RowExpansionState | undefined;
   editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
@@ -663,6 +945,8 @@ interface DataTableBodyRegionProps<TRow> {
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
   cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
   skeletonRows: number | undefined;
@@ -680,6 +964,12 @@ interface DataTableBodyRegionProps<TRow> {
   minWidth: number;
   hasPinned: boolean;
   hasRowActions: boolean;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
+  rowPinning: RowPinningState<TRow> | undefined;
+  pinnedTopRows: readonly TRow[];
+  pinnedBottomRows: readonly TRow[];
+  extraRows: DataTableProps<TRow>["extraRows"];
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -699,6 +989,9 @@ function DesktopTableBody<TRow>({
   summary,
   handleChange,
   rowClassName,
+  rowStyle,
+  rowHeight,
+  editing,
   onRowClick,
   gridFocus,
   prefetch,
@@ -706,6 +999,9 @@ function DesktopTableBody<TRow>({
   maxHeight,
   minWidth,
   emptyNode,
+  rowReorder,
+  windowStart,
+  rowPinning,
 }: Readonly<{
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
@@ -724,13 +1020,26 @@ function DesktopTableBody<TRow>({
   summary: TableProps<GroupedDataRecord<TRow>>["summary"];
   handleChange: TableProps<TRow>["onChange"];
   rowClassName: DataTableProps<TRow>["rowClassName"];
+  rowStyle: DataTableProps<TRow>["rowStyle"];
+  rowHeight: DataTableProps<TRow>["rowHeight"];
+  /** The editing bundle, so a row can carry its dirty mark. */
+  editing: NonNullable<ReturnType<typeof useTableChrome<TRow>>>["editing"];
   onRowClick: DataTableProps<TRow>["onRowClick"];
   prefetch: DataTableProps<TRow>["prefetch"];
   hasPinned: boolean;
   maxHeight: number | undefined;
   minWidth: number;
   emptyNode: ReactNode;
+  rowReorder: RowReorderState<TRow> | undefined;
+  windowStart: number;
+  rowPinning: RowPinningState<TRow> | undefined;
 }>) {
+  const [theadRef, headerHeight] = useOffsetHeight();
+  let stickyHeaderOffset: number | undefined;
+  if (sticky === true) stickyHeaderOffset = 0;
+  else if (sticky) stickyHeaderOffset = sticky.offsetHeader ?? 0;
+  const headerOffset =
+    stickyHeaderOffset === undefined ? 0 : stickyHeaderOffset + headerHeight;
   // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
   // reach it through the `components` seam. Memoized: a new component identity
   // here would remount the whole table on every render.
@@ -739,6 +1048,7 @@ function DesktopTableBody<TRow>({
   // Depends on the GETTER, not the whole state: the announcement changes on
   // every focus move, and rebuilding `components` would remount antd's table and
   // throw away the focus this just placed.
+  const pinArmed = rowPinning !== undefined;
   const gridComponents = useMemo(
     () =>
       gridEnabled && getGridProps
@@ -746,11 +1056,21 @@ function DesktopTableBody<TRow>({
         : undefined,
     [gridEnabled, getGridProps]
   );
+  const components = useMemo(() => {
+    const header = pinArmed
+      ? { wrapper: pinnedTheadComponent(theadRef) }
+      : undefined;
+    return {
+      ...gridComponents,
+      ...(header ? { header } : {}),
+      body: { wrapper: TbodyWrapper },
+    };
+  }, [gridComponents, pinArmed, theadRef]);
 
   return (
     <Table<GroupedDataRecord<TRow>>
       aria-label={tableLabel}
-      components={gridComponents}
+      components={components}
       columns={columns}
       dataSource={[...dataSource]}
       rowKey={(record) => groupedRowKey(record, getRowId)}
@@ -765,22 +1085,23 @@ function DesktopTableBody<TRow>({
       pagination={false}
       rowClassName={rowClassName ? buildRowClassName(rowClassName) : undefined}
       onChange={handleChange as TableProps<GroupedDataRecord<TRow>>["onChange"]}
-      onRow={(record, rowIndex) => {
-        if (isAdaptTableGroupRow(record)) {
-          return {
-            "data-adapttable-part": "group-row",
-            "data-collapsed": record.collapsed ? "true" : undefined,
-          } as HTMLAttributes<HTMLElement>;
-        }
-        return {
-          ...rowClickProps(record, onRowClick, rowIndex),
-          // antd builds its own <tr>, so the absolute aria-rowindex arrives
-          // here rather than through a spread on the element.
-          ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
-          "data-stagger": "",
-          onMouseEnter: prefetch ? () => prefetch(record) : undefined,
-        };
-      }}
+      onRow={(record, rowIndex) =>
+        antdOnRow({
+          record,
+          rowIndex,
+          getRowId,
+          rowPinning,
+          headerOffset,
+          rowReorder,
+          windowStart,
+          gridFocus,
+          onRowClick,
+          editing,
+          prefetch,
+          rowStyle,
+          rowHeight,
+        })
+      }
       scroll={resolveScroll(
         virtualize && !grouping,
         hasPinned,
@@ -806,6 +1127,20 @@ function gridTableComponent(gridProps: Record<string, unknown>) {
   };
 }
 
+function TbodyWrapper(
+  props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
+) {
+  return <tbody data-adapttable-part="tbody" {...props} />;
+}
+
+function pinnedTheadComponent(theadRef: Ref<HTMLTableSectionElement | null>) {
+  return function PinnedThead(
+    props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
+  ) {
+    return <thead ref={theadRef} {...props} />;
+  };
+}
+
 /**
  * The table body region (error, skeleton, empty, mobile cards, desktop table).
  * Extracted outside `DataTable` to keep cognitive complexity within budget.
@@ -827,6 +1162,7 @@ function DataTableBodyRegion<TRow>(
     labels,
     emptyNode,
     grouping,
+    tree,
     detailRender,
     detailExpansion,
     editing,
@@ -836,6 +1172,8 @@ function DataTableBodyRegion<TRow>(
     prefetch,
     onRowClick,
     rowClassName,
+    rowStyle,
+    rowHeight,
     cardClassName,
     summaryRow,
     skeletonRows,
@@ -853,6 +1191,12 @@ function DataTableBodyRegion<TRow>(
     minWidth,
     hasPinned,
     hasRowActions,
+    rowReorder,
+    windowStart,
+    rowPinning,
+    pinnedTopRows,
+    pinnedBottomRows,
+    extraRows,
   } = props;
 
   let body: ReactNode;
@@ -889,14 +1233,22 @@ function DataTableBodyRegion<TRow>(
         prefetch={prefetch}
         onRowClick={onRowClick}
         rowClassName={rowClassName}
+        rowStyle={rowStyle}
+        rowHeight={rowHeight}
         tableLabel={tableLabel}
         compact={(density ?? "comfortable") === "compact"}
         expansion={detailExpansion}
         editing={editing}
         grouping={grouping}
+        tree={tree}
         renderRowDetail={detailRender}
         summaryRow={summaryRow}
         {...cardWindow}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
+        pinnedTopRows={pinnedTopRows}
+        pinnedBottomRows={pinnedBottomRows}
+        extraRows={extraRows}
       />
     );
   } else {
@@ -918,16 +1270,34 @@ function DataTableBodyRegion<TRow>(
         summary={summary}
         handleChange={handleChange}
         rowClassName={rowClassName}
+        rowStyle={rowStyle}
+        rowHeight={rowHeight}
+        editing={editing}
         onRowClick={onRowClick}
         prefetch={prefetch}
         hasPinned={hasPinned}
         maxHeight={maxHeight}
         minWidth={minWidth}
         emptyNode={emptyNode}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
+        rowPinning={rowPinning}
       />
     );
   }
   return body;
+}
+
+function AntdRowReorderAnnouncer<TRow>({
+  rowReorder,
+}: Readonly<{ rowReorder: RowReorderState<TRow> | undefined }>) {
+  if (rowReorder === undefined) return null;
+  return <RowReorderAnnouncer announcement={rowReorder.announcement} />;
+}
+
+function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
+  if (children == null) return null;
+  return <div data-adapttable-part="table-footer">{children}</div>;
 }
 
 /**
@@ -978,8 +1348,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    filterTypes: props.filterTypes,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
+    supports: props.supports,
+    facetKeys: props.facetKeys,
+    facets: props.facets,
   });
   // A declarative `filters` array becomes the auto-built form; JSX passes
   // through untouched. Column-level `filter` shorthands alone (no `filters`
@@ -995,11 +1369,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     () => ({ ...runtime.filterLabels, ...props.filterLabels }),
     [runtime.filterLabels, props.filterLabels]
   );
+  const { history, onCellEdit: recordingCellEdit } =
+    useTableEditHistory<TRow>(props);
+  const pinChrome = useAntdPinChrome({
+    pinnedRowIds: props.pinnedRowIds,
+    onPinnedRowIdsChange: props.onPinnedRowIdsChange,
+    urlSync: props.urlSync,
+    urlKey: props.urlKey,
+    urlAdapter: resolvedUrlAdapter,
+  });
   const chromeProps = {
     ...props,
+    onCellEdit: recordingCellEdit,
     source: resolvedSource,
     filters: filtersNode,
+    filterDefs: runtime.defs,
     filterLabels,
+    pinnedRowIds: pinChrome.pinnedRowIds,
+    onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,
   };
   const c = useTableChrome<TRow>(chromeProps);
   // antd builds its own chrome rather than using `useDataTableShell`, so it
@@ -1011,6 +1398,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     c.source.paginationMode === "paged"
       ? Math.max(0, (c.source.page - 1) * c.source.limit)
       : 0;
+  const find = useFindInTable<TRow>({
+    enabled: props.findInTable === true,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
     rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
@@ -1019,6 +1412,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     firstRowIndex: windowStart,
     dir: props.dir,
     labels: c.table.labels,
+    onCut: props.onCellCut,
+    onPaste: asGesture(cellPasteHandler(props), history.record),
+    onFill: asGesture(cellFillHandler(props), history.record),
+    onUndo: history.undo,
+    onRedo: history.redo,
+    onFind: find.openBar,
+    matchKeys: find.matchKeys,
+    currentMatch: find.current,
+  });
+  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
+  const stats = selectionStats({
+    enabled: props.selectionStats === true,
+    range: gridFocus.range,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
   });
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
@@ -1027,10 +1436,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // rowActions BEFORE buildColumns — the trailing column, summary spans, and
   // min-width all adjust together. The Columns menu still lists it (from the
   // raw prop) so it can be shown again.
-  const rowActions = c.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
-  const hasRowActions = Boolean(rowActions?.length);
+  const rowActions = c.rowActions;
+  const hasRowActions = rowActions !== undefined;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
@@ -1059,6 +1466,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
+  // Same action the shell exposes, wired to this adapter's own root: sizing a
+  // column means measuring cells, and the cells are in there.
+  const onAutoSize = useCallback(() => {
+    autoSizeAllColumns(
+      rootRef.current,
+      c.columnLayout.visibleColumns.map((column) => column.key),
+      c.columnLayout.setWidth
+    );
+  }, [c.columnLayout]);
+  const onAutoSizeColumn = useCallback(
+    (key: string) =>
+      autoSizeAllColumns(rootRef.current, [key], c.columnLayout.setWidth),
+    [c.columnLayout]
+  );
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -1116,6 +1537,47 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     scrollMargin: props.virtualScrollMargin,
   });
 
+  const treeEntries = c.tree?.entries;
+  const treeEntryByRow = new Map<TRow, TreeEntry<TRow>>(
+    treeEntries?.map((entry) => [entry.row, entry])
+  );
+  const dataSourceBase: readonly GroupedDataRecord<TRow>[] = grouping
+    ? buildGroupedDataSource(grouping.entries)
+    : (treeEntries?.map((entry) => entry.row) ?? source.rows);
+  const {
+    dataSource: partitionedSource,
+    pinnedTopRows,
+    pinnedBottomRows,
+  } = antdPinnedDataSource(
+    grouping,
+    treeEntries,
+    c.rowPinning,
+    source.rows,
+    getRowId,
+    dataSourceBase
+  );
+  const dataSource = resolveAntdDataSource(
+    grouping,
+    partitionedSource,
+    props.extraRows,
+    getRowId
+  );
+  const { cellsByRow } = tableRenderModel({
+    table,
+    rows: treeEntries?.map((entry) => entry.row) ?? source.rows,
+    rowActions,
+    getRowId,
+    renderRowDetail: props.renderRowDetail,
+    expansion: c.detail?.expansion,
+    editing: c.editing,
+    rowReorder: c.rowReorder,
+    pinnedTopRows,
+    pinnedBottomRows,
+    getCellSpan: props.getCellSpan,
+    pinOffset: c.columnLayout.pinOffset,
+    grouping: c.grouping,
+  });
+
   const columns = buildColumns<TRow>({
     gridFocus: gridFocus,
     columns: table.columns,
@@ -1135,16 +1597,36 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // Shift-click multi-sort is opt-in; without it antd keeps full control
     // of header clicks (single-sort via `onChange`).
     onToggleSortLevel: chainToggler(props.multiSort, source),
+    fitColumns: props.fitColumns,
+    tree: c.tree
+      ? {
+          columnKey: c.tree.columnKey,
+          entryFor: (row: TRow) => treeEntryByRow.get(row),
+          toggle: c.tree.expansion.toggle,
+        }
+      : undefined,
     grouping: grouping
       ? {
           collapsed: grouping.collapsed,
           dataColumnCount: table.columns.length,
+          showMore: grouping.showMore,
         }
       : undefined,
+    collapsibleColumnGroups: props.collapsibleColumnGroups === true,
+    collapsedColumnGroups: c.columnLayout.state.collapsedGroups,
+    onToggleColumnGroup: c.columnLayout.toggleColumnGroup,
+    rowReorder: c.rowReorder,
+    windowStart,
+    cellsByRow,
+    headerFilters: props.headerFilters === true,
+    filterDefs: runtime.defs,
+    filterSource: resolvedSource,
+    filterRegistry: runtime.registry,
   });
-  const dataSource: readonly GroupedDataRecord<TRow>[] = grouping
-    ? buildGroupedDataSource(grouping.entries)
-    : source.rows;
+  // A tree is already flat by the time antd sees it: core walks the hierarchy
+  // and hands back the visible rows in reading order, so antd's own
+  // `childrenColumnName` recursion stays out of it and one expansion state
+  // drives all nine adapters.
   const pinnedSides = Object.values(c.columnLayout.state.pinned);
   const hasPinned = pinnedSides.length > 0;
   const hasStartPin = pinnedSides.includes("start");
@@ -1152,7 +1634,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     table.columns,
     c.columnLayout.state.widths,
     Boolean(table.selection),
-    hasRowActions
+    hasRowActions,
+    Boolean(c.rowReorder)
   );
 
   const handleChange = sortChangeHandler(source);
@@ -1174,7 +1657,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const summary = buildSummary(
     props.summaryRow,
     table.columns,
-    summaryLeadingCells(rowSelection, expandable),
+    summaryLeadingCells(rowSelection, expandable, Boolean(c.rowReorder)),
     hasRowActions
   );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
@@ -1208,6 +1691,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       labels={labels}
       emptyNode={emptyNode}
       grouping={grouping}
+      tree={c.tree}
       detailRender={c.detail?.render}
       detailExpansion={c.detail?.expansion}
       editing={c.editing}
@@ -1217,6 +1701,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       prefetch={props.prefetch}
       onRowClick={props.onRowClick}
       rowClassName={props.rowClassName}
+      rowStyle={props.rowStyle}
+      rowHeight={props.rowHeight}
       cardClassName={classNames?.card}
       summaryRow={props.summaryRow}
       skeletonRows={props.skeletonRows}
@@ -1234,6 +1720,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       minWidth={minWidth}
       hasPinned={hasPinned}
       hasRowActions={hasRowActions}
+      rowReorder={c.rowReorder}
+      windowStart={windowStart}
+      rowPinning={c.rowPinning}
+      pinnedTopRows={pinnedTopRows}
+      pinnedBottomRows={pinnedBottomRows}
+      extraRows={props.extraRows}
     />
   );
 
@@ -1247,6 +1739,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       aria-busy={c.isRefreshing || undefined}
     >
       <GridFocusAnnouncer focus={gridFocus} />
+      <AntdRowReorderAnnouncer rowReorder={c.rowReorder} />
+      <FindBar find={find} labels={c.table.labels} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <div className={classNames?.toolbar}>
           <Toolbar
@@ -1264,16 +1758,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
             onCloseFilters={() => setFiltersOpen(false)}
             onClearFilters={c.clearFilters}
+            onAddRow={c.rowMutations.canAdd ? c.rowMutations.addRow : undefined}
+            addRowLabel={labels.addRow}
             isRefreshing={c.isRefreshing}
             dir={props.dir}
             columnMenu={
               <ColumnMenuSlot
+                onAutoSize={onAutoSize}
+                onAutoSizeColumn={onAutoSizeColumn}
+                onSortColumn={(key, dir) => source.setSort(key, dir)}
+                onFilterColumn={() => setFiltersOpen(true)}
+                sortBy={source.sortBy}
+                sortDir={source.sortDir}
                 enabled={Boolean(props.enableColumnMenu) && !c.isMobile}
                 allColumns={c.allColumns}
                 layout={c.columnLayout}
                 labels={labels}
                 dir={props.dir}
-                hasRowActions={Boolean(props.rowActions?.length)}
+                hasRowActions={c.hasRowActions}
+                hasRowReorder={c.hasRowReorder}
               />
             }
             {...exportHandler}
@@ -1294,6 +1797,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={c.clearFilters}
           labels={labels}
         />
+        {c.editing?.batch && (
+          <BatchEditBar batch={c.editing.batch} labels={labels} />
+        )}
+
         {selection && props.bulkActions && (
           <BulkBar
             selection={selection}
@@ -1306,6 +1813,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         <div className={c.body === "desktop" ? classNames?.table : undefined}>
           {bodyRegion}
         </div>
+        <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.isPaged && !source.error && c.body === "desktop" && (
           <div className={classNames?.footer}>
             <PagedFooter
@@ -1338,6 +1846,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <SelectionStatsBar
+        stats={stats}
+        labels={c.table.labels}
+        locale={props.locale}
+      />
     </div>
   );
 }

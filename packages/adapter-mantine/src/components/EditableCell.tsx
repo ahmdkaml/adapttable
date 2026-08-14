@@ -3,8 +3,16 @@ import {
   type EditableCellEditing,
   type EditableCellEditorCtrl,
   EditableCellGate,
+  editorInputType,
+  isBooleanEditor,
+  isMultiSelectEditor,
+  isSelectEditor,
 } from "@adapttable/core";
-import { focusEditorOnMount } from "@adapttable/core/adapter";
+import {
+  editorBusyProps,
+  NativeBooleanEditor,
+  NativeMultiSelectEditor,
+} from "@adapttable/core/adapter";
 import { Select, TextInput } from "@mantine/core";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
@@ -27,10 +35,28 @@ export function MantineCellEditor({
     stopEditKeys(event);
   };
 
-  if (typeof ctrl.editor === "object" && ctrl.editor.type === "select") {
+  if (isBooleanEditor(ctrl.editor)) {
+    return (
+      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+    );
+  }
+
+  if (isMultiSelectEditor(ctrl.editor)) {
+    return (
+      <NativeMultiSelectEditor
+        ctrl={ctrl}
+        label={label}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  if (isSelectEditor(ctrl.editor)) {
     return (
       <Select
-        ref={focusEditorOnMount}
+        error={ctrl.conflict === true ? undefined : ctrl.error}
+        {...editorBusyProps(ctrl)}
+        ref={ctrl.focusRef}
         data-adapttable-part="edit-cell-editor"
         aria-label={label}
         size="xs"
@@ -49,11 +75,13 @@ export function MantineCellEditor({
 
   return (
     <TextInput
-      ref={focusEditorOnMount}
+      error={ctrl.conflict === true ? undefined : ctrl.error}
+      {...editorBusyProps(ctrl)}
+      ref={ctrl.focusRef}
       data-adapttable-part="edit-cell-editor"
       aria-label={label}
       size="xs"
-      type={ctrl.editor === "number" ? "number" : "text"}
+      type={editorInputType(ctrl.editor)}
       value={ctrl.draft}
       onChange={(event) => ctrl.setDraft(event.currentTarget.value)}
       onKeyDown={onKeyDown}
@@ -75,10 +103,13 @@ export function EditableDataCell<TRow>(props: {
   readonly columns: readonly ColumnDef<TRow>[];
   readonly rowKey: (row: TRow) => string;
   readonly editLabel: string;
+  /** `labels.undoEdit` — the control a failed save offers. */
+  readonly undoLabel?: string;
   readonly display: ReactNode;
 }): ReactElement {
   return (
     <EditableCellGate
+      kitRendersError
       editing={props.editing}
       row={props.row}
       column={props.column}
@@ -87,6 +118,7 @@ export function EditableDataCell<TRow>(props: {
       columns={props.columns}
       rowKey={props.rowKey}
       editLabel={props.editLabel}
+      undoLabel={props.undoLabel}
       display={props.display}
       renderEditor={(ctrl) => (
         <MantineCellEditor ctrl={ctrl} label={props.editLabel} />

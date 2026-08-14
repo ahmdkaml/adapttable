@@ -28,6 +28,7 @@ function fakeLayout(
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
     ...overrides,
   };
 }
@@ -40,19 +41,37 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
-function open(layout: UseColumnLayoutResult<Row>, hasRowActions = false) {
+function open(
+  layout: UseColumnLayoutResult<Row>,
+  hasRowActions = false,
+  hasRowReorder = false
+) {
   const view = render(
     <ColumnMenu
       allColumns={cols}
+      onAutoSize={() => undefined}
       layout={layout}
       labels={labels}
       classNames={{}}
       hasRowActions={hasRowActions}
+      hasRowReorder={hasRowReorder}
     />
   );
   fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -176,6 +195,20 @@ describe("unstyled ColumnMenu", () => {
     expect(layout.toggleVisible).toHaveBeenCalledWith("c");
   });
 
+  it("lists a leading reorder row with an eye and a start pin", () => {
+    const layout = fakeLayout();
+    open(layout, false, true);
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Hide column: Reorder" })
+    );
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Pin to start: Reorder" })
+    );
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
+  });
+
   it("omits the actions row when the table has no row actions", () => {
     open(fakeLayout());
     expect(screen.queryByText("Actions")).toBeNull();
@@ -238,6 +271,46 @@ describe("unstyled ColumnMenu", () => {
       screen.getByRole("button", { name: "Show column: Actions" })
     );
     expect(layout.toggleVisible).toHaveBeenCalledWith("actions");
+  });
+
+  it("filters the chooser by the search box", () => {
+    open(fakeLayout());
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Search columns" }),
+      {
+        target: { value: "bravo" },
+      }
+    );
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+    expect(screen.queryByText("Charlie")).toBeNull();
+  });
+
+  it("bulk-unpins from the menu", () => {
+    const layout = fakeLayout();
+    open(layout);
+    fireEvent.click(screen.getByRole("button", { name: "Unpin all" }));
+    expect(layout.setPinned).toHaveBeenCalledWith("a", undefined);
+  });
+
+  it("opens a per-column submenu", () => {
+    const onSortColumn = vi.fn();
+    render(
+      <ColumnMenu
+        allColumns={[{ ...cols[0]!, sortable: true }, cols[1]!, cols[2]!]}
+        onAutoSize={() => undefined}
+        onSortColumn={onSortColumn}
+        layout={fakeLayout()}
+        labels={labels}
+        classNames={{}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Column actions: Alpha" })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sort ascending" }));
+    expect(onSortColumn).toHaveBeenCalledWith("a", "asc");
   });
 
   it("resets the layout", () => {

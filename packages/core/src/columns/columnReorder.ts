@@ -1,6 +1,8 @@
 import type { DragEvent, KeyboardEvent } from "react";
 import { useCallback, useState } from "react";
 
+import { isRtlElement } from "../layout/writingDirection";
+
 /** MIME type carrying the dragged column key during a reorder drag. */
 export const COLUMN_DND_MIME = "application/x-adapttable-column";
 
@@ -57,10 +59,7 @@ export interface ColumnReorderKeyProps {
  * set on the root), falling back to the resolved CSS `direction`.
  */
 function isRtl(grip: HTMLElement | null): boolean {
-  if (!grip) return false;
-  const scoped = grip.closest("[dir]");
-  if (scoped) return scoped.getAttribute("dir") === "rtl";
-  return globalThis.getComputedStyle(grip).direction === "rtl";
+  return isRtlElement(grip);
 }
 
 /**

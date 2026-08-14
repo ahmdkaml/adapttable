@@ -62,7 +62,7 @@ const TAILWIND: DataTableClassNames = {
     "border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 text-start font-semibold text-gray-500 [&[data-pinned]]:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 dark:[&[data-pinned]]:bg-zinc-800",
   sortButton:
     "inline-flex items-center gap-1 font-semibold text-gray-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400",
-  row: "border-b border-gray-100 last:border-0 hover:bg-gray-50 data-[selected]:bg-indigo-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60 dark:data-[selected]:bg-indigo-500/15",
+  row: "border-b border-gray-100 last:border-0 hover:bg-gray-50 data-[selected]:bg-indigo-50 data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_theme(colors.indigo.500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_theme(colors.indigo.500)] dark:border-zinc-800 dark:hover:bg-zinc-800/60 dark:data-[selected]:bg-indigo-500/15",
   cell: "px-3 py-2.5 [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
   actionButton:
     "h-8 w-8 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
@@ -180,6 +180,7 @@ const TAILWIND: DataTableClassNames = {
   headerGroupRow: "border-b border-gray-200 dark:border-zinc-700",
   headerGroupCell:
     "border-b border-gray-200 bg-gray-50/60 px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+  columnGroupToggle: "align-middle text-gray-400 dark:text-zinc-500",
   groupRow:
     "border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/50",
   groupCell: "px-3 py-2 font-medium",
@@ -237,6 +238,16 @@ export function UnstyledDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
+  nested,
+  rowMode,
+  batch,
+  rowMutations,
+  rowReorder,
+  rowPinning,
+  cellSpan,
+  extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -248,6 +259,16 @@ export function UnstyledDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
+  nested?: boolean;
+  rowMode?: boolean;
+  batch?: boolean;
+  rowMutations?: boolean;
+  rowReorder?: boolean;
+  rowPinning?: boolean;
+  cellSpan?: boolean;
+  extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -261,8 +282,18 @@ export function UnstyledDemo({
       filtersUi={filtersUi}
       animate={animate}
       grouping={grouping}
+      tree={tree}
+      nested={nested}
+      rowMode={rowMode}
+      batch={batch}
+      rowMutations={rowMutations}
+      rowReorder={rowReorder}
+      rowPinning={rowPinning}
+      cellSpan={cellSpan}
+      extraRows={extraRows}
+      rowStyle={rowStyle}
       editing={editing}
-      cellNavigation={cellNavigation}
+      cellNavigation={cellNavigation ?? editing}
       classNames={TAILWIND}
     />
   );

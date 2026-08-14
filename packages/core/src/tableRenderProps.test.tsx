@@ -90,6 +90,148 @@ describe("tableRenderModel", () => {
     expect(model.showActions).toBe(false);
     expect(model.columnSpan).toBe(2); // selection + 1 data column
   });
+
+  it("counts the reorder column when the host opted in", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      rowReorder: { lifted: null } as never,
+    });
+    expect(model.showReorder).toBe(true);
+    expect(model.leadingCells).toBe(1);
+    expect(model.columnSpan).toBe(2);
+  });
+
+  it("drops pinned rows from the scroll entries so they are not drawn twice", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      pinnedTopRows: [ROWS[0]!],
+    });
+    expect(model.entries.map((entry) => entry.key)).toEqual(["b"]);
+  });
+
+  it("drops pinned-bottom rows from the scroll entries too", () => {
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      pinnedBottomRows: [ROWS[1]!],
+    });
+    expect(model.entries.map((entry) => entry.key)).toEqual(["a"]);
+  });
+
+  it("windows body cells to the column window", () => {
+    const wide: ColumnDef<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "id", header: "Id", accessor: (r) => r.id },
+    ];
+    const wideTable = {
+      ...table,
+      columns: wide,
+    } as unknown as UseDataTableResult<Row>;
+    const model = tableRenderModel({
+      table: wideTable,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      columnWindow: {
+        enabled: true,
+        columns: [wide[1]!],
+        paddingStart: 80,
+        paddingEnd: 0,
+      },
+    });
+    expect(model.columns.map((column) => column.key)).toEqual(["id"]);
+    expect(model.cellsByRow.get("a")?.map((cell) => cell.column.key)).toEqual([
+      "id",
+    ]);
+    expect(model.columnSpacers).toEqual({ start: 80, end: 0 });
+  });
+
+  it("emits cells for tree children, not only the source roots", () => {
+    const child: Row = { id: "c", name: "Cara" };
+    const model = tableRenderModel({
+      table,
+      rows: ROWS,
+      getRowId: (r) => r.id,
+      tree: {
+        entries: [
+          {
+            row: ROWS[0]!,
+            key: "a",
+            level: 0,
+            hasChildren: true,
+            expanded: true,
+            path: [],
+            descendantIds: ["c"],
+          },
+          {
+            row: child,
+            key: "c",
+            level: 1,
+            hasChildren: false,
+            expanded: false,
+            path: ["a"],
+            descendantIds: [],
+          },
+          {
+            row: ROWS[1]!,
+            key: "b",
+            level: 0,
+            hasChildren: false,
+            expanded: false,
+            path: [],
+            descendantIds: [],
+          },
+        ],
+        expansion: { expandedIds: new Set(["a"]) } as never,
+      },
+    });
+    expect(model.cellsByRow.get("c")?.map((cell) => cell.column.key)).toEqual([
+      "name",
+    ]);
+  });
+
+  it("emits cells for grouped leaves, which reach the screen by their own list", () => {
+    // A grouped body renders `grouping.entries`, never the row list — and a
+    // windowed one carries rows the page slice does not. A leaf with no cells
+    // built for it renders as an empty `<tr>`: present, addressable, and blank.
+    const grouped: Row = { id: "z", name: "Zoe" };
+    const model = tableRenderModel({
+      table,
+      rows: [],
+      getRowId: (r) => r.id,
+      grouping: {
+        groupBy: ["name"],
+        entries: [
+          {
+            kind: "group",
+            key: "group:name:Zoe",
+            groupKey: "Zoe",
+            columnKey: "name",
+            value: "Zoe",
+            level: 0,
+            count: 1,
+            leafRows: [grouped],
+            leafIds: ["z"],
+            label: "Zoe",
+          },
+          {
+            kind: "row",
+            key: "z",
+            row: grouped,
+            index: 0,
+            groupKey: "Zoe",
+          },
+        ],
+      } as never,
+    });
+    expect(model.cellsByRow.get("z")?.map((cell) => cell.column.key)).toEqual([
+      "name",
+    ]);
+  });
 });
 
 describe("useChromeScrollReset", () => {
@@ -312,6 +454,32 @@ describe("controlled selection through the chrome", () => {
 });
 
 describe("useChromeBodyData", () => {
+  it("pulls pinned rows out of the virtual window", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "paged",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        pinnedRowIds: { top: ["a"], bottom: [] },
+        onPinnedRowIdsChange: () => undefined,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    expect(result.current.pinnedTopRows.map((row) => row.id)).toEqual(["a"]);
+    expect(
+      result.current.virtualization.rows.map((entry) => entry.key)
+    ).toEqual(["b"]);
+    expect(result.current.virtualization.rows[0]?.sourceIndex).toBe(1);
+  });
+
   it("element mode: a maxHeight box scrolls the virtual window (ref wiring)", () => {
     const adapter = createMemoryAdapter("");
     const many = Array.from({ length: 40 }, (_, i) => ({
@@ -671,10 +839,12 @@ describe("chrome row expansion", () => {
     );
   });
 
-  it("dev-warns when row details meet virtualization", () => {
+  it("measures a row with its panel rather than warning about the pair", () => {
+    // The warning this replaces existed because an open panel was unmeasured;
+    // the window now sizes the pair, so the combination is supported.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const adapter = createMemoryAdapter("");
-    renderHook(() => {
+    const { result } = renderHook(() => {
       const source = useFrontendData<Row>({
         data: ROWS,
         columns: cols,
@@ -691,9 +861,10 @@ describe("chrome row expansion", () => {
       const chrome = useTableChrome<Row>(props);
       return useChromeBodyData<Row>(chrome, props);
     });
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("renderRowDetail with virtualize")
+    expect(warn.mock.calls.flat().join(" ")).not.toContain(
+      "renderRowDetail with virtualize"
     );
+    expect(result.current.virtualization.measureRowPair).toBeDefined();
     warn.mockRestore();
   });
 });

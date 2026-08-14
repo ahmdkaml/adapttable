@@ -19,18 +19,19 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Columns & layout
 
-| Prop                    | Type                                | Default | Description                                                                                        |
-| ----------------------- | ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| `columns`               | `ColumnDef<TRow>[]`                 | —       | Column definitions (required) — see [ColumnDef](#columndef).                                       |
-| `enableColumnMenu`      | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                      |
-| `resizableColumns`      | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                        |
-| `columnLayout`          | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                             |
-| `onColumnLayoutChange`  | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                   |
-| `defaultColumnLayout`   | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                   |
-| `maxHeight`             | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.   |
-| `multiSort`             | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed). |
-| `sortByOptions`         | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                               |
-| `mobileIdentityColumns` | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                             |
+| Prop                      | Type                                | Default | Description                                                                                                                                                                         |
+| ------------------------- | ----------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `columns`                 | `ColumnDef<TRow>[]`                 | —       | Column definitions (required) — see [ColumnDef](#columndef).                                                                                                                        |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                                                                                                       |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                                                                                         |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                                                                                                              |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                                                                                                    |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                                                                                                    |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; a collapsed group keeps its first leaf as the summary column. State lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.                                                                                    |
+| `multiSort`               | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed).                                                                                  |
+| `sortByOptions`           | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                                                                                                                |
+| `mobileIdentityColumns`   | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                                                                                                              |
 
 ### Filters & search
 
@@ -42,6 +43,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                            |
 | `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                        |
 | `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                              |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                        |
 | `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                       |
 | `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                              |
 
@@ -75,9 +77,25 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
 | `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
 | `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
+| `rowStyle`                  | `(row: TRow, index: number) => CSSProperties \| undefined`      | —               | Conditional per-row inline style, on desktop rows and mobile cards alike. See [row styling and heights](./row-styling.md).                                                                                                                                                                                                                                                       |
+| `rowHeight`                 | `number \| ((row: TRow, index: number) => number)`              | —               | Row height in px. Sets the row and the virtualizer's `estimateSize`. `measureElement` still reports what the browser laid out. See [row styling and heights](./row-styling.md).                                                                                                                                                                                                  |
 | `renderRowDetail`           | `(row: TRow) => ReactNode`                                      | —               | Row expansion: its presence enables the expand chevron; multiple rows may be open, keyed by row id.                                                                                                                                                                                                                                                                              |
 | `onCellEdit`                | `(row: TRow, key: string, nextValue: unknown) => void`          | —               | Inline cell editing: its presence enables editors on columns with `editable`; the table never mutates rows — your handler applies the change.                                                                                                                                                                                                                                    |
+| `onEditStart`               | `EditEventHandler<TRow>`                                        | —               | Observe an editor opening (cell, row or batch). Cannot change the outcome.                                                                                                                                                                                                                                                                                                       |
+| `onEditCancel`              | `EditEventHandler<TRow>`                                        | —               | Observe a cancel. Not fired when a successful commit merely closes the editor.                                                                                                                                                                                                                                                                                                   |
+| `onEditCommit`              | `EditEventHandler<TRow>`                                        | —               | Observe a value reaching the host, after parse and validation.                                                                                                                                                                                                                                                                                                                   |
+| `onValidationFail`          | `EditEventHandler<TRow>`                                        | —               | Observe a validator refusing a value; the editor stays open.                                                                                                                                                                                                                                                                                                                     |
+| `onEditError`               | `EditEventHandler<TRow>`                                        | —               | Observe a save promise rejecting.                                                                                                                                                                                                                                                                                                                                                |
+| `onEditConflict`            | `EditConflictHandler<TRow>`                                     | —               | A row changed under an open editor. Return `"keep"` or `"take"`; omit and `editConflictPolicy` decides.                                                                                                                                                                                                                                                                          |
+| `editConflictPolicy`        | `"keep" \| "take" \| "ask"`                                     | `"ask"`         | What to do when the host does not choose. `"ask"` surfaces Keep mine / Take theirs.                                                                                                                                                                                                                                                                                              |
+| `rowVersion`                | `(row: TRow) => string \| number`                               | —               | Host version of a row. Any change under an open editor is a conflict, not only the edited column.                                                                                                                                                                                                                                                                                |
+| `onRowReorder`              | `RowReorderHandler<TRow>`                                       | —               | Drag handle in a reserved column. `from` / `to` are dataset-relative; the table never mutates rows. Keyboard: Space lifts, arrows move, Space drops, Escape cancels. Grouping or a tree refuses with a `devWarn`. See [row reordering](./row-reordering.md).                                                                                                                     |
+| `pinnedRowIds`              | `RowPinState`                                                   | —               | Controlled `{ top, bottom }` row-id lists. Pinned rows leave the virtual window and stick above or below the scroll box. See [row pinning](./row-pinning.md).                                                                                                                                                                                                                    |
+| `onPinnedRowIdsChange`      | `(next: RowPinState) => void`                                   | —               | Pin-list channel. Setting this (or `pinnedRowIds`) arms the feature. Uncontrolled lists also write `rowPin` to the URL. Grouping or a tree refuses with a `devWarn`.                                                                                                                                                                                                             |
+| `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).                                                                                                                                                              |
+| `extraRows`                 | `readonly ExtraRow[]`                                           | —               | Host-injected separator and full-width slots, spliced in by `beforeRowId`. Omit and nothing is inserted. See [full-width and separator rows](./full-width-rows.md).                                                                                                                                                                                                              |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
+| `tableFooter`               | `ReactNode`                                                     | —               | Free slot under the table, above the pager. Not the column-aligned summary row.                                                                                                                                                                                                                                                                                                  |
 | `groupBy`                   | `string \| null`                                                | —               | Single-level row grouping by column key; frontend tier only (server sources devWarn and ignore). Omit and grouping stays dormant.                                                                                                                                                                                                                                                |
 | `onGroupByChange`           | `(groupBy: string \| null) => void`                             | —               | Controlled `groupBy` channel; falls back to `source.setGroupBy`. URL-synced when the source uses URL state.                                                                                                                                                                                                                                                                      |
 | `groupAggregates`           | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Per-group aggregate cells — **same signature as `summaryRow`**. Called with each group's leaf rows.                                                                                                                                                                                                                                                                              |
@@ -111,68 +129,113 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop            | Type                                                | Default       | Description                                                                                                                                             |
-| --------------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
-| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
-| `group`         | `string`                                            | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
-| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
-| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
-| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
-| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
-| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
-| `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
-| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                       |
-| `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
-| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
-| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
-| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
-| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
-| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
-| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
-| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                           |
-| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                      |
-| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                             |
-| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
+| Prop             | Type                                                | Default       | Description                                                                                                                                                 |
+| ---------------- | --------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`            | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                               |
+| `header`         | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                       |
+| `renderHeader`   | `(ctx: ColumnHeaderContext<TRow>) => ReactNode`     | —             | Replace the header caption. The cell still owns sort, resize and the menu; `ctx.controller` exposes them.                                                   |
+| `renderFooter`   | `(ctx: ColumnFooterContext<TRow>) => ReactNode`     | —             | Replace one summary-row cell. `value` is the `summaryRow` result for this key.                                                                              |
+| `headerTooltip`  | `string`                                            | —             | Native tooltip on the header caption.                                                                                                                       |
+| `headerActions`  | `ReactNode`                                         | —             | Host controls after the caption, before the resize handle.                                                                                                  |
+| `group`          | `string \| readonly string[]`                       | —             | Presentational header group: a string is one level; a path stacks one header row per depth. Contiguous same-path columns merge; a reorder splits the group. |
+| `i18n`           | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path.     |
+| `filter`         | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                      |
+| `Cell`           | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                                |
+| `accessor`       | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                    |
+| `sortValue`      | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                                 |
+| `exportValue`    | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                      |
+| `formatValue`    | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                           |
+| `parseValue`     | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                      |
+| `sortable`       | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                             |
+| `colSpan`        | `number \| ((row: TRow) => number)`                 | `1`           | Columns this cell covers. Covered neighbours are omitted. See [row and column spanning](./row-spanning.md).                                                 |
+| `rowSpan`        | `number \| ((row: TRow) => number)`                 | `1`           | Rows this cell covers. Stays inside one tbody.                                                                                                              |
+| `width`          | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                    |
+| `align`          | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                             |
+| `mobileLabel`    | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                         |
+| `hideOnMobile`   | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                                |
+| `hideOnDesktop`  | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                               |
+| `lockPosition`   | `boolean`                                           | `false`       | Gray out the column menu's reorder grip.                                                                                                                    |
+| `lockVisibility` | `boolean`                                           | `false`       | Gray out the column menu's show/hide control.                                                                                                               |
+| `lockWidth`      | `boolean`                                           | `false`       | Gray out resize and per-column auto-size.                                                                                                                   |
+| `lockPin`        | `boolean`                                           | `false`       | Gray out the column menu's pin control.                                                                                                                     |
+| `editable`       | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                               |
+| `editor`         | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                          |
+| `editValue`      | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                                 |
+| `meta`           | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                               |
 
 ## FilterDef
 
-| Prop          | Type                     | Default         | Description                                                                                                                           |
-| ------------- | ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate.      |
-| `type`        | `FilterType`             | —               | The widget shape (required): `"text" \| "select" \| "multiSelect" \| "dateRange" \| "numberRange"`.                                   |
-| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                                  |
-| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`: a static `FilterOption[]`, `"auto"` (distinct frontend values, capped at 50), or an async loader. |
-| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                                    |
-| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                     |
+| Prop          | Type                     | Default         | Description                                                                                                                      |
+| ------------- | ------------------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | `string`                 | —               | State key in the filter bag and the `f_<key>` URL param (required); doubles as the row's dot-path for the client-side predicate. |
+| `column`      | `string`                 | `key`           | Column the header filter row places this widget under, when the bag key and the column key differ.                               |
+| `type`        | `string`                 | —               | Built-in `FilterType` or a custom type registered on `filterTypes`.                                                              |
+| `label`       | `string`                 | humanized `key` | Widget + chip label.                                                                                                             |
+| `options`     | `FilterOptionsSource`    | —               | Choices for `select`/`multiSelect`/`checklist` labels: a static `FilterOption[]`, `"auto"`, or an async loader.                  |
+| `getValue`    | `(row: TRow) => unknown` | `key` as path   | Row-value extractor for the client-side predicate.                                                                               |
+| `placeholder` | `string`                 | —               | Placeholder for text-like inputs.                                                                                                |
 
 Range types persist two inclusive state keys: `dateRange` →
-`${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. The range
-widgets are operator-first (Equal / At least / At most / Between; dates: On /
-On or after / On or before / Between) — headless: `readRangeWidget`,
-`writeRangeWidget`, `RANGE_OPS`.
+`${key}From`/`${key}To`, `numberRange` → `${key}Min`/`${key}Max`. Every
+operator-first widget also writes `f_<key>Op` (`TEXT_OPS` / `NUMBER_OPS` /
+`DATE_OPS`) so the comparison survives the URL and Saved Views. Headless:
+`readRangeWidget`, `writeRangeWidget`, `writeRangeFilter`,
+`useTextFilterWidget`, `useRangeFilterWidget`, `useBooleanFilterWidget`.
+A `boolean` filter is any / true / false (`f_<key>=true|false`); omitting
+the param is any. A `dateRange` `relative` operator stores a token
+(`today`, `last:7`, …) in `${key}From` — never a resolved calendar day —
+and `resolveRelativeRange` is the only place that token becomes a window.
+An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
+`serializeFilterTree`); the frontend ANDs it with the flat bag, and a
+server that sets `supports.filterTree` receives `query.filterTree`.
+`FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
+the chrome label tree chips. A `checklist` filter is the Excel-style
+distinct-values widget (`ChecklistFilter` / `useChecklistFilter` /
+`collectChecklistValues`); it prefers `source.facets` (own-filter
+excluded via `computeFilterFacets` / `rowsExcludingFilter` /
+`FacetMap` / `FacetCounts`) and falls back to `allFilteredRows`. A
+server that sets `supports.facets` receives `query.facets` and returns
+the same map on the page (`PaginatedResponse.facets`,
+`PageSelector.facets`). Without either surface the widget stays hidden.
+`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
+`headerFilterStickTop`) as a second header row of compact inputs on the
+same extra bag. Desktop only.
+`filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
+(`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
+`emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
+operators, predicate, chips, tree projection, and optional `render`
+(`FilterWidgetRenderProps`). `FilterTypeRegistry.register` adds a type;
+`extend` patches a built-in. Lookups: `filterTypeSpec` /
+`filterWidgetKind` / `filterTypeOps` / `filterTypeDefaultOp` /
+`renderRegisteredFilter`.
 
 ## Adapter extras
 
 Props beyond the core surface, with per-kit availability.
 
-| Prop            | Type                                            | Default     | Available on                              | Description                                                                                                                                                                             |
-| --------------- | ----------------------------------------------- | ----------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`          | `readonly TRow[]`                               | —           | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                              |
-| `total`         | `number`                                        | —           | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                       |
-| `loading`       | `boolean`                                       | —           | all                                       | Server tier: a request is in flight.                                                                                                                                                    |
-| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —           | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                              |
-| `urlKey`        | `string`                                        | —           | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
-| `urlAdapter`    | `UrlStateAdapter`                               | History API | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
-| `urlSync`       | `boolean`                                       | `true`      | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
-| `savedViews`    | `UseSavedViewsOptions`                          | —           | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                               |
-| `slots`         | `{ skeleton?, empty?, noResults? }`             | —           | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one (see customization).                                                              |
-| `classNames`    | `DataTableClassNames`                           | —           | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                               |
-| `className`     | `string`                                        | —           | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                 |
-| `animate`       | `boolean`                                       | `false`     | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                   |
-| `size`          | kit-specific union                              | —           | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`). |
-| `accentColor`   | kit accent union (chakra: `string`)             | —           | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                       |
-| `bordered`      | `boolean`                                       | `false`     | antd                                      | Render the table with cell borders.                                                                                                                                                     |
+| Prop            | Type                                            | Default        | Available on                              | Description                                                                                                                                                                             |
+| --------------- | ----------------------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`          | `readonly TRow[]`                               | —              | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                              |
+| `total`         | `number`                                        | —              | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                       |
+| `loading`       | `boolean`                                       | —              | all                                       | Server tier: a request is in flight.                                                                                                                                                    |
+| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —              | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                              |
+| `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
+| `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
+| `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
+| `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                  |
+| `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
+| `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
+| `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                         |
+| `savedViews`    | `UseSavedViewsOptions`                          | —              | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                               |
+| `slots`         | `{ skeleton?, empty?, noResults? }`             | —              | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one (see customization).                                                              |
+| `classNames`    | `DataTableClassNames`                           | —              | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                               |
+| `className`     | `string`                                        | —              | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                 |
+| `animate`       | `boolean`                                       | `false`        | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                   |
+| `size`          | kit-specific union                              | —              | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`). |
+| `accentColor`   | kit accent union (chakra: `string`)             | —              | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                       |
+| `bordered`      | `boolean`                                       | `false`        | antd                                      | Render the table with cell borders.                                                                                                                                                     |
 
 Each adapter also re-exports the core source builders and types, so one
 import path covers everything.
@@ -184,7 +247,8 @@ All from `@adapttable/core`.
 ### Data sources
 
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
-  filters, sorts, and slices a raw array from URL state.
+  filters, sorts, and slices a raw array from URL state. Pass
+  `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -199,7 +263,7 @@ All from `@adapttable/core`.
 - `useTableUrlState(options?): UseTableUrlStateResult` — page / limit /
   search / sort / extra-filter bag in the query string, with setters
   (`setPage`, `setSearch`, `setSort`, `toggleSortLevel`, `setExtra`,
-  `setExtras`, `clearExtras`, `clearAll`).
+  `setExtras`, `setFilterTree`, `clearExtras`, `clearAll`).
 - `useColumnLayoutUrlState(options?): { layout, onLayoutChange }` —
   URL-persisted column layout (hidden / order / pinned / widths).
 - `useColumnLayoutStorageState(options): { layout, onLayoutChange }` — the
@@ -221,8 +285,9 @@ All from `@adapttable/core`.
 - `useChromeBodyData(chrome, props): ChromeBodyData<TRow>` — body data-flow
   wiring: window virtualization + the infinite-scroll sentinel.
 - `useColumnLayout(options): UseColumnLayoutResult<TRow>` — headless
-  visibility / order / pinning / width state (`visibleColumns`,
-  `toggleVisible`, `move`, `setPinned`, `setWidth`, `pinOffset`, `reset`).
+  visibility / order / pinning / width / collapsed-group state
+  (`visibleColumns`, `toggleVisible`, `move`, `setPinned`, `setWidth`,
+  `pinOffset`, `reset`, `toggleColumnGroup`).
 - `useSearchInput(...)` — debounced search-input state behind
   `getSearchInputProps`.
 - `useSelection(options): SelectionState` — page-scoped selection with
@@ -278,9 +343,97 @@ vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
 the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
 describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
-`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`.
+`normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`. Beyond
+text, number and select it names `boolean`, `date`, `datetime`, `time` and
+`multi-select`: `editorInputType` maps one to its input's `type`,
+`isBooleanEditor` / `isSelectEditor` / `isMultiSelectEditor` tell them apart,
+`booleanDraft` / `isDraftChecked` and `formatMultiDraft` / `readMultiDraft`
+(joined by `MULTI_SEPARATOR`) are the draft shapes those two hold, and
+`NativeBooleanEditor` / `NativeMultiSelectEditor` (`NativeEditorProps`) with
+`commitBooleanDraft` / `multiDraftFromSelect` from `@adapttable/core/adapter`
+are the platform controls the kits render for them. A ninth kind,
+`{ type: "custom", render }`, is a host's own component:
+`CustomCellEditorRender` is the callback and `CustomCellEditorCtrl` what it
+receives (`draft`, `setDraft`, `commit`, `cancel`, `onKeyDown`, `onBlur`,
+`focusRef`, plus the validation trio), with `isCustomEditor` telling it apart.
 `EditableColumnLike` is the minimal column shape editing reads, and
 `isCellEditable` / `hasEditableColumns` are the two predicates the chrome uses.
+
+**A save the reader can see.** `onCellEdit` may return a promise;
+`useCellSaveState(options)` (`UseCellSaveStateOptions` in, `CellSaveState` out)
+tracks it, exposing a `CellSaveStatus` per cell and a `FailedCellSave<TRow>` —
+the previous row, the attempted value and the message — for one that rejected.
+`onEditRollback` puts the row back and `formatEditError` words the failure;
+`labels.undoEdit` names the control the failed cell offers.
+
+**Editing a row as one unit.** `rowEditing` + `onRowEdit` change the commit unit
+from a cell to a row: `useRowEditing(options)` (`UseRowEditingOptions` in,
+`RowEditingState` out, holding `RowEditDrafts`) opens every editable field
+together and hands the host one patch of what changed. `RowEditCell` (`RowEditCellProps`),
+`RowEditActions` (`RowEditActionsProps`) and `rowEditControls`
+(`RowEditControlsOptions` in, `RowEditControls` out) from
+`@adapttable/core/adapter` render the fields and the edit / save / cancel
+controls; `labels.editRow` and `labels.saveRow` name them.
+
+**Changing many rows at once.** `batchEditing` + `onBatchEdit` hold every change
+until one save: `useBatchEditing(options)` (`UseBatchEditingOptions` in,
+`BatchEditingState` out) counts pending ROWS, marks changed cells, and produces
+the `BatchRowEdit<TRow>[]` — `{ row, rowId, patch }` — the host receives in a
+single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
+cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
+all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
+
+**Lifecycle events.** `onEditStart`, `onEditCancel`, `onEditCommit`,
+`onValidationFail` and `onEditError` observe a commit; they never own it. The
+shared payload is `EditEvent<TRow>` (`row`, `rowId`, `columnKey`, `value`,
+`previousValue`, `unit` of `EditUnit` `"cell" \| "row" \| "batch"`, optional
+`error`). `EditEventHandler<TRow>` is the callback shape and `EditLifecycle<TRow>`
+the five together. `useCellEditing` accepts `UseCellEditingOptions` for start
+and cancel; a throw from any handler is swallowed so analytics cannot rewind a
+commit. The same events fire on a mobile card — the commit unit does not change
+with the layout.
+
+**Live-update conflicts.** A refetch or a websocket that changes the row under
+an open editor is a conflict, not a discard. `onEditConflict` (`EditConflictHandler<TRow>`)
+receives an `EditConflict<TRow>` (`row`, `previous`, `rowId`, `columnKey`,
+`draft`, `incomingValue`, `previousValue`) and may return `"keep"` or `"take"`
+(`EditConflictChoice`); returning nothing defers to `editConflictPolicy`
+(`EditConflictPolicy`, default `"ask"`). `"ask"` surfaces Keep mine / Take
+theirs on the same channel validation already owns (`aria-describedby`,
+`data-conflict`). `rowVersion` makes any version change a conflict, not only the
+edited column. `useEditConflict` (`EditConflictState` in, `ReconcileLiveEdit` the
+inspect input) is the headless state; `liveRowChanged` is the comparison.
+`labels.editConflict`, `labels.keepMine` and `labels.takeTheirs` name the notice.
+The same notice appears on a mobile card.
+
+**Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
+toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
+every row, after the host's own `rowActions`, under the keys
+`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. A delete confirms first
+unless `confirmDeleteRow={false}`. `useRowMutations(options)`
+(`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
+`RowMutationHandlers`) is the state behind them; `labels.addRow`,
+`labels.duplicateRow`, `labels.deleteRow` and `labels.deleteRowConfirm` name
+them. The table stores nothing — a new row arrives through the source like any
+other.
+
+**Dirty marks.** `dirtyIndicators` turns them on;
+`useDirtyCells(options)` (`UseDirtyCellsOptions` in, `DirtyCellState` out) holds
+which cells hold an unconfirmed change, with `isDirty` / `isRowDirty`, a `count`,
+and `confirm` / `confirmRow` / `confirmAll` for a host that settles its own state.
+`rowIsDirty(editing, rowId)` from `@adapttable/core/adapter` is what a row reads.
+
+**Validation gates the commit.** A column's `validate` (`CellValidator`) judges
+one value; the table's `validateRow` (`RowValidator`) judges the row an edit
+would produce, with `applyEdit` saying how the edit lands on it.
+`useEditValidation(options)` holds the state — which cells carry a message, which
+are still checking — behind `EditValidationState` (`UseEditValidationOptions` in,
+`ValidationTarget` naming the cell a check is about), and
+`resolveCommitValue(options)` is the row, column and parsed value a validator
+sees before the host does. `editorValidationProps(ctrl)` from
+`@adapttable/core/adapter` is the `aria-invalid` / `aria-describedby` /
+`aria-busy` a kit's editor spreads, and `editorBusyProps(ctrl)` is just the busy
+flag for a kit whose own input owns the other two.
 See [cell editing](./cell-editing.md).
 
 **The grouped row model.** `buildGroupedFlatModel` turns rows into the flat
@@ -322,9 +475,28 @@ dependency, and a separate entry so a CSV export never ships it —
 with `buildTableXlsx` underneath for building a workbook by hand. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
+**Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /
+`sparklineColumn` so a cell can draw a bar, line or area chart without a
+chart library and without pulling the mark into the base bundle.
+`SparklineProps` / `SparklineKind` / `SparklineColumnSpec` type the
+surface. `finiteSparklineValues` drops non-finite points, `sparklineSummary`
+is the default accessible label, and `sparklineExportValue` writes the
+series as text so CSV and xlsx never get an SVG. See
+[sparkline columns](./sparkline.md).
+
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
 See [cell editing](./cell-editing.md).
+
+**Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
+
+**Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`). Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `BodyCell`. See [row and column spanning](./row-spanning.md).
+
+**Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
+
+**Row styling and heights.** `rowStyle` / `rowHeight` resolve through `resolveRowStyle` / `resolveRowHeight`. Height wins over `style.height`. `rowStyleSignature` is the memo digest; `rowStyleArmed` is whether either hook was passed; `estimateFromRowHeight` is the virtualizer estimator. Types: `RowStyle`, `RowHeight`. See [row styling and heights](./row-styling.md).
+
+**Row pinning.** `pinnedRowIds` / `onPinnedRowIdsChange` take a `RowPinState` (`{ top, bottom }` of `RowPinSide`). `applyRowPin(state, rowId, side)` is the in-memory helper; `partitionPinnedRows` splits a list into top / scroll / bottom; `EMPTY_ROW_PIN_STATE` is the empty lists. `useRowPinning` returns `RowPinningState`; `rowPinSignature` is the memo digest. Action keys: `PIN_TOP_ACTION_KEY`, `PIN_BOTTOM_ACTION_KEY`, `UNPIN_ROW_ACTION_KEY`. URL: `useRowPinningUrlState` (`UseRowPinningUrlStateOptions` / `UseRowPinningUrlStateResult`) writes `rowPin=id:top,id:bottom`. Labels: `pinToTop`, `pinToBottom`, `unpinRow` (`RowPinLabels`). `rowSourceIndex(entry)` is the dataset index when pinning remapped the window. From `@adapttable/core/adapter`: `pinnedRowStickyStyle` / `pinnedRowCellStyle`, `orderedCardEntries`, `useOffsetHeight`, `PINNED_TOP_PART` / `PINNED_BOTTOM_PART`. See [row pinning](./row-pinning.md).
 
 **Filter internals.** `FILTER_TYPES` lists the built-in types, `filterLabel`
 resolves a filter's caption, `filterStateKeys` names the URL keys one filter
@@ -337,16 +509,51 @@ state via `countFilterExtra` / `countFilterStateFromExtra` / `CountFilterState`
 / `isCountFilterComplete` / `clearCountFilterExtra` /
 `sanitizeCountFilterParams`, and a chip label from `countFilterChipLabel`.
 Range widgets: `useRangeFilterWidget` / `RangeWidgetState` /
-`RangeFieldWidget` / `RangeOp` / `RANGE_SUFFIXES` / `RANGE_OP_LABEL_KEYS` /
-`RangeOpLabelKeys`. See [filtering](./filtering.md).
+`RangeFieldWidget` / `RangeOp` / `RangeOpArity` / `RANGE_SUFFIXES` /
+`RANGE_OPS` / `RANGE_OP_LABEL_KEYS` / `RangeOpLabelKeys` /
+`writeRangeFilter`. Operator registry: `TEXT_OPS` /
+`NUMBER_OPS` / `DATE_OPS` / `TEXT_OP_LABEL_KEYS` / `NUMBER_OP_LABEL_KEYS` /
+`DATE_OP_LABEL_KEYS` / `FilterOp` / `TextOp` / `NumberOp` / `DateOp` /
+`FILTER_OP_SUFFIX` / `filterOpKey` / `isFilterOpKey` /
+`isValuelessFilterOp` / `isListFilterOp` / `isBetweenFilterOp` /
+`parseTextOp` / `parseNumberOp` / `parseDateOp` /
+`readFilterOp` / `parseListOperand` / `parseNumberList` / `isEmptyRowValue` /
+`formatFilterChip` / `filterOpLabel` / `useTextFilterWidget` /
+`TextFieldWidget` / `useBooleanFilterWidget` / `BooleanFieldWidget` /
+`BooleanChoice` / `parseBooleanChoice` / `coerceBooleanValue`.
+Relative dates: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+`RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+`RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+`countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+`relativeTokenLabel` / `resolveRelativeRange`.
+AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
+`parseFilterTree` / `serializeFilterTree` / `isActiveFilterTree` /
+`evaluateFilterTree` / `conditionToExtra`. Mutations:
+`emptyFilterTree` / `addFilterTreeCondition` / `addFilterTreeGroup` /
+`removeFilterTreeNode` / `replaceFilterTreeNode` /
+`setFilterTreeCombinator` / `walkFilterTreeConditions` /
+`FilterTreeNode`. Builder: `FilterTreeBuilder` /
+`FilterTreeBuilderProps` / `FilterTreeClassNames`. Chips:
+`useFilterTreeChips` / `UseFilterTreeChipsOptions` /
+`filterTreeChipLabel`. Checklist: `ChecklistFilter` /
+`ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
+`ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
+`CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
+`CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
+`FilterHeaderRowProps` / `FilterHeaderClassNames` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
+`rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
+`QueryCondition`s (`isFilterGroup` narrows a child). See
+[filtering](./filtering.md).
 
 **Keyboard cell navigation.** `useGridFocus(options)` is the focus grid —
 `UseGridFocusOptions` in, `GridFocusState` out (`getGridProps`,
-`getCellPropsAt`, `getRowPropsAt`, `focusCell`, `announcement`, `enabled`), and
+`getCellPropsAt`, `getRowPropsAt`, `getColumnHeaderProps`, `selectColumn`,
+`focusCell`, `announcement`, `enabled`), and
 `<DataTable cellNavigation>` wires it for you. The move arithmetic is separate
 and pure: `moveGridFocus(from, move, bounds)` over a `GridCell` and
 `GridBounds`, with `GridFocusMove` naming the intents and
-`gridFocusMoveForKey(press, dir)` mapping a `GridKeyPress` to one (applying the
+`gridFocusMoveForKey(press, dir)` maps a `GridKeyPress` to one (applying the
 RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
 `gridCellAttr(cell)` are the `data-grid-cell` attribute focus uses to find a
 cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
@@ -360,6 +567,165 @@ or left, `isInCellRange` tests membership, `cellRangeSize` multiplies rather
 than enumerating, `extendCellRange` moves the head while keeping the anchor,
 `singleCellRange` / `isSingleCell` cover the one-cell case, and
 `cellRangeIndices` lists the rows and columns for an exporter. See
+[cell navigation](./cell-navigation.md).
+
+**Clipboard.** `clipboardRangeText(options)` turns the selected rectangle into
+the tab-separated text a spreadsheet reads (`ClipboardRangeOptions` in), and
+`writeClipboardText` puts it on the clipboard, answering whether it landed
+rather than throwing. Coming back the other way, `readClipboardText` returns the
+clipboard's text or `null` when the browser refuses it, `parseClipboardTable`
+parses tab-separated text into a grid of raw strings (quoted tabs and newlines
+intact), and `pasteRangeEdits(options)` maps that grid onto a range
+(`PasteRangeOptions` in) as `PasteEdit` values — one per cell, already through
+the column's `parseValue`, ready for the same handler an inline edit uses. `cellPasteHandler(options)`
+resolves who receives them — `onCellPaste` when given, otherwise `onCellEdit`
+one cell at a time, `undefined` when the table takes no edits at all
+(`CellPasteHandlerOptions` in). On `<DataTable>` the props are `onCellPaste` and
+`onCellCut`. See [cell navigation](./cell-navigation.md).
+
+**Fill handle.** `fillDirection(source, to)` says which way a drag from the
+selection's corner is filling (`FillDirection`, or `null` inside the selection),
+`fillTargetRange(source, to)` is the rectangle it would cover — what the preview
+highlights — and `fillRangeEdits(options)` turns the gesture into `CellEdit`
+values (`FillRangeOptions` in), continuing an arithmetic series when the source
+is one and repeating otherwise. `cellFillHandler(options)` resolves the
+recipient (`CellFillHandlerOptions`), and `batchEditHandler(batch, onCellEdit)`
+is the rule both it and `cellPasteHandler` follow. The square itself is
+`FillHandle` / `FillHandleProps` from `@adapttable/core/adapter`; on
+`<DataTable>` the prop is `onCellFill`. See
+[cell navigation](./cell-navigation.md).
+
+**Undo and redo.** `useEditHistory(options)` remembers gestures and replays
+them through `onCellEdit` (`UseEditHistoryOptions` in, `EditHistoryState` out —
+`undo`, `redo`, `canUndo`, `canRedo`, `clear`, `record`), with
+`EditHistoryEntry` the recorded pair. `useTableEditHistory(props)` is the
+table-level wiring — it takes the `editHistory` prop
+(`TableEditHistoryProps`) and returns the history plus the commit channel that
+records each inline edit as a one-cell gesture. `asGesture(apply, record)` makes
+a batch handler one undo entry instead, and `readCellValue(row, column)` reads a
+cell's current value unstringified — what an undo puts back. On `<DataTable>` the prop is
+`editHistory`. See [cell editing](./cell-editing.md).
+
+**Server-side grouping.** A source that declares `supports.grouping` receives
+`query.groupBy` (the keys, outermost first) and, with `supports.aggregates`,
+`query.aggregates` from `useQuerySource`'s `aggregates` option. It answers with
+`QueryGroupRow` values — `value`, `count`, optional `aggregates`, `groups` and
+`rows` — on the source's `groups` field (`QueryGroupsPage` types a whole page),
+and `serverGroupEntries(options)` (`ServerGroupEntriesOptions`) lays them out as
+the same entries local grouping produces. `groupLeafCount(entry)` is the count a
+header shows: the server's when it grouped, the rows in hand otherwise. See
+[row grouping](./row-grouping.md).
+
+**Column sizing.** A `ColumnDef` takes `width`, `minWidth`, `maxWidth` and
+`flex`; `<DataTable fitColumns>` makes the columns share the container.
+`columnFlexShares(options)` computes each flexible column's percentage
+(`ColumnSizingOptions`), `columnSizeStyle(column, shares, userWidth)` is the
+style a cell carries — dragged width first, then the column's own, then its
+share — and `fittedTableStyle(fitColumns)` is what the `<table>` needs for
+percentages to mean anything. See
+[column management](./column-management.md).
+
+**Column auto-sizing.** `measureColumnWidth(root, key)` returns the width a
+column needs for its widest rendered cell — measured from the DOM by the
+`data-column-key` every cell carries — and `autoSizeColumns(root, keys,
+setWidth)` sizes a whole set, returning how many it could measure. A resize
+handle sizes its own column on double-click, and the column menu's action calls
+`shell.autoSizeColumns`. See [column management](./column-management.md).
+
+**Column virtualization.** `useColumnWindow(options)` windows the horizontal
+axis (`UseColumnWindowOptions` in, `ColumnWindow` out — the columns to render
+and the `paddingStart` / `paddingEnd` that hold the rest open), and
+`ColumnSpacer` / `ColumnSpacerProps` from `@adapttable/core/adapter` render one
+of those spacers.
+The render model swaps the windowed columns in, so an adapter maps over
+`model.columns` as before and renders `model.columnSpacers` either side. On
+`<DataTable>` the prop is `virtualizeColumns`. See
+[virtualization](./virtualization.md).
+
+**Virtualized row detail.** `useRowPairMeasurer(virtualizer, enabled)` returns
+`RowPairMeasurer` — `row(index)` and `detail(index)` ref callbacks — which
+report a row and its open panel as one height through the virtualizer's
+`resizeItem` (`ResizableVirtualizer`). It is what lets `renderRowDetail` and
+`virtualize` be used together; adapters take it as `measureRowPair` in place of
+`measureElement` when the table can expand rows. See
+[virtualization](./virtualization.md).
+
+**Row grouping.** `groupBy` takes a key or an ordered list; `parseGroupBy(value)`
+turns any of its forms (`GroupByInput`) into the key list and `formatGroupBy`
+back into the single comma-separated value state is stored as.
+`buildGroupedFlatModel(options)` walks the tree into the flat `GroupedFlatEntry`
+list adapters render — each group entry carrying its `level`, its `groupBy` key,
+its `path` and the leaves of its whole subtree — and `groupIndentStyle(level)`
+from `@adapttable/core/adapter` is the indent every kit applies. `GroupSort`
+names the orderings `groupSort` accepts (`"label"`, `"label-desc"`, `"count"`,
+`"count-desc"`, or a comparator) and `GroupNode` is what it and `groupFilter`
+receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`.
+Paging is `groupPageSize` / `groupRowPageSize`: `useGroupPaging()` holds how
+much has been revealed (`GroupPagingState`, whose `paging` is a `GroupPaging`),
+the model emits a `groupMore` entry for the rest, and `GroupMoreButton` /
+`GroupMoreButtonProps` from `@adapttable/core/adapter` render the offer.
+`groupRowParts(kind)` names the `data-adapttable-part` values for each of the
+three rows a grouped body renders (`GroupRowKind`), and `GroupToggleSpacer`
+holds the chevron's width on the two rows that have no chevron, so a footer
+lines up with the header it closes.
+Expansion is the `collapsedGroupIds` / `onCollapsedGroupIdsChange` pair —
+`useGroupCollapseUrlState(options)` keeps it in the URL
+(`UseGroupCollapseUrlStateOptions` in, `UseGroupCollapseUrlStateResult` out,
+serialized by `readCollapsedGroups` / `writeCollapsedGroups` under
+`PARAM_GROUP_CLOSED`), and the table's grouping bundle carries `expandAll`,
+`collapseAll` and `collapseToDepth`. See
+[row grouping](./row-grouping.md).
+
+**Tree data.** A hierarchy the data declares, not one derived from values, so
+it is a separate model from grouping. `TreeShape<TRow>` is how a host declares
+it — `getChildren` for nested rows, `getParentId` for a flat list with a parent
+column, `hasChildren` for children not fetched yet. `buildTreeEntries(options)`
+(`BuildTreeEntriesOptions` in) flattens it into the `TreeEntry<TRow>` list
+adapters render, each entry carrying its `level`, `path`, `descendantIds` and
+`loading`; `useTreeExpansion(options)` holds the open set
+(`TreeExpansionState`), `treeColumnKey(columns, declared?)` picks the column
+that carries the chevron, and `filterTreeRows(options)` keeps a match together
+with every ancestor that leads to it. `treeIndentStyle(level)` indents a cell
+and `treeCardStyle(level)` a mobile card; `bodyRowEntries(rows, tree)` returns
+the `BodyRowEntry<TRow>` list a body maps over, tree or flat. `TreeCell` /
+`TreeCellProps` from `@adapttable/core/adapter` wrap the tree column's cell in
+its chevron and its indent (every other column passes through), and `TreeToggle`
+/ `TreeToggleProps` render the chevron itself. Lazy branches are
+`hasChildren` + `onLoadChildren`: `useLazyChildren(options)` holds which nodes
+are fetching (`LazyChildrenState`, `UseLazyChildrenOptions` in) and the tree
+bundle carries `loadingIds` / `failedIds`. A server-side tree is
+`supports: { tree: true }` plus `expandedIds` on `useServerData` /
+`useQuerySource`, which sends the open ids as `query.expandedIds`.
+
+**A real table under a row.** `nestedTable` takes a `NestedTableFor<TRow>` and
+returns a `NestedTable` — a `label` and a `table(defaults)` that mounts the kit's
+own component. `NestedTableDefaults` is what it receives: `urlSync: false`,
+`searchable: false`, the parent's `density`, `labels` and the `tableLabel`.
+`nestedTableDefaults(label, parent)` builds them and `nestedTableDetail(options)`
+turns the declaration into the `renderRowDetail` the table places under a row
+(both from `@adapttable/core/adapter`, with `NestedTableParent` for what the
+parent contributes). See [tree data](./tree-data.md).
+See [tree data](./tree-data.md).
+
+**Find in table.** `findMatches(options)` returns every cell whose text
+contains the query, in absolute addresses (`FindMatchesOptions` in);
+`matchKey(cell)` / `matchKeySet(matches)` make membership a constant-time
+question and `stepMatch(index, total, step)` wraps the walk.
+`useFindInTable(options)` is the bar's state — `open`, `query`, `matches`,
+`index`, `current`, `next`, `previous` (`UseFindInTableOptions` in,
+`FindInTableState` out) — and `FindBar` / `FindBarProps` from
+`@adapttable/core/adapter` render it. `useFindFocus(current, focusCell,
+selectRange)` is what takes the table's focus to the match the walk is on. Cells carry `data-cell-match` /
+`data-cell-match-current`, which `isMatchedCell` / `isCurrentMatchCell` read and
+`cellHighlightStyle(props, base, selected)` resolves into one background. On
+`<DataTable>` the prop is `findInTable`. See
+[cell navigation](./cell-navigation.md).
+
+**Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
+`cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
+selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /
+`SelectionStatsBarProps` from `@adapttable/core/adapter` render the strip, which
+is empty below two cells. On `<DataTable>` the prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
@@ -390,12 +756,24 @@ by its tag: `ar`, `de`, `en`, `es`, `fa`, `fr`, `he`, `hi`, `it`, `ja`, `ko`,
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
-`computePagination`, `headerGroupRow`, `columnMenuRows` +
+`computePagination`, `headerGroupRow` / `headerGroupRows`,
+`columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP`,
+`applyCollapsedColumnGroups` / `toggleCollapsedColumnGroup`,
+`columnHeaderLabel` / `columnHeaderController` /
+`resolveColumnHeader` / `resolveColumnFooter` / `columnsHaveFooter`,
+`ColumnHeaderController` / `ColumnHeaderContext` / `ColumnFooterContext`,
+`columnMenuRows` / `filterColumnMenuRows` / `columnMenuActions` /
+`showAllColumns` / `hideAllColumns` / `unpinAllColumns` /
+`resetColumnLayout`, `ColumnMenuAction` / `ColumnMenuActionContext`,
 `columnRowDragProps` / `columnDropProps` / `columnReorderKeyProps` /
 `columnResizeHandleProps` (RTL-aware), `pinnedCellStyle` / `edgePinStyle` /
 `PIN_Z`, `tableMinWidth` / `resolveColumnWidth` / `parsePxWidth`,
 `rowClickProps`, `resolveFilterDefs` / `buildFilterRuntime` /
 `filterPredicate` / `materializeAutoOptions` / `clearedFilterExtras`,
+`builtInFilterSpecs` / `defaultFilterRegistry` / `resolveFilterRegistry` /
+`createFilterRegistry` / `emptyFilterRegistry` / `filterTypeSpec` /
+`filterWidgetKind` / `filterTypeOps` / `filterTypeDefaultOp` /
+`renderRegisteredFilter`,
 `mergeProps`, `stableKey`, `getPath`, `humanizeKey`, `resolveLabels` /
 `defaultLabels`, `pageSizeOptions`, and the constants `DEFAULT_LIMIT` (25),
 `PAGE_SIZE_OPTIONS`, `SEARCH_DEBOUNCE_MS` (300), `AUTO_OPTIONS_LIMIT` (50),
@@ -403,40 +781,50 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 
 ## Types
 
-| Type                                                                | What it is                                                                                                   |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `TableSource<TRow>`                                                 | The uniform data + state contract a table consumes (rows, total, loading flags, state read/write).           |
-| `TableQuery`                                                        | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`. |
-| `TableQueryParams`                                                  | Baseline query params a backend list endpoint receives.                                                      |
-| `QuerySupport`                                                      | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.               |
-| `QueryExtensions`                                                   | The optional query fields those capabilities unlock, carried on `TableQuery`.                                |
-| `QueryAggregate`                                                    | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.            |
-| `aggregate`                                                         | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md). |
-| `AggregateName` / `AGGREGATE_NAMES`                                 | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
-| `Aggregator` / `AggregateSpec` / `AggregateOptions`                 | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).  |
-| `AggregateFn`                                                       | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                           |
-| `QueryCondition` / `QueryFilterGroup`                               | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                 |
-| `isFilterGroup`                                                     | Narrows a filter-tree child to a nested group while walking the tree.                                        |
-| `PaginatedResponse<TRow>`                                           | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                             |
-| `ColumnLayoutState`                                                 | `{ hidden, order, pinned, widths }` — the column-layout shape.                                               |
-| `TableLabels`                                                       | Every string the table renders; all keys optional, English defaults fill gaps.                               |
-| `RowAction<TRow>` / `BulkAction`                                    | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                             |
-| `BulkActionContext`                                                 | `{ allMatching, total }` — scope handed to a bulk action handler.                                            |
-| `ActionConfirm<TArg>`                                               | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                   |
-| `ConfirmHandler` / `ConfirmRequest`                                 | The injectable confirmation seam (`(request) => void`).                                                      |
-| `defaultConfirm`                                                    | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                              |
-| `ActiveFilterChip` / `ChipLabelResolver`                            | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                               |
-| `UrlStateAdapter`                                                   | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                       |
-| `SavedView`                                                         | `{ name, search }` — one captured view.                                                                      |
-| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource` | The declarative filter surface (see [FilterDef](#filterdef)).                                                |
-| `CellProps<TRow>`                                                   | `{ row, rowIndex }` — what a `Cell` component receives.                                                      |
-| `SortDirection` / `SortLevel`                                       | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                       |
-| `Direction`                                                         | `"ltr" \| "rtl"`.                                                                                            |
-| `ColorScheme`                                                       | `"light" \| "dark" \| "auto"`.                                                                               |
-| `PaginationMode`                                                    | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                        |
-| `FilterValue` / `ExtraFilters`                                      | One URL-round-tripped filter value / the keyed bag of them.                                                  |
-| `SortableValue`                                                     | Comparable primitive returned by a sort-value extractor.                                                     |
-| `SortByOption`                                                      | `{ value, label }` for the mobile sort-by select.                                                            |
+| Type                                                                      | What it is                                                                                                                                         |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write). |
+| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                       |
+| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                                            |
+| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                     |
+| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                      |
+| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                  |
+| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                       |
+| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                        |
+| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
+| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                       |
+| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                                              |
+| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                   |
+| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                   |
+| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                     |
+| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                   |
+| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                  |
+| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                         |
+| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                            |
+| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                    |
+| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                     |
+| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                             |
+| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                            |
+| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                      |
+| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`              | One registered type / the immutable registry / which built-in widget to draw.                                                                      |
+| `FilterWidgetRenderProps`                                                 | Props a custom `FilterTypeSpec.render` receives.                                                                                                   |
+| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                            |
+| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                             |
+| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                  |
+| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                                     |
+| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                              |
+| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                        |
+| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                           |
+| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                  |
+| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).                               |
+| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                  |
+| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                     |
+| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                    |
+| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                                        |
+| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                      |
+| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                             |
+| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                                   |
 
 ## Development warnings
 
@@ -462,7 +850,8 @@ full set: `UseDataTableOptions`, `UseFrontendDataOptions`,
 `UseTableUrlStateOptions`, `UseSavedViewsResult`, `UseSelectionOptions`,
 `UseColumnLayoutOptions`, `UseColumnLayoutStorageStateOptions` /
 `UseColumnLayoutStorageStateResult`, `UseColumnLayoutUrlStateOptions` /
-`UseColumnLayoutUrlStateResult`, `UseQuerySourceOptions`,
+`UseColumnLayoutUrlStateResult`, `UseRowPinningUrlStateOptions` /
+`UseRowPinningUrlStateResult`, `UseQuerySourceOptions`,
 `UseActiveFilterChipsOptions`,
 `UseExtraChipsOptions`, `UseBulkActionRunnerOptions`,
 `UseBulkBarStateOptions`, `UseInfiniteScrollOptions`,
@@ -498,7 +887,8 @@ shared render prelude from `SharedTableRenderProps`; `TableBodyRegion`
 names which body region renders (desktop rows, mobile cards);
 `VirtualTableRow` is one materialized virtual row/card entry.
 `useResolvedAdapter` resolves the URL backend the way the shell does;
-`PageSelector` projects a fetched page to rows and an optional total, and
+`PageSelector` projects a fetched page to rows, an optional total, and
+optional `facets`, and
 `InfiniteQueryLike` is the minimal `useInfiniteQuery` shape
 `useQuerySource` reads (structural — TanStack Query stays a type-only
 peer).
@@ -520,14 +910,22 @@ column's pin, `pinActionLabel` labels the action, and
 reorder/resize/pin rows. Toolbar glue: `SearchInputState` (debounced
 search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
-`rowEditingSignature`, `HeaderGroupCell` and `headerGroupRow`. Shared
+`rowEditingSignature`, `HeaderGroupCell`, `headerGroupRow` /
+`headerGroupRows`, `ColumnGroupToggle` / `ColumnGroupToggleProps`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
-`resolveMobileLabel` (a card field's caption), `shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
+`resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
+cell's props put it inside the selected range, for a kit applying its own fill),
+`shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,
 `DEFAULT_CARD_SIZE_PX`, `useKeyedVirtualization` / `KeyedVirtualization`
 (virtualize an opaque keyed list, e.g. grouped entries),
 `useMountStagger` (the `animate` stagger), and the inline icon set
 (`FiltersIcon`, `SearchIcon`, `EyeIcon`, `GripIcon`, `PinIcon`,
-`ExpandChevron`, `sortArrow`).
+`ExpandChevron`, `sortArrow`). Row reorder chrome: `RowReorderHandle`,
+`RowReorderHandleProps`, `RowReorderButtons`, `RowReorderButtonsProps`,
+`RowReorderAnnouncer`, `rowReorderSignature`, `REORDER_COLUMN_WIDTH`,
+`ROW_DND_MIME`. Row pin chrome: `rowPinSignature`, `rowSourceIndex`,
+`pinnedRowStickyStyle`, `pinnedRowCellStyle`, `orderedCardEntries`,
+`useOffsetHeight`, `PINNED_TOP_PART`, `PINNED_BOTTOM_PART`.
 
 **Bulk actions.** `useBulkBarState` / `BulkBarState` /
 `BulkBarChromeProps` derive everything a bulk-action toolbar renders

@@ -59,7 +59,7 @@ const FIXTURES = [
   {
     name: "core · simple table",
     pkg: "core",
-    budgetKB: 12,
+    budgetKB: 13,
     code: `export { useFrontendData, useDataTable } from "PKG";`,
     // The size ceiling says the base import is small. These say WHY: the heavy
     // capabilities are genuinely shaken out, not merely compressing well. A
@@ -75,19 +75,140 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 40,
+    budgetKB: 76,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 57 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 56 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 57 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 57 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 57 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 63 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 61 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 58 },
+  //
+  // These moved together on 2026-08-12 (+~1 KB each) when cell selection became
+  // visible, columns became selectable and Ctrl/Cmd+C learned to copy the
+  // rectangle — all of it on the grid path, which every adapter bundles. The
+  // fixture that carries the actual promise is `core · simple table` above: a
+  // plain table pays 10.6 KB of a 12 KB ceiling and did not move.
+  //
+  // Five capabilities joined that path on 2026-08-12, each of them chrome the
+  // batteries-included table always carries: Ctrl/Cmd+V (~0.4 KB), the fill
+  // handle (~1.3 KB), the selection statistics strip (~0.5 KB), the edit
+  // history (~0.6 KB) and find in table (~0.8 KB, bar included). The fixture
+  // that carries the actual promise is `core · simple table` above — a plain
+  // table pays 10.7 KB of a 12 KB ceiling and did not move through any of it.
+  //
+  // Grouping grew on the same day: nesting, footers, ordering and the server's
+  // own group rows all render through the entries every adapter already walks.
+  // Row detail then learned to be measured together with its row, which is
+  // what let it be used with virtualization at all, and the columns learned to
+  // window too (~1 KB): the spacer cells and the horizontal window ride the
+  // same render model every adapter already maps over. Auto-sizing added the
+  // measurement and one menu action on top, and column sizing — bounds, flex
+  // shares and the container-fitting mode — closed phase 3. Tree data adds a
+  // second hierarchy model (~1 KB): the flattening walk, its own expansion
+  // state, and the chevron every body and every card renders — plus the
+  // per-node fetch state a lazily loaded branch needs, and the nested-table
+  // region that turns master/detail into a real table under a row. Editing
+  // validation adds the per-cell message state, the async check that supersedes
+  // a stale answer, and the ARIA every editor now carries (~1 KB). The editor
+  // set — boolean, date, datetime, time, multi-select — adds the platform
+  // controls two of them render and the draft shapes they hold. Async saves add
+  // the per-cell in-flight state, the rollback it offers, and a bring-your-own
+  // editor's contract; dirty marks add the per-cell change set every row reads.
+  // Row editing adds the second commit unit — the whole-row draft state, the
+  // cell that renders a field instead of a value, and the three controls that
+  // end the edit — and batch editing the third, holding many rows at once
+  // behind one write. Lifecycle events (~0.5 KB) observe those three units:
+  // start, cancel, commit, validation-fail and save-error, latched so a host
+  // inline arrow never repaints rows. Edit conflicts (~0.5 KB) compare the
+  // open editor to a live row and surface Keep mine / Take theirs on the
+  // validation channel. The simple-table fixture did not move.
+  //
+  // Row reordering (~2 KB) is chrome every adapter already walks: the reserved
+  // grip column, Space-lift keyboard, live-region announcer, HTML5 drop
+  // targets, and the mobile up/down pair. The host still opts in with
+  // `onRowReorder` — omit it and nothing renders — but the builders sit on
+  // the same path as row actions. `core · simple table` stayed at 11.4 KB
+  // of a 12 KB ceiling.
+  //
+  // Row pinning (~0.5 KB) adds the sticky top/bottom sections, the pin
+  // actions, and the URL pair. The host still opts in with `pinnedRowIds`
+  // or `onPinnedRowIdsChange`. `core · simple table` stayed at 11.4 KB of
+  // a 12 KB ceiling.
+  //
+  // Row and column spanning (~1.5 KB) replaces every kit's columns.map
+  // with a per-row cell list: origins carry colSpan/rowSpan, covered
+  // cells are omitted, pins and the column window clip the rectangle,
+  // and arrows / CSV skip a covered address. The host still opts in
+  // with `getCellSpan` or `column.colSpan` / `column.rowSpan`.
+  // `core · simple table` stayed at 11.4 KB of a 12 KB ceiling.
+  //
+  // Collapsible multi-level column groups (~0.4 KB) stack header rows
+  // from a path, hide non-summary leaves when a group is collapsed, and
+  // render one shared toggle. The host still opts in with
+  // `collapsibleColumnGroups` — omit it and no toggle renders — but the
+  // path walker sits on the same header-group path the kits already
+  // imported. `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
+  //
+  // Column menu 2.0 (~2 KB per kit) adds the search box, bulk
+  // show/hide/unpin, the per-column submenu, and the lock flags the
+  // shared model already computed. The host still opts in with
+  // `enableColumnMenu` — omit it and the menu does not render — but
+  // every kit's ColumnMenu is on the same always-imported path.
+  // `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
+  //
+  // Rich filter operators (~1.5 KB) put the per-datatype registry, the
+  // operator-first widgets, and `f_<key>Op` persistence on the filter
+  // form every kit already imports. The host still opts in with a
+  // `filters` array — omit it and no widget renders — but the
+  // comparison tokens ride the same AutoFilterForm path. `core ·
+  // simple table` stayed at 11.7 KB of a 12 KB ceiling.
+  //
+  // Boolean filter (~0.3 KB) adds the tri-state any/true/false widget
+  // on that same AutoFilterForm path. `core · simple table` unmoved.
+  //
+  // Relative date tokens (~0.5–1.1 KB) add the preset select + last/next
+  // N on the dateRange widget. `core · simple table` stayed at 11.9 KB
+  // of a 12 KB ceiling.
+  //
+  // AND/OR filter trees (~0.4 KB on the simple path, ~0.9 KB on the
+  // full export) parse `ft=1.{…}` in the URL layer and evaluate the
+  // tree in `useTableData`. A shared link has to filter without a
+  // builder, so the codec cannot sit behind an optional entry. The
+  // evaluator stays next to `filterDefs` (already on `useTableData`);
+  // the codec is a separate module so `useFrontendData` does not pull
+  // the predicate engine. `core · simple table` is 12.3 KB of a 13 KB
+  // ceiling.
+  //
+  // The visual AND/OR builder (~4 KB per kit) mounts under the same
+  // filter panel every adapter already imports. The host still opts
+  // in with `filters` — omit the defs and the builder returns null —
+  // but the recursive native UI cannot sit behind a second entry
+  // without breaking a shared `ft=` link that needs editing. The
+  // simple-table fixture stayed at 12.5 KB of a 13 KB ceiling.
+  //
+  // The Excel-style checklist (~1.5 KB per kit) is another leaf on
+  // that same AutoFilterForm path. Omit `type: "checklist"` and the
+  // widget returns null; a server page without `allFilteredRows`
+  // never offers it. `core · simple table` stayed at 12.5 KB of a
+  // 13 KB ceiling.
+  //
+  // The compact header filter row (~0.7 KB on the full export, ~1 KB
+  // per kit) sits under the leaf header every desktop table already
+  // renders. `headerFilters` opts the row in; omit it and
+  // FilterHeaderRow returns null. Ant Design keeps the control in
+  // the header cell so its fixture stayed under. `core · simple
+  // table` stayed at 12.5 KB of a 13 KB ceiling.
+  //
+  // The public filter-type registry (~0.5 KB on the kit path) lives in
+  // `filterBuiltins` so `useFrontendData` / `useDataTable` do not load
+  // every built-in spec. Ant Design's header-cell control plus the
+  // registry lookup on AutoFilterForm nudged that fixture over 101 KB.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 107 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 107 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 107 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 102 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 107 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 113 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 109 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 106 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

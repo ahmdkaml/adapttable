@@ -1,5 +1,6 @@
 import { defaultLabels } from "@adapttable/core";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { FilterPopover } from "./FilterPopover";
@@ -100,6 +101,22 @@ describe("FilterPopover", () => {
     // Click on the document body (outside) — closes.
     fireEvent.click(document.body);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays open when the clicked control unmounts mid-click", () => {
+    function SelfReplace() {
+      const [gone, setGone] = useState(false);
+      if (gone) return <span>replaced</span>;
+      return (
+        <button type="button" onClick={() => setGone(true)}>
+          Add condition
+        </button>
+      );
+    }
+    const { onClose } = renderPopover({ filters: <SelfReplace /> });
+    fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
+    expect(screen.getByText("replaced")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("stays open while a control inside it holds focus (native picker popups)", () => {

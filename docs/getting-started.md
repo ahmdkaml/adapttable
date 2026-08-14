@@ -240,6 +240,12 @@ The source for each lives in
   (show/hide, reorder, pin), resizing.
 - [Inline cell editing](./cell-editing.md) — opt-in `onCellEdit`, kit-native
   editors, keyboard flow.
+- [Row reordering](./row-reordering.md) — opt-in `onRowReorder`, Space-lift
+- [Row pinning](./row-pinning.md) — sticky top and bottom rows, `{ top, bottom }` ids
+- [Row and column spanning](./row-spanning.md) — `getCellSpan`, one cell list per row
+- [Full-width and separator rows](./full-width-rows.md) — `extraRows`, host-injected slots
+- [Row styling and heights](./row-styling.md) — `rowStyle`, `rowHeight`, variable-height virtualizer
+  keyboard, dataset-relative indices.
 - [Filtering](./filtering.md) — every filter type, options sources, chips,
   popover vs drawer.
 - [Data tiers](./data-tiers.md) — server data without a query library

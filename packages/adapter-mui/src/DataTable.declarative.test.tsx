@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { DataTable } from "./DataTable";
 import type { ColumnDef, FilterDef, FilterOption, TableQuery } from "./index";
-import { defaultLabels } from "./index";
+import { defaultFilterRegistry, defaultLabels } from "./index";
 import { renderMui } from "./test-utils";
 
 interface Person {
@@ -78,6 +78,12 @@ const FILTERS: FilterDef<Person>[] = [
   },
   { key: "hiredAt", type: "dateRange" },
   { key: "budget", type: "numberRange" },
+  {
+    key: "active",
+    type: "boolean",
+    label: "Active",
+    getValue: (row) => row.status === "active",
+  },
 ];
 
 const theme = createTheme();
@@ -235,10 +241,23 @@ describe("declarative DataTable (MUI)", () => {
     expect(seen[1]!.aborted).toBe(false);
   });
 
+  it("boolean filter writes true and clears", () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(screen.getByLabelText("Active"), {
+      target: { value: "true" },
+    });
+    expect(param(adapter, "f_active")).toBe("true");
+    fireEvent.change(screen.getByLabelText("Active"), {
+      target: { value: "" },
+    });
+    expect(param(adapter, "f_active")).toBeNull();
+  });
+
   it("text filter writes its key (and empty clears it)", () => {
     const adapter = mountTable();
     openFilters();
-    const input = screen.getByLabelText("First Name");
+    const input = screen.getByLabelText("Value");
     fireEvent.change(input, { target: { value: "car" } });
     expect(param(adapter, "f_firstName")).toBe("car");
     expect(screen.queryByText("Alice")).toBeNull();
@@ -280,24 +299,51 @@ describe("declarative DataTable (MUI)", () => {
     expect(budgetOps).toEqual([
       "",
       "Equal",
+      "Not equal",
+      "Greater than",
       "Mindestens",
+      "Less than",
       "At most",
       "Between",
+      "Is any of",
+      "Is none of",
     ]);
-    // Date flavour: on / on-or-after / on-or-before / between.
+    // Date flavour: before / after / on / on-or / between / empty.
     const hiredOps = hiredGroup()
       .getAllByRole("option")
       .map((option) => option.textContent);
     expect(hiredOps).toEqual([
       "",
+      "Before",
+      "After",
       "On",
       "On or after",
       "On or before",
       "Between",
+      "Relative",
+      "Is empty",
     ]);
     // Operator-first: no value input until a comparison is chosen.
     expect(budgetGroup().queryByLabelText("Value")).toBeNull();
     expect(budgetGroup().queryByLabelText("From")).toBeNull();
+  });
+
+  it("dateRange Relative stores the token and exposes last/next N", () => {
+    const adapter = mountTable();
+    openFilters();
+    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
+      target: { value: "relative" },
+    });
+    expect(param(adapter, "f_hiredAtOp")).toBe("relative");
+    expect(param(adapter, "f_hiredAtFrom")).toBe("today");
+    fireEvent.change(hiredGroup().getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    expect(param(adapter, "f_hiredAtFrom")).toBe("last:7");
+    fireEvent.change(hiredGroup().getByLabelText("Value"), {
+      target: { value: "14" },
+    });
+    expect(param(adapter, "f_hiredAtFrom")).toBe("last:14");
   });
 
   it('"At least" writes only Min — switching to "At most" migrates it to Max', () => {
@@ -438,6 +484,56 @@ describe("declarative DataTable (MUI)", () => {
 });
 
 describe("<AutoFilterForm> (MUI)", () => {
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    renderMui(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={{ extra: {}, setExtra: vi.fn(), setExtras: vi.fn() }}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
+  });
+
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    const setExtra = vi.fn();
+    const source = {
+      extra: {},
+      setExtra,
+      setExtras: vi.fn(),
+    };
+    renderMui(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={source}
+        labels={defaultLabels}
+      />
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    renderMui(
+      <AutoFilterForm
+        defs={[{ key: "team", type: "checklist", getValue: () => "Core" }]}
+        source={{ ...source, allFilteredRows: [{ id: "1" } as Person] }}
+        labels={defaultLabels}
+      />
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("async select options load lazily: disabled placeholder, then choices", async () => {
     const load = vi.fn(() =>
       Promise.resolve<readonly FilterOption[]>([

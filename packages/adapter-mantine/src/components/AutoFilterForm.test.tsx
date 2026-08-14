@@ -1,4 +1,5 @@
 import {
+  defaultFilterRegistry,
   defaultLabels,
   type ExtraFilters,
   type FilterDef,
@@ -15,11 +16,15 @@ interface Row {
   id: string;
 }
 
-function makeSource(extra: ExtraFilters = {}) {
+function makeSource(
+  extra: ExtraFilters = {},
+  allFilteredRows?: readonly Row[]
+) {
   const setExtra = vi.fn();
   const setExtras = vi.fn();
   const source: TableSource<Row> = {
     rows: [],
+    allFilteredRows,
     total: 0,
     isLoading: false,
     isFetching: false,
@@ -88,16 +93,48 @@ const BUDGET_DEF: FilterDef<Row> = {
 const HIRED_DEF: FilterDef<Row> = { key: "hired", type: "dateRange" };
 
 describe("<AutoFilterForm>", () => {
+  it("checklist hides without allFilteredRows and checks a counted value", () => {
+    const hidden = makeSource();
+    renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      hidden.source
+    );
+    expect(screen.queryByLabelText("Search values")).toBeNull();
+    const { source, setExtra } = makeSource({}, [{ id: "1" }]);
+    renderForm(
+      [{ key: "team", type: "checklist", getValue: () => "Core" }],
+      source
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Core/ }));
+    expect(setExtra).toHaveBeenCalledWith("team", ["Core"]);
+  });
+
   it("text: shows the current value + placeholder and writes the state key", () => {
-    const { source, setExtra } = makeSource({ name: "al" });
+    const { source, setExtras } = makeSource({ name: "al" });
     renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);
     const input = screen.getByLabelText("Name");
     expect(input).toHaveValue("al");
     expect(input).toHaveAttribute("placeholder", "Find…");
     fireEvent.change(input, { target: { value: "ali" } });
-    expect(setExtra).toHaveBeenCalledWith("name", "ali");
+    expect(setExtras).toHaveBeenCalledWith({
+      name: "ali",
+      nameOp: "contains",
+    });
     fireEvent.change(input, { target: { value: "" } });
-    expect(setExtra).toHaveBeenCalledWith("name", "");
+    expect(setExtras).toHaveBeenCalledWith({
+      name: undefined,
+      nameOp: undefined,
+    });
+  });
+
+  it("boolean: tri-state select writes true and clears", () => {
+    const { source, setExtra } = makeSource();
+    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
+    const select = screen.getByLabelText("Core team");
+    fireEvent.change(select, { target: { value: "true" } });
+    expect(setExtra).toHaveBeenCalledWith("core", "true");
+    fireEvent.change(select, { target: { value: "" } });
+    expect(setExtra).toHaveBeenCalledWith("core", undefined);
   });
 
   it("select: prepends a clearing All option and writes the chosen value", () => {
@@ -205,6 +242,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     fireEvent.change(screen.getByRole("textbox", { name: "Budget Value" }), {
       target: { value: "150" },
@@ -212,6 +250,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "150",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -225,6 +264,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: "5",
+      budgetOp: "eq",
     });
   });
 
@@ -240,6 +280,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: "200",
+      budgetOp: "lte",
     });
   });
 
@@ -260,11 +301,13 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "100",
       budgetMax: "1200",
+      budgetOp: "between",
     });
     fireEvent.change(from, { target: { value: "150" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "150",
       budgetMax: "900",
+      budgetOp: "between",
     });
   });
 
@@ -279,6 +322,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
   });
 
@@ -296,6 +340,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: "5",
       budgetMax: undefined,
+      budgetOp: "gte",
     });
   });
 
@@ -310,6 +355,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       budgetMin: undefined,
       budgetMax: undefined,
+      budgetOp: undefined,
     });
     expect(operator).toHaveValue("At least");
   });
@@ -338,6 +384,7 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-01",
       hiredTo: undefined,
+      hiredOp: "gte",
     });
   });
 
@@ -359,11 +406,38 @@ describe("<AutoFilterForm>", () => {
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-15",
       hiredTo: "2026-02-01",
+      hiredOp: "between",
     });
     fireEvent.change(to, { target: { value: "2026-03-01" } });
     expect(setExtras).toHaveBeenLastCalledWith({
       hiredFrom: "2026-01-01",
       hiredTo: "2026-03-01",
+      hiredOp: "between",
     });
+  });
+
+  it("renders a custom type through the registry widget kind", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personText",
+    });
+    const { source } = makeSource();
+    renderMantine(
+      <AutoFilterForm
+        defs={[
+          {
+            key: "name",
+            type: "personText",
+            label: "Name",
+            placeholder: "Find…",
+          },
+        ]}
+        source={source}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByPlaceholderText("Find…")).toBeVisible();
   });
 });

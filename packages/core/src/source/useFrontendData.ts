@@ -13,6 +13,7 @@ import {
   type UseTableUrlStateOptions,
 } from "../url/useTableUrlState";
 import { devWarn } from "../utils/devWarn";
+import type { QueryFilterGroup } from "./queryContract";
 import type { TableSource } from "./TableSource";
 
 /** Narrows an accessor's `ReactNode` to a sortable primitive, else `null`. */
@@ -82,6 +83,11 @@ export interface UseFrontendDataOptions<TRow> extends Pick<
    * filter UI filters the rows with no extra wiring. Omit for no filtering.
    */
   filterFn?: (row: TRow, extra: ExtraFilters) => boolean;
+  /**
+   * Evaluate the URL's AND/OR filter tree against a row. Omit and the
+   * tree is stored but not applied (server tiers send it instead).
+   */
+  filterTreeFn?: (row: TRow, tree: QueryFilterGroup) => boolean;
   /** Pagination mode. Defaults to `"auto"` (mobile → infinite). */
   paginationMode?: PaginationMode;
   /** Forwarded error to display (e.g. from the query that produced `data`). */
@@ -131,6 +137,7 @@ export function useFrontendData<TRow>(
     getSortValue,
     columns,
     filterFn,
+    filterTreeFn,
     paginationMode = "auto",
     error = null,
     refetch,
@@ -157,15 +164,21 @@ export function useFrontendData<TRow>(
     [data, getSearchText]
   );
 
-  const filtered = useMemo(() => {
+  const searched = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const bySearch = term
+    return term
       ? data.filter((_, index) => searchIndex[index]!.includes(term))
       : data;
-    return filterFn
-      ? bySearch.filter((row) => filterFn(row, state.extra))
-      : bySearch;
-  }, [data, searchIndex, search, filterFn, state.extra]);
+  }, [data, searchIndex, search]);
+
+  const filtered = useMemo(() => {
+    const byExtra = filterFn
+      ? searched.filter((row) => filterFn(row, state.extra))
+      : searched;
+    const tree = state.filterTree;
+    if (!tree || !filterTreeFn) return byExtra;
+    return byExtra.filter((row) => filterTreeFn(row, tree));
+  }, [searched, filterFn, filterTreeFn, state.extra, state.filterTree]);
 
   const sortLevels = state.sortLevels;
   const sorted = useMemo(() => {
@@ -223,6 +236,7 @@ export function useFrontendData<TRow>(
   return {
     rows,
     allFilteredRows: sorted,
+    allSearchedRows: searched,
     total,
     isLoading,
     isFetching,
@@ -239,6 +253,7 @@ export function useFrontendData<TRow>(
     sortDir,
     groupBy,
     extra: state.extra,
+    filterTree: state.filterTree,
     setPage: state.setPage,
     setLimit: state.setLimit,
     setSort: state.setSort,
@@ -248,6 +263,7 @@ export function useFrontendData<TRow>(
     setSearch: state.setSearch,
     setExtra: state.setExtra,
     setExtras: state.setExtras,
+    setFilterTree: state.setFilterTree,
     clearExtras: state.clearExtras,
     clearAll: state.clearAll,
   };

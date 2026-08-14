@@ -84,23 +84,24 @@ export function People() {
 
 ## How it works
 
-- `enableColumnMenu` renders the built-in Columns menu: a visibility toggle per column, drag- or arrow-key reorder on each row's grip, a pin control cycling none → left → right → none, and a reset action. Hiding a column never reorders the rest.
+- `enableColumnMenu` renders the built-in Columns menu: a search box, bulk show/hide/unpin, a visibility toggle per column, drag- or arrow-key reorder on each row's grip, a pin control, a per-column submenu (sort, pin, hide, auto-size, filter, reset one), auto-size-all, and reset-all. Hiding a column never reorders the rest. `lockPosition` / `lockVisibility` / `lockWidth` / `lockPin` on a `ColumnDef` gray out the matching controls.
 - Pinning is logical (inline start/end), so a "left" pin sticks to the correct edge under `dir="rtl"`. It needs a horizontal scroll context to visibly stick — set `maxHeight`, or let the table exceed its container width.
 - `resizableColumns` adds a handle to every header: drag it, or focus it and press ←/→ (16 px per step, 60 px minimum). Direction-aware, so it widens the right way in RTL.
 - The row-actions column is first-class under the reserved key `"actions"` (`ACTIONS_COLUMN_KEY`): the menu lists it with a visibility toggle and an end-pin toggle — `hidden: ["actions"]` hides it, `pinned: { actions: "right" }` pins it to the end on its own, no data-column pin required. It never reorders or resizes; it always trails.
-- The layout state is `{ hidden, order, pinned, widths }` (`ColumnLayoutState`), keyed by column key. Uncontrolled by default; seed it with `defaultColumnLayout`, or own it with `columnLayout` + `onColumnLayoutChange` — the same controlled/uncontrolled split as a form input.
-- Two ready-made persistence hooks feed the controlled mode: `useColumnLayoutUrlState({ urlKey })` keeps the layout in the query string (`colHide` / `colPin` / `colOrder` / `colW` — shareable links), and `useColumnLayoutStorageState({ storageKey })` keeps it in localStorage (user preference).
+- The layout state is `{ hidden, order, pinned, widths, collapsedGroups? }` (`ColumnLayoutState`), keyed by column key. Uncontrolled by default; seed it with `defaultColumnLayout`, or own it with `columnLayout` + `onColumnLayoutChange` — the same controlled/uncontrolled split as a form input. `collapsedGroups` is omitted when every group is open.
+- Two ready-made persistence hooks feed the controlled mode: `useColumnLayoutUrlState({ urlKey })` keeps the layout in the query string (`colHide` / `colPin` / `colOrder` / `colW` / `colGroupCollapse` — shareable links), and `useColumnLayoutStorageState({ storageKey })` keeps it in localStorage (user preference).
 
 ## Options
 
-| Prop                   | Type                                | Default | Description                                                              |
-| ---------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `enableColumnMenu`     | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
-| `resizableColumns`     | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
-| `defaultColumnLayout`  | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
-| `columnLayout`         | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
-| `onColumnLayoutChange` | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
-| `maxHeight`            | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
+| Prop                      | Type                                | Default | Description                                                              |
+| ------------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; state is `collapsedGroups`.        |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
 
 ## Notes
 
@@ -116,3 +117,62 @@ export function People() {
   storage (Safari private mode, sandboxed webviews) is tolerated silently.
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
+
+## Widths, bounds and shares
+
+A column can say how wide it is three ways, and they compose:
+
+```tsx
+const columns = [
+  { key: "id", header: "ID", width: 80 }, // exactly this
+  { key: "name", header: "Name", minWidth: 160 }, // never narrower
+  { key: "note", header: "Note", flex: 2 }, // twice the leftover space
+];
+```
+
+`minWidth` and `maxWidth` are bounds the column keeps whatever else happens — a
+resize will not cross them, and neither will the fitting mode. `flex` asks for a
+share of whatever space is left over.
+
+### Filling the container
+
+By default a table takes the width its columns need and scrolls when that is
+more than the container. `fitColumns` reverses it: the columns share the
+container instead.
+
+```tsx
+<DataTable data={rows} columns={columns} rowKey={rowKey} fitColumns />
+```
+
+Columns with a `width` keep it, columns with a `flex` take that share, and
+everything else divides what remains equally. A width the **user** dragged wins
+over all of it — they said what they wanted.
+
+Underneath it is CSS the browser already knows: a fixed table layout with
+percentage widths shares space proportionally, and the bounds clamp it. The Ant
+Design adapter renders through antd's own `<Table>`, which sets its own layout
+mode; the per-column widths, bounds and shares still apply there.
+
+## Sizing a column to its content
+
+Double-click a resize handle and that column takes the width of its widest
+rendered cell. The Columns menu's **Size columns to content** does the same for
+every column at once.
+
+Measurement comes from the DOM, not the data: a cell renders a badge, an avatar
+and a name, and the only honest answer to "how wide is this column" is what the
+browser laid out. It measures the **rendered** rows — the page, or the window
+under virtualization — which is the set the reader is looking at, and it reads
+each cell's content width, so a column that is currently clipping its text is
+sized to fit it rather than to its clipped width.
+
+The result is an ordinary width in the column layout: it persists, serializes to
+the URL and to saved views, and a later drag overrides it exactly as it
+overrides any other width. A column with nothing measurable on screen is left
+alone rather than collapsed.
+
+Both actions are localizable — `labels.autoSizeColumns` and
+`labels.autoSizeColumn` — in all seventeen locales.
+
+Headless: `measureColumnWidth(root, key)` and `autoSizeColumns(root, keys,
+setWidth)`.

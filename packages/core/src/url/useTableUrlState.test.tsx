@@ -375,6 +375,24 @@ describe("clearExtras", () => {
     expect(result.current.sortBy).toBe("name");
   });
 
+  it("setFilterTree writes a versioned ft param; clearAll drops it", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() =>
+      useTableUrlState({ urlAdapter: adapter })
+    );
+    act(() =>
+      result.current.setFilterTree?.({
+        combinator: "and",
+        conditions: [{ key: "name", op: "eq", value: "Ada" }],
+      })
+    );
+    expect(adapter.getSearch()).toContain("ft=1.");
+    expect(result.current.filterTree?.conditions).toHaveLength(1);
+    act(() => result.current.clearAll());
+    expect(result.current.filterTree).toBeUndefined();
+    expect(adapter.getSearch()).not.toContain("ft=");
+  });
+
   it("stamps cleared markers so defaulted extras stay cleared", () => {
     const adapter = createMemoryAdapter("");
     const { result } = renderHook(() =>

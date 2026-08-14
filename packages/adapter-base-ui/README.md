@@ -60,10 +60,17 @@ Behavior lives in `@adapttable/core`; this package only renders Base UI primitiv
 - **Row expansion** — inline detail panels via `renderRowDetail`.
 - **Inline cell editing** (`onCellEdit` + `editable` columns) — text, number and select
   editors; Enter commits, Escape cancels, Tab moves on. Omit the handler and no cell opens.
+- **Row reordering** (`onRowReorder`) — drag handle, Space-lift keyboard, dataset-relative indices. Grouping and trees refuse it.
+- **Row pinning** (`pinnedRowIds` / `onPinnedRowIdsChange`) — sticky top and bottom rows outside the virtual window. Grouping and trees refuse it.
+- **Row and column spanning** (`getCellSpan`) — one cell list per row; covered cells are omitted.
+- **Full-width and separator rows** (`extraRows`) — host-injected slots spliced in by `beforeRowId`.
+- **Row styling and heights** (`rowStyle`, `rowHeight`) — conditional inline style and per-row height.
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Tree data** (`getChildren` / `getParentId`) — hierarchical rows with expand/collapse, on desktop and on cards.
 - **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Sparkline columns** (`@adapttable/core/sparkline`) — bar, line and area as inline SVG. The base bundle never pays for it.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
 - **CSV export** (`exportCsv`) — current page, the full filtered set, or the
   selected rows; choose the columns, or hand the whole thing to your backend.

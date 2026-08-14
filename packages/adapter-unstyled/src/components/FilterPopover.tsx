@@ -57,7 +57,12 @@ export function FilterPopover({
       // The listener only lives while the anchor span is mounted, so the ref
       // is always set here.
       const root = rootRef.current!;
-      if (root.contains(event.target as Node)) return;
+      const target = event.target as Node;
+      // A control that unmounts mid-click (Add condition replaces itself
+      // with the new tree) leaves a detached target. That click started
+      // inside — do not treat it as outside.
+      if (!document.contains(target)) return;
+      if (root.contains(target)) return;
       // A control inside the CARD (not the trigger) still holds focus → keep
       // open so native picker popups don't dismiss it mid-edit.
       if (cardRef.current?.contains(document.activeElement)) return;
@@ -133,6 +138,11 @@ export function FilterPopover({
             zIndex: 200,
             // Shifting alone can't save a card wider than the screen.
             maxWidth: `calc(100vw - ${VIEWPORT_GUTTER * 2}px)`,
+            // Nor taller than it: the form grows while open, and a card past
+            // the viewport edge paints its lower fields where no scroll can
+            // reach them without dismissing the card.
+            maxHeight: "min(70vh, 560px)",
+            overflowY: "auto",
             ...side,
           }}
         >

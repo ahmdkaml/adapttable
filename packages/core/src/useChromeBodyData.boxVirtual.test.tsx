@@ -154,3 +154,193 @@ describe("useChromeBodyData with row grouping", () => {
     expect(result.current.body.virtualization.enabled).toBe(true);
   });
 });
+
+describe("useChromeBodyData with tree data", () => {
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    vi.mocked(useVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useVirtualizer>
+    );
+  });
+
+  it("windows the tree's entries instead of the source rows", () => {
+    // A tree's visible list is its own — the row virtualizer counts source
+    // rows, so without a keyed window over the entries a 50,000-row hierarchy
+    // renders 50,000 rows.
+    vi.mocked(useWindowVirtualizer).mockReturnValue({
+      getVirtualItems: () => [
+        { index: 0, start: 0, end: 48, key: "1" },
+        { index: 1, start: 48, end: 96, key: "2" },
+      ],
+      getTotalSize: () => 400,
+      measureElement: vi.fn(),
+      options: { scrollMargin: 0 },
+    } as unknown as ReturnType<typeof useWindowVirtualizer>);
+
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        // Every row a child of the one before it: one deep chain, all open.
+        getParentId: (row: Row) =>
+          row.id === "0" ? undefined : String(Number(row.id) - 1),
+        expandedIds: ROWS.map((row) => row.id),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return { chrome, body: useChromeBodyData(chrome, props) };
+    });
+
+    // One entry per row the source handed over — the whole walked tree.
+    expect(result.current.chrome.tree?.entries).toHaveLength(
+      result.current.chrome.source.rows.length
+    );
+    // The body renders the window, not the walked tree.
+    expect(result.current.body.treeEntries).toHaveLength(2);
+    // Leaf row virtualization is off while a tree is armed — the keyed entry
+    // window owns the spacers instead.
+    expect(result.current.body.virtualization.rows).toEqual([]);
+    expect(result.current.body.virtualization.enabled).toBe(true);
+  });
+
+  it("leaves a flat table's rows to the row virtualizer", () => {
+    const { result } = renderBody(undefined);
+    expect(result.current.treeEntries).toBeUndefined();
+  });
+});
+
+describe("useChromeBodyData rowHeight estimate", () => {
+  beforeEach(() => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    vi.mocked(useVirtualizer).mockReturnValue(
+      IDLE as unknown as ReturnType<typeof useVirtualizer>
+    );
+  });
+
+  it("reads a per-row height on a flat table", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        rowHeight: (row: Row) => (row.id === "0" ? 80 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(80);
+    expect(estimate(1)).toBe(40);
+    expect(estimate(999)).toBe(56);
+  });
+
+  it("uses a constant height for every slot", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        rowHeight: 48,
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(48);
+    expect(estimate(9)).toBe(48);
+  });
+
+  it("skips group headers and extras when grouping is on", () => {
+    const groupedRows: Row[] = [
+      { id: "1", name: "Alice" },
+      { id: "2", name: "Bob" },
+    ];
+    const groupCols: ColumnDef<Row>[] = [
+      { key: "name" },
+      { key: "team", accessor: () => "A" },
+    ];
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: groupedRows,
+        columns: groupCols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: groupCols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        groupBy: "team",
+        rowHeight: (row: Row) => (row.id === "1" ? 90 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    // Index 0 is the group header — not a data row.
+    expect(estimate(0)).toBe(56);
+    expect(estimate(1)).toBe(90);
+  });
+
+  it("reads the walked tree entry at the virtualizer index", () => {
+    const adapter = createMemoryAdapter("");
+    renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS.slice(0, 3),
+        columns: cols,
+        urlAdapter: adapter,
+        paginationMode: "infinite",
+      });
+      const props = {
+        source,
+        columns: cols,
+        rowKey: (r: Row) => r.id,
+        virtualize: true as const,
+        getParentId: (row: Row) =>
+          row.id === "0" ? undefined : String(Number(row.id) - 1),
+        expandedIds: ["0", "1", "2"],
+        rowHeight: (row: Row) => (row.id === "1" ? 72 : 40),
+      };
+      const chrome = useTableChrome<Row>(props);
+      return useChromeBodyData(chrome, props);
+    });
+    const estimate = vi.mocked(useWindowVirtualizer).mock.calls.at(-1)![0]
+      .estimateSize;
+    expect(estimate(0)).toBe(40);
+    expect(estimate(1)).toBe(72);
+    expect(estimate(99)).toBe(56);
+  });
+});

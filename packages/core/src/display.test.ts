@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { PIN_Z } from "./columns/useColumnLayout";
 import {
+  cellHighlightStyle,
+  groupIndentStyle,
+  groupRowParts,
+  isCurrentMatchCell,
+  isMatchedCell,
   logicalAlign,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
@@ -87,5 +92,73 @@ describe("resolveMobileLabel", () => {
 
   it("falls back to the key when there is no header", () => {
     expect(resolveMobileLabel({ key: "name" })).toBe("name");
+  });
+});
+
+describe("cellHighlightStyle", () => {
+  const base = { position: "sticky" as const };
+  const selected = { background: "kit-blue" };
+
+  it("leaves an ordinary cell exactly as the kit styled it", () => {
+    expect(cellHighlightStyle({}, base, selected)).toBe(base);
+  });
+
+  it("uses the kit's own fill for a selected cell", () => {
+    expect(
+      cellHighlightStyle({ "data-cell-selected": "" }, base, selected)
+    ).toEqual({ ...base, background: "kit-blue" });
+  });
+
+  it("paints a find hit amber, over the kit's selection fill", () => {
+    // The find walk moves the selection with it, so without this order the one
+    // cell you were sent to would be the one cell not marked as a hit.
+    const style = cellHighlightStyle(
+      { "data-cell-match": "", "data-cell-selected": "" },
+      base,
+      selected
+    );
+    expect(style?.background).toContain("--adapttable-find-match");
+    expect(style?.position).toBe("sticky");
+  });
+
+  it("marks the current hit more strongly than the rest", () => {
+    const style = cellHighlightStyle(
+      { "data-cell-match": "", "data-cell-match-current": "" },
+      base,
+      selected
+    );
+    expect(style?.background).toContain("--adapttable-find-match-current");
+  });
+
+  it("answers the match questions on their own", () => {
+    expect(isMatchedCell({ "data-cell-match": "" })).toBe(true);
+    expect(isMatchedCell(undefined)).toBe(false);
+    expect(isCurrentMatchCell({ "data-cell-match-current": "" })).toBe(true);
+    expect(isCurrentMatchCell({})).toBe(false);
+  });
+});
+
+describe("groupRowParts", () => {
+  it("names each of the three rows a grouped body renders", () => {
+    expect(groupRowParts("group")).toEqual({
+      row: "group-row",
+      cell: "group-cell",
+      card: "group-card",
+      label: "group-label",
+    });
+    expect(groupRowParts("groupFooter").row).toBe("group-footer-row");
+    // A footer still labels itself as a group label — it names the group.
+    expect(groupRowParts("groupFooter").label).toBe("group-label");
+    expect(groupRowParts("groupMore")).toMatchObject({
+      row: "group-more-row",
+      label: "group-more-label",
+    });
+  });
+});
+
+describe("groupIndentStyle", () => {
+  it("indents deeper levels, logically so RTL mirrors it", () => {
+    expect(groupIndentStyle(0)).toEqual({});
+    expect(groupIndentStyle(2)).toEqual({ paddingInlineStart: "3rem" });
   });
 });

@@ -27,6 +27,47 @@ export interface DataTableClassNames {
   /** The leading funnel icon inside the Filters button. */
   filtersIcon?: string;
   filtersCount?: string;
+  /**
+   * A cell inside the selected range (`cellNavigation` + a range). There is no
+   * kit colour to borrow here, so the fill is yours; `data-cell-selected` is on
+   * the element too, for CSS that prefers attribute selectors.
+   */
+  cellSelected?: string;
+  /**
+   * A cell the find bar matched (`findInTable`). `data-cell-match` is on the
+   * element too, for CSS that prefers attribute selectors.
+   */
+  /** The footer row that closes a group (`groupFooters`). */
+  groupFooterRow?: string;
+  /** The spanning cell inside a group footer. */
+  groupFooterCell?: string;
+  /** The row offering more groups, or more rows inside one. */
+  groupMoreRow?: string;
+  /** The spanning cell inside that row. */
+  groupMoreCell?: string;
+  cellMatch?: string;
+  /** The one match the find walk is on — `data-cell-match-current`. */
+  cellMatchCurrent?: string;
+  /**
+   * A validator's message under an open editor (`validate` / `validateRow`).
+   * It is a live region, so a rejected commit is heard as well as seen.
+   */
+  editCellError?: string;
+  /**
+   * A failed save's message under the cell (`onCellEdit` returned a promise
+   * that rejected). A live region, so it is heard as well as seen.
+   */
+  editCellSaveError?: string;
+  /** The undo control beside it (`onEditRollback`). */
+  editCellRollback?: string;
+  /** The indented wrapper in a tree row's tree column (`getChildren`). */
+  treeCell?: string;
+  /** The chevron that folds a node. */
+  treeToggle?: string;
+  /** A leaf's placeholder, holding the chevron's width so names line up. */
+  treeSpacer?: string;
+  /** The Add-row toolbar button (when `onAddRow` is set). */
+  addRow?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**
@@ -46,6 +87,18 @@ export interface DataTableClassNames {
   filtersFooter?: string;
   filtersClear?: string;
   filtersDone?: string;
+  /** Wrapper around the auto form and the AND/OR builder. */
+  filtersForm?: string;
+  /** AND/OR filter-tree builder root. */
+  filterTree?: string;
+  /** One nested group in the filter-tree builder. */
+  filterTreeGroup?: string;
+  /** One condition row in the filter-tree builder. */
+  filterTreeCondition?: string;
+  /** Add-condition / add-group row in the filter-tree builder. */
+  filterTreeActions?: string;
+  /** Remove-condition / remove-group control in the filter-tree builder. */
+  filterTreeRemove?: string;
   /** One auto-built filter field (the `<label>`/`<fieldset>` wrapper). */
   filterField?: string;
   /** The field's caption (the `<span>`/`<legend>` holding the label text). */
@@ -62,6 +115,16 @@ export interface DataTableClassNames {
   filterCheckbox?: string;
   /** The placeholder shown while a field's async options load. */
   filterOptionsLoading?: string;
+  /** Excel-style checklist wrapper. */
+  filterChecklist?: string;
+  /** Search box inside a checklist. */
+  filterChecklistSearch?: string;
+  /** Select-all / clear row on a checklist. */
+  filterChecklistActions?: string;
+  /** Scrollable value list inside a checklist. */
+  filterChecklistList?: string;
+  /** Per-value count in a checklist. */
+  filterChecklistCount?: string;
   chips?: string;
   chip?: string;
   chipRemove?: string;
@@ -78,6 +141,24 @@ export interface DataTableClassNames {
   /** The separator above the trailing row-actions entry in the menu. */
   columnMenuSeparator?: string;
   columnMenuReset?: string;
+  /** The column menu's "size columns to content" action. */
+  columnMenuAutoSize?: string;
+  /** Search box inside the column menu. */
+  columnMenuSearch?: string;
+  /** Bulk show/hide/unpin row. */
+  columnMenuBulk?: string;
+  /** One bulk action button. */
+  columnMenuBulkButton?: string;
+  /** Per-column submenu trigger. */
+  columnMenuMore?: string;
+  /** The open per-column submenu. */
+  columnMenuSubmenu?: string;
+  /** One action inside the per-column submenu. */
+  columnMenuAction?: string;
+  /** Host-provided controls after a header caption. */
+  headerActions?: string;
+  /** Free slot under the table, above the pager. */
+  tableFooter?: string;
   /** The saved-views menu container (trigger + anchored panel). */
   viewsMenu?: string;
   /** The saved-views menu trigger button. */
@@ -113,10 +194,18 @@ export interface DataTableClassNames {
   thead?: string;
   headerRow?: string;
   headerCell?: string;
+  /** Compact per-column filter row under the header. */
+  filterHeaderRow?: string;
+  /** One cell in the header filter row. */
+  filterHeaderCell?: string;
+  /** The input inside a header filter cell. */
+  filterHeaderInput?: string;
   /** The grouped-header `<tr>` rendered above the column headers. */
   headerGroupRow?: string;
   /** One spanning `<th>` (or edge gap) inside the header-group row. */
   headerGroupCell?: string;
+  /** Collapse/expand control inside a collapsible group header. */
+  columnGroupToggle?: string;
   sortButton?: string;
   /** The 1-based multi-sort position badge inside a sorted header. */
   sortIndex?: string;
@@ -139,6 +228,18 @@ export interface DataTableClassNames {
   actionsHeader?: string;
   actionsCell?: string;
   actionButton?: string;
+  /** The leading row-reorder header cell. */
+  reorderHeader?: string;
+  /** The leading row-reorder body cell on each row. */
+  reorderCell?: string;
+  /** The desktop drag-handle button. */
+  rowReorderHandle?: string;
+  /** The mobile up/down control group. */
+  rowReorderButtons?: string;
+  /** Move this card one slot up. */
+  rowReorderUp?: string;
+  /** Move this card one slot down. */
+  rowReorderDown?: string;
   /** The leading select-all header cell. */
   selectionHeader?: string;
   selectionCell?: string;
@@ -179,6 +280,14 @@ export interface DataTableClassNames {
   scrollBox?: string;
   /** A virtualization padding spacer (desktop row or mobile card list). */
   virtualSpacer?: string;
+  /** A host-injected separator `<tr>`. */
+  separatorRow?: string;
+  /** The spanning cell inside a separator row. */
+  separatorCell?: string;
+  /** A host-injected full-width `<tr>`. */
+  fullWidthRow?: string;
+  /** The spanning cell inside a full-width row. */
+  fullWidthCell?: string;
   /** The `<tfoot>` holding the summary row. */
   summary?: string;
   /** The summary `<tr>` inside the footer. */

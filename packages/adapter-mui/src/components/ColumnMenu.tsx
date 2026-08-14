@@ -1,11 +1,21 @@
-import type { Direction } from "@adapttable/core";
+import type { Direction, UseColumnLayoutResult } from "@adapttable/core";
 import {
   ACTIONS_COLUMN_KEY,
+  columnMenuActions,
   columnMenuRows,
   columnReorderKeyProps,
+  filterColumnMenuRows,
+  hideAllColumns,
+  REORDER_COLUMN_KEY,
+  showAllColumns,
+  unpinAllColumns,
   useColumnDragState,
 } from "@adapttable/core";
-import type { ColumnMenuChromeProps } from "@adapttable/core/adapter";
+import type {
+  ColumnMenuChromeProps,
+  ColumnMenuLabels,
+  ColumnMenuRow,
+} from "@adapttable/core/adapter";
 import {
   EyeIcon,
   GripIcon,
@@ -20,6 +30,7 @@ import {
   IconButton,
   Popover,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -27,9 +38,27 @@ import { useState } from "react";
 /** Props for the column menu — the shared core contract + actions wiring. */
 export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   /** Resolved labels, including the trailing actions-column entry's name. */
-  labels: ColumnMenuChromeProps<TRow>["labels"] & { actions: string };
+  labels: ColumnMenuChromeProps<TRow>["labels"] & {
+    actions: string;
+    reorderRow: string;
+  };
   /** Whether the table has row actions — lists the injected actions column. */
   hasRowActions?: boolean;
+  /**
+   * Whether the table renders a row-reorder column. When true the menu
+   * lists it as a leading reserved row: hideable and start-pinnable.
+   */
+  hasRowReorder?: boolean;
+  /** Size every rendered column to its content. */
+  onAutoSize: () => void;
+  /** Size one column to its content. */
+  onAutoSizeColumn?: (key: string) => void;
+  /** Sort one column from the submenu. */
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  /** Open the filter UI from the submenu. */
+  onFilterColumn?: (key: string) => void;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
   /** Text direction — the Popover portals to `<body>`, so it loses the
    *  table's direction unless we hand it over explicitly (RTL flips
    *  grip ↔ pin). */
@@ -48,11 +77,13 @@ function VisibilityToggle({
   name,
   labels,
   onToggle,
+  disabled = false,
 }: Readonly<{
   hidden: boolean;
   name: string;
   labels: RowLabels;
   onToggle: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <IconButton
@@ -60,6 +91,7 @@ function VisibilityToggle({
       aria-label={`${hidden ? labels.showColumn : labels.hideColumn}: ${name}`}
       aria-pressed={!hidden}
       color={hidden ? "default" : "primary"}
+      disabled={disabled}
       onClick={onToggle}
     >
       <EyeIcon off={hidden} />
@@ -91,16 +123,56 @@ function PinToggle({
   active,
   label,
   onClick,
-}: Readonly<{ active: boolean; label: string; onClick: () => void }>) {
+  disabled = false,
+}: Readonly<{
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}>) {
   return (
     <IconButton
       size="small"
       color={active ? "primary" : "default"}
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
     >
       <PinIcon />
     </IconButton>
+  );
+}
+
+function ReorderRow<TRow>({
+  layout,
+  labels,
+}: Readonly<Pick<ColumnMenuProps<TRow>, "layout" | "labels">>) {
+  const hidden = layout.isHidden(REORDER_COLUMN_KEY);
+  const pinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
+  return (
+    <div data-adapttable-part="column-menu-item" data-reorder="">
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
+      >
+        <Box aria-hidden sx={{ width: 24 }} />
+        <VisibilityToggle
+          hidden={hidden}
+          name={labels.reorderRow}
+          labels={labels}
+          onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
+        />
+        <RowName hidden={hidden} name={labels.reorderRow} />
+        <PinToggle
+          active={pinned}
+          label={`${pinned ? labels.unpin : labels.pinStart}: ${labels.reorderRow}`}
+          onClick={() =>
+            layout.setPinned(REORDER_COLUMN_KEY, pinned ? undefined : "start")
+          }
+        />
+      </Stack>
+    </div>
   );
 }
 
@@ -118,31 +190,157 @@ function ActionsRow<TRow>({
   const hidden = layout.isHidden(ACTIONS_COLUMN_KEY);
   const pinned = layout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
   return (
-    <>
-      <Divider sx={{ my: 0.5 }} />
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
+    >
+      {/* Spacer where data rows show the drag grip — actions never move. */}
+      <Box aria-hidden sx={{ width: 24 }} />
+      <VisibilityToggle
+        hidden={hidden}
+        name={labels.actions}
+        labels={labels}
+        onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+      />
+      <RowName hidden={hidden} name={labels.actions} />
+      <PinToggle
+        active={pinned}
+        label={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
+        onClick={() =>
+          layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
+        }
+      />
+    </Stack>
+  );
+}
+
+function ColumnMenuRowItem<TRow>({
+  row,
+  layout,
+  labels,
+  drag,
+  sortBy,
+  sortDir,
+  onSortColumn,
+  onAutoSizeColumn,
+  onFilterColumn,
+}: Readonly<{
+  row: ColumnMenuRow<TRow>;
+  layout: UseColumnLayoutResult<TRow>;
+  labels: ColumnMenuLabels;
+  drag: ReturnType<typeof useColumnDragState>;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSortColumn?: (key: string, dir: "asc" | "desc") => void;
+  onAutoSizeColumn?: (key: string) => void;
+  onFilterColumn?: (key: string) => void;
+}>) {
+  const { key, name, hidden, pinned, index, canMove, canHide, canPin } = row;
+  const [open, setOpen] = useState(false);
+  const actions = columnMenuActions(row, {
+    labels,
+    layout,
+    sortBy,
+    sortDir,
+    onSortColumn,
+    onAutoSizeColumn,
+    onFilterColumn,
+  });
+  const indicator = canMove ? drag.rowAttrs(key, index) : {};
+  const edge = indicator["data-drop"];
+  const edgeOffset = edge === "before" ? "2px" : "-2px";
+  return (
+    <div
+      data-adapttable-part="column-menu-item"
+      data-hidden={hidden || undefined}
+      data-pinned={pinned}
+    >
       <Stack
         direction="row"
         spacing={0.5}
-        sx={{ px: 0.5, py: 0.25, alignItems: "center" }}
+        sx={{
+          alignItems: "center",
+          px: 0.5,
+          py: 0.25,
+          cursor: canMove ? "grab" : "default",
+          opacity: "data-dragging" in indicator ? 0.4 : undefined,
+          boxShadow: edge
+            ? (theme) =>
+                `inset 0 ${edgeOffset} 0 0 ${theme.palette.primary.main}`
+            : undefined,
+        }}
+        {...(canMove
+          ? {
+              ...drag.rowDragProps(key, index),
+              ...drag.dropProps(index, layout.move),
+              ...indicator,
+            }
+          : {})}
       >
-        {/* Spacer where data rows show the drag grip — actions never move. */}
-        <Box aria-hidden sx={{ width: 24 }} />
+        <IconButton
+          size="small"
+          disabled={!canMove}
+          sx={{ cursor: canMove ? "grab" : "default", color: "text.disabled" }}
+          {...(canMove
+            ? columnReorderKeyProps(
+                key,
+                index,
+                layout.move,
+                `${labels.moveStart} / ${labels.moveEnd}: ${name}`
+              )
+            : {})}
+        >
+          <GripIcon />
+        </IconButton>
         <VisibilityToggle
           hidden={hidden}
-          name={labels.actions}
+          name={name}
           labels={labels}
-          onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
+          disabled={!canHide}
+          onToggle={() => layout.toggleVisible(key)}
         />
-        <RowName hidden={hidden} name={labels.actions} />
+        <RowName hidden={hidden} name={name} />
         <PinToggle
-          active={pinned}
-          label={`${pinned ? labels.unpin : labels.pinEnd}: ${labels.actions}`}
-          onClick={() =>
-            layout.setPinned(ACTIONS_COLUMN_KEY, pinned ? undefined : "end")
-          }
+          active={pinned !== undefined}
+          label={`${pinActionLabel(pinned, labels)}: ${name}`}
+          disabled={!canPin}
+          onClick={() => layout.setPinned(key, nextPinSide(pinned))}
         />
+        <IconButton
+          size="small"
+          data-adapttable-part="column-menu-more"
+          aria-expanded={open}
+          aria-label={`${labels.columnActions}: ${name}`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          ⋯
+        </IconButton>
       </Stack>
-    </>
+      {open ? (
+        <Box
+          data-adapttable-part="column-menu-submenu"
+          sx={{ px: 0.5, pb: 0.5 }}
+        >
+          {actions.map((action) => (
+            <Button
+              key={action.id}
+              size="small"
+              fullWidth
+              data-adapttable-part="column-menu-action"
+              disabled={action.disabled}
+              sx={{ justifyContent: "flex-start" }}
+              onClick={() => {
+                action.run();
+                setOpen(false);
+              }}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </Box>
+      ) : null}
+    </div>
   );
 }
 
@@ -156,11 +354,20 @@ export function ColumnMenu<TRow>({
   allColumns,
   layout,
   labels,
-  hasRowActions,
+  hasRowActions = false,
+  hasRowReorder = false,
+  onAutoSize,
+  onAutoSizeColumn,
+  onSortColumn,
+  onFilterColumn,
+  sortBy,
+  sortDir,
   dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+  const [query, setQuery] = useState("");
+  const rows = filterColumnMenuRows(columnMenuRows(allColumns, layout), query);
   return (
     <>
       <Button
@@ -168,6 +375,7 @@ export function ColumnMenu<TRow>({
         variant="outlined"
         aria-expanded={anchor !== null}
         aria-haspopup="true"
+        data-adapttable-part="column-menu-button"
         onClick={(e) => setAnchor(e.currentTarget)}
       >
         {labels.columns}
@@ -193,60 +401,75 @@ export function ColumnMenu<TRow>({
           >
             {labels.columns}
           </Typography>
-          {columnMenuRows(allColumns, layout).map((r) => {
-            // Drop-position feedback: dim the source, line the landing edge.
-            const indicator = drag.rowAttrs(r.key, r.index);
-            const edge = indicator["data-drop"];
-            const edgeOffset = edge === "before" ? "2px" : "-2px";
-            return (
-              <Stack
-                key={r.key}
-                direction="row"
-                spacing={0.5}
-                sx={{
-                  alignItems: "center",
-                  px: 0.5,
-                  py: 0.25,
-                  cursor: "grab",
-                  opacity: "data-dragging" in indicator ? 0.4 : undefined,
-                  boxShadow: edge
-                    ? (theme) =>
-                        `inset 0 ${edgeOffset} 0 0 ${theme.palette.primary.main}`
-                    : undefined,
-                }}
-                {...drag.rowDragProps(r.key, r.index)}
-                {...drag.dropProps(r.index, layout.move)}
-                {...indicator}
-              >
-                <IconButton
-                  size="small"
-                  sx={{ cursor: "grab", color: "text.disabled" }}
-                  {...columnReorderKeyProps(
-                    r.key,
-                    r.index,
-                    layout.move,
-                    `${labels.moveStart} / ${labels.moveEnd}: ${r.name}`
-                  )}
-                >
-                  <GripIcon />
-                </IconButton>
-                <VisibilityToggle
-                  hidden={r.hidden}
-                  name={r.name}
-                  labels={labels}
-                  onToggle={() => layout.toggleVisible(r.key)}
-                />
-                <RowName hidden={r.hidden} name={r.name} />
-                <PinToggle
-                  active={r.pinned !== undefined}
-                  label={`${pinActionLabel(r.pinned, labels)}: ${r.name}`}
-                  onClick={() => layout.setPinned(r.key, nextPinSide(r.pinned))}
-                />
-              </Stack>
-            );
-          })}
+          <TextField
+            type="search"
+            size="small"
+            fullWidth
+            placeholder={labels.searchColumns}
+            slotProps={{
+              htmlInput: {
+                "aria-label": labels.searchColumns,
+                "data-adapttable-part": "column-menu-search",
+              },
+            }}
+            value={query}
+            sx={{ mb: 0.75 }}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <Stack
+            direction="row"
+            spacing={0.5}
+            data-adapttable-part="column-menu-bulk"
+            sx={{ px: 0.5, pb: 0.75, flexWrap: "wrap" }}
+          >
+            <Button
+              size="small"
+              data-adapttable-part="column-menu-bulk-button"
+              onClick={() => showAllColumns(rows, layout)}
+            >
+              {labels.showAllColumns}
+            </Button>
+            <Button
+              size="small"
+              data-adapttable-part="column-menu-bulk-button"
+              onClick={() => hideAllColumns(rows, layout)}
+            >
+              {labels.hideAllColumns}
+            </Button>
+            <Button
+              size="small"
+              data-adapttable-part="column-menu-bulk-button"
+              onClick={() => unpinAllColumns(rows, layout)}
+            >
+              {labels.unpinAllColumns}
+            </Button>
+          </Stack>
+          {rows.map((row) => (
+            <ColumnMenuRowItem
+              key={row.key}
+              row={row}
+              layout={layout}
+              labels={labels}
+              drag={drag}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortColumn={onSortColumn}
+              onAutoSizeColumn={onAutoSizeColumn}
+              onFilterColumn={onFilterColumn}
+            />
+          ))}
+          {(hasRowReorder || hasRowActions) && <Divider sx={{ my: 0.5 }} />}
+          {hasRowReorder && <ReorderRow layout={layout} labels={labels} />}
           {hasRowActions && <ActionsRow layout={layout} labels={labels} />}
           <Divider sx={{ my: 0.5 }} />
+          <Button
+            size="small"
+            fullWidth
+            sx={{ justifyContent: "flex-start" }}
+            onClick={onAutoSize}
+          >
+            {labels.autoSizeColumns}
+          </Button>
           <Button
             size="small"
             fullWidth

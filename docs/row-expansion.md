@@ -68,9 +68,11 @@ export function Orders() {
 
 ## Notes
 
-- Not recommended with `virtualize`: desktop detail panels render as
-  unmeasured sibling rows, so virtual scroll heights can drift (a dev-mode
-  warning fires). Prefer paged data with row details.
+- Works with `virtualize`. A table cannot nest a detail panel inside the row it
+  belongs to, so the two are separate elements — the window measures them
+  **together**, and an open panel reports its real height instead of its row's.
+  A panel that grows later (an image loading, a nested table opening) corrects
+  the height as it happens.
 - The detail cell spans the full row width, including selection, actions, and
   the expansion column itself.
 - Kits with native expand affordances keep their own look; only the labels

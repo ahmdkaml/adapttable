@@ -1,6 +1,10 @@
-import { resolveLabels } from "@adapttable/core";
+import { FilterTreeBuilder, resolveLabels } from "@adapttable/core";
 import {
+  BatchEditBar,
+  FindBar,
   GridFocusAnnouncer,
+  RowReorderAnnouncer,
+  SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -12,6 +16,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
@@ -26,6 +31,11 @@ import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
+
+function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
+  if (children == null) return null;
+  return <Box data-adapttable-part="table-footer">{children}</Box>;
+}
 
 /**
  * Map row density to MUI's table `size`, independent of column pinning. An
@@ -55,12 +65,21 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { filtersMode = "popover" } = props;
   // The whole shared orchestration lives in core's shell; MUI adds only its
   // kit's row `size` over the returned bundles.
-  const shell = useDataTableShell<TRow>(props, (defs, source) => (
-    <AutoFilterForm
-      defs={defs}
-      source={source}
-      labels={resolveLabels(props.labels)}
-    />
+  const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
+    <div data-adapttable-part="filters-form">
+      <AutoFilterForm
+        defs={defs}
+        source={source}
+        labels={resolveLabels(props.labels)}
+        registry={registry}
+      />
+      <FilterTreeBuilder
+        defs={defs}
+        source={source}
+        labels={props.labels}
+        registry={registry}
+      />
+    </div>
   ));
   const {
     chrome: c,
@@ -74,6 +93,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     toolbarProps,
   } = shell;
   // Everything rendered below reads the chrome's VIEW facade — identical to
@@ -87,9 +107,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const columnMenu = props.enableColumnMenu && !c.isMobile && (
     <ColumnMenu
       allColumns={c.allColumns}
+      onAutoSize={shell.autoSizeColumns}
+      onAutoSizeColumn={shell.autoSizeColumn}
+      onSortColumn={(key, dir) => viewSource.setSort(key, dir)}
+      onFilterColumn={() => setFiltersOpen(true)}
+      sortBy={viewSource.sortBy}
+      sortDir={viewSource.sortDir}
       layout={c.columnLayout}
       labels={labels}
       hasRowActions={hasRowActions}
+      hasRowReorder={hasRowReorder}
       dir={props.dir}
     />
   );
@@ -151,6 +178,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       sx={{ p: 1.5 }}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
+      {shell.tableProps.rowReorder ? (
+        <RowReorderAnnouncer
+          announcement={shell.tableProps.rowReorder.announcement}
+        />
+      ) : null}
+      <FindBar find={shell.find} labels={labels} />
       <Stack spacing={1.5}>
         <Box className={classNames?.toolbar}>
           <Toolbar
@@ -170,6 +203,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           onClearAll={c.clearFilters}
           labels={labels}
         />
+        {c.editing?.batch && (
+          <BatchEditBar batch={c.editing.batch} labels={labels} />
+        )}
+
         {table.selection && props.bulkActions && (
           <BulkBar
             selection={table.selection}
@@ -205,6 +242,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             </Button>
           </Box>
         )}
+        <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.showFooter && (
           <Box className={classNames?.footer}>
             <Footer
@@ -230,6 +268,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <SelectionStatsBar
+        stats={shell.selectionStats}
+        labels={labels}
+        locale={props.locale}
+      />
     </Paper>
   );
 }

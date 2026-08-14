@@ -116,14 +116,20 @@ export function PeopleTable() {
   both inherited from the column) and the table-level `filters: FilterDef[]`
   for filters with no column. On a key collision the standalone definition
   wins and a development warning points at the duplicate.
-- Five built-in types (`FILTER_TYPES`): `text` (contains), `select` (equals),
-  `multiSelect` (one of), `dateRange`, `numberRange`.
-- Range widgets are operator-first — pick `Equal` / `At least` / `At most` /
-  `Between` (dates: `On` / `On or after` / `On or before` / `Between`), then
-  fill one value (two for Between). The persisted state stays the inclusive
-  pair `${key}Min`/`${key}Max` (dates: `${key}From`/`${key}To`), so the URL
-  params are `f_salaryMin`, `f_hiredAtFrom`, … and chips, predicates, and the
-  server-tier query are unchanged.
+- Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
+  `multiSelect` (one of), `checklist` (Excel-style distinct values with
+  search, select-all and counts — from `source.facets` when present,
+  otherwise `source.allFilteredRows`; a server page that omits both does
+  not offer the widget), `boolean` (any / true / false — never a checkbox),
+  `dateRange`, `numberRange`.
+- Widgets are operator-first. Text offers equals / not equals / contains /
+  not contains / starts with / ends with / empty / not empty. Numbers offer
+  `=` `≠` `>` `≥` `<` `≤` between / in / not in. Dates offer before / after /
+  on / on-or-after / on-or-before / between / empty. The operator token is
+  stored as `f_<key>Op` (readable, stable across releases) beside the value
+  keys (`f_name`, `f_salaryMin`/`f_salaryMax`, `f_hiredAtFrom`/`f_hiredAtTo`).
+  Links written before `Op` existed still work: text defaults to contains,
+  and a Min/Max pair still infers at-least / at-most / between.
 - `select`/`multiSelect` options come from a static `{ value, label }[]`,
   `"auto"` (distinct values derived from the frontend dataset, sorted,
   capped at `AUTO_OPTIONS_LIMIT` = 50), or an async loader — one shared fetch
@@ -141,25 +147,27 @@ export function PeopleTable() {
 `FilterDef` (entries of `filters`, and the column `filter` object minus
 `key`/`label`):
 
-| Prop          | Type                                                                  | Default               | Description                                                                                      |
-| ------------- | --------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| `key`         | `string`                                                              | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
-| `type`        | `"text" \| "select" \| "multiSelect" \| "dateRange" \| "numberRange"` | —                     | The widget shape.                                                                                |
-| `label`       | `string`                                                              | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
-| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>`           | —                     | Choices for `select` / `multiSelect`.                                                            |
-| `getValue`    | `(row) => unknown`                                                    | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
-| `placeholder` | `string`                                                              | —                     | Placeholder for text-like inputs.                                                                |
+| Prop          | Type                                                        | Default               | Description                                                                                      |
+| ------------- | ----------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `key`         | `string`                                                    | —                     | State key and `f_<key>` URL param. Doubles as the row's dot path unless `getValue` overrides it. |
+| `type`        | `string`                                                    | —                     | Built-in `FilterType` or a custom type registered on `filterTypes`.                              |
+| `label`       | `string`                                                    | humanized `key`       | Widget and chip label (`hiredAt` → "Hired At").                                                  |
+| `options`     | `FilterOption[] \| "auto" \| () => Promise<FilterOption[]>` | —                     | Choices for `select` / `multiSelect`.                                                            |
+| `getValue`    | `(row) => unknown`                                          | reads `key` as a path | Row-value extractor for the client-side predicate.                                               |
+| `placeholder` | `string`                                                    | —                     | Placeholder for text-like inputs.                                                                |
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                               |
-| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                            |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| Prop                | Type                                | Default        | Description                                                                                                                                |
+| ------------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                         |
+| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                             |
+| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                       |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label).  |
+| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                        |
+| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                        |
+| `headerFilters`     | `boolean`                           | `false`        | Compact per-column filter row under the header, bound to the same defs and extra bag. Desktop only — mobile cards keep the Filters button. |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                               |
 
 ## Headless filter primitives
 
@@ -173,12 +181,71 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `isCountFilterComplete`, `clearCountFilterExtra`,
   `sanitizeCountFilterParams` and `countFilterChipLabel` handle validation,
   reset, outgoing params, and the chip text.
+- **Operators**: `TEXT_OPS` / `NUMBER_OPS` / `DATE_OPS` are the stable URL
+  tokens (`FilterOp`, `TextOp`, `NumberOp`, `DateOp`). `filterOpKey` /
+  `FILTER_OP_SUFFIX` name the `f_<key>Op` slot; `parseTextOp` /
+  `parseNumberOp` / `parseDateOp` / `readFilterOp` read it;
+  `isValuelessFilterOp` / `isListFilterOp` / `isBetweenFilterOp` classify
+  operand shape. `TEXT_OP_LABEL_KEYS` /
+  `NUMBER_OP_LABEL_KEYS` / `DATE_OP_LABEL_KEYS` map each token to a
+  `TableLabels` key. `formatFilterChip` / `filterOpLabel` / `isEmptyRowValue`
+  / `parseListOperand` / `parseNumberList` / `isFilterOpKey` are the
+  helpers. `useTextFilterWidget` returns a `TextFieldWidget`. Relative
+  windows: `RELATIVE_NAMED` / `RELATIVE_PRESETS` /
+  `RELATIVE_PRESET_LABEL_KEYS` / `RelativeDateToken` / `RelativeDateRange` /
+  `RelativePreset` / `parseRelativeToken` / `isRelativeDateToken` /
+  `countedRelativeToken` / `splitRelativeToken` / `joinRelativeToken` /
+  `relativeTokenLabel` / `resolveRelativeRange`. AND/OR groups:
+  `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
+  `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
+  `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
+  (`isFilterGroup` narrows a child). The builder UI is a later issue;
+  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
+  tier (ANDed with the flat extra bag). `useTableData` wires
+  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  directly passes `filterTreeFn` over the same defs as `filterFn`. A
+  server that declares `supports.filterTree` receives the same tree on
+  `query.filterTree`. The filter panel mounts `FilterTreeBuilder` —
+  add condition, add group, AND/OR — over that same model. Tree
+  leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
+- **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
+  `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
+  the filtered set with that facet's own filter removed. Frontend
+  `useTableData` computes them from `allSearchedRows` (after search,
+  before extras). A server that declares `supports.facets` receives
+  `query.facets` (checklist keys) and returns the same map on the page;
+  `useQuerySource` / `useServerData` surface it as `source.facets`.
+  `useChecklistFilter` prefers that map over `allFilteredRows`.
+- **Type registry**: `FilterTypeSpec` is one type — widget kind, operators,
+  predicate, chips, tree projection, optional `render`. Built-ins
+  (`builtInFilterSpecs` / `defaultFilterRegistry`) are the first
+  consumers; `filterTypes` on the table merges extras via
+  `resolveFilterRegistry` / `createFilterRegistry` / `register` /
+  `extend`. `filterWidgetKind` / `filterTypeOps` /
+  `filterTypeDefaultOp` / `filterTypeSpec` / `renderRegisteredFilter`
+  look a spec up. A custom type with `widget: "text"` draws the text
+  widget; `extend("text", { ops })` adds operators without forking.
+  `emptyFilterRegistry` seeds a registry from scratch.
+  `FilterTypeRegistry` / `FilterWidgetKind` / `FilterWidgetRenderProps`
+  are the types.
+- **Header filter row**: `headerFilters` mounts `FilterHeaderRow` /
+  `FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`
+  under the leaf header.
+  Pads and column spacers match the header so sticky, pin offsets, and
+  column windowing stay aligned. A def whose bag key differs from the
+  column key sets `column` (`key: "name"` under `column: "person"`). Ant Design keeps the control inside the
+  header cell so `fixed` columns stay on antd's own header. Compact
+  range inputs default the operator to `gte` (no picker in the header);
+  checklist / multiSelect use a native `<select>`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
-  `RangeFieldWidget` entries carry the visible bounds and the active
-  `RangeOp`; `RANGE_SUFFIXES` names the persisted `Min` / `Max` key pair and
-  `RANGE_OP_LABEL_KEYS` / `RangeOpLabelKeys` map each operator to its
-  `TableLabels` key.
+  `RangeFieldWidget` entries carry the visible bounds, the active
+  `RangeOp`, and a `RangeOpArity` (`none` / `one` / `two` / `list`);
+  `RANGE_SUFFIXES` names the persisted `Min` / `Max` key pair,
+  `RANGE_OPS` is the historical four-operator set (`eq` / `gte` / `lte` /
+  `between`), and `RANGE_OP_LABEL_KEYS` / `RangeOpLabelKeys` map each
+  operator to its `TableLabels` key. `writeRangeFilter` persists the pair
+  plus `f_<key>Op`.
 - **Definitions and state**: `filterStateKeys` lists the state keys a
   definition reads and writes; `scalarFilterText` renders a scalar filter
   value as input text; `listFilterValues` normalizes a multi-select value
@@ -213,6 +280,14 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   and resolves to no options — pass an array or an async loader instead.
 - The `dateRange` upper bound is inclusive end-of-day: "On or before
   2026-01-31" keeps that day's rows.
+- Relative date filters (`DATE_OPS` token `relative`) store a **token**
+  (`today`, `yesterday`, `tomorrow`, `thisWeek`, `thisMonth`,
+  `previousMonth`, `last:N`, `next:N`) in `${key}From` plus
+  `f_<key>Op=relative`. The URL and Saved Views never hold a resolved
+  calendar day — a shared "last 7 days" link stays the last 7 days
+  tomorrow. `resolveRelativeRange` is the only resolver; the frontend
+  predicate and a server query both call it so they agree. Weeks are ISO
+  (Monday–Sunday, local time).
 - `Equal` writes the same value to both range keys; clearing a field clears
   its key, so half-filled widgets never leak stale bounds.
 - Async loaders run once (the promise is cached); until they resolve, chips

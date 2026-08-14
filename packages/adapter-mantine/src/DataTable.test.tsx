@@ -4,6 +4,7 @@ import {
   useColumnLayoutUrlState,
   useFrontendData,
 } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import { MantineProvider } from "@mantine/core";
 import {
   act,
@@ -169,6 +170,34 @@ describe("<DataTable> (Mantine)", () => {
       override: { rowClassName },
     });
     expect(mobile.container.querySelector(".row-a")).not.toBeNull();
+  });
+
+  it("applies rowStyle and rowHeight to desktop rows", () => {
+    renderHarness({
+      override: {
+        rowStyle: (row) =>
+          row.id === "a" ? { color: "rgb(255, 0, 0)" } : undefined,
+        rowHeight: 48,
+      },
+    });
+    const alice = screen.getByText("Alice").closest("tr")!;
+    const bob = screen.getByText("Bob").closest("tr")!;
+    expect(alice).toHaveStyle({ color: "rgb(255, 0, 0)", height: "48px" });
+    expect(bob).toHaveStyle({ height: "48px" });
+    expect(bob).not.toHaveStyle({ color: "rgb(255, 0, 0)" });
+  });
+
+  it("applies rowStyle to mobile cards", () => {
+    const { container } = renderHarness({
+      isMobile: true,
+      override: {
+        rowStyle: (_row, index) =>
+          index === 0 ? { backgroundColor: "rgb(0, 128, 0)" } : undefined,
+      },
+    });
+    const cards = container.querySelectorAll('[role="listitem"]');
+    expect(cards[0]).toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
+    expect(cards[1]).not.toHaveStyle({ backgroundColor: "rgb(0, 128, 0)" });
   });
 
   it("drawer mode: the toolbar button opens the slide-in filter drawer", async () => {
@@ -1029,5 +1058,89 @@ describe("<DataTable> (Mantine) — adapter defect fixes", () => {
     expect(screen.getAllByText("City").length).toBeGreaterThan(0);
     expect(screen.queryByText("Name")).not.toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+});
+
+describe("custom header and footer", () => {
+  it("renders a custom caption, tooltip, actions and table footer", () => {
+    renderHarness({
+      override: {
+        columns: [
+          {
+            key: "name",
+            header: "Name",
+            accessor: (r) => r.name,
+            sortable: true,
+            headerTooltip: "Legal name",
+            headerActions: <button type="button">info</button>,
+            renderHeader: ({ controller }) => {
+              const { label } = controller;
+              if (typeof label !== "string") {
+                throw new Error("expected a string header caption");
+              }
+              return `*${label}*`;
+            },
+            renderFooter: () => "Name foot",
+          },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+        tableFooter: <p>Under the table</p>,
+      },
+    });
+    expect(screen.getByText("*Name*")).toBeInTheDocument();
+    expect(screen.getByTitle("Legal name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "info" })).toBeInTheDocument();
+    expect(screen.getByText("Name foot")).toBeInTheDocument();
+    expect(screen.getByText("Under the table")).toBeInTheDocument();
+  });
+});
+
+describe("header filter row", () => {
+  it("writes a compact name filter under the header", () => {
+    renderHarness({
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    const input = screen.getByLabelText("Name");
+    fireEvent.change(input, { target: { value: "Ali" } });
+    expect(input).toHaveValue("Ali");
+    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
+  });
+
+  it("hides the header filter row on mobile cards", () => {
+    renderHarness({
+      isMobile: true,
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-row"]')
+    ).toBeNull();
+  });
+});
+
+describe("sparkline column", () => {
+  it("renders an accessible chart from the optional entry", () => {
+    renderHarness({
+      override: {
+        columns: [
+          sparklineColumn({
+            key: "trend",
+            header: "Trend",
+            values: () => [1, 4, 2],
+            kind: "bar",
+          }),
+          { key: "name", header: "Name", accessor: (r) => r.name },
+        ],
+      },
+    });
+    expect(
+      screen.getAllByRole("img", { name: "3 values, min 1, max 4, last 2" })
+        .length
+    ).toBeGreaterThan(0);
   });
 });

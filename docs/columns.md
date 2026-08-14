@@ -94,7 +94,8 @@ export function People() {
 ## How it works
 
 - A bare `{ key }` is a complete column: the key doubles as the row's data path (dot paths reach nested values, `"department.name"`), and the header is auto-humanised (`hiredAt` → "Hired At"). An explicit `header` always wins, in any language.
-- Cell content resolves `Cell` → `accessor` → the key's data path. `Cell` is a React component receiving `{ row, rowIndex }`; `accessor` is the lighter function form.
+- `renderHeader` replaces the caption only. The cell still owns sort, resize and the menu, and passes a `controller` (`label`, `sortDir`, `toggleSort`) so a custom caption can stay wired. `headerTooltip` is a native title; `headerActions` sit after the caption. `renderFooter` replaces one summary cell; `tableFooter` is a free slot under the table.
+- Cell content resolves `Cell` → `accessor` → the key's data path. `Cell` is a React component receiving `{ row, rowIndex }`; `accessor` is the lighter function form. Mini charts are a separate import — see [sparkline columns](./sparkline.md).
 - `sortable` opts a column into sorting; on frontend data the comparator reads `sortValue`, falling back to the column's accessor. See [sorting](./sorting.md).
 - `i18n` maps locale tags to alternative data paths; the table's `locale` prop picks one (exact tag → primary subtag → `key`). The cell, client-side sort, and the column's filter all follow the resolved path — header text does not.
 - `hideOnMobile` / `hideOnDesktop` drop a column per layout; `mobileLabel` overrides the label on mobile cards.
@@ -106,6 +107,10 @@ export function People() {
 | --------------- | -------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
 | `key`           | `string`                         | required                     | Unique id; data path for the cell value; the backend `sortBy` value.                              |
 | `header`        | `ReactNode`                      | humanised from `key`         | Header content, pre-translated by the caller.                                                     |
+| `renderHeader`  | `(ctx) => ReactNode`             | —                            | Custom caption; receives a controller so sort/resize stay available.                              |
+| `renderFooter`  | `(ctx) => ReactNode`             | —                            | Custom summary-row cell.                                                                          |
+| `headerTooltip` | `string`                         | —                            | Native tooltip on the caption.                                                                    |
+| `headerActions` | `ReactNode`                      | —                            | Host controls after the caption.                                                                  |
 | `accessor`      | `(row) => ReactNode`             | read the key's data path     | Lightweight cell renderer.                                                                        |
 | `Cell`          | `ComponentType<CellProps<TRow>>` | —                            | Component per row, receives `{ row, rowIndex }`; wins over `accessor`.                            |
 | `sortable`      | `boolean`                        | `false`                      | Enable sorting for this column.                                                                   |
@@ -207,33 +212,38 @@ Rows must be objects, since the cache is keyed by row identity. The spec type is
 ## Grouped headers
 
 Give adjacent columns the same `group` and they render under one spanning
-header cell:
+header cell. A string is one level; a path stacks one header row per depth:
 
 ```tsx
 const columns: ColumnDef<Person>[] = [
   { key: "firstName", header: "First", group: "Name" },
   { key: "lastName", header: "Last", group: "Name" },
-  { key: "city", header: "City", group: "Location" },
-  { key: "country", header: "Country", group: "Location" },
+  { key: "q1", header: "Q1", group: ["Finance", "2026"] },
+  { key: "q2", header: "Q2", group: ["Finance", "2026"] },
   { key: "hiredAt", header: "Hired" },
 ];
 ```
 
 ```text
-|      Name      |     Location      |        |
-| First |  Last  |  City  | Country  | Hired  |
+|      Name      |      Finance      |        |
+|                |       2026        |        |
+| First |  Last  |   Q1   |    Q2    | Hired  |
 ```
 
-Columns without a `group` sit under a blank spanning cell, so the header row
-always lines up. The grouping is **presentational and adjacency-based**: the
+Columns without a `group` sit under a blank spanning cell, so the header rows
+always line up. The grouping is **presentational and adjacency-based**: the
 span is computed from the columns as they are currently ordered, so dragging a
 column out of the middle of a group splits it into two spans rather than
 pretending the layout is something it is not. Reorder them back together and
 the group closes up again.
 
-Groups are one level deep and carry no behaviour of their own — they do not
-collapse, pin, or reorder as a unit. On mobile the card layout has no header
-row, so `group` has no effect there.
+Pass `collapsibleColumnGroups` and each real group header gains a toggle. A
+collapsed group keeps its first leaf as the summary column and hides the
+rest. Collapse state lives on `columnLayout.collapsedGroups` and the URL
+(`colGroupCollapse`); group ids are `path.join("\u001f")` so a label may
+contain `/`. On mobile the card layout has no header row, but the same
+visible-column filter applies — cards hide the same leaves a collapsed
+group hid on desktop.
 
 ## Notes
 

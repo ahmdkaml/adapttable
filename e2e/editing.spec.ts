@@ -33,7 +33,7 @@ test.describe("editing demo page", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Editing" }).click();
     await expect(page).toHaveURL(/\/editing\/$/);
-    await expect(page.getByRole("table").first()).toBeVisible();
+    await expect(page.getByRole("grid").first()).toBeVisible();
   });
 
   // Every editable column the page shows on load, not just the first one that
@@ -43,14 +43,14 @@ test.describe("editing demo page", () => {
   for (const column of ["Person", "Email", "Status", "Budget", "Load"]) {
     test(`${column} opens an editor on double-click`, async ({ page }) => {
       await page.goto("/editing/");
-      await expect(page.getByRole("table").first()).toBeVisible();
+      await expect(page.getByRole("grid").first()).toBeVisible();
       await expect(await openEditor(page, column)).toBeVisible();
     });
   }
 
   test("Team edits once revealed from the Columns menu", async ({ page }) => {
     await page.goto("/editing/");
-    await expect(page.getByRole("table").first()).toBeVisible();
+    await expect(page.getByRole("grid").first()).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Team" })).toHaveCount(
       0
     );

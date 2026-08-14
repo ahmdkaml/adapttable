@@ -2,13 +2,20 @@ import {
   type ColumnDef,
   groupAggregateEntries,
   type GroupedFlatEntry,
+  groupLeafCount,
   groupRowLayout,
   groupSelectionState,
   type SelectionState,
   type TableLabels,
 } from "@adapttable/core";
-import { resolveMobileLabel } from "@adapttable/core/adapter";
-import type { ReactElement } from "react";
+import {
+  groupIndentStyle,
+  GroupMoreButton,
+  groupRowParts,
+  GroupToggleSpacer,
+  resolveMobileLabel,
+} from "@adapttable/core/adapter";
+import type { ReactElement, ReactNode } from "react";
 
 import type { DataTableClassNames } from "../types";
 import { ChevronIcon } from "./icons";
@@ -24,8 +31,12 @@ export function GroupHeaderRow<TRow>({
   labels,
   classNames,
   onToggleCollapse,
+  onShowMore,
 }: Readonly<{
-  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  entry: Extract<
+    GroupedFlatEntry<TRow>,
+    { kind: "group" | "groupFooter" | "groupMore" }
+  >;
   /** The data columns as rendered, so a subtotal lands under its own. */
   columns: readonly ColumnDef<TRow>[];
   /** Edge cells before the first data column (chevron, checkbox). */
@@ -38,26 +49,66 @@ export function GroupHeaderRow<TRow>({
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
   onToggleCollapse: (groupKey: string) => void;
+  /** Reveal the next page of groups, or of one group's rows. */
+  onShowMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
 }>): ReactElement {
-  const expanded = !entry.collapsed;
-  const groupState = selection
-    ? groupSelectionState(entry.leafIds, selection.selectedIds)
-    : "none";
+  // A footer is the same row with the controls taken away: no chevron (there
+  // is nothing to collapse from the bottom), no checkbox (the header's already
+  // selects the group), and a caption that says what the numbers are.
+  const footer = entry.kind === "groupFooter";
+  // A "show more" row is the same row again with a button where the label
+  // goes: one component, so the three never drift apart in a kit.
+  const more = entry.kind === "groupMore";
+  const parts = groupRowParts(entry.kind);
+  // The class hooks follow the parts: one row, one meaning, one name each.
+  const rowClasses = {
+    group: { row: classNames.groupRow, cell: classNames.groupCell },
+    groupFooter: {
+      row: classNames.groupFooterRow,
+      cell: classNames.groupFooterCell,
+    },
+    groupMore: { row: classNames.groupMoreRow, cell: classNames.groupMoreCell },
+  }[entry.kind];
+  /** What the label cell shows: a button on a "more" row, else the name. */
+  let labelContent: ReactNode = entry.label;
+  if (entry.kind === "groupMore") {
+    labelContent = (
+      <GroupMoreButton
+        scope={entry.scope}
+        remaining={entry.remaining}
+        groupKey={entry.groupKey}
+        labels={labels}
+        onShowMore={onShowMore}
+      />
+    );
+  } else if (footer) {
+    labelContent = labels.groupTotal(entry.label);
+  }
+  const expanded = entry.kind !== "group" || !entry.collapsed;
+  const groupState =
+    selection && !footer && !more
+      ? groupSelectionState(entry.leafIds, selection.selectedIds)
+      : "none";
   // One cell per column from the first aggregate onward: a subtotal only reads
   // as one when it sits under the column it totals.
-  const layout = groupRowLayout(columns, entry.aggregateCells);
+  const layout = groupRowLayout(
+    columns,
+    entry.kind === "groupMore" ? undefined : entry.aggregateCells
+  );
 
   return (
     <tr
-      data-adapttable-part="group-row"
-      data-collapsed={entry.collapsed ? "true" : undefined}
-      className={classNames.groupRow}
+      data-adapttable-part={parts.row}
+      data-collapsed={
+        entry.kind === "group" && entry.collapsed ? "true" : undefined
+      }
+      className={rowClasses.row}
     >
       <td
         colSpan={leadingCells + layout.labelColumns.length}
-        data-adapttable-part="group-cell"
-        className={classNames.groupCell}
-        style={{ fontWeight: 600 }}
+        data-adapttable-part={parts.cell}
+        className={rowClasses.cell}
+        style={{ fontWeight: 600, ...groupIndentStyle(entry.level) }}
       >
         <span
           style={{
@@ -67,25 +118,29 @@ export function GroupHeaderRow<TRow>({
             width: "100%",
           }}
         >
-          <button
-            type="button"
-            data-adapttable-part="group-toggle"
-            aria-expanded={expanded}
-            aria-label={expanded ? labels.collapseGroup : labels.expandGroup}
-            className={classNames.groupToggle}
-            onClick={() => onToggleCollapse(entry.key)}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-                transition: "transform 150ms ease",
-              }}
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
+            <button
+              type="button"
+              data-adapttable-part="group-toggle"
+              aria-expanded={expanded}
+              aria-label={expanded ? labels.collapseGroup : labels.expandGroup}
+              className={classNames.groupToggle}
+              onClick={() => onToggleCollapse(entry.key)}
             >
-              <ChevronIcon size={14} />
-            </span>
-          </button>
-          {selection && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 150ms ease",
+                }}
+              >
+                <ChevronIcon size={14} />
+              </span>
+            </button>
+          )}
+          {selection && !footer && !more && (
             <input
               type="checkbox"
               data-adapttable-part="group-select"
@@ -99,18 +154,22 @@ export function GroupHeaderRow<TRow>({
             />
           )}
           <span
-            data-adapttable-part="group-label"
+            data-adapttable-part={parts.label}
             className={classNames.groupLabel}
           >
-            {entry.label}
+            {labelContent}
           </span>
-          <span
-            data-adapttable-part="group-count"
-            className={classNames.groupCount}
-            style={{ opacity: 0.65 }}
-          >
-            {labels.groupCount(entry.leafIds.length)}
-          </span>
+          {footer || more ? (
+            <GroupToggleSpacer />
+          ) : (
+            <span
+              data-adapttable-part="group-count"
+              className={classNames.groupCount}
+              style={{ opacity: 0.65 }}
+            >
+              {labels.groupCount(groupLeafCount(entry))}
+            </span>
+          )}
           {layout.labelAggregates.map(({ column, node }) => (
             <span
               key={column.key}
@@ -150,47 +209,81 @@ export function GroupHeaderCard<TRow>({
   labels,
   classNames,
   onToggleCollapse,
+  onShowMore,
 }: Readonly<{
-  entry: Extract<GroupedFlatEntry<TRow>, { kind: "group" }>;
+  entry: Extract<
+    GroupedFlatEntry<TRow>,
+    { kind: "group" | "groupFooter" | "groupMore" }
+  >;
   /** The card's columns, for captioning each subtotal. */
   columns: readonly ColumnDef<TRow>[];
   selection: SelectionState | null;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
   onToggleCollapse: (groupKey: string) => void;
+  /** Reveal the next page of groups, or of one group's rows. */
+  onShowMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
 }>): ReactElement {
-  const expanded = !entry.collapsed;
-  const groupState = selection
-    ? groupSelectionState(entry.leafIds, selection.selectedIds)
-    : "none";
+  // A footer is the same row with the controls taken away: no chevron (there
+  // is nothing to collapse from the bottom), no checkbox (the header's already
+  // selects the group), and a caption that says what the numbers are.
+  const footer = entry.kind === "groupFooter";
+  // A "show more" row is the same row again with a button where the label
+  // goes: one component, so the three never drift apart in a kit.
+  const more = entry.kind === "groupMore";
+  const parts = groupRowParts(entry.kind);
+  /** What the label cell shows: a button on a "more" row, else the name. */
+  let labelContent: ReactNode = entry.label;
+  if (entry.kind === "groupMore") {
+    labelContent = (
+      <GroupMoreButton
+        scope={entry.scope}
+        remaining={entry.remaining}
+        groupKey={entry.groupKey}
+        labels={labels}
+        onShowMore={onShowMore}
+      />
+    );
+  } else if (footer) {
+    labelContent = labels.groupTotal(entry.label);
+  }
+  const expanded = entry.kind !== "group" || !entry.collapsed;
+  const groupState =
+    selection && !footer && !more
+      ? groupSelectionState(entry.leafIds, selection.selectedIds)
+      : "none";
 
   return (
     <div
-      data-adapttable-part="group-card"
-      data-collapsed={entry.collapsed ? "true" : undefined}
+      data-adapttable-part={parts.card}
+      data-collapsed={
+        entry.kind === "group" && entry.collapsed ? "true" : undefined
+      }
       className={classNames.groupCard}
       style={{ fontWeight: 600 }}
     >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-        <button
-          type="button"
-          data-adapttable-part="group-toggle"
-          aria-expanded={expanded}
-          aria-label={expanded ? labels.collapseGroup : labels.expandGroup}
-          className={classNames.groupToggle}
-          onClick={() => onToggleCollapse(entry.key)}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-              transition: "transform 150ms ease",
-            }}
+        {!footer && !more && (
+          <button
+            type="button"
+            data-adapttable-part="group-toggle"
+            aria-expanded={expanded}
+            aria-label={expanded ? labels.collapseGroup : labels.expandGroup}
+            className={classNames.groupToggle}
+            onClick={() => onToggleCollapse(entry.key)}
           >
-            <ChevronIcon size={14} />
-          </span>
-        </button>
-        {selection && (
+            <span
+              style={{
+                display: "inline-flex",
+                transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                transition: "transform 150ms ease",
+              }}
+            >
+              <ChevronIcon size={14} />
+            </span>
+          </button>
+        )}
+        {selection && !footer && !more && (
           <input
             type="checkbox"
             data-adapttable-part="group-select"
@@ -204,39 +297,42 @@ export function GroupHeaderCard<TRow>({
           />
         )}
         <span
-          data-adapttable-part="group-label"
+          data-adapttable-part={parts.label}
           className={classNames.groupLabel}
         >
-          {entry.label}
+          {labelContent}
         </span>
-        <span
-          data-adapttable-part="group-count"
-          className={classNames.groupCount}
-          style={{ opacity: 0.65 }}
-        >
-          {labels.groupCount(entry.leafIds.length)}
-        </span>
-      </span>
-      {groupAggregateEntries(columns, entry.aggregateCells).map(
-        ({ column, node }) => (
+        {!footer && !more && (
           <span
-            key={column.key}
-            style={{ display: "flex", gap: 8, marginTop: 4 }}
+            data-adapttable-part="group-count"
+            className={classNames.groupCount}
+            style={{ opacity: 0.65 }}
           >
-            <span className={classNames.groupCount} style={{ opacity: 0.65 }}>
-              {resolveMobileLabel(column)}
-            </span>
-            <span
-              data-adapttable-part="group-aggregate"
-              data-column={column.key}
-              className={classNames.groupAggregate}
-              style={{ marginInlineStart: "auto" }}
-            >
-              {node}
-            </span>
+            {labels.groupCount(groupLeafCount(entry))}
           </span>
-        )
-      )}
+        )}
+      </span>
+      {groupAggregateEntries(
+        columns,
+        entry.kind === "groupMore" ? undefined : entry.aggregateCells
+      ).map(({ column, node }) => (
+        <span
+          key={column.key}
+          style={{ display: "flex", gap: 8, marginTop: 4 }}
+        >
+          <span className={classNames.groupCount} style={{ opacity: 0.65 }}>
+            {resolveMobileLabel(column)}
+          </span>
+          <span
+            data-adapttable-part="group-aggregate"
+            data-column={column.key}
+            className={classNames.groupAggregate}
+            style={{ marginInlineStart: "auto" }}
+          >
+            {node}
+          </span>
+        </span>
+      ))}
     </div>
   );
 }

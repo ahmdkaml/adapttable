@@ -4,6 +4,8 @@
 
 A spectrum, all opt-in: restyle parts with `classNames`, replace parts with
 `slots`, tune the chrome with props, or theme through your kit's provider.
+Per-row colour and height are `rowStyle` / `rowHeight` — see
+[row styling and heights](./row-styling.md).
 
 ## `classNames` — per-part styling
 
@@ -52,24 +54,27 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                              | Element                                                                                |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `filtersButton`                                   | The Filters trigger button.                                                            |
-| `filtersIcon`                                     | The funnel icon inside the trigger.                                                    |
-| `filtersCount`                                    | The active-filter count badge.                                                         |
-| `exportCsvButton`                                 | The Export CSV toolbar button (`exportCsv` prop).                                      |
-| `exportSpinner`                                   | The spinner inside that button while a host-handled export runs.                       |
-| `filtersAnchor`                                   | The popover anchor wrapper around the trigger.                                         |
-| `filtersPopover`                                  | The anchored popover card (`filtersMode="popover"`).                                   |
-| `filtersBackdrop`                                 | The drawer backdrop (`filtersMode="drawer"`).                                          |
-| `filtersPanel`                                    | The drawer panel.                                                                      |
-| `filtersHeader` / `filtersTitle` / `filtersClose` | Panel header, its title, and the close button.                                         |
-| `filtersBody` / `filtersFooter`                   | The panel content area and its action row.                                             |
-| `filtersClear` / `filtersDone`                    | The clear-all and done/apply buttons.                                                  |
-| `filterField` / `filterLabel`                     | One auto-built field's wrapper and its caption.                                        |
-| `filterInput` / `filterSelect` / `filterOperator` | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
-| `filterCheckboxGroup` / `filterCheckbox`          | A `multiSelect` checkbox list and one option.                                          |
-| `filterOptionsLoading`                            | The placeholder shown while async options load.                                        |
+| Part                                                                                                                    | Element                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                            |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                    |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                         |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                      |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                       |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                         |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                   |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                          |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                      |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                         |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                             |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                  |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                        |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
+| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput`                                                            | Compact header filter row, one cell, and its input.                                    |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
 
 ### Chips
 
@@ -88,6 +93,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `columnMenuItem` / `columnMenuGrip` / `columnMenuLabel` | One column row, its drag grip, and its label.               |
 | `columnMenuVisibility` / `columnMenuPin`                | The show/hide toggle and the pin control.                   |
 | `columnMenuSeparator` / `columnMenuReset`               | The separator above the actions entry and the reset button. |
+| `columnMenuAutoSize`                                    | The menu's "size columns to content" action.                |
 | `resizeHandle`                                          | A header's drag/keyboard resize handle.                     |
 
 ### Saved views
@@ -141,16 +147,19 @@ editing is dormant these parts are never mounted.
 Opt-in via `groupBy` — see [Row grouping](./row-grouping.md). When grouping
 is dormant these parts are never mounted.
 
-| Part              | Element                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| `group-row`       | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
-| `group-cell`      | The spanning `<td>` / `<th>` inside a group header (most kits).       |
-| `group-card`      | Group header block in the mobile card list.                           |
-| `group-toggle`    | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
-| `group-label`     | The group's display label (bucket value).                             |
-| `group-count`     | Leaf count beside the label (`labels.groupCount`).                    |
-| `group-select`    | Tri-state checkbox over the group's leaf rows (when selection is on). |
-| `group-aggregate` | One per-group aggregate cell (`data-column` = column key).            |
+| Part                | Element                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| `group-row`         | Desktop group header `<tr>` (or antd's grouped row wrapper).          |
+| `group-cell`        | The spanning `<td>` / `<th>` inside a group header (most kits).       |
+| `group-footer-row`  | The row closing a group when `groupFooters` is set.                   |
+| `group-footer-cell` | The spanning cell inside a group footer.                              |
+| `group-footer-card` | Group footer block in the mobile card list.                           |
+| `group-card`        | Group header block in the mobile card list.                           |
+| `group-toggle`      | Expand / collapse chevron (`aria-expanded`, `expandGroup` labels).    |
+| `group-label`       | The group's display label (bucket value).                             |
+| `group-count`       | Leaf count beside the label (`labels.groupCount`).                    |
+| `group-select`      | Tri-state checkbox over the group's leaf rows (when selection is on). |
+| `group-aggregate`   | One per-group aggregate cell (`data-column` = column key).            |
 
 ### Mobile cards & summary
 

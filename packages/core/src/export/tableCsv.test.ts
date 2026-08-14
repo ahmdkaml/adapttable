@@ -25,6 +25,7 @@ const COLS: ColumnDef<Person>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name },
   { key: "age", header: "Age", accessor: (r) => r.age },
   { key: "actions", header: "Actions" },
+  { key: "reorder", header: "Reorder" },
 ];
 
 const PAGE: Person[] = [
@@ -86,7 +87,7 @@ describe("resolveExportCsv", () => {
 });
 
 describe("exportableColumns", () => {
-  it("drops the actions column", () => {
+  it("drops the synthetic actions and reorder columns", () => {
     expect(exportableColumns(COLS).map((c) => c.key)).toEqual(["name", "age"]);
   });
 });

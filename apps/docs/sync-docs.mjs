@@ -24,12 +24,18 @@ const TITLES = {
   "getting-started.md": "Get started — a React table for your UI kit",
   "concepts.md": "AdaptTable concepts — headless core & source",
   "columns.md": "React table columns — ColumnDef & custom cells",
+  "sparkline.md": "React table sparkline columns — bar, line, area",
   "sorting.md": "React table sorting — multi-column, URL-synced",
   "filtering.md": "React table filtering — chips & URL-synced",
   "pagination.md": "React table pagination — paged, infinite, auto",
   "selection.md": "React table row selection & bulk actions",
   "row-expansion.md": "React table expandable rows — detail panels",
   "cell-editing.md": "React table inline cell editing — onCellEdit",
+  "row-reordering.md": "React table row reordering — drag handle",
+  "row-pinning.md": "React table row pinning — sticky top and bottom",
+  "row-spanning.md": "React table row and column spanning",
+  "full-width-rows.md": "React table full-width and separator rows",
+  "row-styling.md": "React table row styling and heights",
   "cell-navigation.md": "React table keyboard navigation — ARIA grid",
   "row-grouping.md": "React table row grouping with subtotals",
   "column-management.md": "React table column management — pin, resize",
@@ -67,6 +73,8 @@ const DESCRIPTIONS = {
     "One headless core, a TableSource data contract, and adapters that mount real Mantine, MUI, Chakra, Ant, Radix and shadcn components.",
   "columns.md":
     "Define React table columns once with ColumnDef — accessors, sorting, per-column filters, alignment, pinning and custom cells — same API across every UI kit.",
+  "sparkline.md":
+    "Optional React table sparkline columns — bar, line and area as inline SVG from @adapttable/core/sparkline, so the base bundle never pays for charts.",
   "sorting.md":
     "React table sorting with single or multi-column sort, custom comparators, server-side sortBy and accessible aria-sort headers — URL-synced when you want it.",
   "filtering.md":
@@ -79,6 +87,16 @@ const DESCRIPTIONS = {
     "Expandable rows for React data tables — per-row detail panels with accessible toggles and keyboard support, on the same API across every UI kit adapter.",
   "cell-editing.md":
     "Inline cell editing for React CRUD tables — opt-in onCellEdit, text/number/select editors, keyboard commit/cancel, kit-native inputs across every adapter.",
+  "row-reordering.md":
+    "Row reordering for React data tables — opt-in onRowReorder, a drag handle with Space-lift keyboard, dataset-relative indices, mobile up/down. Grouping and trees refuse it.",
+  "row-pinning.md":
+    "Row pinning for React data tables — sticky top and bottom rows outside the virtual window, { top, bottom } id lists, URL-synced, mobile actions only.",
+  "row-spanning.md":
+    "Row and column spanning for React data tables — getCellSpan and column.colSpan/rowSpan emit one cell list per row so covered cells never render twice.",
+  "full-width-rows.md":
+    "Full-width and separator rows for React data tables — extraRows splices host-injected slots into the body by beforeRowId. Mobile cards keep the same slots.",
+  "row-styling.md":
+    "Conditional row styling and heights for React data tables — rowStyle and rowHeight on desktop rows and mobile cards, with a variable-height virtualizer.",
   "cell-navigation.md":
     "Arrow-key cell navigation for a React table: one tab stop, correct ARIA grid semantics, absolute row indices under virtualization, and spoken announcements.",
   "row-grouping.md":

@@ -1,4 +1,7 @@
-import type { KeyboardEvent, PointerEvent } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent } from "react";
+
+import { isRtlElement } from "../layout/writingDirection";
+import { measureColumnWidth } from "./autoSizeColumns";
 
 /** Minimum column width (px) a resize drag/keyboard step will not go below. */
 export const MIN_COLUMN_WIDTH = 60;
@@ -23,6 +26,8 @@ export interface ColumnResizeHandleProps {
   "aria-label": string;
   onPointerDown: (event: PointerEvent<HTMLElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+  /** Double-click sizes the column to its content, as every grid does. */
+  onDoubleClick: (event: MouseEvent<HTMLElement>) => void;
 }
 
 /** Current rendered width of the resize handle's owning header cell. */
@@ -39,9 +44,7 @@ function cellWidth(handle: HTMLElement): number {
  * falling back to the resolved CSS `direction` for theme-only RTL.
  */
 function isRtl(handle: HTMLElement): boolean {
-  const scoped = handle.closest("[dir]");
-  if (scoped) return scoped.getAttribute("dir") === "rtl";
-  return globalThis.getComputedStyle(handle).direction === "rtl";
+  return isRtlElement(handle);
 }
 
 /**
@@ -62,6 +65,16 @@ export function columnResizeHandleProps(
     role: "button",
     tabIndex: 0,
     "aria-label": label,
+    onDoubleClick: (event) => {
+      // Measure from the table the handle is in, so this needs no wiring: the
+      // cells carry their column key and the browser has already laid them out.
+      const width = measureColumnWidth(
+        event.currentTarget.closest("table") ??
+          event.currentTarget.ownerDocument.body,
+        key
+      );
+      if (width !== null) setWidth(key, width);
+    },
     onPointerDown: (event) => {
       event.preventDefault();
       event.stopPropagation();

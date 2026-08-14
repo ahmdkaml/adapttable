@@ -5,6 +5,7 @@ import type {
   ConfirmHandler,
   ConfirmRequest,
   FilterDef,
+  FilterTypeSpec,
   GroupAggregatesFn,
   RowAction,
   UseSavedViewsOptions,
@@ -13,8 +14,11 @@ import {
   aggregate,
   buildFilterRuntime,
   computed,
+  defaultFilterRegistry,
   resolveFilterDefs,
+  resolveFilterRegistry,
 } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -43,9 +47,75 @@ export interface Person {
   status?: DemoStatus;
   budget?: number;
   utilization?: number;
+  /** `YYYY-MM-DD`, once a date edit materializes one. */
+  start?: string;
 }
 
 export const PEOPLE = people as Person[];
+
+/**
+ * The org chart already inside the seed: the first person on each team leads
+ * it, everyone else on that team reports to them. Derived rather than stored,
+ * so the tree demo and every other demo read the identical thirty rows.
+ */
+const TEAM_LEAD = new Map<string, string>();
+for (const person of PEOPLE) {
+  if (!TEAM_LEAD.has(person.team)) TEAM_LEAD.set(person.team, person.id);
+}
+
+/** One line item under a person — the nested table's rows. */
+export interface DemoOrder {
+  id: string;
+  item: string;
+  qty: number;
+  amount: number;
+}
+
+const ORDER_ITEMS = [
+  "Analytical engine time",
+  "Punch cards",
+  "Compiler licence",
+  "Support retainer",
+];
+
+/**
+ * The orders under one person, derived from their id so the nested-table demo
+ * needs no second seed file and stays stable across reloads.
+ */
+export function demoOrders(person: Person): DemoOrder[] {
+  const seed = Number(person.id);
+  const count = (seed % 3) + 2;
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${person.id}-${i + 1}`,
+    item: ORDER_ITEMS[(seed + i) % ORDER_ITEMS.length],
+    qty: ((seed + i) % 5) + 1,
+    amount: 1200 + ((seed * 137 + i * 419) % 8800),
+  }));
+}
+
+/** `YYYY-MM-DD` in local time — what a date editor holds. */
+function localDay(value: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${String(value.getFullYear())}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
+
+/** Columns for the nested orders table — a different shape from the parent's. */
+export const DEMO_ORDER_COLUMNS: ColumnDef<DemoOrder>[] = [
+  { key: "item", header: "Item", accessor: (row) => row.item },
+  { key: "qty", header: "Qty", accessor: (row) => row.qty, align: "end" },
+  {
+    key: "amount",
+    header: "Amount",
+    accessor: (row) => `$${row.amount.toLocaleString("en-US")}`,
+    align: "end",
+  },
+];
+
+/** The id of a person's manager, or `undefined` for a team lead. */
+export function reportsTo(person: Person): string | undefined {
+  const lead = TEAM_LEAD.get(person.team);
+  return lead === person.id ? undefined : lead;
+}
 
 export type Locale = "en" | "ar";
 
@@ -64,8 +134,10 @@ interface Strings {
   allocations: string;
   timeline: string;
   load: string;
+  trend: string;
   allocationFilter: string;
   budgetFilter: string;
+  coreFilter: string;
   edit: string;
   remove: string;
   /** Spanning header over the two assignment columns. */
@@ -74,11 +146,14 @@ interface Strings {
   groupDelivery: string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
+  /** Rejection message for the editing demo's validated name column. */
+  nameRequired: string;
 }
 
 const STRINGS: Record<Locale, Strings> = {
   en: {
     search: "Search people…",
+    nameRequired: "A name is required",
     name: "Name",
     person: "Person",
     email: "Email",
@@ -92,8 +167,10 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "Allocations",
     timeline: "Timeline",
     load: "Load",
+    trend: "Trend",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
+    coreFilter: "Core team",
     edit: "Edit",
     remove: "Delete",
     groupAssignment: "Assignment",
@@ -103,6 +180,7 @@ const STRINGS: Record<Locale, Strings> = {
   },
   ar: {
     search: "ابحث عن الأشخاص…",
+    nameRequired: "الاسم مطلوب",
     name: "الاسم",
     person: "الشخص",
     email: "البريد الإلكتروني",
@@ -116,8 +194,10 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "التخصيصات",
     timeline: "الجدول الزمني",
     load: "الحمل",
+    trend: "الاتجاه",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
+    coreFilter: "الفريق الأساسي",
     edit: "تعديل",
     remove: "حذف",
     groupAssignment: "التعيين",
@@ -345,11 +425,15 @@ export function makeColumns(
     {
       key: "person",
       header: s.person,
+      headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
       editable: true,
       editor: "text",
       editValue: (r) => r.name,
+      // A rule the reader can trip on purpose: clear the name and commit.
+      validate: (value) =>
+        String(value).trim() === "" ? s.nameRequired : undefined,
       width: 230,
       accessor: (row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
@@ -366,9 +450,19 @@ export function makeColumns(
       ),
       mobileLabel: s.person,
     },
+    sparklineColumn({
+      key: "trend",
+      header: s.trend,
+      values: loadHistory,
+      kind: "area",
+      width: 88,
+      height: 28,
+      column: { width: 96, mobileLabel: s.trend },
+    }),
     {
       key: "email",
       header: s.email,
+      headerTooltip: s.email,
       // Opt-in cell editing demo — only activates when the host passes
       // `onCellEdit` (Frontend path in DemoBody). Column flag alone is inert.
       editable: true,
@@ -420,12 +514,17 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.timeline],
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
       exportValue: (r) => startDate(r).toISOString().slice(0, 10),
       sortable: true,
+      // The cell shows a localized range; the editor edits the start date it
+      // sorts by, in the browser's own date control.
+      editable: true,
+      editor: "date",
+      editValue: (r) => localDay(startDate(r)),
       width: 185,
       accessor: (row) => (
         <span style={cellStack}>
@@ -442,7 +541,7 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.budget],
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -496,6 +595,7 @@ export function makeWideColumns(
     {
       key: "person",
       header: s.person,
+      headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
       editable: true,
@@ -516,6 +616,15 @@ export function makeWideColumns(
         </span>
       ),
     },
+    sparklineColumn({
+      key: "trend",
+      header: s.trend,
+      values: loadHistory,
+      kind: "area",
+      width: 88,
+      height: 28,
+      column: { width: 96 },
+    }),
     {
       key: "role",
       header: s.role,
@@ -566,6 +675,7 @@ export function makeWideColumns(
     {
       key: "email",
       header: s.email,
+      headerTooltip: s.email,
       editable: true,
       editor: "text",
       accessor: (r) => r.email,
@@ -574,7 +684,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.timeline],
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -595,7 +705,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.budget],
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -696,7 +806,21 @@ export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
 }
 
+/** Eight weeks of load, derived so the sparkline needs no second seed. */
+export function loadHistory(row: Person): number[] {
+  const base = utilization(row);
+  const seed = Number(row.id) || 1;
+  return Array.from({ length: 8 }, (_, week) => {
+    const wobble = ((seed * (week + 3)) % 17) - 8;
+    return Math.max(0, Math.min(100, base + wobble));
+  });
+}
+
 export function startDate(row: Person): Date {
+  if (row.start !== undefined) {
+    const [year, month, day] = row.start.split("-").map(Number);
+    return new Date(Date.UTC(year ?? 2026, (month ?? 1) - 1, day ?? 1));
+  }
   const day = 1 + ((Number(row.id) * 7) % 26);
   const month = (Number(row.id) * 2) % 12;
   return new Date(Date.UTC(2026, month, day));
@@ -745,8 +869,15 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
   const s = STRINGS[locale];
   return [
     {
+      key: "name",
+      column: "person",
+      type: "personText",
+      label: s.person,
+      getValue: (row) => row.name,
+    },
+    {
       key: "team",
-      type: "multiSelect",
+      type: "checklist",
       label: s.team,
       options: TEAMS.map((team) => ({
         value: team,
@@ -773,6 +904,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "start",
+      column: "timeline",
       type: "dateRange",
       label: s.startDate,
       getValue: (row) => startDate(row).toISOString(),
@@ -783,7 +915,24 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
       label: s.allocationFilter,
       getValue: allocationCount,
     },
+    {
+      key: "core",
+      type: "boolean",
+      label: s.coreFilter,
+      getValue: (row) => row.team === "Core",
+    },
   ];
+}
+
+/**
+ * Alias of the built-in text type. The live demos point the name filter
+ * at `personText` so a missing registry would blank the header widget —
+ * the seam is real, not a special case for `"text"`.
+ */
+export function demoFilterTypes(): FilterTypeSpec[] {
+  const text = defaultFilterRegistry.get("text");
+  if (!text) return [];
+  return [{ ...text, type: "personText" }];
 }
 
 /**
@@ -793,7 +942,8 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
  * labels, never keys or matching, so one runtime serves every demo.
  */
 export const DEMO_FILTER_RUNTIME = buildFilterRuntime(
-  resolveFilterDefs<Person>([], demoFilterDefs("en"))
+  resolveFilterDefs<Person>([], demoFilterDefs("en")),
+  resolveFilterRegistry(demoFilterTypes())
 );
 
 /** Client-side predicate; the mock API applies the same logic server-side. */

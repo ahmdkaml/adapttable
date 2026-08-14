@@ -1,0 +1,199 @@
+/**
+ * Filter-operator registry. Each built-in type declares the operators it
+ * understands; the token written to `f_<key>Op` is the stable URL / Saved
+ * Views / query-contract id. Omitting the param keeps the historical
+ * default so existing links keep matching.
+ */
+import type { ExtraFilters, FilterValue, TableLabels } from "../types";
+
+/** Suffix on the filter key that stores the operator token (`name` → `nameOp`). */
+export const FILTER_OP_SUFFIX = "Op";
+
+/** The extra-bag / `f_` key that holds one definition's operator. */
+export function filterOpKey(key: string): string {
+  return key + FILTER_OP_SUFFIX;
+}
+
+/** True when `key` is an operator slot (`nameOp`), not a value slot. */
+export function isFilterOpKey(key: string): boolean {
+  return key.endsWith(FILTER_OP_SUFFIX) && key.length > FILTER_OP_SUFFIX.length;
+}
+
+/** Text comparison operators. Default when `f_<key>Op` is absent: `contains`. */
+export const TEXT_OPS = [
+  "eq",
+  "neq",
+  "contains",
+  "notContains",
+  "startsWith",
+  "endsWith",
+  "empty",
+  "notEmpty",
+] as const;
+
+/** Number comparison operators. Absent `Op` infers from the Min/Max pair. */
+export const NUMBER_OPS = [
+  "eq",
+  "neq",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "between",
+  "in",
+  "notIn",
+] as const;
+
+/**
+ * Date comparison operators. `on` / `gte` / `lte` keep the inclusive-day
+ * behaviour existing links already encode; `before` / `after` are exclusive.
+ */
+export const DATE_OPS = [
+  "before",
+  "after",
+  "on",
+  "gte",
+  "lte",
+  "between",
+  "relative",
+  "empty",
+] as const;
+
+/** One text operator token. */
+export type TextOp = (typeof TEXT_OPS)[number];
+/** One number operator token. */
+export type NumberOp = (typeof NUMBER_OPS)[number];
+/** One date operator token. */
+export type DateOp = (typeof DATE_OPS)[number];
+/** Any built-in operator token. */
+export type FilterOp = TextOp | NumberOp | DateOp;
+
+const TEXT_OP_SET = new Set<string>(TEXT_OPS);
+const NUMBER_OP_SET = new Set<string>(NUMBER_OPS);
+const DATE_OP_SET = new Set<string>(DATE_OPS);
+
+/** True for operators that take no operand (`empty` / `notEmpty`). */
+export function isValuelessFilterOp(op: string): boolean {
+  return op === "empty" || op === "notEmpty";
+}
+
+/** True for operators that take a comma-separated list (`in` / `notIn`). */
+export function isListFilterOp(op: string): boolean {
+  return op === "in" || op === "notIn";
+}
+
+/** True for the two-bound `between` operator. */
+export function isBetweenFilterOp(op: string): boolean {
+  return op === "between";
+}
+
+/** `TableLabels` key for each text operator (widget + chip wording). */
+export const TEXT_OP_LABEL_KEYS = {
+  eq: "opEqual",
+  neq: "opNotEqual",
+  contains: "opContains",
+  notContains: "opNotContains",
+  startsWith: "opStartsWith",
+  endsWith: "opEndsWith",
+  empty: "opEmpty",
+  notEmpty: "opNotEmpty",
+} as const satisfies Record<TextOp, keyof TableLabels>;
+
+/** `TableLabels` key for each number operator. */
+export const NUMBER_OP_LABEL_KEYS = {
+  eq: "opEqual",
+  neq: "opNotEqual",
+  gt: "opGreater",
+  gte: "opAtLeast",
+  lt: "opLess",
+  lte: "opAtMost",
+  between: "opBetween",
+  in: "opIn",
+  notIn: "opNotIn",
+} as const satisfies Record<NumberOp, keyof TableLabels>;
+
+/** `TableLabels` key for each date operator. */
+export const DATE_OP_LABEL_KEYS = {
+  before: "opBefore",
+  after: "opAfter",
+  on: "opOn",
+  gte: "opOnOrAfter",
+  lte: "opOnOrBefore",
+  between: "opBetween",
+  relative: "opRelative",
+  empty: "opEmpty",
+} as const satisfies Record<DateOp, keyof TableLabels>;
+
+/** Parse a text operator; unknown / missing → `contains` (historical default). */
+export function parseTextOp(raw: FilterValue | undefined): TextOp {
+  if (typeof raw === "string" && TEXT_OP_SET.has(raw)) return raw as TextOp;
+  return "contains";
+}
+
+/** Parse a number operator, or `undefined` when the token is absent/unknown. */
+export function parseNumberOp(
+  raw: FilterValue | undefined
+): NumberOp | undefined {
+  if (typeof raw === "string" && NUMBER_OP_SET.has(raw)) {
+    return raw as NumberOp;
+  }
+  return undefined;
+}
+
+/** Parse a date operator, accepting `eq` as the historical spelling of `on`. */
+export function parseDateOp(raw: FilterValue | undefined): DateOp | undefined {
+  if (raw === "eq") return "on";
+  if (typeof raw === "string" && DATE_OP_SET.has(raw)) return raw as DateOp;
+  return undefined;
+}
+
+/** Read the operator token stored beside a filter key. */
+export function readFilterOp(
+  extra: ExtraFilters,
+  key: string
+): FilterValue | undefined {
+  return extra[filterOpKey(key)];
+}
+
+/** True when a row value counts as empty for `empty` / `notEmpty`. */
+export function isEmptyRowValue(value: unknown): boolean {
+  if (value == null) return true;
+  if (typeof value === "string") return value.trim() === "";
+  if (value instanceof Date) return Number.isNaN(value.getTime());
+  return false;
+}
+
+/** Split a list operand (`in` / `notIn`) into trimmed, non-empty tokens. */
+export function parseListOperand(value: FilterValue | undefined): string[] {
+  if (Array.isArray(value)) {
+    return value.map((entry) => String(entry).trim()).filter(Boolean);
+  }
+  if (value == null || value === "") return [];
+  return String(value)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+/** Parse a list operand as finite numbers (unknown tokens dropped). */
+export function parseNumberList(value: FilterValue | undefined): number[] {
+  const out: number[] = [];
+  for (const token of parseListOperand(value)) {
+    const n = Number(token);
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return out;
+}
+
+/**
+ * Chip text: `Name contains Ada`, or `Name is empty` when there is no
+ * operand. The operator word is already localized by the caller.
+ */
+export function formatFilterChip(
+  fieldLabel: string,
+  opWord: string,
+  value?: string
+): string {
+  if (value == null || value === "") return `${fieldLabel} ${opWord}`;
+  return `${fieldLabel} ${opWord} ${value}`;
+}

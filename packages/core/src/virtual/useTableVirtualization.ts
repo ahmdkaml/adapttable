@@ -6,17 +6,41 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { VIRTUAL_OVERSCAN } from "../constants";
+import { type RowPairMeasurer, useRowPairMeasurer } from "./measureRowPair";
 
 /** One row/card entry materialized from a virtual window. */
 export interface VirtualTableRow<TRow> {
   /** Row data for this visual slot. */
   row: TRow;
-  /** Original index in the source row array. */
+  /**
+   * Index in the array the virtualizer windows. When pinning is on that is
+   * the unpinned scroll list, not the page — use {@link rowSourceIndex}
+   * for ARIA, focus and `rowClassName`.
+   */
   index: number;
+  /**
+   * Index in the page's full row list. Equals {@link VirtualTableRow.index}
+   * unless pinned rows were pulled out of the window.
+   */
+  sourceIndex?: number;
   /** Stable key resolved from the caller's rowKey. */
   key: string;
   /** Virtualizer item metadata; absent when virtualization is disabled. */
   virtualItem?: VirtualItem;
+}
+
+/** Wrap a constant estimate so both virtualizer modes share one shape. */
+function asSizeEstimator(
+  estimateSize: number | ((index: number) => number)
+): (index: number) => number {
+  return typeof estimateSize === "function" ? estimateSize : () => estimateSize;
+}
+
+/** Dataset index for ARIA / focus — the window index when pinning is off. */
+export function rowSourceIndex(
+  entry: Pick<VirtualTableRow<unknown>, "index" | "sourceIndex">
+): number {
+  return entry.sourceIndex ?? entry.index;
 }
 
 /** Result consumed by adapters that opt into virtualized rendering. */
@@ -31,6 +55,15 @@ export interface TableVirtualization<TRow> {
   paddingBottom: number;
   /** Element measurement callback for virtualized rows/cards. */
   measureElement?: (node: Element | null) => void;
+  /**
+   * Measure a row TOGETHER with its open detail panel.
+   *
+   * A table cannot nest a detail panel inside the row it belongs to, so the
+   * two are separate elements and the virtualizer would size the item from the
+   * row alone. These refs report the pair's real height instead — which is
+   * what lets row detail and virtualization be used together at all.
+   */
+  measureRowPair?: RowPairMeasurer;
 }
 
 /** Options for {@link useTableVirtualization}. */
@@ -41,8 +74,8 @@ export interface UseTableVirtualizationOptions<TRow> {
   rowKey: (row: TRow) => string;
   /** Master switch; adapters keep this optional. */
   enabled?: boolean;
-  /** Estimated row/card size in px. */
-  estimateSize?: number;
+  /** Estimated row/card size in px, or a per-index reader. */
+  estimateSize?: number | ((index: number) => number);
   /** Extra items rendered before/after the visible window. */
   overscan?: number;
   /** Window virtualizer scroll margin, usually sticky header height. */
@@ -55,6 +88,12 @@ export interface UseTableVirtualizationOptions<TRow> {
   getScrollElement?: () => Element | null;
   /** Called when the virtual window reaches the last source row. */
   onEndReached?: () => void;
+  /**
+   * Whether rows can expand. With detail panels in play the window measures
+   * each row together with its panel; without them the extra observers would
+   * be pure cost.
+   */
+  expandable?: boolean;
 }
 
 /** Resolve either virtual entries or the full source rows into render entries. */
@@ -78,13 +117,15 @@ export function virtualColumnSpan(
   columnCount: number,
   hasSelection: boolean,
   hasActions: boolean,
-  hasExpansion = false
+  hasExpansion = false,
+  hasReorder = false
 ): number {
   return (
     columnCount +
     (hasSelection ? 1 : 0) +
     (hasActions ? 1 : 0) +
-    (hasExpansion ? 1 : 0)
+    (hasExpansion ? 1 : 0) +
+    (hasReorder ? 1 : 0)
   );
 }
 
@@ -102,6 +143,7 @@ export function useTableVirtualization<TRow>({
   scrollMargin = 0,
   getScrollElement,
   onEndReached,
+  expandable = false,
 }: UseTableVirtualizationOptions<TRow>): TableVirtualization<TRow> {
   const elementMode = getScrollElement !== undefined;
   // Stable identity, re-keyed ONLY when the data changes: the virtualizer
@@ -124,7 +166,7 @@ export function useTableVirtualization<TRow>({
   const windowVirtualizer = useWindowVirtualizer({
     count: rows.length,
     enabled: enabled && !elementMode,
-    estimateSize: () => estimateSize,
+    estimateSize: asSizeEstimator(estimateSize),
     getItemKey,
     overscan,
     scrollMargin,
@@ -133,7 +175,7 @@ export function useTableVirtualization<TRow>({
     count: rows.length,
     enabled: enabled && elementMode,
     getScrollElement: getScrollElement ?? (() => null),
-    estimateSize: () => estimateSize,
+    estimateSize: asSizeEstimator(estimateSize),
     getItemKey,
     overscan,
   });
@@ -141,6 +183,7 @@ export function useTableVirtualization<TRow>({
 
   const virtualItems = virtualizer.getVirtualItems();
   const active = enabled && virtualItems.length > 0;
+  const measureRowPair = useRowPairMeasurer(virtualizer, enabled && expandable);
   const materializedRows = useMemo<readonly VirtualTableRow<TRow>[]>(() => {
     if (!active) {
       return rows.map((row, index) => ({
@@ -204,7 +247,10 @@ export function useTableVirtualization<TRow>({
     rows: materializedRows,
     paddingTop: Math.max(0, paddingTop),
     paddingBottom: Math.max(0, paddingBottom),
-    measureElement: virtualizer.measureElement,
+    // A row that can expand is measured as a PAIR; one that cannot keeps the
+    // virtualizer's own element measurement, which is cheaper.
+    measureElement: expandable ? undefined : virtualizer.measureElement,
+    measureRowPair: expandable ? measureRowPair : undefined,
   };
 }
 
@@ -225,7 +271,7 @@ export interface KeyedVirtualization {
 export function useKeyedVirtualization(options: {
   keys: readonly string[];
   enabled?: boolean;
-  estimateSize?: number;
+  estimateSize?: number | ((index: number) => number);
   overscan?: number;
   scrollMargin?: number;
   getScrollElement?: () => Element | null;
@@ -242,10 +288,11 @@ export function useKeyedVirtualization(options: {
   } = options;
   const elementMode = getScrollElement !== undefined;
   const getItemKey = (index: number): string => keys[index] ?? String(index);
+  const sizeOf = asSizeEstimator(estimateSize);
   const windowVirtualizer = useWindowVirtualizer({
     count: keys.length,
     enabled: enabled && !elementMode,
-    estimateSize: () => estimateSize,
+    estimateSize: sizeOf,
     getItemKey,
     overscan,
     scrollMargin,
@@ -254,7 +301,7 @@ export function useKeyedVirtualization(options: {
     count: keys.length,
     enabled: enabled && elementMode,
     getScrollElement: getScrollElement ?? (() => null),
-    estimateSize: () => estimateSize,
+    estimateSize: sizeOf,
     getItemKey,
     overscan,
   });

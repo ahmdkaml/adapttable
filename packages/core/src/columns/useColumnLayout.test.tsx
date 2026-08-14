@@ -297,4 +297,25 @@ describe("batched mutations", () => {
     expect(result.current.state.pinned).toEqual({ a: "start" });
     expect(result.current.state.widths).toEqual({ a: 200 });
   });
+
+  it("hides non-summary leaves only when column-group collapse is armed", () => {
+    const grouped: ColumnDef<Row>[] = [
+      { key: "a", header: "A", accessor: (r) => r.id, group: "People" },
+      { key: "b", header: "B", accessor: (r) => r.id, group: "People" },
+      { key: "c", header: "C", accessor: (r) => r.id },
+    ];
+    const idle = renderHook(() => useColumnLayout({ columns: grouped }));
+    act(() => idle.result.current.toggleColumnGroup("People"));
+    expect(keys(idle.result.current.visibleColumns)).toEqual(["a", "b", "c"]);
+
+    const { result } = renderHook(() =>
+      useColumnLayout({ columns: grouped, collapsibleColumnGroups: true })
+    );
+    act(() => result.current.toggleColumnGroup("People"));
+    expect(keys(result.current.visibleColumns)).toEqual(["a", "c"]);
+    expect(result.current.state.collapsedGroups).toEqual(["People"]);
+    act(() => result.current.toggleColumnGroup("People"));
+    expect(keys(result.current.visibleColumns)).toEqual(["a", "b", "c"]);
+    expect(result.current.state.collapsedGroups).toBeUndefined();
+  });
 });

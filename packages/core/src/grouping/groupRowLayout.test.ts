@@ -8,7 +8,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { groupAggregateEntries, groupRowLayout } from "./groupRowLayout";
+import {
+  groupAggregateEntries,
+  groupLeafCount,
+  groupRowLayout,
+} from "./groupRowLayout";
 
 interface Row {
   name: string;
@@ -112,5 +116,14 @@ describe("groupAggregateEntries", () => {
 
   it("is empty when the group has no aggregates", () => {
     expect(groupAggregateEntries(COLUMNS, undefined)).toEqual([]);
+  });
+});
+
+describe("groupLeafCount", () => {
+  it("prefers the server's count over the page of leaves in hand", () => {
+    expect(groupLeafCount({ leafIds: ["a", "b"], serverCount: 4000 })).toBe(
+      4000
+    );
+    expect(groupLeafCount({ leafIds: ["a", "b"] })).toBe(2);
   });
 });

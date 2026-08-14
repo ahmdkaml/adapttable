@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
+import { useEventCallback } from "../hooks/useEventCallback";
+
 /** Collapse state + actions returned by {@link useGroupCollapse}. */
 export interface GroupCollapseState {
   /** Ids of currently collapsed groups (`group:…` keys). */
@@ -12,6 +14,15 @@ export interface GroupCollapseState {
   expandAll: () => void;
   /** Collapse every group in `groupKeys`. */
   collapseAll: (groupKeys: readonly string[]) => void;
+  /**
+   * Show the tree down to `depth` and no further: every group at that depth or
+   * deeper closes, everything above it opens. Depth 0 collapses the top level,
+   * so only the outermost headers show.
+   */
+  collapseToDepth: (
+    depth: number,
+    groups: readonly { key: string; level: number }[]
+  ) => void;
 }
 
 /**
@@ -33,16 +44,17 @@ export function useGroupCollapse(controlled?: {
     [isControlled, controlledIds, uncontrolled]
   );
 
-  const commit = useCallback(
-    (next: Set<string>) => {
-      if (isControlled) {
-        controlled?.onCollapsedGroupIdsChange?.([...next]);
-      } else {
-        setUncontrolled(next);
-      }
-    },
-    [controlled, isControlled]
-  );
+  // Stable across renders on purpose: the options object arrives fresh from
+  // the caller every time, and a `commit` that changed with it would change
+  // every action here — which rebuilds the whole grouped model on a keystroke
+  // that has nothing to do with grouping.
+  const commit = useEventCallback((next: Set<string>) => {
+    if (isControlled) {
+      controlled?.onCollapsedGroupIdsChange?.([...next]);
+    } else {
+      setUncontrolled(next);
+    }
+  });
 
   const isCollapsed = useCallback(
     (groupKey: string) => collapsedGroupIds.has(groupKey),
@@ -70,8 +82,33 @@ export function useGroupCollapse(controlled?: {
     [commit]
   );
 
+  const collapseToDepth = useCallback(
+    (depth: number, groups: readonly { key: string; level: number }[]) => {
+      commit(
+        new Set(
+          groups.filter((group) => group.level >= depth).map((g) => g.key)
+        )
+      );
+    },
+    [commit]
+  );
+
   return useMemo(
-    () => ({ collapsedGroupIds, isCollapsed, toggle, expandAll, collapseAll }),
-    [collapsedGroupIds, isCollapsed, toggle, expandAll, collapseAll]
+    () => ({
+      collapsedGroupIds,
+      isCollapsed,
+      toggle,
+      expandAll,
+      collapseAll,
+      collapseToDepth,
+    }),
+    [
+      collapsedGroupIds,
+      isCollapsed,
+      toggle,
+      expandAll,
+      collapseAll,
+      collapseToDepth,
+    ]
   );
 }

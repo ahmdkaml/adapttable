@@ -51,8 +51,7 @@ const JSON_OUT = args.includes("--json");
  *
  * A scenario for a feature the library does not have is absent rather than
  * stubbed — a benchmark that measures nothing is worse than a missing one, so
- * each arrives with the feature it measures. Tree data is the one still
- * outstanding, because hierarchical rows do not exist yet.
+ * each arrives with the feature it measures.
  */
 const SCENARIOS = [
   {
@@ -60,6 +59,12 @@ const SCENARIOS = [
     query: "rows=50000",
     smoke: true,
     expect: { maxDomRows: 60 },
+  },
+  {
+    name: "variable height · 20k rows, windowed",
+    query: "rows=20000&rowHeight=1",
+    smoke: true,
+    expect: { maxDomRows: 80 },
   },
   {
     name: "100k rows, windowed",
@@ -89,6 +94,23 @@ const SCENARIOS = [
     name: "wide · 500 columns",
     query: "rows=5000&cols=500",
     smoke: false,
+    expect: { maxDomRows: 60 },
+  },
+  // The horizontal A/B pair: same table, same rows, columns windowed or not.
+  // The cell count is the number that moves, and it is the whole point of
+  // windowing an axis nobody scrolls to the end of.
+  {
+    name: "wide · 500 columns, windowed (A/B arm)",
+    query: "rows=5000&cols=500&virtualizeColumns=1",
+    smoke: false,
+    expect: { maxDomRows: 60, maxCells: 3000 },
+  },
+  {
+    // A 50,000-row hierarchy with every parent open: the flattening walk runs
+    // over the whole set, and the window is what keeps the DOM small.
+    name: "tree · 50k rows, every parent open",
+    query: "rows=50000&tree=1",
+    smoke: true,
     expect: { maxDomRows: 60 },
   },
   {
@@ -234,6 +256,11 @@ function verdict(result, expect = {}) {
   if (expect.minDomRows !== undefined && result.domRows < expect.minDomRows) {
     failures.push(`${result.domRows} DOM rows < ${expect.minDomRows}`);
   }
+  // Cells are the number a wide table lives or dies by: windowing the rows of
+  // a 500-column table still leaves eleven thousand of them.
+  if (expect.maxCells !== undefined && result.domCells > expect.maxCells) {
+    failures.push(`${result.domCells} cells > ${expect.maxCells}`);
+  }
   return failures;
 }
 
@@ -342,6 +369,19 @@ if (JSON_OUT) {
         (on.heapMB && off.heapMB
           ? `, ${off.heapMB - on.heapMB}MB less heap`
           : "")
+    );
+  }
+  // The same claim on the other axis: a wide table renders the columns a
+  // reader can see, not the ones the schema has.
+  const wideOn = results.find((r) => r.query.includes("virtualizeColumns=1"));
+  const wideOff = results.find(
+    (r) =>
+      r.query.includes("cols=500") && !r.query.includes("virtualizeColumns")
+  );
+  if (wideOn && wideOff) {
+    console.log(
+      `windowing 500 columns: ${Math.round(wideOff.domCells / wideOn.domCells)}x ` +
+        `fewer DOM cells (${wideOff.domCells} → ${wideOn.domCells})`
     );
   }
   console.log(

@@ -25,6 +25,7 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
   };
 }
 
@@ -36,9 +37,21 @@ const labels = {
   moveStart: "Move to start",
   moveEnd: "Move to end",
   resetColumns: "Reset columns",
+  autoSizeColumns: "Size columns to content",
+  autoSizeColumn: "Size column to content",
   showColumn: "Show column",
   hideColumn: "Hide column",
+  searchColumns: "Search columns",
+  showAllColumns: "Show all",
+  hideAllColumns: "Hide all",
+  unpinAllColumns: "Unpin all",
+  resetColumn: "Reset column",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  columnActions: "Column actions",
   actions: "Actions",
+  reorderRow: "Reorder",
 };
 
 const byLabel = (name: string) =>
@@ -47,7 +60,14 @@ const byLabel = (name: string) =>
 describe("mui ColumnMenu", () => {
   it("shows drop-position feedback while dragging a row", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -87,7 +107,14 @@ describe("mui ColumnMenu", () => {
 
   it("toggles visibility, pins, reorders, and resets", async () => {
     const layout = fakeLayout();
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -116,7 +143,14 @@ describe("mui ColumnMenu", () => {
     // `r.hidden` is derived from `layout.isHidden(key)`; mark "b" hidden so the
     // hidden-side branches (eye color, text color, line-through) are exercised.
     layout.isHidden = (key) => key === "b";
-    render(<ColumnMenu allColumns={cols} layout={layout} labels={labels} />);
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
 
@@ -139,6 +173,7 @@ describe("mui ColumnMenu", () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -165,6 +200,7 @@ describe("mui ColumnMenu", () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={layout}
         labels={labels}
         hasRowActions
@@ -186,9 +222,34 @@ describe("mui ColumnMenu", () => {
     expect(layout.setPinned).toHaveBeenCalledWith("actions", undefined);
   });
 
+  it("lists a leading reorder row with an eye and a start pin", async () => {
+    const layout = fakeLayout();
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={layout}
+        labels={labels}
+        hasRowReorder
+        onAutoSize={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(screen.getByText("Reorder")).toBeInTheDocument();
+    fireEvent.click(byLabel("Hide column: Reorder"));
+    expect(layout.toggleVisible).toHaveBeenCalledWith("reorder");
+    fireEvent.click(byLabel("Pin to start: Reorder"));
+    expect(layout.setPinned).toHaveBeenCalledWith("reorder", "start");
+  });
+
   it("omits the Actions row when the table has no row actions", async () => {
     render(
-      <ColumnMenu allColumns={cols} layout={fakeLayout()} labels={labels} />
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
     await screen.findByText("Reset columns");
@@ -199,10 +260,29 @@ describe("mui ColumnMenu", () => {
   // table's direction. Under an Arabic locale the grip and pin controls
   // stayed on the LTR sides while the table itself mirrored. Only Chakra
   // passed `dir` through; the rest silently dropped it.
+  it("filters the chooser by the search box", async () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        layout={fakeLayout()}
+        labels={labels}
+        onAutoSize={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    fireEvent.change(screen.getByLabelText("Search columns"), {
+      target: { value: "bravo" },
+    });
+    expect(screen.getByText("Bravo")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+  });
+
   it("forwards dir to the portalled menu", async () => {
     render(
       <ColumnMenu
         allColumns={cols}
+        onAutoSize={() => undefined}
         layout={fakeLayout()}
         labels={labels}
         dir="rtl"

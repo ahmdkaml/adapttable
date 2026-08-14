@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { createElement, useCallback, useEffect, useMemo } from "react";
 
+import { columnFlexShares, columnSizeStyle } from "../columns/columnSizing";
 import { resolveColumns } from "../columns/resolveColumns";
 import { visibleColumns } from "../columns/visibleColumns";
 import { SEARCH_DEBOUNCE_MS } from "../constants";
@@ -39,6 +40,13 @@ export interface UseDataTableOptions<TRow> {
   source: TableSource<TRow>;
   /** Column definitions. */
   columns: ColumnDef<TRow>[];
+  /**
+   * Make the columns share the container's width instead of overflowing it.
+   * Columns with `flex` take that share; columns with a `width` keep it.
+   */
+  fitColumns?: boolean;
+  /** User widths from the column layout, which win over everything else. */
+  columnWidths?: Readonly<Record<string, number>>;
   /** Stable React key extractor for a row. */
   rowKey: (row: TRow) => string;
   /** Accessible label for the table element. */
@@ -260,6 +268,8 @@ export function useDataTable<TRow>(
     filterLabels = EMPTY_LABELS,
     multiSort = false,
     locale,
+    fitColumns = false,
+    columnWidths,
   } = options;
 
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
@@ -294,6 +304,13 @@ export function useDataTable<TRow>(
         mobileIdentityColumns
       ),
     [allColumns, isMobile, mobileIdentityColumns]
+  );
+
+  // Each flexible column's share of the leftover width, recomputed only when
+  // the column set or the user's widths change.
+  const flexShares = useMemo(
+    () => columnFlexShares({ columns, fitColumns, widths: columnWidths }),
+    [columns, fitColumns, columnWidths]
   );
 
   const sortByOptions = useMemo(() => deriveSortByOptions(columns), [columns]);
@@ -371,11 +388,15 @@ export function useDataTable<TRow>(
             chainLevel(source.sortLevels, column.key)?.dir ?? source.sortDir
           ),
           "data-sort-index": sortIndexAttr(source.sortLevels, column.key),
-          style: { textAlign: textAlign(column.align), width: column.width },
+          "data-column-key": column.key,
+          style: {
+            textAlign: textAlign(column.align),
+            ...columnSizeStyle(column, flexShares, columnWidths?.[column.key]),
+          },
         },
         props
       ),
-    [source.sortBy, source.sortDir, source.sortLevels]
+    [source.sortBy, source.sortDir, source.sortLevels, flexShares, columnWidths]
   );
 
   const getSortButtonProps = useCallback(
@@ -434,11 +455,17 @@ export function useDataTable<TRow>(
       mergeProps(
         {
           role: "cell",
-          style: { textAlign: textAlign(column.align), width: column.width },
+          // Which column this cell belongs to, so auto-sizing can measure a
+          // column's content and CSS can target one column across any kit.
+          "data-column-key": column.key,
+          style: {
+            textAlign: textAlign(column.align),
+            ...columnSizeStyle(column, flexShares, columnWidths?.[column.key]),
+          },
         },
         props
       ),
-    []
+    [flexShares, columnWidths]
   );
 
   const getSearchInputProps = useCallback(

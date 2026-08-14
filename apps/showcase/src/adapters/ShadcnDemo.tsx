@@ -24,6 +24,16 @@ export function ShadcnDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
+  nested,
+  rowMode,
+  batch,
+  rowMutations,
+  rowReorder,
+  rowPinning,
+  cellSpan,
+  extraRows,
+  rowStyle,
   editing,
   cellNavigation,
 }: Readonly<{
@@ -35,6 +45,16 @@ export function ShadcnDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
+  nested?: boolean;
+  rowMode?: boolean;
+  batch?: boolean;
+  rowMutations?: boolean;
+  rowReorder?: boolean;
+  rowPinning?: boolean;
+  cellSpan?: boolean;
+  extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
 }>) {
@@ -48,8 +68,18 @@ export function ShadcnDemo({
       filtersUi={filtersUi}
       animate={animate}
       grouping={grouping}
+      tree={tree}
+      nested={nested}
+      rowMode={rowMode}
+      batch={batch}
+      rowMutations={rowMutations}
+      rowReorder={rowReorder}
+      rowPinning={rowPinning}
+      cellSpan={cellSpan}
+      extraRows={extraRows}
+      rowStyle={rowStyle}
       editing={editing}
-      cellNavigation={cellNavigation}
+      cellNavigation={cellNavigation ?? editing}
       classNames={shadcnClassNames}
     />
   );

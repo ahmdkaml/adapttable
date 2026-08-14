@@ -29,12 +29,12 @@ const columns: ColumnDef<Row>[] = [
   { key: "name", header: "Name", accessor: (r) => r.name },
 ];
 
-/** Stub ResizeObserver (jsdom has none) and capture its re-measure callback. */
+/** Stub ResizeObserver (jsdom has none) and fan out to every observer. */
 function installResizeObserver() {
-  let callback: (() => void) | undefined;
+  const observers: (() => void)[] = [];
   class FakeResizeObserver {
     constructor(cb: () => void) {
-      callback = cb;
+      observers.push(cb);
     }
     observe() {
       // measurement is driven by `fire`
@@ -47,7 +47,11 @@ function installResizeObserver() {
     }
   }
   vi.stubGlobal("ResizeObserver", FakeResizeObserver);
-  return { fire: () => callback?.() };
+  return {
+    fire: () => {
+      for (const cb of observers) cb();
+    },
+  };
 }
 
 function Harness({ stickyTop }: Readonly<{ stickyTop?: number }>) {

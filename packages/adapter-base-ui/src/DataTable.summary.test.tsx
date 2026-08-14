@@ -158,6 +158,22 @@ describe("header groups (Base UI)", () => {
     expect(cells.map((c) => c.textContent)).toEqual(["Person", "", "Org"]);
   });
 
+  it("collapses a group to its summary column when armed", () => {
+    const { container } = renderTable({
+      columns: GROUPED,
+      collapsibleColumnGroups: true,
+    });
+    const toggle = container.querySelector(
+      '[data-adapttable-part="column-group-toggle"]'
+    );
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggle!);
+    expect(screen.queryByRole("columnheader", { name: "Age" })).toBeNull();
+    expect(
+      screen.getByRole("columnheader", { name: "Name" })
+    ).toBeInTheDocument();
+  });
+
   it("renders a single header row when no column declares a group", () => {
     const { container } = renderTable();
     expect(container.querySelectorAll("thead tr")).toHaveLength(1);

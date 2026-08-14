@@ -91,6 +91,8 @@ export function Toolbar<TRow>({
   dir,
   savedViewsMenu,
   columnMenu,
+  onAddRow,
+  addRowLabel,
   onExportCsv,
   exportBusy,
   exportAnnouncement = "",
@@ -216,6 +218,16 @@ export function Toolbar<TRow>({
             </Button>
             <ExportAnnouncer announcement={exportAnnouncement} />
           </>
+        )}
+        {onAddRow && (
+          <Button
+            variant="contained"
+            size="small"
+            data-adapttable-part="add-row"
+            onClick={onAddRow}
+          >
+            {addRowLabel}
+          </Button>
         )}
         {showRowsPerPage && (
           <TextField

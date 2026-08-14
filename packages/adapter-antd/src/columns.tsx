@@ -1,21 +1,44 @@
 import {
   ACTIONS_COLUMN_KEY,
   type ColumnDef,
+  columnHeaderController,
   columnResizeHandleProps,
   type ConfirmHandler,
   type EditableCellEditing,
+  type FilterDef,
+  filterDefForColumn,
+  type FilterFormSource,
+  FilterHeaderControl,
+  type FilterTypeRegistry,
   type GridFocusState,
   type GroupCollapseState,
   type PinSide,
+  REORDER_COLUMN_KEY,
+  resolveColumnHeader,
   type RowAction,
   runRowAction,
   type SortDirection,
   type SortLevel,
   type TableLabels,
+  type TreeEntry,
 } from "@adapttable/core";
 import {
-  headerGroupRow,
+  type BodyCell,
+  cellHighlightStyle,
+  cellsForRow,
+  columnFlexShares,
+  ColumnGroupToggle,
+  columnSizeStyle,
+  EXTRA_ROW_PARTS,
+  FillHandle,
+  type HeaderGroupCell,
+  headerGroupRows,
+  REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
+  RowEditActions,
+  RowReorderHandle,
+  type RowReorderState,
+  TreeCell,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type {
@@ -23,6 +46,7 @@ import type {
   HTMLAttributes,
   KeyboardEvent,
   MouseEvent,
+  ReactElement,
   ReactNode,
 } from "react";
 
@@ -32,6 +56,7 @@ import {
   type AdaptTableGroupRow,
   type GroupedDataRecord,
   GroupHeaderCell,
+  isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
 
@@ -201,28 +226,82 @@ function headerCellProps<TRow>(
   return props;
 }
 
+/** Title for one antd group parent — label plus an optional collapse toggle. */
+function groupTitle(
+  cell: HeaderGroupCell,
+  labels: Required<TableLabels>,
+  onToggle?: (id: string) => void
+): ReactElement {
+  return (
+    <>
+      {onToggle ? (
+        <ColumnGroupToggle cell={cell} labels={labels} onToggle={onToggle} />
+      ) : null}
+      {cell.label}
+    </>
+  );
+}
+
+/**
+ * Walk one depth of {@link headerGroupRows} into antd parent columns.
+ * Gap cells flatten; labelled cells nest their next depth (or the leaves).
+ */
+function nestGroupLevel<TRow>(
+  rows: HeaderGroupCell[][],
+  leaves: TableColumnsType<TRow>,
+  depth: number,
+  start: number,
+  end: number,
+  titleFor: (cell: HeaderGroupCell) => ReactNode
+): TableColumnsType<TRow> {
+  if (depth >= rows.length) return leaves.slice(start, end);
+  const row = rows[depth]!;
+  const out: TableColumnsType<TRow> = [];
+  let col = 0;
+  for (const cell of row) {
+    const cellStart = col;
+    const cellEnd = col + cell.span;
+    col = cellEnd;
+    if (cellEnd <= start || cellStart >= end) continue;
+    // Clamp to the parent's range. A deeper row merges adjacent unlabelled
+    // cells across the boundaries above it — one gap can span several parents
+    // — so descending on the cell's own range would hand every one of those
+    // parents the whole span, and the leaves inside it would render once per
+    // parent.
+    const children = nestGroupLevel(
+      rows,
+      leaves,
+      depth + 1,
+      Math.max(cellStart, start),
+      Math.min(cellEnd, end),
+      titleFor
+    );
+    if (cell.label === null) out.push(...children);
+    else out.push({ key: cell.key, title: titleFor(cell), children });
+  }
+  return out;
+}
+
 /**
  * Fold contiguous same-`group` leaves into antd's NATIVE grouped columns.
- * Core's `headerGroupRow` owns the ordering rules (adjacency-based, a
+ * Core's `headerGroupRows` owns the ordering rules (adjacency-based, a
  * reorder splits the group), so the antd column tree always mirrors the
  * shared group-row model: labelled cells become parent columns with
  * `children`, unlabelled gap cells leave their leaves at the top level.
  */
 function groupColumns<TRow>(
   columns: readonly ColumnDef<TRow>[],
-  leaves: TableColumnsType<TRow>
+  leaves: TableColumnsType<TRow>,
+  labels: Required<TableLabels>,
+  collapsedIds: readonly string[] = [],
+  collapsible = false,
+  onToggle?: (id: string) => void
 ): TableColumnsType<TRow> {
-  const cells = headerGroupRow(columns);
-  if (!cells) return leaves;
-  const grouped: TableColumnsType<TRow> = [];
-  let cursor = 0;
-  for (const cell of cells) {
-    const run = leaves.slice(cursor, cursor + cell.span);
-    cursor += cell.span;
-    if (cell.label === null) grouped.push(...run);
-    else grouped.push({ key: cell.key, title: cell.label, children: run });
-  }
-  return grouped;
+  const rows = headerGroupRows(columns, collapsedIds, collapsible);
+  if (!rows) return leaves;
+  return nestGroupLevel(rows, leaves, 0, 0, leaves.length, (cell) =>
+    groupTitle(cell, labels, onToggle)
+  );
 }
 
 /** Opt-in grouping chrome passed into {@link buildColumns} when armed. */
@@ -230,10 +309,28 @@ export interface BuildColumnsGrouping {
   collapsed: GroupCollapseState;
   /** Number of leaf data columns (for group-header colSpan). */
   dataColumnCount: number;
+  /** Reveal the next page of groups, or of one group's rows. */
+  showMore?: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
 }
 
 /** Options for {@link buildColumns}. */
+/**
+ * What a cell needs to draw the tree: which column carries the chevron, the
+ * entry behind a given row, and how to open it. antd flattens the hierarchy
+ * into its own `dataSource`, so the row is the only handle a cell has.
+ */
+export interface BuildColumnsTree<TRow> {
+  /** The column that renders the chevron and the indent. */
+  columnKey?: string;
+  /** This row's place in the tree, if it is in one. */
+  entryFor: (row: TRow) => TreeEntry<TRow> | undefined;
+  /** Open or close a node. */
+  toggle: (id: string) => void;
+}
+
 export interface BuildColumnsOptions<TRow> {
+  /** Hierarchy, when the host declared one. */
+  tree?: BuildColumnsTree<TRow>;
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   columns: readonly ColumnDef<TRow>[];
@@ -265,6 +362,29 @@ export interface BuildColumnsOptions<TRow> {
    * group header (or per-column aggregates). Omit and grouping stays dormant.
    */
   grouping?: BuildColumnsGrouping;
+  /** Whether the table fits its container rather than overflowing it. */
+  fitColumns?: boolean;
+  /** Headless row-reorder; omit and no reorder column is injected. */
+  rowReorder?: RowReorderState<TRow>;
+  /** Dataset offset of the first rendered row (page / virtual window). */
+  windowStart?: number;
+  /** Per-row body cells so `onCell` can apply col/row spans. */
+  cellsByRow?: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /** When true, group parents render a collapse toggle. */
+  collapsibleColumnGroups?: boolean;
+  /** Collapsed column-group ids from the layout. */
+  collapsedColumnGroups?: readonly string[];
+  /** Toggle one column group. No-op unless collapse is armed. */
+  onToggleColumnGroup?: (id: string) => void;
+  /**
+   * Compact filter under the caption. antd keeps it in the header cell
+   * so `fixed` columns stay on antd's own header.
+   */
+  headerFilters?: boolean;
+  filterDefs?: readonly FilterDef<TRow>[];
+  filterSource?: FilterFormSource<TRow>;
+  /** Type registry so a custom `filterTypes` entry can render in the header. */
+  filterRegistry?: FilterTypeRegistry;
 }
 
 /**
@@ -285,6 +405,7 @@ function groupSpansAll(group: AdaptTableGroupRow): boolean {
 
 /** Cell props for a data column when grouping may produce synthetic rows. */
 function groupedOnCell<TRow>(
+  columnKey: string,
   columnIndex: number,
   align: ColumnDef<unknown>["align"],
   grouping: BuildColumnsGrouping | undefined,
@@ -298,7 +419,21 @@ function groupedOnCell<TRow>(
     gridFocus && rowIndex !== undefined && !isAdaptTableGroupRow(record)
       ? gridFocus.getCellPropsAt(rowIndex, columnIndex)
       : {};
-  const base = { ...cellStyle(align), ...focus };
+  // antd's own active-item fill for a selected cell, from its design token so
+  // it follows the theme and dark algorithm rather than a hard-coded colour —
+  // and core's amber for a find hit, which is a browser convention rather than
+  // a kit's choice.
+  const styled = cellStyle(align);
+  const highlighted = cellHighlightStyle(focus, styled.style, {
+    background: "var(--ant-control-item-bg-active, rgba(0, 0, 0, 0.06))",
+  });
+  const base = {
+    ...styled,
+    ...focus,
+    // Which column this cell belongs to — what auto-sizing measures by.
+    "data-column-key": columnKey,
+    ...(highlighted ? { style: highlighted } : {}),
+  };
   if (!grouping || !isAdaptTableGroupRow(record)) return base;
   if (groupSpansAll(record)) {
     if (columnIndex === 0) {
@@ -333,6 +468,7 @@ function renderGroupDataCell<TRow>(
           group={record}
           labels={options.labels}
           onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+          onShowMore={options.grouping?.showMore}
         />
       );
     }
@@ -342,6 +478,7 @@ function renderGroupDataCell<TRow>(
         group={record}
         labels={options.labels}
         onToggle={() => options.grouping?.collapsed.toggle(record.key)}
+        onShowMore={options.grouping?.showMore}
         aggregate={record.aggregateCells?.[column.key]}
       />
     );
@@ -362,20 +499,39 @@ function renderLeafDataCell<TRow>(
     columns: readonly ColumnDef<TRow>[];
     getRowId: (row: TRow) => string;
     labels: Required<TableLabels>;
-  }
+    gridFocus?: GridFocusState;
+    tree?: BuildColumnsTree<TRow>;
+  },
+  columnIndex: number
 ): ReactNode {
   return (
-    <EditableDataCell
-      editing={options.editing}
-      row={record}
-      column={column}
-      rowId={options.getRowId(record)}
-      rowIndex={index}
-      rows={options.rows}
-      columns={options.columns}
-      rowKey={options.getRowId}
-      editLabel={options.labels.editCell}
-    />
+    <>
+      <TreeCell
+        entry={options.tree?.entryFor(record)}
+        columnKey={column.key}
+        treeColumnKey={options.tree?.columnKey}
+        labels={options.labels}
+        onToggle={options.tree?.toggle}
+      >
+        <EditableDataCell
+          editing={options.editing}
+          row={record}
+          column={column}
+          rowId={options.getRowId(record)}
+          rowIndex={index}
+          rows={options.rows}
+          columns={options.columns}
+          rowKey={options.getRowId}
+          editLabel={options.labels.editCell}
+          undoLabel={options.labels.undoEdit}
+        />
+      </TreeCell>
+      <FillHandle
+        focus={options.gridFocus}
+        windowIndex={index}
+        col={columnIndex}
+      />
+    </>
   );
 }
 
@@ -392,12 +548,17 @@ function renderDataCell<TRow>(
     getRowId: (row: TRow) => string;
     labels: Required<TableLabels>;
     grouping?: BuildColumnsGrouping;
+    gridFocus?: GridFocusState;
+    tree?: BuildColumnsTree<TRow>;
   }
 ): ReactNode {
+  if (isAdaptTableExtraRow(record)) {
+    return record.extraKind === "fullWidth" ? record.render?.() : null;
+  }
   if (isAdaptTableGroupRow(record)) {
     return renderGroupDataCell(column, columnIndex, record, options);
   }
-  return renderLeafDataCell(column, record, index, options);
+  return renderLeafDataCell(column, record, index, options, columnIndex);
 }
 
 export function buildColumns<TRow>({
@@ -418,6 +579,18 @@ export function buildColumns<TRow>({
   sortLevels = [],
   onToggleSortLevel,
   grouping,
+  fitColumns,
+  tree,
+  rowReorder,
+  windowStart = 0,
+  cellsByRow,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
+  headerFilters,
+  filterDefs,
+  filterSource,
+  filterRegistry,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -426,7 +599,16 @@ export function buildColumns<TRow>({
     getRowId,
     labels,
     grouping,
+    gridFocus,
+    tree,
   };
+  // Each flexible column's share, from the same rule every other kit uses.
+  const flexShares = columnFlexShares({
+    columns,
+    fitColumns,
+    widths: columnWidths,
+  });
+
   const leaves: TableColumnsType<GroupedDataRecord<TRow>> = columns.map(
     (column, columnIndex) => {
       // An active chain level supersedes the single sort for this column's
@@ -435,6 +617,10 @@ export function buildColumns<TRow>({
       const effectiveSortBy = dir ? column.key : sortBy;
       const effectiveSortDir = dir ?? sortDir;
       const sortIndex = chainIndex(sortLevels, column.key);
+      const headerDef =
+        headerFilters && filterSource
+          ? filterDefForColumn(filterDefs ?? [], column.key)
+          : undefined;
       return {
         key: column.key,
         // A real element (not a Fragment): antd v6 attaches a `ref` to the
@@ -442,8 +628,20 @@ export function buildColumns<TRow>({
         // dev. The wrapper takes the ref; the absolute resize handle still
         // anchors to the (positioned) header cell, so the layout is unchanged.
         title: (
-          <span>
-            {column.header}
+          <span title={column.headerTooltip}>
+            {resolveColumnHeader(
+              column,
+              columnHeaderController(column, {
+                sortDir: effectiveSortDir,
+                sortIndex:
+                  typeof sortIndex === "number" ? sortIndex : undefined,
+              })
+            )}
+            {column.headerActions ? (
+              <span data-adapttable-part="header-actions">
+                {column.headerActions}
+              </span>
+            ) : null}
             <SortIndexBadge index={sortIndex} />
             {setWidth && (
               <span
@@ -455,26 +653,69 @@ export function buildColumns<TRow>({
                 style={RESIZE_HANDLE_STYLE}
               />
             )}
+            {headerDef && filterSource ? (
+              <span data-adapttable-part="filter-header-cell">
+                <FilterHeaderControl
+                  def={headerDef}
+                  source={filterSource}
+                  labels={labels}
+                  registry={filterRegistry}
+                />
+              </span>
+            ) : null}
           </span>
         ),
         width: columnWidths?.[column.key] ?? column.width,
+        // Bounds and flex shares reach antd through the header cell's style,
+        // which is the one place this adapter can put per-column CSS.
         fixed: antdFixed(pinned?.[column.key]),
         sorter: column.sortable ? true : undefined,
         sortOrder: column.sortable
           ? sortOrderFor(column.key, effectiveSortBy, effectiveSortDir)
           : undefined,
         showSorterTooltip: false,
-        onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) =>
-          groupedOnCell(
+        onCell: (record: GroupedDataRecord<TRow>, rowIndex?: number) => {
+          if (isAdaptTableExtraRow(record)) {
+            if (columnIndex === 0) {
+              return {
+                colSpan: grouping?.dataColumnCount ?? columns.length,
+                "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].cell,
+                role:
+                  record.extraKind === "separator" ? "separator" : undefined,
+                "aria-label":
+                  record.extraKind === "separator"
+                    ? labels.rowSeparator
+                    : undefined,
+              };
+            }
+            return { colSpan: 0 };
+          }
+          const grouped = groupedOnCell(
+            column.key,
             columnIndex,
             column.align,
             grouping,
             record,
             rowIndex,
             gridFocus
-          ),
-        onHeaderCell: () =>
-          headerCellProps(
+          );
+          if (isAdaptTableGroupRow(record) || !cellsByRow) return grouped;
+          const cells = cellsForRow(cellsByRow, getRowId(record));
+          const cell = cells.find((c) => c.column.key === column.key);
+          if (!cell) return { colSpan: 0 };
+          return {
+            ...grouped,
+            colSpan: cell.colSpan,
+            rowSpan: cell.rowSpan,
+            "data-adapttable-part": "cell",
+            "data-column-key": column.key,
+          };
+        },
+        onHeaderCell: () => {
+          // Column selection rides along with the sort/resize/pin props: antd
+          // merges whatever this returns onto the <th>, so this is the one
+          // place a header attribute can exist in this adapter.
+          const head = headerCellProps(
             column,
             effectiveSortBy,
             effectiveSortDir,
@@ -482,7 +723,25 @@ export function buildColumns<TRow>({
             Boolean(setWidth),
             pinned?.[column.key] != null,
             onToggleSortLevel
-          ),
+          );
+          return {
+            "data-column-key": column.key,
+            ...gridFocus?.getColumnHeaderProps(columnIndex, {
+              sortable: column.sortable,
+            }),
+            ...head,
+            // The sizing merges INTO whatever style the header already has,
+            // rather than being overwritten by it.
+            style: {
+              ...head.style,
+              ...columnSizeStyle(
+                column,
+                flexShares,
+                columnWidths?.[column.key]
+              ),
+            },
+          };
+        },
         render: (
           _value: unknown,
           record: GroupedDataRecord<TRow>,
@@ -493,10 +752,66 @@ export function buildColumns<TRow>({
   );
   const cols = groupColumns(
     columns,
-    leaves as TableColumnsType<TRow>
+    leaves as TableColumnsType<TRow>,
+    labels,
+    collapsedColumnGroups,
+    collapsibleColumnGroups,
+    onToggleColumnGroup
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
-  if (rowActions && rowActions.length > 0) {
+  if (rowReorder) {
+    const reorderFixed =
+      pinned?.[REORDER_COLUMN_KEY] === "start" ||
+      columns.some((column) => pinned?.[column.key] === "start");
+    cols.unshift({
+      key: "__reorder__",
+      // Empty like the other kits: the header is a grip slot, named by
+      // aria-label. Visible "Reorder row" text collided with the Columns
+      // menu row of the same name.
+      title: "",
+      width: REORDER_COLUMN_WIDTH,
+      fixed: reorderFixed ? "left" : undefined,
+      onCell: (record: GroupedDataRecord<TRow>) => {
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return { colSpan: 0 };
+        }
+        return {};
+      },
+      onHeaderCell: () => ({
+        "data-adapttable-part": "reorder-header",
+        "aria-label": labels.reorderRow,
+      }),
+      render: (
+        _value: unknown,
+        record: GroupedDataRecord<TRow>,
+        index: number
+      ) => {
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return null;
+        }
+        const row = record;
+        const id = getRowId(row);
+        return (
+          <span data-adapttable-part="reorder-cell">
+            <RowReorderHandle
+              reorder={rowReorder}
+              labels={labels}
+              rowId={id}
+              localIndex={index}
+              row={row}
+              windowStart={windowStart}
+              rowCount={rows.length}
+            />
+          </span>
+        );
+      },
+    });
+  }
+
+  // The trailing control column also carries row mode's save / cancel, so it
+  // exists when either is armed.
+  const rowMode = editing?.rowEditing;
+  if ((rowActions && rowActions.length > 0) || rowMode) {
     // The actions column rides antd's `fixed: "right"` when the user pins it
     // from the Columns menu (its reserved layout key, one click, no data pins
     // required) — OR'd with any end-pinned data column, which drags it
@@ -511,16 +826,28 @@ export function buildColumns<TRow>({
       width: 1,
       fixed: actionsFixed ? "right" : undefined,
       onCell: (record: GroupedDataRecord<TRow>) => {
-        if (isAdaptTableGroupRow(record)) return { colSpan: 0 };
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return { colSpan: 0 };
+        }
         return cellStyle("end");
       },
       onHeaderCell: () => cellStyle("end"),
       render: (_value: unknown, record: GroupedDataRecord<TRow>) => {
-        if (isAdaptTableGroupRow(record)) return null;
+        if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {
+          return null;
+        }
         const row = record;
         return (
           <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-            {rowActions.map((action) => {
+            {rowMode && (
+              <RowEditActions
+                rowEditing={rowMode}
+                row={row}
+                rowId={getRowId(row)}
+                labels={labels}
+              />
+            )}
+            {(rowActions ?? []).map((action) => {
               if (action.isHidden?.(row)) return null;
               const reason = resolveDisabledReason(
                 action.disabledReason?.(row)

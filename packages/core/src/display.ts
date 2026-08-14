@@ -74,8 +74,26 @@ export const SHARED_DESKTOP_ROW_KEYS = [
   "hasSelection",
   "expandable",
   "showActions",
+  "showReorder",
+  "reorderSignature",
+  "rowPinSignature",
+  "spanSignature",
   "hasRowClick",
   "columnSpan",
+  // Cell focus and the selected range live here too, or a row never learns that
+  // one of its cells became focused or selected. Omitting it is why the range
+  // was invisible after 2.2.0: the live region announced the new cell (it sits
+  // outside the memo) while every row kept its previous render, so no cell ever
+  // showed `data-cell-selected`. The state object is memoized as a whole, so
+  // this compares one reference and changes only when focus or the range does.
+  "gridFocus",
+  // A tree row's own place in the hierarchy — depth, whether it is open, and
+  // whether its children are loading. Without it a folder's children appear
+  // while its chevron stays shut, because the row that owns the chevron never
+  // re-renders.
+  "treeEntry",
+  // Which column carries the chevron, so moving the tree column moves it.
+  "treeColumnKey",
 ] as const;
 
 /** Shallow-equal two objects across a fixed key set (the row-memo guard). */
@@ -109,6 +127,150 @@ export function sortArrow(sort: unknown): string {
   if (sort === "ascending") return " ↑";
   if (sort === "descending") return " ↓";
   return " ↕";
+}
+
+/**
+ * Is this cell inside the selected range?
+ *
+ * Core marks a selected cell with `data-cell-selected` through
+ * `gridFocus.getCellProps`, but it cannot colour it: a selection has to look
+ * like the kit it lives in, and a hard-coded blue would be wrong in seven of
+ * eight. So core answers the question and each adapter answers it with its own
+ * theme token — the same division as {@link pinnedDataCellStyle}, which takes
+ * the kit's surface colour as an argument.
+ *
+ * Without this the range was invisible: the attribute reached the DOM in 2.2.0
+ * and no adapter styled it, so a user extending a selection saw nothing move.
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell should render as selected.
+ */
+export function isSelectedCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-selected"] !== undefined;
+}
+
+/**
+ * Is this cell one the find bar matched?
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell contains a match.
+ */
+export function isMatchedCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-match"] !== undefined;
+}
+
+/**
+ * Is this the match the find walk is currently on?
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @returns Whether the cell is the current match.
+ */
+export function isCurrentMatchCell(
+  props: Readonly<Record<string, unknown>> | undefined
+): boolean {
+  return props?.["data-cell-match-current"] !== undefined;
+}
+
+/**
+ * A cell's background, given everything that might want to colour it.
+ *
+ * A find highlight is the one cell colour that is NOT a kit's to choose. It is
+ * a browser convention — the same amber every browser paints Ctrl+F hits in —
+ * and a table that answered it in eight different accent colours would be
+ * harder to read, not more native. So the kit supplies its selection fill and
+ * core supplies the match fill, both overridable through
+ * `--adapttable-find-match` / `--adapttable-find-match-current`.
+ *
+ * The current match wins over other matches, which win over the selection —
+ * the find walk moves the selection with it, so without that order the cell
+ * you were sent to would be the one cell not marked as a hit.
+ *
+ * @param props - The props from `getCellProps` / `getCellPropsAt`, or nothing.
+ * @param base - The kit's own cell style (pinning, alignment).
+ * @param selected - The kit's fill for a selected cell.
+ * @returns The merged style, or `base` when nothing highlights this cell.
+ */
+export function cellHighlightStyle(
+  props: Readonly<Record<string, unknown>> | undefined,
+  base: CSSProperties | undefined,
+  selected: CSSProperties
+): CSSProperties | undefined {
+  if (isCurrentMatchCell(props)) {
+    return {
+      ...base,
+      background:
+        "var(--adapttable-find-match-current, rgba(255, 150, 50, 0.75))",
+    };
+  }
+  if (isMatchedCell(props)) {
+    return {
+      ...base,
+      background: "var(--adapttable-find-match, rgba(255, 213, 0, 0.45))",
+    };
+  }
+  return isSelectedCell(props) ? { ...base, ...selected } : base;
+}
+
+/** The three rows a grouped body renders, all through one component. */
+export type GroupRowKind = "group" | "groupFooter" | "groupMore";
+
+/**
+ * The `data-adapttable-part` names for one of those rows.
+ *
+ * One place decides them, because a header, its footer and its "show more" row
+ * are the same component in every kit — and three nested ternaries per kit is
+ * how those names drift apart.
+ *
+ * @param kind - Which of the three the entry is.
+ * @returns The part names for its row, cell, card and label.
+ */
+export function groupRowParts(kind: GroupRowKind): {
+  row: string;
+  cell: string;
+  card: string;
+  label: string;
+} {
+  if (kind === "groupMore") {
+    return {
+      row: "group-more-row",
+      cell: "group-more-cell",
+      card: "group-more-card",
+      label: "group-more-label",
+    };
+  }
+  if (kind === "groupFooter") {
+    return {
+      row: "group-footer-row",
+      cell: "group-footer-cell",
+      card: "group-footer-card",
+      label: "group-label",
+    };
+  }
+  return {
+    row: "group-row",
+    cell: "group-cell",
+    card: "group-card",
+    label: "group-label",
+  };
+}
+
+/**
+ * How far a nested group header sits in from the one above it.
+ *
+ * Logical padding, so a nested group indents from the right in Arabic and
+ * Hebrew without a second rule. One value in core rather than eight in the
+ * adapters: nesting that steps by 1.5rem in one kit and 8px in another reads
+ * as a bug in whichever the user sees second.
+ *
+ * @param level - The header's depth, from zero.
+ * @returns The style for the header's label cell.
+ */
+export function groupIndentStyle(level: number): CSSProperties {
+  return level > 0 ? { paddingInlineStart: `${level * 1.5}rem` } : {};
 }
 
 /**

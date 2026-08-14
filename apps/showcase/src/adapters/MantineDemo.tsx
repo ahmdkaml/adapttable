@@ -1,3 +1,4 @@
+import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mantine";
 import {
@@ -11,9 +12,12 @@ import {
 
 import {
   type AvatarCellProps,
+  DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
   demoFilterDefs,
+  demoFilterTypes,
+  demoOrders,
   demoSavedViews,
   LIVE_DEFAULT_LAYOUT,
   type LoadCellProps,
@@ -21,6 +25,7 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
+  type Person,
   type StatusCellProps,
   statusTone,
   strings,
@@ -53,6 +58,22 @@ const MANTINE_CELLS: DemoCells = {
   ),
 };
 
+/**
+ * The orders under one person, as a nested table — the kit's own `<DataTable>`
+ * inside a row, so the reader gets the same table twice over.
+ */
+const nestedOrders = (row: Person) => ({
+  label: `${row.name} — recent orders`,
+  table: (defaults: NestedTableDefaults) => (
+    <DataTable
+      {...defaults}
+      data={demoOrders(row)}
+      columns={DEMO_ORDER_COLUMNS}
+      rowKey={(order) => order.id}
+    />
+  ),
+});
+
 export function MantineDemo({
   mode,
   locale,
@@ -63,6 +84,16 @@ export function MantineDemo({
   filtersUi,
   animate,
   grouping,
+  tree,
+  nested,
+  rowMode,
+  batch,
+  rowMutations,
+  rowReorder,
+  rowPinning,
+  cellSpan,
+  extraRows,
+  rowStyle,
   editing,
   cellNavigation,
   forceMobile,
@@ -76,6 +107,16 @@ export function MantineDemo({
   filtersUi?: FiltersUi;
   animate?: boolean;
   grouping?: boolean;
+  tree?: boolean;
+  nested?: boolean;
+  rowMode?: boolean;
+  batch?: boolean;
+  rowMutations?: boolean;
+  rowReorder?: boolean;
+  rowPinning?: boolean;
+  cellSpan?: boolean;
+  extraRows?: boolean;
+  rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   forceMobile?: boolean;
@@ -89,13 +130,26 @@ export function MantineDemo({
         urlKey={urlKey}
         defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
         grouping={grouping}
+        tree={tree}
+        rowMode={rowMode}
+        batch={batch}
+        rowMutations={rowMutations}
+        rowReorder={rowReorder}
+        rowPinning={rowPinning}
+        cellSpan={cellSpan}
+        extraRows={extraRows}
+        rowStyle={rowStyle}
         editing={editing}
         render={(source, columns) => (
           <DataTable
             source={source}
             columns={makeColumns(locale, MANTINE_CELLS)}
             rowKey={(r) => r.id}
-            cellNavigation={cellNavigation}
+            nestedTable={nested ? nestedOrders : undefined}
+            cellNavigation={cellNavigation ?? editing}
+            selectionStats={editing}
+            editHistory={editing}
+            findInTable={editing}
             {...columns}
             density={density}
             filtersMode={filtersUi}
@@ -112,8 +166,10 @@ export function MantineDemo({
             animate={animate}
             resizableColumns
             stickyHeader
+            headerFilters
             stickyTop={8}
             filters={demoFilterDefs(locale)}
+            filterTypes={demoFilterTypes()}
             forceMobile={forceMobile}
           />
         )}

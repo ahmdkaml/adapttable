@@ -9,6 +9,214 @@ that says where you are.
 [Virtualization](./virtualization.md) · [Columns](./columns.md) ·
 [Accessibility in the FAQ](./faq.md)
 
+## Copy and cut, the way a spreadsheet reads it
+
+**Ctrl/Cmd+C** copies the selected rectangle as tab-separated text — the format
+Excel, Google Sheets, Numbers and LibreOffice all read — so a paste lands in
+columns rather than one cell. Cells carrying a tab, a newline or a quote are
+quoted the way those applications quote them.
+
+Values resolve exactly as an export's do, `exportValue` included, so a copy and
+a downloaded file cannot disagree about what a cell contains.
+
+**Ctrl/Cmd+X** copies the same text and then calls `onCellCut(range)`. The table
+clears nothing itself: what "cut" removes is your decision, and a cut that
+emptied cells before the clipboard accepted them would lose the data outright.
+
+Either way the outcome is announced — `labels.gridRangeCopied` on success,
+`labels.gridRangeCopyFailed` when the browser refuses (the Clipboard API needs a
+secure context and can be denied). With nothing selected, both keys are left to
+the browser.
+
+Headless: `clipboardRangeText` builds the text and `writeClipboardText` writes
+it, reporting whether it landed rather than throwing.
+
+## Pasting a spreadsheet back in
+
+**Ctrl/Cmd+V** parses what a spreadsheet put on the clipboard and commits it as
+ordinary cell edits — through `onCellEdit`, the same channel inline editing
+uses:
+
+```tsx
+<DataTable
+  cellNavigation
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={(row, key, value) => save(row, key, value)}
+/>
+```
+
+That is the whole wiring: a table that can be edited can be pasted into. Each
+edit is the same thing an inline commit produces — same `parseValue`, same
+shape, same handler — so paste is not a second editing route, and whatever you
+wrap around a single-cell commit already covers a paste of two hundred.
+
+To take the batch whole instead — one server round trip, one undo entry — set
+`onCellPaste`, which takes precedence:
+
+```tsx
+<DataTable
+  cellNavigation
+  onCellPaste={(edits) => saveAll(edits)}
+  onCellEdit={commit}
+/>
+```
+
+The **clipboard's shape wins** over the selection's: pasting a 3×2 block into one
+focused cell writes 3×2, as every spreadsheet does. Cells landing outside the
+loaded rows or the rendered columns are dropped rather than invented, and a
+column that is not `editable` is skipped — a paste is an edit, and an edit into a
+read-only column is not one.
+
+The table writes nothing itself. Applying the edits stays yours, which is what
+keeps a paste undoable, validatable and cancellable on your terms. The outcome
+is announced through `labels.gridRangePasted`, or `labels.gridRangePasteFailed`
+when the browser will not hand over the clipboard.
+
+Headless: `readClipboardText` reads it, `parseClipboardTable` parses it, and
+`pasteRangeEdits` maps it onto a range.
+
+## The fill handle
+
+Select a cell or a block and a small square appears on its bottom corner. Drag
+it and the selection's values carry on — down, up, or sideways, whichever way
+the drag mostly goes. The cells it would write are highlighted before anything
+is committed, so the preview and the result cannot disagree.
+
+**Two or more numbers a constant step apart continue the series** (1, 2 → 3, 4);
+anything else repeats in order (Mon, Tue → Mon, Tue). A single number repeats
+rather than counting — one value carries no step, and guessing `+1` there is the
+behaviour spreadsheets are cursed for.
+
+**Ctrl/Cmd+D** is the keyboard route: the selection's top row carries into the
+rest of it. The handle itself is not a tab stop, because the grid is one tab
+stop and a focusable square inside it would break that; the key press announces
+what it wrote through `labels.gridRangeFilled`.
+
+The edits arrive exactly as a paste's do — `onCellEdit` per cell, or
+`onCellFill` for the batch — so the handle appears as soon as a table can be
+edited, and never when it cannot:
+
+```tsx
+<DataTable
+  cellNavigation
+  columns={[{ key: "budget", header: "Budget", editable: true }]}
+  onCellEdit={commit}
+/>
+```
+
+The square paints in the cell's own text colour; `--adapttable-fill-handle`
+changes it. In RTL it sits on the row's inline end, which is the left, and a
+sideways drag follows the same mirroring the arrow keys do.
+
+Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
+in `@adapttable/core/adapter` renders the square itself.
+
+## Find in table
+
+Set `findInTable` and **Ctrl/Cmd+F** opens a find bar over the table:
+
+```tsx
+<DataTable cellNavigation findInTable />
+```
+
+Find is not search. The search box asks "show me only the rows that match", and
+on a server tier it asks the server; find asks "where does this appear in what I
+am looking at", leaves every row where it is, and walks the hits. Both can be on
+at once.
+
+Every hit is marked — `data-cell-match`, and `data-cell-match-current` on the
+one you are standing on — painted in the amber every browser paints its own
+find hits, because a find highlight is a browser convention rather than a
+design-system token. `--adapttable-find-match` and
+`--adapttable-find-match-current` change it; in `@adapttable/unstyled` the
+`cellMatch` / `cellMatchCurrent` class hooks do (the shadcn preset fills them
+in).
+
+**Enter** walks forward, **Shift+Enter** back, **Escape** closes and clears.
+Walking moves the table's focus with it, so the cell is scrolled into view,
+announced, and left selected — a find that highlighted without going there would
+leave you hunting for the highlight. The bar itself is one input, a count and
+three buttons, all named through `labels.findInTable`, `findPlaceholder`,
+`findMatchCount`, `findPrevious`, `findNext` and `findClose`.
+
+Matching reads what a cell **shows**, so a column that renders a formatted date
+is found by that date rather than by the ISO string underneath. Only the loaded
+rows are searched: a hit the table cannot take you to would be a lie, so on a
+paged table find covers the page you are on, and under virtualization it covers
+what has been fetched. The query is deliberately not put in the URL — where you
+are looking is not part of the table's state, and a shared link should not reopen
+someone else's search box.
+
+On mobile the cards are a list rather than a grid, so the bar opens and searches
+but the hits are not marked; the desktop layout is where a cell can be pointed
+at.
+
+Headless: `findMatches`, `matchKeySet`, `stepMatch`, `useFindInTable`, and
+`FindBar` in `@adapttable/core/adapter`.
+
+## What the selection adds up to
+
+Set `selectionStats` and a strip under the table says what is selected:
+
+```tsx
+<DataTable cellNavigation selectionStats />
+```
+
+> Count 12 · Sum 1,240.5 · Avg 103.4 · Min 12 · Max 900
+
+The count covers every selected cell; the arithmetic covers the numeric ones,
+so a rectangle spanning a name column and a budget column still has a sum.
+Numbers are read the way an export reads them — `exportValue` included — so the
+total here and the total a spreadsheet computes from a paste of the same cells
+cannot disagree. Booleans are not counted as numbers: summing a column of ticks
+to 3 answers a question nobody asked.
+
+A single cell shows nothing — it has no total worth reading, and a strip that
+flickers in on every arrow press is noise. The strip is a status region, so a
+screen reader reads the figures after the range announcement rather than
+interrupting it, and every word is localizable (`labels.selectionCount`,
+`selectionSum`, `selectionAverage`, `selectionMin`, `selectionMax`). Number
+formatting follows the table's `locale`.
+
+Selecting a column covers the LOADED rows, so the figures describe the 500 rows
+in hand rather than the 100,000 in the dataset — the table never totals rows it
+has never seen.
+
+Headless: `selectionStats(options)` returns the figures;
+`SelectionStatsBar` in `@adapttable/core/adapter` renders the strip.
+
+## Selecting with the pointer, and whole columns
+
+Drag across cells to select a block: the press anchors it, crossing a cell
+extends it, and releasing anywhere — including outside the table — ends it.
+
+A **column header** selects its whole column. Where the header already sorts,
+sorting keeps the plain click and **Ctrl/Cmd+click** selects instead; on a header
+that does not sort, a plain click selects. Ctrl/Cmd+click also extends an
+existing selection to a second column.
+
+A column selection covers the **loaded** rows. With 500 of 100,000 rows in hand
+that is 500 cells, not 100,000 — the table never claims rows the browser has
+never seen, because a copy or an export would then invent them.
+
+Whenever the rectangle changes, the live region says what it now covers —
+`"selected rows 1 to 2, columns 1 to 2, 4 cells"` — through
+`labels.gridRangeSelection`, translated in all seventeen locales. A single cell
+stays silent: it announces itself already, and repeating "1 cell" on every arrow
+press turns navigation into noise.
+
+## The selection is visible, in each kit's own colour
+
+Hold Shift while arrowing (or shift-click) and the extended range is filled with
+the kit's own selected-cell token — Mantine's primary-light, MUI's
+`action.selected`, Ant Design's active-item background, Radix's accent, and so
+on. Nothing to configure.
+
+Every selected cell also carries `data-cell-selected`, so CSS can target the
+range directly. In `@adapttable/unstyled` there is no kit colour to borrow, so
+the fill is yours through the `cellSelected` class hook (the shadcn preset sets
+`bg-accent`).
+
 ## Example
 
 ```tsx
@@ -32,6 +240,8 @@ That is the whole opt-in. Omit it and nothing changes — see
 | `Ctrl`+`Home` / `Ctrl`+`End` | First / last cell of the whole grid             |
 | `PageUp` / `PageDown`        | A viewport's worth of rows                      |
 | `Enter` / `F2`               | Opens the editor, when the column is `editable` |
+| `Ctrl`/`Cmd`+`C` / `X` / `V` | Copy, cut, paste the selected rectangle         |
+| `Ctrl`/`Cmd`+`D`             | Fill the selection down from its top row        |
 | `Tab`                        | Leaves the table — it is one stop, not hundreds |
 
 Edges **stop rather than wrap.** Wrapping off the last column would move the

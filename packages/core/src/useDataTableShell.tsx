@@ -1,12 +1,25 @@
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ACTIONS_COLUMN_KEY } from "./columns/columnMenuModel";
+import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
+import {
+  ACTIONS_COLUMN_KEY,
+  REORDER_COLUMN_KEY,
+} from "./columns/columnMenuModel";
+import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
+import type { FacetMap } from "./filters/facets";
 import type { FilterDef } from "./filters/filterDefs";
+import type { FilterTypeRegistry } from "./filters/filterRegistry";
+import { useFindFocus, useFindInTable } from "./find/useFindInTable";
+import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
+import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
 import type { BaseDataTableProps } from "./props";
+import { coveredAddressSet } from "./rows/cellSpan";
+import type { RowPinState } from "./rows/rowPinning";
+import type { QuerySupport } from "./source/queryContract";
 import type { TableSource } from "./source/TableSource";
 import {
   type DataModeProps,
@@ -14,12 +27,14 @@ import {
   useTableData,
 } from "./source/useTableData";
 import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
+import { useRowPinningUrlState } from "./url/useRowPinningUrlState";
 import {
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
   useTableChrome,
 } from "./useTableChrome";
+import { useColumnWindow } from "./virtual/useColumnWindow";
 
 /**
  * The kit-agnostic prop surface every batteries-included `<DataTable>` shares:
@@ -50,6 +65,18 @@ export type DataTableShellProps<TRow> = Omit<
   urlSync?: boolean;
   /** Namespace for this table's URL params. */
   urlKey?: string;
+  /**
+   * Server tier: what this endpoint can answer. `supports.facets`
+   * unlocks `query.facets` for checklist counts.
+   */
+  supports?: QuerySupport;
+  /**
+   * Server tier: keys to send as `query.facets`. Defaults to every
+   * `checklist` definition.
+   */
+  facetKeys?: readonly string[];
+  /** Server tier: distinct-value counts from the last fetch. */
+  facets?: FacetMap;
 } & DataModeProps<TRow>;
 
 /**
@@ -73,7 +100,8 @@ export function useDataTableShell<TRow>(
   props: DataTableShellProps<TRow>,
   renderAutoForm: (
     defs: readonly FilterDef<TRow>[],
-    source: TableSource<TRow>
+    source: TableSource<TRow>,
+    registry: FilterTypeRegistry
   ) => ReactNode
 ) {
   // ONE resolved URL backend for everything in this table: the tier hooks
@@ -103,21 +131,34 @@ export function useDataTableShell<TRow>(
     urlKey: props.urlKey,
     columns: props.columns,
     filters: props.filters,
+    filterTypes: props.filterTypes,
     defaults: props.defaults,
     paginationMode: props.paginationMode,
+    supports: props.supports,
+    facetKeys: props.facetKeys,
+    facets: props.facets,
   });
+  const { history, onCellEdit: recordingCellEdit } =
+    useTableEditHistory<TRow>(props);
+
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
-    runtime.defs.length > 0 ? renderAutoForm(runtime.defs, source) : undefined;
+    runtime.defs.length > 0
+      ? renderAutoForm(runtime.defs, source, runtime.registry)
+      : undefined;
   const filtersNode =
     isDeclarativeFilters(props.filters) || props.filters === undefined
       ? autoForm
       : props.filters;
+  const pinProps = useShellRowPins(props, urlAdapter);
   const chromeProps = {
     ...props,
+    onCellEdit: recordingCellEdit,
     source,
     filters: filtersNode,
+    filterDefs: runtime.defs,
     filterLabels: { ...runtime.filterLabels, ...props.filterLabels },
+    ...pinProps,
   };
   const chrome = useTableChrome<TRow>(chromeProps);
   const { table, confirm, getRowId } = chrome;
@@ -135,6 +176,36 @@ export function useDataTableShell<TRow>(
     chrome.source.paginationMode === "paged"
       ? Math.max(0, (chrome.source.page - 1) * chrome.source.limit)
       : 0;
+  // Find state first: the grid marks the cells it matched, and the effect
+  // below walks focus to whichever match the user is on.
+  const find = useFindInTable<TRow>({
+    enabled: props.findInTable === true,
+    rows: chrome.source.rows,
+    columns: chrome.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
+  const coveredCells = useMemo(
+    () =>
+      coveredAddressSet({
+        rows: chrome.source.rows,
+        columns: chrome.columnLayout.visibleColumns,
+        getCellSpan: props.getCellSpan,
+        firstRowIndex: windowStart,
+        pinOffset: chrome.columnLayout.pinOffset,
+      }),
+    [
+      chrome.source.rows,
+      chrome.columnLayout.visibleColumns,
+      chrome.columnLayout.pinOffset,
+      props.getCellSpan,
+      windowStart,
+    ]
+  );
+  const isCoveredCell = useCallback(
+    (cell: { row: number; col: number }) =>
+      coveredCells.has(`${cell.row}:${cell.col}`),
+    [coveredCells]
+  );
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
     rowCount: Math.max(
@@ -146,6 +217,29 @@ export function useDataTableShell<TRow>(
     firstRowIndex: windowStart,
     dir: props.dir,
     labels,
+    onCut: props.onCellCut,
+    // With no `onCellPaste`, the ordinary edit channel takes each cell: a table
+    // that can be edited can be pasted into with nothing extra wired. A batch
+    // is ONE undo entry, so it records itself rather than per cell.
+    onPaste: asGesture(cellPasteHandler(props), history.record),
+    onFill: asGesture(cellFillHandler(props), history.record),
+    onUndo: history.undo,
+    onRedo: history.redo,
+    onFind: find.openBar,
+    matchKeys: find.matchKeys,
+    currentMatch: find.current,
+    isCoveredCell,
+  });
+  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
+  // Computed here rather than in eight adapters: the rectangle, the rows and
+  // the window offset all live on this side, and an adapter that derived any
+  // of them itself would be the one place the figures could go wrong.
+  const stats = selectionStats({
+    enabled: props.selectionStats === true,
+    range: gridFocus.range,
+    rows: chrome.source.rows,
+    columns: chrome.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
   });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
@@ -165,6 +259,7 @@ export function useDataTableShell<TRow>(
         allColumns: chrome.allColumns,
         range: gridFocus.range,
         firstRowIndex: windowStart,
+        getCellSpan: props.getCellSpan,
       }
     ),
     labels,
@@ -174,29 +269,88 @@ export function useDataTableShell<TRow>(
   );
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, chrome, chromeProps);
+  // Name the root the way the scroll box is named: the column menu sizes
+  // columns by measuring cells, and it has to know which table is its own.
+  useEffect(() => {
+    rootRef.current?.setAttribute("data-adapttable-part", "root");
+  });
+
+  /**
+   * Size every rendered column to its content — the column menu's action.
+   * Measures the DOM, because a cell's width is what the browser laid out
+   * rather than anything the data knows.
+   */
+  const autoSizeColumns = useCallback(
+    () =>
+      autoSizeAllColumns(
+        rootRef.current,
+        chrome.columnLayout.visibleColumns.map((column) => column.key),
+        chrome.columnLayout.setWidth
+      ),
+    [chrome.columnLayout]
+  );
+  const autoSizeColumn = useCallback(
+    (key: string) =>
+      autoSizeAllColumns(rootRef.current, [key], chrome.columnLayout.setWidth),
+    [chrome.columnLayout]
+  );
   const {
     virtualization,
     groupingEntries,
+    treeEntries,
     loadMoreRef,
     canLoadMore,
-    virtualScrollRef,
+    virtualScrollRef: bodyScrollRef,
+    pinnedTopRows,
+    pinnedBottomRows,
   } = useChromeBodyData(chrome, chromeProps);
+  // One scroll box, two windows: the rows track its vertical scrolling and the
+  // columns its horizontal, so the adapters attach a single ref.
+  const scrollBoxElement = useRef<HTMLElement | null>(null);
+  const virtualScrollRef = useCallback(
+    (node: HTMLElement | null) => {
+      scrollBoxElement.current = node;
+      // Name the element every kit scrolls, whatever it called it: both
+      // windows read it, and CSS and tests need to be able to find it.
+      node?.setAttribute("data-adapttable-part", "scroll-box");
+      bodyScrollRef(node);
+    },
+    [bodyScrollRef]
+  );
 
   // The injected actions column is first-class in column management: the layout
   // state treats its reserved key like any column key, so the Columns menu can
   // hide it (strip rowActions before the renderers) or end-pin it (the
   // renderers stick the actions cells, with zero data columns pinned).
-  const hasRowActions = Boolean(props.rowActions?.length);
-  const rowActions = chrome.columnLayout.isHidden(ACTIONS_COLUMN_KEY)
-    ? undefined
-    : props.rowActions;
+  const { hasRowActions, rowActions, hasRowReorder, rowReorder } = chrome;
   const actionsPinned =
     chrome.columnLayout.state.pinned[ACTIONS_COLUMN_KEY] === "end";
+  const reorderPinned =
+    chrome.columnLayout.state.pinned[REORDER_COLUMN_KEY] === "start";
+
+  // The horizontal window reads the same scroll box the vertical one does.
+  const columnWindow = useColumnWindow<TRow>({
+    columns: chrome.columnLayout.visibleColumns,
+    enabled: props.virtualizeColumns === true,
+    widths: chrome.columnLayout.state.widths,
+    pinnedKeys: new Set(
+      Object.keys(chrome.columnLayout.state.pinned).filter(
+        (key) => chrome.columnLayout.state.pinned[key] !== undefined
+      )
+    ),
+    getScrollElement: () => scrollBoxElement.current,
+  });
 
   const grouping =
     chrome.grouping && groupingEntries
       ? { ...chrome.grouping, entries: groupingEntries }
       : chrome.grouping;
+  // Same shape for the hierarchy: what the body renders is the window, not the
+  // whole walked tree.
+  const tree =
+    chrome.tree && treeEntries
+      ? { ...chrome.tree, entries: treeEntries }
+      : chrome.tree;
 
   // The kit-agnostic slice of a table renderer's props — the adapter spreads
   // this and adds its kit's row `size` and accent colour.
@@ -206,14 +360,29 @@ export function useDataTableShell<TRow>(
     rows: chrome.editingRows,
     rowActions,
     actionsPinned,
+    rowReorder,
+    reorderPinned,
+    pinnedTopRows,
+    pinnedBottomRows,
+    rowPinning: chrome.rowPinning,
+    getCellSpan: props.getCellSpan,
+    extraRows: props.extraRows,
+    windowStart,
     confirm,
     getRowId,
     rowEntries: virtualization.enabled ? virtualization.rows : undefined,
     paddingTop: virtualization.paddingTop,
     paddingBottom: virtualization.paddingBottom,
     measureElement: virtualization.measureElement,
+    measureRowPair: virtualization.measureRowPair,
+    columnWindow,
+    fitColumns: props.fitColumns,
+    tree,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
+    headerFilters: props.headerFilters === true,
+    filterDefs: runtime.defs,
+    filterRegistry: runtime.registry,
     pinOffset: chrome.columnLayout.pinOffset,
     maxHeight: props.maxHeight,
     virtualScrollRef,
@@ -223,7 +392,12 @@ export function useDataTableShell<TRow>(
     onRowClick: props.onRowClick,
     prefetch: props.prefetch,
     rowClassName: props.rowClassName,
-    renderRowDetail: props.renderRowDetail,
+    collapsibleColumnGroups: props.collapsibleColumnGroups === true,
+    collapsedColumnGroups: chrome.columnLayout.state.collapsedGroups,
+    onToggleColumnGroup: chrome.columnLayout.toggleColumnGroup,
+    rowStyle: props.rowStyle,
+    rowHeight: props.rowHeight,
+    renderRowDetail: chrome.detail?.render,
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,
@@ -245,6 +419,10 @@ export function useDataTableShell<TRow>(
     onClearFilters: chrome.clearFilters,
     // Hidden in the grouped full-set view, where page size has no effect.
     showRowsPerPage: canLoadMore && !chrome.grouping,
+    onAddRow: chrome.rowMutations.canAdd
+      ? chrome.rowMutations.addRow
+      : undefined,
+    addRowLabel: labels.addRow,
     ...exportHandler,
     dir: props.dir,
   };
@@ -252,6 +430,12 @@ export function useDataTableShell<TRow>(
   return {
     /** Cell-navigation state; inert unless `cellNavigation` is set. */
     gridFocus,
+    /** What the selection adds up to; `null` unless `selectionStats` is set. */
+    selectionStats: stats,
+    /** Undo/redo controls; inert unless `editHistory` is set. */
+    editHistory: history,
+    /** Find-bar state; inert unless `findInTable` is set. */
+    find,
     // The chrome's VIEW facade — with grouping armed it presents the full
     // rendered set, so adapter footers and export buttons stay truthful.
     source: chrome.source,
@@ -266,10 +450,51 @@ export function useDataTableShell<TRow>(
     setFiltersOpen,
     filtersTrigger,
     rootRef,
+    /** Size every rendered column to its content. */
+    autoSizeColumns,
+    autoSizeColumn,
     loadMoreRef,
     canLoadMore,
     hasRowActions,
+    hasRowReorder,
     tableProps,
     toolbarProps,
+  };
+}
+
+/**
+ * Uncontrolled pins write the URL; a host that passes `pinnedRowIds` owns
+ * the lists and the URL hook stays a no-op.
+ */
+function useShellRowPins<TRow>(
+  props: Pick<
+    DataTableShellProps<TRow>,
+    "pinnedRowIds" | "onPinnedRowIdsChange" | "urlSync" | "urlKey"
+  >,
+  urlAdapter: UrlStateAdapter
+): {
+  pinnedRowIds: RowPinState | undefined;
+  onPinnedRowIdsChange: ((next: RowPinState) => void) | undefined;
+} {
+  const requested =
+    props.pinnedRowIds !== undefined ||
+    props.onPinnedRowIdsChange !== undefined;
+  const pinUrl = useRowPinningUrlState({
+    urlAdapter,
+    urlSync:
+      props.urlSync !== false && requested && props.pinnedRowIds === undefined,
+    urlKey: props.urlKey,
+  });
+  if (!requested) {
+    return { pinnedRowIds: undefined, onPinnedRowIdsChange: undefined };
+  }
+  return {
+    pinnedRowIds: props.pinnedRowIds ?? pinUrl.pinnedRowIds,
+    onPinnedRowIdsChange: (next: RowPinState) => {
+      if (props.pinnedRowIds === undefined) {
+        pinUrl.onPinnedRowIdsChange(next);
+      }
+      props.onPinnedRowIdsChange?.(next);
+    },
   };
 }

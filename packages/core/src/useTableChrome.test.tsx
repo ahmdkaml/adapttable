@@ -271,6 +271,36 @@ describe("useTableChrome", () => {
     expect(onClearFilters).toHaveBeenCalledTimes(1);
   });
 
+  it("tree chips appear and clearFilters drops the tree", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        filterDefs: [{ key: "name", type: "text", label: "Person" }],
+      });
+    });
+    act(() =>
+      result.current.source.setFilterTree?.({
+        combinator: "and",
+        conditions: [{ key: "name", op: "eq", value: "Ada" }],
+      })
+    );
+    expect(
+      result.current.mergedChips.some((chip) => chip.label.includes("Ada"))
+    ).toBe(true);
+    act(() => result.current.clearFilters());
+    expect(result.current.source.filterTree).toBeUndefined();
+    expect(result.current.mergedChips).toEqual([]);
+  });
+
   it("onGroupByChange observes — a logging handler never breaks grouping", () => {
     const onGroupByChange = vi.fn();
     const adapter = createMemoryAdapter("");
@@ -293,7 +323,7 @@ describe("useTableChrome", () => {
     act(() => result.current.grouping!.setGroupBy(null));
     // The change APPLIED (URL cleared → prop groupBy still forces it on,
     // but the mutator ran and the host was notified with the value).
-    expect(onGroupByChange).toHaveBeenCalledWith(null);
+    expect(onGroupByChange).toHaveBeenCalledWith([]);
     expect(adapter.getSearch()).not.toContain("groupBy");
   });
 
@@ -335,6 +365,104 @@ describe("useTableChrome", () => {
         });
       });
       expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("arms row reorder when onRowReorder is set, and warns under grouping", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const onRowReorder = vi.fn();
+      const { result } = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          onRowReorder,
+        });
+      });
+      expect(result.current.hasRowReorder).toBe(true);
+      expect(result.current.rowReorder).toBeDefined();
+
+      warn.mockClear();
+      resetDevWarnings();
+      const grouped = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          groupBy: "name",
+          onRowReorder,
+        });
+      });
+      expect(grouped.result.current.hasRowReorder).toBe(false);
+      expect(grouped.result.current.rowReorder).toBeUndefined();
+      expect(warn.mock.calls[0]?.[0]).toContain("onRowReorder");
+    } finally {
+      warn.mockRestore();
+      resetDevWarnings();
+    }
+  });
+
+  it("arms row pinning when onPinnedRowIdsChange is set, and warns under grouping", () => {
+    resetDevWarnings();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const onPinnedRowIdsChange = vi.fn();
+      const { result } = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          onPinnedRowIdsChange,
+        });
+      });
+      expect(result.current.rowPinning).toBeDefined();
+      expect(result.current.hasRowActions).toBe(true);
+      expect(
+        result.current.rowActions?.some((a) => a.key.includes("pin"))
+      ).toBe(true);
+
+      warn.mockClear();
+      resetDevWarnings();
+      const grouped = renderHook(() => {
+        const source = useFrontendData<Row>({
+          data: ROWS,
+          urlAdapter: createMemoryAdapter(""),
+          columns,
+          paginationMode: "paged",
+        });
+        return useTableChrome<Row>({
+          source,
+          columns,
+          rowKey: (r) => r.id,
+          groupBy: "name",
+          onPinnedRowIdsChange,
+        });
+      });
+      expect(grouped.result.current.rowPinning).toBeUndefined();
+      expect(warn.mock.calls[0]?.[0]).toContain("row pinning");
     } finally {
       warn.mockRestore();
       resetDevWarnings();
@@ -443,5 +571,168 @@ describe("useTableChrome", () => {
     expect(result.current.ids).toEqual(["a"]);
     // toggle commit + setIds re-render — never an unbounded cascade.
     expect(renders.count - mounted).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("useTableChrome — the whole-tree grouping actions", () => {
+  interface Person {
+    id: string;
+    name: string;
+    role: string;
+  }
+  const rows: Person[] = [
+    { id: "1", name: "Ada", role: "Core" },
+    { id: "2", name: "Alan", role: "Core" },
+    { id: "3", name: "Grace", role: "Web" },
+  ];
+  const groupColumns: ColumnDef<Person>[] = [
+    { key: "name", header: "Name" },
+    { key: "role", header: "Role" },
+  ];
+  const setup = (props: Record<string, unknown> = {}) =>
+    renderHook(() => {
+      const source = useFrontendData<Person>({
+        data: rows,
+        urlAdapter: createMemoryAdapter(""),
+        columns: groupColumns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Person>({
+        source,
+        columns: groupColumns,
+        rowKey: (r) => r.id,
+        groupBy: ["role", "name"],
+        ...props,
+      });
+    });
+  const headers = (result: {
+    current: { grouping?: { entries: readonly { kind: string }[] } };
+  }) =>
+    result.current.grouping!.entries.filter((entry) => entry.kind === "group");
+
+  it("collapses everything, then opens it again", () => {
+    const { result } = setup();
+    expect(headers(result)).toHaveLength(5);
+    act(() => result.current.grouping!.collapseAll());
+    // Only the outermost headers survive a full collapse.
+    expect(headers(result)).toHaveLength(2);
+    act(() => result.current.grouping!.expandAll());
+    expect(headers(result)).toHaveLength(5);
+  });
+
+  it("shows the tree down to a depth", () => {
+    const { result } = setup();
+    act(() => result.current.grouping!.collapseToDepth(1));
+    // Depth 1 keeps the top level open and closes what is inside it.
+    expect(headers(result)).toHaveLength(5);
+    act(() => result.current.grouping!.collapseToDepth(0));
+    expect(headers(result)).toHaveLength(2);
+  });
+
+  it("reveals another page of groups", () => {
+    const { result } = setup({ groupBy: "role", groupPageSize: 1 });
+    expect(headers(result)).toHaveLength(1);
+    act(() => result.current.grouping!.showMore({ scope: "groups" }));
+    expect(headers(result)).toHaveLength(2);
+  });
+
+  it("reveals more of one group's rows, and says which", () => {
+    const onGroupLoadMore = vi.fn();
+    const { result } = setup({
+      groupBy: "role",
+      groupRowPageSize: 1,
+      onGroupLoadMore,
+    });
+    const leaves = () =>
+      result.current.grouping!.entries.filter((entry) => entry.kind === "row");
+    expect(leaves()).toHaveLength(2);
+    act(() =>
+      result.current.grouping!.showMore({
+        scope: "rows",
+        groupKey: "group:role:s:Core",
+      })
+    );
+    expect(leaves()).toHaveLength(3);
+    expect(onGroupLoadMore).toHaveBeenCalledExactlyOnceWith(
+      "group:role:s:Core"
+    );
+  });
+});
+
+describe("useTableChrome — row mutations and lazy tree", () => {
+  it("appends duplicate and delete after the host's own row actions", () => {
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        rowActions: [{ key: "edit", label: "Edit", onClick: () => undefined }],
+        onDuplicateRow: vi.fn(),
+        onDeleteRow: vi.fn(),
+      });
+    });
+    expect(result.current.rowActions?.map((action) => action.key)).toEqual([
+      "edit",
+      "adapttable:duplicate-row",
+      "adapttable:delete-row",
+    ]);
+  });
+
+  it("loads children when a collapsed lazy node is opened", () => {
+    const onLoadChildren = vi.fn().mockResolvedValue(undefined);
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        getChildren: (row) => (row.id === "a" ? [] : undefined),
+        hasChildren: (row) => row.id === "a",
+        onLoadChildren,
+      });
+    });
+    expect(result.current.tree?.entries[0]?.expanded).toBe(false);
+    act(() => {
+      result.current.tree?.expansion.toggle("a");
+    });
+    expect(onLoadChildren).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("does not reload a flat node whose children are already in the rows", () => {
+    const onLoadChildren = vi.fn().mockResolvedValue(undefined);
+    const adapter = createMemoryAdapter("");
+    const { result } = renderHook(() => {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "paged",
+      });
+      return useTableChrome<Row>({
+        source,
+        columns,
+        rowKey: (r) => r.id,
+        getParentId: (row) => (row.id === "b" ? "a" : undefined),
+        hasChildren: (row) => row.id === "a",
+        onLoadChildren,
+      });
+    });
+    act(() => {
+      result.current.tree?.expansion.toggle("a");
+    });
+    expect(onLoadChildren).not.toHaveBeenCalled();
   });
 });

@@ -1,19 +1,32 @@
 /** The card list rendered in place of the table on narrow screens. */
 import {
+  bodyRowEntries,
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
   type RowAction,
   type TableLabels,
+  treeCardStyle,
+  type TreeEntry,
 } from "@adapttable/core";
 import {
+  EXTRA_ROW_PARTS,
+  insertExtraRows,
+  isExtraEntry,
+  orderedCardEntries,
   resolveMobileLabel,
-  resolveVirtualRows,
+  resolveRowStyle,
   rowClickProps,
+  RowEditActions,
   rowEditingSignature,
+  rowIsDirty,
+  RowReorderButtons,
+  rowReorderSignature,
+  rowStyleSignature,
+  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import type { ReactElement, ReactNode } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { memo, useMemo } from "react";
 
 import { cx } from "../cx";
@@ -26,17 +39,24 @@ import { RowActionButtons } from "./RowActionButtons";
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
+  /** This card's place in the tree, when the table is one. */
+  treeEntry?: TreeEntry<TRow>;
+  /** Open or close this node. */
+  onToggleTree?: (id: string) => void;
   row: TRow;
   index: number;
   /** Stable row id (selection / expansion key). */
   id: string;
-  columns: ColumnDef<TRow>[];
+  columns: readonly ColumnDef<TRow>[];
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: RowAction<TRow>[];
   classNames: DataTableClassNames;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
+  /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
+  style?: CSSProperties;
+  styleSignature: string;
   selected: boolean;
   expanded: boolean;
   /** Selection toggle — present only when selection is enabled. */
@@ -59,10 +79,20 @@ interface MobileCardProps<TRow> {
   getRowId: (row: TRow) => string;
   /** Memo digest from {@link rowEditingSignature}. */
   editingSignature: string | null;
+  /** Headless reorder; uncompared — visual churn is `reorderSignature`. */
+  rowReorder: SharedProps<TRow>["rowReorder"];
+  windowStart: number;
+  rowCount: number;
+  reorderSignature: string | null;
 }
 
 /** The card props the memo comparator deliberately skips (see `editing`). */
-type UncomparedCardProp = "editing" | "rows" | "getRowId";
+type UncomparedCardProp =
+  | "editing"
+  | "rows"
+  | "getRowId"
+  | "rowReorder"
+  | "style";
 
 /** Every card prop the memo comparator checks with `Object.is`. */
 const COMPARED_CARD_PROPS: readonly Exclude<
@@ -78,6 +108,7 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "rowActions",
   "classNames",
   "className",
+  "styleSignature",
   "selected",
   "expanded",
   "onToggleSelect",
@@ -87,6 +118,11 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "measureElement",
   "clickable",
   "editingSignature",
+  "reorderSignature",
+  "windowStart",
+  "rowCount",
+  // Or a folder opens and its own chevron never turns.
+  "treeEntry",
 ];
 
 /**
@@ -112,6 +148,7 @@ function MobileCardBase<TRow>({
   rowActions,
   classNames,
   className,
+  style,
   selected,
   expanded,
   onToggleSelect,
@@ -123,18 +160,34 @@ function MobileCardBase<TRow>({
   editing,
   rows,
   getRowId,
+  treeEntry,
+  onToggleTree,
+  rowReorder,
+  windowStart,
+  rowCount,
 }: Readonly<MobileCardProps<TRow>>) {
   return (
     <li
       {...rowClickProps(row, onRowClick, index)}
+      style={{ ...treeCardStyle(treeEntry?.level ?? 0), ...style }}
       ref={measureElement}
       data-index={index}
       data-adapttable-part="card"
       data-stagger=""
       data-selected={selected ? "" : undefined}
+      data-dirty={rowIsDirty(editing, id) ? "" : undefined}
       data-clickable={clickable ? "" : undefined}
       className={cx(classNames.card, className)}
     >
+      {treeEntry && (
+        <TreeToggle
+          toggleClassName={classNames.treeToggle}
+          spacerClassName={classNames.treeSpacer}
+          entry={treeEntry}
+          labels={labels}
+          onToggle={onToggleTree ?? (() => undefined)}
+        />
+      )}
       {onToggleSelect && (
         <input
           type="checkbox"
@@ -173,6 +226,9 @@ function MobileCardBase<TRow>({
           >
             <EditableDataCell
               activateClassName={classNames.editCellActivate}
+              errorClassName={classNames.editCellError}
+              saveErrorClassName={classNames.editCellSaveError}
+              rollbackClassName={classNames.editCellRollback}
               editorClassName={classNames.editCellEditor}
               editing={editing}
               row={row}
@@ -182,6 +238,7 @@ function MobileCardBase<TRow>({
               columns={columns}
               rowKey={getRowId}
               editLabel={labels.editCell}
+              undoLabel={labels.undoEdit}
               display={
                 column.Cell ? (
                   <column.Cell row={row} rowIndex={index} />
@@ -193,6 +250,27 @@ function MobileCardBase<TRow>({
           </span>
         </div>
       ))}
+      {rowReorder && (
+        <RowReorderButtons
+          reorder={rowReorder}
+          labels={labels}
+          localIndex={index}
+          row={row}
+          windowStart={windowStart}
+          rowCount={rowCount}
+          className={classNames.rowReorderButtons}
+          upClassName={classNames.rowReorderUp}
+          downClassName={classNames.rowReorderDown}
+        />
+      )}
+      {editing?.rowEditing && (
+        <RowEditActions
+          rowEditing={editing.rowEditing}
+          row={row}
+          rowId={id}
+          labels={labels}
+        />
+      )}
       {rowActions && rowActions.length > 0 && (
         <div
           data-adapttable-part="card-actions"
@@ -229,18 +307,32 @@ export function MobileCards<TRow>({
   classNames,
   onRowClick,
   rowClassName,
+  rowStyle,
+  rowHeight,
   renderRowDetail,
   summaryRow,
   expansion,
   editing,
   grouping,
+  tree,
   rowEntries,
   paddingTop = 0,
   paddingBottom = 0,
   measureElement,
+  rowReorder,
+  windowStart = 0,
+  pinnedTopRows = [],
+  pinnedBottomRows = [],
+  extraRows,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
-  const entries = resolveVirtualRows(rows, getRowId, rowEntries);
+  const entries = orderedCardEntries(
+    rows,
+    getRowId,
+    rowEntries,
+    pinnedTopRows,
+    pinnedBottomRows
+  );
   const expansionState = renderRowDetail ? expansion : undefined;
   const summary = useSummaryCells(summaryRow, rows);
 
@@ -251,7 +343,12 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderCard = (row: TRow, index: number, key: string): ReactElement => {
+  const renderCard = (
+    row: TRow,
+    index: number,
+    key: string,
+    treeEntry?: TreeEntry<TRow>
+  ): ReactElement => {
     const id = getRowId(row);
     return (
       <CardItem
@@ -265,6 +362,10 @@ export function MobileCards<TRow>({
         rowActions={rowActions}
         classNames={classNames}
         className={rowClassName?.(row, index)}
+        style={resolveRowStyle(rowStyle, rowHeight, row, index)}
+        styleSignature={rowStyleSignature(
+          resolveRowStyle(rowStyle, rowHeight, row, index)
+        )}
         selected={selection ? selection.isSelected(id) : false}
         expanded={expansionState ? expansionState.isExpanded(id) : false}
         onToggleSelect={selection ? selection.toggle : undefined}
@@ -272,11 +373,17 @@ export function MobileCards<TRow>({
         renderDetail={renderRowDetail}
         onRowClick={onRowClick}
         measureElement={measureElement}
-        clickable={Boolean(onRowClick)}
         editing={editing}
         rows={rows}
         getRowId={getRowId}
         editingSignature={rowEditingSignature(editing, id)}
+        treeEntry={treeEntry}
+        onToggleTree={tree ? tree.expansion.toggle : undefined}
+        rowReorder={rowReorder}
+        windowStart={windowStart}
+        rowCount={rows.length}
+        reorderSignature={rowReorderSignature(rowReorder, id, index)}
+        clickable={Boolean(onRowClick)}
       />
     );
   };
@@ -298,23 +405,92 @@ export function MobileCards<TRow>({
         />
       )}
       {grouping
-        ? grouping.entries.map((entry) =>
-            entry.kind === "group" ? (
-              <li key={entry.key} style={{ display: "block" }}>
-                <GroupHeaderCard
-                  entry={entry}
-                  columns={columns}
-                  selection={selection}
-                  labels={labels}
-                  classNames={classNames}
-                  onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
-                />
+        ? grouping.entries.map((entry) => {
+            if (isExtraEntry(entry)) {
+              return (
+                <li
+                  key={entry.key}
+                  data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].row}
+                  role={entry.kind === "separator" ? "separator" : undefined}
+                  aria-label={
+                    entry.kind === "separator" ? labels.rowSeparator : undefined
+                  }
+                  className={
+                    entry.kind === "separator"
+                      ? classNames.separatorRow
+                      : classNames.fullWidthRow
+                  }
+                  style={{ display: "block" }}
+                >
+                  <div
+                    data-adapttable-part={EXTRA_ROW_PARTS[entry.kind].cell}
+                    className={
+                      entry.kind === "separator"
+                        ? classNames.separatorCell
+                        : classNames.fullWidthCell
+                    }
+                  >
+                    {entry.kind === "fullWidth" ? entry.render?.() : null}
+                  </div>
+                </li>
+              );
+            }
+            if (
+              entry.kind === "group" ||
+              entry.kind === "groupFooter" ||
+              entry.kind === "groupMore"
+            ) {
+              return (
+                <li key={entry.key} style={{ display: "block" }}>
+                  <GroupHeaderCard
+                    entry={entry}
+                    columns={columns}
+                    selection={selection}
+                    labels={labels}
+                    classNames={classNames}
+                    onToggleCollapse={(key) => grouping.collapsed.toggle(key)}
+                    onShowMore={grouping.showMore}
+                  />
+                </li>
+              );
+            }
+            return renderCard(entry.row, entry.index, entry.key);
+          })
+        : insertExtraRows(
+            bodyRowEntries(entries, tree),
+            extraRows,
+            (e) => e.key
+          ).map((slot) =>
+            isExtraEntry(slot) ? (
+              <li
+                key={slot.key}
+                data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].row}
+                role={slot.kind === "separator" ? "separator" : undefined}
+                aria-label={
+                  slot.kind === "separator" ? labels.rowSeparator : undefined
+                }
+                className={
+                  slot.kind === "separator"
+                    ? classNames.separatorRow
+                    : classNames.fullWidthRow
+                }
+                style={{ display: "block" }}
+              >
+                <div
+                  data-adapttable-part={EXTRA_ROW_PARTS[slot.kind].cell}
+                  className={
+                    slot.kind === "separator"
+                      ? classNames.separatorCell
+                      : classNames.fullWidthCell
+                  }
+                >
+                  {slot.kind === "fullWidth" ? slot.render?.() : null}
+                </div>
               </li>
             ) : (
-              renderCard(entry.row, entry.index, entry.key)
+              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
             )
-          )
-        : entries.map(({ row, index, key }) => renderCard(row, index, key))}
+          )}
       {paddingBottom > 0 && (
         <li
           data-adapttable-part="virtual-spacer"
