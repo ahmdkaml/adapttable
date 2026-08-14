@@ -707,6 +707,7 @@ export function DesktopTable<TRow>({
     getCellSpan,
     pinOffset,
     tree,
+    grouping,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   const [headerRowRef, leafHeaderHeight] = useOffsetHeight();

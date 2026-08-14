@@ -266,6 +266,7 @@ export function tableRenderModel<TRow>(
     | "getCellSpan"
     | "pinOffset"
     | "tree"
+    | "grouping"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -331,6 +332,22 @@ export function tableRenderModel<TRow>(
       firstRowIndex: scrollRows[0]?.sourceIndex ?? scrollRows[0]?.index ?? 0,
     })
   );
+  // A grouped body renders `grouping.entries`, not the row list above — its
+  // leaves reach the screen through a different array and would otherwise have
+  // no cells built for them at all, so every grouped row would render empty.
+  const groupedRows = (props.grouping?.entries ?? []).filter(
+    (entry): entry is Extract<GroupedFlatEntry<TRow>, { kind: "row" }> =>
+      entry.kind === "row"
+  );
+  if (groupedRows.length > 0) {
+    merge(
+      buildBodyCells({
+        ...cellOptions,
+        rows: groupedRows.map((entry) => entry.row),
+        firstRowIndex: groupedRows[0]?.index ?? 0,
+      })
+    );
+  }
   merge(
     buildBodyCells({
       ...cellOptions,

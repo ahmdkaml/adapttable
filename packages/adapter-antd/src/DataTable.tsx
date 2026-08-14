@@ -1575,6 +1575,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     pinnedBottomRows,
     getCellSpan: props.getCellSpan,
     pinOffset: c.columnLayout.pinOffset,
+    grouping: c.grouping,
   });
 
   const columns = buildColumns<TRow>({

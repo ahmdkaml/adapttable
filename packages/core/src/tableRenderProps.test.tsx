@@ -193,6 +193,45 @@ describe("tableRenderModel", () => {
       "name",
     ]);
   });
+
+  it("emits cells for grouped leaves, which reach the screen by their own list", () => {
+    // A grouped body renders `grouping.entries`, never the row list — and a
+    // windowed one carries rows the page slice does not. A leaf with no cells
+    // built for it renders as an empty `<tr>`: present, addressable, and blank.
+    const grouped: Row = { id: "z", name: "Zoe" };
+    const model = tableRenderModel({
+      table,
+      rows: [],
+      getRowId: (r) => r.id,
+      grouping: {
+        groupBy: ["name"],
+        entries: [
+          {
+            kind: "group",
+            key: "group:name:Zoe",
+            groupKey: "Zoe",
+            columnKey: "name",
+            value: "Zoe",
+            level: 0,
+            count: 1,
+            leafRows: [grouped],
+            leafIds: ["z"],
+            label: "Zoe",
+          },
+          {
+            kind: "row",
+            key: "z",
+            row: grouped,
+            index: 0,
+            groupKey: "Zoe",
+          },
+        ],
+      } as never,
+    });
+    expect(model.cellsByRow.get("z")?.map((cell) => cell.column.key)).toEqual([
+      "name",
+    ]);
+  });
 });
 
 describe("useChromeScrollReset", () => {
