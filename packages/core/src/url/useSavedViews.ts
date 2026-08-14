@@ -5,6 +5,7 @@ import { safeLocalStorage } from "../utils/env";
 import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
 import {
   FILTER_PREFIX,
+  PARAM_COL_GROUPS,
   PARAM_COL_HIDDEN,
   PARAM_COL_ORDER,
   PARAM_COL_PINNED,
@@ -72,6 +73,7 @@ const BARE_PARAMS = [
   PARAM_COL_PINNED,
   PARAM_COL_ORDER,
   PARAM_COL_WIDTHS,
+  PARAM_COL_GROUPS,
   PARAM_ROW_PIN,
 ];
 

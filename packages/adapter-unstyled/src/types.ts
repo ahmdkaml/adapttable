@@ -160,6 +160,8 @@ export interface DataTableClassNames {
   headerGroupRow?: string;
   /** One spanning `<th>` (or edge gap) inside the header-group row. */
   headerGroupCell?: string;
+  /** Collapse/expand control inside a collapsible group header. */
+  columnGroupToggle?: string;
   sortButton?: string;
   /** The 1-based multi-sort position badge inside a sorted header. */
   sortIndex?: string;

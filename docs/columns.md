@@ -207,33 +207,38 @@ Rows must be objects, since the cache is keyed by row identity. The spec type is
 ## Grouped headers
 
 Give adjacent columns the same `group` and they render under one spanning
-header cell:
+header cell. A string is one level; a path stacks one header row per depth:
 
 ```tsx
 const columns: ColumnDef<Person>[] = [
   { key: "firstName", header: "First", group: "Name" },
   { key: "lastName", header: "Last", group: "Name" },
-  { key: "city", header: "City", group: "Location" },
-  { key: "country", header: "Country", group: "Location" },
+  { key: "q1", header: "Q1", group: ["Finance", "2026"] },
+  { key: "q2", header: "Q2", group: ["Finance", "2026"] },
   { key: "hiredAt", header: "Hired" },
 ];
 ```
 
 ```text
-|      Name      |     Location      |        |
-| First |  Last  |  City  | Country  | Hired  |
+|      Name      |      Finance      |        |
+|                |       2026        |        |
+| First |  Last  |   Q1   |    Q2    | Hired  |
 ```
 
-Columns without a `group` sit under a blank spanning cell, so the header row
-always lines up. The grouping is **presentational and adjacency-based**: the
+Columns without a `group` sit under a blank spanning cell, so the header rows
+always line up. The grouping is **presentational and adjacency-based**: the
 span is computed from the columns as they are currently ordered, so dragging a
 column out of the middle of a group splits it into two spans rather than
 pretending the layout is something it is not. Reorder them back together and
 the group closes up again.
 
-Groups are one level deep and carry no behaviour of their own — they do not
-collapse, pin, or reorder as a unit. On mobile the card layout has no header
-row, so `group` has no effect there.
+Pass `collapsibleColumnGroups` and each real group header gains a toggle. A
+collapsed group keeps its first leaf as the summary column and hides the
+rest. Collapse state lives on `columnLayout.collapsedGroups` and the URL
+(`colGroupCollapse`); group ids are `path.join("\u001f")` so a label may
+contain `/`. On mobile the card layout has no header row, but the same
+visible-column filter applies — cards hide the same leaves a collapsed
+group hid on desktop.
 
 ## Notes
 

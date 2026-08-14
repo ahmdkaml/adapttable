@@ -20,10 +20,12 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  ColumnGroupToggle,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
   FillHandle,
-  headerGroupRow,
+  type HeaderGroupCell,
+  headerGroupRows,
   REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
   RowEditActions,
@@ -37,6 +39,7 @@ import type {
   HTMLAttributes,
   KeyboardEvent,
   MouseEvent,
+  ReactElement,
   ReactNode,
 } from "react";
 
@@ -216,28 +219,77 @@ function headerCellProps<TRow>(
   return props;
 }
 
+/** Title for one antd group parent — label plus an optional collapse toggle. */
+function groupTitle(
+  cell: HeaderGroupCell,
+  labels: Required<TableLabels>,
+  onToggle?: (id: string) => void
+): ReactElement {
+  return (
+    <>
+      {onToggle ? (
+        <ColumnGroupToggle cell={cell} labels={labels} onToggle={onToggle} />
+      ) : null}
+      {cell.label}
+    </>
+  );
+}
+
+/**
+ * Walk one depth of {@link headerGroupRows} into antd parent columns.
+ * Gap cells flatten; labelled cells nest their next depth (or the leaves).
+ */
+function nestGroupLevel<TRow>(
+  rows: HeaderGroupCell[][],
+  leaves: TableColumnsType<TRow>,
+  depth: number,
+  start: number,
+  end: number,
+  titleFor: (cell: HeaderGroupCell) => ReactNode
+): TableColumnsType<TRow> {
+  if (depth >= rows.length) return leaves.slice(start, end);
+  const row = rows[depth]!;
+  const out: TableColumnsType<TRow> = [];
+  let col = 0;
+  for (const cell of row) {
+    const cellStart = col;
+    const cellEnd = col + cell.span;
+    col = cellEnd;
+    if (cellEnd <= start || cellStart >= end) continue;
+    const children = nestGroupLevel(
+      rows,
+      leaves,
+      depth + 1,
+      cellStart,
+      cellEnd,
+      titleFor
+    );
+    if (cell.label === null) out.push(...children);
+    else out.push({ key: cell.key, title: titleFor(cell), children });
+  }
+  return out;
+}
+
 /**
  * Fold contiguous same-`group` leaves into antd's NATIVE grouped columns.
- * Core's `headerGroupRow` owns the ordering rules (adjacency-based, a
+ * Core's `headerGroupRows` owns the ordering rules (adjacency-based, a
  * reorder splits the group), so the antd column tree always mirrors the
  * shared group-row model: labelled cells become parent columns with
  * `children`, unlabelled gap cells leave their leaves at the top level.
  */
 function groupColumns<TRow>(
   columns: readonly ColumnDef<TRow>[],
-  leaves: TableColumnsType<TRow>
+  leaves: TableColumnsType<TRow>,
+  labels: Required<TableLabels>,
+  collapsedIds: readonly string[] = [],
+  collapsible = false,
+  onToggle?: (id: string) => void
 ): TableColumnsType<TRow> {
-  const cells = headerGroupRow(columns);
-  if (!cells) return leaves;
-  const grouped: TableColumnsType<TRow> = [];
-  let cursor = 0;
-  for (const cell of cells) {
-    const run = leaves.slice(cursor, cursor + cell.span);
-    cursor += cell.span;
-    if (cell.label === null) grouped.push(...run);
-    else grouped.push({ key: cell.key, title: cell.label, children: run });
-  }
-  return grouped;
+  const rows = headerGroupRows(columns, collapsedIds, collapsible);
+  if (!rows) return leaves;
+  return nestGroupLevel(rows, leaves, 0, 0, leaves.length, (cell) =>
+    groupTitle(cell, labels, onToggle)
+  );
 }
 
 /** Opt-in grouping chrome passed into {@link buildColumns} when armed. */
@@ -306,6 +358,12 @@ export interface BuildColumnsOptions<TRow> {
   windowStart?: number;
   /** Per-row body cells so `onCell` can apply col/row spans. */
   cellsByRow?: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /** When true, group parents render a collapse toggle. */
+  collapsibleColumnGroups?: boolean;
+  /** Collapsed column-group ids from the layout. */
+  collapsedColumnGroups?: readonly string[];
+  /** Toggle one column group. No-op unless collapse is armed. */
+  onToggleColumnGroup?: (id: string) => void;
 }
 
 /**
@@ -505,6 +563,9 @@ export function buildColumns<TRow>({
   rowReorder,
   windowStart = 0,
   cellsByRow,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -640,7 +701,11 @@ export function buildColumns<TRow>({
   );
   const cols = groupColumns(
     columns,
-    leaves as TableColumnsType<TRow>
+    leaves as TableColumnsType<TRow>,
+    labels,
+    collapsedColumnGroups,
+    collapsibleColumnGroups,
+    onToggleColumnGroup
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
   if (rowReorder) {

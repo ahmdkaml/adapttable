@@ -91,6 +91,8 @@ export const he: Required<TableLabels> = {
   pinToBottom: "הצמד למטה",
   unpinRow: "בטל הצמדת שורה",
   rowSeparator: "מפריד",
+  expandColumnGroup: "הרחב קבוצת עמודות",
+  collapseColumnGroup: "כווץ קבוצת עמודות",
   moreGroups: (remaining) => `הצגת ${remaining} קבוצות נוספות`,
   moreRowsInGroup: (remaining) => `הצגת ${remaining} נוספות בקבוצה`,
   groupTotal: (label) => `סך הכול ${label}`,

@@ -94,6 +94,8 @@ export const de: Required<TableLabels> = {
   pinToBottom: "Unten anheften",
   unpinRow: "Zeile lösen",
   rowSeparator: "Trennlinie",
+  expandColumnGroup: "Spaltengruppe erweitern",
+  collapseColumnGroup: "Spaltengruppe einklappen",
   moreGroups: (remaining) => `${remaining} weitere Gruppen anzeigen`,
   moreRowsInGroup: (remaining) => `${remaining} weitere in dieser Gruppe`,
   groupTotal: (label) => `${label} gesamt`,

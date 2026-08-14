@@ -20,11 +20,12 @@ import {
 import {
   type BodyCell,
   cellsForRow,
+  ColumnGroupToggle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
-  headerGroupRow,
+  headerGroupRows,
   insertExtraRows,
   isCurrentMatchCell,
   isExtraEntry,
@@ -636,6 +637,9 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
   rowStyle,
   rowHeight,
   renderRowDetail,
@@ -850,7 +854,11 @@ export function DesktopTable<TRow>({
   // The grouped header row (when any visible column declares a `group`) and
   // the footer summary both align under the data columns, so the leading
   // expand/selection and trailing actions columns get unlabeled pad cells.
-  const groups = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   const summary = useSummaryCells(summaryRow, rows);
   const groupPad = (
     <th
@@ -940,8 +948,9 @@ export function DesktopTable<TRow>({
         data-adapttable-part="thead"
         className={classNames.thead}
       >
-        {groups && (
+        {groupRows?.map((groups, rowIndex) => (
           <tr
+            key={rowIndex}
             data-adapttable-part="header-group-row"
             className={classNames.headerGroupRow}
           >
@@ -955,12 +964,20 @@ export function DesktopTable<TRow>({
                 data-adapttable-part="header-group-cell"
                 className={classNames.headerGroupCell}
               >
+                {onToggleColumnGroup ? (
+                  <ColumnGroupToggle
+                    cell={group}
+                    labels={labels}
+                    onToggle={onToggleColumnGroup}
+                    className={classNames.columnGroupToggle}
+                  />
+                ) : null}
                 {group.label}
               </th>
             ))}
             {showActions && groupPad}
           </tr>
-        )}
+        ))}
         <tr
           {...table.getHeaderRowProps()}
           data-adapttable-part="header-row"

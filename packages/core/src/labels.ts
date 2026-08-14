@@ -92,6 +92,8 @@ export const defaultLabels: Required<TableLabels> = {
   pinToBottom: "Pin to bottom",
   unpinRow: "Unpin row",
   rowSeparator: "Separator",
+  expandColumnGroup: "Expand column group",
+  collapseColumnGroup: "Collapse column group",
   gridRangeCopied: (cells) =>
     `${cells} ${cells === 1 ? "cell" : "cells"} copied`,
   gridRangeCopyFailed: "Copy failed",

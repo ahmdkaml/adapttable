@@ -139,14 +139,21 @@ const FIXTURES = [
   // and arrows / CSV skip a covered address. The host still opts in
   // with `getCellSpan` or `column.colSpan` / `column.rowSpan`.
   // `core · simple table` stayed at 11.4 KB of a 12 KB ceiling.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 89 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 88 },
+  //
+  // Collapsible multi-level column groups (~0.4 KB) stack header rows
+  // from a path, hide non-summary leaves when a group is collapsed, and
+  // render one shared toggle. The host still opts in with
+  // `collapsibleColumnGroups` — omit it and no toggle renders — but the
+  // path walker sits on the same header-group path the kits already
+  // imported. `core · simple table` stayed at 11.5 KB of a 12 KB ceiling.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 90 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 89 },
   { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 89 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 85 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 86 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 89 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 95 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 92 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 89 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 96 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 93 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 90 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

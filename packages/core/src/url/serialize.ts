@@ -50,6 +50,7 @@ export const PARAM_COL_HIDDEN = "colHide";
 export const PARAM_COL_PINNED = "colPin";
 export const PARAM_COL_ORDER = "colOrder";
 export const PARAM_COL_WIDTHS = "colW";
+export const PARAM_COL_GROUPS = "colGroupCollapse";
 /** Pinned rows: `rowPin=id1:top,id2:bottom`. */
 export const PARAM_ROW_PIN = "rowPin";
 
@@ -171,11 +172,13 @@ export function readColumnLayout(
   const pinRaw = params.get(prefix + PARAM_COL_PINNED);
   const orderRaw = params.get(prefix + PARAM_COL_ORDER);
   const widthRaw = params.get(prefix + PARAM_COL_WIDTHS);
+  const groupRaw = params.get(prefix + PARAM_COL_GROUPS);
   if (
     hideRaw === null &&
     pinRaw === null &&
     orderRaw === null &&
-    widthRaw === null
+    widthRaw === null &&
+    groupRaw === null
   ) {
     return undefined;
   }
@@ -202,11 +205,13 @@ export function readColumnLayout(
     }
   }
 
+  const collapsedGroups = splitRaw(groupRaw).map(safeDecode);
   return {
     hidden: splitRaw(hideRaw).map(safeDecode),
     order: splitRaw(orderRaw).map(safeDecode),
     pinned,
     widths,
+    ...(collapsedGroups.length > 0 ? { collapsedGroups } : {}),
   };
 }
 
@@ -242,6 +247,10 @@ export function writeColumnLayout(
     Object.entries(layout.widths)
       .map(([key, px]) => `${encodeURIComponent(key)}:${Math.round(px)}`)
       .join(",")
+  );
+  setOrDelete(
+    PARAM_COL_GROUPS,
+    (layout.collapsedGroups ?? []).map((id) => encodeURIComponent(id)).join(",")
   );
 }
 

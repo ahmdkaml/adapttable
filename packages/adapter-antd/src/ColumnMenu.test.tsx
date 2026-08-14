@@ -25,6 +25,7 @@ function fakeLayout(): UseColumnLayoutResult<Row> {
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
   };
 }
 

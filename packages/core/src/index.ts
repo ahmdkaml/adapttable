@@ -317,6 +317,16 @@ export {
   tableMinWidth,
 } from "./columns/columnWidths";
 export {
+  applyCollapsedColumnGroups,
+  COLUMN_GROUP_ID_SEP,
+  columnGroupId,
+  columnGroupPath,
+  type HeaderGroupCell,
+  headerGroupRow,
+  headerGroupRows,
+  toggleCollapsedColumnGroup,
+} from "./columns/headerGroups";
+export {
   type ColumnLayoutState,
   edgePinStyle,
   PIN_Z,

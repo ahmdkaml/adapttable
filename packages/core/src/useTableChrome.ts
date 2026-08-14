@@ -415,6 +415,7 @@ export function useTableChrome<TRow>(
     layout: columnLayoutProp,
     onLayoutChange: onColumnLayoutChange,
     defaultColumnLayout,
+    collapsibleColumnGroups: props.collapsibleColumnGroups === true,
   });
 
   // Effective groupBy: prop wins when provided (including `null` to force

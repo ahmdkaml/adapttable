@@ -134,6 +134,7 @@ function hiddenLayout(): UseColumnLayoutResult<MenuRow> {
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
   };
 }
 

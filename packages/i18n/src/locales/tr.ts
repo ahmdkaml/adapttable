@@ -93,6 +93,8 @@ export const tr: Required<TableLabels> = {
   pinToBottom: "Alta sabitle",
   unpinRow: "Satırı bırak",
   rowSeparator: "Ayırıcı",
+  expandColumnGroup: "Sütun grubunu genişlet",
+  collapseColumnGroup: "Sütun grubunu daralt",
   moreGroups: (remaining) => `${remaining} grup daha göster`,
   moreRowsInGroup: (remaining) => `Bu grupta ${remaining} tane daha`,
   groupTotal: (label) => `${label} toplamı`,

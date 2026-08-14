@@ -89,6 +89,8 @@ export const zhTW: Required<TableLabels> = {
   pinToBottom: "固定到底部",
   unpinRow: "取消固定列",
   rowSeparator: "分隔線",
+  expandColumnGroup: "展開欄組",
+  collapseColumnGroup: "摺疊欄組",
   moreGroups: (remaining) => `再顯示 ${remaining} 個群組`,
   moreRowsInGroup: (remaining) => `在此群組中再顯示 ${remaining} 列`,
   groupTotal: (label) => `${label} 總計`,

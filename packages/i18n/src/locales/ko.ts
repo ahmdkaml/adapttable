@@ -92,6 +92,8 @@ export const ko: Required<TableLabels> = {
   pinToBottom: "아래에 고정",
   unpinRow: "행 고정 해제",
   rowSeparator: "구분선",
+  expandColumnGroup: "열 그룹 펼치기",
+  collapseColumnGroup: "열 그룹 접기",
   moreGroups: (remaining) => `${remaining}개 그룹 더 보기`,
   moreRowsInGroup: (remaining) => `이 그룹에서 ${remaining}개 더 보기`,
   groupTotal: (label) => `${label} 합계`,

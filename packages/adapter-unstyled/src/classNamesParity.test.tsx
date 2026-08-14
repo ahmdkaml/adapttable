@@ -229,6 +229,7 @@ function Harness(props: {
       exportCsv
       onAddRow={vi.fn()}
       enableColumnMenu
+      collapsibleColumnGroups
       resizableColumns
       multiSort
       summaryRow={() => ({ qty: "sum" })}
@@ -533,6 +534,7 @@ const KEYS = [
   "headerCell",
   "headerGroupRow",
   "headerGroupCell",
+  "columnGroupToggle",
   "sortButton",
   "sortIndex",
   "tbody",

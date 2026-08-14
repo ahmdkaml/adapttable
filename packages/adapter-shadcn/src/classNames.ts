@@ -141,6 +141,7 @@ export const shadcnClassNames = {
   headerGroupRow: "border-b border-border",
   headerGroupCell:
     "border-b border-border bg-card px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+  columnGroupToggle: "align-middle text-muted-foreground",
   sortIndex:
     "ms-1 inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-0.5 text-[10px] font-bold text-primary",
   // ── Filters chrome extras ───────────────────────────────────────

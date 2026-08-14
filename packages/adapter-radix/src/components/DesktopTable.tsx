@@ -23,11 +23,12 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  ColumnGroupToggle,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   FillHandle,
-  headerGroupRow,
+  headerGroupRows,
   insertExtraRows,
   logicalAlign,
   type PinLeads,
@@ -619,6 +620,9 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
   rowStyle,
   rowHeight,
   renderRowDetail,
@@ -686,7 +690,11 @@ export function DesktopTable<TRow>({
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   const expandable = expansion !== undefined;
-  const groups = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   const summary = useSummaryCells(summaryRow, rows);
   // End-pinned actions count as a pin too: sticking them needs the wrapper to
   // be the horizontal scroll container, exactly like a pinned data column.
@@ -912,8 +920,8 @@ export function DesktopTable<TRow>({
         {...gridFocus?.getGridProps()}
       >
         <Table.Header ref={theadRef}>
-          {groups && (
-            <Table.Row>
+          {groupRows?.map((groups, rowIndex) => (
+            <Table.Row key={rowIndex}>
               {expandable && <Table.ColumnHeaderCell />}
               <When show={showReorder}>
                 <Table.ColumnHeaderCell />
@@ -925,12 +933,19 @@ export function DesktopTable<TRow>({
                   colSpan={cell.span}
                   justify="center"
                 >
+                  {onToggleColumnGroup ? (
+                    <ColumnGroupToggle
+                      cell={cell}
+                      labels={labels}
+                      onToggle={onToggleColumnGroup}
+                    />
+                  ) : null}
                   {cell.label}
                 </Table.ColumnHeaderCell>
               ))}
               {showActions && <Table.ColumnHeaderCell />}
             </Table.Row>
-          )}
+          ))}
           <Table.Row>
             {expandable && (
               <Table.ColumnHeaderCell

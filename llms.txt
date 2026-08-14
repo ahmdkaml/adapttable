@@ -55,7 +55,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 
 - [Overview](https://orwa-mahmoud.github.io/adapttable/): what AdaptTable is, in one page
 - [Get started with AdaptTable — React table for your UI kit](https://orwa-mahmoud.github.io/adapttable/getting-started/): install (npx @adapttable/cli init), providers, first table
-- [React table columns — ColumnDef, sort, pin, custom cells](https://orwa-mahmoud.github.io/adapttable/columns/): keys, headers, Cell, align, responsive, per-locale paths
+- [React table columns — ColumnDef, sort, pin, custom cells](https://orwa-mahmoud.github.io/adapttable/columns/): keys, headers, grouped/collapsible headers, Cell, align, responsive, per-locale paths
 - [React table sorting — single, multi-column, server-side](https://orwa-mahmoud.github.io/adapttable/sorting/): sortable, sortValue, multi-sort, URL codec
 - [React table filters — chips, operators, URL-synced state](https://orwa-mahmoud.github.io/adapttable/filtering/): five types, operator widgets, option sources, custom JSX
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device
@@ -70,7 +70,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table keyboard navigation — arrow keys & ARIA grid](https://orwa-mahmoud.github.io/adapttable/cell-navigation/): one tab stop, absolute aria-rowindex under virtualization, screen-reader announcements
 - [React table row grouping — single-level groupBy & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/): per-group subtotals sharing the summaryRow mapper, expand/collapse, frontend tier only
 - [React table tree data — hierarchical rows with expand/collapse](https://orwa-mahmoud.github.io/adapttable/tree-data/): getChildren or getParentId, per-level indent, mobile cards keep the hierarchy
-- [React table column management — show/hide, reorder, pin, resize](https://orwa-mahmoud.github.io/adapttable/column-management/): menu, pin, resize, layout persistence
+- [React table column management — show/hide, reorder, pin, resize](https://orwa-mahmoud.github.io/adapttable/column-management/): menu, pin, resize, collapsible groups, layout persistence
 - [React table saved views — shareable named layouts](https://orwa-mahmoud.github.io/adapttable/saved-views/): built-in menu, useSavedViews
 - [React table virtualization — 10k rows, ~24 DOM nodes](https://orwa-mahmoud.github.io/adapttable/virtualization/): row/card windowing. Measured A/B at 10,000 rows — virtualized renders 24 DOM `<tr>` vs 10,000 for a plain table (417x fewer nodes, ~half the JS heap: 169 MB vs 347 MB), and the rendered row count stays ~24 from 1k to 100k rows. Window or scroll-box mode.
 - [Client & server React table data — one TableSource API](https://orwa-mahmoud.github.io/adapttable/data-tiers/): in-memory, server query event, custom TableSource

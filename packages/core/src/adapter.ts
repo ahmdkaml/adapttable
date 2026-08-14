@@ -21,6 +21,10 @@ export {
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
 export {
+  ColumnGroupToggle,
+  type ColumnGroupToggleProps,
+} from "./columns/ColumnGroupToggle";
+export {
   type ColumnMenuChromeProps,
   type ColumnMenuLabels,
   type ColumnMenuRow,
@@ -44,7 +48,16 @@ export {
   fittedTableStyle,
 } from "./columns/columnSizing";
 export { pinnedColumnWidth } from "./columns/columnWidths";
-export { type HeaderGroupCell, headerGroupRow } from "./columns/headerGroups";
+export {
+  applyCollapsedColumnGroups,
+  COLUMN_GROUP_ID_SEP,
+  columnGroupId,
+  columnGroupPath,
+  type HeaderGroupCell,
+  headerGroupRow,
+  headerGroupRows,
+  toggleCollapsedColumnGroup,
+} from "./columns/headerGroups";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
 export {
   type PinLeads,

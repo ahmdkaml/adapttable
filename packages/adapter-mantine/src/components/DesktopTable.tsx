@@ -21,11 +21,12 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  ColumnGroupToggle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
-  headerGroupRow,
+  headerGroupRows,
   insertExtraRows,
   type PinLeads,
   PINNED_BOTTOM_PART,
@@ -779,6 +780,9 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
   rowStyle,
   rowHeight,
   renderRowDetail,
@@ -853,7 +857,11 @@ export function DesktopTable<TRow>({
   const expandable = expansion !== undefined;
   // Grouped header row over the VISIBLE columns (`null` → no extra row) and
   // the per-column footer summary cells (`undefined` → no footer).
-  const groupCells = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   const summaryCells = useSummaryCells(summaryRow, rows);
   const hasEndPin = table.columns.some(
     (c) => pinOffset?.(c.key)?.side === "end"
@@ -1175,14 +1183,14 @@ export function DesktopTable<TRow>({
         }}
       >
         <Table.Thead ref={theadRef} style={{ background: SURFACE }}>
-          {groupCells && (
-            <Table.Tr>
+          {groupRows?.map((groups, rowIndex) => (
+            <Table.Tr key={rowIndex}>
               {expandable && <Table.Th />}
               <When show={showReorder}>
                 <Table.Th />
               </When>
               {selection && <Table.Th />}
-              {groupCells.map((cell) => (
+              {groups.map((cell) => (
                 <Table.Th
                   key={cell.key}
                   colSpan={cell.span}
@@ -1192,12 +1200,19 @@ export function DesktopTable<TRow>({
                     borderBottom: `1px solid ${HAIRLINE}`,
                   }}
                 >
+                  {onToggleColumnGroup ? (
+                    <ColumnGroupToggle
+                      cell={cell}
+                      labels={labels}
+                      onToggle={onToggleColumnGroup}
+                    />
+                  ) : null}
                   {cell.label}
                 </Table.Th>
               ))}
               {showActions && <Table.Th />}
             </Table.Tr>
-          )}
+          ))}
           <Table.Tr {...table.getHeaderRowProps()}>
             {expandable && (
               <Table.Th

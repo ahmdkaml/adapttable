@@ -92,6 +92,8 @@ export const fr: Required<TableLabels> = {
   pinToBottom: "Épingler en bas",
   unpinRow: "Désépingler la ligne",
   rowSeparator: "Séparateur",
+  expandColumnGroup: "Développer le groupe de colonnes",
+  collapseColumnGroup: "Réduire le groupe de colonnes",
   moreGroups: (remaining) => `Afficher ${remaining} groupes de plus`,
   moreRowsInGroup: (remaining) =>
     `Afficher ${remaining} de plus dans ce groupe`,

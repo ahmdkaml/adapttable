@@ -160,6 +160,16 @@ describe("readColumnLayout", () => {
     expect(readColumnLayout(ps("page=2&q=foo"))).toBeUndefined();
   });
 
+  it("reads collapsed groups as a layout even when they are the only param", () => {
+    expect(readColumnLayout(ps("colGroupCollapse=People"))).toEqual({
+      hidden: [],
+      order: [],
+      pinned: {},
+      widths: {},
+      collapsedGroups: ["People"],
+    });
+  });
+
   it("reads hidden, pinned, order, and widths", () => {
     const params = ps(
       "colHide=email,team&colPin=person:start,budget:end&colOrder=person,status&colW=person:240,budget:130"
@@ -219,6 +229,19 @@ describe("writeColumnLayout", () => {
     writeColumnLayout(params, layout, prefix);
     return params.toString();
   };
+
+  it("round-trips collapsed groups through read", () => {
+    const layout: ColumnLayoutState = {
+      hidden: [],
+      order: [],
+      pinned: {},
+      widths: {},
+      collapsedGroups: ["Finance\u001fQ1"],
+    };
+    const params = ps("");
+    writeColumnLayout(params, layout);
+    expect(readColumnLayout(params)).toEqual(layout);
+  });
 
   it("round-trips a full layout through read", () => {
     const layout: ColumnLayoutState = {

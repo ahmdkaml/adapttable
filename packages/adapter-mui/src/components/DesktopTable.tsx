@@ -21,12 +21,13 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  ColumnGroupToggle,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
-  headerGroupRow,
+  headerGroupRows,
   insertExtraRows,
   type PinLeads,
   PINNED_BOTTOM_PART,
@@ -633,6 +634,9 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
   rowStyle,
   rowHeight,
   renderRowDetail,
@@ -699,7 +703,11 @@ export function DesktopTable<TRow>({
   const [theadRef, headerHeight] = useOffsetHeight();
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
-  const groupRow = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   // Footer summary cells for the CURRENT rows, keyed by column key.
   const summaryCells = useSummaryCells(summaryRow, rows);
   // Expansion is active only when BOTH halves arrived (the chrome supplies
@@ -938,26 +946,33 @@ export function DesktopTable<TRow>({
         style={fittedTableStyle(fitColumns)}
       >
         <TableHead ref={theadRef}>
-          {groupRow && (
-            // Decorative group row. It deliberately skips the sticky `headSx`
-            // treatment: sticking both header rows at the same `top` would
+          {groupRows?.map((groups, rowIndex) => (
+            // Decorative group rows. They deliberately skip the sticky `headSx`
+            // treatment: sticking every header row at the same `top` would
             // overlap them, so only the sortable header row pins.
-            <TableRow>
+            <TableRow key={rowIndex}>
               {expandActive && <TableCell padding="checkbox" />}
               <ExtraCheckboxCell show={showReorder} />
               {selection && <TableCell padding="checkbox" />}
-              {groupRow.map((cell) => (
+              {groups.map((cell) => (
                 <TableCell
                   key={cell.key}
                   colSpan={cell.span}
                   sx={{ textAlign: "center", fontWeight: 600 }}
                 >
+                  {onToggleColumnGroup ? (
+                    <ColumnGroupToggle
+                      cell={cell}
+                      labels={labels}
+                      onToggle={onToggleColumnGroup}
+                    />
+                  ) : null}
                   {cell.label}
                 </TableCell>
               ))}
               {showActions && <TableCell />}
             </TableRow>
-          )}
+          ))}
           <TableRow>
             {expandActive && (
               <TableCell

@@ -19,18 +19,19 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Columns & layout
 
-| Prop                    | Type                                | Default | Description                                                                                        |
-| ----------------------- | ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| `columns`               | `ColumnDef<TRow>[]`                 | —       | Column definitions (required) — see [ColumnDef](#columndef).                                       |
-| `enableColumnMenu`      | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                      |
-| `resizableColumns`      | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                        |
-| `columnLayout`          | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                             |
-| `onColumnLayoutChange`  | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                   |
-| `defaultColumnLayout`   | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                   |
-| `maxHeight`             | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.   |
-| `multiSort`             | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed). |
-| `sortByOptions`         | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                               |
-| `mobileIdentityColumns` | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                             |
+| Prop                      | Type                                | Default | Description                                                                                                                                                                         |
+| ------------------------- | ----------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `columns`                 | `ColumnDef<TRow>[]`                 | —       | Column definitions (required) — see [ColumnDef](#columndef).                                                                                                                        |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                                                                                                       |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                                                                                         |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                                                                                                              |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                                                                                                    |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                                                                                                    |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; a collapsed group keeps its first leaf as the summary column. State lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.                                                                                    |
+| `multiSort`               | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed).                                                                                  |
+| `sortByOptions`           | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                                                                                                                |
+| `mobileIdentityColumns`   | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                                                                                                              |
 
 ### Filters & search
 
@@ -126,31 +127,31 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop            | Type                                                | Default       | Description                                                                                                                                             |
-| --------------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                           |
-| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                   |
-| `group`         | `string`                                            | —             | Presentational header group: contiguous same-group columns render under one spanning header cell.                                                       |
-| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path. |
-| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                  |
-| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                            |
-| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                |
-| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                             |
-| `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                  |
-| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                       |
-| `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                  |
-| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                         |
-| `colSpan`       | `number \| ((row: TRow) => number)`                 | `1`           | Columns this cell covers. Covered neighbours are omitted. See [row and column spanning](./row-spanning.md).                                             |
-| `rowSpan`       | `number \| ((row: TRow) => number)`                 | `1`           | Rows this cell covers. Stays inside one tbody.                                                                                                          |
-| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                |
-| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                         |
-| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                     |
-| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                            |
-| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                           |
-| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                           |
-| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                      |
-| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                             |
-| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                           |
+| Prop            | Type                                                | Default       | Description                                                                                                                                                 |
+| --------------- | --------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`           | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                               |
+| `header`        | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                       |
+| `group`         | `string \| readonly string[]`                       | —             | Presentational header group: a string is one level; a path stacks one header row per depth. Contiguous same-path columns merge; a reorder splits the group. |
+| `i18n`          | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path.     |
+| `filter`        | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                      |
+| `Cell`          | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                                |
+| `accessor`      | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                    |
+| `sortValue`     | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                                 |
+| `exportValue`   | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                      |
+| `formatValue`   | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                           |
+| `parseValue`    | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                      |
+| `sortable`      | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                             |
+| `colSpan`       | `number \| ((row: TRow) => number)`                 | `1`           | Columns this cell covers. Covered neighbours are omitted. See [row and column spanning](./row-spanning.md).                                                 |
+| `rowSpan`       | `number \| ((row: TRow) => number)`                 | `1`           | Rows this cell covers. Stays inside one tbody.                                                                                                              |
+| `width`         | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                    |
+| `align`         | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                             |
+| `mobileLabel`   | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                         |
+| `hideOnMobile`  | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                                |
+| `hideOnDesktop` | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                               |
+| `editable`      | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                               |
+| `editor`        | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                          |
+| `editValue`     | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                                 |
+| `meta`          | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                               |
 
 ## FilterDef
 
@@ -238,8 +239,9 @@ All from `@adapttable/core`.
 - `useChromeBodyData(chrome, props): ChromeBodyData<TRow>` — body data-flow
   wiring: window virtualization + the infinite-scroll sentinel.
 - `useColumnLayout(options): UseColumnLayoutResult<TRow>` — headless
-  visibility / order / pinning / width state (`visibleColumns`,
-  `toggleVisible`, `move`, `setPinned`, `setWidth`, `pinOffset`, `reset`).
+  visibility / order / pinning / width / collapsed-group state
+  (`visibleColumns`, `toggleVisible`, `move`, `setPinned`, `setWidth`,
+  `pinOffset`, `reset`, `toggleColumnGroup`).
 - `useSearchInput(...)` — debounced search-input state behind
   `getSearchInputProps`.
 - `useSelection(options): SelectionState` — page-scoped selection with
@@ -665,7 +667,10 @@ by its tag: `ar`, `de`, `en`, `es`, `fa`, `fr`, `he`, `hi`, `it`, `ja`, `ko`,
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
-`computePagination`, `headerGroupRow`, `columnMenuRows` +
+`computePagination`, `headerGroupRow` / `headerGroupRows`,
+`columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP`,
+`applyCollapsedColumnGroups` / `toggleCollapsedColumnGroup`,
+`columnMenuRows` +
 `columnRowDragProps` / `columnDropProps` / `columnReorderKeyProps` /
 `columnResizeHandleProps` (RTL-aware), `pinnedCellStyle` / `edgePinStyle` /
 `PIN_Z`, `tableMinWidth` / `resolveColumnWidth` / `parsePxWidth`,
@@ -693,7 +698,7 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                      |
 | `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                             |
 | `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                  |
-| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths }` — the column-layout shape.                                                                    |
+| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                  |
 | `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                    |
 | `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                  |
 | `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                 |
@@ -804,7 +809,8 @@ column's pin, `pinActionLabel` labels the action, and
 reorder/resize/pin rows. Toolbar glue: `SearchInputState` (debounced
 search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
-`rowEditingSignature`, `HeaderGroupCell` and `headerGroupRow`. Shared
+`rowEditingSignature`, `HeaderGroupCell`, `headerGroupRow` /
+`headerGroupRows`, `ColumnGroupToggle` / `ColumnGroupToggleProps`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
 `resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
 cell's props put it inside the selected range, for a kit applying its own fill),

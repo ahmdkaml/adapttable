@@ -66,6 +66,12 @@ export interface SharedTableRenderProps<TRow> {
   onRowClick?: (row: TRow) => void;
   /** Conditional per-row class — see `BaseDataTableProps.rowClassName`. */
   rowClassName?: (row: TRow, index: number) => string | undefined;
+  /** When true, group headers render a collapse toggle. */
+  collapsibleColumnGroups?: boolean;
+  /** Collapsed column-group ids from the layout. */
+  collapsedColumnGroups?: readonly string[];
+  /** Toggle one column group. No-op unless collapse is armed. */
+  onToggleColumnGroup?: (id: string) => void;
   /** Conditional per-row style — see `BaseDataTableProps.rowStyle`. */
   rowStyle?: RowStyle<TRow>;
   /** Per-row height — see `BaseDataTableProps.rowHeight`. */

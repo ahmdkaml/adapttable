@@ -31,6 +31,7 @@ function layout(
     setWidth: () => undefined,
     pinOffset: () => undefined,
     reset: () => undefined,
+    toggleColumnGroup: () => undefined,
   };
 }
 

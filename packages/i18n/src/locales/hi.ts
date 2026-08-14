@@ -92,6 +92,8 @@ export const hi: Required<TableLabels> = {
   pinToBottom: "नीचे पिन करें",
   unpinRow: "पंक्ति अनपिन करें",
   rowSeparator: "विभाजक",
+  expandColumnGroup: "स्तंभ समूह फैलाएँ",
+  collapseColumnGroup: "स्तंभ समूह समेटें",
   moreGroups: (remaining) => `${remaining} और समूह दिखाएँ`,
   moreRowsInGroup: (remaining) => `इस समूह में ${remaining} और दिखाएँ`,
   groupTotal: (label) => `${label} कुल`,

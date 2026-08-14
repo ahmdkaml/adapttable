@@ -69,10 +69,11 @@ export interface ColumnDef<TRow> {
   header?: ReactNode;
   /**
    * Presentational header group: contiguous columns sharing a `group`
-   * render under one spanning header cell. Reordering columns apart
+   * render under one spanning header cell. A string is one level; a
+   * path (`["Finance", "Q1"]`) stacks rows. Reordering columns apart
    * splits the group (adjacency-based, never lies about layout).
    */
-  group?: string;
+  group?: string | readonly string[];
   /**
    * Per-locale data paths for this column's VALUE. The active table
    * `locale` picks the path (exact tag first, then its primary subtag, then
@@ -511,6 +512,10 @@ export interface TableLabels {
   unpinRow?: string;
   /** Accessible name of a decorative separator row. */
   rowSeparator?: string;
+  /** Expand a collapsed column group back to its leaves. */
+  expandColumnGroup?: string;
+  /** Collapse a column group to its summary column. */
+  collapseColumnGroup?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges
    * and how many cells it covers, return what a screen reader should hear when

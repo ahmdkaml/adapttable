@@ -28,6 +28,7 @@ function fakeLayout(
     setWidth: vi.fn(),
     pinOffset: () => undefined,
     reset: vi.fn(),
+    toggleColumnGroup: vi.fn(),
     ...overrides,
   };
 }

@@ -90,6 +90,8 @@ export const ja: Required<TableLabels> = {
   pinToBottom: "下に固定",
   unpinRow: "行の固定を解除",
   rowSeparator: "区切り",
+  expandColumnGroup: "列グループを展開",
+  collapseColumnGroup: "列グループを折りたたむ",
   moreGroups: (remaining) => `さらに ${remaining} グループを表示`,
   moreRowsInGroup: (remaining) => `このグループでさらに ${remaining} 件`,
   groupTotal: (label) => `${label} 合計`,

@@ -23,12 +23,13 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  ColumnGroupToggle,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   FillHandle,
   fittedTableStyle,
-  headerGroupRow,
+  headerGroupRows,
   insertExtraRows,
   logicalAlign,
   type PinLeads,
@@ -807,6 +808,9 @@ export function DesktopTable<TRow>({
   prefetch,
   onRowClick,
   rowClassName,
+  collapsibleColumnGroups,
+  collapsedColumnGroups,
+  onToggleColumnGroup,
   rowStyle,
   rowHeight,
   renderRowDetail,
@@ -874,7 +878,11 @@ export function DesktopTable<TRow>({
   });
   const [theadRef, headerHeight] = useOffsetHeight();
   const expandable = expansion !== undefined;
-  const groups = headerGroupRow(columns);
+  const groupRows = headerGroupRows(
+    columns,
+    collapsedColumnGroups,
+    collapsibleColumnGroups
+  );
   const summary = useSummaryCells(summaryRow, rows);
   // Stick the header *cells* (a `<thead>` does not pin against the document
   // scroller) and avoid `<TableContainer>`, whose `overflow-x` would trap
@@ -1079,8 +1087,8 @@ export function DesktopTable<TRow>({
         style={fittedTableStyle(fitColumns)}
       >
         <Table.Header ref={theadRef}>
-          {groups && (
-            <Table.Row>
+          {groupRows?.map((groups, rowIndex) => (
+            <Table.Row key={rowIndex}>
               {expandable && <Table.ColumnHeader px={1} />}
               <When show={showReorder}>
                 <Table.ColumnHeader px={1} />
@@ -1094,12 +1102,19 @@ export function DesktopTable<TRow>({
                   fontWeight="semibold"
                   textTransform="none"
                 >
+                  {onToggleColumnGroup ? (
+                    <ColumnGroupToggle
+                      cell={cell}
+                      labels={labels}
+                      onToggle={onToggleColumnGroup}
+                    />
+                  ) : null}
                   {cell.label}
                 </Table.ColumnHeader>
               ))}
               {showActions && <Table.ColumnHeader />}
             </Table.Row>
-          )}
+          ))}
           <Table.Row>
             {expandable && (
               <Table.ColumnHeader

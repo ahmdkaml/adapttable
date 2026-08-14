@@ -91,6 +91,8 @@ export const pt: Required<TableLabels> = {
   pinToBottom: "Fixar no fundo",
   unpinRow: "Desafixar linha",
   rowSeparator: "Separador",
+  expandColumnGroup: "Expandir grupo de colunas",
+  collapseColumnGroup: "Recolher grupo de colunas",
   moreGroups: (remaining) => `Mostrar mais ${remaining} grupos`,
   moreRowsInGroup: (remaining) => `Mostrar mais ${remaining} neste grupo`,
   groupTotal: (label) => `Total ${label}`,

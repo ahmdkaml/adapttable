@@ -48,6 +48,7 @@ const TREE_DEFAULTS = { limit: 30 };
 export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
+  collapsibleColumnGroups?: boolean;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
   onRowReorder?: (from: number, to: number, row: Person) => void;
   /** `null` forces grouping off even if the URL carries a groupBy. */
@@ -418,6 +419,7 @@ export function DemoBody({
   const columns: DemoColumnProps = {
     columnLayout: layout,
     onColumnLayoutChange,
+    collapsibleColumnGroups: true,
   };
 
   return mode === "backend" ? (

@@ -88,19 +88,20 @@ export function People() {
 - Pinning is logical (inline start/end), so a "left" pin sticks to the correct edge under `dir="rtl"`. It needs a horizontal scroll context to visibly stick — set `maxHeight`, or let the table exceed its container width.
 - `resizableColumns` adds a handle to every header: drag it, or focus it and press ←/→ (16 px per step, 60 px minimum). Direction-aware, so it widens the right way in RTL.
 - The row-actions column is first-class under the reserved key `"actions"` (`ACTIONS_COLUMN_KEY`): the menu lists it with a visibility toggle and an end-pin toggle — `hidden: ["actions"]` hides it, `pinned: { actions: "right" }` pins it to the end on its own, no data-column pin required. It never reorders or resizes; it always trails.
-- The layout state is `{ hidden, order, pinned, widths }` (`ColumnLayoutState`), keyed by column key. Uncontrolled by default; seed it with `defaultColumnLayout`, or own it with `columnLayout` + `onColumnLayoutChange` — the same controlled/uncontrolled split as a form input.
-- Two ready-made persistence hooks feed the controlled mode: `useColumnLayoutUrlState({ urlKey })` keeps the layout in the query string (`colHide` / `colPin` / `colOrder` / `colW` — shareable links), and `useColumnLayoutStorageState({ storageKey })` keeps it in localStorage (user preference).
+- The layout state is `{ hidden, order, pinned, widths, collapsedGroups? }` (`ColumnLayoutState`), keyed by column key. Uncontrolled by default; seed it with `defaultColumnLayout`, or own it with `columnLayout` + `onColumnLayoutChange` — the same controlled/uncontrolled split as a form input. `collapsedGroups` is omitted when every group is open.
+- Two ready-made persistence hooks feed the controlled mode: `useColumnLayoutUrlState({ urlKey })` keeps the layout in the query string (`colHide` / `colPin` / `colOrder` / `colW` / `colGroupCollapse` — shareable links), and `useColumnLayoutStorageState({ storageKey })` keeps it in localStorage (user preference).
 
 ## Options
 
-| Prop                   | Type                                | Default | Description                                                              |
-| ---------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `enableColumnMenu`     | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
-| `resizableColumns`     | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
-| `defaultColumnLayout`  | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
-| `columnLayout`         | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
-| `onColumnLayoutChange` | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
-| `maxHeight`            | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
+| Prop                      | Type                                | Default | Description                                                              |
+| ------------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; state is `collapsedGroups`.        |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
 
 ## Notes
 

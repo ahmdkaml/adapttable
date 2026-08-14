@@ -547,6 +547,13 @@ export interface BaseDataTableProps<TRow> {
   /** Initial column layout for the uncontrolled mode. */
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
+   * Column-group headers gain a collapse toggle. A collapsed group keeps
+   * its first leaf as the summary column. State lives on
+   * `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
+   * Omit and group headers stay static.
+   */
+  collapsibleColumnGroups?: boolean;
+  /**
    * Fixed-height scroll box (px). Enables sideways scrolling + column pinning;
    * the header and pinned columns pin within this box. Omit for page scroll.
    */

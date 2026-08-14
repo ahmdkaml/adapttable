@@ -493,7 +493,7 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.timeline],
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -520,7 +520,7 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.budget],
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -652,7 +652,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.timeline],
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -673,7 +673,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      group: [s.groupDelivery, s.budget],
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}

@@ -180,6 +180,7 @@ const TAILWIND: DataTableClassNames = {
   headerGroupRow: "border-b border-gray-200 dark:border-zinc-700",
   headerGroupCell:
     "border-b border-gray-200 bg-gray-50/60 px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+  columnGroupToggle: "align-middle text-gray-400 dark:text-zinc-500",
   groupRow:
     "border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/50",
   groupCell: "px-3 py-2 font-medium",
