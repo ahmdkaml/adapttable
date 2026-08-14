@@ -15,6 +15,7 @@ import {
   computed,
   resolveFilterDefs,
 } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -130,6 +131,7 @@ interface Strings {
   allocations: string;
   timeline: string;
   load: string;
+  trend: string;
   allocationFilter: string;
   budgetFilter: string;
   edit: string;
@@ -161,6 +163,7 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "Allocations",
     timeline: "Timeline",
     load: "Load",
+    trend: "Trend",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
     edit: "Edit",
@@ -186,6 +189,7 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "التخصيصات",
     timeline: "الجدول الزمني",
     load: "الحمل",
+    trend: "الاتجاه",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
     edit: "تعديل",
@@ -440,6 +444,15 @@ export function makeColumns(
       ),
       mobileLabel: s.person,
     },
+    sparklineColumn({
+      key: "trend",
+      header: s.trend,
+      values: loadHistory,
+      kind: "area",
+      width: 88,
+      height: 28,
+      column: { width: 96, mobileLabel: s.trend },
+    }),
     {
       key: "email",
       header: s.email,
@@ -597,6 +610,15 @@ export function makeWideColumns(
         </span>
       ),
     },
+    sparklineColumn({
+      key: "trend",
+      header: s.trend,
+      values: loadHistory,
+      kind: "area",
+      width: 88,
+      height: 28,
+      column: { width: 96 },
+    }),
     {
       key: "role",
       header: s.role,
@@ -776,6 +798,16 @@ export function budget(row: Person): number {
 
 export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
+}
+
+/** Eight weeks of load, derived so the sparkline needs no second seed. */
+export function loadHistory(row: Person): number[] {
+  const base = utilization(row);
+  const seed = Number(row.id) || 1;
+  return Array.from({ length: 8 }, (_, week) => {
+    const wobble = ((seed * (week + 3)) % 17) - 8;
+    return Math.max(0, Math.min(100, base + wobble));
+  });
 }
 
 export function startDate(row: Person): Date {

@@ -140,6 +140,7 @@ export default defineConfig({
           label: "Features",
           items: [
             { label: "Columns", slug: "columns" },
+            { label: "Sparkline columns", slug: "sparkline" },
             { label: "Sorting", slug: "sorting" },
             { label: "Filtering", slug: "filtering" },
             { label: "Pagination", slug: "pagination" },

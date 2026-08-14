@@ -1,5 +1,6 @@
 import type { ColumnLayoutState } from "@adapttable/core";
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -1064,5 +1065,27 @@ describe("custom header and footer", () => {
     expect(screen.getByRole("button", { name: "info" })).toBeInTheDocument();
     expect(screen.getByText("Name foot")).toBeInTheDocument();
     expect(screen.getByText("Under the table")).toBeInTheDocument();
+  });
+});
+
+describe("sparkline column", () => {
+  it("renders an accessible chart from the optional entry", () => {
+    renderHarness({
+      override: {
+        columns: [
+          sparklineColumn({
+            key: "trend",
+            header: "Trend",
+            values: () => [1, 4, 2],
+            kind: "bar",
+          }),
+          { key: "name", header: "Name", accessor: (r) => r.name },
+        ],
+      },
+    });
+    expect(
+      screen.getAllByRole("img", { name: "3 values, min 1, max 4, last 2" })
+        .length
+    ).toBeGreaterThan(0);
   });
 });

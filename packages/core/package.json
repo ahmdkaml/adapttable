@@ -68,6 +68,16 @@
         "default": "./dist/xlsx.cjs"
       }
     },
+    "./sparkline": {
+      "import": {
+        "types": "./dist/sparkline.d.ts",
+        "default": "./dist/sparkline.js"
+      },
+      "require": {
+        "types": "./dist/sparkline.d.cts",
+        "default": "./dist/sparkline.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

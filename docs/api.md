@@ -438,6 +438,15 @@ dependency, and a separate entry so a CSV export never ships it —
 with `buildTableXlsx` underneath for building a workbook by hand. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
+**Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /
+`sparklineColumn` so a cell can draw a bar, line or area chart without a
+chart library and without pulling the mark into the base bundle.
+`SparklineProps` / `SparklineKind` / `SparklineColumnSpec` type the
+surface. `finiteSparklineValues` drops non-finite points, `sparklineSummary`
+is the default accessible label, and `sparklineExportValue` writes the
+series as text so CSV and xlsx never get an SVG. See
+[sparkline columns](./sparkline.md).
+
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
 See [cell editing](./cell-editing.md).

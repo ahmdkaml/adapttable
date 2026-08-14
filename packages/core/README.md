@@ -47,6 +47,7 @@ control via prop-getters.
 - **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
 - **Tree data** — `getChildren` / `getParentId`, hierarchical rows with their own expansion state.
 - **Column management** — show/hide, reorder, pin (sticky) and resize state.
+- **Sparkline columns** — `@adapttable/core/sparkline`; bar, line and area as inline SVG.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
 - **CSV export** (`exportCsv`) — current page, the full filtered set, or the
   selected rows; choose the columns, or hand the whole thing to your backend.
@@ -84,7 +85,7 @@ One dataset, re-rendered by each adapter — these clips are the cross-kit tour.
 
 - **Data** — [client vs server tiers](https://orwa-mahmoud.github.io/adapttable/data-tiers/) · [pagination & infinite scroll](https://orwa-mahmoud.github.io/adapttable/pagination/) · [URL-synced state](https://orwa-mahmoud.github.io/adapttable/url-state/)
 - **Interaction** — [filtering](https://orwa-mahmoud.github.io/adapttable/filtering/) · [sorting](https://orwa-mahmoud.github.io/adapttable/sorting/) · [selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/) · [row expansion](https://orwa-mahmoud.github.io/adapttable/row-expansion/) · [inline cell editing](https://orwa-mahmoud.github.io/adapttable/cell-editing/) · [row reordering](https://orwa-mahmoud.github.io/adapttable/row-reordering/) · [row pinning](https://orwa-mahmoud.github.io/adapttable/row-pinning/) · [row and column spanning](https://orwa-mahmoud.github.io/adapttable/row-spanning/) · [full-width and separator rows](https://orwa-mahmoud.github.io/adapttable/full-width-rows/) · [row styling and heights](https://orwa-mahmoud.github.io/adapttable/row-styling/)
-- **Columns** — [show/hide · reorder · pin · resize](https://orwa-mahmoud.github.io/adapttable/column-management/) · [row grouping & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/) · [CSV export](https://orwa-mahmoud.github.io/adapttable/customization/#csv-export)
+- **Columns** — [show/hide · reorder · pin · resize](https://orwa-mahmoud.github.io/adapttable/column-management/) · [sparkline columns](https://orwa-mahmoud.github.io/adapttable/sparkline/) · [row grouping & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/) · [CSV export](https://orwa-mahmoud.github.io/adapttable/customization/#csv-export)
 - **More** — [i18n & RTL](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/) · [virtualization](https://orwa-mahmoud.github.io/adapttable/virtualization/) · [customization](https://orwa-mahmoud.github.io/adapttable/customization/) · [API](https://orwa-mahmoud.github.io/adapttable/api/) · [FAQ](https://orwa-mahmoud.github.io/adapttable/faq/)
 
 ## License

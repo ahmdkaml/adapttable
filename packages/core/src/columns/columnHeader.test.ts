@@ -23,6 +23,13 @@ describe("columnHeaderLabel", () => {
   });
 });
 
+describe("columnHeaderController", () => {
+  it("defaults toggleSort to a no-op", () => {
+    const controller = columnHeaderController(name);
+    expect(() => controller.toggleSort()).not.toThrow();
+  });
+});
+
 describe("resolveColumnHeader", () => {
   it("returns the default label when no renderer is set", () => {
     const controller = columnHeaderController(name, { sortDir: "asc" });

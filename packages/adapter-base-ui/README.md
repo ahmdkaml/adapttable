@@ -70,6 +70,7 @@ Behavior lives in `@adapttable/core`; this package only renders Base UI primitiv
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
 - **Tree data** (`getChildren` / `getParentId`) — hierarchical rows with expand/collapse, on desktop and on cards.
 - **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Sparkline columns** (`@adapttable/core/sparkline`) — bar, line and area as inline SVG. The base bundle never pays for it.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
 - **CSV export** (`exportCsv`) — current page, the full filtered set, or the
   selected rows; choose the columns, or hand the whole thing to your backend.
