@@ -20,7 +20,7 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
-import { type ReactElement, type ReactNode } from "react";
+import { type ReactElement, type ReactNode, useId } from "react";
 
 import type { DataTableClassNames } from "../types";
 
@@ -53,25 +53,30 @@ interface GroupFieldProps {
   children: ReactNode;
 }
 
-/** `<fieldset>` + `<legend>` wrapper for multi-control fields. */
+/** Labelled stack for multi-control fields — no fieldset box. */
 function GroupField({
   caption,
   classNames,
   children,
 }: Readonly<GroupFieldProps>) {
+  const labelId = useId();
   return (
-    <fieldset
+    <div
+      role="group"
+      aria-labelledby={labelId}
       data-adapttable-part={FIELD_PART}
       className={classNames.filterField}
+      style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}
     >
-      <legend
+      <div
+        id={labelId}
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
       >
         {caption}
-      </legend>
+      </div>
       {children}
-    </fieldset>
+    </div>
   );
 }
 
@@ -84,16 +89,7 @@ function TextField<TRow>({
   const { label, ops, opLabelKeys, op, value, needsValue, write } =
     useTextFilterWidget(def, source);
   return (
-    <fieldset
-      data-adapttable-part={FIELD_PART}
-      className={classNames.filterField}
-    >
-      <legend
-        data-adapttable-part={LABEL_PART}
-        className={classNames.filterLabel}
-      >
-        {label}
-      </legend>
+    <GroupField caption={label} classNames={classNames}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <select
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
@@ -124,7 +120,7 @@ function TextField<TRow>({
           />
         )}
       </div>
-    </fieldset>
+    </GroupField>
   );
 }
 
@@ -215,6 +211,7 @@ function MultiSelectField<TRow>({
       <div
         data-adapttable-part="filter-checkbox-group"
         className={classNames.filterCheckboxGroup}
+        style={{ display: "flex", flexDirection: "column", gap: 6 }}
       >
         {loading ? (
           <span

@@ -25,6 +25,7 @@ const TITLES = {
   "concepts.md": "AdaptTable concepts — headless core & source",
   "columns.md": "React table columns — ColumnDef & custom cells",
   "sparkline.md": "React table sparkline columns — bar, line, area",
+  "export-pdf.md": "React table PDF export and print layout",
   "sorting.md": "React table sorting — multi-column, URL-synced",
   "filtering.md": "React table filtering — chips & URL-synced",
   "pagination.md": "React table pagination — paged, infinite, auto",
@@ -75,6 +76,8 @@ const DESCRIPTIONS = {
     "Define React table columns once with ColumnDef — accessors, sorting, per-column filters, alignment, pinning and custom cells — same API across every UI kit.",
   "sparkline.md":
     "Optional React table sparkline columns — bar, line and area as inline SVG from @adapttable/core/sparkline, so the base bundle never pays for charts.",
+  "export-pdf.md":
+    "Optional React table PDF export and print layout from @adapttable/core/pdf — pdfWriter on the export button, printTable for the browser dialog, so the base bundle never pays for a PDF writer.",
   "sorting.md":
     "React table sorting with single or multi-column sort, custom comparators, server-side sortBy and accessible aria-sort headers — URL-synced when you want it.",
   "filtering.md":

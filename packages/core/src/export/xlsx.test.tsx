@@ -6,6 +6,7 @@
  * type. The second is where hand-rolled exporters usually fail — a postal code
  * arriving as a number is a data-loss bug the user cannot undo.
  */
+
 import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
@@ -78,6 +79,7 @@ describe("buildTableXlsx", () => {
       "_rels/.rels",
       "xl/workbook.xml",
       "xl/_rels/workbook.xml.rels",
+      "xl/styles.xml",
       "xl/worksheets/sheet1.xml",
     ]);
   });
@@ -93,11 +95,17 @@ describe("buildTableXlsx", () => {
       'Target="worksheets/sheet1.xml"'
     );
     expect(files.get("xl/workbook.xml")).toContain('r:id="rId1"');
+    expect(files.get("[Content_Types].xml")).toContain(
+      'PartName="/xl/styles.xml"'
+    );
+    expect(files.get("xl/_rels/workbook.xml.rels")).toContain(
+      'Target="styles.xml"'
+    );
   });
 
   it("writes a header row from the column headers", () => {
     expect(sheetOf()).toContain(
-      '<row r="1"><c r="A1" t="inlineStr"><is><t xml:space="preserve">Name</t></is></c>'
+      '<row r="1"><c r="A1" s="1" t="inlineStr"><is><t xml:space="preserve">Name</t></is></c>'
     );
   });
 
@@ -173,6 +181,207 @@ describe("buildTableXlsx", () => {
     expect(files.get("xl/workbook.xml")).toContain('name="Q1 Q2  draft"');
   });
 
+  it("writes a date-and-time as an Excel serial with the datetime style", () => {
+    const due = new Date("2026-08-15T13:45:00.000Z");
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ due }],
+        columns: [
+          {
+            key: "due",
+            header: "Due",
+            exportValue: (row: { due: Date }) => row.due,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    const serial = (due.getTime() - Date.UTC(1899, 11, 30)) / 86_400_000;
+    expect(sheet).toContain(`<c r="A2" s="3"><v>${String(serial)}</v></c>`);
+  });
+
+  it("writes a Date as an Excel serial with a date style", () => {
+    const due = new Date("2026-08-15T00:00:00.000Z");
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ name: "Ada", age: 1, zip: "", active: true, due }],
+        columns: [
+          {
+            key: "due",
+            header: "Due",
+            exportValue: (row: { due: Date }) => row.due,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    const serial = (due.getTime() - Date.UTC(1899, 11, 30)) / 86_400_000;
+    expect(sheet).toContain(`<c r="A2" s="2"><v>${String(serial)}</v></c>`);
+  });
+
+  it("types a Date the accessor returned, without exportValue", () => {
+    const due = new Date("2026-08-15T00:00:00.000Z");
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ due }],
+        columns: [
+          {
+            key: "when",
+            header: "When",
+            exportValue: (row: { due: Date }) => row.due,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    const serial = (due.getTime() - Date.UTC(1899, 11, 30)) / 86_400_000;
+    expect(sheet).toContain(`<c r="A2" s="2"><v>${String(serial)}</v></c>`);
+  });
+
+  it("writes a local midnight Date as a day, not a clock time", () => {
+    const due = new Date(2026, 7, 15);
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ due }],
+        columns: [
+          {
+            key: "due",
+            header: "Due",
+            exportValue: (row: { due: Date }) => row.due,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('s="2"');
+    expect(sheet).not.toContain('s="3"');
+  });
+
+  it("writes an invalid Date as an empty cell, not a NaN serial", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ due: new Date(Number.NaN) }],
+        columns: [
+          {
+            key: "due",
+            header: "Due",
+            exportValue: (row: { due: Date }) => row.due,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('<c r="A2"/>');
+    expect(sheet).not.toContain("NaN");
+  });
+
+  it("writes NaN and Infinity as empty cells, not numbers a sheet would sum", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: [{ n: Number.NaN }, { n: Number.POSITIVE_INFINITY }],
+        columns: [
+          {
+            key: "n",
+            header: "N",
+            exportValue: (row: { n: number }) => row.n,
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('<c r="A2"/>');
+    expect(sheet).toContain('<c r="A3"/>');
+    expect(sheet).not.toContain("Infinity");
+    expect(sheet).not.toContain("NaN");
+  });
+
+  it("writes a leading-equals string as text, never a formula element", () => {
+    const sheet = sheetOf(
+      [{ name: "=CMD()", age: 1, zip: "", active: false }],
+      [{ key: "name", header: "Name", accessor: (row) => row.name }]
+    );
+    expect(sheet).toContain("=CMD()");
+    expect(sheet).not.toContain("<f>");
+  });
+
+  it("freezes the header and sizes columns", () => {
+    const sheet = sheetOf();
+    expect(sheet).toContain('state="frozen"');
+    expect(sheet).toContain("<cols>");
+    expect(sheet).toContain('customWidth="1"');
+  });
+
+  it("ships date formats and a header fill in the stylesheet", () => {
+    const styles = unzip(buildTableXlsx({ rows: ROWS, columns: COLUMNS })).get(
+      "xl/styles.xml"
+    );
+    expect(styles).toContain('formatCode="yyyy-mm-dd"');
+    expect(styles).toContain('formatCode="yyyy-mm-dd hh:mm"');
+    expect(styles).toContain('patternType="solid"');
+    expect(styles).toContain('fillId="2"');
+    expect(styles).toContain('applyFill="1"');
+  });
+
+  it("records the deepest outline level on the sheet", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: ROWS,
+        columns: COLUMNS,
+        view: [
+          { role: "group", label: "Core", level: 0, labelKey: "name" },
+          { role: "data", row: ROWS[0]!, level: 1 },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('outlineLevelRow="1"');
+    expect(sheet).toContain('summaryBelow="0"');
+  });
+
+  it("outlines a tree row at its depth", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: ROWS,
+        columns: COLUMNS,
+        view: [
+          { role: "data", row: ROWS[0]!, level: 0 },
+          { role: "data", row: ROWS[1]!, level: 2 },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('outlineLevel="2"');
+    expect(sheet).toContain('outlineLevelRow="2"');
+  });
+
+  it("outlines group leaves and bolds headers and totals", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: ROWS,
+        columns: COLUMNS,
+        view: [
+          { role: "group", label: "Core", level: 0, labelKey: "name" },
+          { role: "data", row: ROWS[0]!, level: 1 },
+          {
+            role: "aggregate",
+            label: "Core total",
+            level: 0,
+            labelKey: "name",
+            values: { age: 36 },
+          },
+        ],
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain('outlineLevel="1"');
+    expect(sheet).toContain("Core");
+    expect(sheet).toContain("Core total");
+    expect(sheet).toContain('s="1"');
+    expect(sheet).toContain("<v>36</v>");
+  });
+
+  it("appends a grand-total row from summary values", () => {
+    const sheet = unzip(
+      buildTableXlsx({
+        rows: ROWS,
+        columns: COLUMNS,
+        summary: { age: 81 },
+      })
+    ).get("xl/worksheets/sheet1.xml");
+    expect(sheet).toContain("<v>81</v>");
+  });
+
   it("exports the same bytes for the same table twice", () => {
     expect(buildTableXlsx({ rows: ROWS, columns: COLUMNS })).toEqual(
       buildTableXlsx({ rows: ROWS, columns: COLUMNS })
@@ -237,5 +446,99 @@ describe("xlsxWriter", () => {
     expect(part).toBeInstanceOf(Uint8Array);
     const bytes = part instanceof Uint8Array ? part : new Uint8Array();
     expect(unzip(bytes).get("xl/workbook.xml")).toContain('name="People"');
+  });
+});
+
+/**
+ * One workbook carrying every part of the feature at once — styles, a frozen
+ * header, outline levels, typed dates and a group total — so a regression in
+ * how they combine shows up here even when each part still passes alone.
+ */
+describe("a complete workbook", () => {
+  it("carries styling, freeze, outline, typed cells and totals together", () => {
+    const joined = new Date(2026, 7, 15);
+    const due = new Date("2026-08-15T13:45:00.000Z");
+    const ada = {
+      name: "Ada",
+      age: 36,
+      joined,
+      active: true,
+      budget: 10,
+    };
+    const grace = {
+      name: "Grace",
+      age: 45,
+      joined: due,
+      active: false,
+      budget: 20,
+    };
+    const bytes = buildTableXlsx({
+      rows: [ada, grace],
+      columns: [
+        {
+          key: "name",
+          header: "Name",
+          accessor: (row: typeof ada) => row.name,
+          width: 160,
+        },
+        {
+          key: "age",
+          header: "Age",
+          accessor: (row: typeof ada) => row.age,
+          width: 80,
+        },
+        {
+          key: "joined",
+          header: "Joined",
+          exportValue: (row: typeof ada) => row.joined,
+          width: 140,
+        },
+        {
+          key: "active",
+          header: "Active",
+          accessor: (row: typeof ada) => row.active,
+        },
+        {
+          key: "budget",
+          header: "Budget",
+          accessor: (row: typeof ada) => row.budget,
+        },
+      ],
+      sheetName: "People",
+      view: [
+        {
+          role: "group",
+          label: "Core",
+          level: 0,
+          labelKey: "name",
+          values: { budget: 30 },
+        },
+        { role: "data", row: ada, level: 1 },
+        { role: "data", row: grace, level: 1 },
+        {
+          role: "aggregate",
+          label: "Core total",
+          level: 0,
+          labelKey: "name",
+          values: { budget: 30 },
+        },
+      ],
+      summary: { name: "All", budget: 30 },
+    });
+    const files = unzip(bytes);
+    const sheet = files.get("xl/worksheets/sheet1.xml") ?? "";
+    const styles = files.get("xl/styles.xml") ?? "";
+    const workbook = files.get("xl/workbook.xml") ?? "";
+    expect(workbook).toContain('name="People"');
+    expect(styles).toContain('patternType="solid"');
+    expect(styles).toContain("yyyy-mm-dd");
+    expect(sheet).toContain('state="frozen"');
+    expect(sheet).toContain('outlineLevel="1"');
+    expect(sheet).toContain("Core total");
+    expect(sheet).toContain("<v>30</v>");
+    expect(sheet).toContain('s="2"');
+    expect(sheet).toContain('s="3"');
+    expect(sheet).toContain('t="b"');
+    expect(bytes.byteLength).toBeGreaterThan(1000);
   });
 });

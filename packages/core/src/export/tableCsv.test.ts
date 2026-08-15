@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TableSource } from "../source/TableSource";
@@ -126,6 +127,145 @@ describe("buildTableCsv", () => {
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('scope "all" is only supported on the frontend')
     );
+  });
+
+  it("writes group headers when the chrome view is passed in", () => {
+    const csv = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      context: {
+        getRowId: (row) => row.id,
+        grouping: {
+          entries: [
+            {
+              kind: "group",
+              key: "g",
+              value: "Core",
+              label: "Core",
+              level: 0,
+              groupBy: "name",
+              path: ["Core"],
+              leafRows: PAGE,
+              leafIds: ["1", "2"],
+              collapsed: false,
+            },
+            {
+              kind: "row",
+              key: "1",
+              row: PAGE[0]!,
+              index: 0,
+              groupKey: "g",
+            },
+          ],
+        },
+      },
+    });
+    expect(csv).toContain("Core");
+    expect(csv).toContain("Ada");
+  });
+
+  it("keeps a collapsed header on the page and unfolds it for all / selected", () => {
+    const collapsed = {
+      grouping: {
+        entries: [
+          {
+            kind: "group" as const,
+            key: "g",
+            value: "Core",
+            label: "Core",
+            level: 0,
+            groupBy: "name",
+            path: ["Core"],
+            leafRows: PAGE,
+            leafIds: ["1", "2"],
+            collapsed: true,
+          },
+        ],
+      },
+      getRowId: (row: Person) => row.id,
+    };
+    const page = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      context: collapsed,
+    });
+    expect(page).toContain("Core");
+    expect(page).not.toContain("Ada");
+
+    const all = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      scope: "all",
+      context: collapsed,
+    });
+    expect(all).toContain("Ada");
+    expect(all).toContain("Grace");
+
+    const selected = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      scope: "selected",
+      context: {
+        ...collapsed,
+        selectedIds: new Set(["1"]),
+      },
+    });
+    expect(selected).toContain("Ada");
+    expect(selected).not.toContain("Grace");
+  });
+
+  it("ignores grouping when the export is a highlighted rectangle", () => {
+    const csv = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      scope: "range",
+      context: {
+        getRowId: (row) => row.id,
+        range: {
+          anchor: { row: 0, col: 0 },
+          head: { row: 0, col: 0 },
+        },
+        grouping: {
+          entries: [
+            {
+              kind: "group",
+              key: "g",
+              value: "Core",
+              label: "Core",
+              level: 0,
+              groupBy: "name",
+              path: ["Core"],
+              leafRows: PAGE,
+              leafIds: ["1", "2"],
+              collapsed: false,
+            },
+            {
+              kind: "row",
+              key: "1",
+              row: PAGE[0]!,
+              index: 0,
+              groupKey: "g",
+            },
+          ],
+        },
+      },
+    });
+    expect(csv).toBe("Name\r\nAda");
+    expect(csv).not.toContain("Core");
+  });
+
+  it("appends a summary row and drops JSX totals", () => {
+    const csv = buildTableCsv({
+      source: source(PAGE, ALL),
+      columns: COLS,
+      context: {
+        summaryRow: () => ({
+          age: 121,
+          name: createElement("span", null, "Total"),
+        }),
+      },
+    });
+    expect(csv.split("\r\n").at(-1)).toBe(",121");
   });
 });
 

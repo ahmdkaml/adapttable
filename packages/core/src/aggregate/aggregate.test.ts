@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
-import { aggregate, AGGREGATE_NAMES } from "./aggregate";
+import {
+  aggregate,
+  AGGREGATE_NAMES,
+  resolveAggregateValue,
+  toAggregateNumber,
+} from "./aggregate";
 
 interface Row {
   id: string;
@@ -117,6 +122,13 @@ describe("aggregate", () => {
     expect(
       aggregate<Row>({ budget: "sum", team: "count", score: "max" })(ROWS)
     ).toEqual({ budget: 400, team: 3, score: 3 });
+  });
+
+  it("resolves a cell the same way incremental totals will", () => {
+    expect(resolveAggregateValue(ROWS[0]!, "budget", undefined)).toBe(100);
+    expect(toAggregateNumber("250")).toBe(250);
+    expect(toAggregateNumber("x")).toBeUndefined();
+    expect(toAggregateNumber(null)).toBeUndefined();
   });
 
   it("publishes its built-in names for a picker UI", () => {

@@ -82,16 +82,17 @@ export function ChecklistFilter<TRow>({
     : 0;
 
   return (
-    <fieldset
+    <div
       data-adapttable-part="filter-checklist"
       className={classNames.filterChecklist ?? classNames.filterField}
+      style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}
     >
-      <legend
+      <div
         data-adapttable-part="filter-label"
         className={classNames.filterLabel}
       >
         {filterLabel(def)}
-      </legend>
+      </div>
       <input
         type="search"
         aria-label={labels.checklistSearch}
@@ -106,6 +107,7 @@ export function ChecklistFilter<TRow>({
       <div
         data-adapttable-part="filter-checklist-actions"
         className={classNames.filterChecklistActions}
+        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
       >
         <button type="button" onClick={state.selectAllVisible}>
           {labels.selectAll}
@@ -122,8 +124,20 @@ export function ChecklistFilter<TRow>({
         }
         style={
           state.virtualize
-            ? { height: CHECKLIST_LIST_HEIGHT, overflow: "auto" }
-            : { maxHeight: CHECKLIST_LIST_HEIGHT, overflow: "auto" }
+            ? {
+                height: CHECKLIST_LIST_HEIGHT,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }
+            : {
+                maxHeight: CHECKLIST_LIST_HEIGHT,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }
         }
         onScroll={state.virtualize ? onScroll : undefined}
       >
@@ -136,6 +150,7 @@ export function ChecklistFilter<TRow>({
               key={item.value}
               data-adapttable-part="filter-checkbox"
               className={classNames.filterCheckbox}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
             >
               <input
                 type="checkbox"
@@ -159,6 +174,6 @@ export function ChecklistFilter<TRow>({
           <span>{labels.checklistNoValues}</span>
         ) : null}
       </div>
-    </fieldset>
+    </div>
   );
 }

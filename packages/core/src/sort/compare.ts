@@ -35,6 +35,76 @@ export function compareValues(a: SortableValue, b: SortableValue): number {
 }
 
 /**
+ * Compare two already-extracted sort keys the way {@link sortRows} does,
+ * including "nulls last" regardless of direction and a stable index
+ * tie-break. Incremental repositioning uses this so a patched row lands
+ * where a full re-sort would have put it.
+ *
+ * @param a - The first key and its index in the unsorted (filtered) list.
+ * @param b - The second key and its index.
+ * @param direction - Sort direction.
+ * @returns Negative if `a` belongs before `b`.
+ */
+export function compareSortEntries(
+  a: { value: SortableValue; index: number },
+  b: { value: SortableValue; index: number },
+  direction: SortDirection
+): number {
+  const aLast = sortsLast(a.value);
+  const bLast = sortsLast(b.value);
+  if (aLast || bLast) {
+    if (aLast && bLast) return a.index - b.index;
+    return aLast ? 1 : -1;
+  }
+  const cmp = compareValues(a.value, b.value);
+  if (cmp === 0) return a.index - b.index;
+  return direction === "asc" ? cmp : -cmp;
+}
+
+/**
+ * Compare one multi-sort level. `undefined` means a tie — including two
+ * unorderable values — so the caller falls through to the next level.
+ *
+ * @param a - The first key.
+ * @param b - The second key.
+ * @param direction - Sort direction for this level.
+ * @returns The ordering, or `undefined` when this level does not decide.
+ */
+export function compareSortLevel(
+  a: SortableValue,
+  b: SortableValue,
+  direction: SortDirection
+): number | undefined {
+  const cmp = compareValues(a, b);
+  if (cmp === 0) return undefined;
+  if (sortsLast(a) || sortsLast(b)) return cmp;
+  return direction === "asc" ? cmp : -cmp;
+}
+
+/**
+ * First index in a sorted list where `compare(item)` is positive — the
+ * insertion point that keeps the list ordered the way {@link sortRows} would.
+ *
+ * @typeParam T - The item type.
+ * @param items - A list already in comparator order.
+ * @param compare - Negative/zero when `item` belongs at or before the target.
+ * @returns The index to splice at.
+ */
+export function sortedInsertIndex<T>(
+  items: readonly T[],
+  compare: (item: T) => number
+): number {
+  let lo = 0;
+  let hi = items.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (compare(items[mid]!) <= 0) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/**
  * Return a new array sorted by the given value extractor and direction.
  * The sort is stable (input order is preserved for equal keys). The input
  * array is not mutated.
@@ -50,21 +120,9 @@ export function sortRows<TRow>(
   getValue: (row: TRow) => SortableValue,
   direction: SortDirection
 ): TRow[] {
-  const factor = direction === "asc" ? 1 : -1;
   return [...rows]
     .map((row, index) => ({ row, index, value: getValue(row) }))
-    .sort((x, y) => {
-      // `null` / `undefined` / `NaN` always sort last, regardless of
-      // direction — they must not be flipped to the top by a descending sort.
-      const xNull = sortsLast(x.value);
-      const yNull = sortsLast(y.value);
-      if (xNull || yNull) {
-        if (xNull && yNull) return x.index - y.index;
-        return xNull ? 1 : -1;
-      }
-      const cmp = compareValues(x.value, y.value);
-      return cmp === 0 ? x.index - y.index : cmp * factor;
-    })
+    .sort((x, y) => compareSortEntries(x, y, direction))
     .map((entry) => entry.row);
 }
 
@@ -93,15 +151,8 @@ export function sortRowsMulti<TRow>(
     }))
     .sort((x, y) => {
       for (const [i, level] of levels.entries()) {
-        const a = x.values[i]!;
-        const b = y.values[i]!;
-        // Two unorderable values (null / undefined / NaN, in any mix) tie
-        // at this level and fall through to the next one.
-        const cmp = compareValues(a, b);
-        if (cmp === 0) continue;
-        // Null-ish sorts last regardless of direction — never negated.
-        if (sortsLast(a) || sortsLast(b)) return cmp;
-        return level.dir === "asc" ? cmp : -cmp;
+        const decided = compareSortLevel(x.values[i], y.values[i], level.dir);
+        if (decided !== undefined) return decided;
       }
       // Stable: preserve the original order for full ties.
       return x.index - y.index;

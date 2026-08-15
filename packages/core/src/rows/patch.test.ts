@@ -9,8 +9,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyRowPatches,
+  applyRowPatchesWithLog,
   insertRow,
   removeRow,
+  rowPatchLog,
   updateRow,
   upsertRow,
 } from "./patch";
@@ -122,6 +124,17 @@ describe("applyRowPatches", () => {
       updateRow("5", { name: "Renamed" }),
     ]);
     expect(next.at(-1)).toEqual({ id: "5", name: "Renamed", team: "Net" });
+  });
+
+  it("attaches a log to a changing result and not to a no-op", () => {
+    const changed = apply([updateRow("2", { team: "Core" })]);
+    expect(rowPatchLog(changed)?.events).toEqual([
+      expect.objectContaining({ type: "update", id: "2" }),
+    ]);
+    expect(
+      rowPatchLog(apply([updateRow("1", { team: "Core" })]))
+    ).toBeUndefined();
+    expect(applyRowPatchesWithLog(ROWS, [], byId).events).toEqual([]);
   });
 
   it("keeps a selection valid, because ids never move under it", () => {

@@ -87,6 +87,10 @@ export {
   resolveFilterRegistry,
 } from "./filters/filterBuiltins";
 export {
+  type FilterChromeMode,
+  resolveFilterMode,
+} from "./filters/filterChrome";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,
@@ -372,6 +376,7 @@ export {
 /* ── Sources ───────────────────────────────────────────────────────── */
 export type { TableSource } from "./source/TableSource";
 export {
+  defaultFrontendRowId,
   defaultSearchText,
   useFrontendData,
   type UseFrontendDataOptions,
@@ -559,12 +564,28 @@ export {
   isExtraEntry,
 } from "./rows/extraRows";
 export {
+  applyRowPatchesToView,
+  applyRowPatchLogToView,
+  attachIncrementalView,
+  configureIncrementalView,
+  createIncrementalView,
+  incrementalSearchText,
+  type IncrementalView,
+  type IncrementalViewConfig,
+  incrementalViewConfig,
+  incrementalViewOf,
+} from "./rows/incremental";
+export {
   applyRowPatches,
+  applyRowPatchesWithLog,
   type InsertPatch,
   insertRow,
   type RemovePatch,
   removeRow,
   type RowPatch,
+  type RowPatchEvent,
+  type RowPatchLog,
+  rowPatchLog,
   type UpdatePatch,
   updateRow,
   type UpsertPatch,
@@ -805,11 +826,21 @@ export {
   type RowsToCsvOptions,
 } from "./export/csv";
 export {
+  exportViewFromChrome,
+  filterExportView,
+  summaryExportValues,
+  viewFromGroupedEntries,
+  viewFromTreeEntries,
+} from "./export/exportView";
+export {
   buildExportTable,
   csvWriter,
   downloadExportFile,
   type ExportPayload,
+  type ExportRowMeta,
+  type ExportRowRole,
   type ExportTable,
+  type ExportViewEntry,
   type ExportWriteContext,
   type ExportWriter,
 } from "./export/exportWriter";

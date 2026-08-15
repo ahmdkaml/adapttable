@@ -117,6 +117,8 @@ export function AntdDemo({
   cellNavigation,
   wide,
   exportCsv,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -147,6 +149,8 @@ export function AntdDemo({
    * cell range as a spreadsheet.
    */
   exportCsv?: DataTableProps<Person>["exportCsv"];
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -178,13 +182,14 @@ export function AntdDemo({
         extraRows={extraRows}
         rowStyle={rowStyle}
         editing={editing}
+        columnGroups={columnGroups}
         render={(source, columns) => (
           <DataTable
             source={source}
             columns={
               wide
                 ? makeWideColumns(locale, ANTD_CELLS)
-                : makeColumns(locale, ANTD_CELLS)
+                : makeColumns(locale, ANTD_CELLS, { groups: columnGroups })
             }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
@@ -209,7 +214,7 @@ export function AntdDemo({
             resizableColumns
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}
-            headerFilters
+            headerFilters={headerFilters}
           />
         )}
       />

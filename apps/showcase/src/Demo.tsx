@@ -26,7 +26,7 @@ import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 export type DataMode = "frontend" | "backend";
 export type PageMode = "paged" | "infinite";
 export type Density = "comfortable" | "compact";
-export type FiltersUi = "popover" | "drawer";
+export type FiltersUi = "popover" | "drawer" | "header";
 
 /** A small page size so both modes show real pagination over 30 rows. */
 // Five rows by default: enough to show real data while keeping the
@@ -399,6 +399,7 @@ export function DemoBody({
   cellSpan,
   extraRows,
   rowStyle,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -416,6 +417,7 @@ export function DemoBody({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  columnGroups?: boolean;
 }>) {
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
@@ -436,7 +438,7 @@ export function DemoBody({
   const columns: DemoColumnProps = {
     columnLayout: layout,
     onColumnLayoutChange,
-    collapsibleColumnGroups: true,
+    collapsibleColumnGroups: columnGroups !== false,
   };
 
   return mode === "backend" ? (

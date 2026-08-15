@@ -200,6 +200,8 @@ export interface DataTableClassNames {
   filterHeaderCell?: string;
   /** The input inside a header filter cell. */
   filterHeaderInput?: string;
+  /** Compact multi-select menu under a header filter cell. */
+  filterHeaderMenu?: string;
   /** The grouped-header `<tr>` rendered above the column headers. */
   headerGroupRow?: string;
   /** One spanning `<th>` (or edge gap) inside the header-group row. */

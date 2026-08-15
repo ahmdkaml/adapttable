@@ -26,6 +26,7 @@ export interface FilterHeaderClassNames {
   filterHeaderRow?: string;
   filterHeaderCell?: string;
   filterHeaderInput?: string;
+  filterHeaderMenu?: string;
   headerCell?: string;
   expandHeader?: string;
   reorderHeader?: string;
@@ -123,13 +124,11 @@ function SelectCell<TRow>({
   def,
   source,
   labels,
-  multiple,
   className,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
-  multiple: boolean;
   className?: string;
 }>): ReactElement {
   const { options } = useFilterOptions(def);
@@ -140,25 +139,107 @@ function SelectCell<TRow>({
   return (
     <select
       aria-label={filterLabel(def)}
-      multiple={multiple}
-      value={multiple ? selected : (selected[0] ?? "")}
+      value={selected[0] ?? ""}
       data-adapttable-part="filter-header-input"
       className={className}
       onChange={(event) => {
-        if (!multiple) {
-          write(event.target.value === "" ? [] : [event.target.value]);
-          return;
-        }
-        write([...event.target.selectedOptions].map((option) => option.value));
+        write(event.target.value === "" ? [] : [event.target.value]);
       }}
     >
-      {multiple ? null : <option value="">{labels.boolAny}</option>}
+      <option value="">{labels.boolAny}</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
       ))}
     </select>
+  );
+}
+
+function CompactMultiCell<TRow>({
+  def,
+  source,
+  labels,
+  className,
+  menuClassName,
+}: Readonly<{
+  def: FilterDef<TRow>;
+  source: FilterFormSource<TRow>;
+  labels: Required<TableLabels>;
+  className?: string;
+  menuClassName?: string;
+}>): ReactElement {
+  const { options } = useFilterOptions(def);
+  const selected = listFilterValues(source.extra[def.key]);
+  const write = (values: readonly string[]) => {
+    source.setExtra(def.key, values.length > 0 ? [...values] : undefined);
+  };
+  const label = filterLabel(def);
+  const first = options.find((option) => option.value === selected[0]);
+  let summary = labels.boolAny;
+  if (selected.length === 1) summary = first?.label ?? selected[0] ?? summary;
+  if (selected.length > 1) summary = labels.groupCount(selected.length);
+  return (
+    <details
+      data-adapttable-part="filter-header-menu"
+      className={menuClassName}
+      style={{ position: "relative", width: "100%" }}
+    >
+      <summary
+        aria-label={label}
+        data-adapttable-part="filter-header-input"
+        className={className}
+        style={{
+          cursor: "pointer",
+          display: "block",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {summary}
+      </summary>
+      <div
+        role="listbox"
+        aria-multiselectable
+        style={{
+          position: "absolute",
+          zIndex: 8,
+          top: "100%",
+          insetInlineStart: 0,
+          minWidth: "100%",
+          maxHeight: 220,
+          overflow: "auto",
+          padding: 8,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          background: "Canvas",
+          color: "CanvasText",
+          border: "1px solid color-mix(in srgb, CanvasText 24%, Canvas)",
+        }}
+      >
+        {options.map((option) => (
+          <label
+            key={option.value}
+            style={{ display: "flex", gap: 8, alignItems: "center" }}
+          >
+            <input
+              type="checkbox"
+              checked={selected.includes(option.value)}
+              onChange={(event) => {
+                write(
+                  event.target.checked
+                    ? [...selected, option.value]
+                    : selected.filter((value) => value !== option.value)
+                );
+              }}
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -254,12 +335,14 @@ function FilterHeaderCell<TRow>({
   source,
   labels,
   className,
+  menuClassName,
   registry = defaultFilterRegistry,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
+  menuClassName?: string;
   registry?: FilterTypeRegistry;
 }>): ReactElement | null {
   const spec = registry.get(def.type);
@@ -287,19 +370,18 @@ function FilterHeaderCell<TRow>({
           def={def}
           source={source}
           labels={labels}
-          multiple={false}
           className={className}
         />
       );
     case "multiSelect":
     case "checklist":
       return (
-        <SelectCell
+        <CompactMultiCell
           def={def}
           source={source}
           labels={labels}
-          multiple
           className={className}
+          menuClassName={menuClassName}
         />
       );
     case "boolean":
@@ -384,6 +466,7 @@ export function FilterHeaderRow<TRow>({
                 source={source}
                 labels={labels}
                 className={classNames.filterHeaderInput}
+                menuClassName={classNames.filterHeaderMenu}
                 registry={registry}
               />
             ) : null}

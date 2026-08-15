@@ -57,15 +57,29 @@ export interface AggregateOptions<TRow> {
   format?: (value: ReactNode, key: string) => ReactNode;
 }
 
+/**
+ * Coerce one cell to a finite number the way the built-in aggregators do.
+ * Non-numeric values are absent, never zero — a missing budget is not a
+ * $0 row.
+ *
+ * @param value - The resolved cell value.
+ * @returns The number, or `undefined` when it is not summable.
+ */
+export function toAggregateNumber(value: SortableValue): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
 /** Numbers only — everything else is not summable, and silently skipped. */
 function numbers(values: readonly SortableValue[]): number[] {
   const out: number[] = [];
   for (const v of values) {
-    if (typeof v === "number" && Number.isFinite(v)) out.push(v);
-    else if (typeof v === "string" && v.trim() !== "") {
-      const n = Number(v);
-      if (Number.isFinite(n)) out.push(n);
-    }
+    const n = toAggregateNumber(v);
+    if (n !== undefined) out.push(n);
   }
   return out;
 }
@@ -99,8 +113,17 @@ const BUILT_INS: Record<AggregateName, Aggregator> = {
 /** Every built-in aggregate name, for a UI that offers a choice. */
 export const AGGREGATE_NAMES = Object.keys(BUILT_INS) as AggregateName[];
 
-/** Resolve one column's value from a row the way the rest of the table does. */
-function valueOf<TRow>(
+/**
+ * Resolve one column's value from a row the way the rest of the table does.
+ * Incremental aggregates use the same path so a patched total matches a
+ * full `aggregate()` pass.
+ *
+ * @typeParam TRow - The row type.
+ * @param row - The row to read.
+ * @param key - The column key / data path.
+ * @param column - The matching column, when the host passed one.
+ */
+export function resolveAggregateValue<TRow>(
   row: TRow,
   key: string,
   column: ColumnDef<TRow> | undefined
@@ -135,7 +158,7 @@ export function aggregate<TRow>(
       const aggregator = typeof fn === "string" ? BUILT_INS[fn] : fn;
       const values: SortableValue[] = [];
       for (const row of rows) {
-        const value = valueOf(row, key, byKey.get(key));
+        const value = resolveAggregateValue(row, key, byKey.get(key));
         // A missing value is not a zero — skip it and let the aggregator see
         // only what is really there.
         if (value !== undefined && value !== null) values.push(value);

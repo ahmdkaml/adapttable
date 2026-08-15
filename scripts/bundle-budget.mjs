@@ -59,7 +59,7 @@ const FIXTURES = [
   {
     name: "core · simple table",
     pkg: "core",
-    budgetKB: 13,
+    budgetKB: 20,
     code: `export { useFrontendData, useDataTable } from "PKG";`,
     // The size ceiling says the base import is small. These say WHY: the heavy
     // capabilities are genuinely shaken out, not merely compressing well. A
@@ -75,7 +75,7 @@ const FIXTURES = [
     // and it moves in a commit that says which one.
     name: "core · every export",
     pkg: "core",
-    budgetKB: 76,
+    budgetKB: 93,
     code: `export * from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
@@ -201,14 +201,32 @@ const FIXTURES = [
   // `filterBuiltins` so `useFrontendData` / `useDataTable` do not load
   // every built-in spec. Ant Design's header-cell control plus the
   // registry lookup on AutoFilterForm nudged that fixture over 101 KB.
-  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 107 },
-  { name: "mui · table", pkg: "adapter-mui", budgetKB: 107 },
-  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 107 },
-  { name: "antd · table", pkg: "adapter-antd", budgetKB: 102 },
-  { name: "radix · table", pkg: "adapter-radix", budgetKB: 107 },
-  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 113 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 109 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 106 },
+  //
+  // XLSX export grew into the shape a spreadsheet actually wants (#316): typed
+  // cells, styling, a frozen header, and the grouped or tree structure the
+  // reader can see rather than a denormalised leaf dump. That work sits in
+  // `exportView` / `exportWriter`, on the CSV path every kit already carries,
+  // and costs ~1.4 KB there. It is genuinely absent from the plain path:
+  // `core · simple table` measured 12.5 KB before this change and 12.5 KB
+  // after, against the same 13 KB ceiling. The PDF writer and the print
+  // layout (#319) are behind `@adapttable/core/pdf` and cost the kits nothing.
+  //
+  // Incremental re-eval (#322) sits on `useFrontendData`. A patch that
+  // carries a `rowPatchLog` re-runs search, filters, sort, grouping and
+  // aggregates for the touched rows only, instead of walking the set.
+  // That snapshot is the live path now, so the simple-table fixture
+  // moved from 12.5 KB to 17.1 KB; the ceiling is 20 KB (~15%
+  // headroom). The heavy capabilities are still shaken out: toCsv,
+  // Blob, download and virtual stay absent. Every adapter imports that
+  // hook, so the kit fixtures moved with it.
+  { name: "mantine · table", pkg: "adapter-mantine", budgetKB: 130 },
+  { name: "mui · table", pkg: "adapter-mui", budgetKB: 129 },
+  { name: "chakra · table", pkg: "adapter-chakra", budgetKB: 129 },
+  { name: "antd · table", pkg: "adapter-antd", budgetKB: 123 },
+  { name: "radix · table", pkg: "adapter-radix", budgetKB: 129 },
+  { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 136 },
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 131 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 128 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

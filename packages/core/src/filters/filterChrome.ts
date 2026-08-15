@@ -1,0 +1,16 @@
+/** How the table presents filters — one container, never stacked. */
+export type FilterChromeMode = "popover" | "drawer" | "header";
+
+/**
+ * Resolve the single filter chrome. `headerFilters` is an alias for
+ * `"header"`. Header mode wins when both are passed so a host cannot
+ * mount the toolbar overlay and the header row at once.
+ */
+export function resolveFilterMode(
+  mode?: FilterChromeMode,
+  headerFilters?: boolean
+): FilterChromeMode {
+  if (headerFilters === true || mode === "header") return "header";
+  if (mode === "drawer") return "drawer";
+  return "popover";
+}

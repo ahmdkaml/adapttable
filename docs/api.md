@@ -35,17 +35,17 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                    |
-| ------------------- | ----------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                    |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"` | Popover anchors a light card under the Filters button (no backdrop); drawer slides in a side panel with one.                                                   |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                            |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                        |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                              |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                        |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                       |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                              |
+| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                              |
+| ------------------- | ----------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                              |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button. `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                           |
+| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                      |
+| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                  |
+| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                        |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                  |
+| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                 |
+| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                        |
 
 ### Selection & actions
 
@@ -197,10 +197,12 @@ excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
-`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
+`FilterChromeMode`): it mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
 `FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
 `headerFilterStickTop`) as a second header row of compact inputs on the
-same extra bag. Desktop only.
+same extra bag and hides the toolbar Filters button. Desktop only. Never
+stacked with the popover or drawer.
 `filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
 (`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
 `emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
@@ -223,7 +225,7 @@ Props beyond the core surface, with per-kit availability.
 | `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
-| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Alias for `filtersMode="header"`: compact per-column row (desktop). Hides the toolbar Filters button. Same defs and extra bag as the panel.                                             |
 | `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                  |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
@@ -249,6 +251,8 @@ All from `@adapttable/core`.
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
   filters, sorts, and slices a raw array from URL state. Pass
   `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
+  `getRowId` (default `defaultFrontendRowId`) matches `applyRowPatches`
+  so a `rowPatchLog` can continue the live incremental view.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -328,7 +332,9 @@ Building blocks for columns, rows and queries:
   mapper. See [row grouping](./row-grouping.md).
 - `applyRowPatches(rows, patches, getRowId)` with `insertRow` / `updateRow` /
   `upsertRow` / `removeRow` — apply changes without a refetch, preserving row
-  identity. See [cell editing](./cell-editing.md).
+  identity. `applyRowPatchesWithLog` returns the `RowPatchLog` /
+  `RowPatchEvent`s; `rowPatchLog` reads the log `applyRowPatches` attaches
+  (spreading the array drops it). See [cell editing](./cell-editing.md).
 - `tableQueryKey(query, options)` / `tableQueryBaseKey(query, options)` —
   stable cache keys for TanStack Query or SWR. See
   [data tiers](./data-tiers.md).
@@ -470,10 +476,28 @@ into an `ExportPayload`, which `downloadExportFile` hands to the browser.
 caller assembled itself. `exportButtonLabel` gives the button a caption naming
 the format it produces — `labels.exportCsv` for CSV, `labels.exportFile(format)`
 for anything else. `@adapttable/core/xlsx`
-adds `xlsxWriter` for real spreadsheets — typed numbers and booleans, no new
-dependency, and a separate entry so a CSV export never ships it —
-with `buildTableXlsx` underneath for building a workbook by hand. See
+adds `xlsxWriter` for real spreadsheets — typed numbers, booleans and dates,
+basic styling, group/tree outline and aggregate rows, no new dependency, and
+a separate entry so a CSV export never ships it — with `buildTableXlsx`
+underneath for building a workbook by hand. An `ExportTable` may carry
+`rowMeta` (`ExportRowMeta`, `ExportRowRole`) and `widths` when the view is
+grouped or a tree; a flat table omits them. `buildTableXlsx` accepts that
+view as `ExportViewEntry` rows — group headers, leaves and aggregates —
+so a host building a workbook by hand can pass the same shape the table
+does. `viewFromGroupedEntries` and `viewFromTreeEntries` build that view
+from the grouping or tree model, `filterExportView` drops groups a scope
+emptied, `exportViewFromChrome` picks which model is showing, and
+`summaryExportValues` turns a `summaryRow` into file values. See
 [customization](./customization.md#spreadsheet-xlsx-export).
+
+**PDF export and print layout.** `@adapttable/core/pdf` adds `pdfWriter` for
+the export button and `buildTablePdf` for a host assembling rows by hand.
+Print is a different verb: `openPrintLayout` (an `ExportTable`) and
+`printTable` (rows and columns) load `buildPrintDocument` into a hidden
+iframe. `buildPrintTableHtml` is the `<table>` alone; `printStyles` is the
+stylesheet. `PrintLayoutOptions` / `PdfWriterOptions` / `PrintPageSize`
+configure title, direction and paper. See
+[PDF export and print layout](./export-pdf.md).
 
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /
 `sparklineColumn` so a cell can draw a bar, line or area chart without a
@@ -486,7 +510,17 @@ series as text so CSV and xlsx never get an SVG. See
 
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
-See [cell editing](./cell-editing.md).
+`applyRowPatchesWithLog` returns a `RowPatchLog` of `RowPatchEvent`s;
+`rowPatchLog` reads the log attached to the result array (a spread copy
+drops it). **Incremental re-evaluation.** `createIncrementalView` builds
+an `IncrementalView` from an `IncrementalViewConfig`; `applyRowPatchesToView`
+and `applyRowPatchLogToView` re-run search, filters, sort, grouping and
+aggregates for touched rows only. `configureIncrementalView` merges
+grouping / summary extras without walking the set when only those
+changed. `incrementalViewOf` / `attachIncrementalView` link a derived
+array to the snapshot (`incrementalViewConfig` reads it back);
+`incrementalSearchText` is the default projector. See
+[cell editing](./cell-editing.md).
 
 **Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
 
@@ -541,7 +575,8 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
 `CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
 `FilterHeaderRowProps` / `FilterHeaderClassNames` /
-`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop` /
+`resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

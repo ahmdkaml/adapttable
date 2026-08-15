@@ -29,6 +29,7 @@ import {
   type GetCellSpan,
 } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
+import { incrementalViewOf } from "./rows/incremental";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
@@ -399,11 +400,12 @@ export function useSummaryCells<TRow>(
     | undefined,
   rows: readonly TRow[]
 ): Partial<Record<string, ReactNode>> | undefined {
+  const fromView = incrementalViewOf(rows)?.aggregates;
   const builderRef = useRef(summaryRow);
   builderRef.current = summaryRow;
-  const enabled = summaryRow !== undefined;
+  const enabled = summaryRow !== undefined && fromView === undefined;
   return useMemo(
-    () => (enabled ? builderRef.current?.(rows) : undefined),
-    [enabled, rows]
+    () => (enabled ? builderRef.current?.(rows) : fromView),
+    [enabled, rows, fromView]
   );
 }

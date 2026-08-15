@@ -1,12 +1,21 @@
+import type { ReactNode } from "react";
+
 import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
 } from "../columns/columnMenuModel";
 import { type CellRange, cellRangeIndices } from "../focus/cellRange";
+import type { GroupedFlatEntry } from "../grouping/groupRows";
 import type { GetCellSpan } from "../rows/cellSpan";
 import type { TableSource } from "../source/TableSource";
+import type { TreeEntry } from "../tree/treeRows";
 import type { ColumnDef, ExtraFilters, SortDirection } from "../types";
 import { devWarn } from "../utils/devWarn";
+import {
+  exportViewFromChrome,
+  filterExportView,
+  summaryExportValues,
+} from "./exportView";
 import {
   buildExportTable,
   csvWriter,
@@ -195,6 +204,24 @@ export interface ExportContext<TRow> {
   firstRowIndex?: number;
   /** Omit covered cells from the file — a span exports its value once. */
   getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * The grouping model's entries, when grouping is armed. A spreadsheet
+   * writes headers, outline levels and footers from them. A range export
+   * ignores this — a rectangle is already its own shape.
+   */
+  grouping?: { entries: readonly GroupedFlatEntry<TRow>[] };
+  /**
+   * The flattened tree, when a tree is armed. Outranks grouping, the same
+   * way the table does.
+   */
+  tree?: { entries: readonly TreeEntry<TRow>[] };
+  /** Caption for a group footer — the table's `labels.groupTotal`. */
+  groupTotal?: (label: string) => string;
+  /**
+   * The table's `summaryRow` mapper. Called on the scoped rows so a grand
+   * total in the file matches the rows that actually left.
+   */
+  summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
 }
 
 /** Pick the column set an export scope asks for, minus the actions column. */
@@ -326,6 +353,40 @@ function columnsInRange<TRow>(
   );
 }
 
+/** Structure and spans for the resolved rows, when the context has them. */
+function exportTableOptions<TRow>(
+  rows: readonly TRow[],
+  scope: ExportRowScope | undefined,
+  context: ExportContext<TRow> | undefined
+) {
+  const getRowId = context?.getRowId;
+  // Page writes the chrome view as it stands — collapsed headers stay,
+  // folded leaves stay out. All / selected unfold those leaves first so a
+  // ticked row inside a closed group still leaves the table, then prune.
+  const includeHiddenLeaves = scope === "all" || scope === "selected";
+  const fullView = exportViewFromChrome({
+    grouping: context?.grouping,
+    tree: context?.tree,
+    groupTotal: context?.groupTotal,
+    includeHiddenLeaves,
+  });
+  let view = fullView;
+  if (scope === "range" || !fullView) view = undefined;
+  else if (includeHiddenLeaves && getRowId) {
+    view = filterExportView(
+      fullView,
+      new Set(rows.map((row) => getRowId(row))),
+      getRowId
+    );
+  }
+  return {
+    getCellSpan: context?.getCellSpan,
+    firstRowIndex: context?.firstRowIndex,
+    view,
+    summary: summaryExportValues(context?.summaryRow?.(rows)),
+  };
+}
+
 /**
  * Build CSV text for the chosen row and column scopes.
  *
@@ -341,10 +402,11 @@ export function buildTableCsv<TRow>(options: {
 }): string {
   const { rows, columns } = resolveExport(options);
   return csvWriter.build({
-    table: buildExportTable(rows, columns, {
-      getCellSpan: options.context?.getCellSpan,
-      firstRowIndex: options.context?.firstRowIndex,
-    }),
+    table: buildExportTable(
+      rows,
+      columns,
+      exportTableOptions(rows, options.scope, options.context)
+    ),
     filename: "export.csv",
     escapeFormulas: options.escapeFormulas,
   }).text;
@@ -381,10 +443,11 @@ export function downloadTableCsv<TRow>(options: {
   // Built after the hook, so a filename the hook chose reaches a writer that
   // embeds it — and so a cancelled export builds nothing at all.
   const file = writer.build({
-    table: buildExportTable(rows, columns, {
-      getCellSpan: options.context?.getCellSpan,
-      firstRowIndex: options.context?.firstRowIndex,
-    }),
+    table: buildExportTable(
+      rows,
+      columns,
+      exportTableOptions(rows, options.scope, options.context)
+    ),
     filename,
     escapeFormulas: options.escapeFormulas,
   });

@@ -27,7 +27,41 @@ import {
 } from "../rows/cellSpan";
 import type { ColumnDef } from "../types";
 import { isBrowser } from "../utils/env";
+import { getPath } from "../utils/path";
 import { defaultCsvValue, matrixToCsv } from "./csv";
+
+/**
+ * What a structured export row is: a data leaf, a group header, or a
+ * total. CSV ignores the distinction; a spreadsheet uses it for outline
+ * levels and for which rows are bold.
+ */
+export type ExportRowRole = "data" | "group" | "aggregate";
+
+/** Per-row structure a writer may honour. Aligned with {@link ExportTable.rows}. */
+export interface ExportRowMeta {
+  /** What this row is. */
+  role: ExportRowRole;
+  /** Outline depth from zero — group headers sit at their grouping level. */
+  level: number;
+}
+
+/**
+ * One row of a grouped or tree-shaped export, before values are resolved.
+ *
+ * A flat table never produces these. When they are present the file follows
+ * the view the reader can see — headers, leaves, footers — instead of a
+ * denormalised leaf list.
+ */
+export type ExportViewEntry<TRow> =
+  | { role: "data"; row: TRow; level: number }
+  | {
+      role: "group" | "aggregate";
+      label: string;
+      level: number;
+      /** Column that receives the label when that cell would otherwise be empty. */
+      labelKey?: string;
+      values?: Readonly<Partial<Record<string, unknown>>>;
+    };
 
 /**
  * An export after the scopes are applied and the cells are resolved: headers,
@@ -40,6 +74,17 @@ export interface ExportTable {
   keys: readonly string[];
   /** One array of values per row, aligned to `headers`. */
   rows: readonly (readonly unknown[])[];
+  /**
+   * Structure for each row, when the export is a grouped or tree view.
+   * Absent on a flat table, so existing writers keep seeing exactly what
+   * they always did.
+   */
+  rowMeta?: readonly ExportRowMeta[];
+  /**
+   * Suggested character widths, aligned to `headers`. A column that did not
+   * state a width is `undefined` and the writer picks its own default.
+   */
+  widths?: readonly (number | undefined)[];
 }
 
 /** What a writer is given: the resolved export, exactly as it will ship. */
@@ -79,9 +124,52 @@ export interface ExportWriter {
  * display-value resolution stands.
  */
 function exportCellValue<TRow>(row: TRow, column: ColumnDef<TRow>): unknown {
-  return column.exportValue
-    ? column.exportValue(row)
-    : defaultCsvValue(row, column);
+  if (column.exportValue) return column.exportValue(row);
+  const value = defaultCsvValue(row, column);
+  if (value !== "") return value;
+  const path = getPath(row, column.key);
+  return path instanceof Date && !Number.isNaN(path.getTime()) ? path : value;
+}
+
+/** Character width a spreadsheet can use, from a column's own `width`. */
+function columnWidthChars<TRow>(column: ColumnDef<TRow>): number | undefined {
+  const raw = column.width;
+  let pixels = Number.NaN;
+  if (typeof raw === "number") pixels = raw;
+  else if (typeof raw === "string") pixels = Number.parseFloat(raw);
+  if (!Number.isFinite(pixels) || pixels <= 0) return undefined;
+  // Excel's width unit is roughly a character. A pixel width divided by
+  // eight is the usual conversion; clamp so a 400px column does not become
+  // a poster and a 20px one does not vanish.
+  return Math.min(40, Math.max(8, pixels / 8));
+}
+
+function tableChrome<TRow>(columns: readonly ColumnDef<TRow>[]): {
+  headers: string[];
+  keys: string[];
+  widths: (number | undefined)[];
+} {
+  return {
+    headers: columns.map((column) =>
+      typeof column.header === "string" ? column.header : column.key
+    ),
+    keys: columns.map((column) => column.key),
+    widths: columns.map(columnWidthChars),
+  };
+}
+
+function viewRowValues<TRow>(
+  entry: ExportViewEntry<TRow>,
+  columns: readonly ColumnDef<TRow>[]
+): unknown[] {
+  if (entry.role === "data") {
+    return columns.map((column) => exportCellValue(entry.row, column));
+  }
+  return columns.map((column) => {
+    const fromValues = entry.values?.[column.key];
+    if (fromValues !== undefined) return fromValues;
+    return column.key === entry.labelKey ? entry.label : "";
+  });
 }
 
 /**
@@ -99,9 +187,34 @@ function exportCellValue<TRow>(row: TRow, column: ColumnDef<TRow>): unknown {
 export function buildExportTable<TRow>(
   rows: readonly TRow[],
   columns: readonly ColumnDef<TRow>[],
-  span?: { getCellSpan?: GetCellSpan<TRow>; firstRowIndex?: number }
+  span?: {
+    getCellSpan?: GetCellSpan<TRow>;
+    firstRowIndex?: number;
+    view?: readonly ExportViewEntry<TRow>[];
+    summary?: Readonly<Partial<Record<string, unknown>>>;
+  }
 ): ExportTable {
+  const chrome = tableChrome(columns);
   const firstRowIndex = span?.firstRowIndex ?? 0;
+  const view = span?.view;
+  if (view) {
+    const body = view.map((entry) => ({
+      values: viewRowValues(entry, columns),
+      meta: { role: entry.role, level: entry.level } satisfies ExportRowMeta,
+    }));
+    const summary = span?.summary;
+    if (summary && Object.keys(summary).length > 0) {
+      body.push({
+        values: columns.map((column) => summary[column.key] ?? ""),
+        meta: { role: "aggregate", level: 0 },
+      });
+    }
+    return {
+      ...chrome,
+      rows: body.map((row) => row.values),
+      rowMeta: body.map((row) => row.meta),
+    };
+  }
   const coveredSet =
     span?.getCellSpan && spanningArmed(columns, span.getCellSpan)
       ? coveredAddressSet({
@@ -111,17 +224,27 @@ export function buildExportTable<TRow>(
           firstRowIndex,
         })
       : undefined;
+  const dataRows = rows.map((row, rowIndex) =>
+    columns.map((column, col) => {
+      if (coveredSet?.has(`${firstRowIndex + rowIndex}:${col}`)) return "";
+      return exportCellValue(row, column);
+    })
+  );
+  const summary = span?.summary;
+  if (summary && Object.keys(summary).length > 0) {
+    const total = columns.map((column) => summary[column.key] ?? "");
+    return {
+      ...chrome,
+      rows: [...dataRows, total],
+      rowMeta: [
+        ...dataRows.map(() => ({ role: "data" as const, level: 0 })),
+        { role: "aggregate", level: 0 },
+      ],
+    };
+  }
   return {
-    headers: columns.map((column) =>
-      typeof column.header === "string" ? column.header : column.key
-    ),
-    keys: columns.map((column) => column.key),
-    rows: rows.map((row, rowIndex) =>
-      columns.map((column, col) => {
-        if (coveredSet?.has(`${firstRowIndex + rowIndex}:${col}`)) return "";
-        return exportCellValue(row, column);
-      })
-    ),
+    ...chrome,
+    rows: dataRows,
   };
 }
 
