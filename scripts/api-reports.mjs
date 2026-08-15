@@ -6,10 +6,8 @@
  * under `etc/`. Run `pnpm api:reports` after an intentional API change and
  * commit the diff: the report shows the change as reviewable signatures.
  * `pnpm api:check` byte-compares fresh extractions against the committed
- * reports — useful locally, but NOT wired into CI: the d.ts chunk split is
- * not byte-stable across builds, so identical sources can extract reports
- * that differ in layout. Gate-grade comparison needs a deterministic build
- * first (tracked for a future cycle).
+ * reports and runs in CI's package job, so a surface change arrives with the
+ * report that shows it.
  *
  * Entries: every library package's main entry, plus core's `/adapter`
  * subpath (the builder-tier surface). The cli scaffolder has no importable
