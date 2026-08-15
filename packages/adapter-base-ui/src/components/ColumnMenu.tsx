@@ -313,7 +313,11 @@ export function ColumnMenu<TRow>({
           <Popover.Popup
             className="adapttable-popup"
             dir={dir}
-            style={{ minWidth: 260 }}
+            style={{
+              minWidth: 260,
+              maxHeight: "min(70vh, 480px)",
+              overflowY: "auto",
+            }}
           >
             <Flex direction="column" gap="1">
               <Text

@@ -151,6 +151,7 @@ describe("kit header filters (base-ui)", () => {
 describe("kit filter tree (base-ui)", () => {
   it("adds a condition and writes the value", () => {
     renderBaseUi(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
@@ -161,6 +162,7 @@ describe("kit filter tree (base-ui)", () => {
 
   it("switches field, operator, and a relative date", () => {
     renderBaseUi(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "age" },

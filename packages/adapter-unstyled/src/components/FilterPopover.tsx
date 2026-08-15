@@ -137,6 +137,7 @@ export function FilterPopover({
             top: "100%",
             zIndex: 200,
             // Shifting alone can't save a card wider than the screen.
+            width: 380,
             maxWidth: `calc(100vw - ${VIEWPORT_GUTTER * 2}px)`,
             // Nor taller than it: the form grows while open, and a card past
             // the viewport edge paints its lower fields where no scroll can

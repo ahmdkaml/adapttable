@@ -269,7 +269,7 @@ function MultiSelectControl<TRow>({
       value={asList(source.extra[def.key])}
       onChange={(values) => source.setExtra(def.key, values)}
     >
-      <Stack gap={6} mt={4}>
+      <Group gap="xs" mt={4} wrap="wrap">
         {loading ? (
           <Loader size="xs" />
         ) : (
@@ -282,7 +282,7 @@ function MultiSelectControl<TRow>({
             />
           ))
         )}
-      </Stack>
+      </Group>
     </Checkbox.Group>
   );
 }

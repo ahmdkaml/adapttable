@@ -45,7 +45,7 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import { Button, Checkbox, Input, Select } from "antd";
+import { Button, Checkbox, Dropdown, Input, Select } from "antd";
 
 export type {
   BatchEditBarProps,
@@ -144,54 +144,65 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
+    <Dropdown
+      trigger={["click"]}
+      popupRender={() => (
+        <div
+          data-adapttable-part="filter-header-menu"
+          className={menuClassName}
+          style={{
+            maxHeight: 220,
+            overflow: "auto",
+            minWidth: 160,
+            padding: 8,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            background: "var(--ant-color-bg-elevated, Canvas)",
+            boxShadow: "var(--ant-box-shadow-secondary)",
+            borderRadius: 8,
+          }}
+        >
+          {options.map((option) => (
+            <Checkbox
+              key={option.value}
+              checked={selected.includes(option.value)}
+              onChange={(event) => onToggle(option.value, event.target.checked)}
+            >
+              {option.label}
+            </Checkbox>
+          ))}
+        </div>
+      )}
     >
-      <summary
+      <Button
+        size="small"
+        block
         aria-label={label}
         data-adapttable-part="filter-header-input"
         className={className}
-        style={{
-          cursor: "pointer",
-          display: "block",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
       >
-        {summary}
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          background: "var(--ant-color-bg-container, Canvas)",
-        }}
-      >
-        {options.map((option) => (
-          <Checkbox
-            key={option.value}
-            checked={selected.includes(option.value)}
-            onChange={(event) => onToggle(option.value, event.target.checked)}
+        <span
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+            minWidth: 0,
+          }}
+        >
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
           >
-            {option.label}
-          </Checkbox>
-        ))}
-      </div>
-    </details>
+            {summary}
+          </span>
+          <span aria-hidden>▾</span>
+        </span>
+      </Button>
+    </Dropdown>
   );
 }
 

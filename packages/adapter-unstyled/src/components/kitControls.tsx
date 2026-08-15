@@ -180,13 +180,31 @@ function HeaderMulti({
         className={className}
         style={{
           cursor: "pointer",
-          display: "block",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          boxSizing: "border-box",
+          width: "100%",
+          paddingBlock: 4,
+          paddingInline: 8,
+          border: "1px solid color-mix(in srgb, CanvasText 24%, Canvas)",
+          borderRadius: 6,
+          background: "Canvas",
           overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          listStyle: "none",
         }}
       >
-        {summary}
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {summary}
+        </span>
+        <span aria-hidden>▾</span>
       </summary>
       <div
         role="listbox"
@@ -206,6 +224,8 @@ function HeaderMulti({
           background: "Canvas",
           color: "CanvasText",
           border: "1px solid color-mix(in srgb, CanvasText 24%, Canvas)",
+          borderRadius: 6,
+          boxShadow: "0 8px 20px rgb(0 0 0 / 12%)",
         }}
       >
         {options.map((option) => (

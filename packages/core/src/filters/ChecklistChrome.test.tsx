@@ -134,7 +134,7 @@ describe("ChecklistChrome", () => {
     expect(screen.getByRole("checkbox", { name: /Core/ })).not.toBeChecked();
   });
 
-  it("windows a long list", () => {
+  it("wraps every option instead of stacking one value per row", () => {
     const many = Array.from(
       { length: CHECKLIST_VIRTUALIZE_AT + 5 },
       (_, i) => ({
@@ -146,14 +146,15 @@ describe("ChecklistChrome", () => {
       '[data-adapttable-part="filter-checklist-list"]'
     );
     expect(list).toHaveAttribute("data-virtualized", "true");
-    expect(screen.getAllByRole("checkbox").length).toBeLessThan(
-      CHECKLIST_VIRTUALIZE_AT
+    expect(list).toHaveStyle({ flexWrap: "wrap" });
+    expect(screen.getAllByRole("checkbox")).toHaveLength(
+      CHECKLIST_VIRTUALIZE_AT + 5
     );
-    Object.defineProperty(list, "scrollTop", { value: 800, writable: true });
-    fireEvent.scroll(list!);
+    expect(
+      screen.getByRole("checkbox", { name: /Team 00/ })
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("checkbox", { name: /Team 38/ })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: /Team 00/ })).toBeNull();
   });
 });

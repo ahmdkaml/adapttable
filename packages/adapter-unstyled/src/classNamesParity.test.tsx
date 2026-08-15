@@ -506,6 +506,7 @@ const KEYS = [
   "filterTreeCondition",
   "filterTreeActions",
   "filterTreeRemove",
+  "filterTreeSummary",
   "filterField",
   "filterLabel",
   "filterInput",

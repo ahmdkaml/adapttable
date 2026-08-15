@@ -350,7 +350,7 @@ function AutoFilterField<TRow>({
           {loading ? (
             <Spinner size="1" />
           ) : (
-            <Flex direction="column" gap="2" role="group" aria-labelledby={id}>
+            <Flex gap="2" wrap="wrap" role="group" aria-labelledby={id}>
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (

@@ -65,7 +65,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** Ant Design Excel-style checklist — kit Checkbox / Input / Button. */
+/** Ant Design checklist — wrapping kit checkboxes, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

@@ -6,7 +6,7 @@ import {
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
-import { Button, TextField } from "@mui/material";
+import { Button, MenuItem, TextField } from "@mui/material";
 
 export type { FilterTreeBuilderProps };
 
@@ -21,20 +21,18 @@ function TreeSelect({
     <TextField
       select
       size="small"
-      label={label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      data-adapttable-part={part}
       slotProps={{
-        select: { native: true },
-        inputLabel: { shrink: true },
+        htmlInput: { "aria-label": label, "data-adapttable-part": part },
+        select: { native: false, MenuProps: { disablePortal: true } },
       }}
-      sx={{ flex: "0 0 8.5rem", minWidth: "8.5rem" }}
+      sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
     >
       {options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value}>
           {option.label}
-        </option>
+        </MenuItem>
       ))}
     </TextField>
   );
@@ -45,12 +43,13 @@ function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
     <TextField
       size="small"
       type={type}
-      label={label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{
-        htmlInput: { "data-adapttable-part": "filter-input" },
-        inputLabel: { shrink: true },
+        htmlInput: {
+          "aria-label": label,
+          "data-adapttable-part": "filter-input",
+        },
       }}
       sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
     />
@@ -76,7 +75,7 @@ const slots: FilterTreeSlots = {
   Button: TreeButton,
 };
 
-/** MUI AND/OR builder — kit TextField / Button, same part names as core chrome. */
+/** MUI AND/OR builder — compact kit Select / TextField / Button, no stacked labels. */
 export function FilterTreeBuilder<TRow>(
   props: Readonly<FilterTreeBuilderProps<TRow>>
 ) {

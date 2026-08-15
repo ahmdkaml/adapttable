@@ -50,8 +50,10 @@ import {
   Checkbox,
   FormControlLabel,
   IconButton,
+  Menu,
   TextField,
 } from "@mui/material";
+import { useState } from "react";
 
 export type {
   BatchEditBarProps,
@@ -167,58 +169,63 @@ function HeaderMulti({
   menuClassName,
   onToggle,
 }: FilterHeaderMultiProps) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
-      <summary
+    <>
+      <Button
+        size="small"
+        variant="outlined"
+        fullWidth
         aria-label={label}
         data-adapttable-part="filter-header-input"
         className={className}
-        style={{
-          cursor: "pointer",
-          display: "block",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+        onClick={(event) => setAnchor(event.currentTarget)}
+        sx={{
+          justifyContent: "space-between",
+          textTransform: "none",
+          minWidth: 0,
         }}
       >
-        {summary}
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          background: "var(--mui-palette-background-paper, Canvas)",
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {summary}
+        </span>
+        <span aria-hidden>▾</span>
+      </Button>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        slotProps={{
+          paper: {
+            className: menuClassName,
+            sx: { maxHeight: 220, minWidth: 160, px: 1, py: 0.5 },
+          },
         }}
       >
-        {options.map((option) => (
-          <FormControlLabel
-            key={option.value}
-            label={option.label}
-            control={
-              <Checkbox
-                size="small"
-                checked={selected.includes(option.value)}
-                onChange={(_, checked) => onToggle(option.value, checked)}
-              />
-            }
-          />
-        ))}
-      </div>
-    </details>
+        <div data-adapttable-part="filter-header-menu">
+          {options.map((option) => (
+            <FormControlLabel
+              key={option.value}
+              label={option.label}
+              sx={{ display: "flex", mx: 1 }}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={selected.includes(option.value)}
+                  onChange={(_, checked) => onToggle(option.value, checked)}
+                />
+              }
+            />
+          ))}
+        </div>
+      </Menu>
+    </>
   );
 }
 

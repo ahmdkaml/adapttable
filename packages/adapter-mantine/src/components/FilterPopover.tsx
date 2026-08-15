@@ -41,7 +41,7 @@ export function FilterPopover({
       withinPortal
       shadow="md"
       radius="md"
-      width={340}
+      width={380}
     >
       <Popover.Target>{children}</Popover.Target>
       {/* The form grows while open (the "between" operator reveals a second
@@ -49,7 +49,11 @@ export function FilterPopover({
           the trigger, the panel has to stop at the viewport edge or its lower
           fields are painted off-screen and cannot be reached — a scroll to
           reach them dismisses the popover instead. */}
-      <Popover.Dropdown mah="min(70vh, 560px)" style={{ overflowY: "auto" }}>
+      <Popover.Dropdown
+        mah="min(70vh, 560px)"
+        maw="calc(100vw - 32px)"
+        style={{ overflowY: "auto" }}
+      >
         <Group justify="space-between" align="center" mb="sm">
           <Text fw={600} fz="sm">
             {labels.filters}

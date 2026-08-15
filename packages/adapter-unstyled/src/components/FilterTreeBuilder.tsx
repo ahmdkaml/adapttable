@@ -16,31 +16,25 @@ function TreeSelect({
   part,
   options,
   className,
-  fieldClassName,
-  labelClassName,
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <label data-adapttable-part="filter-field" className={fieldClassName}>
-      <span data-adapttable-part="filter-label" className={labelClassName}>
-        {label}
-      </span>
-      <select
-        aria-label={label}
-        data-adapttable-part={part}
-        className={className}
-        value={value}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          onChange(event.target.value)
-        }
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <select
+      aria-label={label}
+      data-adapttable-part={part}
+      className={className}
+      value={value}
+      onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+        onChange(event.target.value)
+      }
+      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -49,26 +43,20 @@ function TreeInput({
   value,
   type,
   className,
-  fieldClassName,
-  labelClassName,
   onChange,
 }: FilterTreeInputProps) {
   return (
-    <label data-adapttable-part="filter-field" className={fieldClassName}>
-      <span data-adapttable-part="filter-label" className={labelClassName}>
-        {label}
-      </span>
-      <input
-        aria-label={label}
-        data-adapttable-part="filter-input"
-        className={className}
-        type={type}
-        value={value}
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          onChange(event.target.value)
-        }
-      />
-    </label>
+    <input
+      aria-label={label}
+      data-adapttable-part="filter-input"
+      className={className}
+      type={type}
+      value={value}
+      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+        onChange(event.target.value)
+      }
+      style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+    />
   );
 }
 
@@ -96,7 +84,7 @@ const slots: FilterTreeSlots = {
   Button: TreeButton,
 };
 
-/** Native AND/OR builder — unstyled's kit is semantic HTML. */
+/** Native AND/OR builder — compact unlabeled row; native is unstyled's kit. */
 export function FilterTreeBuilder<TRow>(
   props: Readonly<FilterTreeBuilderProps<TRow>>
 ) {

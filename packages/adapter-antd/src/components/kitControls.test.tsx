@@ -156,6 +156,7 @@ describe("kit header filters (antd)", () => {
 describe("kit filter tree (antd)", () => {
   it("adds a condition and writes the value", () => {
     renderAntd(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },

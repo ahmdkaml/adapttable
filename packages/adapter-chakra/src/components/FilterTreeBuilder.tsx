@@ -8,7 +8,7 @@ import {
 } from "@adapttable/core/adapter";
 import { Button, Input } from "@chakra-ui/react";
 
-import { FormField, NativeSelect } from "./primitives";
+import { NativeSelect } from "./primitives";
 
 export type { FilterTreeBuilderProps };
 
@@ -20,36 +20,35 @@ function TreeSelect({
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <FormField label={label}>
-      <NativeSelect
-        size="sm"
-        aria-label={label}
-        data-adapttable-part={part}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
-    </FormField>
+    <NativeSelect
+      size="sm"
+      aria-label={label}
+      data-adapttable-part={part}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      flex="1 1 8.5rem"
+      minW="8.5rem"
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </NativeSelect>
   );
 }
 
 function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
   return (
-    <FormField label={label}>
-      <Input
-        size="sm"
-        type={type}
-        aria-label={label}
-        data-adapttable-part="filter-input"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </FormField>
+    <Input
+      size="sm"
+      type={type}
+      aria-label={label}
+      data-adapttable-part="filter-input"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+    />
   );
 }
 
@@ -73,7 +72,7 @@ const slots: FilterTreeSlots = {
   Button: TreeButton,
 };
 
-/** Chakra AND/OR builder — kit NativeSelect / Input / Button. */
+/** Chakra AND/OR builder — compact kit controls, no stacked field labels. */
 export function FilterTreeBuilder<TRow>(
   props: Readonly<FilterTreeBuilderProps<TRow>>
 ) {

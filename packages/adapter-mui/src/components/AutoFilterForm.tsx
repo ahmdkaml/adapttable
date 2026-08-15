@@ -89,7 +89,6 @@ function TextFilter<TRow>({
         <TextField
           select
           size="small"
-          label={labels.operator}
           value={op}
           onChange={(e) => {
             const next = ops.find((choice) => choice === e.target.value);
@@ -98,7 +97,7 @@ function TextFilter<TRow>({
           data-adapttable-part="filter-operator"
           slotProps={{
             select: { native: true },
-            inputLabel: { shrink: true },
+            htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
@@ -111,12 +110,14 @@ function TextFilter<TRow>({
         {needsValue && (
           <TextField
             size="small"
-            label={labels.value}
             placeholder={def.placeholder}
             value={value}
             onChange={(e) => write(op, e.target.value)}
             slotProps={{
-              htmlInput: { "data-adapttable-part": "filter-input" },
+              htmlInput: {
+                "aria-label": labels.value,
+                "data-adapttable-part": "filter-input",
+              },
             }}
             sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
           />
@@ -196,7 +197,7 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
   return (
     <FormControl component="fieldset" variant="standard">
       <FormLabel component="legend">{filterLabel(def)}</FormLabel>
-      <FormGroup sx={{ gap: 0.5 }}>
+      <FormGroup row sx={{ gap: 0.5, flexWrap: "wrap" }}>
         {loading ? (
           <CircularProgress size={16} />
         ) : (
@@ -235,7 +236,6 @@ function RelativeTokenField({
       <TextField
         select
         size="small"
-        label={labels.opRelative}
         value={preset}
         onChange={(e) => {
           const found = RELATIVE_PRESETS.find((p) => p === e.target.value);
@@ -243,7 +243,7 @@ function RelativeTokenField({
         }}
         slotProps={{
           select: { native: true },
-          inputLabel: { shrink: true },
+          htmlInput: { "aria-label": labels.opRelative },
         }}
         sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
       >
@@ -257,14 +257,12 @@ function RelativeTokenField({
         <TextField
           size="small"
           type="number"
-          label={labels.value}
           value={n}
           onChange={(e) =>
             onValue(joinRelativeToken(preset, Number(e.target.value)))
           }
           slotProps={{
-            htmlInput: { min: 1 },
-            inputLabel: { shrink: true },
+            htmlInput: { min: 1, "aria-label": labels.value },
           }}
           sx={{ flex: "0 0 4.5rem", width: "4.5rem" }}
         />
@@ -294,10 +292,10 @@ function RangeFilter<TRow>({
       size="small"
       sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
       type={boundType}
-      label={caption}
+      placeholder={caption}
       value={value}
       onChange={(e) => commit(e.target.value)}
-      slotProps={{ inputLabel: { shrink: true } }}
+      slotProps={{ htmlInput: { "aria-label": caption } }}
     />
   );
   let bounds: ReactNode = null;
@@ -328,7 +326,6 @@ function RangeFilter<TRow>({
         <TextField
           select
           size="small"
-          label={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
             const next = ops.find((candidate) => candidate === e.target.value);
@@ -337,7 +334,7 @@ function RangeFilter<TRow>({
           }}
           slotProps={{
             select: { native: true },
-            inputLabel: { shrink: true },
+            htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
@@ -387,8 +384,8 @@ function FilterField<TRow>({
 /**
  * The auto-built filter form: one MUI widget per declarative definition,
  * reading and writing the source's extra-filter bag (so chips, URL state
- * and — on frontend data — the row predicate all stay in sync). The selects
- * render natively, so every control works inline, without portal menus.
+ * and — on frontend data — the row predicate all stay in sync). Operator
+ * and value share a row; native selects stay inline inside the popover.
  *
  * @typeParam TRow - The row type.
  */

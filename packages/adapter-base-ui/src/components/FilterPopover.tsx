@@ -73,7 +73,7 @@ export function FilterPopover({
             aria-label={labels.filters}
             dir={dir}
             className="adapttable-popup"
-            style={{ width: 340, maxWidth: "90vw" }}
+            style={{ width: 380, maxWidth: "90vw" }}
           >
             <Flex direction="column" gap="3">
               <Flex justify="between" align="center">

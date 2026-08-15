@@ -159,13 +159,31 @@ function HeaderMulti({
         className={className}
         style={{
           cursor: "pointer",
-          display: "block",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          boxSizing: "border-box",
+          width: "100%",
+          minHeight: 28,
+          paddingInline: 8,
+          border:
+            "1px solid var(--mantine-color-default-border, color-mix(in srgb, currentColor 24%, transparent))",
+          borderRadius: "var(--mantine-radius-default, 4px)",
+          background: "var(--mantine-color-default, Canvas)",
+          listStyle: "none",
         }}
       >
-        {summary}
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {summary}
+        </span>
+        <span aria-hidden>▾</span>
       </summary>
       <div
         role="listbox"
@@ -183,6 +201,10 @@ function HeaderMulti({
           flexDirection: "column",
           gap: 6,
           background: "var(--mantine-color-body, Canvas)",
+          border:
+            "1px solid var(--mantine-color-default-border, color-mix(in srgb, currentColor 24%, transparent))",
+          borderRadius: "var(--mantine-radius-default, 4px)",
+          boxShadow: "var(--mantine-shadow-sm)",
         }}
       >
         {options.map((option) => (

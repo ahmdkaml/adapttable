@@ -62,7 +62,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** Base UI Excel-style checklist — kit Checkbox / TextField / Button. */
+/** Base UI checklist — wrapping kit checkboxes, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

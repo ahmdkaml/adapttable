@@ -99,6 +99,8 @@ export interface DataTableClassNames {
   filterTreeActions?: string;
   /** Remove-condition / remove-group control in the filter-tree builder. */
   filterTreeRemove?: string;
+  /** Disclosure label that parks the AND/OR builder behind Advanced. */
+  filterTreeSummary?: string;
   /** One auto-built filter field (the `<label>`/`<fieldset>` wrapper). */
   filterField?: string;
   /** The field's caption (the `<span>`/`<legend>` holding the label text). */

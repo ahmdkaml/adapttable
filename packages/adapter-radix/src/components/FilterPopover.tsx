@@ -48,7 +48,7 @@ export function FilterPopover({
         aria-label={labels.filters}
         align={dir === "rtl" ? "start" : "end"}
         side="bottom"
-        width="340px"
+        width="380px"
         maxWidth="90vw"
         dir={dir}
         // The form GROWS while open (the "between" operator reveals a second

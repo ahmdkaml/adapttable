@@ -1,18 +1,14 @@
 /**
- * Excel-style checklist layout. Structure only — adapters pass the
- * search field, action buttons and checkboxes the end user clicks.
+ * Compact checklist layout. Structure only — adapters pass the search
+ * field, action buttons and checkboxes the end user clicks. Options wrap
+ * like the multi-select form; they never stack one value per row.
  */
-import { type ReactNode, type UIEvent, useState } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 
 import { resolveLabels } from "../labels";
 import type { TableSource } from "../source/TableSource";
 import type { TableLabels } from "../types";
-import {
-  CHECKLIST_ITEM_HEIGHT,
-  CHECKLIST_LIST_HEIGHT,
-  type ChecklistValue,
-  useChecklistFilter,
-} from "./checklist";
+import { CHECKLIST_LIST_HEIGHT, useChecklistFilter } from "./checklist";
 import { type FilterDef, filterLabel } from "./filterDefs";
 
 /** Class hooks the unstyled adapter maps onto `DataTableClassNames`. */
@@ -76,14 +72,21 @@ export interface ChecklistChromeProps<TRow> extends ChecklistFilterProps<TRow> {
   readonly slots: ChecklistSlots;
 }
 
-function windowSlice(
-  items: readonly ChecklistValue[],
-  scrollTop: number
-): { start: number; slice: readonly ChecklistValue[] } {
-  const start = Math.max(0, Math.floor(scrollTop / CHECKLIST_ITEM_HEIGHT) - 2);
-  const count = Math.ceil(CHECKLIST_LIST_HEIGHT / CHECKLIST_ITEM_HEIGHT) + 4;
-  return { start, slice: items.slice(start, start + count) };
-}
+const LIST: CSSProperties = {
+  maxHeight: CHECKLIST_LIST_HEIGHT,
+  overflow: "auto",
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 8,
+};
+
+const OPTION: CSSProperties = {
+  flex: "0 0 auto",
+  display: "inline-flex",
+  alignItems: "center",
+  maxWidth: "100%",
+};
 
 /**
  * Distinct-values checklist layout. Returns `null` when the source has no
@@ -99,26 +102,10 @@ export function ChecklistChrome<TRow>({
 }: Readonly<ChecklistChromeProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const state = useChecklistFilter(def, source);
-  const [scrollTop, setScrollTop] = useState(0);
   if (!state.available) return null;
   const Search = slots.Search;
   const Button = slots.Button;
   const Checkbox = slots.Checkbox;
-
-  const onScroll = (event: UIEvent<HTMLDivElement>) => {
-    setScrollTop(event.currentTarget.scrollTop);
-  };
-  const windowed = state.virtualize
-    ? windowSlice(state.visible, scrollTop)
-    : { start: 0, slice: state.visible };
-  const padTop = windowed.start * CHECKLIST_ITEM_HEIGHT;
-  const padBottom = state.virtualize
-    ? Math.max(
-        0,
-        (state.visible.length - windowed.start - windowed.slice.length) *
-          CHECKLIST_ITEM_HEIGHT
-      )
-    : 0;
 
   return (
     <div
@@ -152,38 +139,20 @@ export function ChecklistChrome<TRow>({
         className={
           classNames.filterChecklistList ?? classNames.filterCheckboxGroup
         }
-        style={
-          state.virtualize
-            ? {
-                height: CHECKLIST_LIST_HEIGHT,
-                overflow: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-              }
-            : {
-                maxHeight: CHECKLIST_LIST_HEIGHT,
-                overflow: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-              }
-        }
-        onScroll={state.virtualize ? onScroll : undefined}
+        style={LIST}
       >
-        {state.virtualize ? <div style={{ height: padTop }} /> : null}
-        {windowed.slice.map((item) => (
-          <Checkbox
-            key={item.value}
-            label={item.label}
-            count={labels.groupCount(item.count)}
-            checked={state.selected.includes(item.value)}
-            className={classNames.filterCheckbox}
-            countClassName={classNames.filterChecklistCount}
-            onChange={(on) => state.toggle(item.value, on)}
-          />
+        {state.visible.map((item) => (
+          <div key={item.value} style={OPTION}>
+            <Checkbox
+              label={item.label}
+              count={labels.groupCount(item.count)}
+              checked={state.selected.includes(item.value)}
+              className={classNames.filterCheckbox}
+              countClassName={classNames.filterChecklistCount}
+              onChange={(on) => state.toggle(item.value, on)}
+            />
+          </div>
         ))}
-        {state.virtualize ? <div style={{ height: padBottom }} /> : null}
         {state.visible.length === 0 ? (
           <span>{labels.checklistNoValues}</span>
         ) : null}

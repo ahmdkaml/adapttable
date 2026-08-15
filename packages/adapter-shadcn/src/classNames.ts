@@ -58,6 +58,8 @@ export const shadcnClassNames = {
   filterTreeActions: "flex flex-wrap gap-2",
   filterTreeRemove:
     "h-8 rounded-md px-2 text-sm text-muted-foreground hover:bg-accent",
+  filterTreeSummary:
+    "flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold",
   // ── Auto-built filter form (declarative `filters` definitions) ──
   filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-muted-foreground",
@@ -69,9 +71,10 @@ export const shadcnClassNames = {
   filterChecklistSearch:
     "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
   filterChecklistActions: "flex flex-wrap gap-2",
-  filterChecklistList: "flex max-h-60 flex-col gap-1 overflow-auto",
+  filterChecklistList:
+    "flex max-h-60 flex-wrap items-center gap-2 overflow-auto",
   filterChecklistCount: "text-xs text-muted-foreground",
-  filterCheckboxGroup: "flex flex-col gap-1.5",
+  filterCheckboxGroup: "flex flex-wrap items-center gap-2",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:

@@ -104,8 +104,16 @@ function Harness({ initial }: Readonly<{ initial?: QueryFilterGroup }> = {}) {
 }
 
 describe("FilterTreeChrome", () => {
+  it("parks the builder behind Advanced so the simple form stays the page", () => {
+    render(<Harness />);
+    expect(screen.getByText("Advanced")).toBeVisible();
+    fireEvent.click(screen.getByText("Advanced"));
+    expect(screen.getByRole("button", { name: "Add condition" })).toBeVisible();
+  });
+
   it("adds a condition and writes the value into the tree", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
@@ -116,6 +124,7 @@ describe("FilterTreeChrome", () => {
 
   it("switches field, operator, combinator, and nests a group", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "budget" },
@@ -137,6 +146,7 @@ describe("FilterTreeChrome", () => {
 
   it("edits a boolean leaf and a relative date", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "core" },
@@ -159,6 +169,7 @@ describe("FilterTreeChrome", () => {
 
   it("starts from Add group and a list operator", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add group" }));
     fireEvent.click(
       screen.getAllByRole("button", { name: "Add condition" })[1]!

@@ -304,8 +304,6 @@ function FilterControl<TRow>({
     case "boolean":
       return <BooleanFilterField def={def} source={source} labels={labels} />;
     case "select":
-      // A native select (antd-styled) instead of antd's portal-driven
-      // <Select>, so the control works anywhere the popover renders.
       return (
         <select
           className="ant-input ant-input-sm"
@@ -332,7 +330,7 @@ function FilterControl<TRow>({
       if (loading) return <Spin size="small" />;
       return (
         <Checkbox.Group
-          style={{ display: "flex", flexDirection: "column", gap: 6 }}
+          style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
           options={options.map((option) => ({
             label: option.label,
             value: option.value,

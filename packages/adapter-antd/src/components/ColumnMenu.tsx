@@ -368,7 +368,14 @@ export function ColumnMenu<TRow>({
   // and width belong to us; `styles.content` below zeroes antd's own padding
   // so this is the single source of it.
   const content = (
-    <div style={{ padding: 8, minWidth: 260 }}>
+    <div
+      style={{
+        padding: 8,
+        minWidth: 260,
+        maxHeight: "min(70vh, 480px)",
+        overflowY: "auto",
+      }}
+    >
       <div
         style={{
           fontSize: 11,

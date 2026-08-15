@@ -151,6 +151,7 @@ describe("kit header filters (chakra)", () => {
 describe("kit filter tree (chakra)", () => {
   it("adds a condition and writes the value", () => {
     renderChakra(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
@@ -161,6 +162,7 @@ describe("kit filter tree (chakra)", () => {
 
   it("switches field, operator, and a relative date", () => {
     renderChakra(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "age" },

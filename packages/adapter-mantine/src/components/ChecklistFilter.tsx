@@ -15,7 +15,6 @@ function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
     <TextInput
       size="sm"
       type="search"
-      label={label}
       aria-label={label}
       placeholder={label}
       value={value}
@@ -45,6 +44,7 @@ function ChecklistBox({
     <Checkbox
       size="sm"
       className={className}
+      style={{ width: "auto" }}
       checked={checked}
       onChange={(event) => onChange(event.currentTarget.checked)}
       label={
@@ -68,7 +68,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** Mantine Excel-style checklist — kit Checkbox / TextInput / Button. */
+/** Mantine checklist — wrapping kit checkboxes, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

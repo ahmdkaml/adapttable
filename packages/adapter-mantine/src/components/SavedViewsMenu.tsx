@@ -71,7 +71,12 @@ export function SavedViewsMenu({
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Box p={4} miw={220}>
+        <Box
+          p={4}
+          miw={220}
+          mah="min(70vh, 360px)"
+          style={{ overflowY: "auto" }}
+        >
           {views.views.map((view) => (
             <Group key={view.name} gap={6} px={4} py={2} wrap="nowrap">
               <Button

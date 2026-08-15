@@ -141,7 +141,6 @@ describe("<AutoFilterForm>", () => {
     const { source, setExtra } = makeSource();
     renderForm([{ key: "status", type: "select" }], source);
     const select = screen.getByLabelText("Status");
-    // No options declared → only the built-in "All" entry, valued "".
     expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
     expect(select).toHaveValue("");
     fireEvent.change(select, { target: { value: "" } });

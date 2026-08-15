@@ -181,7 +181,6 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    // While the loader is in flight: "All" plus one disabled "…" option.
     const select = screen.getByLabelText<HTMLSelectElement>("City");
     expect(select.options).toHaveLength(2);
     expect(select.options[1]).toBeDisabled();

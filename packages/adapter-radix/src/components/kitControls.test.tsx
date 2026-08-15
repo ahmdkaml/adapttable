@@ -156,6 +156,7 @@ describe("kit header filters (radix)", () => {
 describe("kit filter tree (radix)", () => {
   it("adds a condition and writes the value", () => {
     renderRadix(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
@@ -166,6 +167,7 @@ describe("kit filter tree (radix)", () => {
 
   it("switches field, operator, and a relative date", () => {
     renderRadix(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "age" },

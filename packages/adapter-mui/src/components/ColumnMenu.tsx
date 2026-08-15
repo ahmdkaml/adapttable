@@ -386,7 +386,15 @@ export function ColumnMenu<TRow>({
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <Box dir={dir} sx={{ p: 0.75, minWidth: 250 }}>
+        <Box
+          dir={dir}
+          sx={{
+            p: 0.75,
+            minWidth: 250,
+            maxHeight: "min(70vh, 480px)",
+            overflowY: "auto",
+          }}
+        >
           <Typography
             variant="caption"
             sx={{

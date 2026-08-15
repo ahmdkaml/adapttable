@@ -42,7 +42,7 @@ function ChecklistBox({
   onChange,
 }: ChecklistCheckboxProps) {
   return (
-    <Checkbox checked={checked} onToggle={() => onChange(!checked)}>
+    <Checkbox size="sm" checked={checked} onToggle={() => onChange(!checked)}>
       <span data-adapttable-part="filter-checkbox">
         {label}{" "}
         <span
@@ -62,7 +62,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** Chakra Excel-style checklist — kit Checkbox / Input / Button. */
+/** Chakra checklist — wrapping kit checkboxes, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

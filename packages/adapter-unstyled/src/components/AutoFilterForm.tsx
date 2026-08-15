@@ -211,7 +211,7 @@ function MultiSelectField<TRow>({
       <div
         data-adapttable-part="filter-checkbox-group"
         className={classNames.filterCheckboxGroup}
-        style={{ display: "flex", flexDirection: "column", gap: 6 }}
+        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
       >
         {loading ? (
           <span

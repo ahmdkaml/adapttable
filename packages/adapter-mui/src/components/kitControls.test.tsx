@@ -148,37 +148,38 @@ describe("kit header filters (mui)", () => {
   });
 });
 
+const pickSelect = (name: string, optionLabel: string) => {
+  fireEvent.mouseDown(screen.getByRole("combobox", { name }));
+  fireEvent.click(
+    screen.getByRole("option", { name: optionLabel, hidden: true })
+  );
+};
+
 describe("kit filter tree (mui)", () => {
   it("adds a condition and writes the value", () => {
     renderMui(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
     });
-    expect(screen.getByLabelText("Field")).toHaveValue("name");
+    expect(screen.getByRole("combobox", { name: "Field" })).toHaveTextContent(
+      "Name"
+    );
     expect(screen.getByLabelText("Value")).toHaveValue("Ada");
   });
 
   it("switches field, operator, and a relative date", () => {
     renderMui(<TreeHarness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
-    fireEvent.change(screen.getByLabelText("Field"), {
-      target: { value: "age" },
-    });
-    fireEvent.change(screen.getByLabelText("Operator"), {
-      target: { value: "between" },
-    });
+    pickSelect("Field", "Age");
+    pickSelect("Operator", "Between");
     fireEvent.change(screen.getByLabelText("From"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "9" } });
-    fireEvent.change(screen.getByLabelText("Field"), {
-      target: { value: "hired" },
-    });
-    fireEvent.change(screen.getByLabelText("Operator"), {
-      target: { value: "relative" },
-    });
-    fireEvent.change(screen.getByLabelText("Relative"), {
-      target: { value: "last" },
-    });
+    pickSelect("Field", "Hired");
+    pickSelect("Operator", "Relative");
+    pickSelect("Relative", "Last N days");
     fireEvent.change(screen.getByLabelText("N"), { target: { value: "14" } });
     expect(screen.getByLabelText("N")).toHaveValue(14);
   });

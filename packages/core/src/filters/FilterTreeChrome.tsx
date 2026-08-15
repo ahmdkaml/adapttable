@@ -2,7 +2,7 @@
  * AND/OR filter-tree layout. Structure only — adapters pass the Select,
  * Input and Button the end user clicks. Core does not draw form controls.
  */
-import type { ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { resolveLabels } from "../labels";
 import type { QueryCondition, QueryFilterGroup } from "../source/queryContract";
@@ -49,6 +49,7 @@ export interface FilterTreeClassNames {
   filterTreeCondition?: string;
   filterTreeActions?: string;
   filterTreeRemove?: string;
+  filterTreeSummary?: string;
   filtersForm?: string;
   filterField?: string;
   filterLabel?: string;
@@ -109,6 +110,57 @@ export interface FilterTreeSlots {
   readonly Input: (props: FilterTreeInputProps) => ReactNode;
   readonly Button: (props: FilterTreeButtonProps) => ReactNode;
 }
+
+/** One compact condition — field, operator, value, remove on a wrapping row. */
+const TREE_ROW: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "flex-end",
+  gap: 8,
+  minWidth: 0,
+};
+
+/** Nested groups and the Advanced shell stack rows, they do not list fields. */
+const TREE_STACK: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+  minWidth: 0,
+};
+
+const TREE_SHELL: CSSProperties = {
+  ...TREE_STACK,
+  marginBlockStart: 4,
+  paddingBlockStart: 8,
+  borderBlockStart:
+    "1px solid color-mix(in srgb, currentColor 14%, transparent)",
+};
+
+const TREE_SUMMARY: CSSProperties = {
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  fontWeight: 600,
+  fontSize: "0.8125rem",
+  paddingBlock: 4,
+  listStyle: "none",
+};
+
+const TREE_GROUP: CSSProperties = {
+  ...TREE_STACK,
+  border: 0,
+  margin: 0,
+  padding: 0,
+  minInlineSize: 0,
+};
+
+const TREE_LEGEND: CSSProperties = {
+  ...TREE_ROW,
+  padding: 0,
+  width: "100%",
+};
 
 /** Props for {@link FilterTreeChrome}. */
 export interface FilterTreeChromeProps<
@@ -329,6 +381,7 @@ function ConditionRow<TRow>({
     <div
       data-adapttable-part="filter-tree-condition"
       className={classNames.filterTreeCondition}
+      style={TREE_ROW}
     >
       <Select
         label={labels.filterField}
@@ -403,6 +456,7 @@ function GroupActions({
     <div
       data-adapttable-part="filter-tree-actions"
       className={classNames.filterTreeActions}
+      style={TREE_ROW}
     >
       <Button label={labels.filterAddCondition} onClick={onAddCondition} />
       <Button label={labels.filterAddGroup} onClick={onAddGroup} />
@@ -443,8 +497,9 @@ function GroupView<TRow>({
     <fieldset
       data-adapttable-part="filter-tree-group"
       className={classNames.filterTreeGroup}
+      style={TREE_GROUP}
     >
-      <legend>
+      <legend style={TREE_LEGEND}>
         <Select
           label={labels.filterTree}
           value={group.combinator}
@@ -531,6 +586,7 @@ export function FilterTreeChrome<TRow>({
   const tree = source.filterTree;
   const commit = source.setFilterTree;
   const first = defs[0];
+  const [expanded, setExpanded] = useState(Boolean(tree));
   if (!commit || !first || defs.length === 0) return null;
 
   const onAddCondition = (path: readonly number[]) => {
@@ -541,7 +597,21 @@ export function FilterTreeChrome<TRow>({
   };
 
   return (
-    <div data-adapttable-part="filter-tree" className={classNames.filterTree}>
+    <details
+      data-adapttable-part="filter-tree"
+      className={classNames.filterTree}
+      style={TREE_SHELL}
+      open={expanded}
+      onToggle={(event) => setExpanded(event.currentTarget.open)}
+    >
+      <summary
+        data-adapttable-part="filter-tree-summary"
+        className={classNames.filterTreeSummary}
+        style={TREE_SUMMARY}
+      >
+        {labels.filterTree}
+        <span aria-hidden>▾</span>
+      </summary>
       {tree ? (
         <GroupView
           group={tree}
@@ -570,6 +640,6 @@ export function FilterTreeChrome<TRow>({
           onAddGroup={() => onAddGroup([])}
         />
       )}
-    </div>
+    </details>
   );
 }

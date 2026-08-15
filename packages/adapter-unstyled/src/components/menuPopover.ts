@@ -14,6 +14,8 @@ export const MENU_PANEL_STYLE: CSSProperties = {
   border: 0,
   padding: 0,
   minInlineSize: 0,
+  maxHeight: "min(70vh, 480px)",
+  overflowY: "auto",
 };
 
 /** Disclosure state shared by the toolbar menu popovers. */

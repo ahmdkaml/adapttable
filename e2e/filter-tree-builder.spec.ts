@@ -46,11 +46,19 @@ async function openFilters(page: Page, name = "Filters"): Promise<void> {
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 }
 
+/** The AND/OR builder sits behind Advanced so the compact form stays the page. */
+async function openAdvanced(page: Page): Promise<void> {
+  await tree(page)
+    .locator('[data-adapttable-part="filter-tree-summary"]')
+    .click();
+}
+
 for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
     test("Add condition writes ft and keeps Ada", async ({ page }) => {
       await openDemo(page, adapter);
       await openFilters(page);
+      await openAdvanced(page);
       await tree(page).getByRole("button", { name: "Add condition" }).click();
       await tree(page).getByLabel("Value").fill("Ada");
       await expect(page).toHaveURL(/live\.ft=1\./);
@@ -67,6 +75,7 @@ for (const adapter of ADAPTERS) {
         .click();
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await openFilters(page, "عوامل التصفية");
+      await openAdvanced(page);
       await tree(page).getByRole("button", { name: "إضافة شرط" }).click();
       await expect(tree(page).getByLabel("الحقل")).toBeVisible();
     });

@@ -51,7 +51,12 @@ function ChecklistBox({
     <label
       data-adapttable-part="filter-checkbox"
       className={className}
-      style={{ display: "flex", alignItems: "center", gap: 8 }}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        width: "auto",
+      }}
     >
       <input
         type="checkbox"
@@ -77,7 +82,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** Native Excel-style checklist — unstyled's kit is semantic HTML. */
+/** Native checklist — wrapping options, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

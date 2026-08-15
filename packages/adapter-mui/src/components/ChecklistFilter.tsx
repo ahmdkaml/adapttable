@@ -15,13 +15,14 @@ function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
     <TextField
       size="small"
       type="search"
-      label={label}
       placeholder={label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{
-        htmlInput: { "data-adapttable-part": "filter-checklist-search" },
-        inputLabel: { shrink: true },
+        htmlInput: {
+          "aria-label": label,
+          "data-adapttable-part": "filter-checklist-search",
+        },
       }}
     />
   );
@@ -47,6 +48,7 @@ function ChecklistBox({
     <FormControlLabel
       data-adapttable-part="filter-checkbox"
       className={className}
+      sx={{ flex: "0 0 auto", mr: 0, width: "auto" }}
       label={
         <span>
           {label}{" "}
@@ -75,7 +77,7 @@ const slots: ChecklistSlots = {
   Checkbox: ChecklistBox,
 };
 
-/** MUI Excel-style checklist — kit Checkbox / TextField / Button. */
+/** MUI checklist — wrapping kit checkboxes, not one value per row. */
 export function ChecklistFilter<TRow>(
   props: Readonly<ChecklistFilterProps<TRow>>
 ) {

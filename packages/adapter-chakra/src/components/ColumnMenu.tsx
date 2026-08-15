@@ -301,7 +301,13 @@ export function ColumnMenu<TRow>({
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>
-          <Popover.Content minW="260px" w="auto" dir={dir}>
+          <Popover.Content
+            minW="260px"
+            w="auto"
+            dir={dir}
+            maxH="min(70vh, 480px)"
+            overflowY="auto"
+          >
             <Popover.Body px={2} py={2}>
               <Text
                 fontSize="xs"

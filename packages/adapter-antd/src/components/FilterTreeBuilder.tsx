@@ -6,7 +6,7 @@ import {
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
-import { Button, Input, InputNumber, Select, Typography } from "antd";
+import { Button, Input, InputNumber, Select } from "antd";
 
 export type { FilterTreeBuilderProps };
 
@@ -18,58 +18,45 @@ function TreeSelect({
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <label data-adapttable-part="filter-field">
-      <Typography.Text data-adapttable-part="filter-label">
-        {label}
-      </Typography.Text>
-      <Select
-        size="small"
-        aria-label={label}
-        data-adapttable-part={part}
-        value={value}
-        onChange={onChange}
-        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
-        options={options.map((option) => ({
-          value: option.value,
-          label: option.label,
-        }))}
-        style={{ minWidth: "8.5rem" }}
-      />
-    </label>
+    <Select
+      size="small"
+      aria-label={label}
+      data-adapttable-part={part}
+      value={value}
+      onChange={onChange}
+      getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
+      options={options.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))}
+      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+    />
   );
 }
 
 function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
   if (type === "number") {
     return (
-      <label data-adapttable-part="filter-field">
-        <Typography.Text data-adapttable-part="filter-label">
-          {label}
-        </Typography.Text>
-        <InputNumber
-          size="small"
-          aria-label={label}
-          data-adapttable-part="filter-input"
-          value={value === "" ? undefined : Number(value)}
-          onChange={(next) => onChange(next == null ? "" : String(next))}
-        />
-      </label>
+      <InputNumber
+        size="small"
+        aria-label={label}
+        data-adapttable-part="filter-input"
+        value={value === "" ? undefined : Number(value)}
+        onChange={(next) => onChange(next == null ? "" : String(next))}
+        style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+      />
     );
   }
   return (
-    <label data-adapttable-part="filter-field">
-      <Typography.Text data-adapttable-part="filter-label">
-        {label}
-      </Typography.Text>
-      <Input
-        size="small"
-        type={type}
-        aria-label={label}
-        data-adapttable-part="filter-input"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
+    <Input
+      size="small"
+      type={type}
+      aria-label={label}
+      data-adapttable-part="filter-input"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      style={{ flex: "1 1 7rem", minWidth: "7rem" }}
+    />
   );
 }
 
@@ -92,7 +79,7 @@ const slots: FilterTreeSlots = {
   Button: TreeButton,
 };
 
-/** Ant Design AND/OR builder — kit Select / Input / Button, popover-safe. */
+/** Ant Design AND/OR builder — compact kit Select / Input / Button, no stacked labels. */
 export function FilterTreeBuilder<TRow>(
   props: Readonly<FilterTreeBuilderProps<TRow>>
 ) {

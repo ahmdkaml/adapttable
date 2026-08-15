@@ -52,7 +52,14 @@ export function SavedViewsMenu({
   }, [open]);
   const trimmed = name.trim();
   const content = (
-    <div style={{ padding: 8, minWidth: 240 }}>
+    <div
+      style={{
+        padding: 8,
+        minWidth: 240,
+        maxHeight: "min(70vh, 360px)",
+        overflowY: "auto",
+      }}
+    >
       {views.map((view) => (
         <Flex key={view.name} align="center" gap={4}>
           <Button

@@ -68,7 +68,7 @@ export function FilterPopover({
         <Paper
           elevation={8}
           sx={{
-            width: 360,
+            width: 380,
             maxWidth: "calc(100vw - 32px)",
             // The form grows while open, and with enough filters it outgrows
             // the window. Pinned below the trigger it has to stop at the

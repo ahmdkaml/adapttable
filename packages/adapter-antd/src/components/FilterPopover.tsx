@@ -70,7 +70,7 @@ export function FilterPopover({
     <div
       style={{
         minWidth: 280,
-        maxWidth: "min(360px, calc(100vw - 48px))",
+        maxWidth: "min(380px, calc(100vw - 48px))",
         // The form grows while open; a card taller than the window paints its
         // lower fields off-screen, so it stops at the viewport edge instead.
         maxHeight: "min(70vh, 560px)",
