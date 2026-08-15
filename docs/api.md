@@ -486,7 +486,13 @@ and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
 button. `ExportRowScope` names the row scopes — including `"range"`, the
 highlighted cell rectangle — `ExportContext` carries the selection, full column
 set and range those scopes need, `ExportInfo` is what the lifecycle hooks
-receive, and `ExportHandlerState` is what `useExportHandler` returns — the
+receive. Handing an export to a backend sends an `ExportRequest`, whose
+`ExportQuery` carries the view's search, filters, sort and grouping — with
+`page` and `limit` undefined for `scope: "all"`, so "everything" cannot be
+answered with one page. `FetchAllExport` is the opt-in that lets the table page
+a server source itself, capped at `EXPORT_FETCH_ALL_MAX_ROWS` (50,000) unless
+`maxRows` says otherwise; `fetchAllExportRows` performs that walk.
+`ExportHandlerState` is what `useExportHandler` returns — the
 click handler, `exportBusy`, an `ExportStatus` and the outcome text an
 `ExportAnnouncer` reads out. `LiveRegion` (with `LiveRegionProps`) is the polite
 region underneath it and `GridFocusAnnouncer`'s, and `ExportAnnouncerProps`

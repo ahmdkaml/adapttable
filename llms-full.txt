@@ -5041,6 +5041,23 @@ raw output for a non-spreadsheet pipeline.
   the rows inside it, and pagination does not decide what leaves the table.
   A grouped export keeps its headers and totals around those rows.
 
+  A server-backed table holds one page, so `"all"` has to be answered by
+  fetching. There are two ways, and no third:
+
+  - `request` — hand the whole thing to your backend. The `ExportRequest` it
+    receives carries an `ExportQuery` with `page` and `limit` **undefined** for
+    this scope, precisely so a handler cannot answer with one page.
+  - `fetchAll` — let the table page the query itself and build the file in the
+    browser. It is opt-in because it is a loop of requests, and capped because
+    an unbounded one can hang a tab: `maxRows` defaults to
+    `EXPORT_FETCH_ALL_MAX_ROWS` (50,000), and `onCapped` fires if the cap
+    stopped the export short. `fetchAllExportRows` is the same walk, exported
+    for hand-built downloads.
+
+  With neither, the Export button is **not rendered** and a development warning
+  says why. Writing the current page as if it were everything is the one answer
+  that is always wrong.
+
 - `scope: "selected"` — the ticked rows, in table order. Selection is a set of
   ids, so a row checked on page 1 is still in the file while page 3 is on
   screen. Nothing ticked writes a header-only file.
@@ -5961,7 +5978,13 @@ and formula escaping), and `makeExportCsvHandler` wires the lot to the toolbar
 button. `ExportRowScope` names the row scopes — including `"range"`, the
 highlighted cell rectangle — `ExportContext` carries the selection, full column
 set and range those scopes need, `ExportInfo` is what the lifecycle hooks
-receive, and `ExportHandlerState` is what `useExportHandler` returns — the
+receive. Handing an export to a backend sends an `ExportRequest`, whose
+`ExportQuery` carries the view's search, filters, sort and grouping — with
+`page` and `limit` undefined for `scope: "all"`, so "everything" cannot be
+answered with one page. `FetchAllExport` is the opt-in that lets the table page
+a server source itself, capped at `EXPORT_FETCH_ALL_MAX_ROWS` (50,000) unless
+`maxRows` says otherwise; `fetchAllExportRows` performs that walk.
+`ExportHandlerState` is what `useExportHandler` returns — the
 click handler, `exportBusy`, an `ExportStatus` and the outcome text an
 `ExportAnnouncer` reads out. `LiveRegion` (with `LiveRegionProps`) is the polite
 region underneath it and `GridFocusAnnouncer`'s, and `ExportAnnouncerProps`

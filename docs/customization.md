@@ -286,6 +286,23 @@ raw output for a non-spreadsheet pipeline.
   the rows inside it, and pagination does not decide what leaves the table.
   A grouped export keeps its headers and totals around those rows.
 
+  A server-backed table holds one page, so `"all"` has to be answered by
+  fetching. There are two ways, and no third:
+
+  - `request` — hand the whole thing to your backend. The `ExportRequest` it
+    receives carries an `ExportQuery` with `page` and `limit` **undefined** for
+    this scope, precisely so a handler cannot answer with one page.
+  - `fetchAll` — let the table page the query itself and build the file in the
+    browser. It is opt-in because it is a loop of requests, and capped because
+    an unbounded one can hang a tab: `maxRows` defaults to
+    `EXPORT_FETCH_ALL_MAX_ROWS` (50,000), and `onCapped` fires if the cap
+    stopped the export short. `fetchAllExportRows` is the same walk, exported
+    for hand-built downloads.
+
+  With neither, the Export button is **not rendered** and a development warning
+  says why. Writing the current page as if it were everything is the one answer
+  that is always wrong.
+
 - `scope: "selected"` — the ticked rows, in table order. Selection is a set of
   ids, so a row checked on page 1 is still in the file while page 3 is on
   screen. Nothing ticked writes a header-only file.

@@ -124,8 +124,10 @@ describe("buildTableCsv", () => {
       scope: "all",
     });
     expect(csv).toBe("Name,Age\r\nAda,36\r\nGrace,85");
+    // The warning has to name the way out, not just the limitation: this call
+    // bypasses the toolbar handler, which refuses to render the button at all.
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('scope "all" is only supported on the frontend')
+      expect.stringContaining("`request` or `fetchAll`")
     );
   });
 

@@ -121,6 +121,83 @@ export interface ExportCsvOptions<TRow = unknown> {
    * click cannot start the same export twice.
    */
   request?: (info: ExportRequest<TRow>) => void | Promise<void>;
+  /**
+   * Let `scope: "all"` page a server source itself.
+   *
+   * A server-backed table holds one page, so "all" has nothing to read. The
+   * first answer is {@link ExportCsvOptions.request} — the backend already has
+   * the data. This is the second: opt in and the table walks the query page by
+   * page and builds the file in the browser.
+   *
+   * It is opt-in because it is a loop of network requests the reader did not
+   * ask for, and capped because an unbounded one over a large table is a way
+   * to hang a tab. Past {@link FetchAllExport.maxRows} the export stops and
+   * says so through {@link FetchAllExport.onCapped} rather than quietly
+   * writing a partial file.
+   */
+  fetchAll?: FetchAllExport<TRow>;
+}
+
+/** How `scope: "all"` pages a server source when the host opts in. */
+export interface FetchAllExport<TRow> {
+  /**
+   * Fetch one page of the current query. Called with 1-based page numbers
+   * until it returns fewer rows than `limit`, or the cap is reached.
+   */
+  fetchPage: (query: ExportQuery) => Promise<readonly TRow[]>;
+  /** Rows per request. Defaults to the table's current page size. */
+  pageSize?: number;
+  /**
+   * Stop after this many rows. Defaults to 50,000 — high enough that ordinary
+   * tables never meet it, low enough that a runaway query cannot exhaust the
+   * tab.
+   */
+  maxRows?: number;
+  /**
+   * Called when the cap stopped the export short, with what was written and
+   * the cap that stopped it. Tell the reader; a silently truncated file is the
+   * outcome this whole option exists to avoid.
+   */
+  onCapped?: (info: { rows: number; maxRows: number }) => void;
+}
+
+/** The default {@link FetchAllExport.maxRows}. */
+export const EXPORT_FETCH_ALL_MAX_ROWS = 50_000;
+
+/**
+ * Walk a server source page by page for `scope: "all"`.
+ *
+ * @typeParam TRow - The row type.
+ * @param source - The table's source, for the current query and page size.
+ * @param config - See {@link FetchAllExport}.
+ * @returns Every row the query matches, up to the cap.
+ */
+export async function fetchAllExportRows<TRow>(
+  source: TableSource<TRow>,
+  config: FetchAllExport<TRow>
+): Promise<readonly TRow[]> {
+  const limit = config.pageSize ?? source.limit ?? 100;
+  const maxRows = config.maxRows ?? EXPORT_FETCH_ALL_MAX_ROWS;
+  const base = exportQueryOf(source, "page");
+  const out: TRow[] = [];
+  let reachedEnd = false;
+  let page = 1;
+  while (out.length < maxRows && !reachedEnd) {
+    const batch = await config.fetchPage({ ...base, page, limit });
+    out.push(...batch);
+    // A short page is the end of the set; an empty one guards a source that
+    // answers the page after the last with an empty array rather than fewer.
+    reachedEnd = batch.length < limit;
+    page += 1;
+  }
+  // Stopping ON the cap is still stopping short — a full last page says
+  // nothing about whether more exist, so only a short page proves the end.
+  if (!reachedEnd) {
+    const rows = Math.min(out.length, maxRows);
+    config.onCapped?.({ rows, maxRows });
+    return out.slice(0, rows);
+  }
+  return out;
 }
 
 /** The view an export was asked for, as a server needs to hear it. */
@@ -142,8 +219,13 @@ export interface ExportRequest<TRow> extends ExportInfo<TRow> {
 
 /** The view-defining half of a table query, for an export request. */
 export interface ExportQuery {
-  page: number;
-  limit: number;
+  /**
+   * Undefined for `scope: "all"`: "all" means every row the filters match, so
+   * a page number would contradict the ask. Present for every other scope.
+   */
+  page: number | undefined;
+  /** Undefined for `scope: "all"` — see {@link ExportQuery.page}. */
+  limit: number | undefined;
   search: string;
   sortBy: string | undefined;
   sortDir: SortDirection | undefined;
@@ -292,8 +374,10 @@ function resolveExportRows<TRow>(
   }
   if (scope === "all") {
     if (!source.allFilteredRows) {
+      // Reached only by a hand-built call: the toolbar handler refuses to
+      // render an "all" button a server source cannot answer.
       devWarn(
-        'exportCsv scope "all" is only supported on the frontend data tier (in-memory rows with allFilteredRows). Server-paginated sources cannot rebuild the full set; exporting the current page instead.'
+        'exportCsv scope "all" needs the full filtered set. This source exposes only the current page, so that is what is exported. Pass `request` or `fetchAll` to export everything from a server tier.'
       );
     }
     return source.allFilteredRows ?? source.rows;
@@ -495,8 +579,44 @@ export function makeExportCsvHandler<TRow>(
         filename: options.filename ?? defaultExportFilename(writer),
         scope: options.scope ?? "page",
         format: writer.extension,
-        query: exportQueryOf(source),
+        query: exportQueryOf(source, options.scope ?? "page"),
       });
+  }
+
+  // "All" over a server source: the browser holds one page, so it has to be
+  // answered by fetching, not by pretending. `fetchAll` is the opt-in.
+  const serverAll =
+    options.scope === "all" && !source.allFilteredRows && options.fetchAll;
+  if (serverAll) {
+    return async () => {
+      const rows = await fetchAllExportRows(source, serverAll);
+      downloadTableCsv({
+        source: { ...source, allFilteredRows: rows },
+        columns,
+        filename: options.filename,
+        scope: "all",
+        columnScope: options.columns,
+        escapeFormulas: options.escapeFormulas,
+        context,
+        writer,
+        onBeforeExport: options.onBeforeExport,
+        onAfterExport: options.onAfterExport,
+      });
+    };
+  }
+
+  // Neither a backend handler nor an opt-in fetch, and no rows to read: the
+  // one thing the button must not do is write the current page and call it
+  // everything. It offers nothing instead, and says why.
+  if (options.scope === "all" && !source.allFilteredRows) {
+    devWarn(
+      'exportCsv scope "all" needs rows to export. A server-paginated source ' +
+        "holds one page, so pass `request` to hand the export to your backend, " +
+        "or `fetchAll` to let the table page the query itself. The Export " +
+        "button is not rendered until one of them is set — exporting the " +
+        "current page as if it were everything is the one wrong answer."
+    );
+    return undefined;
   }
 
   return () =>
@@ -515,10 +635,17 @@ export function makeExportCsvHandler<TRow>(
 }
 
 /** The view-defining half of the source's state, for a server export. */
-function exportQueryOf<TRow>(source: TableSource<TRow>): ExportQuery {
+function exportQueryOf<TRow>(
+  source: TableSource<TRow>,
+  scope: ExportRowScope
+): ExportQuery {
+  // "All" is the whole filtered set, so the window the reader happens to be
+  // looking at is not part of the question. Sending it invites a backend to
+  // answer with one page and call it everything.
+  const paged = scope !== "all";
   return {
-    page: source.page,
-    limit: source.limit,
+    page: paged ? source.page : undefined,
+    limit: paged ? source.limit : undefined,
     search: source.search,
     sortBy: source.sortBy,
     sortDir: source.sortDir,

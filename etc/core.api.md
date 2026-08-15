@@ -1300,6 +1300,9 @@ export function estimateFromRowHeight<TRow>(rowHeight: RowHeight<TRow> | undefin
 export function evaluateFilterTree<TRow>(tree: QueryFilterGroup | undefined, row: TRow, defs: readonly FilterDef<TRow>[], registry?: FilterTypeRegistry): boolean;
 
 // @public
+export const EXPORT_FETCH_ALL_MAX_ROWS = 50000;
+
+// @public
 export function exportableColumns<TRow>(columns: readonly ColumnDef<TRow>[]): ColumnDef<TRow>[];
 
 // @public
@@ -1328,6 +1331,7 @@ export interface ExportContext<TRow> {
 export interface ExportCsvOptions<TRow = unknown> {
     columns?: ExportColumnScope;
     escapeFormulas?: boolean;
+    fetchAll?: FetchAllExport<TRow>;
     filename?: string;
     onAfterExport?: (info: ExportInfo<TRow> & {
         csv: string;
@@ -1353,6 +1357,29 @@ export interface ExportPayload {
     mimeType: string;
     parts: readonly BlobPart[];
     text: string;
+}
+
+// @public
+export interface ExportQuery {
+    // (undocumented)
+    filters: ExtraFilters;
+    // (undocumented)
+    groupBy: string | undefined;
+    limit: number | undefined;
+    page: number | undefined;
+    // (undocumented)
+    search: string;
+    // (undocumented)
+    sortBy: string | undefined;
+    // (undocumented)
+    sortDir: SortDirection | undefined;
+}
+
+// @public
+export interface ExportRequest<TRow> extends ExportInfo<TRow> {
+    format: string;
+    query: ExportQuery;
+    scope: ExportRowScope;
 }
 
 // @public
@@ -1470,6 +1497,20 @@ export interface FailedCellSave<TRow> {
     message: string;
     previous: TRow;
 }
+
+// @public
+export interface FetchAllExport<TRow> {
+    fetchPage: (query: ExportQuery) => Promise<readonly TRow[]>;
+    maxRows?: number;
+    onCapped?: (info: {
+        rows: number;
+        maxRows: number;
+    }) => void;
+    pageSize?: number;
+}
+
+// @public
+export function fetchAllExportRows<TRow>(source: TableSource<TRow>, config: FetchAllExport<TRow>): Promise<readonly TRow[]>;
 
 // @public
 export type FillDirection = "down" | "up" | "right" | "left";
