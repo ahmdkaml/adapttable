@@ -22,7 +22,7 @@ const part = (page: Page, name: string) =>
   demo(page).locator(`[data-adapttable-part="${name}"]`);
 
 async function openDemo(page: Page, adapter: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/all-options/");
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();

@@ -18,7 +18,7 @@ const ADAPTERS = [
 const demo = (page: Page) => page.locator("#demo");
 
 async function openDemo(page: Page, adapter: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/all-options/");
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();
@@ -39,7 +39,7 @@ for (const adapter of ADAPTERS) {
       const name = table.getByRole("searchbox", { name: "Person" });
       await expect(name).toBeVisible();
       await name.fill("Ada");
-      await expect(page).toHaveURL(/live\.f_name=/);
+      await expect(page).toHaveURL(/f_name=/);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
     });

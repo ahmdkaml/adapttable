@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { compareValues, sortRows, sortRowsMulti } from "./compare";
+import {
+  compareSortEntries,
+  compareSortLevel,
+  compareValues,
+  sortedInsertIndex,
+  sortRows,
+  sortRowsMulti,
+} from "./compare";
 
 describe("compareValues", () => {
   it("returns 0 for equal values", () => {
@@ -31,6 +38,48 @@ describe("compareValues — booleans", () => {
     expect(compareValues(false, true)).toBeLessThan(0);
     expect(compareValues(true, false)).toBeGreaterThan(0);
     expect(compareValues(true, true)).toBe(0);
+  });
+});
+
+describe("compareSortEntries / sortedInsertIndex", () => {
+  it("keeps nulls last in both directions and ties by index", () => {
+    expect(
+      compareSortEntries(
+        { value: null, index: 0 },
+        { value: 1, index: 1 },
+        "asc"
+      )
+    ).toBeGreaterThan(0);
+    expect(
+      compareSortEntries(
+        { value: null, index: 0 },
+        { value: 1, index: 1 },
+        "desc"
+      )
+    ).toBeGreaterThan(0);
+    expect(
+      compareSortEntries({ value: 2, index: 3 }, { value: 2, index: 1 }, "asc")
+    ).toBeGreaterThan(0);
+  });
+
+  it("inserts where a full sort would, including after an equal key", () => {
+    const items = [
+      { value: 1, index: 0 },
+      { value: 3, index: 1 },
+    ];
+    const target = { value: 3, index: 2 };
+    const at = sortedInsertIndex(items, (item) =>
+      compareSortEntries(item, target, "asc")
+    );
+    expect(at).toBe(2);
+  });
+});
+
+describe("compareSortLevel", () => {
+  it("falls through on a tie, including two unorderable values", () => {
+    expect(compareSortLevel(1, 1, "asc")).toBeUndefined();
+    expect(compareSortLevel(null, undefined, "desc")).toBeUndefined();
+    expect(compareSortLevel(2, 1, "desc")).toBeLessThan(0);
   });
 });
 

@@ -21,6 +21,7 @@ import {
   pinnedRowStickyStyle,
   resolveColumnFooter,
   resolveExportCsv,
+  resolveFilterMode,
   resolveLabels,
   type RowExpansionState,
   type RowPinningState,
@@ -1320,7 +1321,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualize = false,
   } = props;
   const size = resolveSize(props.size, props.density);
-  const filtersMode = props.filtersMode ?? "popover";
+  const filtersMode = resolveFilterMode(props.filtersMode, props.headerFilters);
   // Resolve the data tier (source > onQueryChange server > frontend data)
   // and the declarative-filter runtime; everything below — pagination, row
   // selection, the sentinel — uses the RESOLVED source via `table.source`.
@@ -1457,6 +1458,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         // offset, so `scope: "range"` means here what it means everywhere else.
         range: gridFocus.range,
         firstRowIndex: windowStart,
+        getCellSpan: props.getCellSpan,
+        grouping: c.grouping,
+        tree: c.tree,
+        groupTotal: labels.groupTotal,
+        summaryRow: props.summaryRow,
       }
     ),
     c.table.labels,
@@ -1618,7 +1624,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     rowReorder: c.rowReorder,
     windowStart,
     cellsByRow,
-    headerFilters: props.headerFilters === true,
+    headerFilters: filtersMode === "header",
     filterDefs: runtime.defs,
     filterSource: resolvedSource,
     filterRegistry: runtime.registry,
@@ -1749,7 +1755,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             searchPlaceholder={props.searchPlaceholder}
             sortByOptions={props.sortByOptions}
             toolbar={props.toolbar}
-            hasFilters={Boolean(filtersNode)}
+            hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
             activeFilterCount={c.activeFilterCount}
             filters={filtersNode}
             filtersMode={filtersMode}

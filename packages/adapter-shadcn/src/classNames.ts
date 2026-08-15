@@ -71,7 +71,7 @@ export const shadcnClassNames = {
   filterChecklistActions: "flex flex-wrap gap-2",
   filterChecklistList: "flex max-h-60 flex-col gap-1 overflow-auto",
   filterChecklistCount: "text-xs text-muted-foreground",
-  filterCheckboxGroup: "flex flex-wrap gap-1.5",
+  filterCheckboxGroup: "flex flex-col gap-1.5",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:
@@ -157,6 +157,7 @@ export const shadcnClassNames = {
     "border-b border-border bg-card px-1 py-1 text-start [[data-density=compact]_&]:px-1 [[data-density=compact]_&]:py-0.5",
   filterHeaderInput:
     "h-7 w-full min-w-0 rounded-md border border-input bg-background px-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring",
+  filterHeaderMenu: "relative w-full",
   tbody: "align-middle",
   scrollBox: "overscroll-x-contain",
   virtualSpacer: "block",

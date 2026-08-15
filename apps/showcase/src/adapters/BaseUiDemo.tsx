@@ -133,6 +133,8 @@ export function BaseUiDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -155,6 +157,8 @@ export function BaseUiDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -177,7 +181,7 @@ export function BaseUiDemo({
       render={(source, columns) => (
         <DataTable
           source={source}
-          columns={makeColumns(locale, BASE_UI_CELLS)}
+          columns={makeColumns(locale, BASE_UI_CELLS, { groups: columnGroups })}
           rowKey={(r) => r.id}
           nestedTable={nested ? nestedOrders : undefined}
           cellNavigation={cellNavigation ?? editing}
@@ -200,7 +204,7 @@ export function BaseUiDemo({
           animate={animate}
           resizableColumns
           stickyHeader
-          headerFilters
+          headerFilters={headerFilters}
           filters={demoFilterDefs(locale)}
           filterTypes={demoFilterTypes()}
           accentColor="blue"

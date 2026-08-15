@@ -1,6 +1,6 @@
 import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
-import { DataTable } from "@adapttable/mantine";
+import { DataTable, type DataTableProps } from "@adapttable/mantine";
 import {
   Avatar,
   Badge,
@@ -97,6 +97,9 @@ export function MantineDemo({
   editing,
   cellNavigation,
   forceMobile,
+  exportCsv,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -119,7 +122,15 @@ export function MantineDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
   forceMobile?: boolean;
+  /**
+   * Export configuration for the toolbar button. Defaults to a plain CSV of
+   * the current page; the grouping demo overrides it to write the grouped
+   * sheet as a spreadsheet.
+   */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
 }>) {
   const s = strings(locale);
   return (
@@ -143,7 +154,9 @@ export function MantineDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MANTINE_CELLS)}
+            columns={makeColumns(locale, MANTINE_CELLS, {
+              groups: columnGroups,
+            })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
@@ -161,12 +174,12 @@ export function MantineDemo({
             bulkActions={makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu
-            exportCsv
+            exportCsv={exportCsv ?? true}
             savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader
-            headerFilters
+            headerFilters={headerFilters}
             stickyTop={8}
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}

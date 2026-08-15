@@ -379,7 +379,7 @@ function FrontendScaleTable({
   dark: boolean;
 }>) {
   const initial = useMemo(() => makeBigList(total), [total]);
-  const [rows, setRows] = useState(initial);
+  const [rows, setRows] = useState<readonly BigPerson[]>(initial);
   // Realtime patches: `?patch=N` applies N updates through the patch API the
   // same way a websocket would, then marks the DOM so the benchmark can time
   // the whole burst rather than guess at it.
@@ -389,8 +389,8 @@ function FrontendScaleTable({
     let done = 0;
     const byId = (row: BigPerson) => String(row.id);
     const tick = () => {
-      setRows((current) => [
-        ...applyRowPatches(
+      setRows((current) =>
+        applyRowPatches(
           current,
           [
             updateRow<BigPerson>(String((done % total) + 1), {
@@ -398,8 +398,8 @@ function FrontendScaleTable({
             }),
           ],
           byId
-        ),
-      ]);
+        )
+      );
       done += 1;
       setApplied(done);
       if (done < patches) queueMicrotask(tick);
@@ -457,8 +457,8 @@ function FrontendScaleTable({
           onCellEdit={
             edit
               ? (row, _key, nextValue) => {
-                  setRows((current) => [
-                    ...applyRowPatches(
+                  setRows((current) =>
+                    applyRowPatches(
                       current,
                       [
                         updateRow<BigPerson>(String(row.id), {
@@ -466,8 +466,8 @@ function FrontendScaleTable({
                         }),
                       ],
                       (r) => String(r.id)
-                    ),
-                  ]);
+                    )
+                  );
                 }
               : undefined
           }

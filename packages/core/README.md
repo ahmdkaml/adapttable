@@ -48,6 +48,8 @@ control via prop-getters.
 - **Tree data** — `getChildren` / `getParentId`, hierarchical rows with their own expansion state.
 - **Column management** — show/hide, reorder, pin (sticky) and resize state.
 - **Sparkline columns** — `@adapttable/core/sparkline`; bar, line and area as inline SVG.
+- **PDF export and print layout** (`@adapttable/core/pdf`) — optional entry; `pdfWriter()` on `exportCsv`, `printTable` for the browser dialog.
+- **Formula engine** (`@adapttable/core/formula`) — spreadsheet formulas over rows and aggregates; circular refs report `#CYCLE!`.
 - **Saved views** — name a filter/sort/column arrangement and switch between them.
 - **CSV export** (`exportCsv`) — current page, the full filtered set, or the
   selected rows; choose the columns, or hand the whole thing to your backend.

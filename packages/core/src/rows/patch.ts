@@ -109,45 +109,100 @@ function indexOfId<TRow>(
   return list.findIndex((row) => getRowId(row) === id);
 }
 
-/** Apply one patch to a working copy. Returns whether anything changed. */
+/**
+ * One mutation {@link applyRowPatchesWithLog} actually performed.
+ *
+ * Incremental re-evaluation walks this list instead of scanning the row set
+ * to find what changed. Indices are taken at the moment the event ran, so a
+ * later event sees the array the earlier one left behind.
+ */
+export type RowPatchEvent<TRow> =
+  | { type: "insert"; id: string; row: TRow; index: number }
+  | { type: "remove"; id: string; row: TRow; index: number }
+  | { type: "update"; id: string; prev: TRow; next: TRow; index: number };
+
+/**
+ * The result of applying patches, plus the events an incremental view needs
+ * so it does not have to diff two 20k-row arrays to find one update.
+ */
+export interface RowPatchLog<TRow> {
+  /** The row set after the patches — same contract as {@link applyRowPatches}. */
+  rows: readonly TRow[];
+  /** Empty when nothing changed; the original array is then on `rows`. */
+  events: readonly RowPatchEvent<TRow>[];
+}
+
+const PATCH_LOGS = new WeakMap<WeakKey, RowPatchLog<unknown>>();
+
+/**
+ * The log {@link applyRowPatches} attached to a result array, when the
+ * patches actually changed something. A host that already called
+ * `applyRowPatches` (the Scale demo, a socket handler) can hand this to
+ * the incremental view instead of applying the same patches twice.
+ *
+ * Spreading the result (`[...applyRowPatches(...)]`) drops the log — the
+ * copy is a different array.
+ *
+ * @typeParam TRow - The row type.
+ * @param rows - An array returned by {@link applyRowPatches}.
+ * @returns The log, or `undefined` when this array was not produced by a
+ *   changing patch (or was copied).
+ */
+export function rowPatchLog<TRow>(
+  rows: readonly TRow[]
+): RowPatchLog<TRow> | undefined {
+  return PATCH_LOGS.get(rows) as RowPatchLog<TRow> | undefined;
+}
+
+function rememberLog<TRow>(log: RowPatchLog<TRow>): void {
+  if (log.events.length === 0) return;
+  PATCH_LOGS.set(log.rows, log);
+}
+
+/** Apply one patch to a working copy. Returns the event when something changed. */
 function applyOne<TRow>(
   list: TRow[],
   patch: RowPatch<TRow>,
   getRowId: (row: TRow) => string
-): boolean {
+): RowPatchEvent<TRow> | undefined {
   if (patch.type === "insert") {
-    list.splice(insertIndex(patch.at, list.length), 0, patch.row);
-    return true;
+    const index = insertIndex(patch.at, list.length);
+    list.splice(index, 0, patch.row);
+    return { type: "insert", id: getRowId(patch.row), row: patch.row, index };
   }
 
   if (patch.type === "remove") {
     const index = indexOfId(list, patch.id, getRowId);
-    if (index === -1) return false;
+    if (index === -1) return undefined;
+    const row = list[index]!;
     list.splice(index, 1);
-    return true;
+    return { type: "remove", id: patch.id, row, index };
   }
 
   if (patch.type === "upsert") {
-    const index = indexOfId(list, getRowId(patch.row), getRowId);
+    const id = getRowId(patch.row);
+    const index = indexOfId(list, id, getRowId);
     if (index === -1) {
       list.push(patch.row);
-      return true;
+      return { type: "insert", id, row: patch.row, index: list.length - 1 };
     }
     // Re-upserting the row already in place is not a change, and replacing it
     // with itself would invalidate every per-row memo for nothing.
-    if (list[index] === patch.row) return false;
+    const prev = list[index]!;
+    if (prev === patch.row) return undefined;
     list[index] = patch.row;
-    return true;
+    return { type: "update", id, prev, next: patch.row, index };
   }
 
   const index = indexOfId(list, patch.id, getRowId);
   const existing = list[index];
-  if (!existing) return false;
+  if (!existing) return undefined;
   // An update that changes nothing must not replace the row object, or every
   // per-row memo downstream would be invalidated for no reason.
-  if (alreadyApplied(existing, patch.changes)) return false;
-  list[index] = { ...existing, ...patch.changes };
-  return true;
+  if (alreadyApplied(existing, patch.changes)) return undefined;
+  const next = { ...existing, ...patch.changes };
+  list[index] = next;
+  return { type: "update", id: patch.id, prev: existing, next, index };
 }
 
 /**
@@ -166,11 +221,37 @@ export function applyRowPatches<TRow>(
   patches: readonly RowPatch<TRow>[],
   getRowId: (row: TRow) => string
 ): readonly TRow[] {
+  return applyRowPatchesWithLog(rows, patches, getRowId).rows;
+}
+
+/**
+ * Apply patches and return the events each real mutation produced.
+ *
+ * {@link applyRowPatches} is this without the log. Incremental re-evaluation
+ * sits on the log so a 200-update burst does not walk 20k rows looking for
+ * what changed.
+ *
+ * @typeParam TRow - The row type.
+ * @param rows - The current rows.
+ * @param patches - The changes to apply, in order.
+ * @param getRowId - How a row's id is derived; the table's own `rowKey`.
+ */
+export function applyRowPatchesWithLog<TRow>(
+  rows: readonly TRow[],
+  patches: readonly RowPatch<TRow>[],
+  getRowId: (row: TRow) => string
+): RowPatchLog<TRow> {
   const working = [...rows];
-  let changed = false;
+  const events: RowPatchEvent<TRow>[] = [];
   for (const patch of patches) {
     // Every patch runs, so a later one acts on what an earlier one did.
-    if (applyOne(working, patch, getRowId)) changed = true;
+    const event = applyOne(working, patch, getRowId);
+    if (event) events.push(event);
   }
-  return changed ? working : rows;
+  const log: RowPatchLog<TRow> = {
+    rows: events.length > 0 ? working : rows,
+    events,
+  };
+  rememberLog(log);
+  return log;
 }

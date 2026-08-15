@@ -156,15 +156,13 @@ describe("FilterHeaderRow", () => {
     expect(screen.getByLabelText("Team")).toHaveValue("");
   });
 
-  it("writes a multi-select from selected options", () => {
+  it("writes a multi-select from the compact menu", () => {
     render(<Harness />);
-    const select = screen.getByLabelText("Tags");
-    const options = select.querySelectorAll("option");
-    options[0]!.selected = true;
-    options[1]!.selected = true;
-    fireEvent.change(select);
-    expect(options[0]).toHaveProperty("selected", true);
-    expect(options[1]).toHaveProperty("selected", true);
+    fireEvent.click(screen.getByLabelText("Tags"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
+    expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "B" })).toBeChecked();
   });
 
   it("writes a boolean tri-state", () => {

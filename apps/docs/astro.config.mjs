@@ -141,6 +141,7 @@ export default defineConfig({
           items: [
             { label: "Columns", slug: "columns" },
             { label: "Sparkline columns", slug: "sparkline" },
+            { label: "PDF export and print", slug: "export-pdf" },
             { label: "Sorting", slug: "sorting" },
             { label: "Filtering", slug: "filtering" },
             { label: "Pagination", slug: "pagination" },

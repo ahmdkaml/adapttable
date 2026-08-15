@@ -123,6 +123,8 @@ export function MuiDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -145,6 +147,8 @@ export function MuiDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
@@ -169,7 +173,7 @@ export function MuiDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MUI_CELLS)}
+            columns={makeColumns(locale, MUI_CELLS, { groups: columnGroups })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
@@ -192,7 +196,7 @@ export function MuiDemo({
             animate={animate}
             resizableColumns
             stickyHeader
-            headerFilters
+            headerFilters={headerFilters}
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}
           />

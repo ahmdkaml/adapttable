@@ -567,6 +567,7 @@ const KEYS = [
   "filterHeaderRow",
   "filterHeaderCell",
   "filterHeaderInput",
+  "filterHeaderMenu",
   "headerGroupRow",
   "headerGroupCell",
   "columnGroupToggle",

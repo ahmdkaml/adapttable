@@ -109,6 +109,8 @@ export function ChakraDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -131,6 +133,8 @@ export function ChakraDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -157,7 +161,9 @@ export function ChakraDemo({
           render={(source, columns) => (
             <DataTable
               source={source}
-              columns={makeColumns(locale, CHAKRA_CELLS)}
+              columns={makeColumns(locale, CHAKRA_CELLS, {
+                groups: columnGroups,
+              })}
               rowKey={(r) => r.id}
               nestedTable={nested ? nestedOrders : undefined}
               cellNavigation={cellNavigation ?? editing}
@@ -180,7 +186,7 @@ export function ChakraDemo({
               animate={animate}
               resizableColumns
               stickyHeader
-              headerFilters
+              headerFilters={headerFilters}
               filters={demoFilterDefs(locale)}
               filterTypes={demoFilterTypes()}
             />

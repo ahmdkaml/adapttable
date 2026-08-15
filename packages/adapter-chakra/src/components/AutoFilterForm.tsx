@@ -376,9 +376,9 @@ function AutoFilterField<TRow>({
             <Spinner size="xs" />
           ) : (
             <HStack
-              gap={3}
-              flexWrap="wrap"
-              rowGap={1}
+              gap={2}
+              flexDirection="column"
+              align="flex-start"
               role="group"
               aria-labelledby={id}
             >

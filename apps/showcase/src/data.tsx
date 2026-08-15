@@ -414,10 +414,12 @@ export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 
 export function makeColumns(
   locale: Locale,
-  cells: DemoCells
+  cells: DemoCells,
+  options?: { groups?: boolean }
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
+  const grouped = options?.groups === true;
   // Fixed pixel widths (not %) so revealing the hidden team column
   // pushes the total past the container and the table scrolls horizontally —
   // the only way a pinned column can be seen to stick.
@@ -514,7 +516,7 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: [s.groupDelivery, s.timeline],
+      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -541,7 +543,7 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
-      group: [s.groupDelivery, s.budget],
+      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -684,7 +686,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: [s.groupDelivery, s.timeline],
+      group: s.groupDelivery,
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -705,7 +707,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      group: [s.groupDelivery, s.budget],
+      group: s.groupDelivery,
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}

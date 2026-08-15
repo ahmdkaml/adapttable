@@ -22,11 +22,14 @@ export interface RowsToCsvOptions<TRow> {
   escapeFormulas?: boolean;
 }
 
-/** A cell value as text: primitives stringify, anything else is empty. */
+/** A cell value as text: primitives stringify, a date is its ISO day, anything else is empty. */
 function cellText(value: unknown): string {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
   }
   return "";
 }
@@ -60,6 +63,13 @@ function escapeCell(
   return text;
 }
 
+/** A value a file can type: a primitive, or a real `Date`. */
+function isTypedCell(value: unknown): boolean {
+  if (typeof value === "string" || typeof value === "boolean") return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
 /**
  * How a cell resolves when nothing overrides it: the display value, since a
  * CSV with no other instruction should carry what the table shows.
@@ -72,14 +82,9 @@ export function defaultCsvValue<TRow>(
   column: ColumnDef<TRow>
 ): unknown {
   const fromAccessor = column.accessor?.(row);
-  if (
-    typeof fromAccessor === "string" ||
-    typeof fromAccessor === "number" ||
-    typeof fromAccessor === "boolean"
-  ) {
-    return fromAccessor;
-  }
-  return column.sortValue?.(row) ?? "";
+  if (isTypedCell(fromAccessor)) return fromAccessor;
+  const fromSort = column.sortValue?.(row);
+  return isTypedCell(fromSort) ? fromSort : (fromSort ?? "");
 }
 
 /**

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import * as env from "../utils/env";
-import { downloadCsv, rowsToCsv } from "./csv";
+import { downloadCsv, matrixToCsv, rowsToCsv } from "./csv";
 
 interface Row {
   id: string;
@@ -127,6 +127,15 @@ describe("downloadCsv", () => {
 });
 
 describe("cell value edge cases", () => {
+  it("writes a Date as its ISO day", () => {
+    // `rowsToCsv` resolves through `accessor` / `sortValue`, and neither can
+    // carry a Date by type — a typed value reaches a file through the writer,
+    // which is what hands a matrix down to here.
+    const due = new Date("2026-08-15T13:45:00.000Z");
+    const csv = matrixToCsv({ headers: ["Due"], rows: [[due]] });
+    expect(csv.split("\r\n")[1]).toBe("2026-08-15");
+  });
+
   it("stringifies booleans and blanks objects (never [object Object])", () => {
     const cols: ColumnDef<Row>[] = [{ key: "k", header: "K" }];
     const csv = rowsToCsv([ROWS[0]!], cols, {

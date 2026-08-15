@@ -330,6 +330,7 @@ function FilterControl<TRow>({
       if (loading) return <Spin size="small" />;
       return (
         <Checkbox.Group
+          style={{ display: "flex", flexDirection: "column", gap: 6 }}
           options={options.map((option) => ({
             label: option.label,
             value: option.value,

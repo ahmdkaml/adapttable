@@ -103,7 +103,7 @@ export function PeopleTable() {
             (Date.now() - new Date(r.hiredAt).getTime()) / 31_557_600_000,
         },
       ]}
-      filtersMode="popover" // the default; "drawer" for a side panel
+      filtersMode="popover" // the default; "drawer" or "header" — one mode, never stacked
     />
   );
 }
@@ -158,16 +158,16 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                                |
-| ------------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                         |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                             |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                       |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label).  |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                        |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                        |
-| `headerFilters`     | `boolean`                           | `false`        | Compact per-column filter row under the header, bound to the same defs and extra bag. Desktop only — mobile cards keep the Filters button. |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                               |
+| Prop                | Type                                | Default        | Description                                                                                                                               |
+| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
+| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
+| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
+| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| `headerFilters`     | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
 
 ## Headless filter primitives
 
@@ -228,15 +228,17 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `emptyFilterRegistry` seeds a registry from scratch.
   `FilterTypeRegistry` / `FilterWidgetKind` / `FilterWidgetRenderProps`
   are the types.
-- **Header filter row**: `headerFilters` mounts `FilterHeaderRow` /
-  `FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`
-  under the leaf header.
+- **Header filter row**: `headerFilters` (or `filtersMode="header"`)
+  mounts `FilterHeaderRow` / `FilterHeaderControl` / `filterDefForColumn`
+  / `headerFilterStickTop` under the leaf header and hides the toolbar
+  Filters button (`resolveFilterMode` / `FilterChromeMode`).
   Pads and column spacers match the header so sticky, pin offsets, and
   column windowing stay aligned. A def whose bag key differs from the
   column key sets `column` (`key: "name"` under `column: "person"`). Ant Design keeps the control inside the
   header cell so `fixed` columns stay on antd's own header. Compact
   range inputs default the operator to `gte` (no picker in the header);
-  checklist / multiSelect use a native `<select>`.
+  checklist / multiSelect open a closed menu of checkboxes, not a native
+  `<select multiple>`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

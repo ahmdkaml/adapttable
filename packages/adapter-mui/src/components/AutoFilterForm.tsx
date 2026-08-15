@@ -195,7 +195,7 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
   return (
     <FormControl component="fieldset" variant="standard">
       <FormLabel component="legend">{filterLabel(def)}</FormLabel>
-      <FormGroup row sx={{ columnGap: 1.5 }}>
+      <FormGroup sx={{ gap: 0.5 }}>
         {loading ? (
           <CircularProgress size={16} />
         ) : (
