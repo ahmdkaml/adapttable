@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -32,6 +31,7 @@ import {
 } from "@chakra-ui/react";
 import { type ReactNode, useId } from "react";
 
+import { ChecklistFilter } from "./ChecklistFilter";
 import { FormField, NativeSelect } from "./primitives";
 
 /**

@@ -1,9 +1,8 @@
 /**
- * Native Excel-style checklist. One renderer for every kit — kit Select
- * portals fight the filter popover, the same reason the tree builder
- * stayed on native controls.
+ * Excel-style checklist layout. Structure only — adapters pass the
+ * search field, action buttons and checkboxes the end user clicks.
  */
-import { type ChangeEvent, type UIEvent, useState } from "react";
+import { type ReactNode, type UIEvent, useState } from "react";
 
 import { resolveLabels } from "../labels";
 import type { TableSource } from "../source/TableSource";
@@ -30,7 +29,7 @@ export interface ChecklistClassNames {
   filterCheckbox?: string;
 }
 
-/** Props for {@link ChecklistFilter}. */
+/** Props for an adapter {@link ChecklistFilter} — no slots on the public API. */
 export interface ChecklistFilterProps<TRow> {
   readonly def: FilterDef<TRow>;
   readonly source: Pick<
@@ -39,6 +38,42 @@ export interface ChecklistFilterProps<TRow> {
   >;
   readonly labels?: TableLabels;
   readonly classNames?: ChecklistClassNames;
+}
+
+/** Kit search field the checklist layout calls. */
+export interface ChecklistSearchProps {
+  readonly label: string;
+  readonly value: string;
+  readonly className?: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit button the checklist layout calls. */
+export interface ChecklistButtonProps {
+  readonly label: string;
+  readonly onClick: () => void;
+}
+
+/** Kit checkbox row the checklist layout calls. */
+export interface ChecklistCheckboxProps {
+  readonly label: string;
+  readonly count: string;
+  readonly checked: boolean;
+  readonly className?: string;
+  readonly countClassName?: string;
+  readonly onChange: (checked: boolean) => void;
+}
+
+/** Adapter-supplied controls for {@link ChecklistChrome}. */
+export interface ChecklistSlots {
+  readonly Search: (props: ChecklistSearchProps) => ReactNode;
+  readonly Button: (props: ChecklistButtonProps) => ReactNode;
+  readonly Checkbox: (props: ChecklistCheckboxProps) => ReactNode;
+}
+
+/** Props for {@link ChecklistChrome}. */
+export interface ChecklistChromeProps<TRow> extends ChecklistFilterProps<TRow> {
+  readonly slots: ChecklistSlots;
 }
 
 function windowSlice(
@@ -51,20 +86,24 @@ function windowSlice(
 }
 
 /**
- * Distinct-values checklist. Returns `null` when the source has no
- * `allFilteredRows` — a server page must declare facets (#281) before
- * this widget can count a set it does not hold.
+ * Distinct-values checklist layout. Returns `null` when the source has no
+ * `allFilteredRows` and no facets — a server page must declare facets
+ * before this widget can count a set it does not hold.
  */
-export function ChecklistFilter<TRow>({
+export function ChecklistChrome<TRow>({
   def,
   source,
   labels: labelOverrides,
   classNames = {},
-}: Readonly<ChecklistFilterProps<TRow>>) {
+  slots,
+}: Readonly<ChecklistChromeProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const state = useChecklistFilter(def, source);
   const [scrollTop, setScrollTop] = useState(0);
   if (!state.available) return null;
+  const Search = slots.Search;
+  const Button = slots.Button;
+  const Checkbox = slots.Checkbox;
 
   const onScroll = (event: UIEvent<HTMLDivElement>) => {
     setScrollTop(event.currentTarget.scrollTop);
@@ -93,28 +132,19 @@ export function ChecklistFilter<TRow>({
       >
         {filterLabel(def)}
       </div>
-      <input
-        type="search"
-        aria-label={labels.checklistSearch}
-        placeholder={labels.checklistSearch}
-        data-adapttable-part="filter-checklist-search"
-        className={classNames.filterChecklistSearch ?? classNames.filterInput}
+      <Search
+        label={labels.checklistSearch}
         value={state.query}
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          state.setQuery(event.target.value)
-        }
+        className={classNames.filterChecklistSearch ?? classNames.filterInput}
+        onChange={state.setQuery}
       />
       <div
         data-adapttable-part="filter-checklist-actions"
         className={classNames.filterChecklistActions}
         style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
       >
-        <button type="button" onClick={state.selectAllVisible}>
-          {labels.selectAll}
-        </button>
-        <button type="button" onClick={state.clear}>
-          {labels.checklistClear}
-        </button>
+        <Button label={labels.selectAll} onClick={state.selectAllVisible} />
+        <Button label={labels.checklistClear} onClick={state.clear} />
       </div>
       <div
         data-adapttable-part="filter-checklist-list"
@@ -142,33 +172,17 @@ export function ChecklistFilter<TRow>({
         onScroll={state.virtualize ? onScroll : undefined}
       >
         {state.virtualize ? <div style={{ height: padTop }} /> : null}
-        {windowed.slice.map((item) => {
-          const checked = state.selected.includes(item.value);
-          const countText = labels.groupCount(item.count);
-          return (
-            <label
-              key={item.value}
-              data-adapttable-part="filter-checkbox"
-              className={classNames.filterCheckbox}
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  state.toggle(item.value, event.target.checked)
-                }
-              />{" "}
-              {item.label}{" "}
-              <span
-                data-adapttable-part="filter-checklist-count"
-                className={classNames.filterChecklistCount}
-              >
-                {countText}
-              </span>
-            </label>
-          );
-        })}
+        {windowed.slice.map((item) => (
+          <Checkbox
+            key={item.value}
+            label={item.label}
+            count={labels.groupCount(item.count)}
+            checked={state.selected.includes(item.value)}
+            className={classNames.filterCheckbox}
+            countClassName={classNames.filterChecklistCount}
+            onChange={(on) => state.toggle(item.value, on)}
+          />
+        ))}
         {state.virtualize ? <div style={{ height: padBottom }} /> : null}
         {state.visible.length === 0 ? (
           <span>{labels.checklistNoValues}</span>

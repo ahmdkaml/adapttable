@@ -1,9 +1,8 @@
 /**
- * Kit-agnostic AND/OR filter-tree builder. Native controls on purpose:
- * kit Select portals fight the filter popover (antd already went native
- * on the flat form for the same reason). Adapters supply class names.
+ * AND/OR filter-tree layout. Structure only — adapters pass the Select,
+ * Input and Button the end user clicks. Core does not draw form controls.
  */
-import type { ChangeEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { resolveLabels } from "../labels";
 import type { QueryCondition, QueryFilterGroup } from "../source/queryContract";
@@ -58,13 +57,64 @@ export interface FilterTreeClassNames {
   filterOperator?: string;
 }
 
-/** Props for {@link FilterTreeBuilder}. */
+/** Props for an adapter {@link FilterTreeBuilder} — no slots on the public API. */
 export interface FilterTreeBuilderProps<TRow> {
   readonly defs: readonly FilterDef<TRow>[];
   readonly source: Pick<TableSource<TRow>, "filterTree" | "setFilterTree">;
   readonly labels?: TableLabels;
   readonly classNames?: FilterTreeClassNames;
   readonly registry?: FilterTypeRegistry;
+}
+
+/** One option in a tree Select. */
+export interface FilterTreeOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+/** Kit Select the tree layout calls. */
+export interface FilterTreeSelectProps {
+  readonly label: string;
+  readonly value: string;
+  readonly part: string;
+  readonly options: readonly FilterTreeOption[];
+  readonly className?: string;
+  readonly fieldClassName?: string;
+  readonly labelClassName?: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit text/number/date field the tree layout calls. */
+export interface FilterTreeInputProps {
+  readonly label: string;
+  readonly value: string;
+  readonly type: "text" | "number" | "date";
+  readonly className?: string;
+  readonly fieldClassName?: string;
+  readonly labelClassName?: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit button the tree layout calls. */
+export interface FilterTreeButtonProps {
+  readonly label: string;
+  readonly part?: string;
+  readonly className?: string;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link FilterTreeChrome}. */
+export interface FilterTreeSlots {
+  readonly Select: (props: FilterTreeSelectProps) => ReactNode;
+  readonly Input: (props: FilterTreeInputProps) => ReactNode;
+  readonly Button: (props: FilterTreeButtonProps) => ReactNode;
+}
+
+/** Props for {@link FilterTreeChrome}. */
+export interface FilterTreeChromeProps<
+  TRow,
+> extends FilterTreeBuilderProps<TRow> {
+  readonly slots: FilterTreeSlots;
 }
 
 function opsFor<TRow>(
@@ -123,87 +173,13 @@ function pairOf(value: unknown): { a: string; b: string } {
   return { a: asText(value), b: "" };
 }
 
-function NativeSelect({
-  label,
-  value,
-  className,
-  fieldClassName,
-  labelClassName,
-  part,
-  onChange,
-  children,
-}: Readonly<{
-  label: string;
-  value: string;
-  className?: string;
-  fieldClassName?: string;
-  labelClassName?: string;
-  part: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}>) {
-  return (
-    <label data-adapttable-part="filter-field" className={fieldClassName}>
-      <span data-adapttable-part="filter-label" className={labelClassName}>
-        {label}
-      </span>
-      <select
-        aria-label={label}
-        data-adapttable-part={part}
-        className={className}
-        value={value}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          onChange(event.target.value)
-        }
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
-
-function NativeInput({
-  label,
-  value,
-  type,
-  className,
-  fieldClassName,
-  labelClassName,
-  onChange,
-}: Readonly<{
-  label: string;
-  value: string;
-  type: "text" | "number" | "date";
-  className?: string;
-  fieldClassName?: string;
-  labelClassName?: string;
-  onChange: (value: string) => void;
-}>) {
-  return (
-    <label data-adapttable-part="filter-field" className={fieldClassName}>
-      <span data-adapttable-part="filter-label" className={labelClassName}>
-        {label}
-      </span>
-      <input
-        aria-label={label}
-        data-adapttable-part="filter-input"
-        className={className}
-        type={type}
-        value={value}
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          onChange(event.target.value)
-        }
-      />
-    </label>
-  );
-}
-
 function ConditionValue<TRow>({
   def,
   condition,
   labels,
   classNames,
   registry,
+  slots,
   onChange,
 }: Readonly<{
   def: FilterDef<TRow>;
@@ -211,6 +187,7 @@ function ConditionValue<TRow>({
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
   registry: FilterTypeRegistry;
+  slots: FilterTreeSlots;
   onChange: (value: unknown) => void;
 }>) {
   if (isValuelessFilterOp(condition.op)) return null;
@@ -219,19 +196,21 @@ function ConditionValue<TRow>({
       condition.value === false || condition.value === "false"
         ? "false"
         : "true";
+    const Select = slots.Select;
     return (
-      <NativeSelect
+      <Select
         label={labels.value}
         value={choice}
         part="filter-select"
         className={classNames.filterSelect}
         fieldClassName={classNames.filterField}
         labelClassName={classNames.filterLabel}
+        options={[
+          { value: "true", label: labels.boolTrue },
+          { value: "false", label: labels.boolFalse },
+        ]}
         onChange={(next) => onChange(next === "true")}
-      >
-        <option value="true">{labels.boolTrue}</option>
-        <option value="false">{labels.boolFalse}</option>
-      </NativeSelect>
+      />
     );
   }
   if (condition.op === "relative") {
@@ -239,27 +218,27 @@ function ConditionValue<TRow>({
       typeof condition.value === "string" ? condition.value : "today";
     const { preset, n } = splitRelativeToken(token);
     const counted = preset === "last" || preset === "next";
+    const Select = slots.Select;
+    const Input = slots.Input;
     return (
       <>
-        <NativeSelect
+        <Select
           label={labels.opRelative}
           value={preset}
           part="filter-select"
           className={classNames.filterSelect}
           fieldClassName={classNames.filterField}
           labelClassName={classNames.filterLabel}
+          options={RELATIVE_PRESETS.map((item) => ({
+            value: item,
+            label: labels[RELATIVE_PRESET_LABEL_KEYS[item]],
+          }))}
           onChange={(next) =>
             onChange(joinRelativeToken(next as RelativePreset, n))
           }
-        >
-          {RELATIVE_PRESETS.map((item) => (
-            <option key={item} value={item}>
-              {labels[RELATIVE_PRESET_LABEL_KEYS[item]]}
-            </option>
-          ))}
-        </NativeSelect>
+        />
         {counted ? (
-          <NativeInput
+          <Input
             label="N"
             type="number"
             value={String(n)}
@@ -277,9 +256,10 @@ function ConditionValue<TRow>({
   const type = inputTypeFor(filterWidgetKind(def, registry), condition.op);
   if (isBetweenFilterOp(condition.op)) {
     const { a, b } = pairOf(condition.value);
+    const Input = slots.Input;
     return (
       <>
-        <NativeInput
+        <Input
           label={labels.from}
           type={type}
           value={a}
@@ -288,7 +268,7 @@ function ConditionValue<TRow>({
           labelClassName={classNames.filterLabel}
           onChange={(next) => onChange([next, b])}
         />
-        <NativeInput
+        <Input
           label={labels.to}
           type={type}
           value={b}
@@ -303,8 +283,9 @@ function ConditionValue<TRow>({
   const text = Array.isArray(condition.value)
     ? condition.value.map(asText).join(",")
     : asText(condition.value);
+  const Input = slots.Input;
   return (
-    <NativeInput
+    <Input
       label={labels.value}
       type={type}
       value={text}
@@ -325,6 +306,7 @@ function ConditionRow<TRow>({
   labels,
   classNames,
   registry,
+  slots,
   onReplace,
   onRemove,
 }: Readonly<{
@@ -334,56 +316,55 @@ function ConditionRow<TRow>({
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
   registry: FilterTypeRegistry;
+  slots: FilterTreeSlots;
   onReplace: (path: readonly number[], next: QueryCondition) => void;
   onRemove: (path: readonly number[]) => void;
 }>) {
   const def = defs.find((item) => item.key === condition.key) ?? defs[0];
   if (!def) return null;
   const ops = opsFor(def, registry);
+  const Select = slots.Select;
+  const Button = slots.Button;
   return (
     <div
       data-adapttable-part="filter-tree-condition"
       className={classNames.filterTreeCondition}
     >
-      <NativeSelect
+      <Select
         label={labels.filterField}
         value={def.key}
         part="filter-select"
         className={classNames.filterSelect}
         fieldClassName={classNames.filterField}
         labelClassName={classNames.filterLabel}
+        options={defs.map((item) => ({
+          value: item.key,
+          label: filterLabel(item),
+        }))}
         onChange={(key) => {
           const next = defs.find((item) => item.key === key);
           if (next) onReplace(path, newCondition(next, registry));
         }}
-      >
-        {defs.map((item) => (
-          <option key={item.key} value={item.key}>
-            {filterLabel(item)}
-          </option>
-        ))}
-      </NativeSelect>
+      />
       {ops.length > 1 ? (
-        <NativeSelect
+        <Select
           label={labels.operator}
           value={condition.op}
           part="filter-operator"
           className={classNames.filterOperator}
           fieldClassName={classNames.filterField}
           labelClassName={classNames.filterLabel}
+          options={ops.map((op) => {
+            const key = opLabelKey(filterWidgetKind(def, registry), op);
+            return {
+              value: op,
+              label: key ? filterOpLabel(labels, key) : op,
+            };
+          })}
           onChange={(op) =>
             onReplace(path, { ...condition, op, value: undefined })
           }
-        >
-          {ops.map((op) => {
-            const key = opLabelKey(filterWidgetKind(def, registry), op);
-            return (
-              <option key={op} value={op}>
-                {key ? filterOpLabel(labels, key) : op}
-              </option>
-            );
-          })}
-        </NativeSelect>
+        />
       ) : null}
       <ConditionValue
         def={def}
@@ -391,16 +372,15 @@ function ConditionRow<TRow>({
         labels={labels}
         classNames={classNames}
         registry={registry}
+        slots={slots}
         onChange={(value) => onReplace(path, { ...condition, value })}
       />
-      <button
-        type="button"
-        data-adapttable-part="filter-tree-remove"
+      <Button
+        label={labels.filterRemoveCondition}
+        part="filter-tree-remove"
         className={classNames.filterTreeRemove}
         onClick={() => onRemove(path)}
-      >
-        {labels.filterRemoveCondition}
-      </button>
+      />
     </div>
   );
 }
@@ -408,25 +388,24 @@ function ConditionRow<TRow>({
 function GroupActions({
   labels,
   classNames,
+  slots,
   onAddCondition,
   onAddGroup,
 }: Readonly<{
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
+  slots: FilterTreeSlots;
   onAddCondition: () => void;
   onAddGroup: () => void;
 }>) {
+  const Button = slots.Button;
   return (
     <div
       data-adapttable-part="filter-tree-actions"
       className={classNames.filterTreeActions}
     >
-      <button type="button" onClick={onAddCondition}>
-        {labels.filterAddCondition}
-      </button>
-      <button type="button" onClick={onAddGroup}>
-        {labels.filterAddGroup}
-      </button>
+      <Button label={labels.filterAddCondition} onClick={onAddCondition} />
+      <Button label={labels.filterAddGroup} onClick={onAddGroup} />
     </div>
   );
 }
@@ -438,6 +417,7 @@ function GroupView<TRow>({
   labels,
   classNames,
   registry,
+  slots,
   onCombinator,
   onAddCondition,
   onAddGroup,
@@ -450,39 +430,41 @@ function GroupView<TRow>({
   labels: Required<TableLabels>;
   classNames: FilterTreeClassNames;
   registry: FilterTypeRegistry;
+  slots: FilterTreeSlots;
   onCombinator: (path: readonly number[], next: "and" | "or") => void;
   onAddCondition: (path: readonly number[]) => void;
   onAddGroup: (path: readonly number[]) => void;
   onReplace: (path: readonly number[], next: QueryCondition) => void;
   onRemove: (path: readonly number[]) => void;
 }>) {
+  const Select = slots.Select;
+  const Button = slots.Button;
   return (
     <fieldset
       data-adapttable-part="filter-tree-group"
       className={classNames.filterTreeGroup}
     >
       <legend>
-        <NativeSelect
+        <Select
           label={labels.filterTree}
           value={group.combinator}
           part="filter-operator"
           className={classNames.filterOperator}
           fieldClassName={classNames.filterField}
           labelClassName={classNames.filterLabel}
+          options={[
+            { value: "and", label: labels.filterCombinatorAnd },
+            { value: "or", label: labels.filterCombinatorOr },
+          ]}
           onChange={(next) => onCombinator(path, next === "or" ? "or" : "and")}
-        >
-          <option value="and">{labels.filterCombinatorAnd}</option>
-          <option value="or">{labels.filterCombinatorOr}</option>
-        </NativeSelect>
+        />
         {path.length > 0 ? (
-          <button
-            type="button"
-            data-adapttable-part="filter-tree-remove"
+          <Button
+            label={labels.filterRemoveGroup}
+            part="filter-tree-remove"
             className={classNames.filterTreeRemove}
             onClick={() => onRemove(path)}
-          >
-            {labels.filterRemoveGroup}
-          </button>
+          />
         ) : null}
       </legend>
       {group.conditions.map((node, index) => {
@@ -497,6 +479,7 @@ function GroupView<TRow>({
               labels={labels}
               classNames={classNames}
               registry={registry}
+              slots={slots}
               onCombinator={onCombinator}
               onAddCondition={onAddCondition}
               onAddGroup={onAddGroup}
@@ -514,6 +497,7 @@ function GroupView<TRow>({
             labels={labels}
             classNames={classNames}
             registry={registry}
+            slots={slots}
             onReplace={onReplace}
             onRemove={onRemove}
           />
@@ -522,6 +506,7 @@ function GroupView<TRow>({
       <GroupActions
         labels={labels}
         classNames={classNames}
+        slots={slots}
         onAddCondition={() => onAddCondition(path)}
         onAddGroup={() => onAddGroup(path)}
       />
@@ -530,16 +515,18 @@ function GroupView<TRow>({
 }
 
 /**
- * Recursive AND/OR builder over {@link QueryFilterGroup}. Writes the
- * versioned `ft` param through `source.setFilterTree`.
+ * Recursive AND/OR layout over {@link QueryFilterGroup}. Writes the
+ * versioned `ft` param through `source.setFilterTree`. Adapters supply
+ * the kit controls via {@link FilterTreeSlots}.
  */
-export function FilterTreeBuilder<TRow>({
+export function FilterTreeChrome<TRow>({
   defs,
   source,
   labels: labelOverrides,
   classNames = {},
   registry = defaultFilterRegistry,
-}: Readonly<FilterTreeBuilderProps<TRow>>) {
+  slots,
+}: Readonly<FilterTreeChromeProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const tree = source.filterTree;
   const commit = source.setFilterTree;
@@ -563,6 +550,7 @@ export function FilterTreeBuilder<TRow>({
           labels={labels}
           classNames={classNames}
           registry={registry}
+          slots={slots}
           onCombinator={(path, next) =>
             commit(setFilterTreeCombinator(tree, path, next))
           }
@@ -577,6 +565,7 @@ export function FilterTreeBuilder<TRow>({
         <GroupActions
           labels={labels}
           classNames={classNames}
+          slots={slots}
           onAddCondition={() => onAddCondition([])}
           onAddGroup={() => onAddGroup([])}
         />

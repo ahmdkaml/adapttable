@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -23,6 +22,7 @@ import {
 import { type ReactElement, type ReactNode, useId } from "react";
 
 import type { DataTableClassNames } from "../types";
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /* Part names shared by more than one field shape. */
 const FIELD_PART = "filter-field";

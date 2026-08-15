@@ -1,9 +1,9 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { TableLabels } from "../types";
 import type { HeaderGroupCell } from "./headerGroups";
 
-/** Props for {@link ColumnGroupToggle}. */
+/** Props for an adapter {@link ColumnGroupToggle} — no slots on the public API. */
 export interface ColumnGroupToggleProps {
   cell: HeaderGroupCell;
   labels: Required<TableLabels>;
@@ -11,43 +11,43 @@ export interface ColumnGroupToggleProps {
   className?: string;
 }
 
-const BUTTON = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "1.5em",
-  height: "1.5em",
-  flexShrink: 0,
-  padding: 0,
-  marginInlineEnd: "0.25em",
-  border: "none",
-  background: "transparent",
-  color: "inherit",
-  cursor: "pointer",
-} as const;
+/** Kit button the column-group chrome calls. */
+export interface ColumnGroupToggleButtonProps {
+  readonly label: string;
+  readonly expanded: boolean;
+  readonly className?: string;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link ColumnGroupToggleChrome}. */
+export interface ColumnGroupToggleSlots {
+  readonly Button: (props: ColumnGroupToggleButtonProps) => ReactNode;
+}
+
+/** Props for {@link ColumnGroupToggleChrome}. */
+export interface ColumnGroupToggleChromeProps extends ColumnGroupToggleProps {
+  readonly slots: ColumnGroupToggleSlots;
+}
 
 /** Collapse/expand control for one column-group header cell. */
-export function ColumnGroupToggle({
+export function ColumnGroupToggleChrome({
   cell,
   labels,
   onToggle,
   className,
-}: Readonly<ColumnGroupToggleProps>): ReactElement {
+  slots,
+}: Readonly<ColumnGroupToggleChromeProps>): ReactElement {
   const id = cell.id;
   if (!cell.collapsible || id === null) return <></>;
+  const Button = slots.Button;
   return (
-    <button
-      type="button"
-      data-adapttable-part="column-group-toggle"
-      aria-expanded={!cell.collapsed}
-      aria-label={
+    <Button
+      label={
         cell.collapsed ? labels.expandColumnGroup : labels.collapseColumnGroup
       }
+      expanded={!cell.collapsed}
       className={className}
-      style={BUTTON}
       onClick={() => onToggle(id)}
-    >
-      {cell.collapsed ? "▶" : "▼"}
-    </button>
+    />
   );
 }

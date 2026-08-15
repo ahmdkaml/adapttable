@@ -416,6 +416,101 @@ describe("<AutoFilterForm>", () => {
     });
   });
 
+  it("boolean: writes false", () => {
+    const { source, setExtra } = makeSource();
+    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
+    fireEvent.change(screen.getByLabelText("Core team"), {
+      target: { value: "false" },
+    });
+    expect(setExtra).toHaveBeenCalledWith("core", "false");
+  });
+
+  it("select: writes a declared option", () => {
+    const { source, setExtra } = makeSource();
+    renderForm(
+      [
+        {
+          key: "status",
+          type: "select",
+          options: [{ value: "act", label: "Active" }],
+        },
+      ],
+      source
+    );
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "act" },
+    });
+    expect(setExtra).toHaveBeenCalledWith("status", "act");
+  });
+
+  it("text: switching to Is empty hides the term", () => {
+    const { source, setExtras } = makeSource({ name: "al" });
+    renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);
+    pickOperator("Name Operator", "Is empty");
+    expect(setExtras).toHaveBeenCalled();
+    expect(screen.queryByPlaceholderText("Find…")).toBeNull();
+  });
+
+  it("dateRange: Relative last-N writes a new count and a named preset", () => {
+    const { source, setExtras } = makeSource({
+      hiredOp: "relative",
+      hiredFrom: "last:7",
+    });
+    renderForm([HIRED_DEF], source);
+    expect(screen.getByRole("combobox", { name: "Relative" })).toBeVisible();
+    const n = screen.getByLabelText("Value");
+    expect(n).toHaveValue("7");
+    fireEvent.change(n, { target: { value: "14" } });
+    expect(setExtras).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("combobox", { name: "Relative" }));
+    fireEvent.click(screen.getByRole("option", { name: "Today" }));
+    expect(setExtras).toHaveBeenCalled();
+  });
+
+  it("dateRange: a named relative preset hides N; next-N shows it", () => {
+    const named = makeSource({ hiredOp: "relative", hiredFrom: "today" });
+    renderForm([HIRED_DEF], named.source);
+    expect(screen.queryByLabelText("Value")).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Relative" }));
+    fireEvent.click(screen.getByRole("option", { name: "Next N days" }));
+    expect(named.setExtras).toHaveBeenCalled();
+
+    const next = makeSource({ hiredOp: "relative", hiredFrom: "next:3" });
+    const { unmount } = renderForm([HIRED_DEF], next.source);
+    expect(screen.getByLabelText("Value")).toHaveValue("3");
+    unmount();
+  });
+
+  it("dateRange: choosing Relative from the operator list mounts the token field", () => {
+    const { source } = makeSource();
+    renderForm([HIRED_DEF], source);
+    pickOperator("Hired Operator", "Relative");
+    expect(screen.getByRole("combobox", { name: "Relative" })).toBeVisible();
+  });
+
+  it("renders a custom registry widget and ignores an unknown type", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personPick",
+      render: () => <div data-testid="custom-filter">picked</div>,
+    });
+    const { source } = makeSource();
+    renderMantine(
+      <AutoFilterForm
+        defs={[
+          { key: "who", type: "personPick", label: "Who" },
+          { key: "nope", type: "unknownKind" },
+        ]}
+        source={source}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByTestId("custom-filter")).toHaveTextContent("picked");
+    expect(screen.queryByLabelText("Nope")).toBeNull();
+  });
+
   it("renders a custom type through the registry widget kind", () => {
     const text = defaultFilterRegistry.get("text")!;
     const registry = defaultFilterRegistry.register({

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import { CHECKLIST_VIRTUALIZE_AT } from "./checklist";
-import { ChecklistFilter } from "./ChecklistFilter";
+import { ChecklistChrome, type ChecklistSlots } from "./ChecklistChrome";
 import type { FilterDef } from "./filterDefs";
 
 interface Row {
@@ -14,10 +14,60 @@ const DEF: FilterDef<Row> = { key: "team", type: "checklist", label: "Team" };
 
 const ROWS: Row[] = [{ team: "Core" }, { team: "Core" }, { team: "Web" }];
 
+const slots: ChecklistSlots = {
+  Search: ({ label, value, className, onChange }) => (
+    <input
+      type="search"
+      aria-label={label}
+      placeholder={label}
+      data-adapttable-part="filter-checklist-search"
+      className={className}
+      value={value}
+      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+        onChange(event.target.value)
+      }
+    />
+  ),
+  Button: ({ label, onClick }) => (
+    <button type="button" onClick={onClick}>
+      {label}
+    </button>
+  ),
+  Checkbox: ({
+    label,
+    count,
+    checked,
+    className,
+    countClassName,
+    onChange,
+  }) => (
+    <label
+      data-adapttable-part="filter-checkbox"
+      className={className}
+      style={{ display: "flex", alignItems: "center", gap: 8 }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange(event.target.checked)
+        }
+      />{" "}
+      {label}{" "}
+      <span
+        data-adapttable-part="filter-checklist-count"
+        className={countClassName}
+      >
+        {count}
+      </span>
+    </label>
+  ),
+};
+
 function Harness({ rows = ROWS }: Readonly<{ rows?: readonly Row[] | null }>) {
   const [extra, setExtra] = useState<Record<string, string[] | undefined>>({});
   return (
-    <ChecklistFilter
+    <ChecklistChrome
       def={DEF}
       source={{
         allFilteredRows: rows ?? undefined,
@@ -28,11 +78,12 @@ function Harness({ rows = ROWS }: Readonly<{ rows?: readonly Row[] | null }>) {
             [key]: Array.isArray(value) ? value : undefined,
           })),
       }}
+      slots={slots}
     />
   );
 }
 
-describe("ChecklistFilter", () => {
+describe("ChecklistChrome", () => {
   it("hides when the source has no full filtered set", () => {
     render(<Harness rows={null} />);
     expect(screen.queryByText("Team")).toBeNull();
@@ -41,7 +92,7 @@ describe("ChecklistFilter", () => {
   it("renders from facets when the page has no allFilteredRows", () => {
     function FacetHarness() {
       return (
-        <ChecklistFilter
+        <ChecklistChrome
           def={DEF}
           source={{
             extra: {},
@@ -53,6 +104,7 @@ describe("ChecklistFilter", () => {
               ],
             },
           }}
+          slots={slots}
         />
       );
     }

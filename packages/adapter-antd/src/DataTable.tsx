@@ -7,7 +7,6 @@ import {
   columnsHaveFooter,
   type ConfirmHandler,
   type FilterRuntime,
-  FilterTreeBuilder,
   type GridFocusState,
   type GroupByInput,
   type GroupCollapseState,
@@ -52,10 +51,8 @@ import {
   windowGroupedEntries,
 } from "@adapttable/core";
 import {
-  BatchEditBar,
   DEFAULT_CARD_SIZE_PX,
   EXTRA_ROW_PARTS,
-  FindBar,
   GridFocusAnnouncer,
   insertExtraRows,
   isExtraEntry,
@@ -108,6 +105,7 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
+import { FilterTreeBuilder } from "./components/FilterTreeBuilder";
 import {
   ADAPTTABLE_EXTRA,
   buildGroupedDataSource,
@@ -117,6 +115,7 @@ import {
   isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
+import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
 import { SkeletonTable } from "./components/SkeletonTable";

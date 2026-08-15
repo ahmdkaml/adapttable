@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -26,6 +25,7 @@ import { Flex, Spinner, Text, TextField } from "@radix-ui/themes";
 import { type ReactNode, useId } from "react";
 
 import type { RadixAccentColor } from "../types";
+import { ChecklistFilter } from "./ChecklistFilter";
 import {
   Checkbox,
   FormField,

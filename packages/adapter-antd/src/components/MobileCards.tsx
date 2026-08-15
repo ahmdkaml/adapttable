@@ -23,13 +23,10 @@ import {
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
-  RowReorderButtons,
   rowReorderSignature,
   rowStyleSignature,
-  TreeToggle,
   useSummaryCells,
   type VirtualTableRow,
 } from "@adapttable/core/adapter";
@@ -44,6 +41,7 @@ import {
   type AdaptTableGroupRow,
   GroupHeaderCard,
 } from "./grouping";
+import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
 
 /** Row-action buttons for a single card. */
 function CardActions<TRow>({

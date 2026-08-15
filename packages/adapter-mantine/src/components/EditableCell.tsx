@@ -5,16 +5,20 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
 } from "@adapttable/core";
 import {
+  commitBooleanDraft,
   editorBusyProps,
-  NativeBooleanEditor,
-  NativeMultiSelectEditor,
+  editorValidationProps,
 } from "@adapttable/core/adapter";
-import { Select, TextInput } from "@mantine/core";
+import { Checkbox, Select, TextInput } from "@mantine/core";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
+
+import { editableCellSlots } from "./kitControls";
+import { NativeMultiSelectEditor } from "./nativeEditors";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -37,7 +41,17 @@ export function MantineCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <Checkbox
+        ref={ctrl.focusRef}
+        data-adapttable-part="edit-cell-editor"
+        aria-label={label}
+        checked={isDraftChecked(ctrl.draft)}
+        onChange={(event) =>
+          commitBooleanDraft(ctrl, event.currentTarget.checked)
+        }
+        onKeyDown={onKeyDown}
+        {...editorValidationProps(ctrl)}
+      />
     );
   }
 
@@ -120,6 +134,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={props.display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <MantineCellEditor ctrl={ctrl} label={props.editLabel} />
       )}

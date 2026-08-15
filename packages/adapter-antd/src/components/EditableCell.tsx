@@ -5,16 +5,19 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
 } from "@adapttable/core";
 import {
+  commitBooleanDraft,
   editorValidationProps,
-  NativeBooleanEditor,
-  NativeMultiSelectEditor,
 } from "@adapttable/core/adapter";
-import { Input, Select } from "antd";
+import { Checkbox, Input, Select } from "antd";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
+
+import { editableCellSlots } from "./kitControls";
+import { NativeMultiSelectEditor } from "./nativeEditors";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -37,7 +40,14 @@ export function AntdCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <Checkbox
+        data-adapttable-part="edit-cell-editor"
+        aria-label={label}
+        checked={isDraftChecked(ctrl.draft)}
+        onChange={(event) => commitBooleanDraft(ctrl, event.target.checked)}
+        onKeyDown={onKeyDown}
+        {...editorValidationProps(ctrl)}
+      />
     );
   }
 
@@ -122,6 +132,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <AntdCellEditor ctrl={ctrl} label={props.editLabel} />
       )}

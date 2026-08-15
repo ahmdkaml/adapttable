@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -19,6 +18,7 @@ import { ActionIcon, Card, Checkbox, Group, Table, Text } from "@mantine/core";
 import type { ReactElement, ReactNode } from "react";
 
 import { ChevronRightIcon } from "../icons";
+import { GroupMoreButton } from "./kitControls";
 
 function GroupToggle({
   expanded,

@@ -12,12 +12,44 @@ export {
   AutoFilterForm,
   type AutoFilterFormProps,
 } from "./components/AutoFilterForm";
+export {
+  ChecklistFilter,
+  type ChecklistFilterProps,
+} from "./components/ChecklistFilter";
 export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
 export {
   FilterPopover,
   type FilterPopoverProps,
 } from "./components/FilterPopover";
+export {
+  FilterTreeBuilder,
+  type FilterTreeBuilderProps,
+} from "./components/FilterTreeBuilder";
 export { FiltersIcon, SearchIcon } from "./components/icons";
+export {
+  BatchEditBar,
+  type BatchEditBarProps,
+  ColumnGroupToggle,
+  type ColumnGroupToggleProps,
+  FilterHeaderControl,
+  type FilterHeaderControlProps,
+  FilterHeaderRow,
+  type FilterHeaderRowProps,
+  FindBar,
+  type FindBarProps,
+  GroupMoreButton,
+  type GroupMoreButtonProps,
+  RowEditActions,
+  type RowEditActionsProps,
+  RowReorderButtons,
+  type RowReorderButtonsProps,
+  RowReorderHandle,
+  type RowReorderHandleProps,
+  TreeCell,
+  type TreeCellProps,
+  TreeToggle,
+  type TreeToggleProps,
+} from "./components/kitControls";
 export {
   type SavedViewsLabels,
   SavedViewsMenu,

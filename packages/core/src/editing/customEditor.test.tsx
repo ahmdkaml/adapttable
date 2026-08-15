@@ -8,6 +8,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { editableCellTestSlots } from "../internal/chromeTestSlots";
 import type { CustomCellEditorCtrl } from "./cellEditing";
 import { EditableCellGate } from "./EditableCellGate";
 import { useRowEditing } from "./rowEditing";
@@ -38,6 +39,7 @@ function Harness({
   };
   return (
     <EditableCellGate
+      slots={editableCellTestSlots}
       editing={{ onCellEdit, state }}
       row={ROWS[0]!}
       column={column}
@@ -222,6 +224,7 @@ describe("the gate in row mode", () => {
           open
         </button>
         <EditableCellGate
+          slots={editableCellTestSlots}
           editing={{ state, rowEditing }}
           row={ROW}
           column={COLUMNS[columnIndex]!}

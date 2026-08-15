@@ -1,8 +1,6 @@
-import { FilterTreeBuilder, type TableSource } from "@adapttable/core";
+import { type TableSource } from "@adapttable/core";
 import {
-  BatchEditBar,
   ExportAnnouncer,
-  FindBar,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SelectionStatsBar,
@@ -19,7 +17,9 @@ import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterPanel } from "./components/FilterPanel";
 import { FilterPopover } from "./components/FilterPopover";
+import { FilterTreeBuilder } from "./components/FilterTreeBuilder";
 import { FiltersIcon, SearchIcon } from "./components/icons";
+import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";

@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -29,6 +28,9 @@ import {
   Spin,
   Typography,
 } from "antd";
+
+import { ChecklistFilter } from "./ChecklistFilter";
+
 /** Localized strings the operator-first widgets render. */
 export type RangeFilterLabels = Required<TableLabels>;
 

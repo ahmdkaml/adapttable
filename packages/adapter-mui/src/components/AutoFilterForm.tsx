@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -30,6 +29,8 @@ import {
   TextField,
 } from "@mui/material";
 import type { ReactNode } from "react";
+
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /** The slice of the source the auto-built form reads and writes. */
 type FilterBag<TRow> = Pick<

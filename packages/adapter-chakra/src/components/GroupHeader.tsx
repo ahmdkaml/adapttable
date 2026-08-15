@@ -12,7 +12,6 @@ import {
 import {
   ExpandChevron,
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -21,6 +20,7 @@ import { Box, Card, HStack, IconButton, Table, Text } from "@chakra-ui/react";
 import type { ReactElement, ReactNode } from "react";
 
 import { subtleText } from "../styles";
+import { GroupMoreButton } from "./kitControls";
 import { Checkbox } from "./primitives";
 
 /** Chevron toggle for a row-group's collapse state (mirrors {@link ExpandToggle}). */

@@ -9,7 +9,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { TreeCell } from "./TreeCell";
+import { treeToggleTestSlots } from "../internal/chromeTestSlots";
+import { TreeCellChrome } from "./TreeCell";
 import type { TreeEntry } from "./treeRows";
 
 interface Row {
@@ -33,9 +34,14 @@ const part = (name: string) =>
 describe("TreeCell", () => {
   it("indents the cell's content, chevron and all", () => {
     render(
-      <TreeCell entry={entry()} columnKey="name" treeColumnKey="name">
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
+        entry={entry()}
+        columnKey="name"
+        treeColumnKey="name"
+      >
         <span>lib</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     const cell = part("tree-cell")!;
     expect(cell.style.paddingInlineStart).toBe("1.5rem");
@@ -46,9 +52,14 @@ describe("TreeCell", () => {
 
   it("passes a column that is not the tree column straight through", () => {
     render(
-      <TreeCell entry={entry()} columnKey="size" treeColumnKey="name">
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
+        entry={entry()}
+        columnKey="size"
+        treeColumnKey="name"
+      >
         <span>2 KB</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     expect(part("tree-cell")).toBeNull();
     expect(screen.getByText("2 KB")).toBeInTheDocument();
@@ -56,9 +67,14 @@ describe("TreeCell", () => {
 
   it("passes a flat table's cell straight through", () => {
     render(
-      <TreeCell entry={undefined} columnKey="name" treeColumnKey="name">
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
+        entry={undefined}
+        columnKey="name"
+        treeColumnKey="name"
+      >
         <span>Ada</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     expect(part("tree-cell")).toBeNull();
     expect(screen.getByText("Ada")).toBeInTheDocument();
@@ -66,7 +82,8 @@ describe("TreeCell", () => {
 
   it("carries the class hooks the unstyled kit passes", () => {
     render(
-      <TreeCell
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
         entry={entry({ hasChildren: false })}
         columnKey="name"
         treeColumnKey="name"
@@ -74,7 +91,7 @@ describe("TreeCell", () => {
         spacerClassName="cn-spacer"
       >
         <span>util.ts</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     expect(part("tree-cell")).toHaveClass("cn-cell");
     expect(part("tree-spacer")).toHaveClass("cn-spacer");
@@ -83,7 +100,8 @@ describe("TreeCell", () => {
   it("reports a click to the handler, and takes the chevron's class", () => {
     const onToggle = vi.fn();
     render(
-      <TreeCell
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
         entry={entry({ level: 0 })}
         columnKey="name"
         treeColumnKey="name"
@@ -91,7 +109,7 @@ describe("TreeCell", () => {
         toggleClassName="cn-toggle"
       >
         <span>src</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     // A root sits at the margin: no indent to apply.
     expect(part("tree-cell")!.style.paddingInlineStart).toBe("");
@@ -104,9 +122,14 @@ describe("TreeCell", () => {
     // A host rendering the cell itself may not wire one; the chevron is still
     // drawn, it just does nothing.
     render(
-      <TreeCell entry={entry()} columnKey="name" treeColumnKey="name">
+      <TreeCellChrome
+        slots={treeToggleTestSlots}
+        entry={entry()}
+        columnKey="name"
+        treeColumnKey="name"
+      >
         <span>lib</span>
-      </TreeCell>
+      </TreeCellChrome>
     );
     part("tree-toggle")!.click();
     expect(part("tree-toggle")).toHaveAttribute("aria-expanded", "false");

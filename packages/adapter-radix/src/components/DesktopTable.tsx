@@ -8,7 +8,6 @@ import {
   type ConfirmHandler,
   type Direction,
   type EditableCellEditing,
-  FilterHeaderRow,
   type GridFocusState,
   headerFilterStickTop,
   PIN_Z,
@@ -30,7 +29,6 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
-  ColumnGroupToggle,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
@@ -50,13 +48,11 @@ import {
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
   rowPinSignature,
   rowReorderDropStyle,
-  RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
   rowStyleSignature,
@@ -65,7 +61,6 @@ import {
   type SharedTableRenderProps,
   sortArrow,
   tableRenderModel,
-  TreeCell,
   useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
@@ -84,6 +79,13 @@ import type { RadixAccentColor } from "../types";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderRow } from "./GroupHeader";
+import {
+  ColumnGroupToggle,
+  FilterHeaderRow,
+  RowEditActions,
+  RowReorderHandle,
+  TreeCell,
+} from "./kitControls";
 import { Checkbox } from "./primitives";
 import { RowActionButtons } from "./RowActionButtons";
 

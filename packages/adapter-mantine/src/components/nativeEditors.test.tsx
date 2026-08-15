@@ -5,11 +5,13 @@
  * these cover is the wiring around them: the draft shape each holds, and the
  * gesture that commits.
  */
+import {
+  type EditableCellEditorCtrl,
+  formatMultiDraft,
+} from "@adapttable/core";
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { formatMultiDraft } from "./cellEditing";
-import type { EditableCellEditorCtrl } from "./EditableCellGate";
 import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
 
 const ctrlFor = (
@@ -34,6 +36,7 @@ describe("NativeBooleanEditor", () => {
       <NativeBooleanEditor
         ctrl={ctrl}
         label="Approved"
+        className="bool-cls"
         onKeyDown={() => undefined}
       />
     );
@@ -42,7 +45,6 @@ describe("NativeBooleanEditor", () => {
     expect(box.checked).toBe(false);
 
     fireEvent.click(box);
-    // One gesture: the draft is written and committed together.
     expect(ctrl.setDraft).toHaveBeenCalledExactlyOnceWith("true");
     expect(ctrl.commitOnBlur).toHaveBeenCalledOnce();
   });
@@ -91,6 +93,7 @@ describe("NativeMultiSelectEditor", () => {
       <NativeMultiSelectEditor
         ctrl={ctrl}
         label="Tags"
+        className="multi-cls"
         onKeyDown={() => undefined}
       />
     );

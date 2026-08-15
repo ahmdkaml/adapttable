@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -31,6 +30,8 @@ import {
   TextInput,
 } from "@mantine/core";
 import { type ReactNode } from "react";
+
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {

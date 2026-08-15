@@ -17,13 +17,10 @@ import {
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
-  RowReorderButtons,
   rowReorderSignature,
   rowStyleSignature,
-  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import { type CSSProperties, memo, type ReactNode, useMemo } from "react";
@@ -34,6 +31,7 @@ import { type SharedProps } from "./DesktopTable";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
+import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
 import { Checkbox } from "./primitives";
 import { RowActionButtons } from "./RowActionButtons";
 

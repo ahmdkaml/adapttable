@@ -79,7 +79,9 @@ slot into a dataset index. `rowReorderSignature(reorder, rowId, localIndex)` is
 the memo digest so a virtualized row repaints when it is lifted or is the drop
 target, and bails out otherwise.
 
-Kits render `RowReorderHandle` (`RowReorderHandleProps`) and `RowReorderButtons`
-(`RowReorderButtonsProps`) from `@adapttable/core/adapter`. `RowReorderAnnouncer`
-is the live region. `REORDER_COLUMN_WIDTH` is the pin-lead width every kit
-shares. `ROW_DND_MIME` is the HTML5 drag type.
+Each adapter mounts `RowReorderHandle` (`RowReorderHandleProps`) and
+`RowReorderButtons` (`RowReorderButtonsProps`) over
+`RowReorderHandleChrome` / `RowReorderButtonsChrome`.
+`RowReorderAnnouncer` stays on `@adapttable/core/adapter`.
+`REORDER_COLUMN_WIDTH` is the pin-lead width every kit shares.
+`ROW_DND_MIME` is the HTML5 drag type.

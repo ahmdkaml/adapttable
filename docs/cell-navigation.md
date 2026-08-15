@@ -151,8 +151,9 @@ On mobile the cards are a list rather than a grid, so the bar opens and searches
 but the hits are not marked; the desktop layout is where a cell can be pointed
 at.
 
-Headless: `findMatches`, `matchKeySet`, `stepMatch`, `useFindInTable`, and
-`FindBar` in `@adapttable/core/adapter`.
+Headless: `findMatches`, `matchKeySet`, `stepMatch`, `useFindInTable` in
+`@adapttable/core/adapter`. Each adapter mounts `FindBar` over
+`FindBarChrome`.
 
 ## What the selection adds up to
 

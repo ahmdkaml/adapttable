@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -19,6 +18,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { DataTableClassNames } from "../types";
 import { ChevronIcon } from "./icons";
+import { GroupMoreButton } from "./kitControls";
 
 /** Kit-native (unstyled) group header row for the desktop table. */
 export function GroupHeaderRow<TRow>({

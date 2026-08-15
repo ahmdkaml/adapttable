@@ -367,9 +367,9 @@ every locale.
 
 Headless: `useRowEditing` (`RowEditingState`, `RowEditDrafts`,
 `UseRowEditingOptions`), with `RowEditCell` (`RowEditCellProps`),
-`RowEditActions` (`RowEditActionsProps`) and `rowEditControls`
-(`RowEditControlsOptions` in, `RowEditControls` out) from
-`@adapttable/core/adapter` for a custom renderer.
+`rowEditControls` (`RowEditControlsOptions` in, `RowEditControls` out)
+from `@adapttable/core/adapter`. Each adapter mounts `RowEditActions`
+(`RowEditActionsProps`) over `RowEditActionsChrome`.
 
 ## Changing many rows, saving once
 
@@ -405,8 +405,9 @@ Parts: `batch-edit-cell`, `batch-edit-bar`, `batch-edit-count`,
 `batch-edit-save`, `batch-edit-cancel`.
 
 Headless: `useBatchEditing` (`BatchEditingState`, `BatchRowEdit`,
-`UseBatchEditingOptions`), with `BatchEditCell` and `BatchEditBar` from
-`@adapttable/core/adapter`.
+`UseBatchEditingOptions`), with `BatchEditCell` on
+`@adapttable/core/adapter`. Each adapter mounts `BatchEditBar` over
+`BatchEditBarChrome`.
 
 ## Adding, duplicating and deleting rows
 

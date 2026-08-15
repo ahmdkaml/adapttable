@@ -8,7 +8,6 @@ import {
   type FilterDef,
   filterDefForColumn,
   type FilterFormSource,
-  FilterHeaderControl,
   type FilterTypeRegistry,
   type GridFocusState,
   type GroupCollapseState,
@@ -27,7 +26,6 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
-  ColumnGroupToggle,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
   FillHandle,
@@ -35,10 +33,7 @@ import {
   headerGroupRows,
   REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
-  RowEditActions,
-  RowReorderHandle,
   type RowReorderState,
-  TreeCell,
 } from "@adapttable/core/adapter";
 import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
 import type {
@@ -59,6 +54,13 @@ import {
   isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
+import {
+  ColumnGroupToggle,
+  FilterHeaderControl,
+  RowEditActions,
+  RowReorderHandle,
+  TreeCell,
+} from "./components/kitControls";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors

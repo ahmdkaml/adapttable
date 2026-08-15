@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { columnGroupTestSlots } from "../internal/chromeTestSlots";
 import { defaultLabels } from "../labels";
-import { ColumnGroupToggle } from "./ColumnGroupToggle";
+import { ColumnGroupToggleChrome } from "./ColumnGroupToggle";
 import type { HeaderGroupCell } from "./headerGroups";
 
 const cell = (over: Partial<HeaderGroupCell> = {}): HeaderGroupCell => ({
@@ -18,7 +19,8 @@ const cell = (over: Partial<HeaderGroupCell> = {}): HeaderGroupCell => ({
 describe("ColumnGroupToggle", () => {
   it("renders nothing useful until the cell is collapsible", () => {
     const { container } = render(
-      <ColumnGroupToggle
+      <ColumnGroupToggleChrome
+        slots={columnGroupTestSlots}
         cell={cell({ collapsible: false })}
         labels={defaultLabels}
         onToggle={vi.fn()}
@@ -30,7 +32,8 @@ describe("ColumnGroupToggle", () => {
   it("toggles the group and names the control from the labels", () => {
     const onToggle = vi.fn();
     render(
-      <ColumnGroupToggle
+      <ColumnGroupToggleChrome
+        slots={columnGroupTestSlots}
         cell={cell()}
         labels={defaultLabels}
         onToggle={onToggle}

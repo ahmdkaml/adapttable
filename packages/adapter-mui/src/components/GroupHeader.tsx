@@ -10,7 +10,6 @@ import {
 } from "@adapttable/core";
 import {
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -26,6 +25,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { ReactElement, ReactNode } from "react";
+
+import { GroupMoreButton } from "./kitControls";
 
 function GroupChevron({ expanded }: Readonly<{ expanded: boolean }>) {
   return (

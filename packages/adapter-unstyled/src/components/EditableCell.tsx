@@ -17,6 +17,8 @@ import {
 } from "@adapttable/core/adapter";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
+import { editableCellSlots } from "./kitControls";
+
 /** Native text / number / select editor for the unstyled adapter. */
 export function NativeCellEditor({
   ctrl,
@@ -157,6 +159,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={props.display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <NativeCellEditor
           ctrl={ctrl}

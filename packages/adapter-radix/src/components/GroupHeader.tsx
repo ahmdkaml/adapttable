@@ -12,7 +12,6 @@ import {
 import {
   ExpandChevron,
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -21,6 +20,7 @@ import { Box, Card, Flex, IconButton, Table, Text } from "@radix-ui/themes";
 import type { ReactElement, ReactNode } from "react";
 
 import type { RadixAccentColor } from "../types";
+import { GroupMoreButton } from "./kitControls";
 import { Checkbox } from "./primitives";
 
 /** Chevron toggle for a row-group's collapse state (mirrors {@link ExpandToggle}). */

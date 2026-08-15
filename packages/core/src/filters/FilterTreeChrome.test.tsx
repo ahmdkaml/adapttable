@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import type { QueryFilterGroup } from "../source/queryContract";
 import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
-import { FilterTreeBuilder } from "./FilterTreeBuilder";
+import { FilterTreeChrome, type FilterTreeSlots } from "./FilterTreeChrome";
 
 interface Row {
   name: string;
@@ -21,16 +21,89 @@ const DEFS: FilterDef<Row>[] = [
   { key: "start", type: "dateRange", label: "Start" },
 ];
 
+const slots: FilterTreeSlots = {
+  Select: ({
+    label,
+    value,
+    part,
+    options,
+    className,
+    fieldClassName,
+    labelClassName,
+    onChange,
+  }) => (
+    <label data-adapttable-part="filter-field" className={fieldClassName}>
+      <span data-adapttable-part="filter-label" className={labelClassName}>
+        {label}
+      </span>
+      <select
+        aria-label={label}
+        data-adapttable-part={part}
+        className={className}
+        value={value}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+          onChange(event.target.value)
+        }
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  ),
+  Input: ({
+    label,
+    value,
+    type,
+    className,
+    fieldClassName,
+    labelClassName,
+    onChange,
+  }) => (
+    <label data-adapttable-part="filter-field" className={fieldClassName}>
+      <span data-adapttable-part="filter-label" className={labelClassName}>
+        {label}
+      </span>
+      <input
+        aria-label={label}
+        data-adapttable-part="filter-input"
+        className={className}
+        type={type}
+        value={value}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange(event.target.value)
+        }
+      />
+    </label>
+  ),
+  Button: ({ label, part, className, onClick }) => (
+    <button
+      type="button"
+      data-adapttable-part={part}
+      className={className}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  ),
+};
+
 function Harness({ initial }: Readonly<{ initial?: QueryFilterGroup }> = {}) {
   const [filterTree, setFilterTree] = useState<QueryFilterGroup | undefined>(
     initial
   );
   return (
-    <FilterTreeBuilder defs={DEFS} source={{ filterTree, setFilterTree }} />
+    <FilterTreeChrome
+      defs={DEFS}
+      source={{ filterTree, setFilterTree }}
+      slots={slots}
+    />
   );
 }
 
-describe("FilterTreeBuilder", () => {
+describe("FilterTreeChrome", () => {
   it("adds a condition and writes the value into the tree", () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
@@ -104,7 +177,11 @@ describe("FilterTreeBuilder", () => {
 
   it("renders nothing without defs or a setter", () => {
     const { container } = render(
-      <FilterTreeBuilder defs={[]} source={{ filterTree: undefined }} />
+      <FilterTreeChrome
+        defs={[]}
+        source={{ filterTree: undefined }}
+        slots={slots}
+      />
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -157,7 +234,7 @@ describe("FilterTreeBuilder", () => {
       defaultOp: "eq",
     });
     render(
-      <FilterTreeBuilder
+      <FilterTreeChrome
         defs={[{ key: "sku", type: "sku", label: "SKU" }]}
         source={{
           filterTree: {
@@ -167,6 +244,7 @@ describe("FilterTreeBuilder", () => {
           setFilterTree: () => undefined,
         }}
         registry={registry}
+        slots={slots}
       />
     );
     expect(

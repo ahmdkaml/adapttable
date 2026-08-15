@@ -7,6 +7,8 @@ import { renderMantine } from "../test-utils";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { BulkActionBar } from "./BulkActionBar";
 import { EmptyState } from "./EmptyState";
+import { ErrorState } from "./ErrorState";
+import { ExpandToggle } from "./ExpandToggle";
 import { FilterPopover } from "./FilterPopover";
 import { PaginationFooter } from "./PaginationFooter";
 import { TableSkeleton } from "./TableSkeleton";
@@ -25,6 +27,91 @@ describe("EmptyState", () => {
     expect(screen.getByText("Nothing")).toBeInTheDocument();
     expect(screen.getByText("try again")).toBeInTheDocument();
     expect(screen.getByTestId("ic")).toBeInTheDocument();
+  });
+
+  it("renders the default icon, an action, and no description", () => {
+    renderMantine(
+      <EmptyState title="Nothing" action={<button type="button">Go</button>} />
+    );
+    expect(screen.getByRole("status").querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Go" })).toBeVisible();
+    expect(screen.queryByText("try again")).toBeNull();
+  });
+});
+
+describe("ErrorState", () => {
+  it("hides retry when no handler is passed", () => {
+    renderMantine(
+      <ErrorState
+        error={new Error("boom")}
+        title="Failed"
+        message="Could not load"
+        retryLabel="Retry"
+      />
+    );
+    expect(screen.getByText("Could not load")).toBeVisible();
+    expect(screen.getByText("boom")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
+  it("retries when the handler is passed", () => {
+    const onRetry = vi.fn();
+    renderMantine(
+      <ErrorState
+        error={new Error("boom")}
+        title="Failed"
+        message="Could not load"
+        retryLabel="Retry"
+        onRetry={onRetry}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it("shows a busy retry button while retrying", () => {
+    renderMantine(
+      <ErrorState
+        error={new Error("boom")}
+        title="Failed"
+        message="Could not load"
+        retryLabel="Retry"
+        onRetry={vi.fn()}
+        isRetrying
+      />
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toHaveAttribute(
+      "data-loading",
+      "true"
+    );
+  });
+});
+
+describe("ExpandToggle", () => {
+  it("names the collapsed and expanded states", () => {
+    const onToggle = vi.fn();
+    renderMantine(
+      <ExpandToggle
+        expanded={false}
+        expandLabel="Open"
+        collapseLabel="Close"
+        onToggle={onToggle}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    expect(onToggle).toHaveBeenCalledOnce();
+    renderMantine(
+      <ExpandToggle
+        expanded
+        expandLabel="Open"
+        collapseLabel="Close"
+        onToggle={onToggle}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Close" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
   });
 });
 
@@ -52,6 +139,18 @@ describe("ActiveFilterChips", () => {
     expect(onClearAll).toHaveBeenCalled();
     fireEvent.click(screen.getByLabelText("Clear all: Status: Active"));
     expect(onRemove).toHaveBeenCalled();
+  });
+
+  it("hides clear-all when no handler is passed", () => {
+    renderMantine(
+      <ActiveFilterChips
+        chips={[{ key: "k", label: "Status: Active", onRemove: vi.fn() }]}
+        label="filters"
+        clearAllLabel="Clear all"
+      />
+    );
+    expect(screen.getByText("Status: Active")).toBeVisible();
+    expect(screen.queryByText("Clear all")).toBeNull();
   });
 });
 
@@ -117,6 +216,13 @@ describe("TableSkeleton", () => {
     renderMantine(<TableSkeleton columns={0} rows={1} />);
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByText(labels.loading)).toBeNull();
+  });
+
+  it("renders the loading label when asked", () => {
+    renderMantine(
+      <TableSkeleton columns={2} rows={2} loadingLabel={labels.loading} />
+    );
+    expect(screen.getByText(labels.loading)).toBeVisible();
   });
 });
 

@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -26,6 +25,7 @@ import { type ReactNode, useId } from "react";
 
 import type { BaseUiAccentColor } from "../types";
 import { Flex, Spinner, Text, TextField } from "../ui";
+import { ChecklistFilter } from "./ChecklistFilter";
 import { FormField, NativeSelect, type SelectOption } from "./primitives";
 
 /**

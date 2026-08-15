@@ -1,0 +1,190 @@
+import type { QueryFilterGroup } from "@adapttable/core";
+import { fireEvent, screen } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, it } from "vitest";
+
+import {
+  defaultLabels,
+  type ExtraFilters,
+  type FilterDef,
+  type FilterValue,
+} from "../index";
+import { renderRadix } from "../test-utils";
+import { FilterTreeBuilder } from "./FilterTreeBuilder";
+import { FilterHeaderControl, FilterHeaderRow } from "./kitControls";
+
+interface Row {
+  name: string;
+  team: string;
+  tags: string[];
+  core: boolean;
+  age: number;
+  hired: string;
+}
+
+const DEFS: FilterDef<Row>[] = [
+  { key: "name", type: "text", label: "Name" },
+  {
+    key: "team",
+    type: "select",
+    label: "Team",
+    options: [
+      { value: "Core", label: "Core" },
+      { value: "Web", label: "Web" },
+    ],
+  },
+  {
+    key: "tags",
+    type: "multiSelect",
+    label: "Tags",
+    options: [
+      { value: "a", label: "A" },
+      { value: "b", label: "B" },
+    ],
+  },
+  { key: "core", type: "boolean", label: "Core" },
+  { key: "age", type: "numberRange", label: "Age" },
+  { key: "hired", type: "dateRange", label: "Hired" },
+];
+
+function HeaderHarness({ extra: initial = {} }: { extra?: ExtraFilters }) {
+  const [extra, setExtra] = useState<ExtraFilters>(initial);
+  const source = {
+    extra,
+    setExtra: (key: string, value: FilterValue) =>
+      setExtra((prev) => ({ ...prev, [key]: value })),
+    setExtras: (patch: ExtraFilters) =>
+      setExtra((prev) => ({ ...prev, ...patch })),
+  };
+  return (
+    <table>
+      <thead>
+        <FilterHeaderRow
+          columns={[
+            { key: "name" },
+            { key: "team" },
+            { key: "tags" },
+            { key: "core" },
+            { key: "age" },
+            { key: "hired" },
+          ]}
+          defs={DEFS}
+          source={source}
+          labels={defaultLabels}
+        />
+      </thead>
+    </table>
+  );
+}
+
+function TreeHarness() {
+  const [filterTree, setFilterTree] = useState<QueryFilterGroup | undefined>();
+  return (
+    <FilterTreeBuilder defs={DEFS} source={{ filterTree, setFilterTree }} />
+  );
+}
+
+describe("kit header filters (radix)", () => {
+  it("writes every compact header widget", () => {
+    renderRadix(<HeaderHarness />);
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Ada" },
+    });
+    expect(screen.getByLabelText("Name")).toHaveValue("Ada");
+
+    fireEvent.change(screen.getByLabelText("Team"), {
+      target: { value: "Web" },
+    });
+    expect(screen.getByLabelText("Team")).toHaveValue("Web");
+
+    fireEvent.click(screen.getByLabelText("Tags"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
+    expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
+    expect(screen.getByLabelText("Tags")).toHaveTextContent("2");
+
+    fireEvent.change(screen.getByLabelText("Core"), {
+      target: { value: "true" },
+    });
+    expect(screen.getByLabelText("Core")).toHaveValue("true");
+
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "30" },
+    });
+    expect(screen.getByLabelText("Age")).toHaveValue(30);
+
+    fireEvent.change(screen.getByLabelText("Hired"), {
+      target: { value: "2024-01-01" },
+    });
+    expect(screen.getByLabelText("Hired")).toHaveValue("2024-01-01");
+  });
+
+  it("writes the upper bound of a between pair", () => {
+    renderRadix(
+      <HeaderHarness extra={{ ageOp: "between", ageMin: "10", ageMax: "40" }} />
+    );
+    const bounds = screen.getAllByLabelText("Age");
+    expect(bounds).toHaveLength(2);
+    fireEvent.change(bounds[1]!, { target: { value: "50" } });
+    expect(bounds[1]).toHaveValue(50);
+  });
+
+  it("renders a lone header control", () => {
+    function One() {
+      const [extra, setExtra] = useState<ExtraFilters>({});
+      return (
+        <FilterHeaderControl
+          def={DEFS[1]!}
+          source={{
+            extra,
+            setExtra: (key, value) =>
+              setExtra((prev) => ({ ...prev, [key]: value })),
+            setExtras: (patch) => setExtra((prev) => ({ ...prev, ...patch })),
+          }}
+          labels={defaultLabels}
+        />
+      );
+    }
+    renderRadix(<One />);
+    fireEvent.change(screen.getByLabelText("Team"), {
+      target: { value: "Core" },
+    });
+    expect(screen.getByLabelText("Team")).toHaveValue("Core");
+  });
+});
+
+describe("kit filter tree (radix)", () => {
+  it("adds a condition and writes the value", () => {
+    renderRadix(<TreeHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
+    fireEvent.change(screen.getByLabelText("Value"), {
+      target: { value: "Ada" },
+    });
+    expect(screen.getByLabelText("Field")).toHaveValue("name");
+    expect(screen.getByLabelText("Value")).toHaveValue("Ada");
+  });
+
+  it("switches field, operator, and a relative date", () => {
+    renderRadix(<TreeHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
+    fireEvent.change(screen.getByLabelText("Field"), {
+      target: { value: "age" },
+    });
+    fireEvent.change(screen.getByLabelText("Operator"), {
+      target: { value: "between" },
+    });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("To"), { target: { value: "9" } });
+    fireEvent.change(screen.getByLabelText("Field"), {
+      target: { value: "hired" },
+    });
+    fireEvent.change(screen.getByLabelText("Operator"), {
+      target: { value: "relative" },
+    });
+    fireEvent.change(screen.getByLabelText("Relative"), {
+      target: { value: "last" },
+    });
+    fireEvent.change(screen.getByLabelText("N"), { target: { value: "14" } });
+    expect(screen.getByLabelText("N")).toHaveValue(14);
+  });
+});

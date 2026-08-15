@@ -8,14 +8,12 @@ import {
   isMultiSelectEditor,
   isSelectEditor,
 } from "@adapttable/core";
-import {
-  editorValidationProps,
-  NativeBooleanEditor,
-  NativeMultiSelectEditor,
-} from "@adapttable/core/adapter";
+import { editorValidationProps } from "@adapttable/core/adapter";
 import { TextField } from "@radix-ui/themes";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
+import { editableCellSlots } from "./kitControls";
+import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
 import { NativeSelect } from "./primitives";
 
 function stopEditKeys(event: KeyboardEvent): void {
@@ -114,6 +112,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={props.display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <RadixCellEditor ctrl={ctrl} label={props.editLabel} />
       )}

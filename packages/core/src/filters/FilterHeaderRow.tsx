@@ -1,8 +1,9 @@
 /**
- * Compact per-column filter row under the header. One native renderer
- * for every kit — the same defs and extra bag the panel uses (#282).
+ * Compact per-column filter row under the header. Structure only —
+ * adapters pass the Search, Select, range inputs and multi menu the
+ * end user clicks. Same defs and extra bag the panel uses (#282).
  */
-import type { CSSProperties, ReactElement } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import type { ColumnDef, TableLabels } from "../types";
 import { ColumnSpacer } from "../virtual/ColumnSpacer";
@@ -45,7 +46,7 @@ export function headerFilterStickTop(
   return { ...stickyExtras, ...base, top };
 }
 
-/** Props for {@link FilterHeaderRow}. */
+/** Props for an adapter {@link FilterHeaderRow} — no slots on the public API. */
 export interface FilterHeaderRowProps<TRow> {
   /** When false the row does not render, even if defs exist. */
   readonly enabled?: boolean;
@@ -64,6 +65,80 @@ export interface FilterHeaderRowProps<TRow> {
   readonly padStyle?: CSSProperties;
   readonly stickyAttr?: true;
   readonly classNames?: FilterHeaderClassNames;
+}
+
+/** Props for an adapter {@link FilterHeaderControl} — no slots on the public API. */
+export interface FilterHeaderControlProps<TRow> {
+  readonly def: FilterDef<TRow>;
+  readonly source: FilterFormSource<TRow>;
+  readonly labels: Required<TableLabels>;
+  readonly className?: string;
+  readonly registry?: FilterTypeRegistry;
+}
+
+/** One option in a header Select or multi menu. */
+export interface FilterHeaderOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+/** Kit search field a text header cell calls. */
+export interface FilterHeaderSearchProps {
+  readonly label: string;
+  readonly placeholder: string;
+  readonly value: string;
+  readonly className?: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit Select a select/boolean header cell calls. */
+export interface FilterHeaderSelectProps {
+  readonly label: string;
+  readonly value: string;
+  readonly options: readonly FilterHeaderOption[];
+  readonly className?: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit number/date field a range header cell calls. */
+export interface FilterHeaderRangeProps {
+  readonly label: string;
+  readonly type: "text" | "number" | "date";
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+}
+
+/** Kit compact multi menu a checklist/multiSelect header cell calls. */
+export interface FilterHeaderMultiProps {
+  readonly label: string;
+  readonly summary: string;
+  readonly options: readonly FilterHeaderOption[];
+  readonly selected: readonly string[];
+  readonly className?: string;
+  readonly menuClassName?: string;
+  readonly onToggle: (value: string, checked: boolean) => void;
+}
+
+/** Adapter-supplied controls for {@link FilterHeaderChrome}. */
+export interface FilterHeaderSlots {
+  readonly Search: (props: FilterHeaderSearchProps) => ReactNode;
+  readonly Select: (props: FilterHeaderSelectProps) => ReactNode;
+  readonly Range: (props: FilterHeaderRangeProps) => ReactNode;
+  readonly Multi: (props: FilterHeaderMultiProps) => ReactNode;
+}
+
+/** Props for {@link FilterHeaderChrome}. */
+export interface FilterHeaderChromeProps<
+  TRow,
+> extends FilterHeaderRowProps<TRow> {
+  readonly slots: FilterHeaderSlots;
+}
+
+/** Props for {@link FilterHeaderControlChrome}. */
+export interface FilterHeaderControlChromeProps<
+  TRow,
+> extends FilterHeaderControlProps<TRow> {
+  readonly slots: FilterHeaderSlots;
 }
 
 /** The definition that drives a column's header filter, if any. */
@@ -100,22 +175,23 @@ function TextCell<TRow>({
   source,
   labels,
   className,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
+  slots: FilterHeaderSlots;
 }>): ReactElement {
   const widget = useTextFilterWidget(def, source);
+  const Search = slots.Search;
   return (
-    <input
-      type="search"
-      value={widget.value}
-      aria-label={widget.label}
+    <Search
+      label={widget.label}
       placeholder={labels.search}
-      data-adapttable-part="filter-header-input"
+      value={widget.value}
       className={className}
-      onChange={(event) => widget.write(widget.op, event.target.value)}
+      onChange={(value) => widget.write(widget.op, value)}
     />
   );
 }
@@ -125,34 +201,36 @@ function SelectCell<TRow>({
   source,
   labels,
   className,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
+  slots: FilterHeaderSlots;
 }>): ReactElement {
   const { options } = useFilterOptions(def);
   const selected = listFilterValues(source.extra[def.key]);
   const write = (values: readonly string[]) => {
     source.setExtra(def.key, values.length > 0 ? [...values] : undefined);
   };
+  const Select = slots.Select;
   return (
-    <select
-      aria-label={filterLabel(def)}
+    <Select
+      label={filterLabel(def)}
       value={selected[0] ?? ""}
-      data-adapttable-part="filter-header-input"
       className={className}
-      onChange={(event) => {
-        write(event.target.value === "" ? [] : [event.target.value]);
+      options={[
+        { value: "", label: labels.boolAny },
+        ...options.map((option) => ({
+          value: option.value,
+          label: option.label,
+        })),
+      ]}
+      onChange={(value) => {
+        write(value === "" ? [] : [value]);
       }}
-    >
-      <option value="">{labels.boolAny}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    />
   );
 }
 
@@ -162,84 +240,44 @@ function CompactMultiCell<TRow>({
   labels,
   className,
   menuClassName,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
   menuClassName?: string;
+  slots: FilterHeaderSlots;
 }>): ReactElement {
   const { options } = useFilterOptions(def);
   const selected = listFilterValues(source.extra[def.key]);
   const write = (values: readonly string[]) => {
     source.setExtra(def.key, values.length > 0 ? [...values] : undefined);
   };
-  const label = filterLabel(def);
   const first = options.find((option) => option.value === selected[0]);
   let summary = labels.boolAny;
   if (selected.length === 1) summary = first?.label ?? selected[0] ?? summary;
   if (selected.length > 1) summary = labels.groupCount(selected.length);
+  const Multi = slots.Multi;
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
-      <summary
-        aria-label={label}
-        data-adapttable-part="filter-header-input"
-        className={className}
-        style={{
-          cursor: "pointer",
-          display: "block",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {summary}
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          background: "Canvas",
-          color: "CanvasText",
-          border: "1px solid color-mix(in srgb, CanvasText 24%, Canvas)",
-        }}
-      >
-        {options.map((option) => (
-          <label
-            key={option.value}
-            style={{ display: "flex", gap: 8, alignItems: "center" }}
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(option.value)}
-              onChange={(event) => {
-                write(
-                  event.target.checked
-                    ? [...selected, option.value]
-                    : selected.filter((value) => value !== option.value)
-                );
-              }}
-            />
-            {option.label}
-          </label>
-        ))}
-      </div>
-    </details>
+    <Multi
+      label={filterLabel(def)}
+      summary={summary}
+      options={options.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))}
+      selected={selected}
+      className={className}
+      menuClassName={menuClassName}
+      onToggle={(value, checked) => {
+        write(
+          checked
+            ? [...selected, value]
+            : selected.filter((item) => item !== value)
+        );
+      }}
+    />
   );
 }
 
@@ -248,27 +286,28 @@ function BooleanCell<TRow>({
   source,
   labels,
   className,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   labels: Required<TableLabels>;
   className?: string;
+  slots: FilterHeaderSlots;
 }>): ReactElement {
   const widget = useBooleanFilterWidget(def, source);
+  const Select = slots.Select;
   return (
-    <select
-      aria-label={widget.label}
+    <Select
+      label={widget.label}
       value={widget.choice}
-      data-adapttable-part="filter-header-input"
       className={className}
-      onChange={(event) =>
-        widget.write(event.target.value as typeof widget.choice)
-      }
-    >
-      <option value="">{labels.boolAny}</option>
-      <option value="true">{labels.boolTrue}</option>
-      <option value="false">{labels.boolFalse}</option>
-    </select>
+      options={[
+        { value: "", label: labels.boolAny },
+        { value: "true", label: labels.boolTrue },
+        { value: "false", label: labels.boolFalse },
+      ]}
+      onChange={(value) => widget.write(value as typeof widget.choice)}
+    />
   );
 }
 
@@ -276,57 +315,35 @@ function RangeCell<TRow>({
   def,
   source,
   className,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
   className?: string;
+  slots: FilterHeaderSlots;
 }>): ReactElement {
   const widget = useRangeFilterWidget(def, source);
   // Compact header has no operator picker. An unset op would wipe the
   // value on write; `gte` is the same inference a lone lower bound uses.
   const op = widget.op ?? "gte";
+  const Range = slots.Range;
   return (
     <span data-adapttable-part="filter-header-input" className={className}>
-      <input
+      <Range
+        label={widget.label}
         type={widget.inputType}
         value={widget.a}
-        aria-label={widget.label}
-        onChange={(event) => widget.write(op, event.target.value, widget.b)}
+        onChange={(value) => widget.write(op, value, widget.b)}
       />
       {widget.arity === "two" ? (
-        <input
+        <Range
+          label={widget.label}
           type={widget.inputType}
           value={widget.b}
-          aria-label={widget.label}
-          onChange={(event) => widget.write(op, widget.a, event.target.value)}
+          onChange={(value) => widget.write(op, widget.a, value)}
         />
       ) : null}
     </span>
-  );
-}
-
-/** Compact control for one filter definition — used in the header row and antd titles. */
-export function FilterHeaderControl<TRow>({
-  def,
-  source,
-  labels,
-  className,
-  registry = defaultFilterRegistry,
-}: Readonly<{
-  def: FilterDef<TRow>;
-  source: FilterFormSource<TRow>;
-  labels: Required<TableLabels>;
-  className?: string;
-  registry?: FilterTypeRegistry;
-}>): ReactElement {
-  return (
-    <FilterHeaderCell
-      def={def}
-      source={source}
-      labels={labels}
-      className={className}
-      registry={registry}
-    />
   );
 }
 
@@ -337,6 +354,7 @@ function FilterHeaderCell<TRow>({
   className,
   menuClassName,
   registry = defaultFilterRegistry,
+  slots,
 }: Readonly<{
   def: FilterDef<TRow>;
   source: FilterFormSource<TRow>;
@@ -344,6 +362,7 @@ function FilterHeaderCell<TRow>({
   className?: string;
   menuClassName?: string;
   registry?: FilterTypeRegistry;
+  slots: FilterHeaderSlots;
 }>): ReactElement | null {
   const spec = registry.get(def.type);
   const custom = renderRegisteredFilter(
@@ -362,6 +381,7 @@ function FilterHeaderCell<TRow>({
           source={source}
           labels={labels}
           className={className}
+          slots={slots}
         />
       );
     case "select":
@@ -371,6 +391,7 @@ function FilterHeaderCell<TRow>({
           source={source}
           labels={labels}
           className={className}
+          slots={slots}
         />
       );
     case "multiSelect":
@@ -382,6 +403,7 @@ function FilterHeaderCell<TRow>({
           labels={labels}
           className={className}
           menuClassName={menuClassName}
+          slots={slots}
         />
       );
     case "boolean":
@@ -391,21 +413,50 @@ function FilterHeaderCell<TRow>({
           source={source}
           labels={labels}
           className={className}
+          slots={slots}
         />
       );
     case "numberRange":
     case "dateRange":
-      return <RangeCell def={def} source={source} className={className} />;
+      return (
+        <RangeCell
+          def={def}
+          source={source}
+          className={className}
+          slots={slots}
+        />
+      );
     default:
       return null;
   }
+}
+
+/** Compact control for one filter definition — used in the header row and antd titles. */
+export function FilterHeaderControlChrome<TRow>({
+  def,
+  source,
+  labels,
+  className,
+  registry = defaultFilterRegistry,
+  slots,
+}: Readonly<FilterHeaderControlChromeProps<TRow>>): ReactElement {
+  return (
+    <FilterHeaderCell
+      def={def}
+      source={source}
+      labels={labels}
+      className={className}
+      registry={registry}
+      slots={slots}
+    />
+  );
 }
 
 /**
  * Second header row of per-column quick filters. Pads and spacers match
  * the leaf header so sticky, pin offsets, and column windowing stay aligned.
  */
-export function FilterHeaderRow<TRow>({
+export function FilterHeaderChrome<TRow>({
   enabled = true,
   columns,
   defs,
@@ -422,7 +473,8 @@ export function FilterHeaderRow<TRow>({
   stickyAttr,
   classNames = {},
   registry = defaultFilterRegistry,
-}: Readonly<FilterHeaderRowProps<TRow>>): ReactElement | null {
+  slots,
+}: Readonly<FilterHeaderChromeProps<TRow>>): ReactElement | null {
   if (!enabled || defs.length === 0) return null;
   const pad = (part: string, extra?: string) => (
     <Pad
@@ -452,13 +504,13 @@ export function FilterHeaderRow<TRow>({
             data-adapttable-part="filter-header-cell"
             data-sticky={stickyAttr}
             data-pinned={pinSide?.(column.key)}
-            data-column-key={column.key}
             style={cellStyle?.(column)}
             className={
               [classNames.headerCell, classNames.filterHeaderCell]
                 .filter(Boolean)
                 .join(" ") || undefined
             }
+            data-column-key={column.key}
           >
             {def ? (
               <FilterHeaderCell
@@ -468,6 +520,7 @@ export function FilterHeaderRow<TRow>({
                 className={classNames.filterHeaderInput}
                 menuClassName={classNames.filterHeaderMenu}
                 registry={registry}
+                slots={slots}
               />
             ) : null}
           </th>

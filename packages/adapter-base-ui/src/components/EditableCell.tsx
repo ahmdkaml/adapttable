@@ -8,11 +8,7 @@ import {
   isMultiSelectEditor,
   isSelectEditor,
 } from "@adapttable/core";
-import {
-  editorValidationProps,
-  NativeBooleanEditor,
-  NativeMultiSelectEditor,
-} from "@adapttable/core/adapter";
+import { editorValidationProps } from "@adapttable/core/adapter";
 import {
   type KeyboardEvent,
   type ReactElement,
@@ -22,6 +18,8 @@ import {
 } from "react";
 
 import { TextField } from "../ui";
+import { editableCellSlots } from "./kitControls";
+import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
 import { NativeSelect } from "./primitives";
 
 function stopEditKeys(event: KeyboardEvent): void {
@@ -152,6 +150,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={props.display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <BaseUiCellEditor ctrl={ctrl} label={props.editLabel} />
       )}
