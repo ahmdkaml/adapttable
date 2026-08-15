@@ -1056,11 +1056,12 @@ the shared locale-resolution algorithm (see [i18n & RTL](./i18n-rtl.md)).
   re-exports); Radix and Base UI export their accent unions
   (`RadixAccentColor`, `BaseUiAccentColor`); Mantine also exports its
   chrome as reusable components (`ActiveFilterChips`, `AutoFilterForm`,
-  `EmptyState`, `ErrorState`, `PaginationFooter`, `TableSkeleton`, each
-  with a `…Props` companion: `ActiveFilterChipsProps`,
-  `AutoFilterFormProps`, `EmptyStateProps`, `ErrorStateProps`,
-  `PaginationFooterProps`, `TableSkeletonProps`); unstyled and shadcn
-  export their building blocks (`FilterPanel` / `FilterPanelProps`,
+  `EmptyState`, `ErrorState`, `FilterDrawer`, `PaginationFooter`,
+  `TableSkeleton`, each with a `…Props` companion:
+  `ActiveFilterChipsProps`, `AutoFilterFormProps`, `EmptyStateProps`,
+  `ErrorStateProps`, `FilterDrawerProps`, `PaginationFooterProps`,
+  `TableSkeletonProps`); unstyled and shadcn export their building blocks
+  (`FilterPanel` / `FilterPanelProps`,
   `FilterPopover` / `FilterPopoverProps`, `AutoFilterForm`, the `cx`
   class joiner) and shadcn additionally ships `shadcnClassNames`, the
   preset map behind its default look.
