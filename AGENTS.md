@@ -50,10 +50,10 @@ Unify the **model**, never the **pixels**:
   `.playwright-mcp/` or `/tmp`, never the repo root, and delete them when
   done.
 
-## The quality gate — green before every commit, zero suppressions
+## The quality gate — green before every push, zero suppressions
 
-`pnpm check` is the single source of truth, and the husky pre-commit hook
-runs it on every commit:
+`pnpm check` is the single source of truth. Husky runs `format:check` on
+every commit (fast) and the full gate on every push:
 
 ```
 format:check → lint → lint:root → check:readmes → check:docsurface
