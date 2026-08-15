@@ -548,7 +548,6 @@ export function makeColumns(
       editable: true,
       editor: "number",
       editValue: (r) => String(budget(r)),
-      align: "end",
       width: 130,
       mobileLabel: s.budget,
     },
@@ -703,7 +702,6 @@ export function makeWideColumns(
       editable: true,
       editor: "number",
       editValue: (r) => String(budget(r)),
-      align: "end",
       width: 150,
     },
     {

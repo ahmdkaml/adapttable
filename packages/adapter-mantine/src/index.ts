@@ -32,6 +32,10 @@ export { EmptyState, type EmptyStateProps } from "./components/EmptyState";
 export { ErrorState, type ErrorStateProps } from "./components/ErrorState";
 export { FillHandle } from "./components/FillHandle";
 export {
+  FilterDrawer,
+  type FilterDrawerProps,
+} from "./components/FilterDrawer";
+export {
   FilterTreeBuilder,
   type FilterTreeBuilderProps,
 } from "./components/FilterTreeBuilder";

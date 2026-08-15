@@ -1,4 +1,7 @@
-import { startTransition, Suspense, useEffect, useRef, useState } from "react";
+import { getLabels } from "@adapttable/i18n";
+import { FilterDrawer } from "@adapttable/mantine";
+import { MantineProvider } from "@mantine/core";
+import { startTransition, Suspense, useState } from "react";
 
 import { cssVars } from "./cssVars";
 import type { Locale } from "./data";
@@ -25,6 +28,14 @@ type OnOff = "on" | "off";
 type Structure = "flat" | "grouped" | "tree" | "nested";
 type EditingMode = "off" | "cell" | "row" | "batch";
 type Recipe = "baseline" | "filters" | "structure" | "editing" | "rows";
+
+const FEATURE_LAB_DRAWER_LABELS = {
+  ...getLabels("en"),
+  filters: "Configure Feature Lab",
+  clearAll: "Reset",
+  filtersDone: "Done",
+  cancel: "Close options",
+};
 
 const RECIPES: readonly {
   key: Recipe;
@@ -109,14 +120,6 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [cellSpan, setCellSpan] = useState<OnOff>("off");
   const [extraRows, setExtraRows] = useState<OnOff>("off");
   const [rowStyle, setRowStyle] = useState<OnOff>("off");
-  const controlsRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = controlsRef.current;
-    if (!dialog) return;
-    if (controlsOpen && !dialog.open) dialog.showModal();
-    if (!controlsOpen && dialog.open) dialog.close();
-  }, [controlsOpen]);
 
   const token =
     ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
@@ -209,6 +212,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
     });
   };
 
+  const resetOptions = () => {
+    applyRecipe("baseline");
+    setLocale("en");
+  };
+
   const changeMode = (next: DataMode) => {
     startTransition(() => {
       setRecipe(null);
@@ -259,8 +267,8 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
 
       <div className="lab-toolbar">
         <div>
-          <strong>Full-width preview</strong>
-          <span>Options open over the canvas, never beside the table.</span>
+          <strong>Table options</strong>
+          <span>Configure data, filters, structure, editing, and rows.</span>
         </div>
         <button
           type="button"
@@ -274,188 +282,185 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
       </div>
 
       <div className="lab-layout">
-        <dialog
-          ref={controlsRef}
-          className="lab-drawer"
-          aria-labelledby="lab-drawer-title"
-          onCancel={() => setControlsOpen(false)}
-          onClose={() => setControlsOpen(false)}
-        >
-          <div className="lab-drawer__head">
-            <div>
-              <strong id="lab-drawer-title">Configure Feature Lab</strong>
-              <span>Only compatible combinations can be enabled.</span>
-            </div>
-            <button
-              type="button"
-              className="lab-drawer__close"
-              aria-label="Close options"
-              onClick={() => setControlsOpen(false)}
-            >
-              Close
-            </button>
-          </div>
-          <aside className="opt-board" aria-label="Feature Lab controls">
-            <ControlPanel title="Data and chrome">
-              <Control label="Data">
-                <Segmented
-                  label="data source"
-                  value={mode}
-                  onChange={changeMode}
-                  options={[
-                    { value: "frontend", label: "Frontend" },
-                    { value: "backend", label: "Backend" },
-                  ]}
-                />
-              </Control>
-              <Control label="Locale">
-                <Segmented
-                  label="locale"
-                  value={locale}
-                  onChange={(next) => customize(setLocale, next)}
-                  options={[
-                    { value: "en", label: "EN" },
-                    { value: "ar", label: "العربية" },
-                  ]}
-                />
-              </Control>
-              <Control label="Filter UI">
-                <Segmented
-                  label="filters container"
-                  value={filtersUi}
-                  onChange={(next) => customize(setFiltersUi, next)}
-                  options={[
-                    { value: "popover", label: "Popover" },
-                    { value: "drawer", label: "Drawer" },
-                    { value: "header", label: "Header" },
-                  ]}
-                />
-              </Control>
-              <Control label="Density">
-                <Segmented
-                  label="density"
-                  value={density}
-                  onChange={(next) => customize(setDensity, next)}
-                  options={[
-                    { value: "comfortable", label: "Comfortable" },
-                    { value: "compact", label: "Compact" },
-                  ]}
-                />
-              </Control>
-              <Toggle
-                label="Motion"
-                value={motion}
-                onChange={(next) => customize(setMotion, next)}
-              />
-            </ControlPanel>
+        <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
+          <FilterDrawer
+            opened={controlsOpen}
+            onClose={() => setControlsOpen(false)}
+            filters={
+              <>
+                <p className="lab-options-drawer__intro">
+                  Only compatible combinations can be enabled.
+                </p>
+                <aside
+                  className="opt-board lab-options-drawer__controls"
+                  aria-label="Feature Lab controls"
+                >
+                  <ControlPanel title="Data and chrome">
+                    <Control label="Data">
+                      <Segmented
+                        label="data source"
+                        value={mode}
+                        onChange={changeMode}
+                        options={[
+                          { value: "frontend", label: "Frontend" },
+                          { value: "backend", label: "Backend" },
+                        ]}
+                      />
+                    </Control>
+                    <Control label="Locale">
+                      <Segmented
+                        label="locale"
+                        value={locale}
+                        onChange={(next) => customize(setLocale, next)}
+                        options={[
+                          { value: "en", label: "EN" },
+                          { value: "ar", label: "العربية" },
+                        ]}
+                      />
+                    </Control>
+                    <Control label="Filter UI">
+                      <Segmented
+                        label="filters container"
+                        value={filtersUi}
+                        onChange={(next) => customize(setFiltersUi, next)}
+                        options={[
+                          { value: "popover", label: "Popover" },
+                          { value: "drawer", label: "Drawer" },
+                          { value: "header", label: "Header" },
+                        ]}
+                      />
+                    </Control>
+                    <Control label="Density">
+                      <Segmented
+                        label="density"
+                        value={density}
+                        onChange={(next) => customize(setDensity, next)}
+                        options={[
+                          { value: "comfortable", label: "Comfortable" },
+                          { value: "compact", label: "Compact" },
+                        ]}
+                      />
+                    </Control>
+                    <Toggle
+                      label="Motion"
+                      value={motion}
+                      onChange={(next) => customize(setMotion, next)}
+                    />
+                  </ControlPanel>
 
-            <ControlPanel title="Structure">
-              <Control label="Row structure">
-                <Segmented
-                  label="row structure"
-                  value={structure}
-                  onChange={changeStructure}
-                  options={[
-                    { value: "flat", label: "Flat" },
-                    {
-                      value: "grouped",
-                      label: "Grouped",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                    {
-                      value: "tree",
-                      label: "Tree",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                    {
-                      value: "nested",
-                      label: "Detail",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                  ]}
-                />
-              </Control>
-              <Toggle
-                label="Column groups"
-                value={columnGroups}
-                onChange={(next) => customize(setColumnGroups, next)}
-              />
-            </ControlPanel>
+                  <ControlPanel title="Structure">
+                    <Control label="Row structure">
+                      <Segmented
+                        label="row structure"
+                        value={structure}
+                        onChange={changeStructure}
+                        options={[
+                          { value: "flat", label: "Flat" },
+                          {
+                            value: "grouped",
+                            label: "Grouped",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                          {
+                            value: "tree",
+                            label: "Tree",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                          {
+                            value: "nested",
+                            label: "Detail",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                        ]}
+                      />
+                    </Control>
+                    <Toggle
+                      label="Column groups"
+                      value={columnGroups}
+                      onChange={(next) => customize(setColumnGroups, next)}
+                    />
+                  </ControlPanel>
 
-            <ControlPanel title="Editing">
-              <Control label="Editing mode">
-                <Segmented
-                  label="editing mode"
-                  value={editingMode}
-                  onChange={(next) => customize(setEditingMode, next)}
-                  options={[
-                    { value: "off", label: "Off" },
-                    {
-                      value: "cell",
-                      label: "Cell",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                    {
-                      value: "row",
-                      label: "Row",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                    {
-                      value: "batch",
-                      label: "Batch",
-                      disabled: Boolean(clientOnlyReason),
-                      title: clientOnlyReason,
-                    },
-                  ]}
-                />
-              </Control>
-            </ControlPanel>
+                  <ControlPanel title="Editing">
+                    <Control label="Editing mode">
+                      <Segmented
+                        label="editing mode"
+                        value={editingMode}
+                        onChange={(next) => customize(setEditingMode, next)}
+                        options={[
+                          { value: "off", label: "Off" },
+                          {
+                            value: "cell",
+                            label: "Cell",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                          {
+                            value: "row",
+                            label: "Row",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                          {
+                            value: "batch",
+                            label: "Batch",
+                            disabled: Boolean(clientOnlyReason),
+                            title: clientOnlyReason,
+                          },
+                        ]}
+                      />
+                    </Control>
+                  </ControlPanel>
 
-            <ControlPanel title="Rows">
-              <Toggle
-                label="Add / delete"
-                value={rowMutations}
-                disabledOn={clientOnlyReason}
-                onChange={(next) => customize(setRowMutations, next)}
-              />
-              <Toggle
-                label="Reorder"
-                value={rowReorder}
-                disabledOn={reorderReason}
-                onChange={(next) => customize(setRowReorder, next)}
-              />
-              <Toggle
-                label="Pin rows"
-                value={rowPinning}
-                disabledOn={pinReason}
-                onChange={(next) => customize(setRowPinning, next)}
-              />
-              <Toggle
-                label="Span cells"
-                value={cellSpan}
-                disabledOn={clientOnlyReason}
-                onChange={(next) => customize(setCellSpan, next)}
-              />
-              <Toggle
-                label="Extra rows"
-                value={extraRows}
-                disabledOn={clientOnlyReason}
-                onChange={(next) => customize(setExtraRows, next)}
-              />
-              <Toggle
-                label="Row style"
-                value={rowStyle}
-                disabledOn={clientOnlyReason}
-                onChange={(next) => customize(setRowStyle, next)}
-              />
-            </ControlPanel>
-          </aside>
-        </dialog>
+                  <ControlPanel title="Rows">
+                    <Toggle
+                      label="Add / delete"
+                      value={rowMutations}
+                      disabledOn={clientOnlyReason}
+                      onChange={(next) => customize(setRowMutations, next)}
+                    />
+                    <Toggle
+                      label="Reorder"
+                      value={rowReorder}
+                      disabledOn={reorderReason}
+                      onChange={(next) => customize(setRowReorder, next)}
+                    />
+                    <Toggle
+                      label="Pin rows"
+                      value={rowPinning}
+                      disabledOn={pinReason}
+                      onChange={(next) => customize(setRowPinning, next)}
+                    />
+                    <Toggle
+                      label="Span cells"
+                      value={cellSpan}
+                      disabledOn={clientOnlyReason}
+                      onChange={(next) => customize(setCellSpan, next)}
+                    />
+                    <Toggle
+                      label="Extra rows"
+                      value={extraRows}
+                      disabledOn={clientOnlyReason}
+                      onChange={(next) => customize(setExtraRows, next)}
+                    />
+                    <Toggle
+                      label="Row style"
+                      value={rowStyle}
+                      disabledOn={clientOnlyReason}
+                      onChange={(next) => customize(setRowStyle, next)}
+                    />
+                  </ControlPanel>
+                </aside>
+              </>
+            }
+            activeFilterCount={recipe === "baseline" && locale === "en" ? 0 : 1}
+            onClearFilters={resetOptions}
+            labels={FEATURE_LAB_DRAWER_LABELS}
+          />
+        </MantineProvider>
 
         <div className="lab-preview">
           <div className="lab-summary" role="status">

@@ -483,8 +483,7 @@ a {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.lab-config-trigger,
-.lab-drawer__close {
+.lab-config-trigger {
   flex: none;
   min-height: 36px;
   padding: 0 12px;
@@ -497,57 +496,17 @@ a {
   font-size: 13px;
   font-weight: 650;
 }
-.lab-config-trigger:hover,
-.lab-drawer__close:hover {
+.lab-config-trigger:hover {
   border-color: color-mix(in srgb, var(--brand) 45%, var(--page-border));
 }
 .lab-layout {
   margin-top: 10px;
   min-width: 0;
 }
-.lab-drawer {
-  inset-block: 12px;
-  inset-inline: auto 12px;
-  width: min(420px, calc(100vw - 24px));
-  height: calc(100dvh - 24px);
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  color: var(--ink);
-  background: var(--page-surface);
-  border: 1px solid var(--page-border);
-  border-radius: 16px;
-  box-shadow: 0 24px 80px oklch(0 0 0 / 0.28);
-  overflow: hidden;
-}
-.lab-drawer[open] {
-  display: flex;
-  flex-direction: column;
-}
-.lab-drawer::backdrop {
-  background: oklch(0.08 0.015 264 / 0.38);
-  backdrop-filter: blur(2px);
-}
-.lab-drawer__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--page-border);
-}
-.lab-drawer__head > div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.lab-drawer__head strong {
-  font-size: 14px;
-}
-.lab-drawer__head span {
+.lab-options-drawer__intro {
+  margin: 0 0 12px;
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .opt-board {
   display: grid;
@@ -555,10 +514,9 @@ a {
   margin: 0;
   min-width: 0;
 }
-.lab-drawer .opt-board {
-  padding: 12px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+.opt-board.lab-options-drawer__controls {
+  grid-template-columns: 1fr;
+  padding-bottom: 16px;
 }
 .opt-panel {
   min-width: 0;
@@ -884,27 +842,21 @@ a {
   .demo-live-update button {
     min-height: 40px;
   }
-  .lab-drawer {
-    inset-block: 8px;
-    inset-inline: 8px;
-    width: auto;
-    height: calc(100dvh - 16px);
-  }
-  .lab-drawer .opt-panel__row {
+  .lab-options-drawer__controls .opt-panel__row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
-  .lab-drawer .ctrl {
+  .lab-options-drawer__controls .ctrl {
     align-items: stretch;
     flex-direction: column;
     gap: 5px;
   }
-  .lab-drawer .seg {
+  .lab-options-drawer__controls .seg {
     display: flex;
     width: 100%;
   }
-  .lab-drawer .seg__btn {
+  .lab-options-drawer__controls .seg__btn {
     flex: 1;
     justify-content: center;
     min-width: 0;

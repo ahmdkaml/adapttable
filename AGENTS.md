@@ -11,24 +11,36 @@ look. Switching the kit in the live demo must change how the whole table
 looks, including the Filters popover and drawer: an MUI table filters with
 MUI controls, a Mantine table with Mantine controls.
 
-Unify the **model**, never the **pixels**:
+Unify the **model**, never the **pixels**. The standing pattern is
+**Chrome + slots**:
 
-- Do not add user-facing form controls to core — no inputs, selects,
-  checkboxes, buttons the end user clicks. Invisible chrome (live regions,
-  announcers, layout structure) is fine.
-- Feature parity means every kit has the feature **with its own components**,
-  the way `AutoFilterForm` works — one shared model in core, one thin input
-  layer per adapter. A shared look is not parity.
+- Core ships `*Chrome` components that own structure only — layout, the
+  recursion over groups, keyboard wiring, localized labels, and the
+  `data-adapttable-part` names — plus the headless hooks and state machines
+  behind them.
+- Every visible control (input, select, checkbox, button — anything the end
+  user clicks) is a **required slot** the adapter fills with its own kit's
+  component. Slots have no native fallback in core: a kit cannot silently
+  render raw HTML. `adapter-unstyled` supplies native controls because
+  native IS its kit; shadcn/tailwind build on unstyled.
+- Do not add user-facing controls to core, and do not give a slot a default
+  implementation. Invisible chrome (live regions, announcers, layout
+  structure) is fine in core.
+- Feature parity means every kit has the feature **with its own components**.
+  A shared look is not parity — copying one adapter's raw-HTML control into
+  another adapter is the same defect as drawing it in core.
 - If a kit's overlay or portal misbehaves inside the filter popover, fix it
   in that adapter (`disablePortal`, `getPopupContainer`, or that kit's native
-  select) — never by drawing the form in core.
-- Any native-HTML widget still exported from core is a leftover being moved
-  into the adapters, not a pattern to extend. New filter UI goes through
-  adapter components.
+  select) — never by weakening the slot contract.
+- `data-adapttable-part` names and placement are part of the public contract:
+  the same part lands on the same element in every adapter, and documented
+  `classNames` keys are honored by every adapter that renders the part.
 
 ## Product decisions — settled, do not reopen
 
-- Core is headless; adapters own appearance (above).
+- Core is headless; adapters own appearance. Chrome + slots (above) is the
+  settled widget architecture — do not reopen core-drawn controls or per-kit
+  copies of the layout.
 - Junior-friendly, senior-targeted: easy defaults for everyone, full control
   for experts — never trade one for the other.
 - One word per concept: `server` is the remote-tier word, `useQuerySource`

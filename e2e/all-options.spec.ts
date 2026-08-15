@@ -55,6 +55,35 @@ test("all-options page loads grouped controls and the table", async ({
   ).toBeVisible();
 });
 
+test("Feature Lab options open as an edge drawer and close from its backdrop", async ({
+  page,
+}) => {
+  await page.goto("/all-options/");
+  await openFeatureControls(page);
+
+  const viewport = page.viewportSize();
+  const drawer = page.getByRole("dialog", { name: "Configure Feature Lab" });
+  await expect
+    .poll(async () => {
+      const box = await drawer.boundingBox();
+      return Math.abs(
+        (box?.x ?? 0) + (box?.width ?? 0) - (viewport?.width ?? 0)
+      );
+    })
+    .toBeLessThanOrEqual(1);
+  const panel = await drawer.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(panel).not.toBeNull();
+  expect(panel?.y).toBe(0);
+  expect(panel?.height).toBe(viewport?.height);
+
+  await page.mouse.click(8, Math.round((viewport?.height ?? 0) / 2));
+  await expect(drawer).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Configure options" })
+  ).toHaveAttribute("aria-expanded", "false");
+});
+
 test("Feature Lab keeps its URL state separate from the live demo", async ({
   page,
 }) => {
