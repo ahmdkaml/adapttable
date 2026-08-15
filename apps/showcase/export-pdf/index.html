@@ -3,26 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
     <meta
       name="description"
-      content="Flip one dataset between Mantine, MUI, Chakra, Ant Design, Radix and shadcn — filtering, sorting, selection and 50,000-row virtualization."
+      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
     />
     <link
       rel="canonical"
-      href="https://orwa-mahmoud.github.io/adapttable/demo/"
+      href="https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/"
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AdaptTable" />
-    <meta property="og:title" content="AdaptTable — live demo, every UI kit" />
+    <meta
+      property="og:title"
+      content="AdaptTable demo — PDF export and print layout"
+    />
     <meta
       property="og:description"
-      content="Flip one dataset between Mantine, MUI, Chakra, Ant Design, Radix and shadcn/ui — with filtering, sorting, selection, column management and 50,000-row virtualization."
+      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
     />
     <meta
       property="og:url"
-      content="https://orwa-mahmoud.github.io/adapttable/demo/"
+      content="https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/"
     />
     <meta
       property="og:image"
@@ -31,10 +34,13 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="AdaptTable — live demo, every UI kit" />
+    <meta
+      name="twitter:title"
+      content="AdaptTable demo — PDF export and print layout"
+    />
     <meta
       name="twitter:description"
-      content="Flip one dataset between Mantine, MUI, Chakra, Ant Design, Radix and shadcn/ui — filtering, sorting, selection, column management, virtualization."
+      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
     />
     <meta
       name="twitter:image"
@@ -45,8 +51,8 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "AdaptTable",
-        "description": "Headless, UI-agnostic React data table with native adapters for Mantine, MUI, Chakra UI, Ant Design, Radix and shadcn/ui — URL-synced state, declarative filters, column management, virtualization, i18n and RTL.",
-        "url": "https://orwa-mahmoud.github.io/adapttable/",
+        "description": "AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks.",
+        "url": "https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Any",
         "license": "https://opensource.org/license/mit",
@@ -63,7 +69,6 @@
     ></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Critical UI face first; mono + Arabic load after first paint. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
@@ -74,16 +79,8 @@
       media="print"
       onload="this.media = 'all'"
     />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
-    <title>AdaptTable — one headless engine, every UI kit</title>
+    <title>AdaptTable demo — PDF export and print layout</title>
     <script>
-      // Apply the stored theme before paint so page-to-page navigation
-      // doesn't flash light.
       try {
         if (localStorage.getItem("adapttable-demo-theme") === "dark")
           document.documentElement.dataset.theme = "dark";
@@ -137,67 +134,41 @@
     </style>
   </head>
   <body>
-    <!--
-      `createRoot` replaces these children on mount, so nobody with
-      JavaScript ever sees them. They exist because the showcase is
-      client-rendered: without them the served HTML is an empty shell, which
-      is what a crawler indexes and what anyone without JavaScript gets.
-    -->
+    <!-- Replaced by React on mount — see the note in the showcase root
+         index.html for why the served HTML carries content at all. -->
     <div id="root">
       <main class="at-fallback">
-        <h1>AdaptTable — live demo, every UI kit</h1>
+        <h1>AdaptTable demo — PDF export and print</h1>
         <p>
-          One dataset, one API, eight renderings. This demo flips the same table
-          between Mantine, MUI, Chakra UI, Ant Design, Radix, Base UI,
-          Tailwind/shadcn and an unstyled build without changing a line of table
-          code — every kit mounts its own native components, never a themed
-          imitation of another.
+          The grouped table downloads as a real PDF from the toolbar Export
+          button, and Print opens the browser dialog on the same view — column
+          widths, nested groups and page breaks — because that is what the
+          reader can actually see.
         </p>
         <h2>What you can drive here</h2>
         <ul>
           <li>
-            Declarative filters in a popover or drawer, with active-filter chips
-            and numeric, date and status editors.
+            Export PDF writes every filtered row, not just the current page.
           </li>
           <li>
-            Multi-column sorting, pagination, and row selection with bulk
-            actions.
+            The file honours group headers, column widths and page breaks.
           </li>
           <li>
-            Column management — show and hide, reorder, pin left or right,
-            resize, and switch density.
-          </li>
-          <li>
-            State synced to the URL, so any view can be copied and shared.
-          </li>
-          <li>Dark mode, and a responsive card layout on narrow screens.</li>
-        </ul>
-        <h2>The other demos</h2>
-        <ul>
-          <li><a href="/adapttable/demo/columns/">Column management</a></li>
-          <li><a href="/adapttable/demo/editing/">Inline cell editing</a></li>
-          <li><a href="/adapttable/demo/grouping/">Row grouping</a></li>
-          <li>
-            <a href="/adapttable/demo/export-pdf/">PDF export and print</a>
-          </li>
-          <li><a href="/adapttable/demo/mobile/">Mobile cards</a></li>
-          <li><a href="/adapttable/demo/rtl/">Arabic and RTL</a></li>
-          <li>
-            <a href="/adapttable/demo/scale/">50,000-row virtualization</a>
+            Print is a host-owned control: it calls
+            <code>printTable</code> / <code>openPrintLayout</code>, not a second
+            toolbar button from core.
           </li>
         </ul>
         <p>
           Documentation:
-          <a href="/adapttable/getting-started/">getting started</a>,
-          <a href="/adapttable/concepts/">concepts</a>,
-          <a href="/adapttable/columns/">columns</a>,
-          <a href="/adapttable/filtering/">filtering</a>,
-          <a href="/adapttable/sorting/">sorting</a>,
-          <a href="/adapttable/selection/">selection</a>,
-          <a href="/adapttable/api/">API reference</a>.
+          <a href="/adapttable/export-pdf/">PDF export and print</a>,
+          <a href="/adapttable/row-grouping/">row grouping</a>,
+          <a href="/adapttable/customization/">export</a>. Other demos:
+          <a href="/adapttable/demo/">the main showcase</a>,
+          <a href="/adapttable/demo/grouping/">row grouping</a>.
         </p>
       </main>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/entry-export-pdf.tsx"></script>
   </body>
 </html>

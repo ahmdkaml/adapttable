@@ -77,6 +77,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Client & server React table data — one TableSource API](https://orwa-mahmoud.github.io/adapttable/data-tiers/): in-memory, server query event, custom TableSource
 - [AdaptTable concepts — headless core, TableSource, adapters](https://orwa-mahmoud.github.io/adapttable/concepts/): architecture, TableSource contract
 - [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit, CSV and XLSX export (typed dates, group/tree outline, aggregates)
+- [React table PDF export and print layout](https://orwa-mahmoud.github.io/adapttable/export-pdf/): optional `@adapttable/core/pdf` entry, `pdfWriter` on the export button, `printTable` for the browser dialog
 - [React table URL state — shareable filters, sort, and page](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out
 - [React table with SSR, server components & streaming](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/): Next.js App Router client boundary, DOM-free rendering, hydration, Suspense
 - [Responsive React table — automatic mobile card layout](https://orwa-mahmoud.github.io/adapttable/mobile/): rows become cards below the mobile breakpoint automatically — same filters, search, selection and URL state; sort-by select, infinite scroll via paginationMode auto, per-column mobileLabel/hideOnMobile, forceMobile to pin either layout.

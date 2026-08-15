@@ -12,7 +12,7 @@ const CLARITY_PROJECT_ID = "xxq9dbsjnj";
  * Inject Google Analytics (GA4) into every HTML entry.
  *
  * The showcase is a multi-page app, so this lives here rather than being
- * pasted into each `index.html` — one definition covers all seven pages and
+ * pasted into each `index.html` — one definition covers all eight pages and
  * any page added later. The docs site injects the same tag through Starlight's
  * `head` config. Microsoft Clarity below follows the identical pattern.
  */
@@ -100,6 +100,7 @@ export default defineConfig({
         columns: page("./columns/index.html"),
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
+        "export-pdf": page("./export-pdf/index.html"),
         mobile: page("./mobile/index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),
@@ -112,6 +113,7 @@ export default defineConfig({
       // swallow the subpath and resolve ".../index.ts/adapter".
       "@adapttable/core/adapter": pkg("core", "adapter"),
       "@adapttable/core/xlsx": pkg("core", "xlsx"),
+      "@adapttable/core/pdf": pkg("core", "pdf"),
       "@adapttable/core/sparkline": pkg("core", "sparkline"),
       "@adapttable/core": pkg("core"),
       "@adapttable/mantine": pkg("adapter-mantine"),
