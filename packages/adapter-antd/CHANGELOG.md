@@ -1,5 +1,20 @@
 # @adapttable/antd
 
+## 2.3.0
+
+### Minor Changes
+
+- 6065cb5: User-facing controls no longer ship on `@adapttable/core`. Import `FilterTreeBuilder`, `ChecklistFilter`, `FilterHeaderRow`, `FilterHeaderControl`, `FindBar`, `RowEditActions`, `BatchEditBar`, `TreeToggle`, `TreeCell`, `ColumnGroupToggle`, `GroupMoreButton`, `RowReorderHandle`, `RowReorderButtons`, `FillHandle`, and `SelectionStatsBar` from the adapter you use. The filter-tree disclosure is adapter-owned too. Core keeps the headless hooks, state machines, and `*Chrome` slot layouts on `@adapttable/core/adapter`. Days-old public exports, no v3.
+
+  Adapter-generated filter forms now use their kit-native select, multiselect, disclosure, and popover controls. Long filter overlays remain viewport-bound and scroll internally, including nested kit menus.
+
+### Patch Changes
+
+- 7563c29: Filters popover is the compact auto form again: Advanced stays collapsed, operator and value share a row, and checklist / multi-select options wrap instead of stacking one value per line. Overlay menus cap to the viewport.
+- Updated dependencies [7563c29]
+- Updated dependencies [6065cb5]
+  - @adapttable/core@2.5.0
+
 ## 2.2.2
 
 ### Patch Changes
