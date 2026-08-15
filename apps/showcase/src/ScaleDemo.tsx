@@ -1,6 +1,7 @@
 import type { CellProps, ColumnDef } from "@adapttable/core";
 import {
   applyRowPatches,
+  applyRowPatchesWithLog,
   updateRow,
   useFrontendData,
   useServerData,
@@ -8,7 +9,7 @@ import {
 import { getLabels } from "@adapttable/i18n";
 import { DataTable } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface BigPerson {
   id: number;
@@ -154,6 +155,7 @@ function scaleParams(): {
   server: boolean;
   edit: boolean;
   patches: number;
+  incremental: boolean;
   tree: boolean;
   variableHeight: boolean;
 } {
@@ -165,6 +167,7 @@ function scaleParams(): {
     server: false,
     edit: false,
     patches: 0,
+    incremental: false,
     virtualCols: false,
     tree: false,
     variableHeight: false,
@@ -184,6 +187,7 @@ function scaleParams(): {
     server: p.get("tier") === "server",
     edit: p.get("edit") === "1",
     patches: int("patch"),
+    incremental: p.get("incremental") === "1",
     tree: p.get("tree") === "1",
     variableHeight: p.get("rowHeight") === "1",
   };
@@ -322,6 +326,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     server,
     edit,
     patches,
+    incremental,
     tree,
     variableHeight,
   } = scaleParams();
@@ -348,6 +353,7 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
       all={all}
       edit={edit}
       patches={patches}
+      incremental={incremental}
       tree={tree}
       dark={dark}
     />
@@ -364,6 +370,7 @@ function FrontendScaleTable({
   all,
   edit,
   patches,
+  incremental,
   tree,
   dark,
 }: Readonly<{
@@ -375,37 +382,59 @@ function FrontendScaleTable({
   all: boolean;
   edit: boolean;
   patches: number;
+  incremental: boolean;
   tree: boolean;
   dark: boolean;
 }>) {
   const initial = useMemo(() => makeBigList(total), [total]);
   const [rows, setRows] = useState<readonly BigPerson[]>(initial);
   // Realtime patches: `?patch=N` applies N updates through the patch API the
-  // same way a websocket would, then marks the DOM so the benchmark can time
-  // the whole burst rather than guess at it.
+  // same way a websocket would. `?incremental=1` keeps the patch log, which is
+  // what engages the incremental engine — without it the pipeline rebuilds the
+  // whole view per patch, and the benchmark runs both to make the difference a
+  // measured number rather than a claim.
   const [applied, setApplied] = useState(0);
+  const [burstMs, setBurstMs] = useState<number | undefined>(undefined);
+  const burstStart = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (patches <= 0) return;
     let done = 0;
     const byId = (row: BigPerson) => String(row.id);
+    // Stamped before the first patch is dispatched, read after the last one
+    // has been committed to the DOM — the burst, not the mount.
+    const startedAt = performance.now();
     const tick = () => {
-      setRows((current) =>
-        applyRowPatches(
-          current,
-          [
-            updateRow<BigPerson>(String((done % total) + 1), {
-              budget: 40000 + ((done * 977) % 180000),
-            }),
-          ],
-          byId
-        )
-      );
+      setRows((current) => {
+        const patch = [
+          updateRow<BigPerson>(String((done % total) + 1), {
+            budget: 40000 + ((done * 977) % 180000),
+          }),
+        ];
+        const next = applyRowPatchesWithLog(current, patch, byId).rows;
+        // The log is memoized against the returned array, and `applyRowPatches`
+        // is the same call underneath — so choosing between the two APIs does
+        // not choose a pipeline. Copying the array is the documented way to
+        // drop the log, and it is what makes this arm a real full rebuild.
+        return incremental ? next : [...next];
+      });
       done += 1;
       setApplied(done);
       if (done < patches) queueMicrotask(tick);
     };
+    burstStart.current = startedAt;
     tick();
-  }, [patches, total]);
+  }, [patches, total, incremental]);
+
+  // React commits the DOM before effects run, so the render carrying the final
+  // patch is already on screen here — this is "after the last one rendered",
+  // not "after the last one was dispatched".
+  useEffect(() => {
+    if (patches <= 0 || applied < patches) return;
+    const startedAt = burstStart.current;
+    if (startedAt === undefined) return;
+    burstStart.current = undefined;
+    setBurstMs(performance.now() - startedAt);
+  }, [applied, patches]);
   // `?tree=1` reads the same flat list as a hierarchy — every tenth row is a
   // root and the nine after it are its children — so the benchmark measures
   // the tree model's cost over rows it already builds, with nothing else
@@ -436,8 +465,17 @@ function FrontendScaleTable({
   });
   return (
     <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-      {/* The benchmark reads this to know the patch burst finished. */}
-      <div data-bench-patches={patches > 0 ? applied : undefined}>
+      {/* The benchmark reads these to know the burst finished and how long
+          it took: the count to wait on, the elapsed time to report. */}
+      <div
+        data-bench-patches={patches > 0 ? applied : undefined}
+        data-bench-burst-ms={
+          burstMs === undefined ? undefined : burstMs.toFixed(2)
+        }
+        data-bench-pipeline={
+          patches > 0 ? (incremental ? "incremental" : "full") : undefined
+        }
+      >
         <DataTable
           source={source}
           columns={columns}
