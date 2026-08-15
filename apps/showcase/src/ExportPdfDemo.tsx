@@ -79,15 +79,17 @@ function printPeople(): void {
 export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
   return (
     <section className="sec shell" id="export-pdf">
-      <SectionHead title="Download a PDF. Print the same view.">
+      <SectionHead title="Download a PDF. Print a grouped view.">
         Pass <code>pdfWriter</code> on <code>exportCsv</code> and the toolbar
         says <strong>Export PDF</strong> — the same seam as CSV and XLSX,{" "}
         <code>{'scope: "all"'}</code> so every grouped row leaves the file.
         Print is a different verb: a host-owned control calls{" "}
         <code>printTable</code> (which loads <code>openPrintLayout</code>) so
         the browser dialog sees column widths, nested groups and page breaks.
-        There is no core Print button. Scripts the hand-written PDF cannot draw
-        belong on that print path.
+        This button builds its sample from the same rows and columns; in an app,
+        pass the table&apos;s current view when print must follow live collapse
+        or filter state. There is no core Print button. Scripts the hand-written
+        PDF cannot draw belong on that print path.
       </SectionHead>
       <div className="pad-surface">
         <div
@@ -117,8 +119,8 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="pdf"
             grouping
-            editing
             exportCsv={EXPORT_GROUPED_AS_PDF}
+            focused
           />
         </div>
       </div>

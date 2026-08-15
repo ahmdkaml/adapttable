@@ -15,7 +15,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -37,6 +36,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Mantine-native cell visuals (Avatar · Badge · Progress). */
 const MANTINE_CELLS: DemoCells = {
@@ -100,6 +100,7 @@ export function MantineDemo({
   exportCsv,
   headerFilters,
   columnGroups,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -125,6 +126,8 @@ export function MantineDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
   /**
    * Export configuration for the toolbar button. Defaults to a plain CSV of
    * the current page; the grouping demo overrides it to write the grouped
@@ -133,6 +136,7 @@ export function MantineDemo({
   exportCsv?: DataTableProps<Person>["exportCsv"];
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
       <DemoBody
@@ -170,18 +174,18 @@ export function MantineDemo({
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={makeActions(locale)}
-            bulkActions={makeBulkActions(locale)}
+            rowActions={focused ? undefined : makeActions(locale)}
+            bulkActions={focused ? undefined : makeBulkActions(locale)}
             confirm={demoConfirm}
-            enableColumnMenu
-            exportCsv={exportCsv ?? true}
-            savedViews={demoSavedViews(urlKey)}
+            enableColumnMenu={!focused}
+            exportCsv={exportCsv ?? !focused}
+            savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
             stickyTop={8}
-            filters={demoFilterDefs(locale)}
+            filters={focused ? undefined : filters}
             filterTypes={demoFilterTypes()}
             forceMobile={forceMobile}
           />

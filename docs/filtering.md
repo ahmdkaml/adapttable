@@ -117,10 +117,11 @@ export function PeopleTable() {
   for filters with no column. On a key collision the standalone definition
   wins and a development warning points at the duplicate.
 - Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
-  `multiSelect` (one of), `checklist` (Excel-style distinct values with
-  search, select-all and counts — from `source.facets` when present,
-  otherwise `source.allFilteredRows`; a server page that omits both does
-  not offer the widget), `boolean` (any / true / false — never a checkbox),
+  `multiSelect` (wrapping multi-value chips),
+  `checklist` (Excel-style distinct values with search, select-all and
+  counts — from `source.facets` when present, otherwise
+  `source.allFilteredRows`; a server page that omits both does not offer
+  the widget), `boolean` (any / true / false — never a checkbox),
   `dateRange`, `numberRange`.
 - Widgets are operator-first. Text offers equals / not equals / contains /
   not contains / starts with / ends with / empty / not empty. Numbers offer
@@ -205,8 +206,9 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `evaluateFilterTree` itself; a host that calls `useFrontendData`
   directly passes `filterTreeFn` over the same defs as `filterFn`. A
   server that declares `supports.filterTree` receives the same tree on
-  `query.filterTree`. The filter panel mounts `FilterTreeBuilder` —
-  add condition, add group, AND/OR — over that same model. Tree
+  `query.filterTree`. The filter panel mounts each adapter's
+  `FilterTreeBuilder` — add condition, add group, AND/OR — over that
+  same model, with that kit's controls. Tree
   leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
 - **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
   `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
@@ -229,9 +231,11 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `FilterTypeRegistry` / `FilterWidgetKind` / `FilterWidgetRenderProps`
   are the types.
 - **Header filter row**: `headerFilters` (or `filtersMode="header"`)
-  mounts `FilterHeaderRow` / `FilterHeaderControl` / `filterDefForColumn`
-  / `headerFilterStickTop` under the leaf header and hides the toolbar
-  Filters button (`resolveFilterMode` / `FilterChromeMode`).
+  mounts each adapter's `FilterHeaderRow` / `FilterHeaderControl` over
+  `FilterHeaderChrome` / `FilterHeaderControlChrome`. Helpers
+  `filterDefForColumn` / `headerFilterStickTop` stay on core. The row
+  sits under the leaf header and hides the toolbar Filters button
+  (`resolveFilterMode` / `FilterChromeMode`).
   Pads and column spacers match the header so sticky, pin offsets, and
   column windowing stay aligned. A def whose bag key differs from the
   column key sets `column` (`key: "name"` under `column: "person"`). Ant Design keeps the control inside the

@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -8,6 +7,7 @@ import {
   type FilterValue,
   filterWidgetKind,
   joinRelativeToken,
+  listFilterValues,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
   renderRegisteredFilter,
@@ -20,16 +20,17 @@ import {
   useTextFilterWidget,
 } from "@adapttable/core";
 import {
-  Checkbox,
+  Autocomplete,
   CircularProgress,
   FormControl,
-  FormControlLabel,
-  FormGroup,
   FormLabel,
+  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
 import type { ReactNode } from "react";
+
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /** The slice of the source the auto-built form reads and writes. */
 type FilterBag<TRow> = Pick<
@@ -67,11 +68,6 @@ function scalarText(value: FilterValue): string {
     : "";
 }
 
-/** A multi-select filter value as the checked-value list. */
-function selectedList(value: FilterValue): readonly string[] {
-  return Array.isArray(value) ? value : [];
-}
-
 function TextFilter<TRow>({
   def,
   source,
@@ -88,7 +84,6 @@ function TextFilter<TRow>({
         <TextField
           select
           size="small"
-          label={labels.operator}
           value={op}
           onChange={(e) => {
             const next = ops.find((choice) => choice === e.target.value);
@@ -96,26 +91,28 @@ function TextFilter<TRow>({
           }}
           data-adapttable-part="filter-operator"
           slotProps={{
-            select: { native: true },
-            inputLabel: { shrink: true },
+            select: { native: false },
+            htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
           {ops.map((choice) => (
-            <option key={choice} value={choice}>
+            <MenuItem key={choice} value={choice}>
               {filterOpLabel(labels, opLabelKeys[choice])}
-            </option>
+            </MenuItem>
           ))}
         </TextField>
         {needsValue && (
           <TextField
             size="small"
-            label={labels.value}
             placeholder={def.placeholder}
             value={value}
             onChange={(e) => write(op, e.target.value)}
             slotProps={{
-              htmlInput: { "data-adapttable-part": "filter-input" },
+              htmlInput: {
+                "aria-label": labels.value,
+                "data-adapttable-part": "filter-input",
+              },
             }}
             sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
           />
@@ -143,13 +140,13 @@ function BooleanFilter<TRow>({
       }}
       data-adapttable-part="filter-select"
       slotProps={{
-        select: { native: true },
+        select: { native: false },
         inputLabel: { shrink: true },
       }}
     >
-      <option value="">{labels.boolAny}</option>
-      <option value="true">{labels.boolTrue}</option>
-      <option value="false">{labels.boolFalse}</option>
+      <MenuItem value="">{labels.boolAny}</MenuItem>
+      <MenuItem value="true">{labels.boolTrue}</MenuItem>
+      <MenuItem value="false">{labels.boolFalse}</MenuItem>
     </TextField>
   );
 }
@@ -166,55 +163,54 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       value={scalarText(source.extra[def.key])}
       onChange={(e) => source.setExtra(def.key, e.target.value)}
       slotProps={{
-        select: { native: true },
+        select: { native: false },
         inputLabel: { shrink: true },
       }}
     >
-      <option value="">All</option>
+      <MenuItem value="">All</MenuItem>
       {loading && (
-        <option value="" disabled>
+        <MenuItem value="" disabled>
           …
-        </option>
+        </MenuItem>
       )}
       {options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value}>
           {option.label}
-        </option>
+        </MenuItem>
       ))}
     </TextField>
   );
 }
 
 function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
+  const label = filterLabel(def);
   const { options, loading } = useFilterOptions(def);
-  const checked = selectedList(source.extra[def.key]);
-  const toggle = (value: string, on: boolean) => {
-    const next = on ? [...checked, value] : checked.filter((v) => v !== value);
-    source.setExtra(def.key, next);
-  };
+  const selected = listFilterValues(source.extra[def.key]);
+  const chosen = options.filter((option) => selected.includes(option.value));
   return (
-    <FormControl component="fieldset" variant="standard">
-      <FormLabel component="legend">{filterLabel(def)}</FormLabel>
-      <FormGroup sx={{ gap: 0.5 }}>
-        {loading ? (
-          <CircularProgress size={16} />
-        ) : (
-          options.map((option) => (
-            <FormControlLabel
-              key={option.value}
-              label={option.label}
-              control={
-                <Checkbox
-                  size="small"
-                  checked={checked.includes(option.value)}
-                  onChange={(_, on) => toggle(option.value, on)}
-                />
-              }
-            />
-          ))
+    <>
+      {loading ? <CircularProgress color="inherit" size={16} /> : null}
+      <Autocomplete
+        multiple
+        options={[...options]}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(left, right) => left.value === right.value}
+        value={chosen}
+        onChange={(_, next) =>
+          source.setExtra(
+            def.key,
+            next.map((option) => option.value)
+          )
+        }
+        loading={loading}
+        slotProps={{
+          listbox: { style: { maxHeight: 240, overflow: "auto" } },
+        }}
+        renderInput={(params) => (
+          <TextField {...params} size="small" label={label} />
         )}
-      </FormGroup>
-    </FormControl>
+      />
+    </>
   );
 }
 
@@ -234,36 +230,33 @@ function RelativeTokenField({
       <TextField
         select
         size="small"
-        label={labels.opRelative}
         value={preset}
         onChange={(e) => {
           const found = RELATIVE_PRESETS.find((p) => p === e.target.value);
           if (found) onValue(joinRelativeToken(found, n));
         }}
         slotProps={{
-          select: { native: true },
-          inputLabel: { shrink: true },
+          select: { native: false },
+          htmlInput: { "aria-label": labels.opRelative },
         }}
         sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
       >
         {RELATIVE_PRESETS.map((p) => (
-          <option key={p} value={p}>
+          <MenuItem key={p} value={p}>
             {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
-          </option>
+          </MenuItem>
         ))}
       </TextField>
       {counted && (
         <TextField
           size="small"
           type="number"
-          label={labels.value}
           value={n}
           onChange={(e) =>
             onValue(joinRelativeToken(preset, Number(e.target.value)))
           }
           slotProps={{
-            htmlInput: { min: 1 },
-            inputLabel: { shrink: true },
+            htmlInput: { min: 1, "aria-label": labels.value },
           }}
           sx={{ flex: "0 0 4.5rem", width: "4.5rem" }}
         />
@@ -293,10 +286,10 @@ function RangeFilter<TRow>({
       size="small"
       sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
       type={boundType}
-      label={caption}
+      placeholder={caption}
       value={value}
       onChange={(e) => commit(e.target.value)}
-      slotProps={{ inputLabel: { shrink: true } }}
+      slotProps={{ htmlInput: { "aria-label": caption } }}
     />
   );
   let bounds: ReactNode = null;
@@ -327,7 +320,6 @@ function RangeFilter<TRow>({
         <TextField
           select
           size="small"
-          label={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
             const next = ops.find((candidate) => candidate === e.target.value);
@@ -335,19 +327,19 @@ function RangeFilter<TRow>({
             write(next, a, b);
           }}
           slotProps={{
-            select: { native: true },
-            inputLabel: { shrink: true },
+            select: { native: false },
+            htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
-          <option value="" />
+          <MenuItem value="" />
           {ops.map((candidate) => (
-            <option key={candidate} value={candidate}>
+            <MenuItem key={candidate} value={candidate}>
               {filterOpLabel(
                 labels,
                 opLabelKeys[candidate as keyof typeof opLabelKeys]
               )}
-            </option>
+            </MenuItem>
           ))}
         </TextField>
         {bounds}
@@ -386,8 +378,8 @@ function FilterField<TRow>({
 /**
  * The auto-built filter form: one MUI widget per declarative definition,
  * reading and writing the source's extra-filter bag (so chips, URL state
- * and — on frontend data — the row predicate all stay in sync). The selects
- * render natively, so every control works inline, without portal menus.
+ * and — on frontend data — the row predicate all stay in sync). Operator
+ * and value share a row; MUI selects stay inline inside the popover.
  *
  * @typeParam TRow - The row type.
  */

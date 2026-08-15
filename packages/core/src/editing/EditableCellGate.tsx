@@ -1,5 +1,4 @@
 import {
-  type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type ReactNode,
   useLayoutEffect,
@@ -116,6 +115,43 @@ export interface EditableCellGateProps<TRow> {
    * Wire `value`/`onChange`/`onKeyDown`/`onBlur` from the controller.
    */
   readonly renderEditor: (ctrl: EditableCellEditorCtrl) => ReactElement;
+  /** Kit activate control and conflict / undo buttons. */
+  readonly slots: EditableCellSlots;
+}
+
+/** Kit activate control the gate calls while the cell is idle. */
+export interface EditableCellActivateProps {
+  readonly title: string;
+  readonly className?: string;
+  readonly saveStatus: string | undefined;
+  readonly dirty: boolean;
+  readonly activateRef: (node: HTMLButtonElement | null) => void;
+  readonly display: ReactNode;
+  readonly onDoubleClick: (event: {
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) => void;
+  readonly onClick: (event: { stopPropagation: () => void }) => void;
+  readonly onKeyDown: (event: {
+    key: string;
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) => void;
+}
+
+/** Kit button the gate calls for conflict choices and undo. */
+export interface EditableCellButtonProps {
+  readonly label: string;
+  readonly part: string;
+  readonly className?: string;
+  readonly onMouseDown?: (event: { preventDefault: () => void }) => void;
+  readonly onClick: (event: { stopPropagation: () => void }) => void;
+}
+
+/** Adapter-supplied controls for {@link EditableCellGate}. */
+export interface EditableCellSlots {
+  readonly Activate: (props: EditableCellActivateProps) => ReactNode;
+  readonly Button: (props: EditableCellButtonProps) => ReactNode;
 }
 
 /**
@@ -172,13 +208,16 @@ function ConflictNotice(
     ctrl: ReturnType<typeof editableCellController>;
     errorId: string;
     errorClassName?: string;
+    slots: EditableCellSlots;
   }>
 ): ReactElement | null {
-  const { ctrl, errorId, errorClassName } = props;
+  "use no memo";
+  const { ctrl, errorId, errorClassName, slots } = props;
+  const Button = slots.Button;
   if (ctrl.conflict === undefined || ctrl.conflictLabels === undefined) {
     return null;
   }
-  const holdFocus = (event: ReactMouseEvent<HTMLButtonElement>) => {
+  const holdFocus = (event: { preventDefault: () => void }) => {
     event.preventDefault();
   };
   return (
@@ -190,28 +229,24 @@ function ConflictNotice(
       className={errorClassName}
     >
       {ctrl.conflictLabels.message}
-      <button
-        type="button"
-        data-adapttable-part="edit-cell-keep-mine"
+      <Button
+        label={ctrl.conflictLabels.keepMine}
+        part="edit-cell-keep-mine"
         onMouseDown={holdFocus}
         onClick={(event) => {
           event.stopPropagation();
           ctrl.keepConflict();
         }}
-      >
-        {ctrl.conflictLabels.keepMine}
-      </button>
-      <button
-        type="button"
-        data-adapttable-part="edit-cell-take-theirs"
+      />
+      <Button
+        label={ctrl.conflictLabels.takeTheirs}
+        part="edit-cell-take-theirs"
         onMouseDown={holdFocus}
         onClick={(event) => {
           event.stopPropagation();
           ctrl.takeConflict();
         }}
-      >
-        {ctrl.conflictLabels.takeTheirs}
-      </button>
+      />
     </span>
   );
 }
@@ -247,9 +282,11 @@ export function multiDraftFromSelect(select: HTMLSelectElement): string {
   );
 }
 
+/** Opt out of the React Compiler: early returns swap trees of different memo sizes. */
 export function EditableCellGate<TRow>(
   props: EditableCellGateProps<TRow>
 ): ReactElement {
+  "use no memo";
   const activateRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef(false);
 
@@ -355,6 +392,7 @@ export function EditableCellGate<TRow>(
           ctrl={ctrl}
           errorId={errorId}
           errorClassName={props.errorClassName}
+          slots={props.slots}
         />
         {/* A kit that renders its own message does so through its own input,
             and a custom editor has none — so the message is always the gate's
@@ -394,6 +432,7 @@ export function EditableCellGate<TRow>(
           ctrl={ctrl}
           errorId={errorId}
           errorClassName={props.errorClassName}
+          slots={props.slots}
         />
         {/* The message is in the DOM whatever the kit does with `error`, and
             it is a live region so it is heard the moment it appears — a
@@ -416,33 +455,25 @@ export function EditableCellGate<TRow>(
     );
   }
 
+  const Activate = props.slots.Activate;
+  const Button = props.slots.Button;
   return (
     <>
-      <button
-        ref={activateRef}
-        type="button"
-        // The cell VALUE is the accessible name (the button's content); the
-        // edit affordance rides along as the title — an aria-label here
-        // would hide the value from screen readers entirely.
+      <Activate
         title={props.editLabel}
         className={props.activateClassName}
-        // A value on its way somewhere is not the same as a saved one; a cell
-        // that looks settled while a request is out is a lie the reader only
-        // finds out about when it fails.
-        data-save={ctrl.saveStatus}
-        // Changed, and not yet settled by anything the reader trusts. A table
-        // that looks identical before and after a save leaves them no way to
-        // tell what is still at risk.
-        data-dirty={ctrl.isDirty ? "" : undefined}
-        aria-busy={ctrl.saveStatus === "saving" ? true : undefined}
-        data-adapttable-part="edit-cell-activate"
+        saveStatus={ctrl.saveStatus}
+        dirty={ctrl.isDirty}
+        activateRef={(node) => {
+          activateRef.current = node;
+        }}
+        display={props.display}
         onDoubleClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           ctrl.begin();
         }}
         onClick={(event) => {
-          // Keep row-click from firing when the user is aiming to edit.
           event.stopPropagation();
         }}
         onKeyDown={(event) => {
@@ -452,17 +483,7 @@ export function EditableCellGate<TRow>(
             ctrl.begin();
           }
         }}
-        style={{
-          all: "unset",
-          boxSizing: "border-box",
-          display: "block",
-          width: "100%",
-          cursor: "text",
-          textAlign: "inherit",
-        }}
-      >
-        {props.display}
-      </button>
+      />
       {ctrl.saveFailure && (
         <span
           role="alert"
@@ -470,21 +491,17 @@ export function EditableCellGate<TRow>(
           className={props.saveErrorClassName}
         >
           {ctrl.saveFailure.message}
-          {/* The undo is only offered when the table was told how to perform
-              one: a host that refetches instead has nothing for it to do. */}
-          {ctrl.canRollback && props.undoLabel !== undefined && (
-            <button
-              type="button"
-              data-adapttable-part="edit-cell-rollback"
+          {ctrl.canRollback && props.undoLabel !== undefined ? (
+            <Button
+              label={props.undoLabel}
+              part="edit-cell-rollback"
               className={props.rollbackClassName}
               onClick={(event) => {
                 event.stopPropagation();
                 ctrl.rollback();
               }}
-            >
-              {props.undoLabel}
-            </button>
-          )}
+            />
+          ) : null}
         </span>
       )}
     </>

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Add / duplicate / delete across every kit — the class of bug jsdom cannot
  * see: the toolbar control actually appearing, a blank row landing at the top
@@ -36,10 +38,7 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
 }
 
 async function enable(page: Page, group: string): Promise<void> {
-  await page
-    .getByRole("group", { name: group })
-    .getByRole("button", { name: "On", exact: true })
-    .click();
+  await configureFeatureLab(page, group, "On");
 }
 
 for (const adapter of ADAPTERS) {
@@ -47,7 +46,7 @@ for (const adapter of ADAPTERS) {
     test("add, duplicate and delete rows", async ({ page }) => {
       await openDemo(page, adapter);
       await enable(page, "add / delete");
-      await enable(page, "editing");
+      await configureFeatureLab(page, "editing mode", "Cell");
 
       const add = demo(page).locator('[data-adapttable-part="add-row"]');
       await expect(add).toBeVisible();

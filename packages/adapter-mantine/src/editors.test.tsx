@@ -1,5 +1,5 @@
 import { MantineProvider } from "@mantine/core";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -12,6 +12,7 @@ interface Shift {
   startsAt: string;
   reviewedAt: string;
   tags: string[];
+  team: string;
 }
 
 const ROWS: Shift[] = [
@@ -22,6 +23,7 @@ const ROWS: Shift[] = [
     startsAt: "09:30",
     reviewedAt: "2026-08-13T14:05",
     tags: ["urgent"],
+    team: "core",
   },
 ];
 
@@ -42,6 +44,19 @@ const COLS: ColumnDef<Shift>[] = [
     editor: {
       type: "multi-select",
       options: ["urgent", "billable", "remote"],
+    },
+  },
+  {
+    key: "team",
+    header: "Team",
+    accessor: (row) => row.team,
+    editable: true,
+    editor: {
+      type: "select",
+      options: [
+        { value: "core", label: "Core" },
+        { value: "web", label: "Web" },
+      ],
     },
   },
 ];
@@ -163,5 +178,16 @@ describe("editor set (mantine)", () => {
     fireEvent.change(select);
     fireEvent.blur(select);
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", []);
+  });
+
+  it("commits a single-select through the kit Select", () => {
+    const { onCellEdit } = table();
+    open(5);
+    fireEvent.click(screen.getByRole("combobox", { name: "Edit cell" }));
+    fireEvent.click(screen.getByRole("option", { name: "Web" }));
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Edit cell" }), {
+      key: "Enter",
+    });
+    expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "team", "web");
   });
 });

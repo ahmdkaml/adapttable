@@ -310,7 +310,14 @@ export function ColumnMenu<TRow>({
           {labels.columns}
         </Button>
       </Popover.Trigger>
-      <Popover.Content align="end" side="bottom" minWidth="260px" dir={dir}>
+      <Popover.Content
+        align="end"
+        side="bottom"
+        minWidth="260px"
+        dir={dir}
+        maxHeight="min(70vh, 480px)"
+        style={{ overflowY: "auto" }}
+      >
         <Flex direction="column" gap="1">
           <Text
             size="1"

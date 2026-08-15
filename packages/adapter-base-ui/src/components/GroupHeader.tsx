@@ -12,7 +12,6 @@ import {
 import {
   ExpandChevron,
   groupIndentStyle,
-  GroupMoreButton,
   groupRowParts,
   GroupToggleSpacer,
   resolveMobileLabel,
@@ -21,6 +20,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { BaseUiAccentColor } from "../types";
 import { Box, Card, Flex, IconButton, Table, Text } from "../ui";
+import { GroupMoreButton } from "./kitControls";
 import { Checkbox } from "./primitives";
 
 /** Chevron toggle for a row-group's collapse state (mirrors {@link ExpandToggle}). */

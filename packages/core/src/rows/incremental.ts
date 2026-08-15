@@ -68,10 +68,9 @@ import {
   type RowPatch,
   type RowPatchEvent,
   type RowPatchLog,
-  rowPatchLog,
 } from "./patch";
 
-export { rowPatchLog };
+export { rowPatchLog } from "./patch";
 
 /** How the table turns a row set into a filtered, sorted, grouped view. */
 export interface IncrementalViewConfig<TRow> {
@@ -970,7 +969,7 @@ function paintGroups<TRow>(
       entry.aggregateCells = state.groupCells.get(entry.groupKey);
     }
   }
-  for (const key of [...state.groupCells.keys()]) {
+  for (const key of state.groupCells.keys()) {
     if (!seen.has(key)) state.groupCells.delete(key);
   }
   state.dirtyGroups.clear();

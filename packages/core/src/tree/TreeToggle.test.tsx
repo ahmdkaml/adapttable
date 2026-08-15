@@ -8,8 +8,9 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { treeToggleTestSlots } from "../internal/chromeTestSlots";
 import type { TreeEntry } from "./treeRows";
-import { TreeToggle } from "./TreeToggle";
+import { TreeToggleChrome } from "./TreeToggle";
 
 interface Row {
   id: string;
@@ -32,13 +33,18 @@ const part = (name: string) =>
 describe("TreeToggle", () => {
   it("names the action for a screen reader, in both directions", () => {
     const { rerender } = render(
-      <TreeToggle entry={entry()} onToggle={() => undefined} />
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
+        entry={entry()}
+        onToggle={() => undefined}
+      />
     );
     expect(part("tree-toggle")).toHaveAttribute("aria-label", "Expand row");
     expect(part("tree-toggle")).toHaveAttribute("aria-expanded", "false");
 
     rerender(
-      <TreeToggle
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
         entry={entry({ expanded: true })}
         onToggle={() => undefined}
       />
@@ -49,7 +55,8 @@ describe("TreeToggle", () => {
 
   it("takes the localized name when one is given", () => {
     render(
-      <TreeToggle
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
         entry={entry()}
         labels={{ expandRow: "افتح الصف" }}
         onToggle={() => undefined}
@@ -62,7 +69,8 @@ describe("TreeToggle", () => {
     // Without the spacer a folder's children would line up under its chevron
     // rather than under its name.
     render(
-      <TreeToggle
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
         entry={entry({ hasChildren: false })}
         onToggle={() => undefined}
       />
@@ -73,14 +81,24 @@ describe("TreeToggle", () => {
 
   it("flags a node whose children are being fetched", () => {
     render(
-      <TreeToggle entry={entry({ loading: true })} onToggle={() => undefined} />
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
+        entry={entry({ loading: true })}
+        onToggle={() => undefined}
+      />
     );
     expect(part("tree-toggle")).toHaveAttribute("data-loading");
   });
 
   it("reports the node it belongs to when clicked", () => {
     const onToggle = vi.fn();
-    render(<TreeToggle entry={entry()} onToggle={onToggle} />);
+    render(
+      <TreeToggleChrome
+        slots={treeToggleTestSlots}
+        entry={entry()}
+        onToggle={onToggle}
+      />
+    );
     fireEvent.click(part("tree-toggle")!);
     expect(onToggle).toHaveBeenCalledExactlyOnceWith("src");
   });

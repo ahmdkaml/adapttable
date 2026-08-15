@@ -99,6 +99,8 @@ export interface DataTableClassNames {
   filterTreeActions?: string;
   /** Remove-condition / remove-group control in the filter-tree builder. */
   filterTreeRemove?: string;
+  /** Disclosure label that parks the AND/OR builder behind Advanced. */
+  filterTreeSummary?: string;
   /** One auto-built filter field (the `<label>`/`<fieldset>` wrapper). */
   filterField?: string;
   /** The field's caption (the `<span>`/`<legend>` holding the label text). */
@@ -109,9 +111,9 @@ export interface DataTableClassNames {
   filterSelect?: string;
   /** The operator `<select>` of an auto-built range field. */
   filterOperator?: string;
-  /** The checkbox-list container of an auto-built `multiSelect` field. */
+  /** The option list of an auto-built searchable `multiSelect` field. */
   filterCheckboxGroup?: string;
-  /** One checkbox option (`<label>` + checkbox) in a `multiSelect` field. */
+  /** One option (`<label>` + checkbox) in a searchable `multiSelect` field. */
   filterCheckbox?: string;
   /** The placeholder shown while a field's async options load. */
   filterOptionsLoading?: string;

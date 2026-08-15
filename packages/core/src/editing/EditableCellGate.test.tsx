@@ -7,13 +7,17 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { editableCellTestSlots } from "../internal/chromeTestSlots";
 import type { ColumnDef } from "../types";
 import { useBatchEditing } from "./batchEditing";
+import { formatMultiDraft } from "./cellEditing";
 import { focusEditorOnMount } from "./editableCellController";
 import {
+  commitBooleanDraft,
   EditableCellGate,
   editorBusyProps,
   editorValidationProps,
+  multiDraftFromSelect,
 } from "./EditableCellGate";
 import { useEditConflict } from "./editConflict";
 import { useCellSaveState } from "./saveState";
@@ -35,6 +39,7 @@ function Harness({
   const state = useCellEditing();
   return (
     <EditableCellGate
+      slots={editableCellTestSlots}
       editing={onCellEdit ? { onCellEdit, state } : undefined}
       row={ROW}
       column={COLS[0]!}
@@ -139,6 +144,7 @@ describe("EditableCellGate", () => {
     }));
     render(
       <EditableCellGate
+        slots={editableCellTestSlots}
         editing={{
           onCellEdit,
           state: result.current.state,
@@ -196,6 +202,7 @@ describe("EditableCellGate", () => {
     });
     render(
       <EditableCellGate
+        slots={editableCellTestSlots}
         editing={{
           onCellEdit,
           state: result.current.state,
@@ -266,6 +273,7 @@ describe("EditableCellGate", () => {
     });
     render(
       <EditableCellGate
+        slots={editableCellTestSlots}
         editing={{
           onCellEdit,
           state: result.current.state,
@@ -306,6 +314,7 @@ describe("EditableCellGate", () => {
       const saving = useCellSaveState<Person>({ onRollback });
       return (
         <EditableCellGate
+          slots={editableCellTestSlots}
           editing={{
             onCellEdit: () => Promise.reject(new Error("Conflict")),
             state,
@@ -388,3 +397,35 @@ describe("editorValidationProps / editorBusyProps", () => {
     expect(editorBusyProps(base)).not.toHaveProperty("aria-describedby");
   });
 });
+
+describe("commitBooleanDraft / multiDraftFromSelect", () => {
+  it("writes the boolean draft and commits in the same gesture", () => {
+    const setDraft = vi.fn();
+    const commitOnBlur = vi.fn();
+    commitBooleanDraft({ ...baseCtrl(), setDraft, commitOnBlur }, true);
+    expect(setDraft).toHaveBeenCalledExactlyOnceWith("true");
+    expect(commitOnBlur).toHaveBeenCalledOnce();
+  });
+
+  it("reads the selected options from a native multi select", () => {
+    const select = document.createElement("select");
+    select.multiple = true;
+    select.innerHTML =
+      '<option value="a" selected>A</option><option value="b" selected>B</option>';
+    expect(multiDraftFromSelect(select)).toBe(formatMultiDraft(["a", "b"]));
+  });
+});
+
+function baseCtrl() {
+  return {
+    draft: "",
+    setDraft: vi.fn(),
+    onEditorKeyDown: vi.fn(),
+    commitOnBlur: vi.fn(),
+    editor: "text" as const,
+    selectOptions: [],
+    validating: false,
+    errorId: "err-1",
+    focusRef: () => undefined,
+  };
+}

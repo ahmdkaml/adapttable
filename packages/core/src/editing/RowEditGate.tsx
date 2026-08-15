@@ -8,7 +8,7 @@
  * rather than in nine adapters, because a second copy of "which editor does this
  * column want" is a second place for the answer to drift.
  */
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { TableLabels } from "../types";
 import type { BatchEditingState } from "./batchEditing";
@@ -185,7 +185,7 @@ export function rowEditControls<TRow>({
   };
 }
 
-/** Props for {@link RowEditActions}. */
+/** Props for an adapter {@link RowEditActions} — no slots on the public API. */
 export interface RowEditActionsProps<
   TRow,
 > extends RowEditControlsOptions<TRow> {
@@ -195,38 +195,56 @@ export interface RowEditActionsProps<
   buttonClassName?: string;
 }
 
+/** Kit button the row-edit chrome calls. */
+export interface RowEditButtonProps {
+  readonly label: string;
+  readonly part: string;
+  readonly className?: string;
+  readonly onClick: (event: { stopPropagation: () => void }) => void;
+}
+
+/** Adapter-supplied controls for {@link RowEditActionsChrome}. */
+export interface RowEditActionsSlots {
+  readonly Button: (props: RowEditButtonProps) => ReactNode;
+}
+
+/** Props for {@link RowEditActionsChrome}. */
+export interface RowEditActionsChromeProps<
+  TRow,
+> extends RowEditActionsProps<TRow> {
+  readonly slots: RowEditActionsSlots;
+}
+
 /**
  * The row's edit / save / cancel controls.
  *
- * Plain buttons with parts and labels, styled by the kit's own classes: every
- * adapter needs the same three, and the interesting part is what they do rather
- * than what they look like. A kit with a strong opinion about its buttons uses
- * {@link rowEditControls} directly instead.
+ * Layout and the shared {@link rowEditControls} contract — adapters pass the
+ * buttons the end user clicks. A kit with a strong opinion about its buttons
+ * can still use {@link rowEditControls} directly instead.
  *
  * @typeParam TRow - The row type.
- * @param props - See {@link RowEditActionsProps}.
+ * @param props - See {@link RowEditActionsChromeProps}.
  * @returns The controls for this row.
  */
-export function RowEditActions<TRow>({
+export function RowEditActionsChrome<TRow>({
   className,
   buttonClassName,
+  slots,
   ...options
-}: Readonly<RowEditActionsProps<TRow>>): ReactElement {
+}: Readonly<RowEditActionsChromeProps<TRow>>): ReactElement {
   const controls = rowEditControls(options);
+  const Button = slots.Button;
   if (!controls.editing) {
     return (
-      <button
-        type="button"
-        data-adapttable-part="row-edit-begin"
+      <Button
+        label={controls.editLabel}
+        part="row-edit-begin"
         className={buttonClassName}
-        aria-label={controls.editLabel}
         onClick={(event) => {
           event.stopPropagation();
           controls.begin();
         }}
-      >
-        {controls.editLabel}
-      </button>
+      />
     );
   }
   return (
@@ -235,30 +253,24 @@ export function RowEditActions<TRow>({
       className={className}
       style={{ display: "inline-flex", gap: 4 }}
     >
-      <button
-        type="button"
-        data-adapttable-part="row-edit-save"
+      <Button
+        label={controls.saveLabel}
+        part="row-edit-save"
         className={buttonClassName}
-        aria-label={controls.saveLabel}
         onClick={(event) => {
           event.stopPropagation();
           controls.save();
         }}
-      >
-        {controls.saveLabel}
-      </button>
-      <button
-        type="button"
-        data-adapttable-part="row-edit-cancel"
+      />
+      <Button
+        label={controls.cancelLabel}
+        part="row-edit-cancel"
         className={buttonClassName}
-        aria-label={controls.cancelLabel}
         onClick={(event) => {
           event.stopPropagation();
           controls.cancel();
         }}
-      >
-        {controls.cancelLabel}
-      </button>
+      />
     </span>
   );
 }
@@ -350,7 +362,7 @@ export function BatchEditCell<TRow>({
   );
 }
 
-/** Props for {@link BatchEditBar}. */
+/** Props for an adapter {@link BatchEditBar} — no slots on the public API. */
 export interface BatchEditBarProps<TRow> {
   /** The batch state from the chrome. */
   batch: BatchEditingState<TRow>;
@@ -362,6 +374,24 @@ export interface BatchEditBarProps<TRow> {
   buttonClassName?: string;
 }
 
+/** Kit button the batch-edit bar calls. */
+export interface BatchEditButtonProps {
+  readonly label: string;
+  readonly part: string;
+  readonly className?: string;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link BatchEditBarChrome}. */
+export interface BatchEditBarSlots {
+  readonly Button: (props: BatchEditButtonProps) => ReactNode;
+}
+
+/** Props for {@link BatchEditBarChrome}. */
+export interface BatchEditBarChromeProps<TRow> extends BatchEditBarProps<TRow> {
+  readonly slots: BatchEditBarSlots;
+}
+
 /**
  * The bar that ends a batch: how many rows are waiting, save all, cancel all.
  *
@@ -369,17 +399,19 @@ export interface BatchEditBarProps<TRow> {
  * the table is in a mode, when what matters is that there are unsaved changes.
  *
  * @typeParam TRow - The row type.
- * @param props - See {@link BatchEditBarProps}.
+ * @param props - See {@link BatchEditBarChromeProps}.
  * @returns The bar, or nothing.
  */
-export function BatchEditBar<TRow>({
+export function BatchEditBarChrome<TRow>({
   batch,
   labels,
   className,
   buttonClassName,
-}: Readonly<BatchEditBarProps<TRow>>): ReactElement | null {
+  slots,
+}: Readonly<BatchEditBarChromeProps<TRow>>): ReactElement | null {
   if (!batch.pending) return null;
   const count = (labels?.pendingRows ?? defaultPendingRows)(batch.count);
+  const Button = slots.Button;
   return (
     <div
       data-adapttable-part="batch-edit-bar"
@@ -387,22 +419,18 @@ export function BatchEditBar<TRow>({
       style={{ display: "flex", alignItems: "center", gap: "0.5em" }}
     >
       <output data-adapttable-part="batch-edit-count">{count}</output>
-      <button
-        type="button"
-        data-adapttable-part="batch-edit-save"
+      <Button
+        label={labels?.saveAll ?? "Save all"}
+        part="batch-edit-save"
         className={buttonClassName}
         onClick={batch.saveAll}
-      >
-        {labels?.saveAll ?? "Save all"}
-      </button>
-      <button
-        type="button"
-        data-adapttable-part="batch-edit-cancel"
+      />
+      <Button
+        label={labels?.cancelAll ?? "Cancel all"}
+        part="batch-edit-cancel"
         className={buttonClassName}
         onClick={batch.cancelAll}
-      >
-        {labels?.cancelAll ?? "Cancel all"}
-      </button>
+      />
     </div>
   );
 }

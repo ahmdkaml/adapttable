@@ -44,7 +44,12 @@ export function FilterPopover({
       // Ignore clicks on the trigger (the toggle handles those) and inside the
       // floating popover content, which antd portals under `.ant-popover`.
       if (target && anchorRef.current?.contains(target)) return;
-      if (target instanceof Element && target.closest(".ant-popover")) {
+      if (
+        target instanceof Element &&
+        target.closest(
+          ".ant-popover, .ant-select-dropdown, .ant-picker-dropdown"
+        )
+      ) {
         return;
       }
       onClose();
@@ -70,7 +75,7 @@ export function FilterPopover({
     <div
       style={{
         minWidth: 280,
-        maxWidth: "min(360px, calc(100vw - 48px))",
+        maxWidth: "min(380px, calc(100vw - 48px))",
         // The form grows while open; a card taller than the window paints its
         // lower fields off-screen, so it stops at the viewport edge instead.
         maxHeight: "min(70vh, 560px)",

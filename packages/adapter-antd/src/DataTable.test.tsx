@@ -1629,6 +1629,15 @@ function openFilters(): HTMLElement {
   return document.querySelector<HTMLElement>(".ant-popover")!;
 }
 
+function pickFilterSelect(
+  popover: HTMLElement,
+  name: string,
+  option: string
+): void {
+  fireEvent.mouseDown(within(popover).getByRole("combobox", { name }));
+  fireEvent.click(screen.getByTitle(option));
+}
+
 /** The adapter's query string, percent-decoded for readable assertions. */
 const urlState = () => decodeURIComponent(adapter.getSearch());
 
@@ -1659,9 +1668,7 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     expect(screen.getByText("First Name Contains ali")).toBeInTheDocument();
 
     // The standalone select definition narrows further and chips up too.
-    fireEvent.change(within(popover).getByLabelText("City"), {
-      target: { value: "Dubai" },
-    });
+    pickFilterSelect(popover, "City", "Dubai");
     expect(urlState()).toContain("f_city=Dubai");
     expect(screen.getByText("City: Dubai")).toBeInTheDocument();
 
@@ -1740,14 +1747,15 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
       within(popover).getByPlaceholderText("Type a name")
     ).toBeInTheDocument();
 
-    fireEvent.change(within(popover).getByLabelText("City"), {
-      target: { value: "Dubai" },
-    });
+    pickFilterSelect(popover, "City", "Dubai");
     expect(urlState()).toContain("f_city=Dubai");
 
-    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    const role = within(popover).getByRole("combobox", { name: "Role" });
+    fireEvent.mouseDown(role);
+    fireEvent.click(screen.getByTitle("Admin"));
     expect(urlState()).toContain("f_role=admin");
-    fireEvent.click(within(popover).getByRole("checkbox", { name: "Editor" }));
+    fireEvent.mouseDown(role);
+    fireEvent.click(screen.getByTitle("Editor"));
     expect(urlState()).toContain("f_role=admin,editor");
 
     // dateRange is operator-first: a single-bound comparison plus one value
@@ -1755,7 +1763,7 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     fireEvent.mouseDown(
       within(popover).getByRole("combobox", { name: "Hired At Operator" })
     );
-    fireEvent.click(within(popover).getByTitle("On or after"));
+    fireEvent.click(screen.getByTitle("On or after"));
     fireEvent.change(within(popover).getByLabelText("Hired At Value"), {
       target: { value: "2026-01-01" },
     });
@@ -1767,7 +1775,7 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
       within(popover).getByRole("combobox", { name: "Age Operator" })
     );
     // Both flavours list "Between"; the age dropdown rendered last.
-    fireEvent.click(within(popover).getAllByTitle("Between").at(-1)!);
+    fireEvent.click(screen.getAllByTitle("Between").at(-1)!);
     fireEvent.change(within(popover).getByLabelText("Age From"), {
       target: { value: "30" },
     });
@@ -1789,10 +1797,8 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     // widgets derive their operator from the persisted pair: distinct
     // bounds → Between, a lower bound alone → On or after.
     expect(within(popover).getByLabelText("First Name")).toHaveValue("ali");
-    expect(within(popover).getByLabelText("City")).toHaveValue("Dubai");
-    expect(
-      within(popover).getByRole("checkbox", { name: "Admin" })
-    ).toBeChecked();
+    expect(within(popover).getByTitle("Dubai")).toBeInTheDocument();
+    expect(within(popover).getByTitle("Admin")).toBeInTheDocument();
     expect(within(popover).getByTitle("Between")).toBeInTheDocument();
     expect(within(popover).getByLabelText("Age From")).toHaveValue("30");
     expect(within(popover).getByLabelText("Age To")).toHaveValue("40");
@@ -1805,10 +1811,13 @@ describe("<DataTable> declarative engine (Ant Design)", () => {
     fireEvent.change(within(popover).getByLabelText("First Name"), {
       target: { value: "" },
     });
-    fireEvent.change(within(popover).getByLabelText("City"), {
-      target: { value: "" },
-    });
-    fireEvent.click(within(popover).getByRole("checkbox", { name: "Admin" }));
+    pickFilterSelect(popover, "City", "All");
+    fireEvent.click(
+      within(popover)
+        .getByRole("combobox", { name: "Role" })
+        .closest(".ant-select")!
+        .querySelector(".ant-select-selection-item-remove")!
+    );
     fireEvent.change(within(popover).getByLabelText("Age From"), {
       target: { value: "" },
     });

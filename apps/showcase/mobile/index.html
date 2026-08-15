@@ -6,7 +6,7 @@
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
     <meta
       name="description"
-      content="The same React table becomes a card list on phones automatically — identical filters, selection and URL state, with infinite scroll."
+      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
     />
     <link
       rel="canonical"
@@ -15,18 +15,51 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AdaptTable" />
-    <meta property="og:title" content="AdaptTable demo — automatic mobile cards" />
-    <meta property="og:description" content="The same React table becomes a card list on phones automatically — identical filters, selection and URL state, with infinite scroll." />
-    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/mobile/" />
-    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta
+      property="og:title"
+      content="AdaptTable demo — automatic mobile cards"
+    />
+    <meta
+      property="og:description"
+      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
+    />
+    <meta
+      property="og:url"
+      content="https://orwa-mahmoud.github.io/adapttable/demo/mobile/"
+    />
+    <meta
+      property="og:image"
+      content="https://orwa-mahmoud.github.io/adapttable/og.png"
+    />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="AdaptTable demo — automatic mobile cards" />
-    <meta name="twitter:description" content="The same React table becomes a card list on phones automatically — identical filters, selection and URL state, with infinite scroll." />
-    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta
+      name="twitter:title"
+      content="AdaptTable demo — automatic mobile cards"
+    />
+    <meta
+      name="twitter:description"
+      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
+    />
+    <meta
+      name="twitter:image"
+      content="https://orwa-mahmoud.github.io/adapttable/og.png"
+    />
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"The same React table becomes a card list on phones automatically — identical filters, selection and URL state, with infinite scroll.","url":"https://orwa-mahmoud.github.io/adapttable/demo/mobile/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AdaptTable",
+        "description": "The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll.",
+        "url": "https://orwa-mahmoud.github.io/adapttable/demo/mobile/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "license": "https://opensource.org/license/mit",
+        "programmingLanguage": "TypeScript",
+        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
     </script>
     <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
     <script
@@ -108,21 +141,20 @@
         <h1>AdaptTable demo — automatic mobile card layout</h1>
         <p>
           Below a breakpoint the same table stops being a table. Rows become
-          cards, the pager becomes infinite scroll, and every other behaviour
-          carries over untouched: the same filters, the same selection and
-          bulk actions, the same URL-synced state. There is no second
-          component to build and no mobile-only prop tree to maintain.
+          cards and the pager becomes infinite scroll. Columns, row content,
+          search and URL-synced query state stay on the same table instance.
+          There is no second component to build and no mobile-only prop tree to
+          maintain.
         </p>
         <h2>What changes, and what does not</h2>
         <ul>
           <li>
-            Each row renders as a card with a title, subtitle and the fields
-            you mark as summary columns; the rest collapse behind a details
-            toggle.
+            Each row renders as a card with a title, subtitle and the fields you
+            mark as summary columns; the rest collapse behind a details toggle.
           </li>
           <li>
-            Selection, bulk actions and row expansion work exactly as they do
-            in the table layout.
+            Search and query state stay identical while this focused page
+            switches between table and card layouts.
           </li>
           <li>
             Pagination becomes infinite scroll, so a thumb never has to find a
@@ -135,7 +167,6 @@
         </ul>
         <p>
           Documentation: <a href="/adapttable/mobile/">mobile cards</a>,
-          <a href="/adapttable/selection/">selection</a>,
           <a href="/adapttable/row-expansion/">row expansion</a>,
           <a href="/adapttable/pagination/">pagination</a>. Other demos:
           <a href="/adapttable/demo/">the main showcase</a>,

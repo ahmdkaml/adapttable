@@ -8,10 +8,44 @@
  */
 
 export {
+  ChecklistFilter,
+  type ChecklistFilterProps,
+} from "./components/ChecklistFilter";
+export { FillHandle } from "./components/FillHandle";
+export {
+  FilterTreeBuilder,
+  type FilterTreeBuilderProps,
+} from "./components/FilterTreeBuilder";
+export {
+  BatchEditBar,
+  type BatchEditBarProps,
+  ColumnGroupToggle,
+  type ColumnGroupToggleProps,
+  FilterHeaderControl,
+  type FilterHeaderControlProps,
+  FilterHeaderRow,
+  type FilterHeaderRowProps,
+  FindBar,
+  type FindBarProps,
+  GroupMoreButton,
+  type GroupMoreButtonProps,
+  RowEditActions,
+  type RowEditActionsProps,
+  RowReorderButtons,
+  type RowReorderButtonsProps,
+  RowReorderHandle,
+  type RowReorderHandleProps,
+  TreeCell,
+  type TreeCellProps,
+  TreeToggle,
+  type TreeToggleProps,
+} from "./components/kitControls";
+export {
   type SavedViewsLabels,
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export { DataTable } from "./DataTable";
 export type {
   DataTableClassNames,

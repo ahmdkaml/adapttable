@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import type { QueryFilterGroup } from "../source/queryContract";
 import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
-import { FilterTreeBuilder } from "./FilterTreeBuilder";
+import { FilterTreeChrome, type FilterTreeSlots } from "./FilterTreeChrome";
 
 interface Row {
   name: string;
@@ -21,18 +21,120 @@ const DEFS: FilterDef<Row>[] = [
   { key: "start", type: "dateRange", label: "Start" },
 ];
 
+const slots: FilterTreeSlots = {
+  Select: ({
+    label,
+    value,
+    part,
+    options,
+    className,
+    fieldClassName,
+    labelClassName,
+    onChange,
+  }) => (
+    <label data-adapttable-part="filter-field" className={fieldClassName}>
+      <span data-adapttable-part="filter-label" className={labelClassName}>
+        {label}
+      </span>
+      <select
+        aria-label={label}
+        data-adapttable-part={part}
+        className={className}
+        value={value}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+          onChange(event.target.value)
+        }
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  ),
+  Input: ({
+    label,
+    value,
+    type,
+    className,
+    fieldClassName,
+    labelClassName,
+    onChange,
+  }) => (
+    <label data-adapttable-part="filter-field" className={fieldClassName}>
+      <span data-adapttable-part="filter-label" className={labelClassName}>
+        {label}
+      </span>
+      <input
+        aria-label={label}
+        data-adapttable-part="filter-input"
+        className={className}
+        type={type}
+        value={value}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange(event.target.value)
+        }
+      />
+    </label>
+  ),
+  Button: ({ label, part, className, onClick }) => (
+    <button
+      type="button"
+      data-adapttable-part={part}
+      className={className}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  ),
+  Disclosure: ({
+    label,
+    expanded,
+    className,
+    summaryClassName,
+    children,
+    onExpandedChange,
+  }) => (
+    <section className={className} data-adapttable-part="filter-tree">
+      <button
+        type="button"
+        className={summaryClassName}
+        aria-expanded={expanded}
+        data-adapttable-part="filter-tree-summary"
+        onClick={() => onExpandedChange(!expanded)}
+      >
+        {label}
+      </button>
+      {expanded ? children : null}
+    </section>
+  ),
+};
+
 function Harness({ initial }: Readonly<{ initial?: QueryFilterGroup }> = {}) {
   const [filterTree, setFilterTree] = useState<QueryFilterGroup | undefined>(
     initial
   );
   return (
-    <FilterTreeBuilder defs={DEFS} source={{ filterTree, setFilterTree }} />
+    <FilterTreeChrome
+      defs={DEFS}
+      source={{ filterTree, setFilterTree }}
+      slots={slots}
+    />
   );
 }
 
-describe("FilterTreeBuilder", () => {
+describe("FilterTreeChrome", () => {
+  it("parks the builder behind Advanced so the simple form stays the page", () => {
+    render(<Harness />);
+    expect(screen.getByText("Advanced")).toBeVisible();
+    fireEvent.click(screen.getByText("Advanced"));
+    expect(screen.getByRole("button", { name: "Add condition" })).toBeVisible();
+  });
+
   it("adds a condition and writes the value into the tree", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Value"), {
       target: { value: "Ada" },
@@ -43,6 +145,7 @@ describe("FilterTreeBuilder", () => {
 
   it("switches field, operator, combinator, and nests a group", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "budget" },
@@ -64,6 +167,7 @@ describe("FilterTreeBuilder", () => {
 
   it("edits a boolean leaf and a relative date", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.change(screen.getByLabelText("Field"), {
       target: { value: "core" },
@@ -86,6 +190,7 @@ describe("FilterTreeBuilder", () => {
 
   it("starts from Add group and a list operator", () => {
     render(<Harness />);
+    fireEvent.click(screen.getByText("Advanced"));
     fireEvent.click(screen.getByRole("button", { name: "Add group" }));
     fireEvent.click(
       screen.getAllByRole("button", { name: "Add condition" })[1]!
@@ -104,7 +209,11 @@ describe("FilterTreeBuilder", () => {
 
   it("renders nothing without defs or a setter", () => {
     const { container } = render(
-      <FilterTreeBuilder defs={[]} source={{ filterTree: undefined }} />
+      <FilterTreeChrome
+        defs={[]}
+        source={{ filterTree: undefined }}
+        slots={slots}
+      />
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -157,7 +266,7 @@ describe("FilterTreeBuilder", () => {
       defaultOp: "eq",
     });
     render(
-      <FilterTreeBuilder
+      <FilterTreeChrome
         defs={[{ key: "sku", type: "sku", label: "SKU" }]}
         source={{
           filterTree: {
@@ -167,6 +276,7 @@ describe("FilterTreeBuilder", () => {
           setFilterTree: () => undefined,
         }}
         registry={registry}
+        slots={slots}
       />
     );
     expect(

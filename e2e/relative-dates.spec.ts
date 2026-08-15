@@ -57,9 +57,15 @@ async function pickRelative(page: Page): Promise<void> {
     await native.first().selectOption({ value: "relative" });
     return;
   }
+  const group = page.getByRole("group", { name: /^Start$|^البداية$/ });
+  const groupedOperator = group.getByRole("combobox", {
+    name: /Operator|المُعامل/,
+  });
   // Mantine / antd name the control "Start Operator" (or the Arabic pair).
   const labeled = page.getByLabel(/^Start Operator$|^البداية /);
-  if ((await labeled.count()) > 0) {
+  if ((await groupedOperator.count()) > 0) {
+    await groupedOperator.first().click();
+  } else if ((await labeled.count()) > 0) {
     await labeled.first().click();
   } else {
     // Radix / Base UI: the operator is just "Operator" under the Start label.
@@ -73,6 +79,7 @@ async function pickRelative(page: Page): Promise<void> {
   const option = page
     .getByRole("option", { name: /Relative|نسبي/ })
     .or(page.getByTitle(/Relative|نسبي/))
+    .filter({ visible: true })
     .first();
   await expect(option).toBeVisible();
   await option.dispatchEvent("pointerdown");

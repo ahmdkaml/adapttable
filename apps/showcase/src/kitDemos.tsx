@@ -8,7 +8,12 @@ import {
 import { MantineDemo } from "./adapters/MantineDemo";
 import { cssVars } from "./cssVars";
 import type { Locale } from "./data";
-import { type DataMode, type Density, type FiltersUi } from "./Demo";
+import {
+  type DataMode,
+  type Density,
+  type FiltersUi,
+  type PageMode,
+} from "./Demo";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
 export type KitDemoProps = Readonly<{
@@ -33,6 +38,9 @@ export type KitDemoProps = Readonly<{
   editing?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  forceMobile?: boolean;
+  pageMode?: PageMode;
+  focused?: boolean;
 }>;
 
 export type DemoComponent = ComponentType<KitDemoProps>;
@@ -73,7 +81,7 @@ export function Segmented<T extends string>({
 }: Readonly<{
   value: T;
   onChange: (v: T) => void;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; disabled?: boolean; title?: string }[];
   label: string;
 }>) {
   return (
@@ -83,6 +91,9 @@ export function Segmented<T extends string>({
           key={o.value}
           type="button"
           className={value === o.value ? "seg__btn is-on" : "seg__btn"}
+          aria-pressed={value === o.value}
+          disabled={o.disabled}
+          title={o.title}
           onClick={() => onChange(o.value)}
         >
           {o.label}
@@ -150,6 +161,7 @@ export function KitSwitcher({
           type="button"
           data-testid={`adapter-${a.key}`}
           className={adapter === a.key ? "adtab is-on" : "adtab"}
+          aria-pressed={adapter === a.key}
           style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
           onClick={() => {
             const url = new URL(window.location.href);

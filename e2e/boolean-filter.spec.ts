@@ -60,6 +60,7 @@ async function pickTrue(page: Page): Promise<void> {
   const option = page
     .getByRole("option", { name: /True|نعم/ })
     .or(page.getByText("True", { exact: true }))
+    .filter({ visible: true })
     .first();
   await expect(option).toBeVisible();
   await option.dispatchEvent("pointerdown");

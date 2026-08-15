@@ -5,16 +5,21 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
 import {
+  commitBooleanDraft,
   editorBusyProps,
-  NativeBooleanEditor,
-  NativeMultiSelectEditor,
+  editorValidationProps,
+  multiDraftFromSelect,
 } from "@adapttable/core/adapter";
-import { MenuItem, TextField } from "@mui/material";
+import { Checkbox, MenuItem, TextField } from "@mui/material";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
+
+import { editableCellSlots } from "./kitControls";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -36,18 +41,54 @@ export function MuiCellEditor({
   };
 
   if (isBooleanEditor(ctrl.editor)) {
+    const inputSlot = {
+      ref: ctrl.focusRef,
+      "aria-label": label,
+      "data-adapttable-part": "edit-cell-editor",
+      ...editorValidationProps(ctrl),
+    };
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <Checkbox
+        slotProps={{ input: inputSlot }}
+        checked={isDraftChecked(ctrl.draft)}
+        onChange={(_, checked) => commitBooleanDraft(ctrl, checked)}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
-        ctrl={ctrl}
-        label={label}
+      <TextField
+        inputRef={ctrl.focusRef}
+        select
+        size="small"
+        fullWidth
+        value={readMultiDraft(ctrl.draft)}
         onKeyDown={onKeyDown}
-      />
+        onBlur={ctrl.commitOnBlur}
+        slotProps={{
+          select: {
+            multiple: true,
+            native: true,
+            onChange: (event) => {
+              const select = event.target as unknown as HTMLSelectElement;
+              ctrl.setDraft(multiDraftFromSelect(select));
+            },
+          },
+          htmlInput: {
+            "aria-label": label,
+            "data-adapttable-part": "edit-cell-editor",
+            ...editorBusyProps(ctrl),
+          },
+        }}
+      >
+        {ctrl.selectOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </TextField>
     );
   }
 
@@ -137,6 +178,7 @@ export function EditableDataCell<TRow>(props: {
       editLabel={props.editLabel}
       undoLabel={props.undoLabel}
       display={display}
+      slots={editableCellSlots}
       renderEditor={(ctrl) => (
         <MuiCellEditor ctrl={ctrl} label={props.editLabel} />
       )}

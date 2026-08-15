@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ColumnDef } from "../types";
 import type { CellEdit } from "./cellEdits";
 import { cellRangeSize } from "./cellRange";
-import { FillHandle } from "./FillHandle";
+import { FillHandleChrome, type FillHandleSlots } from "./FillHandle";
 import { type GridCell } from "./gridFocus";
 import { useGridFocus } from "./useGridFocus";
 
@@ -29,6 +29,11 @@ const COLUMNS: ColumnDef<Row>[] = [
 ];
 /** The same table, with the cells open for writing. */
 const EDITABLE = COLUMNS.map((column) => ({ ...column, editable: true }));
+const fillHandleSlots: FillHandleSlots = {
+  Handle: ({ handleProps }) => (
+    <span {...handleProps} data-adapttable-part="fill-handle" />
+  ),
+};
 
 function makeRows(count: number, from = 0): Row[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -109,11 +114,12 @@ function Grid(props: {
                   {...focus.getCellProps({ row: first + i, col })}
                 >
                   {column.accessor?.(row)}
-                  <FillHandle
+                  <FillHandleChrome
                     focus={focus}
                     windowIndex={i}
                     col={col}
                     firstRowIndex={first}
+                    slots={fillHandleSlots}
                   />
                 </td>
               ))}

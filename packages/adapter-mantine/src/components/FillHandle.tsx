@@ -1,0 +1,46 @@
+import {
+  FillHandleChrome,
+  type FillHandleChromeProps,
+  type FillHandleSlotProps,
+  type FillHandleSlots,
+} from "@adapttable/core/adapter";
+import { Box } from "@mantine/core";
+
+function Handle({ label, handleProps, className }: FillHandleSlotProps) {
+  return (
+    <Box
+      component="span"
+      data-adapttable-part="fill-handle-anchor"
+      style={{ position: "relative", display: "block", height: 0 }}
+    >
+      <Box
+        component="span"
+        {...handleProps}
+        aria-hidden="true"
+        title={label}
+        className={className}
+        data-adapttable-part="fill-handle"
+        style={{
+          position: "absolute",
+          insetInlineEnd: -3,
+          bottom: -3,
+          width: 8,
+          height: 8,
+          borderRadius: 2,
+          background:
+            "var(--adapttable-fill-handle, var(--mantine-primary-color-filled))",
+          cursor: "crosshair",
+        }}
+      />
+    </Box>
+  );
+}
+
+const slots: FillHandleSlots = { Handle };
+
+/** Mantine-owned fill handle; core only decides which cell receives it. */
+export function FillHandle(
+  props: Readonly<Omit<FillHandleChromeProps, "slots">>
+) {
+  return <FillHandleChrome {...props} slots={slots} />;
+}

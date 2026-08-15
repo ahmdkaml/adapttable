@@ -2,14 +2,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
+import { filterHeaderTestSlots } from "../internal/chromeTestSlots";
 import { defaultLabels } from "../labels";
 import type { ExtraFilters } from "../types";
 import { defaultFilterRegistry } from "./filterBuiltins";
 import type { FilterDef } from "./filterDefs";
 import {
   filterDefForColumn,
-  FilterHeaderControl,
-  FilterHeaderRow,
+  FilterHeaderChrome,
+  FilterHeaderControlChrome,
   headerFilterStickTop,
 } from "./FilterHeaderRow";
 
@@ -58,7 +59,8 @@ function Harness({
   return (
     <table>
       <thead>
-        <FilterHeaderRow
+        <FilterHeaderChrome
+          slots={filterHeaderTestSlots}
           columns={[
             { key: "name" },
             { key: "team" },
@@ -129,7 +131,7 @@ describe("filterDefForColumn", () => {
   });
 });
 
-describe("FilterHeaderRow", () => {
+describe("FilterHeaderChrome", () => {
   it("writes a text filter and leaves unmatched columns empty", () => {
     render(<Harness />);
     expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
@@ -158,11 +160,20 @@ describe("FilterHeaderRow", () => {
 
   it("writes a multi-select from the compact menu", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByLabelText("Tags"));
+    const tagsTrigger = screen
+      .getAllByLabelText("Tags")
+      .find((element) => element.tagName === "SUMMARY");
+    if (!tagsTrigger) throw new Error("Tags filter trigger was not rendered");
+    fireEvent.click(tagsTrigger);
     fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
     expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
+    expect(tagsTrigger).toHaveTextContent("A");
+    fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
     expect(screen.getByRole("checkbox", { name: "B" })).toBeChecked();
+    expect(tagsTrigger).toHaveTextContent("2");
+    fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
+    expect(screen.getByRole("checkbox", { name: "A" })).not.toBeChecked();
+    expect(tagsTrigger).toHaveTextContent("B");
   });
 
   it("writes a boolean tri-state", () => {
@@ -194,7 +205,8 @@ describe("FilterHeaderRow", () => {
     const { rerender } = render(
       <table>
         <thead>
-          <FilterHeaderRow
+          <FilterHeaderChrome
+            slots={filterHeaderTestSlots}
             enabled={false}
             columns={[{ key: "name" }]}
             defs={DEFS}
@@ -212,7 +224,8 @@ describe("FilterHeaderRow", () => {
     rerender(
       <table>
         <thead>
-          <FilterHeaderRow
+          <FilterHeaderChrome
+            slots={filterHeaderTestSlots}
             columns={[{ key: "name" }]}
             defs={[]}
             source={{
@@ -262,7 +275,8 @@ describe("FilterHeaderRow", () => {
     render(
       <table>
         <thead>
-          <FilterHeaderRow
+          <FilterHeaderChrome
+            slots={filterHeaderTestSlots}
             columns={[{ key: "name" }]}
             defs={[{ key: "name", type: "personText", label: "Name" }]}
             source={{
@@ -289,7 +303,8 @@ describe("FilterHeaderRow", () => {
     render(
       <table>
         <thead>
-          <FilterHeaderRow
+          <FilterHeaderChrome
+            slots={filterHeaderTestSlots}
             columns={[{ key: "name" }]}
             defs={[{ key: "name", type: "personCard", label: "Name" }]}
             source={{
@@ -308,11 +323,12 @@ describe("FilterHeaderRow", () => {
   });
 });
 
-describe("FilterHeaderControl", () => {
+describe("FilterHeaderControlChrome", () => {
   it("renders the compact widget for a standalone def", () => {
     const extra: ExtraFilters = {};
     render(
-      <FilterHeaderControl
+      <FilterHeaderControlChrome
+        slots={filterHeaderTestSlots}
         def={DEFS[0]!}
         source={{
           extra,

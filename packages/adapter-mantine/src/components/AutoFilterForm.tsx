@@ -1,5 +1,4 @@
 import {
-  ChecklistFilter,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -20,17 +19,18 @@ import {
   useTextFilterWidget,
 } from "@adapttable/core";
 import {
-  Checkbox,
   Group,
   Input,
   Loader,
-  NativeSelect,
+  MultiSelect,
   NumberInput,
   Select,
   Stack,
   TextInput,
 } from "@mantine/core";
 import { type ReactNode } from "react";
+
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
@@ -81,7 +81,6 @@ function RelativeTokenField({
           const found = RELATIVE_PRESETS.find((p) => p === next);
           if (found) onValue(joinRelativeToken(found, n));
         }}
-        comboboxProps={{ withinPortal: false }}
       />
       {counted && (
         <NumberInput
@@ -189,7 +188,6 @@ function RangeField<TRow>({
           data={data}
           value={op ?? null}
           onChange={handleOp}
-          comboboxProps={{ withinPortal: false }}
         />
         {values}
       </Group>
@@ -213,7 +211,7 @@ function BooleanControl<TRow>({
 }>) {
   const { label, choice, write } = useBooleanFilterWidget(def, source);
   return (
-    <NativeSelect
+    <Select
       size="sm"
       label={label}
       data-adapttable-part="filter-select"
@@ -223,10 +221,10 @@ function BooleanControl<TRow>({
         { value: "false", label: labels.boolFalse },
       ]}
       value={choice}
-      onChange={(e) => {
-        const next = e.currentTarget.value;
+      onChange={(next) => {
         if (next === "" || next === "true" || next === "false") write(next);
       }}
+      allowDeselect={false}
     />
   );
 }
@@ -241,20 +239,20 @@ function SelectControl<TRow>({
     ? [{ value: "", label: "…", disabled: true }]
     : [{ value: "", label: "All" }, ...options];
   return (
-    <NativeSelect
+    <Select
       size="sm"
       label={label}
       data={data}
       value={asText(source.extra[def.key])}
-      onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
+      onChange={(next) => source.setExtra(def.key, next ?? "")}
+      allowDeselect={false}
     />
   );
 }
 
 /**
- * Multi-choice control. Options resolve through {@link useFilterOptions};
- * while a loader is in flight the group shows a small spinner instead of
- * checkboxes.
+ * Searchable multi-select. Options resolve through {@link useFilterOptions};
+ * while a loader is in flight the field shows a small spinner.
  */
 function MultiSelectControl<TRow>({
   def,
@@ -263,26 +261,19 @@ function MultiSelectControl<TRow>({
   const label = filterLabel(def);
   const { options, loading } = useFilterOptions(def);
   return (
-    <Checkbox.Group
+    <MultiSelect
+      size="sm"
       label={label}
+      searchable
+      clearable
+      hidePickedOptions={false}
+      maxDropdownHeight={240}
+      data={options}
       value={asList(source.extra[def.key])}
       onChange={(values) => source.setExtra(def.key, values)}
-    >
-      <Stack gap={6} mt={4}>
-        {loading ? (
-          <Loader size="xs" />
-        ) : (
-          options.map((option) => (
-            <Checkbox
-              key={option.value}
-              size="sm"
-              value={option.value}
-              label={option.label}
-            />
-          ))
-        )}
-      </Stack>
-    </Checkbox.Group>
+      disabled={loading}
+      rightSection={loading ? <Loader size="xs" /> : undefined}
+    />
   );
 }
 
@@ -317,7 +308,6 @@ function TextFilterField<TRow>({
             const found = ops.find((choice) => choice === next);
             if (found) write(found, value);
           }}
-          comboboxProps={{ withinPortal: false }}
         />
         {needsValue && (
           <TextInput

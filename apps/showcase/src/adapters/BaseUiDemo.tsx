@@ -7,7 +7,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -28,6 +27,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Two-letter initials for the avatar fallback. */
 function initials(name: string): string {
@@ -135,6 +135,8 @@ export function BaseUiDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  forceMobile,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -159,8 +161,12 @@ export function BaseUiDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <DemoBody
       mode={mode}
@@ -189,23 +195,24 @@ export function BaseUiDemo({
           editHistory={editing}
           findInTable={editing}
           {...columns}
+          forceMobile={forceMobile}
           density={density}
           filtersMode={filtersUi}
           labels={getLabels(locale)}
           locale={locale}
           dir={getDirection(locale)}
           searchPlaceholder={s.search}
-          rowActions={makeActions(locale)}
-          bulkActions={makeBulkActions(locale)}
+          rowActions={focused ? undefined : makeActions(locale)}
+          bulkActions={focused ? undefined : makeBulkActions(locale)}
           confirm={demoConfirm}
-          enableColumnMenu
-          exportCsv
-          savedViews={demoSavedViews(urlKey)}
+          enableColumnMenu={!focused}
+          exportCsv={!focused}
+          savedViews={focused ? undefined : demoSavedViews(urlKey)}
           animate={animate}
           resizableColumns
           stickyHeader
           headerFilters={headerFilters}
-          filters={demoFilterDefs(locale)}
+          filters={focused ? undefined : filters}
           filterTypes={demoFilterTypes()}
           accentColor="blue"
         />

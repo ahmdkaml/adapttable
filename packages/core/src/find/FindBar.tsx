@@ -1,21 +1,14 @@
 /**
- * The find bar.
- *
- * Deliberately kit-neutral: a native search input and two buttons, sized in
- * `em` so it inherits whatever type the table sits in. A find bar is one of the
- * few pieces of table chrome that is a browser convention rather than a design
- * system's — people expect Ctrl+F to produce something that behaves like the
- * browser's own — and eight kit-specific versions would be eight ways for it to
- * drift. Every part carries a `data-adapttable-part`, so a kit that wants its
- * own look styles it without a fork.
+ * Find-bar layout. Structure only — adapters pass the search field and
+ * the previous / next / close buttons the end user clicks.
  */
-import type { ChangeEvent, KeyboardEvent, ReactElement } from "react";
+import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { focusEditorOnMount } from "../editing/editableCellController";
 import type { TableLabels } from "../types";
 import type { FindInTableState } from "./useFindInTable";
 
-/** Props for {@link FindBar}. */
+/** Props for an adapter {@link FindBar} — no slots on the public API. */
 export interface FindBarProps {
   /** The find state, straight from `shell.find`. */
   find: FindInTableState;
@@ -25,15 +18,38 @@ export interface FindBarProps {
   className?: string;
 }
 
-const BUTTON: Record<string, string | number> = {
-  border: "1px solid currentColor",
-  borderRadius: "0.25em",
-  background: "transparent",
-  color: "inherit",
-  cursor: "pointer",
-  lineHeight: 1,
-  padding: "0.25em 0.5em",
-};
+/** Kit search field the find bar calls. */
+export interface FindSearchProps {
+  readonly label: string;
+  readonly placeholder: string;
+  readonly value: string;
+  readonly focusRef: (node: { focus: () => void } | null) => void;
+  readonly onChange: (value: string) => void;
+  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+}
+
+/** One find-bar glyph. */
+export type FindButtonKind = "previous" | "next" | "close";
+
+/** Kit button the find bar calls. */
+export interface FindButtonProps {
+  readonly label: string;
+  readonly part: string;
+  readonly kind: FindButtonKind;
+  readonly disabled?: boolean;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link FindBarChrome}. */
+export interface FindBarSlots {
+  readonly Search: (props: FindSearchProps) => ReactNode;
+  readonly Button: (props: FindButtonProps) => ReactNode;
+}
+
+/** Props for {@link FindBarChrome}. */
+export interface FindBarChromeProps extends FindBarProps {
+  readonly slots: FindBarSlots;
+}
 
 /**
  * Renders the find bar, or nothing when it is closed — so an adapter renders
@@ -42,17 +58,18 @@ const BUTTON: Record<string, string | number> = {
  * Enter walks forward, Shift+Enter walks back and Escape closes, which is what
  * every find bar does and therefore what nobody should have to learn.
  */
-export function FindBar({
+export function FindBarChrome({
   find,
   labels,
   className,
-}: Readonly<FindBarProps>): ReactElement | null {
+  slots,
+}: Readonly<FindBarChromeProps>): ReactElement | null {
   if (!find.open) return null;
   const count = (labels?.findMatchCount ?? defaultCount)(
     find.index + 1,
     find.matches.length
   );
-  const onKeyDown = (event: KeyboardEvent) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
       find.setOpen(false);
       return;
@@ -63,6 +80,8 @@ export function FindBar({
     else find.next();
   };
 
+  const Search = slots.Search;
+  const Button = slots.Button;
   return (
     <div
       data-adapttable-part="find-bar"
@@ -74,54 +93,37 @@ export function FindBar({
         padding: "0.25em 0",
       }}
     >
-      <input
-        // The bar exists only because the user just asked for it, so focus
-        // belongs in the box they opened — the same mount-focus the cell
-        // editors use, rather than an attribute a11y rules rightly distrust.
-        ref={focusEditorOnMount}
-        type="search"
-        data-adapttable-part="find-input"
-        aria-label={labels?.findInTable ?? "Find in table"}
+      <Search
+        label={labels?.findInTable ?? "Find in table"}
         placeholder={labels?.findPlaceholder ?? "Find in table"}
         value={find.query}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          find.setQuery(event.target.value);
-        }}
+        focusRef={focusEditorOnMount}
+        onChange={find.setQuery}
         onKeyDown={onKeyDown}
-        style={{ font: "inherit", padding: "0.25em 0.5em", minWidth: "12em" }}
       />
       <output data-adapttable-part="find-count">{count}</output>
-      <button
-        type="button"
-        data-adapttable-part="find-previous"
-        aria-label={labels?.findPrevious ?? "Previous match"}
+      <Button
+        label={labels?.findPrevious ?? "Previous match"}
+        part="find-previous"
+        kind="previous"
+        disabled={find.matches.length === 0}
         onClick={find.previous}
+      />
+      <Button
+        label={labels?.findNext ?? "Next match"}
+        part="find-next"
+        kind="next"
         disabled={find.matches.length === 0}
-        style={BUTTON}
-      >
-        ↑
-      </button>
-      <button
-        type="button"
-        data-adapttable-part="find-next"
-        aria-label={labels?.findNext ?? "Next match"}
         onClick={find.next}
-        disabled={find.matches.length === 0}
-        style={BUTTON}
-      >
-        ↓
-      </button>
-      <button
-        type="button"
-        data-adapttable-part="find-close"
-        aria-label={labels?.findClose ?? "Close find"}
+      />
+      <Button
+        label={labels?.findClose ?? "Close find"}
+        part="find-close"
+        kind="close"
         onClick={() => {
           find.setOpen(false);
         }}
-        style={BUTTON}
-      >
-        ✕
-      </button>
+      />
     </div>
   );
 }

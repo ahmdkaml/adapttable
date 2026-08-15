@@ -6,7 +6,7 @@ import {
   type TableLabels,
   type TableSource,
 } from "@adapttable/core";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderMantine } from "../test-utils";
@@ -75,6 +75,14 @@ const pickOperator = (selectName: string, optionLabel: string) => {
   fireEvent.click(screen.getByRole("option", { name: optionLabel }));
 };
 
+/** Pick an item from a Mantine Select by its accessible control name. */
+const pickSelect = (selectName: string, optionLabel: string) => {
+  fireEvent.click(screen.getByRole("combobox", { name: selectName }));
+  fireEvent.click(
+    screen.getByRole("option", { name: optionLabel, hidden: true })
+  );
+};
+
 const TAGS_DEF: FilterDef<Row> = {
   key: "tags",
   type: "multiSelect",
@@ -129,47 +137,68 @@ describe("<AutoFilterForm>", () => {
 
   it("boolean: tri-state select writes true and clears", () => {
     const { source, setExtra } = makeSource();
-    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
-    const select = screen.getByLabelText("Core team");
-    fireEvent.change(select, { target: { value: "true" } });
+    const view = renderForm(
+      [{ key: "core", type: "boolean", label: "Core team" }],
+      source
+    );
+    pickSelect("Core team", "True");
     expect(setExtra).toHaveBeenCalledWith("core", "true");
-    fireEvent.change(select, { target: { value: "" } });
-    expect(setExtra).toHaveBeenCalledWith("core", undefined);
+
+    view.unmount();
+    const clearing = makeSource({ core: "true" });
+    renderForm(
+      [{ key: "core", type: "boolean", label: "Core team" }],
+      clearing.source
+    );
+    pickSelect("Core team", "Any");
+    expect(clearing.setExtra).toHaveBeenCalledWith("core", undefined);
   });
 
   it("select: prepends a clearing All option and writes the chosen value", () => {
-    const { source, setExtra } = makeSource();
-    renderForm([{ key: "status", type: "select" }], source);
-    const select = screen.getByLabelText("Status");
-    // No options declared → only the built-in "All" entry, valued "".
-    expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
-    expect(select).toHaveValue("");
-    fireEvent.change(select, { target: { value: "" } });
+    const { source, setExtra } = makeSource({ status: "active" });
+    renderForm(
+      [
+        {
+          key: "status",
+          type: "select",
+          options: [{ value: "active", label: "Active" }],
+        },
+      ],
+      source
+    );
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue(
+      "Active"
+    );
+    pickSelect("Status", "All");
     expect(setExtra).toHaveBeenCalledWith("status", "");
   });
 
   it("multiSelect: wraps a scalar URL value and appends on check", () => {
     const { source, setExtra } = makeSource({ tags: "urgent" });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Urgent")).toBeChecked();
-    expect(screen.getByLabelText("Low")).not.toBeChecked();
-    fireEvent.click(screen.getByLabelText("Low"));
+    const field = screen.getByRole("combobox", { name: "Tags" });
+    expect(document.querySelector(".mantine-Pill-label")).toHaveTextContent(
+      "Urgent"
+    );
+    fireEvent.click(field);
+    fireEvent.click(screen.getByRole("option", { name: "Low" }));
     expect(setExtra).toHaveBeenCalledWith("tags", ["urgent", "low"]);
   });
 
   it("multiSelect: unchecking the last value clears with an empty array", () => {
     const { source, setExtra } = makeSource({ tags: ["low"] });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Low")).toBeChecked();
-    fireEvent.click(screen.getByLabelText("Low"));
+    fireEvent.click(document.querySelector(".mantine-Pill-remove")!);
     expect(setExtra).toHaveBeenCalledWith("tags", []);
   });
 
   it("multiSelect: an empty-string value reads as nothing selected", () => {
     const { source } = makeSource({ tags: "" });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Urgent")).not.toBeChecked();
-    expect(screen.getByLabelText("Low")).not.toBeChecked();
+    expect(document.querySelector(".mantine-Pill-label")).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Tags" }));
+    expect(screen.getByRole("option", { name: "Urgent" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Low" })).toBeInTheDocument();
   });
 
   it("select: an async loader shows a disabled placeholder, then the options", async () => {
@@ -184,16 +213,24 @@ describe("<AutoFilterForm>", () => {
       ],
       source
     );
-    // While the loader is in flight: a single disabled "…" option.
-    const placeholder = screen.getByRole("option", { name: "…" });
-    expect(placeholder).toBeDisabled();
-    expect(screen.queryByRole("option", { name: "All" })).toBeNull();
-    // Loaded: the clearing All entry plus the fetched options.
-    expect(await screen.findByRole("option", { name: "Active" })).toHaveValue(
-      "act"
+    // While the loader is in flight, the closed control shows its placeholder.
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue("…");
+    // Loaded: the clearing All entry plus the fetched option.
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue(
+        "All"
+      )
     );
-    expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
-    expect(screen.queryByRole("option", { name: "…" })).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Status" }));
+    expect(
+      screen.getByRole("option", { name: "Active", hidden: true })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "All", hidden: true })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "…", hidden: true })
+    ).toBeNull();
   });
 
   it("multiSelect: an async loader shows a spinner, then the checkboxes", async () => {
@@ -209,12 +246,14 @@ describe("<AutoFilterForm>", () => {
       ],
       source
     );
-    // While the loader is in flight: a Loader instead of checkboxes.
+    // While the loader is in flight: a Loader instead of options.
     expect(container.querySelector(".mantine-Loader-root")).not.toBeNull();
-    expect(screen.queryByLabelText("Urgent")).toBeNull();
-    // Loaded: the checkboxes replace the spinner.
-    expect(await screen.findByLabelText("Urgent")).not.toBeChecked();
+    expect(screen.queryByRole("option", { name: "Urgent" })).toBeNull();
+    // Loaded: the searchable field replaces the spinner.
+    const field = await screen.findByRole("combobox", { name: "Tags" });
     expect(container.querySelector(".mantine-Loader-root")).toBeNull();
+    fireEvent.click(field);
+    expect(screen.getByRole("option", { name: "Urgent" })).toBeInTheDocument();
   });
 
   it("numberRange: the operator select lists the localized number operators", () => {
@@ -414,6 +453,97 @@ describe("<AutoFilterForm>", () => {
       hiredTo: "2026-03-01",
       hiredOp: "between",
     });
+  });
+
+  it("boolean: writes false", () => {
+    const { source, setExtra } = makeSource();
+    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
+    pickSelect("Core team", "False");
+    expect(setExtra).toHaveBeenCalledWith("core", "false");
+  });
+
+  it("select: writes a declared option", () => {
+    const { source, setExtra } = makeSource();
+    renderForm(
+      [
+        {
+          key: "status",
+          type: "select",
+          options: [{ value: "act", label: "Active" }],
+        },
+      ],
+      source
+    );
+    pickSelect("Status", "Active");
+    expect(setExtra).toHaveBeenCalledWith("status", "act");
+  });
+
+  it("text: switching to Is empty hides the term", () => {
+    const { source, setExtras } = makeSource({ name: "al" });
+    renderForm([{ key: "name", type: "text", placeholder: "Find…" }], source);
+    pickOperator("Name Operator", "Is empty");
+    expect(setExtras).toHaveBeenCalled();
+    expect(screen.queryByPlaceholderText("Find…")).toBeNull();
+  });
+
+  it("dateRange: Relative last-N writes a new count and a named preset", () => {
+    const { source, setExtras } = makeSource({
+      hiredOp: "relative",
+      hiredFrom: "last:7",
+    });
+    renderForm([HIRED_DEF], source);
+    expect(screen.getByRole("combobox", { name: "Relative" })).toBeVisible();
+    const n = screen.getByLabelText("Value");
+    expect(n).toHaveValue("7");
+    fireEvent.change(n, { target: { value: "14" } });
+    expect(setExtras).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("combobox", { name: "Relative" }));
+    fireEvent.click(screen.getByRole("option", { name: "Today" }));
+    expect(setExtras).toHaveBeenCalled();
+  });
+
+  it("dateRange: a named relative preset hides N; next-N shows it", () => {
+    const named = makeSource({ hiredOp: "relative", hiredFrom: "today" });
+    renderForm([HIRED_DEF], named.source);
+    expect(screen.queryByLabelText("Value")).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Relative" }));
+    fireEvent.click(screen.getByRole("option", { name: "Next N days" }));
+    expect(named.setExtras).toHaveBeenCalled();
+
+    const next = makeSource({ hiredOp: "relative", hiredFrom: "next:3" });
+    const { unmount } = renderForm([HIRED_DEF], next.source);
+    expect(screen.getByLabelText("Value")).toHaveValue("3");
+    unmount();
+  });
+
+  it("dateRange: choosing Relative from the operator list mounts the token field", () => {
+    const { source } = makeSource();
+    renderForm([HIRED_DEF], source);
+    pickOperator("Hired Operator", "Relative");
+    expect(screen.getByRole("combobox", { name: "Relative" })).toBeVisible();
+  });
+
+  it("renders a custom registry widget and ignores an unknown type", () => {
+    const text = defaultFilterRegistry.get("text")!;
+    const registry = defaultFilterRegistry.register({
+      ...text,
+      type: "personPick",
+      render: () => <div data-testid="custom-filter">picked</div>,
+    });
+    const { source } = makeSource();
+    renderMantine(
+      <AutoFilterForm
+        defs={[
+          { key: "who", type: "personPick", label: "Who" },
+          { key: "nope", type: "unknownKind" },
+        ]}
+        source={source}
+        labels={defaultLabels}
+        registry={registry}
+      />
+    );
+    expect(screen.getByTestId("custom-filter")).toHaveTextContent("picked");
+    expect(screen.queryByLabelText("Nope")).toBeNull();
   });
 
   it("renders a custom type through the registry widget kind", () => {

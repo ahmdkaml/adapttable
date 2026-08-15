@@ -188,21 +188,37 @@ and `resolveRelativeRange` is the only place that token becomes a window.
 An AND/OR tree lives in `ft=1.{…}` (`parseFilterTree` /
 `serializeFilterTree`); the frontend ANDs it with the flat bag, and a
 server that sets `supports.filterTree` receives `query.filterTree`.
-`FilterTreeBuilder` is the panel UI over that tree; `filterDefs` lets
-the chrome label tree chips. A `checklist` filter is the Excel-style
-distinct-values widget (`ChecklistFilter` / `useChecklistFilter` /
-`collectChecklistValues`); it prefers `source.facets` (own-filter
+Each adapter mounts `FilterTreeBuilder` (`FilterTreeBuilderProps`) as
+the panel UI over that tree — kit controls, same part names. The
+shared layout (no form controls) is `FilterTreeChrome` /
+`FilterTreeChromeProps` / `FilterTreeClassNames` / `FilterTreeSlots` /
+`FilterTreeSelectProps` / `FilterTreeInputProps` /
+`FilterTreeButtonProps` / `FilterTreeDisclosureProps` / `FilterTreeOption` on
+`@adapttable/core/adapter`.
+`filterDefs` lets the chrome label tree chips. A `checklist` filter is
+the Excel-style distinct-values widget (`ChecklistFilter` /
+`ChecklistFilterProps` / `useChecklistFilter` / `collectChecklistValues`);
+adapters draw it. The shared layout is `ChecklistChrome` /
+`ChecklistChromeProps` / `ChecklistClassNames` / `ChecklistSlots` /
+`ChecklistSearchProps` / `ChecklistButtonProps` /
+`ChecklistCheckboxProps`. It prefers `source.facets` (own-filter
 excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 `FacetMap` / `FacetCounts`) and falls back to `allFilteredRows`. A
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
 `headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
-`FilterChromeMode`): it mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
-`FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
-`headerFilterStickTop`) as a second header row of compact inputs on the
-same extra bag and hides the toolbar Filters button. Desktop only. Never
-stacked with the popover or drawer.
+`FilterChromeMode`): each adapter mounts `FilterHeaderRow` /
+`FilterHeaderControl` (`FilterHeaderRowProps` / `FilterHeaderControlProps`)
+as a second header row of compact kit inputs on the same extra bag and
+hides the toolbar Filters button. The shared layout is `FilterHeaderChrome`
+/ `FilterHeaderControlChrome` / `FilterHeaderChromeProps` /
+`FilterHeaderControlChromeProps` / `FilterHeaderClassNames` /
+`FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
+/ `FilterHeaderRangeProps` / `FilterHeaderMultiProps` / `FilterHeaderOption`
+on `@adapttable/core/adapter`. Helpers `filterDefForColumn` /
+`headerFilterStickTop` stay on core. Desktop only. Never stacked with the
+popover or drawer.
 `filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
 (`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
 `emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
@@ -342,7 +358,9 @@ Building blocks for columns, rows and queries:
 **Headless cell editing.** `useCellEditing` is the state machine (one active
 cell, a draft string, the Enter/Escape/Tab flow) and returns
 `CellEditingState`; `EditableCellGate` / `EditableCellGateProps` is the
-activation wrapper every adapter renders. A commit arrives as
+activation wrapper every adapter renders, with `EditableCellSlots` /
+`EditableCellActivateProps` / `EditableCellButtonProps` for the kit
+activate control and conflict / undo buttons. A commit arrives as
 `CellEditCommit` and the active address as `CellEditTarget`. The keyboard
 vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `CellEditNavigation`. A custom editor receives `EditableCellController` /
@@ -355,9 +373,9 @@ text, number and select it names `boolean`, `date`, `datetime`, `time` and
 `isBooleanEditor` / `isSelectEditor` / `isMultiSelectEditor` tell them apart,
 `booleanDraft` / `isDraftChecked` and `formatMultiDraft` / `readMultiDraft`
 (joined by `MULTI_SEPARATOR`) are the draft shapes those two hold, and
-`NativeBooleanEditor` / `NativeMultiSelectEditor` (`NativeEditorProps`) with
 `commitBooleanDraft` / `multiDraftFromSelect` from `@adapttable/core/adapter`
-are the platform controls the kits render for them. A ninth kind,
+are the draft helpers the kits use for those two. Each adapter draws the
+checkbox and multi-select with its own controls. A ninth kind,
 `{ type: "custom", render }`, is a host's own component:
 `CustomCellEditorRender` is the callback and `CustomCellEditorCtrl` what it
 receives (`draft`, `setDraft`, `commit`, `cancel`, `onKeyDown`, `onBlur`,
@@ -375,19 +393,22 @@ the previous row, the attempted value and the message — for one that rejected.
 **Editing a row as one unit.** `rowEditing` + `onRowEdit` change the commit unit
 from a cell to a row: `useRowEditing(options)` (`UseRowEditingOptions` in,
 `RowEditingState` out, holding `RowEditDrafts`) opens every editable field
-together and hands the host one patch of what changed. `RowEditCell` (`RowEditCellProps`),
-`RowEditActions` (`RowEditActionsProps`) and `rowEditControls`
-(`RowEditControlsOptions` in, `RowEditControls` out) from
-`@adapttable/core/adapter` render the fields and the edit / save / cancel
-controls; `labels.editRow` and `labels.saveRow` name them.
+together and hands the host one patch of what changed. `RowEditCell` (`RowEditCellProps`) and `rowEditControls`
+(`RowEditControlsOptions` in, `RowEditControls` out) stay on
+`@adapttable/core/adapter`. Each adapter mounts `RowEditActions`
+(`RowEditActionsProps`) over `RowEditActionsChrome` /
+`RowEditActionsChromeProps` / `RowEditActionsSlots` / `RowEditButtonProps`;
+`labels.editRow` and `labels.saveRow` name them.
 
 **Changing many rows at once.** `batchEditing` + `onBatchEdit` hold every change
 until one save: `useBatchEditing(options)` (`UseBatchEditingOptions` in,
 `BatchEditingState` out) counts pending ROWS, marks changed cells, and produces
 the `BatchRowEdit<TRow>[]` — `{ row, rowId, patch }` — the host receives in a
 single call. `BatchEditCell` (`BatchEditCellProps`) renders a field per editable
-cell and `BatchEditBar` (`BatchEditBarProps`) the count with Save all / Cancel
-all; `labels.pendingRows`, `labels.saveAll` and `labels.cancelAll` name them.
+cell. Each adapter mounts `BatchEditBar` (`BatchEditBarProps`) over
+`BatchEditBarChrome` / `BatchEditBarChromeProps` / `BatchEditBarSlots` /
+`BatchEditButtonProps`; `labels.pendingRows`, `labels.saveAll` and
+`labels.cancelAll` name them.
 
 **Lifecycle events.** `onEditStart`, `onEditCancel`, `onEditCommit`,
 `onValidationFail` and `onEditError` observe a commit; they never own it. The
@@ -522,7 +543,14 @@ array to the snapshot (`incrementalViewConfig` reads it back);
 `incrementalSearchText` is the default projector. See
 [cell editing](./cell-editing.md).
 
-**Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
+**Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). Each adapter mounts `RowReorderHandle` / `RowReorderHandleProps` and
+`RowReorderButtons` / `RowReorderButtonsProps` over
+`RowReorderHandleChrome` / `RowReorderHandleChromeProps` /
+`RowReorderHandleSlots` / `RowReorderHandleSlotProps` and
+`RowReorderButtonsChrome` / `RowReorderButtonsChromeProps` /
+`RowReorderButtonsSlots` / `RowReorderMoveButtonProps`.
+`RowReorderAnnouncer` stays on `@adapttable/core/adapter`. See
+[row reordering](./row-reordering.md).
 
 **Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`). Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `BodyCell`. See [row and column spanning](./row-spanning.md).
 
@@ -566,16 +594,28 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `emptyFilterTree` / `addFilterTreeCondition` / `addFilterTreeGroup` /
 `removeFilterTreeNode` / `replaceFilterTreeNode` /
 `setFilterTreeCombinator` / `walkFilterTreeConditions` /
-`FilterTreeNode`. Builder: `FilterTreeBuilder` /
-`FilterTreeBuilderProps` / `FilterTreeClassNames`. Chips:
+`FilterTreeNode`. Builder (on each adapter): `FilterTreeBuilder` /
+`FilterTreeBuilderProps`. Layout (on `@adapttable/core/adapter`):
+`FilterTreeChrome` / `FilterTreeChromeProps` / `FilterTreeClassNames` /
+`FilterTreeSlots` / `FilterTreeSelectProps` / `FilterTreeInputProps` /
+`FilterTreeButtonProps` / `FilterTreeDisclosureProps` / `FilterTreeOption`.
+Chips:
 `useFilterTreeChips` / `UseFilterTreeChipsOptions` /
-`filterTreeChipLabel`. Checklist: `ChecklistFilter` /
-`ChecklistFilterProps` / `ChecklistClassNames` / `useChecklistFilter` /
+`filterTreeChipLabel`. Checklist (on each adapter): `ChecklistFilter` /
+`ChecklistFilterProps`. Layout (on `@adapttable/core/adapter`):
+`ChecklistChrome` / `ChecklistChromeProps` / `ChecklistClassNames` /
+`ChecklistSlots` / `ChecklistSearchProps` / `ChecklistButtonProps` /
+`ChecklistCheckboxProps`. Headless: `useChecklistFilter` /
 `ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
-`CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
-`FilterHeaderRowProps` / `FilterHeaderClassNames` /
-`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop` /
+`CHECKLIST_LIST_HEIGHT`. Header row (on each adapter): `FilterHeaderRow` /
+`FilterHeaderControl` / `FilterHeaderRowProps` / `FilterHeaderControlProps`.
+Layout (on `@adapttable/core/adapter`): `FilterHeaderChrome` /
+`FilterHeaderControlChrome` / `FilterHeaderChromeProps` /
+`FilterHeaderControlChromeProps` / `FilterHeaderClassNames` /
+`FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
+/ `FilterHeaderRangeProps` / `FilterHeaderMultiProps` / `FilterHeaderOption`.
+Helpers: `filterDefForColumn` / `headerFilterStickTop` /
 `resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
@@ -625,9 +665,10 @@ highlights — and `fillRangeEdits(options)` turns the gesture into `CellEdit`
 values (`FillRangeOptions` in), continuing an arithmetic series when the source
 is one and repeating otherwise. `cellFillHandler(options)` resolves the
 recipient (`CellFillHandlerOptions`), and `batchEditHandler(batch, onCellEdit)`
-is the rule both it and `cellPasteHandler` follow. The square itself is
-`FillHandle` / `FillHandleProps` from `@adapttable/core/adapter`; on
-`<DataTable>` the prop is `onCellFill`. See
+is the rule both it and `cellPasteHandler` follow. Adapters export their
+kit-owned `FillHandle` and render it over `FillHandleChrome` /
+`FillHandleChromeProps` / `FillHandleSlots` / `FillHandleSlotProps` from
+`@adapttable/core/adapter`; on `<DataTable>` the prop is `onCellFill`. See
 [cell navigation](./cell-navigation.md).
 
 **Undo and redo.** `useEditHistory(options)` remembers gestures and replays
@@ -697,8 +738,10 @@ names the orderings `groupSort` accepts (`"label"`, `"label-desc"`, `"count"`,
 receive: `value`, `label`, `level`, `groupBy` and the group's `leafRows`.
 Paging is `groupPageSize` / `groupRowPageSize`: `useGroupPaging()` holds how
 much has been revealed (`GroupPagingState`, whose `paging` is a `GroupPaging`),
-the model emits a `groupMore` entry for the rest, and `GroupMoreButton` /
-`GroupMoreButtonProps` from `@adapttable/core/adapter` render the offer.
+the model emits a `groupMore` entry for the rest, and each adapter mounts
+`GroupMoreButton` / `GroupMoreButtonProps` over `GroupMoreButtonChrome` /
+`GroupMoreButtonChromeProps` / `GroupMoreButtonSlots` /
+`GroupMoreButtonSlotProps`.
 `groupRowParts(kind)` names the `data-adapttable-part` values for each of the
 three rows a grouped body renders (`GroupRowKind`), and `GroupToggleSpacer`
 holds the chevron's width on the two rows that have no chevron, so a footer
@@ -722,10 +765,11 @@ adapters render, each entry carrying its `level`, `path`, `descendantIds` and
 that carries the chevron, and `filterTreeRows(options)` keeps a match together
 with every ancestor that leads to it. `treeIndentStyle(level)` indents a cell
 and `treeCardStyle(level)` a mobile card; `bodyRowEntries(rows, tree)` returns
-the `BodyRowEntry<TRow>` list a body maps over, tree or flat. `TreeCell` /
-`TreeCellProps` from `@adapttable/core/adapter` wrap the tree column's cell in
-its chevron and its indent (every other column passes through), and `TreeToggle`
-/ `TreeToggleProps` render the chevron itself. Lazy branches are
+the `BodyRowEntry<TRow>` list a body maps over, tree or flat. Each adapter
+mounts `TreeCell` / `TreeCellProps` and `TreeToggle` / `TreeToggleProps`
+over `TreeCellChrome` / `TreeCellChromeProps` / `TreeToggleChrome` /
+`TreeToggleChromeProps` / `TreeToggleSlots` / `TreeToggleButtonProps`.
+Lazy branches are
 `hasChildren` + `onLoadChildren`: `useLazyChildren(options)` holds which nodes
 are fetching (`LazyChildrenState`, `UseLazyChildrenOptions` in) and the tree
 bundle carries `loadingIds` / `failedIds`. A server-side tree is
@@ -748,8 +792,10 @@ contains the query, in absolute addresses (`FindMatchesOptions` in);
 question and `stepMatch(index, total, step)` wraps the walk.
 `useFindInTable(options)` is the bar's state — `open`, `query`, `matches`,
 `index`, `current`, `next`, `previous` (`UseFindInTableOptions` in,
-`FindInTableState` out) — and `FindBar` / `FindBarProps` from
-`@adapttable/core/adapter` render it. `useFindFocus(current, focusCell,
+`FindInTableState` out) — and each adapter mounts `FindBar` / `FindBarProps`
+over `FindBarChrome` / `FindBarChromeProps` / `FindBarSlots` /
+`FindSearchProps` / `FindButtonProps` / `FindButtonKind`.
+`useFindFocus(current, focusCell,
 selectRange)` is what takes the table's focus to the match the walk is on. Cells carry `data-cell-match` /
 `data-cell-match-current`, which `isMatchedCell` / `isCurrentMatchCell` read and
 `cellHighlightStyle(props, base, selected)` resolves into one background. On
@@ -758,9 +804,12 @@ selectRange)` is what takes the table's focus to the match the walk is on. Cells
 
 **Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
 `cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
-selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /
-`SelectionStatsBarProps` from `@adapttable/core/adapter` render the strip, which
-is empty below two cells. On `<DataTable>` the prop is `selectionStats`. See
+selection holds no numbers (`SelectionStatsOptions` in). Adapters export their
+kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
+`SelectionStatsChromeProps` / `SelectionStatsSlots` /
+`SelectionStatsSlotProps` / `SelectionStatPart` from
+`@adapttable/core/adapter`; it is empty below two cells. On `<DataTable>` the
+prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
@@ -946,7 +995,10 @@ reorder/resize/pin rows. Toolbar glue: `SearchInputState` (debounced
 search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell`, `headerGroupRow` /
-`headerGroupRows`, `ColumnGroupToggle` / `ColumnGroupToggleProps`. Shared
+`headerGroupRows`. Each adapter mounts `ColumnGroupToggle` /
+`ColumnGroupToggleProps` over `ColumnGroupToggleChrome` /
+`ColumnGroupToggleChromeProps` / `ColumnGroupToggleSlots` /
+`ColumnGroupToggleButtonProps`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
 `resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
 cell's props put it inside the selected range, for a kit applying its own fill),
@@ -955,9 +1007,11 @@ cell's props put it inside the selected range, for a kit applying its own fill),
 (virtualize an opaque keyed list, e.g. grouped entries),
 `useMountStagger` (the `animate` stagger), and the inline icon set
 (`FiltersIcon`, `SearchIcon`, `EyeIcon`, `GripIcon`, `PinIcon`,
-`ExpandChevron`, `sortArrow`). Row reorder chrome: `RowReorderHandle`,
-`RowReorderHandleProps`, `RowReorderButtons`, `RowReorderButtonsProps`,
-`RowReorderAnnouncer`, `rowReorderSignature`, `REORDER_COLUMN_WIDTH`,
+`ExpandChevron`, `sortArrow`). Row reorder chrome (on each adapter):
+`RowReorderHandle`, `RowReorderHandleProps`, `RowReorderButtons`,
+`RowReorderButtonsProps`. Layout: `RowReorderHandleChrome`,
+`RowReorderButtonsChrome`. Also `RowReorderAnnouncer`,
+`rowReorderSignature`, `REORDER_COLUMN_WIDTH`,
 `ROW_DND_MIME`. Row pin chrome: `rowPinSignature`, `rowSourceIndex`,
 `pinnedRowStickyStyle`, `pinnedRowCellStyle`, `orderedCardEntries`,
 `useOffsetHeight`, `PINNED_TOP_PART`, `PINNED_BOTTOM_PART`.

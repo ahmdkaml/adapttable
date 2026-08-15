@@ -18,14 +18,11 @@ import {
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
-  RowReorderButtons,
   rowReorderSignature,
   rowStyleSignature,
   type SharedTableRenderProps,
-  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import {
@@ -51,6 +48,7 @@ import type { Density } from "../density";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
+import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared

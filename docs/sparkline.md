@@ -2,8 +2,6 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — import `@adapttable/core/sparkline`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — the **Trend** column.
-
 A sparkline is a mini chart in a cell: bar, line or area, drawn as inline
 SVG. It ships as `@adapttable/core/sparkline` so a table that never
 imports it never pays for it. No chart library.

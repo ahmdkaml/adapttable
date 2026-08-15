@@ -78,7 +78,12 @@ export function SavedViewsMenu({
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>
-          <Popover.Content minW="240px" w="auto">
+          <Popover.Content
+            minW="240px"
+            w="auto"
+            maxH="min(70vh, 360px)"
+            overflowY="auto"
+          >
             <Popover.Body px={2} py={2}>
               {views.map((view) => (
                 <HStack key={view.name} gap={1} py={0.5}>

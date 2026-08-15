@@ -17,13 +17,10 @@ import {
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
-  RowReorderButtons,
   rowReorderSignature,
   rowStyleSignature,
-  TreeToggle,
   useSummaryCells,
 } from "@adapttable/core/adapter";
 import {
@@ -41,6 +38,7 @@ import { type SharedProps } from "./DesktopTable";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
+import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
 import { RowActionButtons } from "./RowActionButtons";
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */

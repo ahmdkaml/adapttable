@@ -75,7 +75,14 @@ export function SavedViewsMenu({
           align="end"
           sideOffset={8}
         >
-          <Popover.Popup className="adapttable-popup" style={{ minWidth: 240 }}>
+          <Popover.Popup
+            className="adapttable-popup"
+            style={{
+              minWidth: 240,
+              maxHeight: "min(70vh, 360px)",
+              overflowY: "auto",
+            }}
+          >
             <Flex direction="column" gap="1">
               {views.map((view) => (
                 <Flex key={view.name} gap="1" align="center">

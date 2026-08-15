@@ -21,8 +21,11 @@ export {
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
 export {
-  ColumnGroupToggle,
+  type ColumnGroupToggleButtonProps,
+  ColumnGroupToggleChrome,
+  type ColumnGroupToggleChromeProps,
   type ColumnGroupToggleProps,
+  type ColumnGroupToggleSlots,
 } from "./columns/ColumnGroupToggle";
 export {
   type ColumnMenuAction,
@@ -96,22 +99,26 @@ export {
 } from "./editing/editableCellController";
 export {
   commitBooleanDraft,
+  type EditableCellActivateProps,
+  type EditableCellButtonProps,
+  type EditableCellSlots,
   editorBusyProps,
   editorValidationProps,
   multiDraftFromSelect,
 } from "./editing/EditableCellGate";
 export {
-  NativeBooleanEditor,
-  type NativeEditorProps,
-  NativeMultiSelectEditor,
-} from "./editing/nativeEditors";
-export {
-  BatchEditBar,
+  BatchEditBarChrome,
+  type BatchEditBarChromeProps,
   type BatchEditBarProps,
+  type BatchEditBarSlots,
+  type BatchEditButtonProps,
   BatchEditCell,
   type BatchEditCellProps,
-  RowEditActions,
+  RowEditActionsChrome,
+  type RowEditActionsChromeProps,
   type RowEditActionsProps,
+  type RowEditActionsSlots,
+  type RowEditButtonProps,
   RowEditCell,
   type RowEditCellProps,
   type RowEditControls,
@@ -128,19 +135,75 @@ export {
   type ExportStatus,
   useExportHandler,
 } from "./export/useExportHandler";
-export { FindBar, type FindBarProps } from "./find/FindBar";
-export { FillHandle, type FillHandleProps } from "./focus/FillHandle";
+export {
+  type ChecklistButtonProps,
+  type ChecklistCheckboxProps,
+  ChecklistChrome,
+  type ChecklistChromeProps,
+  type ChecklistClassNames,
+  type ChecklistFilterProps,
+  type ChecklistSearchProps,
+  type ChecklistSlots,
+} from "./filters/ChecklistChrome";
+export {
+  FilterHeaderChrome,
+  type FilterHeaderChromeProps,
+  type FilterHeaderClassNames,
+  FilterHeaderControlChrome,
+  type FilterHeaderControlChromeProps,
+  type FilterHeaderControlProps,
+  type FilterHeaderMultiProps,
+  type FilterHeaderOption,
+  type FilterHeaderRangeProps,
+  type FilterHeaderRowProps,
+  type FilterHeaderSearchProps,
+  type FilterHeaderSelectProps,
+  type FilterHeaderSlots,
+} from "./filters/FilterHeaderRow";
+export {
+  type FilterTreeBuilderProps,
+  type FilterTreeButtonProps,
+  FilterTreeChrome,
+  type FilterTreeChromeProps,
+  type FilterTreeClassNames,
+  type FilterTreeDisclosureProps,
+  type FilterTreeInputProps,
+  type FilterTreeOption,
+  type FilterTreeSelectProps,
+  type FilterTreeSlots,
+} from "./filters/FilterTreeChrome";
+export {
+  FindBarChrome,
+  type FindBarChromeProps,
+  type FindBarProps,
+  type FindBarSlots,
+  type FindButtonKind,
+  type FindButtonProps,
+  type FindSearchProps,
+} from "./find/FindBar";
+export {
+  FillHandleChrome,
+  type FillHandleChromeProps,
+  type FillHandleSlotProps,
+  type FillHandleSlots,
+} from "./focus/FillHandle";
 export {
   GridFocusAnnouncer,
   type GridFocusAnnouncerProps,
 } from "./focus/GridFocusAnnouncer";
 export {
-  SelectionStatsBar,
-  type SelectionStatsBarProps,
+  type SelectionStatPart,
+  SelectionStatsChrome,
+  type SelectionStatsChromeProps,
+  type SelectionStatsSlotProps,
+  type SelectionStatsSlots,
 } from "./focus/SelectionStatsBar";
 export {
-  GroupMoreButton,
+  GroupMoreButtonChrome,
+  type GroupMoreButtonChromeProps,
   type GroupMoreButtonProps,
+  type GroupMoreButtonSlotProps,
+  type GroupMoreButtonSlots,
 } from "./grouping/GroupMoreButton";
 export { GroupToggleSpacer } from "./grouping/GroupToggleSpacer";
 export {
@@ -181,10 +244,16 @@ export {
 } from "./rows/rowReorder";
 export {
   RowReorderAnnouncer,
-  RowReorderButtons,
+  RowReorderButtonsChrome,
+  type RowReorderButtonsChromeProps,
   type RowReorderButtonsProps,
-  RowReorderHandle,
+  type RowReorderButtonsSlots,
+  RowReorderHandleChrome,
+  type RowReorderHandleChromeProps,
   type RowReorderHandleProps,
+  type RowReorderHandleSlotProps,
+  type RowReorderHandleSlots,
+  type RowReorderMoveButtonProps,
 } from "./rows/RowReorderHandle";
 export {
   resolveRowHeight,
@@ -206,8 +275,18 @@ export {
   nestedTableDetail,
   type NestedTableParent,
 } from "./tree/nestedTable";
-export { TreeCell, type TreeCellProps } from "./tree/TreeCell";
-export { TreeToggle, type TreeToggleProps } from "./tree/TreeToggle";
+export {
+  TreeCellChrome,
+  type TreeCellChromeProps,
+  type TreeCellProps,
+} from "./tree/TreeCell";
+export {
+  type TreeToggleButtonProps,
+  TreeToggleChrome,
+  type TreeToggleChromeProps,
+  type TreeToggleProps,
+  type TreeToggleSlots,
+} from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
 export { type SearchInputState } from "./useDataTable/useSearchInput";
 export {

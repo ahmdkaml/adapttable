@@ -21,7 +21,8 @@
    its utilities — including the `aria-[current=page]` active-page variant —
    compile. (Real consumers add `@adapttable/shadcn` to their Tailwind sources
    for the same reason.) */
-@source "../../../packages/adapter-shadcn/src/**/*.{ts,tsx}";
+@source "./adapters";
+@source "../../../packages/adapter-shadcn/src";
 
 /* Bind `dark:` to the site's theme toggle (data-theme), not the OS media
    query, so the demos flip with the navbar switch like everything else. */

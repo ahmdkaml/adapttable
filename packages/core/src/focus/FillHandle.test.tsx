@@ -7,11 +7,12 @@
  * entirely when there is nothing to fill or nobody to receive it.
  */
 import { fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ColumnDef } from "../types";
 import type { CellRange } from "./cellRange";
-import { FillHandle } from "./FillHandle";
+import { FillHandleChrome, type FillHandleSlots } from "./FillHandle";
 import { useGridFocus } from "./useGridFocus";
 
 interface Row {
@@ -27,14 +28,22 @@ const COLUMNS: ColumnDef<Row>[] = [
   { key: "id", header: "I", editable: true },
 ];
 
+const slots: FillHandleSlots = {
+  Handle: ({ label, handleProps }) => (
+    <span {...handleProps} title={label} data-adapttable-part="fill-handle" />
+  ),
+};
+
 function Grid({
   selection,
   onFill,
   firstRowIndex = 0,
+  renderSlots = slots,
 }: Readonly<{
   selection?: CellRange;
   onFill?: (edits: unknown[]) => void;
   firstRowIndex?: number;
+  renderSlots?: FillHandleSlots;
 }>) {
   const focus = useGridFocus<Row>({
     enabled: true,
@@ -57,11 +66,12 @@ function Grid({
                 >
                   select
                 </button>
-                <FillHandle
+                <FillHandleChrome
                   focus={focus}
                   windowIndex={index}
                   col={col}
                   firstRowIndex={firstRowIndex}
+                  slots={renderSlots}
                 />
               </td>
             ))}
@@ -78,7 +88,7 @@ const select = (container: HTMLElement) => {
   fireEvent.click(container.querySelectorAll("button")[0]!);
 };
 
-describe("FillHandle", () => {
+describe("FillHandleChrome", () => {
   const range = {
     anchor: { row: 0, col: 0 },
     head: { row: 1, col: 1 },
@@ -90,6 +100,26 @@ describe("FillHandle", () => {
     expect(handles(container)).toHaveLength(1);
     const cells = container.querySelectorAll("td");
     expect(cells[3]?.contains(handles(container)[0]!)).toBe(true);
+  });
+
+  it("mounts the adapter handle as a component so kit hooks stay valid", () => {
+    const hookedSlots: FillHandleSlots = {
+      Handle: ({ label, handleProps }) => {
+        const [ready] = useState(true);
+        return ready ? (
+          <span
+            {...handleProps}
+            title={label}
+            data-adapttable-part="fill-handle"
+          />
+        ) : null;
+      },
+    };
+    const { container } = render(
+      <Grid selection={range} onFill={vi.fn()} renderSlots={hookedSlots} />
+    );
+    select(container);
+    expect(handles(container)).toHaveLength(1);
   });
 
   it("renders nothing while nothing is selected", () => {
@@ -121,7 +151,14 @@ describe("FillHandle", () => {
   });
 
   it("renders nothing at all when cell navigation is off", () => {
-    render(<FillHandle focus={undefined} windowIndex={0} col={0} />);
+    render(
+      <FillHandleChrome
+        focus={undefined}
+        windowIndex={0}
+        col={0}
+        slots={slots}
+      />
+    );
     // No focus state at all is the adapter's "cell navigation is off" case.
     expect(
       document.querySelectorAll('[data-adapttable-part="fill-handle"]')

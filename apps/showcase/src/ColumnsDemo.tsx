@@ -4,14 +4,6 @@ import { AntdDemo } from "./adapters/AntdDemo";
 import { Columns, Keyboard, Pin, Resize } from "./sectionIcons";
 import { SectionHead } from "./sections";
 
-/**
- * Export what you highlighted, as a spreadsheet.
- *
- * `scope: "range"` takes the rectangle cell navigation is holding, and
- * `xlsxWriter` writes it as a real `.xlsx` — a separate entry point, so a table
- * that exports CSV never ships the encoder. With nothing highlighted the
- * button falls back to the current page, which is why it is never a dead end.
- */
 const EXPORT_RANGE_AS_XLSX = {
   scope: "range",
   writer: xlsxWriter({ sheetName: "People" }),
@@ -25,13 +17,9 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
         Show/hide, drag-reorder, pin to the start, and resize by drag or
         keyboard — open the Columns menu, grab a header edge, or tap the pin to
         stick a column to the start, then tap again to unpin. Persist the layout
-        to localStorage, the URL, or your server. <code>cellNavigation</code> is
-        on here too: Tab reaches the table once, then the arrow keys walk the
-        cells and a screen reader names each one. Hold Shift while arrowing to
-        highlight a block, and Export writes exactly that block as a
-        spreadsheet. Two pairs of columns sit under spanning headers —
-        Assignment and Delivery — and dragging one of a pair away splits its
-        group rather than letting the span lie about the layout.
+        to localStorage, the URL, or your server. Arrow through cells, hold
+        Shift to select a range, and export exactly that range. No row grouping,
+        editing, or spanning header groups compete with the column layout.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -45,8 +33,7 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Columns size={12} /> Columns menu reorders &amp; hides
           </span>
           <span className="hint">
-            <Keyboard size={12} /> Tab in, arrow between cells, Shift+arrow to
-            select, then Export
+            <Keyboard size={12} /> Shift+arrow selects a range to export
           </span>
         </div>
         <div className="pad-surface__body">
@@ -58,6 +45,7 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             wide
             cellNavigation
             exportCsv={EXPORT_RANGE_AS_XLSX}
+            focused
           />
         </div>
       </div>

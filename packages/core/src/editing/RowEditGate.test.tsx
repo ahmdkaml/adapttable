@@ -9,13 +9,17 @@ import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  batchEditTestSlots,
+  rowEditTestSlots,
+} from "../internal/chromeTestSlots";
 import { useBatchEditing } from "./batchEditing";
 import type { EditableColumnLike } from "./cellEditing";
 import type { EditableCellEditorCtrl } from "./EditableCellGate";
 import {
-  BatchEditBar,
+  BatchEditBarChrome,
   BatchEditCell,
-  RowEditActions,
+  RowEditActionsChrome,
   RowEditCell,
   rowEditControls,
 } from "./RowEditGate";
@@ -303,7 +307,14 @@ describe("rowEditControls", () => {
 describe("RowEditActions", () => {
   it("offers only an Edit control on a closed row", () => {
     const result = mountRowEditing();
-    render(<RowEditActions rowEditing={result.current} row={TASK} rowId="1" />);
+    render(
+      <RowEditActionsChrome
+        slots={rowEditTestSlots}
+        rowEditing={result.current}
+        row={TASK}
+        rowId="1"
+      />
+    );
     expect(part("row-edit-begin")).not.toBeNull();
     expect(part("row-edit-save")).toBeNull();
   });
@@ -311,7 +322,14 @@ describe("RowEditActions", () => {
   it("swaps to save and cancel once the row is open", () => {
     const onRowEdit = vi.fn();
     const result = openRow(onRowEdit);
-    render(<RowEditActions rowEditing={result.current} row={TASK} rowId="1" />);
+    render(
+      <RowEditActionsChrome
+        slots={rowEditTestSlots}
+        rowEditing={result.current}
+        row={TASK}
+        rowId="1"
+      />
+    );
     expect(part("row-edit-begin")).toBeNull();
     act(() => {
       fireEvent.click(part("row-edit-cancel")!);
@@ -323,7 +341,14 @@ describe("RowEditActions", () => {
   it("opens the row from its Edit control, and never bubbles to the row", () => {
     const onRowClick = vi.fn();
     const result = mountRowEditing();
-    render(<RowEditActions rowEditing={result.current} row={TASK} rowId="1" />);
+    render(
+      <RowEditActionsChrome
+        slots={rowEditTestSlots}
+        rowEditing={result.current}
+        row={TASK}
+        rowId="1"
+      />
+    );
     // The row itself is clickable in most tables, so the control has to stop
     // the click rather than open an edit AND fire whatever the row does.
     const click = new MouseEvent("click", { bubbles: true });
@@ -343,7 +368,8 @@ describe("RowEditActions", () => {
       result.current.setDraft("title", "Ship it");
     });
     render(
-      <RowEditActions
+      <RowEditActionsChrome
+        slots={rowEditTestSlots}
         rowEditing={result.current}
         row={TASK}
         rowId="1"
@@ -367,7 +393,14 @@ describe("RowEditActions", () => {
 
   it("stops a cancel click from reaching the row too", () => {
     const result = openRow();
-    render(<RowEditActions rowEditing={result.current} row={TASK} rowId="1" />);
+    render(
+      <RowEditActionsChrome
+        slots={rowEditTestSlots}
+        rowEditing={result.current}
+        row={TASK}
+        rowId="1"
+      />
+    );
     const click = new MouseEvent("click", { bubbles: true });
     const stopped = vi.spyOn(click, "stopPropagation");
     act(() => {
@@ -507,13 +540,17 @@ describe("BatchEditBar", () => {
     const result = renderHook(() =>
       useBatchEditing<Task>({ enabled: true, columns: COLUMNS })
     ).result;
-    const { container } = render(<BatchEditBar batch={result.current} />);
+    const { container } = render(
+      <BatchEditBarChrome slots={batchEditTestSlots} batch={result.current} />
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
   it("names the pending rows and saves them all", () => {
     const { result, onBatchEdit } = mountBatch();
-    render(<BatchEditBar batch={result.current} />);
+    render(
+      <BatchEditBarChrome slots={batchEditTestSlots} batch={result.current} />
+    );
     expect(part("batch-edit-count")).toHaveTextContent("1 unsaved row");
     expect(part("batch-edit-save")).toHaveTextContent("Save all");
     act(() => {
@@ -536,7 +573,8 @@ describe("BatchEditBar", () => {
       );
     });
     render(
-      <BatchEditBar
+      <BatchEditBarChrome
+        slots={batchEditTestSlots}
         batch={result.current}
         labels={{
           pendingRows: (n) => `${String(n)} waiting`,
@@ -564,7 +602,9 @@ describe("BatchEditBar", () => {
         "Tested"
       );
     });
-    render(<BatchEditBar batch={result.current} />);
+    render(
+      <BatchEditBarChrome slots={batchEditTestSlots} batch={result.current} />
+    );
     expect(part("batch-edit-count")).toHaveTextContent("2 unsaved rows");
   });
 });

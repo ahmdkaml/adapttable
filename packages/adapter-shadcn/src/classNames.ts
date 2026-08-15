@@ -58,6 +58,8 @@ export const shadcnClassNames = {
   filterTreeActions: "flex flex-wrap gap-2",
   filterTreeRemove:
     "h-8 rounded-md px-2 text-sm text-muted-foreground hover:bg-accent",
+  filterTreeSummary:
+    "flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold",
   // ── Auto-built filter form (declarative `filters` definitions) ──
   filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-muted-foreground",
@@ -69,9 +71,10 @@ export const shadcnClassNames = {
   filterChecklistSearch:
     "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
   filterChecklistActions: "flex flex-wrap gap-2",
-  filterChecklistList: "flex max-h-60 flex-col gap-1 overflow-auto",
+  filterChecklistList:
+    "flex max-h-60 flex-wrap items-center gap-2 overflow-auto",
   filterChecklistCount: "text-xs text-muted-foreground",
-  filterCheckboxGroup: "flex flex-col gap-1.5",
+  filterCheckboxGroup: "flex flex-wrap items-center gap-2",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:
@@ -145,10 +148,12 @@ export const shadcnClassNames = {
   headerActions: "ms-1 inline-flex items-center gap-0.5",
   tableFooter: "px-3 py-2 text-sm text-muted-foreground",
   resizeHandle: "hover:bg-border",
-  card: "mb-2 rounded-lg border border-border p-3 [[data-density=compact]_&]:p-2",
-  cardRow: "flex justify-between gap-3 py-0.5 text-sm",
-  cardLabel: "text-muted-foreground",
-  cardValue: "font-medium",
+  card: "list-none rounded-xl border border-border bg-card p-3 shadow-sm [[data-density=compact]_&]:p-2",
+  cardRow:
+    "flex items-start justify-between gap-3 py-1 text-sm first-of-type:mb-1 first-of-type:border-b first-of-type:border-border first-of-type:pb-2",
+  cardLabel:
+    "pt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground",
+  cardValue: "min-w-0 text-right font-medium",
   // ── Structure & scroll ──────────────────────────────────────────
   thead: "bg-card",
   headerRow: "align-middle",
@@ -166,7 +171,7 @@ export const shadcnClassNames = {
   fullWidthRow: "border-b border-border bg-muted/30",
   fullWidthCell:
     "px-3 py-2.5 text-sm [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
-  cards: "p-3",
+  cards: "m-0 grid list-none gap-2 p-3",
   cardActions: "mt-2 flex justify-end gap-1 border-t border-border pt-2",
   // ── Header groups (column banding) ──────────────────────────────
   headerGroupRow: "border-b border-border",

@@ -75,7 +75,7 @@ export function FilterPopover({
           <Popover.Content
             data-testid="adapttable-filter-popover"
             aria-label={labels.filters}
-            w="340px"
+            w="380px"
             maxW="90vw"
             // Stops at the viewport edge: the form grows while open, and a
             // card taller than the window paints its lower fields off-screen.

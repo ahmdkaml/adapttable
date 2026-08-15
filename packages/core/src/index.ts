@@ -71,11 +71,6 @@ export {
   useChecklistFilter,
 } from "./filters/checklist";
 export {
-  type ChecklistClassNames,
-  ChecklistFilter,
-  type ChecklistFilterProps,
-} from "./filters/ChecklistFilter";
-export {
   computeFilterFacets,
   type FacetCounts,
   type FacetMap,
@@ -131,8 +126,6 @@ export {
 export {
   filterDefForColumn,
   type FilterHeaderClassNames,
-  FilterHeaderControl,
-  FilterHeaderRow,
   type FilterHeaderRowProps,
   headerFilterStickTop,
 } from "./filters/FilterHeaderRow";
@@ -158,11 +151,6 @@ export {
   parseFilterTree,
   serializeFilterTree,
 } from "./filters/filterTree";
-export {
-  FilterTreeBuilder,
-  type FilterTreeBuilderProps,
-  type FilterTreeClassNames,
-} from "./filters/FilterTreeBuilder";
 export {
   addFilterTreeCondition,
   addFilterTreeGroup,
@@ -717,9 +705,12 @@ export {
   type EditableCellMode,
 } from "./editing/editableCellController";
 export {
+  type EditableCellActivateProps,
+  type EditableCellButtonProps,
   type EditableCellEditorCtrl,
   EditableCellGate,
   type EditableCellGateProps,
+  type EditableCellSlots,
 } from "./editing/EditableCellGate";
 export {
   type EditConflict,

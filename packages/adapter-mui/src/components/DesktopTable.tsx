@@ -8,7 +8,6 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
-  FilterHeaderRow,
   type GridFocusState,
   headerFilterStickTop,
   PIN_Z,
@@ -27,11 +26,9 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
-  ColumnGroupToggle,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -44,19 +41,16 @@ import {
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
   rowPinSignature,
   rowReorderDropStyle,
-  RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
   rowStyleSignature,
   type SharedTableRenderProps,
   tableRenderModel,
-  TreeCell,
   useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
@@ -64,6 +58,14 @@ import type { CSSProperties, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { ExpandToggle } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
+import {
+  ColumnGroupToggle,
+  FilterHeaderRow,
+  RowEditActions,
+  RowReorderHandle,
+  TreeCell,
+} from "./kitControls";
 import { RowActionButtons } from "./RowActionButtons";
 
 const RESIZE_HANDLE_SX = {

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Row style across every kit — Style on paints the first row and sets
  * height 48. RTL uses the same functions; they are not geometry.
@@ -36,10 +38,7 @@ for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
     test("applies row height when Style is on", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "row style" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
+      await configureFeatureLab(page, "row style", "On");
       const row = demo(page)
         .locator(`[data-adapter="${adapter}"] [data-stagger]`)
         .first();
@@ -53,14 +52,8 @@ for (const adapter of ADAPTERS) {
 
     test("keeps the height under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "row style" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "row style", "On");
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       const row = demo(page)
         .locator(`[data-adapter="${adapter}"] [data-stagger]`)

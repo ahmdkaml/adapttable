@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Row reorder across every kit — the grip appears when the host opts in,
  * Space lifts, arrows move, Space drops, and the first two people swap.
@@ -60,10 +62,7 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
 }
 
 async function enable(page: Page, group: string): Promise<void> {
-  await page
-    .getByRole("group", { name: group })
-    .getByRole("button", { name: "On", exact: true })
-    .click();
+  await configureFeatureLab(page, group, "On");
 }
 
 async function grabOneDown(page: Page, key: "ArrowDown" | "ArrowLeft") {
@@ -98,10 +97,7 @@ for (const adapter of ADAPTERS) {
     test("mirrors the horizontal grab under RTL", async ({ page }) => {
       await openDemo(page, adapter);
       await enable(page, "reorder");
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       // RTL: ArrowLeft is down, the same as ArrowDown in LTR.
       await grabOneDown(page, "ArrowLeft");

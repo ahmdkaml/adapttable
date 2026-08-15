@@ -8,7 +8,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { FindBar } from "./FindBar";
+import { findBarTestSlots } from "../internal/chromeTestSlots";
+import { FindBarChrome } from "./FindBar";
 import type { FindInTableState } from "./useFindInTable";
 
 /** A find state with everything stubbed, overridable per test. */
@@ -31,25 +32,30 @@ const part = (name: string) =>
 
 describe("FindBar", () => {
   it("renders nothing while the bar is closed", () => {
-    const { container } = render(<FindBar find={stateFor({ open: false })} />);
+    const { container } = render(
+      <FindBarChrome
+        slots={findBarTestSlots}
+        find={stateFor({ open: false })}
+      />
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
   it("focuses the box the reader just opened", () => {
-    render(<FindBar find={stateFor()} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={stateFor()} />);
     expect(part("find-input")).toHaveFocus();
   });
 
   it("reports what the reader types", () => {
     const find = stateFor();
-    render(<FindBar find={find} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={find} />);
     fireEvent.change(part("find-input")!, { target: { value: "ada" } });
     expect(find.setQuery).toHaveBeenCalledExactlyOnceWith("ada");
   });
 
   it("walks matches with Enter, and back with Shift+Enter", () => {
     const find = stateFor({ query: "a", matches: [{}, {}] as never });
-    render(<FindBar find={find} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={find} />);
     fireEvent.keyDown(part("find-input")!, { key: "Enter" });
     expect(find.next).toHaveBeenCalledOnce();
     fireEvent.keyDown(part("find-input")!, { key: "Enter", shiftKey: true });
@@ -58,14 +64,14 @@ describe("FindBar", () => {
 
   it("closes on Escape, without leaving the box", () => {
     const find = stateFor();
-    render(<FindBar find={find} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={find} />);
     fireEvent.keyDown(part("find-input")!, { key: "Escape" });
     expect(find.setOpen).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it("leaves other keys to the input", () => {
     const find = stateFor();
-    render(<FindBar find={find} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={find} />);
     fireEvent.keyDown(part("find-input")!, { key: "a" });
     expect(find.next).not.toHaveBeenCalled();
     expect(find.previous).not.toHaveBeenCalled();
@@ -74,7 +80,10 @@ describe("FindBar", () => {
 
   it("announces the count in a live region", () => {
     render(
-      <FindBar find={stateFor({ index: 2, matches: Array(12).fill({}) })} />
+      <FindBarChrome
+        slots={findBarTestSlots}
+        find={stateFor({ index: 2, matches: Array(12).fill({}) })}
+      />
     );
     const count = part("find-count")!;
     expect(count.tagName).toBe("OUTPUT");
@@ -83,14 +92,14 @@ describe("FindBar", () => {
   });
 
   it("disables the walk controls until something matches", () => {
-    render(<FindBar find={stateFor()} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={stateFor()} />);
     expect(part("find-previous")).toBeDisabled();
     expect(part("find-next")).toBeDisabled();
   });
 
   it("walks and closes from its own controls", () => {
     const find = stateFor({ query: "a", matches: [{}, {}] as never });
-    render(<FindBar find={find} />);
+    render(<FindBarChrome slots={findBarTestSlots} find={find} />);
     fireEvent.click(part("find-next")!);
     expect(find.next).toHaveBeenCalledOnce();
     fireEvent.click(part("find-previous")!);
@@ -101,7 +110,8 @@ describe("FindBar", () => {
 
   it("takes localized names, and the host's own count wording", () => {
     render(
-      <FindBar
+      <FindBarChrome
+        slots={findBarTestSlots}
         find={stateFor({ matches: [{}] as never })}
         labels={{
           findInTable: "ابحث في الجدول",
@@ -125,7 +135,13 @@ describe("FindBar", () => {
   });
 
   it("takes a kit's own class for the bar", () => {
-    render(<FindBar find={stateFor()} className="cn-find" />);
+    render(
+      <FindBarChrome
+        slots={findBarTestSlots}
+        find={stateFor()}
+        className="cn-find"
+      />
+    );
     expect(part("find-bar")).toHaveClass("cn-find");
   });
 });

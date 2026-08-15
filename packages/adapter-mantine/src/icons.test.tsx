@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   AlertIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronUpIcon,
   CloseIcon,
   FiltersIcon,
@@ -16,9 +17,10 @@ import {
 describe("icons", () => {
   it("renders every icon as an svg, including a custom size", () => {
     const icons = [
-      <SearchIcon key="1" />,
+      <SearchIcon key="1" className="icon-cls" style={{ color: "red" }} />,
       <ChevronUpIcon key="2" />,
       <ChevronDownIcon key="3" />,
+      <ChevronRightIcon key="3b" />,
       <SelectorIcon key="4" />,
       <CloseIcon key="5" />,
       <FiltersIcon key="6" />,

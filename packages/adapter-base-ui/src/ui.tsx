@@ -286,6 +286,7 @@ type TextFieldProps = Omit<
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
+  ref?: Ref<HTMLInputElement>;
 };
 
 /** Text field root with optional left slot (search icon). */

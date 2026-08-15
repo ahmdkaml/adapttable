@@ -56,7 +56,14 @@ export function SavedViewsMenu({
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <Box sx={{ p: 0.75, minWidth: 250 }}>
+        <Box
+          sx={{
+            p: 0.75,
+            minWidth: 250,
+            maxHeight: "min(70vh, 360px)",
+            overflowY: "auto",
+          }}
+        >
           {views.map((view) => (
             <Stack
               key={view.name}

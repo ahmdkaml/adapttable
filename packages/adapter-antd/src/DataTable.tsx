@@ -7,7 +7,6 @@ import {
   columnsHaveFooter,
   type ConfirmHandler,
   type FilterRuntime,
-  FilterTreeBuilder,
   type GridFocusState,
   type GroupByInput,
   type GroupCollapseState,
@@ -52,10 +51,8 @@ import {
   windowGroupedEntries,
 } from "@adapttable/core";
 import {
-  BatchEditBar,
   DEFAULT_CARD_SIZE_PX,
   EXTRA_ROW_PARTS,
-  FindBar,
   GridFocusAnnouncer,
   insertExtraRows,
   isExtraEntry,
@@ -65,7 +62,6 @@ import {
   rowIsDirty,
   RowReorderAnnouncer,
   rowReorderDropStyle,
-  SelectionStatsBar,
   tableRenderModel,
   useExportHandler,
   useKeyedVirtualization,
@@ -100,7 +96,11 @@ import {
   useState,
 } from "react";
 
-import { buildColumns, logicalAlign } from "./columns";
+import {
+  ANTD_ACTIONS_COLUMN_WIDTH,
+  buildColumns,
+  logicalAlign,
+} from "./columns";
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
@@ -108,6 +108,7 @@ import { ColumnMenu } from "./components/ColumnMenu";
 import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
+import { FilterTreeBuilder } from "./components/FilterTreeBuilder";
 import {
   ADAPTTABLE_EXTRA,
   buildGroupedDataSource,
@@ -117,8 +118,10 @@ import {
   isAdaptTableExtraRow,
   isAdaptTableGroupRow,
 } from "./components/grouping";
+import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { SkeletonTable } from "./components/SkeletonTable";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
@@ -214,7 +217,7 @@ function antdMinWidth<TRow>(
     widths,
     extra:
       (hasSelection ? 48 : 0) +
-      (hasActions ? 120 : 0) +
+      (hasActions ? ANTD_ACTIONS_COLUMN_WIDTH : 0) +
       (hasReorder ? REORDER_COLUMN_WIDTH : 0),
   });
 }

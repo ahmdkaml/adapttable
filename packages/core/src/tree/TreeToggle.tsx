@@ -1,17 +1,13 @@
 /**
- * The chevron in front of a tree row, and the space where one would be.
- *
- * It lives in core because a tree is one shape rendered eight times: the same
- * indent step, the same accessible name, the same `aria-expanded`, and — the
- * part that is easy to get wrong — the same footprint on a LEAF, so a folder's
- * children line up under its name rather than under its chevron.
+ * Tree-toggle layout. The leaf spacer stays here (display only). Adapters
+ * pass the chevron button the end user clicks.
  */
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { TableLabels } from "../types";
 import type { TreeEntry } from "./treeRows";
 
-/** Props for {@link TreeToggle}. */
+/** Props for an adapter {@link TreeToggle} — no slots on the public API. */
 export interface TreeToggleProps<TRow> {
   /** The row's place in the tree. */
   entry: TreeEntry<TRow>;
@@ -25,31 +21,37 @@ export interface TreeToggleProps<TRow> {
   spacerClassName?: string;
 }
 
-const BUTTON = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "1.5em",
-  height: "1.5em",
-  flexShrink: 0,
-  padding: 0,
-  border: "none",
-  background: "transparent",
-  color: "inherit",
-  cursor: "pointer",
-} as const;
+/** Kit chevron the tree layout calls. */
+export interface TreeToggleButtonProps {
+  readonly label: string;
+  readonly expanded: boolean;
+  readonly loading: boolean;
+  readonly className?: string;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link TreeToggleChrome}. */
+export interface TreeToggleSlots {
+  readonly Button: (props: TreeToggleButtonProps) => ReactNode;
+}
+
+/** Props for {@link TreeToggleChrome}. */
+export interface TreeToggleChromeProps<TRow> extends TreeToggleProps<TRow> {
+  readonly slots: TreeToggleSlots;
+}
 
 /**
  * Renders the chevron for a row with children, or an equal-width spacer for a
  * leaf so the column stays aligned.
  */
-export function TreeToggle<TRow>({
+export function TreeToggleChrome<TRow>({
   entry,
   labels,
   onToggle,
   toggleClassName,
   spacerClassName,
-}: Readonly<TreeToggleProps<TRow>>): ReactElement {
+  slots,
+}: Readonly<TreeToggleChromeProps<TRow>>): ReactElement {
   if (!entry.hasChildren) {
     return (
       <span
@@ -60,38 +62,20 @@ export function TreeToggle<TRow>({
       />
     );
   }
+  const Button = slots.Button;
   return (
-    <button
-      type="button"
-      data-adapttable-part="tree-toggle"
-      className={toggleClassName}
-      aria-expanded={entry.expanded}
-      aria-label={
+    <Button
+      label={
         entry.expanded
           ? (labels?.collapseRow ?? "Collapse row")
           : (labels?.expandRow ?? "Expand row")
       }
-      data-loading={entry.loading === true ? "" : undefined}
-      // A branch being fetched is busy, not broken: the chevron stays where it
-      // is and stays clickable, and a screen reader hears the wait.
-      aria-busy={entry.loading === true ? true : undefined}
+      expanded={entry.expanded}
+      loading={entry.loading === true}
+      className={toggleClassName}
       onClick={() => {
         onToggle(entry.key);
       }}
-      style={BUTTON}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          display: "inline-block",
-          // The same glyph either way, turned — one shape, one animation, and
-          // nothing to keep in step between the two states.
-          transform: entry.expanded ? "rotate(90deg)" : "none",
-          transition: "transform 150ms ease",
-        }}
-      >
-        ▸
-      </span>
-    </button>
+    />
   );
 }

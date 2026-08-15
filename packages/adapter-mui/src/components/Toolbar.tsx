@@ -236,7 +236,7 @@ export function Toolbar<TRow>({
             label={labels.rowsPerPage}
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
-            sx={{ minWidth: 110 }}
+            sx={{ minWidth: 132 }}
           >
             {pageSizeOptions(source.limit).map((n) => (
               <MenuItem key={n} value={n}>

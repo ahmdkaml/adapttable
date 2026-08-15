@@ -355,7 +355,9 @@ export function ColumnMenu<TRow>({
   return (
     <Popover
       opened={opened}
-      onDismiss={() => setOpened(false)}
+      onChange={(nextOpened) => {
+        if (!nextOpened) setOpened(false);
+      }}
       position="bottom-end"
       withinPortal
       returnFocus
@@ -372,7 +374,12 @@ export function ColumnMenu<TRow>({
         </Button>
       </Popover.Target>
       <Popover.Dropdown dir={dir}>
-        <Box p={4} miw={250}>
+        <Box
+          p={4}
+          miw={250}
+          mah="min(70vh, 480px)"
+          style={{ overflowY: "auto" }}
+        >
           <Text size="xs" c="dimmed" fw={600} tt="uppercase" px={4} pb={6}>
             {labels.columns}
           </Text>

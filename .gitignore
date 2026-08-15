@@ -1,9 +1,6 @@
 # Private working context (plans, notes, AI/skill/tool output). Never committed.
 ai_docs/
 
-# Local AI instructions (project memory for assistants). Never committed.
-CLAUDE.md
-
 # Local-only reference notes or scratch material. Never committed or published.
 reference/
 

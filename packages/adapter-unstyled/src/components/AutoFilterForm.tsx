@@ -1,5 +1,5 @@
 import {
-  ChecklistFilter,
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -20,9 +20,10 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
-import { type ReactElement, type ReactNode, useId } from "react";
+import { type ReactElement, type ReactNode } from "react";
 
 import type { DataTableClassNames } from "../types";
+import { ChecklistFilter } from "./ChecklistFilter";
 
 /* Part names shared by more than one field shape. */
 const FIELD_PART = "filter-field";
@@ -53,30 +54,35 @@ interface GroupFieldProps {
   children: ReactNode;
 }
 
-/** Labelled stack for multi-control fields — no fieldset box. */
+/** Native labelled group for multi-control fields — no visible fieldset box. */
 function GroupField({
   caption,
   classNames,
   children,
 }: Readonly<GroupFieldProps>) {
-  const labelId = useId();
   return (
-    <div
-      role="group"
-      aria-labelledby={labelId}
+    <fieldset
       data-adapttable-part={FIELD_PART}
       className={classNames.filterField}
-      style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        minWidth: 0,
+        margin: 0,
+        padding: 0,
+        border: 0,
+      }}
     >
-      <div
-        id={labelId}
+      <legend
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
+        style={{ padding: 0 }}
       >
         {caption}
-      </div>
+      </legend>
       {children}
-    </div>
+    </fieldset>
   );
 }
 
@@ -211,7 +217,13 @@ function MultiSelectField<TRow>({
       <div
         data-adapttable-part="filter-checkbox-group"
         className={classNames.filterCheckboxGroup}
-        style={{ display: "flex", flexDirection: "column", gap: 6 }}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          maxHeight: CHECKLIST_LIST_HEIGHT,
+          overflow: "auto",
+        }}
       >
         {loading ? (
           <span
@@ -508,7 +520,7 @@ export interface AutoFilterFormProps<TRow> {
 /**
  * The auto-built filter form for the declarative `filters` array: one
  * semantic field per definition (`text` input, `select` with an "All"
- * option, `multiSelect` checkbox list, operator-first `dateRange` /
+ * option, wrapping `multiSelect` chips, operator-first `dateRange` /
  * `numberRange` widgets), each carrying `data-adapttable-part` hooks and
  * `classNames` overrides. Controls read `source.extra` and write through
  * `source.setExtra` / `source.setExtras` — an empty value clears its key.

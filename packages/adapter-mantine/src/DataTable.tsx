@@ -1,15 +1,11 @@
 import {
-  FilterTreeBuilder,
   resolveLabels,
   type TableLabels,
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
-  BatchEditBar,
-  FindBar,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
-  SelectionStatsBar,
   useDataTableShell,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
@@ -25,9 +21,12 @@ import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
+import { FilterTreeBuilder } from "./components/FilterTreeBuilder";
+import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { SURFACE } from "./surface";

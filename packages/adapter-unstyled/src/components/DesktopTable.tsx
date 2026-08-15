@@ -8,7 +8,6 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
-  FilterHeaderRow,
   type GridFocusState,
   headerFilterStickTop,
   PIN_Z,
@@ -26,10 +25,8 @@ import {
 import {
   type BodyCell,
   cellsForRow,
-  ColumnGroupToggle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -47,19 +44,16 @@ import {
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
-  RowEditActions,
   rowEditingSignature,
   rowIsDirty,
   type RowPairMeasurer,
   rowPinSignature,
   rowReorderDropStyle,
-  RowReorderHandle,
   rowReorderSignature,
   rowSpanSignature,
   rowStyleSignature,
   type SharedTableRenderProps,
   tableRenderModel,
-  TreeCell,
   useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
@@ -70,7 +64,15 @@ import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandButton } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
+import {
+  ColumnGroupToggle,
+  FilterHeaderRow,
+  RowEditActions,
+  RowReorderHandle,
+  TreeCell,
+} from "./kitControls";
 import { RowActionButtons } from "./RowActionButtons";
 
 function ExtraSlotRow({

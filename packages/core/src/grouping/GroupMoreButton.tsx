@@ -1,15 +1,14 @@
 /**
- * The button that reveals the next page of groups, or of a group's rows.
+ * The offer that reveals the next page of groups, or of a group's rows.
  *
- * It lives in core because it is the same sentence in every kit — "Show 42
- * more groups" — wired to the same action, and eight copies of a button is
- * eight places for the wording and the part name to drift.
+ * Wording and the part name stay here so they cannot drift. Adapters pass
+ * the button the end user clicks.
  */
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { TableLabels } from "../types";
 
-/** Props for {@link GroupMoreButton}. */
+/** Props for an adapter {@link GroupMoreButton} — no slots on the public API. */
 export interface GroupMoreButtonProps {
   /** Whether this offers more groups or more rows inside one. */
   scope: "groups" | "rows";
@@ -23,34 +22,42 @@ export interface GroupMoreButtonProps {
   onShowMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => void;
 }
 
-/** Renders the offer as a plain button that inherits the kit's type. */
-export function GroupMoreButton({
+/** Kit button the group-more chrome calls. */
+export interface GroupMoreButtonSlotProps {
+  readonly label: string;
+  readonly onClick: () => void;
+}
+
+/** Adapter-supplied controls for {@link GroupMoreButtonChrome}. */
+export interface GroupMoreButtonSlots {
+  readonly Button: (props: GroupMoreButtonSlotProps) => ReactNode;
+}
+
+/** Props for {@link GroupMoreButtonChrome}. */
+export interface GroupMoreButtonChromeProps extends GroupMoreButtonProps {
+  readonly slots: GroupMoreButtonSlots;
+}
+
+/** Renders the offer through the adapter's button. */
+export function GroupMoreButtonChrome({
   scope,
   remaining,
   groupKey,
   labels,
   onShowMore,
-}: Readonly<GroupMoreButtonProps>): ReactElement {
+  slots,
+}: Readonly<GroupMoreButtonChromeProps>): ReactElement {
+  const Button = slots.Button;
   return (
-    <button
-      type="button"
-      data-adapttable-part="group-more"
+    <Button
+      label={
+        scope === "groups"
+          ? labels.moreGroups(remaining)
+          : labels.moreRowsInGroup(remaining)
+      }
       onClick={() => {
         onShowMore({ scope, groupKey });
       }}
-      style={{
-        font: "inherit",
-        background: "transparent",
-        border: "none",
-        padding: 0,
-        cursor: "pointer",
-        textDecoration: "underline",
-        color: "inherit",
-      }}
-    >
-      {scope === "groups"
-        ? labels.moreGroups(remaining)
-        : labels.moreRowsInGroup(remaining)}
-    </button>
+    />
   );
 }

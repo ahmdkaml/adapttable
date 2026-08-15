@@ -72,7 +72,13 @@ export function SavedViewsMenu({
           {labels.savedViews}
         </Button>
       </Popover.Trigger>
-      <Popover.Content align="end" side="bottom" minWidth="240px">
+      <Popover.Content
+        align="end"
+        side="bottom"
+        minWidth="240px"
+        maxHeight="min(70vh, 360px)"
+        style={{ overflowY: "auto" }}
+      >
         <Flex direction="column" gap="1">
           {views.map((view) => (
             <Flex key={view.name} gap="1" align="center">

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Cell spanning across every kit — Span on makes Ada's name cover the
  * email column. RTL uses the same lists; spans are ids and counts, not
@@ -37,10 +39,7 @@ for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
     test("spans the first name across the next column", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "span cells" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
+      await configureFeatureLab(page, "span cells", "On");
       const name = demo(page)
         .locator('[data-adapttable-part="cell"][data-column-key="person"]')
         .first();
@@ -50,14 +49,8 @@ for (const adapter of ADAPTERS) {
 
     test("spans the same way under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "span cells" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "span cells", "On");
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       const name = demo(page)
         .locator('[data-adapttable-part="cell"][data-column-key="person"]')

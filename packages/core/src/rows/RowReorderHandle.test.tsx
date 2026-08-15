@@ -5,11 +5,15 @@
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  rowReorderButtonsTestSlots,
+  rowReorderHandleTestSlots,
+} from "../internal/chromeTestSlots";
 import { useRowReorder } from "./rowReorder";
 import {
   RowReorderAnnouncer,
-  RowReorderButtons,
-  RowReorderHandle,
+  RowReorderButtonsChrome,
+  RowReorderHandleChrome,
 } from "./RowReorderHandle";
 
 interface Task {
@@ -39,7 +43,8 @@ describe("RowReorderHandle", () => {
       })
     );
     const { rerender } = render(
-      <RowReorderHandle
+      <RowReorderHandleChrome
+        slots={rowReorderHandleTestSlots}
         reorder={result.current}
         labels={LABELS}
         rowId="a"
@@ -53,7 +58,8 @@ describe("RowReorderHandle", () => {
       key: " ",
     });
     rerender(
-      <RowReorderHandle
+      <RowReorderHandleChrome
+        slots={rowReorderHandleTestSlots}
         reorder={result.current}
         labels={LABELS}
         rowId="a"
@@ -81,7 +87,8 @@ describe("RowReorderButtons", () => {
     render(
       <>
         <RowReorderAnnouncer announcement={result.current.announcement} />
-        <RowReorderButtons
+        <RowReorderButtonsChrome
+          slots={rowReorderButtonsTestSlots}
           reorder={result.current}
           labels={LABELS}
           localIndex={0}
@@ -107,7 +114,8 @@ describe("RowReorderButtons", () => {
       })
     );
     render(
-      <RowReorderButtons
+      <RowReorderButtonsChrome
+        slots={rowReorderButtonsTestSlots}
         reorder={result.current}
         labels={LABELS}
         localIndex={1}

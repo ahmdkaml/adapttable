@@ -124,14 +124,16 @@ const TAILWIND: DataTableClassNames = {
   viewsSave:
     "h-8 shrink-0 rounded-md bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600",
   resizeHandle: "hover:bg-indigo-300",
-  card: "mb-2 rounded-lg border border-gray-200 p-3 dark:border-zinc-700",
-  cardRow: "flex justify-between gap-3 py-0.5 text-sm",
-  cardLabel: "text-gray-500 dark:text-zinc-400",
-  cardValue: "font-medium",
+  card: "list-none rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900",
+  cardRow:
+    "flex items-start justify-between gap-3 py-1 text-sm first-of-type:mb-1 first-of-type:border-b first-of-type:border-gray-100 first-of-type:pb-2 dark:first-of-type:border-zinc-800",
+  cardLabel:
+    "pt-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-zinc-400",
+  cardValue: "min-w-0 text-right font-medium text-gray-900 dark:text-zinc-100",
   cardActions:
-    "mt-2 flex justify-end gap-1 border-t border-gray-200 pt-2 dark:border-zinc-700",
+    "mt-2 flex justify-end gap-1 border-t border-gray-100 pt-2 dark:border-zinc-800",
   cardDetail: "mt-2 border-t border-gray-200 pt-2 text-sm dark:border-zinc-700",
-  cards: "p-3",
+  cards: "m-0 grid list-none gap-2 p-3",
   // ── Table scaffolding ───────────────────────────────────────────
   scrollBox: "overscroll-x-contain",
   thead: "bg-white dark:bg-zinc-900",
@@ -252,6 +254,8 @@ export function UnstyledDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  forceMobile,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -275,6 +279,8 @@ export function UnstyledDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  forceMobile?: boolean;
+  focused?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -300,6 +306,8 @@ export function UnstyledDemo({
       cellNavigation={cellNavigation ?? editing}
       headerFilters={headerFilters}
       columnGroups={columnGroups}
+      forceMobile={forceMobile}
+      focused={focused}
       classNames={TAILWIND}
     />
   );

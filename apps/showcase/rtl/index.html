@@ -6,7 +6,7 @@
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
     <meta
       name="description"
-      content="AdaptTable RTL demo — switch to Arabic and the whole table mirrors: toolbar, sort arrows, pinned columns, pagination. A genuinely flipped axis."
+      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
     />
     <link
       rel="canonical"
@@ -15,18 +15,51 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AdaptTable" />
-    <meta property="og:title" content="AdaptTable demo — Arabic and right-to-left" />
-    <meta property="og:description" content="AdaptTable RTL demo — switch to Arabic and the whole table mirrors: toolbar, sort arrows, pinned columns, pagination. A genuinely flipped axis." />
-    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/rtl/" />
-    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta
+      property="og:title"
+      content="AdaptTable demo — Arabic and right-to-left"
+    />
+    <meta
+      property="og:description"
+      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
+    />
+    <meta
+      property="og:url"
+      content="https://orwa-mahmoud.github.io/adapttable/demo/rtl/"
+    />
+    <meta
+      property="og:image"
+      content="https://orwa-mahmoud.github.io/adapttable/og.png"
+    />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="AdaptTable demo — Arabic and right-to-left" />
-    <meta name="twitter:description" content="AdaptTable RTL demo — switch to Arabic and the whole table mirrors: toolbar, sort arrows, pinned columns, pagination. A genuinely flipped axis." />
-    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta
+      name="twitter:title"
+      content="AdaptTable demo — Arabic and right-to-left"
+    />
+    <meta
+      name="twitter:description"
+      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
+    />
+    <meta
+      name="twitter:image"
+      content="https://orwa-mahmoud.github.io/adapttable/og.png"
+    />
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"AdaptTable RTL demo — switch to Arabic and the whole table mirrors: toolbar, sort arrows, pinned columns, pagination. A genuinely flipped axis.","url":"https://orwa-mahmoud.github.io/adapttable/demo/rtl/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AdaptTable",
+        "description": "AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis.",
+        "url": "https://orwa-mahmoud.github.io/adapttable/demo/rtl/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "license": "https://opensource.org/license/mit",
+        "programmingLanguage": "TypeScript",
+        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
     </script>
     <script
       defer
@@ -99,28 +132,27 @@
          index.html for why the served HTML carries content at all. -->
     <div id="root">
       <main class="at-fallback">
-        <h1>AdaptTable demo — Arabic, Hebrew and right-to-left layout</h1>
+        <h1>AdaptTable demo — Arabic and right-to-left layout</h1>
         <p>
           The same table in a right-to-left document. RTL here is a layout
           direction, not a stylesheet flip: column pinning is logical, so a
-          column pinned to the start pins to the right in Arabic, and filter
-          popovers anchor and flip from the correct edge instead of opening
-          off-screen.
+          column pinned to the start pins to the right in Arabic. Search,
+          sorting and pagination follow the same logical axis.
         </p>
-        <h2>What you can drive here</h2>
+        <h2>What this focused page demonstrates</h2>
         <ul>
-          <li>Switch between English, Arabic and Hebrew and watch direction follow.</li>
+          <li>Arabic labels and values render in a genuinely RTL table.</li>
           <li>
-            Pinned columns hold the logical start and end, not a hard-coded
-            left and right.
+            Pinned columns hold the logical start and end, not a hard-coded left
+            and right.
           </li>
           <li>
-            Filter popovers, column menus and drawers anchor from the correct
-            side and flip when they would overflow.
+            Search, sort arrows and pagination mirror without reversing data
+            meaning.
           </li>
           <li>
-            Every string, including pagination, empty states and bulk-action
-            labels, comes from the translation catalogue.
+            Visible table strings, pagination and empty states come from the
+            Arabic translation catalogue.
           </li>
         </ul>
         <p>

@@ -211,8 +211,8 @@ function pdfLiteral(text: string): string {
       continue;
     }
     if (code === 0x5c) out += "\\\\";
-    else if (code === 0x28) out += "\\(";
-    else if (code === 0x29) out += "\\)";
+    else if (code === 0x28) out += String.raw`\(`;
+    else if (code === 0x29) out += String.raw`\)`;
     else if (code >= 32 && code <= 126) out += String.fromCodePoint(code);
     else out += octalByte(code);
   }
@@ -311,16 +311,27 @@ function cellBox(x: number, y: number, w: number, h: number): string {
   );
 }
 
-function cellText(
-  text: string,
-  x: number,
-  y: number,
-  w: number,
-  height: number,
-  indent: number,
-  bold: boolean,
-  rtl: boolean
-): string {
+interface CellTextOptions {
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  height: number;
+  indent: number;
+  bold: boolean;
+  rtl: boolean;
+}
+
+function cellText({
+  text,
+  x,
+  y,
+  w,
+  height,
+  indent,
+  bold,
+  rtl,
+}: Readonly<CellTextOptions>): string {
   const max = Math.max(8, w - CELL_PAD * 2 - indent);
   const shown = fitText(text, max, FONT_SIZE);
   const drawn = textWidth(shown, FONT_SIZE);
@@ -353,7 +364,18 @@ function drawCells(
     parts.push(cellBox(x, y, w, height));
     const text = exportCellText(values[i]);
     if (text !== "") {
-      parts.push(cellText(text, x, y, w, height, indent, style.bold, ctx.rtl));
+      parts.push(
+        cellText({
+          text,
+          x,
+          y,
+          w,
+          height,
+          indent,
+          bold: style.bold,
+          rtl: ctx.rtl,
+        })
+      );
     }
   }
   return parts.join("");
@@ -464,8 +486,7 @@ function compilePdf(
     const pageId = 6 + index * 2;
     const contentId = pageId + 1;
     kids.push(`${String(pageId)} 0 R`);
-    pageBodies.push(pageObject(contentId, box));
-    pageBodies.push(streamObject(stream));
+    pageBodies.push(pageObject(contentId, box), streamObject(stream));
   });
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",

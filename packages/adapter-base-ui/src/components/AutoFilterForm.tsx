@@ -1,5 +1,5 @@
 import {
-  ChecklistFilter,
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -26,7 +26,13 @@ import { type ReactNode, useId } from "react";
 
 import type { BaseUiAccentColor } from "../types";
 import { Flex, Spinner, Text, TextField } from "../ui";
-import { FormField, NativeSelect, type SelectOption } from "./primitives";
+import { ChecklistFilter } from "./ChecklistFilter";
+import {
+  Checkbox,
+  FormField,
+  NativeSelect,
+  type SelectOption,
+} from "./primitives";
 
 /**
  * A labelled GROUP wrapper for multi-control fields (the multiSelect chip
@@ -334,9 +340,6 @@ function AutoFilterField<TRow>({
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
-      // Toggle chips — selected state is the chip chrome, no nested checkbox.
-      // Named through the group label via `aria-labelledby`; each chip is a
-      // `role="checkbox"` so existing a11y semantics / tests stay intact.
       const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
@@ -350,33 +353,34 @@ function AutoFilterField<TRow>({
           {loading ? (
             <Spinner size="1" />
           ) : (
-            <Flex direction="column" gap="2" role="group" aria-labelledby={id}>
+            <Flex
+              gap="2"
+              wrap="wrap"
+              role="group"
+              aria-labelledby={id}
+              style={{
+                maxHeight: CHECKLIST_LIST_HEIGHT,
+                overflow: "auto",
+              }}
+            >
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (
-                  <label
+                  <span
                     key={option.value}
-                    htmlFor={`${id}-${option.value}`}
                     className="adapttable-filter-chip"
                     data-checked={checked ? "true" : "false"}
                     data-accent={accentColor}
                   >
-                    <input
-                      type="checkbox"
-                      id={`${id}-${option.value}`}
+                    <Checkbox
                       checked={checked}
-                      onChange={() => toggle(option.value)}
-                      style={{
-                        position: "absolute",
-                        opacity: 0,
-                        width: 1,
-                        height: 1,
-                        margin: 0,
-                        pointerEvents: "none",
-                      }}
-                    />
-                    {option.label}
-                  </label>
+                      color={accentColor}
+                      value={option.value}
+                      onToggle={() => toggle(option.value)}
+                    >
+                      {option.label}
+                    </Checkbox>
+                  </span>
                 );
               })}
             </Flex>

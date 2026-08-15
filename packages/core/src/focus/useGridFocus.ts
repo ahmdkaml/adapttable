@@ -205,7 +205,7 @@ export interface GridFocusState {
    * receive it.
    */
   fillHandleCell: GridCell | null;
-  /** Props for the fill handle element. See `FillHandle` in the adapter entry. */
+  /** Props for the adapter-owned fill handle element. */
   getFillHandleProps: () => Record<string, unknown>;
   /** The handle's accessible name, already localized. */
   fillHandleLabel: string;

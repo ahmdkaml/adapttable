@@ -18,7 +18,6 @@ import {
   resolveFilterDefs,
   resolveFilterRegistry,
 } from "@adapttable/core";
-import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -49,6 +48,8 @@ export interface Person {
   utilization?: number;
   /** `YYYY-MM-DD`, once a date edit materializes one. */
   start?: string;
+  /** Demo-only websocket revision used to exercise live-edit conflicts. */
+  revision?: number;
 }
 
 export const PEOPLE = people as Person[];
@@ -134,7 +135,6 @@ interface Strings {
   allocations: string;
   timeline: string;
   load: string;
-  trend: string;
   allocationFilter: string;
   budgetFilter: string;
   coreFilter: string;
@@ -167,7 +167,6 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "Allocations",
     timeline: "Timeline",
     load: "Load",
-    trend: "Trend",
     allocationFilter: "Allocation count",
     budgetFilter: "Budget",
     coreFilter: "Core team",
@@ -194,7 +193,6 @@ const STRINGS: Record<Locale, Strings> = {
     allocations: "التخصيصات",
     timeline: "الجدول الزمني",
     load: "الحمل",
-    trend: "الاتجاه",
     allocationFilter: "عدد التخصيصات",
     budgetFilter: "الميزانية",
     coreFilter: "الفريق الأساسي",
@@ -395,21 +393,21 @@ export function statusTone(
 /**
  * The live-demo's default column layout: `email` and `team` ship as real
  * columns but start hidden, so the table fits its container with no
- * horizontal scrollbar by default. Revealing them (or pinning — see the
- * showcase) widens the table past its container so a pinned column visibly
- * sticks while scrolling.
+ * horizontal cell scroll by default. Revealing them (or pinning — see the
+ * showcase) widens the table past its container so a pinned column
+ * visibly sticks while scrolling.
  */
 export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
   hidden: ["email", "team"],
 };
 
 /**
- * The editing page's default layout: email stays visible there — it is the
- * column its walkthrough (and e2e specs) edit — while team stays hidden so
- * the table still fits without a horizontal scrollbar.
+ * The editing page's default layout: every editable field stays visible.
+ * Timeline is the only display-only column, so hiding it keeps the table
+ * compact without making the page borrow the Columns menu from its showcase.
  */
 export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
-  hidden: ["team"],
+  hidden: ["timeline"],
 };
 
 export function makeColumns(
@@ -450,17 +448,10 @@ export function makeColumns(
           </span>
         </span>
       ),
-      mobileLabel: s.person,
+      // The first mobile field is the card identity block; its Avatar + name
+      // already explain themselves, so repeating "Person" adds visual noise.
+      mobileLabel: "",
     },
-    sparklineColumn({
-      key: "trend",
-      header: s.trend,
-      values: loadHistory,
-      kind: "area",
-      width: 88,
-      height: 28,
-      column: { width: 96, mobileLabel: s.trend },
-    }),
     {
       key: "email",
       header: s.email,
@@ -589,10 +580,12 @@ export function makeColumns(
  */
 export function makeWideColumns(
   locale: Locale,
-  cells: DemoCells
+  cells: DemoCells,
+  options: Readonly<{ groups?: boolean }> = {}
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
+  const grouped = options.groups === true;
   return [
     {
       key: "person",
@@ -618,21 +611,10 @@ export function makeWideColumns(
         </span>
       ),
     },
-    sparklineColumn({
-      key: "trend",
-      header: s.trend,
-      values: loadHistory,
-      kind: "area",
-      width: 88,
-      height: 28,
-      column: { width: 96 },
-    }),
     {
       key: "role",
       header: s.role,
-      // Adjacent columns sharing a `group` render under one spanning header.
-      // Reordering them apart splits it, so the span never lies about layout.
-      group: s.groupAssignment,
+      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "roleAr" },
       editable: true,
       editor: "text",
@@ -641,7 +623,7 @@ export function makeWideColumns(
     {
       key: "team",
       header: s.team,
-      group: s.groupAssignment,
+      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "teamAr" },
       sortable: true,
       editable: true,
@@ -686,7 +668,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -707,7 +689,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -808,16 +790,6 @@ export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
 }
 
-/** Eight weeks of load, derived so the sparkline needs no second seed. */
-export function loadHistory(row: Person): number[] {
-  const base = utilization(row);
-  const seed = Number(row.id) || 1;
-  return Array.from({ length: 8 }, (_, week) => {
-    const wobble = ((seed * (week + 3)) % 17) - 8;
-    return Math.max(0, Math.min(100, base + wobble));
-  });
-}
-
 export function startDate(row: Person): Date {
   if (row.start !== undefined) {
     const [year, month, day] = row.start.split("-").map(Number);
@@ -879,7 +851,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "team",
-      type: "checklist",
+      type: "multiSelect",
       label: s.team,
       options: TEAMS.map((team) => ({
         value: team,
@@ -924,6 +896,17 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
       getValue: (row) => row.team === "Core",
     },
   ];
+}
+
+/**
+ * Feature Lab only — Team as the Excel checklist so that mode has a
+ * home. The live demo stays on `multiSelect`; the type is configuration,
+ * not a control on the page.
+ */
+export function kitchenFilterDefs(locale: Locale): FilterDef<Person>[] {
+  return demoFilterDefs(locale).map((def) =>
+    def.key === "team" ? { ...def, type: "checklist" } : def
+  );
 }
 
 /**

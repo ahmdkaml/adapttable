@@ -105,11 +105,11 @@ export type DemoPage =
 /** The demo pages — each a static HTML entry, linked with plain anchors. */
 const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
+  { key: "all-options", label: "Feature Lab", path: "all-options" },
   { key: "columns", label: "Columns", path: "columns" },
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "export-pdf", label: "PDF", path: "export-pdf" },
-  { key: "all-options", label: "Every option", path: "all-options" },
   { key: "mobile", label: "Mobile", path: "mobile" },
   { key: "rtl", label: "RTL", path: "rtl" },
   { key: "scale", label: "Scale", path: "scale" },
@@ -150,6 +150,25 @@ export function AppNav({
             </a>
           ))}
         </nav>
+        <label className="nav__mobile">
+          <select
+            aria-label="Demo page"
+            value={active}
+            onChange={(event) => {
+              const page = PAGES.find(
+                (candidate) => candidate.key === event.currentTarget.value
+              );
+              if (page) window.location.assign(href(page.path));
+            }}
+          >
+            {PAGES.map((page) => (
+              <option key={page.key} value={page.key}>
+                {page.label}
+              </option>
+            ))}
+          </select>
+          <span aria-hidden>▾</span>
+        </label>
         <div className="nav__right">
           <button
             type="button"
