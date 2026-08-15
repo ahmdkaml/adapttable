@@ -16,6 +16,7 @@ function TreeSelect({
   value,
   part,
   options,
+  className,
   onChange,
 }: FilterTreeSelectProps) {
   return (
@@ -23,6 +24,7 @@ function TreeSelect({
       size="small"
       aria-label={label}
       data-adapttable-part={part}
+      className={className}
       value={value}
       onChange={onChange}
       options={options.map((option) => ({
@@ -34,13 +36,20 @@ function TreeSelect({
   );
 }
 
-function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
+function TreeInput({
+  label,
+  value,
+  type,
+  className,
+  onChange,
+}: FilterTreeInputProps) {
   if (type === "number") {
     return (
       <InputNumber
         size="small"
         aria-label={label}
         data-adapttable-part="filter-input"
+        className={className}
         value={value === "" ? undefined : Number(value)}
         onChange={(next) => onChange(next == null ? "" : String(next))}
         style={{ flex: "1 1 7rem", minWidth: "7rem" }}
@@ -53,6 +62,7 @@ function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
       type={type}
       aria-label={label}
       data-adapttable-part="filter-input"
+      className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       style={{ flex: "1 1 7rem", minWidth: "7rem" }}
@@ -60,12 +70,18 @@ function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
   );
 }
 
-function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
+function TreeButton({
+  label,
+  part,
+  className,
+  onClick,
+}: FilterTreeButtonProps) {
   return (
     <Button
       type="default"
       size="small"
       data-adapttable-part={part}
+      className={className}
       onClick={onClick}
     >
       {label}

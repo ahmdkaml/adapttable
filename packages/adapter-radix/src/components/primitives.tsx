@@ -71,6 +71,9 @@ export function Checkbox({
   "aria-busy"?: true;
   "data-conflict"?: "";
 }>) {
+  // The part and the class name the WHOLE control, so with a visible label
+  // they belong to the wrapper that holds box and text together — the same
+  // element MUI tags — and only to the box when there is nothing else.
   const box = (
     <RadixCheckbox
       id={id}
@@ -78,9 +81,9 @@ export function Checkbox({
       size={size}
       color={color}
       ref={inputRef}
-      className={className}
+      className={children == null ? className : undefined}
       aria-label={ariaLabel}
-      data-adapttable-part={dataPart}
+      data-adapttable-part={children == null ? dataPart : undefined}
       checked={indeterminate ? "indeterminate" : checked}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
       {...rest}
@@ -90,7 +93,12 @@ export function Checkbox({
   // A labelled checkbox: the visible text and the box share one `<label>`, so
   // clicking the text toggles the box and the name reads through the label.
   return (
-    <Text as="label" size="2">
+    <Text
+      as="label"
+      size="2"
+      className={className}
+      data-adapttable-part={dataPart}
+    >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
         {box}
         {children}
@@ -131,6 +139,7 @@ export function NativeSelect({
   triggerRef,
   options,
   width,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
   ...rest
@@ -144,6 +153,7 @@ export function NativeSelect({
   triggerRef?: (node: { focus: () => void } | null) => void;
   options: readonly SelectOption[];
   width?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   /** Validation and busy state from the headless layer. */
@@ -162,6 +172,7 @@ export function NativeSelect({
         ref={triggerRef}
         aria-label={ariaLabel}
         data-adapttable-part={part}
+        className={className}
         placeholder={placeholder}
         onKeyDown={onKeyDown}
         style={width ? { width } : undefined}

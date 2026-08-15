@@ -169,11 +169,7 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
+    <details style={{ position: "relative", width: "100%" }}>
       <summary
         aria-label={label}
         data-adapttable-part="filter-header-input"
@@ -208,6 +204,8 @@ function HeaderMulti({
       </summary>
       <fieldset
         aria-label={label}
+        data-adapttable-part="filter-header-menu"
+        className={menuClassName}
         style={{
           position: "absolute",
           zIndex: 8,

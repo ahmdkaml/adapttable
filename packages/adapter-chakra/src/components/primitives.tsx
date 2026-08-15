@@ -134,6 +134,7 @@ export function NativeSelect({
   flex,
   w,
   minW,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": dataPart,
   children,
@@ -151,6 +152,7 @@ export function NativeSelect({
   flex?: string;
   w?: string;
   minW?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   children: ReactNode;
@@ -163,6 +165,7 @@ export function NativeSelect({
   return (
     <ChakraNativeSelect.Root size={size} flex={flex} w={w} minW={minW}>
       <ChakraNativeSelect.Field
+        className={className}
         ref={fieldRef}
         data-adapttable-part={dataPart}
         aria-label={ariaLabel}

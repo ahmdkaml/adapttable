@@ -81,17 +81,24 @@ export function Checkbox({
   "aria-busy"?: true;
   "data-conflict"?: "";
 }>) {
+  // The part and the class name the WHOLE control, so with a visible label
+  // they belong to the wrapper that holds box and text together — the same
+  // element MUI tags — and only to the box when there is nothing else.
   const box = (
     <BaseCheckbox.Root
       id={id}
       value={value}
       ref={inputRef}
       aria-label={children == null ? ariaLabel : undefined}
-      data-adapttable-part={dataPart}
+      data-adapttable-part={children == null ? dataPart : undefined}
       checked={checked}
       indeterminate={indeterminate}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
-      className={className ?? "adapttable-checkbox"}
+      className={
+        children == null
+          ? (className ?? "adapttable-checkbox")
+          : "adapttable-checkbox"
+      }
       {...rest}
     >
       <BaseCheckbox.Indicator className="adapttable-checkbox__indicator">
@@ -107,7 +114,11 @@ export function Checkbox({
   // Native <label> (not Text-as-label): Base UI wires aria-labelledby to the
   // enclosing label id; a plain label keeps the visible text as the name.
   return (
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+    <label
+      className={className}
+      data-adapttable-part={dataPart}
+      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+    >
       {box}
       <Text as="span" size="2">
         {children}
@@ -141,6 +152,7 @@ export function NativeSelect({
   onKeyDown,
   options,
   width,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
   ...rest
@@ -152,6 +164,7 @@ export function NativeSelect({
   onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   options: readonly SelectOption[];
   width?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   /** Validation and busy state from the headless layer. */
@@ -178,7 +191,7 @@ export function NativeSelect({
       <Select.Trigger
         aria-label={ariaLabel}
         data-adapttable-part={part}
-        className="adapttable-btn"
+        className={className ?? "adapttable-btn"}
         data-size={size}
         data-variant="outline"
         data-slot="select-trigger"

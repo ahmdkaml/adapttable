@@ -67,6 +67,7 @@ export function MuiCellEditor({
         value={readMultiDraft(ctrl.draft)}
         onKeyDown={onKeyDown}
         onBlur={ctrl.commitOnBlur}
+        data-adapttable-part="edit-cell-editor"
         slotProps={{
           select: {
             multiple: true,
@@ -76,11 +77,7 @@ export function MuiCellEditor({
               ctrl.setDraft(multiDraftFromSelect(select));
             },
           },
-          htmlInput: {
-            "aria-label": label,
-            "data-adapttable-part": "edit-cell-editor",
-            ...editorBusyProps(ctrl),
-          },
+          htmlInput: { "aria-label": label, ...editorBusyProps(ctrl) },
         }}
       >
         {ctrl.selectOptions.map((option) => (
@@ -105,12 +102,9 @@ export function MuiCellEditor({
         onBlur={ctrl.commitOnBlur}
         error={ctrl.conflict === true ? false : ctrl.error !== undefined}
         helperText={ctrl.conflict === true ? undefined : ctrl.error}
+        data-adapttable-part="edit-cell-editor"
         slotProps={{
-          htmlInput: {
-            "aria-label": label,
-            "data-adapttable-part": "edit-cell-editor",
-            ...editorBusyProps(ctrl),
-          },
+          htmlInput: { "aria-label": label, ...editorBusyProps(ctrl) },
         }}
       >
         {ctrl.selectOptions.map((option) => (

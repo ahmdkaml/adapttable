@@ -102,12 +102,8 @@ function HeaderSearch({
       placeholder={placeholder}
       className={className}
       onChange={(event) => onChange(event.target.value)}
-      slotProps={{
-        htmlInput: {
-          "aria-label": label,
-          "data-adapttable-part": "filter-header-input",
-        },
-      }}
+      data-adapttable-part="filter-header-input"
+      slotProps={{ htmlInput: { "aria-label": label } }}
     />
   );
 }
@@ -128,12 +124,10 @@ function HeaderSelect({
       value={value}
       className={className}
       onChange={(event) => onChange(event.target.value)}
+      data-adapttable-part="filter-header-input"
       slotProps={{
         select: { native: false },
-        htmlInput: {
-          "aria-label": label,
-          "data-adapttable-part": "filter-header-input",
-        },
+        htmlInput: { "aria-label": label },
       }}
     >
       {options.map((option) => (

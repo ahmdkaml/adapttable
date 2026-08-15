@@ -162,7 +162,10 @@ export const shadcnClassNames = {
     "border-b border-border bg-card px-1 py-1 text-start [[data-density=compact]_&]:px-1 [[data-density=compact]_&]:py-0.5",
   filterHeaderInput:
     "h-7 w-full min-w-0 rounded-md border border-input bg-background px-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring",
-  filterHeaderMenu: "relative w-full",
+  // The dropdown panel itself, matching every other part named `*Menu`/`*Panel`
+  // — not the wrapper it is positioned against.
+  filterHeaderMenu:
+    "z-50 min-w-full rounded-md border border-border bg-card p-2 text-card-foreground shadow-xl",
   tbody: "align-middle",
   scrollBox: "overscroll-x-contain",
   virtualSpacer: "block",
