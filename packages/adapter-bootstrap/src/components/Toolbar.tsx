@@ -24,12 +24,12 @@ export function Toolbar<TRow>({
   hasFilters,
   activeFilterCount,
   filtersMode,
-//   filters,
+  //   filters,
   filtersOpen,
   onToggleFilters,
   onFiltersTriggerPointerDown,
-//   onCloseFilters,
-//   onClearFilters,
+  //   onCloseFilters,
+  //   onClearFilters,
   savedViewsMenu,
   columnMenu,
   onAddRow,
@@ -48,7 +48,7 @@ export function Toolbar<TRow>({
     sortByOptions ?? (table.isMobile ? table.sortByOptions : undefined);
 
   const searchProps = table.getSearchInputProps(
-    searchPlaceholder ? { placeholder: searchPlaceholder } : undefined,
+    searchPlaceholder ? { placeholder: searchPlaceholder } : undefined
   );
 
   return (
@@ -78,7 +78,7 @@ export function Toolbar<TRow>({
             onChange={(event) =>
               source.setSort(
                 event.target.value || undefined,
-                source.sortDir ?? "asc",
+                source.sortDir ?? "asc"
               )
             }
           >
@@ -131,11 +131,7 @@ export function Toolbar<TRow>({
         )}
 
         {onAddRow && (
-          <Button
-            size="sm"
-            data-adapttable-part="add-row"
-            onClick={onAddRow}
-          >
+          <Button size="sm" data-adapttable-part="add-row" onClick={onAddRow}>
             {addRowLabel}
           </Button>
         )}

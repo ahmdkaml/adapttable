@@ -12,7 +12,7 @@ function renderNoAutoForm() {
 }
 
 export function DataTable<TRow>(
-  props: Readonly<DataTableProps<TRow>>,
+  props: Readonly<DataTableProps<TRow>>
 ): ReactNode {
   const shell = useDataTableShell<TRow>(props, renderNoAutoForm);
   const { filtersMode = "popover" } = props;
@@ -35,30 +35,28 @@ export function DataTable<TRow>(
         onToggleFilters={filtersTrigger.onClick}
         onCloseFilters={() => setFiltersOpen(false)}
         // columnMenu={
-          // props.enableColumnMenu && !chrome.isMobile ? (
-            // <ColumnMenu
-            //   allColumns={chrome.allColumns}
-            //   onAutoSize={shell.autoSizeColumns}
-            //   onAutoSizeColumn={shell.autoSizeColumn}
-            //   onSortColumn={(key, dir) => source.setSort(key, dir)}
-            //   onFilterColumn={() => setFiltersOpen(true)}
-            //   sortBy={source.sortBy}
-            //   sortDir={source.sortDir}
-            //   layout={chrome.columnLayout}
-            //   labels={table.labels}
-            //   hasRowActions={shell.hasRowActions}
-            //   hasRowReorder={shell.hasRowReorder}
-            //   dir={props.dir}
-            // />
-          // ) : undefined
+        // props.enableColumnMenu && !chrome.isMobile ? (
+        // <ColumnMenu
+        //   allColumns={chrome.allColumns}
+        //   onAutoSize={shell.autoSizeColumns}
+        //   onAutoSizeColumn={shell.autoSizeColumn}
+        //   onSortColumn={(key, dir) => source.setSort(key, dir)}
+        //   onFilterColumn={() => setFiltersOpen(true)}
+        //   sortBy={source.sortBy}
+        //   sortDir={source.sortDir}
+        //   layout={chrome.columnLayout}
+        //   labels={table.labels}
+        //   hasRowActions={shell.hasRowActions}
+        //   hasRowReorder={shell.hasRowReorder}
+        //   dir={props.dir}
+        // />
+        // ) : undefined
         // }
       />
       <DesktopTable {...shell.tableProps} />
 
       {props.tableFooter ? (
-        <div data-adapttable-part="table-footer">
-          {props.tableFooter}
-        </div>
+        <div data-adapttable-part="table-footer">{props.tableFooter}</div>
       ) : null}
 
       {chrome.showFooter && (

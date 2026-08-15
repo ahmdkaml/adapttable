@@ -12,10 +12,12 @@ const labels = {
     `Showing ${from}-${to} of ${total}`,
   pageOf: ({ page, total }: { page: number; total: number }) =>
     `Page ${page} of ${total}`,
-} as Required<Pick<
-  TableLabels,
-  "rowsPerPage" | "previousPage" | "nextPage" | "showing" | "pageOf"
->>;
+} as Required<
+  Pick<
+    TableLabels,
+    "rowsPerPage" | "previousPage" | "nextPage" | "showing" | "pageOf"
+  >
+>;
 
 const pagination: PaginationInfo = {
   safePage: 2,
@@ -34,17 +36,15 @@ describe("PaginationFooter", () => {
         setPage={vi.fn()}
         setLimit={vi.fn()}
         labels={labels as Required<TableLabels>}
-      />,
+      />
     );
 
     expect(screen.getByLabelText(labels.rowsPerPage)).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(labels.previousPage),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(labels.previousPage)).toBeInTheDocument();
     expect(screen.getByLabelText(labels.nextPage)).toBeInTheDocument();
 
     expect(
-      screen.getByText(labels.pageOf({ page: 2, total: 5 })),
+      screen.getByText(labels.pageOf({ page: 2, total: 5 }))
     ).toBeInTheDocument();
 
     expect(
@@ -53,8 +53,8 @@ describe("PaginationFooter", () => {
           from: 11,
           to: 20,
           total: 50,
-        }),
-      ),
+        })
+      )
     ).toBeInTheDocument();
   });
 
@@ -69,7 +69,7 @@ describe("PaginationFooter", () => {
         setPage={setPage}
         setLimit={vi.fn()}
         labels={labels as Required<TableLabels>}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "3" }));
@@ -88,7 +88,7 @@ describe("PaginationFooter", () => {
         setPage={vi.fn()}
         setLimit={setLimit}
         labels={labels as Required<TableLabels>}
-      />,
+      />
     );
 
     const select = screen.getByLabelText(labels.rowsPerPage);
@@ -114,15 +114,15 @@ describe("PaginationFooter", () => {
         setPage={vi.fn()}
         setLimit={vi.fn()}
         labels={labels as Required<TableLabels>}
-      />,
+      />
     );
 
     expect(
-    screen.getByLabelText(labels.previousPage).closest(".page-item"),
+      screen.getByLabelText(labels.previousPage).closest(".page-item")
     ).toHaveClass("disabled");
 
     expect(
-    screen.getByLabelText(labels.nextPage).closest(".page-item"),
+      screen.getByLabelText(labels.nextPage).closest(".page-item")
     ).not.toHaveClass("disabled");
 
     rerender(
@@ -138,15 +138,15 @@ describe("PaginationFooter", () => {
         setPage={vi.fn()}
         setLimit={vi.fn()}
         labels={labels as Required<TableLabels>}
-      />,
+      />
     );
 
     expect(
-    screen.getByLabelText(labels.previousPage).closest(".page-item"),
+      screen.getByLabelText(labels.previousPage).closest(".page-item")
     ).not.toHaveClass("disabled");
 
     expect(
-    screen.getByLabelText(labels.nextPage).closest(".page-item"),
+      screen.getByLabelText(labels.nextPage).closest(".page-item")
     ).toHaveClass("disabled");
   });
 
@@ -160,11 +160,9 @@ describe("PaginationFooter", () => {
         setLimit={vi.fn()}
         labels={labels as Required<TableLabels>}
         showRowsPerPage={false}
-      />,
+      />
     );
 
-    expect(
-      screen.queryByLabelText(labels.rowsPerPage),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(labels.rowsPerPage)).not.toBeInTheDocument();
   });
 });
