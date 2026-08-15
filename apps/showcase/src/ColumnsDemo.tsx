@@ -43,6 +43,10 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="cols"
             wide
+            // This page IS the column tools, so it says so rather than
+            // inheriting the menu from whether the column set happens to be
+            // wide — a coupling that left every kit but antd without one.
+            columnMenu
             cellNavigation
             exportCsv={EXPORT_RANGE_AS_XLSX}
             focused

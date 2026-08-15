@@ -126,6 +126,7 @@ export function MuiDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  columnMenu,
   forceMobile,
   focused,
 }: Readonly<{
@@ -153,6 +154,8 @@ export function MuiDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Show the Columns menu. Defaults to on unless the page is focused. */
+  columnMenu?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -202,7 +205,7 @@ export function MuiDemo({
             rowActions={focused ? undefined : makeActions(locale)}
             bulkActions={focused ? undefined : makeBulkActions(locale)}
             confirm={demoConfirm}
-            enableColumnMenu={!focused}
+            enableColumnMenu={columnMenu ?? !focused}
             exportCsv={!focused}
             savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}

@@ -39,6 +39,7 @@ export function ShadcnDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  columnMenu,
   forceMobile,
   focused,
 }: Readonly<{
@@ -65,6 +66,7 @@ export function ShadcnDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  columnMenu?: boolean;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -93,6 +95,7 @@ export function ShadcnDemo({
       headerFilters={headerFilters}
       columnGroups={columnGroups}
       sparkline={sparkline}
+      columnMenu={columnMenu}
       forceMobile={forceMobile}
       focused={focused}
       classNames={shadcnClassNames}

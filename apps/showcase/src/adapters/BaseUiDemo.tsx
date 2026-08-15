@@ -136,6 +136,7 @@ export function BaseUiDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  columnMenu,
   forceMobile,
   focused,
 }: Readonly<{
@@ -163,6 +164,8 @@ export function BaseUiDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Show the Columns menu. Defaults to on unless the page is focused. */
+  columnMenu?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -210,7 +213,7 @@ export function BaseUiDemo({
           rowActions={focused ? undefined : makeActions(locale)}
           bulkActions={focused ? undefined : makeBulkActions(locale)}
           confirm={demoConfirm}
-          enableColumnMenu={!focused}
+          enableColumnMenu={columnMenu ?? !focused}
           exportCsv={!focused}
           savedViews={focused ? undefined : demoSavedViews(urlKey)}
           animate={animate}

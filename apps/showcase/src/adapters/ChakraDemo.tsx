@@ -112,6 +112,7 @@ export function ChakraDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  columnMenu,
   defaultColumnLayout,
   forceMobile,
   focused,
@@ -140,6 +141,8 @@ export function ChakraDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Show the Columns menu. Defaults to on unless the page is focused. */
+  columnMenu?: boolean;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
@@ -192,7 +195,7 @@ export function ChakraDemo({
               rowActions={focused ? undefined : makeActions(locale)}
               bulkActions={focused ? undefined : makeBulkActions(locale)}
               confirm={demoConfirm}
-              enableColumnMenu={!focused}
+              enableColumnMenu={columnMenu ?? !focused}
               exportCsv={!focused}
               savedViews={focused ? undefined : demoSavedViews(urlKey)}
               animate={animate}
