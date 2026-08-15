@@ -223,7 +223,12 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    expect(screen.getByRole("combobox", { name: "Role" })).toBeInTheDocument();
+    const select = screen
+      .getByRole("combobox", { name: "Role" })
+      .closest(".ant-select");
+    // Busy, and saying so in the kit's own way — the same assertion the
+    // single-select case above makes.
+    expect(select).toHaveClass("ant-select-loading");
     fireEvent.mouseDown(screen.getByRole("combobox", { name: "Role" }));
     expect(screen.queryByTitle("Admin")).toBeNull();
 
@@ -231,6 +236,7 @@ describe("<AutoFilterForm> (Ant Design)", () => {
       resolve([{ value: "admin", label: "Admin" }]);
       await Promise.resolve();
     });
+    expect(select).not.toHaveClass("ant-select-loading");
     fireEvent.mouseDown(screen.getByRole("combobox", { name: "Role" }));
     expect(screen.getByTitle("Admin")).toBeInTheDocument();
   });

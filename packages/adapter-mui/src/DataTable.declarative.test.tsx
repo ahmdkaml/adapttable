@@ -646,6 +646,9 @@ describe("<AutoFilterForm> (MUI)", () => {
       // Let the loader's .then handlers run before asserting.
       await Promise.resolve();
     });
+    // The spinner has to go away, not just be replaced beside: a progressbar
+    // that outlives its load reads as a table still working, forever.
+    expect(screen.queryByRole("progressbar")).toBeNull();
     const field = screen.getByRole("combobox", { name: "Department" });
     fireEvent.mouseDown(field);
     fireEvent.click(screen.getByRole("option", { name: "Engineering" }));
