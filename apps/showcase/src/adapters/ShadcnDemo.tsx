@@ -41,6 +41,7 @@ export function ShadcnDemo({
   sparkline,
   columnMenu,
   filterControls,
+  wide,
   forceMobile,
   focused,
 }: Readonly<{
@@ -69,6 +70,7 @@ export function ShadcnDemo({
   sparkline?: boolean;
   columnMenu?: boolean;
   filterControls?: boolean;
+  wide?: boolean;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -99,6 +101,7 @@ export function ShadcnDemo({
       sparkline={sparkline}
       columnMenu={columnMenu}
       filterControls={filterControls}
+      wide={wide}
       forceMobile={forceMobile}
       focused={focused}
       classNames={shadcnClassNames}

@@ -1,3 +1,4 @@
+import type { DataTableProps } from "@adapttable/mantine";
 import {
   type ComponentType,
   lazy,
@@ -7,7 +8,7 @@ import {
 
 import { MantineDemo } from "./adapters/MantineDemo";
 import { cssVars } from "./cssVars";
-import type { Locale } from "./data";
+import type { Locale, Person } from "./data";
 import {
   type DataMode,
   type Density,
@@ -41,6 +42,12 @@ export type KitDemoProps = Readonly<{
   sparkline?: boolean;
   columnMenu?: boolean;
   filterControls?: boolean;
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
+  /** Arrow-key cell navigation and Shift+arrow range selection. */
+  cellNavigation?: boolean;
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
   forceMobile?: boolean;
   pageMode?: PageMode;
   focused?: boolean;

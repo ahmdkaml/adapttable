@@ -24,6 +24,7 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
+  makeWideColumns,
   type Person,
   type StatusCellProps,
   statusTone,
@@ -103,6 +104,7 @@ export function MantineDemo({
   sparkline,
   columnMenu,
   filterControls,
+  wide,
   focused,
 }: Readonly<{
   mode: DataMode;
@@ -133,6 +135,8 @@ export function MantineDemo({
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -151,7 +155,17 @@ export function MantineDemo({
         mode={mode}
         pageMode={pageMode}
         urlKey={urlKey}
-        defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+        defaultColumnLayout={
+          // The wide showcase pins BOTH edges by default: person at the
+          // start, the actions column at the end (it pins like any column).
+          wide
+            ? {
+                pinned: focused
+                  ? { person: "start" }
+                  : { person: "start", actions: "end" },
+              }
+            : LIVE_DEFAULT_LAYOUT
+        }
         grouping={grouping}
         tree={tree}
         rowMode={rowMode}
@@ -166,10 +180,14 @@ export function MantineDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MANTINE_CELLS, {
-              groups: columnGroups,
-              sparkline,
-            })}
+            columns={
+              wide
+                ? makeWideColumns(locale, MANTINE_CELLS)
+                : makeColumns(locale, MANTINE_CELLS, {
+                    groups: columnGroups,
+                    sparkline,
+                  })
+            }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}

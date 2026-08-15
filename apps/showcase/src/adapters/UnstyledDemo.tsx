@@ -257,6 +257,7 @@ export function UnstyledDemo({
   sparkline,
   columnMenu,
   filterControls,
+  wide,
   forceMobile,
   focused,
 }: Readonly<{
@@ -285,6 +286,7 @@ export function UnstyledDemo({
   sparkline?: boolean;
   columnMenu?: boolean;
   filterControls?: boolean;
+  wide?: boolean;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -315,6 +317,7 @@ export function UnstyledDemo({
       sparkline={sparkline}
       columnMenu={columnMenu}
       filterControls={filterControls}
+      wide={wide}
       forceMobile={forceMobile}
       focused={focused}
       classNames={TAILWIND}

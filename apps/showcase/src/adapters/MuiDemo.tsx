@@ -26,6 +26,7 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
+  makeWideColumns,
   nameHue,
   type Person,
   type StatusCellProps,
@@ -128,6 +129,7 @@ export function MuiDemo({
   sparkline,
   columnMenu,
   filterControls,
+  wide,
   forceMobile,
   focused,
 }: Readonly<{
@@ -159,6 +161,8 @@ export function MuiDemo({
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -172,7 +176,17 @@ export function MuiDemo({
         mode={mode}
         pageMode={pageMode}
         urlKey={urlKey}
-        defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+        defaultColumnLayout={
+          // The wide showcase pins BOTH edges by default: person at the
+          // start, the actions column at the end (it pins like any column).
+          wide
+            ? {
+                pinned: focused
+                  ? { person: "start" }
+                  : { person: "start", actions: "end" },
+              }
+            : LIVE_DEFAULT_LAYOUT
+        }
         grouping={grouping}
         tree={tree}
         rowMode={rowMode}
@@ -187,10 +201,14 @@ export function MuiDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MUI_CELLS, {
-              groups: columnGroups,
-              sparkline,
-            })}
+            columns={
+              wide
+                ? makeWideColumns(locale, MUI_CELLS)
+                : makeColumns(locale, MUI_CELLS, {
+                    groups: columnGroups,
+                    sparkline,
+                  })
+            }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
