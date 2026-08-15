@@ -1,36 +1,12 @@
+import { useDataTableShell } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
-export interface DataTableProps<TRow> {
-  columns: {
-    key: keyof TRow & string;
-    header: ReactNode;
-  }[];
-  data: readonly TRow[];
-}
+import { DesktopTable } from "./components/DesktopTable";
+import type { DataTableProps } from "./types";
 
-export function DataTable<TRow>({
-  columns,
-  data,
-}: Readonly<DataTableProps<TRow>>) {
-  return (
-    <table className="table">
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key}>{column.header}</th>
-          ))}
-        </tr>
-      </thead>
-
-      <tbody>
-        {data.map((row, rowIndex) => (
-          <tr key={rowIndex}>
-            {columns.map((column) => (
-              <td key={column.key}>{String(row[column.key] ?? "")}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+export function DataTable<TRow>(
+  props: Readonly<DataTableProps<TRow>>,
+): ReactNode {
+  const shell = useDataTableShell<TRow>(props, () => null);
+  return <DesktopTable {...shell.tableProps} />;
 }
