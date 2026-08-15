@@ -10,6 +10,7 @@ import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FacetMap } from "./filters/facets";
+import { resolveFilterMode } from "./filters/filterChrome";
 import type { FilterDef } from "./filters/filterDefs";
 import type { FilterTypeRegistry } from "./filters/filterRegistry";
 import { useFindFocus, useFindInTable } from "./find/useFindInTable";
@@ -384,7 +385,8 @@ export function useDataTableShell<TRow>(
     tree,
     stickyHeader: props.stickyHeader,
     stickyTop: props.stickyTop,
-    headerFilters: props.headerFilters === true,
+    headerFilters:
+      resolveFilterMode(props.filtersMode, props.headerFilters) === "header",
     filterDefs: runtime.defs,
     filterRegistry: runtime.registry,
     pinOffset: chrome.columnLayout.pinOffset,
@@ -417,7 +419,9 @@ export function useDataTableShell<TRow>(
     searchPlaceholder: props.searchPlaceholder,
     sortByOptions: props.sortByOptions,
     toolbar: props.toolbar,
-    hasFilters: Boolean(filtersNode),
+    hasFilters:
+      resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&
+      Boolean(filtersNode),
     activeFilterCount: chrome.activeFilterCount,
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,

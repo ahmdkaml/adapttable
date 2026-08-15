@@ -624,13 +624,13 @@ export interface BaseDataTableProps<TRow> {
    */
   filterDefs?: readonly FilterDef<TRow>[];
   /**
-   * How the filter container opens. `"popover"` (default) anchors a light
-   * card under the Filters button — no backdrop, closing on Escape and
-   * outside click; `"drawer"` slides in a side panel with a real backdrop.
-   * The caller passes the same `filters` content either way — only the
-   * container changes.
+   * How the filter container opens. One mode at a time — never stacked.
+   * `"popover"` (default) anchors a light card under the Filters button
+   * (no backdrop); `"drawer"` slides in a side panel with a real backdrop;
+   * `"header"` is the compact per-column row and hides the toolbar button.
+   * `headerFilters` is an alias for `"header"`.
    */
-  filtersMode?: "popover" | "drawer";
+  filtersMode?: "popover" | "drawer" | "header";
   /** Per-filter-key chip label resolvers. */
   filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
   /** Extra chips driven by non-URL state, merged with the derived chips. */
@@ -644,9 +644,11 @@ export interface BaseDataTableProps<TRow> {
    */
   onClearFilters?: () => void;
   /**
-   * Render a compact filter row under the header, bound to the same
-   * defs and extra bag as the panel. Desktop only — mobile cards keep
-   * the Filters button. Omit the prop and nothing renders.
+   * Alias for `filtersMode="header"`: a compact per-column filter row
+   * under the header, bound to the same defs and extra bag as the panel.
+   * Desktop only. Mutually exclusive with the toolbar popover/drawer —
+   * passing this hides the Filters button. Omit the prop and nothing
+   * extra renders.
    */
   headerFilters?: boolean;
 

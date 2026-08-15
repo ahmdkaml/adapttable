@@ -23,7 +23,7 @@ export function pageSizeSelectOptions(limit: number): SelectOption[] {
 /** Props for {@link Toolbar}: the shared chrome surface + Radix extras. */
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Which filter container opens from the Filters button. */
-  filtersMode: "popover" | "drawer";
+  filtersMode: "popover" | "drawer" | "header";
   /** Filter widgets rendered inside the popover container. */
   filters?: ReactNode;
   /** Close the filter popover (Escape / outside click). */

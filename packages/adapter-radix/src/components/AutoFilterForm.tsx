@@ -355,7 +355,7 @@ function AutoFilterField<TRow>({
           {loading ? (
             <Spinner size="1" />
           ) : (
-            <Flex gap="3" wrap="wrap" role="group" aria-labelledby={id}>
+            <Flex direction="column" gap="2" role="group" aria-labelledby={id}>
               {options.map((option, index) => (
                 <Checkbox
                   key={option.value}

@@ -35,17 +35,17 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                    |
-| ------------------- | ----------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                    |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"` | Popover anchors a light card under the Filters button (no backdrop); drawer slides in a side panel with one.                                                   |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                            |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                        |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                              |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                        |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                       |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                              |
+| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                              |
+| ------------------- | ----------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                              |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button. `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                           |
+| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                      |
+| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                  |
+| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                        |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                  |
+| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                 |
+| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                        |
 
 ### Selection & actions
 
@@ -197,10 +197,12 @@ excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
-`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
+`FilterChromeMode`): it mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
 `FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
 `headerFilterStickTop`) as a second header row of compact inputs on the
-same extra bag. Desktop only.
+same extra bag and hides the toolbar Filters button. Desktop only. Never
+stacked with the popover or drawer.
 `filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
 (`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
 `emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
@@ -223,7 +225,7 @@ Props beyond the core surface, with per-kit availability.
 | `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
-| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Alias for `filtersMode="header"`: compact per-column row (desktop). Hides the toolbar Filters button. Same defs and extra bag as the panel.                                             |
 | `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                  |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
@@ -573,7 +575,8 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
 `CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
 `FilterHeaderRowProps` / `FilterHeaderClassNames` /
-`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop` /
+`resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

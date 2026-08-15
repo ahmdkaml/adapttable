@@ -1281,7 +1281,7 @@ export function PeopleTable() {
             (Date.now() - new Date(r.hiredAt).getTime()) / 31_557_600_000,
         },
       ]}
-      filtersMode="popover" // the default; "drawer" for a side panel
+      filtersMode="popover" // the default; "drawer" or "header" — one mode, never stacked
     />
   );
 }
@@ -1336,16 +1336,16 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                                |
-| ------------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                         |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"`    | Popover: anchored card, no backdrop, closes on Escape/outside click. Drawer: panel + backdrop.                                             |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                       |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label).  |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                        |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                        |
-| `headerFilters`     | `boolean`                           | `false`        | Compact per-column filter row under the header, bound to the same defs and extra bag. Desktop only — mobile cards keep the Filters button. |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                               |
+| Prop                | Type                                | Default        | Description                                                                                                                               |
+| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
+| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
+| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
+| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| `headerFilters`     | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
 
 ## Headless filter primitives
 
@@ -1406,15 +1406,17 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `emptyFilterRegistry` seeds a registry from scratch.
   `FilterTypeRegistry` / `FilterWidgetKind` / `FilterWidgetRenderProps`
   are the types.
-- **Header filter row**: `headerFilters` mounts `FilterHeaderRow` /
-  `FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`
-  under the leaf header.
+- **Header filter row**: `headerFilters` (or `filtersMode="header"`)
+  mounts `FilterHeaderRow` / `FilterHeaderControl` / `filterDefForColumn`
+  / `headerFilterStickTop` under the leaf header and hides the toolbar
+  Filters button (`resolveFilterMode` / `FilterChromeMode`).
   Pads and column spacers match the header so sticky, pin offsets, and
   column windowing stay aligned. A def whose bag key differs from the
   column key sets `column` (`key: "name"` under `column: "person"`). Ant Design keeps the control inside the
   header cell so `fixed` columns stay on antd's own header. Compact
   range inputs default the operator to `gte` (no picker in the header);
-  checklist / multiSelect use a native `<select>`.
+  checklist / multiSelect open a closed menu of checkboxes, not a native
+  `<select multiple>`.
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -4551,6 +4553,63 @@ when there is no `window`, so nothing crashes under SSR either way.
 
 ---
 
+# React table PDF export and print layout
+
+▶ **See it working:** [download a grouped PDF and print the same view](https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/) — a real table, not a recording.
+
+▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — import `@adapttable/core/pdf`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
+
+A downloaded PDF and a printed page are the same view — the columns, group
+structure and page breaks the reader can actually see — shipped as
+`@adapttable/core/pdf` so a table that never imports it never pays for it.
+No PDF library.
+
+```tsx
+import { pdfWriter, printTable } from "@adapttable/core/pdf";
+import { DataTable } from "@adapttable/mantine";
+
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(row) => row.id}
+  exportCsv={{ writer: pdfWriter(), scope: "all" }}
+/>;
+```
+
+`pdfWriter` is the production default for the export button: the same
+`exportCsv` seam as [CSV and XLSX](./customization.md#export), the same
+scopes (`page`, `all`, `selected`, `range`) and the same column subset.
+The button relabels itself **Export PDF** from `labels.exportFile("pdf")`.
+`buildTablePdf` is the same file, for a host assembling rows by hand.
+
+Print is a different verb. `downloadExportFile` cannot open a dialog, so
+`openPrintLayout` (an `ExportTable`) and `printTable` (rows and columns)
+load `buildPrintDocument` into a hidden iframe and call `window.print()`.
+`buildPrintTableHtml` is the `<table>` alone; `printStyles` is the
+stylesheet — repeating `thead`, `break-inside: avoid` on rows and groups,
+column widths from the table, `padding-inline-start` so a tree or a
+group indents under RTL. `PrintLayoutOptions` / `PdfWriterOptions` /
+`PrintPageSize` configure title, direction, paper and whether a
+top-level group starts a new page (`pageBreak: "group"`). Paper defaults
+to A4 landscape; direction inherits `document.documentElement.dir` when
+omitted, so print matches what the reader is looking at.
+
+The PDF is written by hand (Helvetica, one page tree, no dependency).
+Glyphs outside WinAnsi paint as `?` and still travel in `/ActualText`.
+Scripts the standard fonts cannot draw — Arabic, CJK, emoji — belong on
+the print path: the browser has the fonts, and "Save as PDF" from that
+dialog is the Unicode-complete file. A font subsetter would be a
+dependency, and this entry exists so a CSV export never takes one.
+
+Mobile cards use the same button and the same file. `hideOnMobile` never
+shrinks an export; print and PDF are the column view, not a card list.
+A grouped or tree-shaped table exports that structure, not a
+denormalised leaf list — the same `ExportViewEntry` rows XLSX writes as
+outline levels. Omit the import and nothing is drawn and nothing is
+downloaded.
+
+---
+
 # React table with SSR, server components & streaming — Next.js App Router
 
 AdaptTable renders on the server, hydrates without mismatches, and sits inside
@@ -4753,7 +4812,7 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 | `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
 | `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
 | `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
-| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput`                                                            | Compact header filter row, one cell, and its input.                                    |
+| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.             |
 | `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
 
 ### Chips
@@ -5429,17 +5488,17 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                    |
-| ------------------- | ----------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                    |
-| `filtersMode`       | `"popover" \| "drawer"`             | `"popover"` | Popover anchors a light card under the Filters button (no backdrop); drawer slides in a side panel with one.                                                   |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                            |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                        |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                              |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                        |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                       |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                              |
+| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                              |
+| ------------------- | ----------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                              |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button. `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                           |
+| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                      |
+| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                  |
+| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                        |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                  |
+| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                 |
+| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                        |
 
 ### Selection & actions
 
@@ -5591,10 +5650,12 @@ excluded via `computeFilterFacets` / `rowsExcludingFilter` /
 server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
-`headerFilters` mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
+`headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
+`FilterChromeMode`): it mounts `FilterHeaderRow` (`FilterHeaderRowProps` /
 `FilterHeaderClassNames` / `FilterHeaderControl` / `filterDefForColumn` /
 `headerFilterStickTop`) as a second header row of compact inputs on the
-same extra bag. Desktop only.
+same extra bag and hides the toolbar Filters button. Desktop only. Never
+stacked with the popover or drawer.
 `filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
 (`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
 `emptyFilterRegistry`). A spec supplies widget (`FilterWidgetKind`),
@@ -5617,7 +5678,7 @@ Props beyond the core surface, with per-kit availability.
 | `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                              |
 | `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                     |
 | `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                       |
-| `headerFilters` | `boolean`                                       | `false`        | all                                       | Compact per-column filter row under the header (desktop). Same defs and extra bag as the panel.                                                                                         |
+| `headerFilters` | `boolean`                                       | `false`        | all                                       | Alias for `filtersMode="header"`: compact per-column row (desktop). Hides the toolbar Filters button. Same defs and extra bag as the panel.                                             |
 | `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                  |
 | `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                     |
 | `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                              |
@@ -5643,6 +5704,8 @@ All from `@adapttable/core`.
 - `useFrontendData<TRow>(options): TableSource<TRow>` — in-memory source:
   filters, sorts, and slices a raw array from URL state. Pass
   `filterTreeFn` (usually `evaluateFilterTree`) to apply an AND/OR tree.
+  `getRowId` (default `defaultFrontendRowId`) matches `applyRowPatches`
+  so a `rowPatchLog` can continue the live incremental view.
 - `useQuerySource<TRow, TParams, TPage>(options): TableSource<TRow>` — wraps
   your `useInfiniteQuery`-style hook into the same contract.
 - `useServerData<TRow>(options): TableSource<TRow>` — hand-rolled-fetch
@@ -5722,7 +5785,9 @@ Building blocks for columns, rows and queries:
   mapper. See [row grouping](./row-grouping.md).
 - `applyRowPatches(rows, patches, getRowId)` with `insertRow` / `updateRow` /
   `upsertRow` / `removeRow` — apply changes without a refetch, preserving row
-  identity. See [cell editing](./cell-editing.md).
+  identity. `applyRowPatchesWithLog` returns the `RowPatchLog` /
+  `RowPatchEvent`s; `rowPatchLog` reads the log `applyRowPatches` attaches
+  (spreading the array drops it). See [cell editing](./cell-editing.md).
 - `tableQueryKey(query, options)` / `tableQueryBaseKey(query, options)` —
   stable cache keys for TanStack Query or SWR. See
   [data tiers](./data-tiers.md).
@@ -5878,6 +5943,15 @@ emptied, `exportViewFromChrome` picks which model is showing, and
 `summaryExportValues` turns a `summaryRow` into file values. See
 [customization](./customization.md#spreadsheet-xlsx-export).
 
+**PDF export and print layout.** `@adapttable/core/pdf` adds `pdfWriter` for
+the export button and `buildTablePdf` for a host assembling rows by hand.
+Print is a different verb: `openPrintLayout` (an `ExportTable`) and
+`printTable` (rows and columns) load `buildPrintDocument` into a hidden
+iframe. `buildPrintTableHtml` is the `<table>` alone; `printStyles` is the
+stylesheet. `PrintLayoutOptions` / `PdfWriterOptions` / `PrintPageSize`
+configure title, direction and paper. See
+[PDF export and print layout](./export-pdf.md).
+
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /
 `sparklineColumn` so a cell can draw a bar, line or area chart without a
 chart library and without pulling the mark into the base bundle.
@@ -5889,7 +5963,17 @@ series as text so CSV and xlsx never get an SVG. See
 
 **Row patches.** `RowPatch` is the union applied by `applyRowPatches`, with
 `InsertPatch`, `UpdatePatch`, `UpsertPatch` and `RemovePatch` as its members.
-See [cell editing](./cell-editing.md).
+`applyRowPatchesWithLog` returns a `RowPatchLog` of `RowPatchEvent`s;
+`rowPatchLog` reads the log attached to the result array (a spread copy
+drops it). **Incremental re-evaluation.** `createIncrementalView` builds
+an `IncrementalView` from an `IncrementalViewConfig`; `applyRowPatchesToView`
+and `applyRowPatchLogToView` re-run search, filters, sort, grouping and
+aggregates for touched rows only. `configureIncrementalView` merges
+grouping / summary extras without walking the set when only those
+changed. `incrementalViewOf` / `attachIncrementalView` link a derived
+array to the snapshot (`incrementalViewConfig` reads it back);
+`incrementalSearchText` is the default projector. See
+[cell editing](./cell-editing.md).
 
 **Row reordering.** `onRowReorder` (`RowReorderHandler`) is the write; `applyRowReorder(rows, from, to)` is the in-memory helper and `datasetIndex(local, windowStart)` turns a rendered slot into a dataset index. `useRowReorder` returns `RowReorderState`; `rowReorderSignature` is the memo digest a virtualized row compares. `rowReorderDropStyle` is the insertion-line CSS kits apply from `rowAttrs`. `REORDER_COLUMN_KEY` is the reserved layout key (hide / start-pin from the Columns menu), `REORDER_COLUMN_WIDTH` the pin-lead width, `ROW_DND_MIME` the HTML5 drag type. Labels: `reorderRow`, `moveRowUp`, `moveRowDown`, `rowLifted`, `rowMoved`, `rowReorderCancelled` (`RowReorderLabels`). From `@adapttable/core/adapter`: `RowReorderHandle` / `RowReorderHandleProps`, `RowReorderButtons` / `RowReorderButtonsProps`, `RowReorderAnnouncer`. See [row reordering](./row-reordering.md).
 
@@ -5944,7 +6028,8 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
 `CHECKLIST_LIST_HEIGHT`. Header row: `FilterHeaderRow` /
 `FilterHeaderRowProps` / `FilterHeaderClassNames` /
-`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop`. Facets: `computeFilterFacets` /
+`FilterHeaderControl` / `filterDefForColumn` / `headerFilterStickTop` /
+`resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

@@ -43,7 +43,6 @@ const DOCS = [
   "mobile.md",
   "url-state.md",
   "export-pdf.md",
-  "formulas.md",
   "ssr-rsc.md",
   "customization.md",
   "i18n-rtl.md",

@@ -14,7 +14,7 @@ export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Filter content (anchored popover or drawer). */
   filters?: ReactNode;
   /** Whether to anchor a popover or open the drawer. */
-  filtersMode: "popover" | "drawer";
+  filtersMode: "popover" | "drawer" | "header";
   /** Close the filter container. */
   onCloseFilters: () => void;
   /** Clear every active filter (always wired — falls back to `clearExtras`). */

@@ -62,7 +62,7 @@ function SearchIcon() {
  */
 export interface MuiToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
   /** Which filter container the Filters button drives. */
-  filtersMode: "popover" | "drawer";
+  filtersMode: "popover" | "drawer" | "header";
   /** Filter content (rendered inside the popover when in popover mode). */
   filters?: ReactNode;
   /** Close the filter container (popover mode). */
