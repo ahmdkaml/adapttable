@@ -38,6 +38,7 @@ export function ShadcnDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -63,6 +64,7 @@ export function ShadcnDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -90,6 +92,7 @@ export function ShadcnDemo({
       cellNavigation={cellNavigation ?? editing}
       headerFilters={headerFilters}
       columnGroups={columnGroups}
+      sparkline={sparkline}
       forceMobile={forceMobile}
       focused={focused}
       classNames={shadcnClassNames}

@@ -103,6 +103,7 @@ export function RadixDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -129,6 +130,7 @@ export function RadixDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -165,7 +167,10 @@ export function RadixDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, RADIX_CELLS, { groups: columnGroups })}
+            columns={makeColumns(locale, RADIX_CELLS, {
+              groups: columnGroups,
+              sparkline,
+            })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}

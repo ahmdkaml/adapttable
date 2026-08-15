@@ -119,6 +119,7 @@ export function AntdDemo({
   exportCsv,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -153,6 +154,7 @@ export function AntdDemo({
   exportCsv?: DataTableProps<Person>["exportCsv"];
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -199,7 +201,10 @@ export function AntdDemo({
             columns={
               wide
                 ? makeWideColumns(locale, ANTD_CELLS)
-                : makeColumns(locale, ANTD_CELLS, { groups: columnGroups })
+                : makeColumns(locale, ANTD_CELLS, {
+                    groups: columnGroups,
+                    sparkline,
+                  })
             }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}

@@ -254,6 +254,7 @@ export function UnstyledDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -279,6 +280,7 @@ export function UnstyledDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -306,6 +308,7 @@ export function UnstyledDemo({
       cellNavigation={cellNavigation ?? editing}
       headerFilters={headerFilters}
       columnGroups={columnGroups}
+      sparkline={sparkline}
       forceMobile={forceMobile}
       focused={focused}
       classNames={TAILWIND}

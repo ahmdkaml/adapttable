@@ -111,6 +111,7 @@ export function ChakraDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   defaultColumnLayout,
   forceMobile,
   focused,
@@ -138,6 +139,7 @@ export function ChakraDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
@@ -171,6 +173,7 @@ export function ChakraDemo({
               source={source}
               columns={makeColumns(locale, CHAKRA_CELLS, {
                 groups: columnGroups,
+                sparkline,
               })}
               rowKey={(r) => r.id}
               nestedTable={nested ? nestedOrders : undefined}

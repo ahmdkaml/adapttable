@@ -38,6 +38,7 @@ export type KitDemoProps = Readonly<{
   editing?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   pageMode?: PageMode;
   focused?: boolean;

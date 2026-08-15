@@ -125,6 +125,7 @@ export function MuiDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -151,6 +152,7 @@ export function MuiDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -179,7 +181,10 @@ export function MuiDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MUI_CELLS, { groups: columnGroups })}
+            columns={makeColumns(locale, MUI_CELLS, {
+              groups: columnGroups,
+              sparkline,
+            })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}

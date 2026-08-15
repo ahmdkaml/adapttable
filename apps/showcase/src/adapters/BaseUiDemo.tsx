@@ -135,6 +135,7 @@ export function BaseUiDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  sparkline,
   forceMobile,
   focused,
 }: Readonly<{
@@ -161,6 +162,7 @@ export function BaseUiDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -187,7 +189,10 @@ export function BaseUiDemo({
       render={(source, columns) => (
         <DataTable
           source={source}
-          columns={makeColumns(locale, BASE_UI_CELLS, { groups: columnGroups })}
+          columns={makeColumns(locale, BASE_UI_CELLS, {
+            groups: columnGroups,
+            sparkline,
+          })}
           rowKey={(r) => r.id}
           nestedTable={nested ? nestedOrders : undefined}
           cellNavigation={cellNavigation ?? editing}

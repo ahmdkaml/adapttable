@@ -113,6 +113,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [motion, setMotion] = useState<OnOff>("on");
   const [structure, setStructure] = useState<Structure>("flat");
   const [columnGroups, setColumnGroups] = useState<OnOff>("off");
+  const [sparkline, setSparkline] = useState<OnOff>("off");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -203,6 +204,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
       setMotion("on");
       setStructure(next === "structure" ? "grouped" : "flat");
       setColumnGroups(next === "structure" ? "on" : "off");
+      setSparkline("off");
       setEditingMode(next === "editing" ? "cell" : "off");
       resetRows();
       if (next === "rows") {
@@ -397,6 +399,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={columnGroups}
                       onChange={(next) => customize(setColumnGroups, next)}
                     />
+                    <Toggle
+                      label="Sparkline column"
+                      value={sparkline}
+                      onChange={(next) => customize(setSparkline, next)}
+                    />
                   </ControlPanel>
 
                   <ControlPanel title="Editing">
@@ -514,6 +521,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       filtersUi={filtersUi}
                       headerFilters={filtersUi === "header"}
                       columnGroups={columnGroups === "on"}
+                      sparkline={sparkline === "on"}
                       animate={motion === "on"}
                       grouping={structure === "grouped"}
                       tree={structure === "tree"}

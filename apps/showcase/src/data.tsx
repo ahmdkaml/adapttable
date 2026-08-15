@@ -18,6 +18,7 @@ import {
   resolveFilterDefs,
   resolveFilterRegistry,
 } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -125,6 +126,7 @@ interface Strings {
   name: string;
   person: string;
   email: string;
+  trend: string;
   role: string;
   team: string;
   status: string;
@@ -157,6 +159,7 @@ const STRINGS: Record<Locale, Strings> = {
     name: "Name",
     person: "Person",
     email: "Email",
+    trend: "Trend",
     role: "Role",
     team: "Team",
     status: "Status",
@@ -183,6 +186,7 @@ const STRINGS: Record<Locale, Strings> = {
     name: "الاسم",
     person: "الشخص",
     email: "البريد الإلكتروني",
+    trend: "الاتجاه",
     role: "الدور",
     team: "الفريق",
     status: "الحالة",
@@ -413,11 +417,26 @@ export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 export function makeColumns(
   locale: Locale,
   cells: DemoCells,
-  options?: { groups?: boolean }
+  options?: { groups?: boolean; sparkline?: boolean }
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
   const grouped = options?.groups === true;
+  // Off unless a page asks for it: the live demo is frozen, and the trend
+  // column belongs to the Feature Lab's sparkline toggle.
+  const trend: ColumnDef<Person>[] = options?.sparkline
+    ? [
+        sparklineColumn({
+          key: "trend",
+          header: s.trend,
+          values: loadHistory,
+          kind: "area",
+          width: 88,
+          height: 28,
+          column: { width: 96, mobileLabel: s.trend },
+        }),
+      ]
+    : [];
   // Fixed pixel widths (not %) so revealing the hidden team column
   // pushes the total past the container and the table scrolls horizontally —
   // the only way a pinned column can be seen to stick.
@@ -452,6 +471,7 @@ export function makeColumns(
       // already explain themselves, so repeating "Person" adds visual noise.
       mobileLabel: "",
     },
+    ...trend,
     {
       key: "email",
       header: s.email,
@@ -786,6 +806,16 @@ export function budget(row: Person): number {
 
 export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
+}
+
+/** Eight weeks of load, derived so the sparkline needs no second seed. */
+export function loadHistory(row: Person): number[] {
+  const base = utilization(row);
+  const seed = Number(row.id) || 1;
+  return Array.from({ length: 8 }, (_, week) => {
+    const wobble = ((seed * (week + 3)) % 17) - 8;
+    return Math.max(0, Math.min(100, base + wobble));
+  });
 }
 
 export function startDate(row: Person): Date {

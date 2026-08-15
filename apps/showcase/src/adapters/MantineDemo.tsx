@@ -100,6 +100,7 @@ export function MantineDemo({
   exportCsv,
   headerFilters,
   columnGroups,
+  sparkline,
   focused,
 }: Readonly<{
   mode: DataMode;
@@ -125,6 +126,7 @@ export function MantineDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -160,6 +162,7 @@ export function MantineDemo({
             source={source}
             columns={makeColumns(locale, MANTINE_CELLS, {
               groups: columnGroups,
+              sparkline,
             })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
