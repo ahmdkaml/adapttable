@@ -87,6 +87,10 @@ export {
   resolveFilterRegistry,
 } from "./filters/filterBuiltins";
 export {
+  type FilterChromeMode,
+  resolveFilterMode,
+} from "./filters/filterChrome";
+export {
   AUTO_OPTIONS_LIMIT,
   buildFilterRuntime,
   clearedFilterExtras,
