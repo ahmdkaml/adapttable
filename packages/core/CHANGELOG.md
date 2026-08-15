@@ -1,5 +1,22 @@
 # @adapttable/core
 
+## 2.4.0
+
+### Minor Changes
+
+- 49c49f0: Re-evaluate filters and groups from a patch log. `applyRowPatches` already
+  mutates rows; an IncrementalView on `useFrontendData` now re-filters,
+  re-sorts, re-groups and re-aggregates only the rows a patch touched.
+- 56c7ce6: PDF export and a print layout. `import { pdfWriter, openPrintLayout } from
+"@adapttable/core/pdf"` — the same export button writes a `.pdf`, or print
+  opens on the view the reader can see.
+- 28195bb: XLSX export types dates, styles the sheet, and writes group/tree outline plus aggregate rows
+
+### Patch Changes
+
+- 6028b15: One filter chrome at a time. `filtersMode="header"` (and the `headerFilters` alias) hides the toolbar Filters button; header multi-selects open a compact menu instead of a stacked `<select multiple>`.
+- 6028b15: Build the default filter registry from its own specs so a new entry point cannot leave every filter type empty.
+
 ## 2.3.0
 
 ### Minor Changes

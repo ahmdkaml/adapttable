@@ -1,5 +1,13 @@
 # @adapttable/shadcn
 
+## 2.2.2
+
+### Patch Changes
+
+- 6028b15: One filter chrome at a time. `filtersMode="header"` (and the `headerFilters` alias) hides the toolbar Filters button; header multi-selects open a compact menu instead of a stacked `<select multiple>`.
+- Updated dependencies [6028b15]
+  - @adapttable/unstyled@2.2.2
+
 ## 2.2.1
 
 ### Patch Changes

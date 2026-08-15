@@ -1,5 +1,17 @@
 # @adapttable/mantine
 
+## 2.2.2
+
+### Patch Changes
+
+- 6028b15: One filter chrome at a time. `filtersMode="header"` (and the `headerFilters` alias) hides the toolbar Filters button; header multi-selects open a compact menu instead of a stacked `<select multiple>`.
+- Updated dependencies [6028b15]
+- Updated dependencies [6028b15]
+- Updated dependencies [49c49f0]
+- Updated dependencies [56c7ce6]
+- Updated dependencies [28195bb]
+  - @adapttable/core@2.4.0
+
 ## 2.2.1
 
 ### Patch Changes
