@@ -165,7 +165,7 @@ export function Toolbar<TRow>({
             {/* This adapter's own Spinner — the same one the filter form uses
                 while options load, so "working" looks the same everywhere in
                 the kit. */}
-            {exportBusy && <Spinner size="1" />}
+            {exportBusy && <Spinner size="1" label={labels.loading} />}
             {exportLabel}
           </Button>
         )}

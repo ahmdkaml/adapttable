@@ -92,6 +92,22 @@ const pickSelect = (name: string, optionLabel: string) => {
 };
 
 describe("kit header filters (mui)", () => {
+  it("announces the multi-select header as a popup trigger", () => {
+    renderMui(<HeaderHarness />);
+    const trigger = screen.getByLabelText("Tags");
+    // Closed: it says a popup exists and that it is shut, and names nothing.
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).not.toHaveAttribute("aria-controls");
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    // Open: the trigger points at the menu it opened.
+    const controls = trigger.getAttribute("aria-controls");
+    expect(controls).toBeTruthy();
+    expect(document.getElementById(controls!)).not.toBeNull();
+  });
+
   it("writes every compact header widget", () => {
     renderMui(<HeaderHarness />);
     fireEvent.change(screen.getByLabelText("Name"), {

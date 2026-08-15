@@ -1,7 +1,7 @@
 import { getLabels } from "@adapttable/i18n";
 import { FilterDrawer } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
-import { startTransition, Suspense, useState } from "react";
+import { startTransition, Suspense, useId, useState } from "react";
 
 import { cssVars } from "./cssVars";
 import type { Locale } from "./data";
@@ -149,12 +149,16 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
     extraRows,
     rowStyle,
   ].filter((value) => value === "on").length;
+  const optionsHeadingId = useId();
   let interactionSummary = "read only";
   if (editingMode !== "off") {
     interactionSummary = `${editingMode} editing`;
   } else if (enabledRowFeatures > 0) {
     interactionSummary = `${enabledRowFeatures} row features`;
   }
+  const configSummary = `${
+    RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"
+  }: ${mode}, ${filtersUi} filters, ${structure} rows, ${interactionSummary}`;
   let compatibilityNote = null;
   if (clientOnlyReason) {
     compatibilityNote = (
@@ -248,7 +252,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
         appearing to work while the table silently ignores them.
       </SectionHead>
 
-      <div className="lab-recipes" aria-label="Feature recipes">
+      <div className="lab-recipes" role="group" aria-label="Feature recipes">
         {RECIPES.map((item) => (
           <button
             key={item.key}
@@ -265,9 +269,13 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
 
       <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
 
-      <div className="lab-toolbar">
+      <div
+        className="lab-toolbar"
+        role="group"
+        aria-labelledby={optionsHeadingId}
+      >
         <div>
-          <strong>Table options</strong>
+          <strong id={optionsHeadingId}>Table options</strong>
           <span>Configure data, filters, structure, editing, and rows.</span>
         </div>
         <button
@@ -291,6 +299,13 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                 <p className="lab-options-drawer__intro">
                   Only compatible combinations can be enabled.
                 </p>
+                {/* The configuration summary is a live region, and a live
+                    region the reader has been moved away from announces
+                    nothing useful — so while the drawer holds focus it lives
+                    in here, beside the controls that change it. */}
+                <div className="visually-hidden" role="status">
+                  {configSummary}
+                </div>
                 <aside
                   className="opt-board lab-options-drawer__controls"
                   aria-label="Feature Lab controls"
@@ -463,7 +478,12 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
         </MantineProvider>
 
         <div className="lab-preview">
-          <div className="lab-summary" role="status">
+          {!controlsOpen && (
+            <div className="visually-hidden" role="status">
+              {configSummary}
+            </div>
+          )}
+          <div className="lab-summary">
             <strong>
               {RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"}
             </strong>

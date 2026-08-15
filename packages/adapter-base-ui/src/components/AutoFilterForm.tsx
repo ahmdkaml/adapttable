@@ -351,7 +351,7 @@ function AutoFilterField<TRow>({
       return (
         <GroupField label={label} id={id}>
           {loading ? (
-            <Spinner size="1" />
+            <Spinner size="1" label={labels.loading} />
           ) : (
             <Flex
               gap="2"

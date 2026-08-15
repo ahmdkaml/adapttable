@@ -54,7 +54,7 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 export type {
   BatchEditBarProps,
@@ -165,6 +165,8 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const menuId = useId();
+  const open = Boolean(anchor);
   return (
     <>
       <Button
@@ -172,6 +174,9 @@ function HeaderMulti({
         variant="outlined"
         fullWidth
         aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
         data-adapttable-part="filter-header-input"
         className={className}
         onClick={(event) => setAnchor(event.currentTarget)}
@@ -193,8 +198,9 @@ function HeaderMulti({
         <span aria-hidden>▾</span>
       </Button>
       <Menu
+        id={menuId}
         anchorEl={anchor}
-        open={Boolean(anchor)}
+        open={open}
         onClose={() => setAnchor(null)}
         slotProps={{
           paper: {
