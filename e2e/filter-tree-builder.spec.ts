@@ -23,7 +23,7 @@ const filtersTrigger = (page: Page, name = "Filters") =>
   demo(page).getByRole("button", { name, exact: true }).first();
 
 async function openDemo(page: Page, adapter: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/all-options/");
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();
@@ -52,6 +52,28 @@ async function openAdvanced(page: Page): Promise<void> {
     .locator('[data-adapttable-part="filter-tree-summary"]')
     .click();
 }
+
+test("live demo has no Advanced builder and no Values control", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
+  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "value picker" })).toHaveCount(
+    0
+  );
+  await page
+    .getByRole("group", { name: "filters container" })
+    .getByRole("button", { name: "Popover", exact: true })
+    .click();
+  const trigger = filtersTrigger(page);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.locator('[data-adapttable-part="filter-tree"]')
+  ).toHaveCount(0);
+});
 
 for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {

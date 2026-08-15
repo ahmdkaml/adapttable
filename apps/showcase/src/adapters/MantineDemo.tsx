@@ -15,7 +15,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -37,6 +36,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Mantine-native cell visuals (Avatar · Badge · Progress). */
 const MANTINE_CELLS: DemoCells = {
@@ -133,6 +133,7 @@ export function MantineDemo({
   exportCsv?: DataTableProps<Person>["exportCsv"];
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
       <DemoBody
@@ -181,7 +182,7 @@ export function MantineDemo({
             stickyHeader
             headerFilters={headerFilters}
             stickyTop={8}
-            filters={demoFilterDefs(locale)}
+            filters={filters}
             filterTypes={demoFilterTypes()}
             forceMobile={forceMobile}
           />

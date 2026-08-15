@@ -18,16 +18,7 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
-import {
-  Checkbox,
-  Flex,
-  Input,
-  InputNumber,
-  Select,
-  Space,
-  Spin,
-  Typography,
-} from "antd";
+import { Flex, Input, InputNumber, Select, Space, Typography } from "antd";
 
 import { ChecklistFilter } from "./ChecklistFilter";
 
@@ -285,7 +276,7 @@ interface ControlProps<TRow> {
  * Select/multiSelect choices resolve through `useFilterOptions`, never by
  * mapping `def.options` directly — the source may be an async loader. While
  * one is in flight the select shows a single disabled "…" option and the
- * checkbox group a small antd spinner.
+ * multi-select shows antd's loading spinner.
  */
 function FilterControl<TRow>({
   def,
@@ -327,16 +318,24 @@ function FilterControl<TRow>({
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect":
-      if (loading) return <Spin size="small" />;
       return (
-        <Checkbox.Group
-          style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+        <Select
+          mode="multiple"
+          showSearch
+          allowClear
+          optionFilterProp="label"
+          listHeight={240}
+          aria-label={label}
+          placeholder={label}
+          loading={loading}
+          style={{ width: "100%" }}
           options={options.map((option) => ({
             label: option.label,
             value: option.value,
           }))}
           value={listValue(extra[def.key])}
           onChange={(values) => setExtra(def.key, values.map(String))}
+          getPopupContainer={(node) => node.parentElement ?? document.body}
         />
       );
     case "dateRange":

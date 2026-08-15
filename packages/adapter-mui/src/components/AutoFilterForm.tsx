@@ -13,17 +13,16 @@ import {
   splitRelativeToken,
   type TableLabels,
   type TableSource,
+  listFilterValues,
   useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
 import {
-  Checkbox,
+  Autocomplete,
   CircularProgress,
   FormControl,
-  FormControlLabel,
-  FormGroup,
   FormLabel,
   Stack,
   TextField,
@@ -66,11 +65,6 @@ function scalarText(value: FilterValue): string {
   return typeof value === "string" || typeof value === "number"
     ? String(value)
     : "";
-}
-
-/** A multi-select filter value as the checked-value list. */
-function selectedList(value: FilterValue): readonly string[] {
-  return Array.isArray(value) ? value : [];
 }
 
 function TextFilter<TRow>({
@@ -188,35 +182,35 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
 }
 
 function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
+  const label = filterLabel(def);
   const { options, loading } = useFilterOptions(def);
-  const checked = selectedList(source.extra[def.key]);
-  const toggle = (value: string, on: boolean) => {
-    const next = on ? [...checked, value] : checked.filter((v) => v !== value);
-    source.setExtra(def.key, next);
-  };
+  const selected = listFilterValues(source.extra[def.key]);
+  const chosen = options.filter((option) => selected.includes(option.value));
   return (
-    <FormControl component="fieldset" variant="standard">
-      <FormLabel component="legend">{filterLabel(def)}</FormLabel>
-      <FormGroup row sx={{ gap: 0.5, flexWrap: "wrap" }}>
-        {loading ? (
-          <CircularProgress size={16} />
-        ) : (
-          options.map((option) => (
-            <FormControlLabel
-              key={option.value}
-              label={option.label}
-              control={
-                <Checkbox
-                  size="small"
-                  checked={checked.includes(option.value)}
-                  onChange={(_, on) => toggle(option.value, on)}
-                />
-              }
-            />
-          ))
+    <>
+      {loading ? <CircularProgress color="inherit" size={16} /> : null}
+      <Autocomplete
+        multiple
+        disablePortal
+        options={[...options]}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(left, right) => left.value === right.value}
+        value={chosen}
+        onChange={(_, next) =>
+          source.setExtra(
+            def.key,
+            next.map((option) => option.value)
+          )
+        }
+        loading={loading}
+        slotProps={{
+          listbox: { style: { maxHeight: 240, overflow: "auto" } },
+        }}
+        renderInput={(params) => (
+          <TextField {...params} size="small" label={label} />
         )}
-      </FormGroup>
-    </FormControl>
+      />
+    </>
   );
 }
 

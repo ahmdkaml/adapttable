@@ -121,6 +121,7 @@ describe("<AutoFilterForm> (Radix)", () => {
     ]);
     openSelect("Plan");
     expect(screen.getAllByRole("option")).toHaveLength(1);
+    fireEvent.keyDown(document.body, { key: "Escape" });
     expect(screen.getByText("Tags")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
   });

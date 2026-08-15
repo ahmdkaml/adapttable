@@ -19,10 +19,10 @@ import {
   useTextFilterWidget,
 } from "@adapttable/core";
 import {
-  Checkbox,
   Group,
   Input,
   Loader,
+  MultiSelect,
   NativeSelect,
   NumberInput,
   Select,
@@ -253,9 +253,8 @@ function SelectControl<TRow>({
 }
 
 /**
- * Multi-choice control. Options resolve through {@link useFilterOptions};
- * while a loader is in flight the group shows a small spinner instead of
- * checkboxes.
+ * Searchable multi-select. Options resolve through {@link useFilterOptions};
+ * while a loader is in flight the field shows a small spinner.
  */
 function MultiSelectControl<TRow>({
   def,
@@ -264,26 +263,20 @@ function MultiSelectControl<TRow>({
   const label = filterLabel(def);
   const { options, loading } = useFilterOptions(def);
   return (
-    <Checkbox.Group
+    <MultiSelect
+      size="sm"
       label={label}
+      searchable
+      clearable
+      hidePickedOptions={false}
+      maxDropdownHeight={240}
+      data={options}
       value={asList(source.extra[def.key])}
       onChange={(values) => source.setExtra(def.key, values)}
-    >
-      <Group gap="xs" mt={4} wrap="wrap">
-        {loading ? (
-          <Loader size="xs" />
-        ) : (
-          options.map((option) => (
-            <Checkbox
-              key={option.value}
-              size="sm"
-              value={option.value}
-              label={option.label}
-            />
-          ))
-        )}
-      </Group>
-    </Checkbox.Group>
+      disabled={loading}
+      rightSection={loading ? <Loader size="xs" /> : undefined}
+      comboboxProps={{ withinPortal: false }}
+    />
   );
 }
 

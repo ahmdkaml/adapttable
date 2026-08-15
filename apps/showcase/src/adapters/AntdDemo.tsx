@@ -15,7 +15,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -40,6 +39,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 const ANTD_TAG_COLOR = {
   green: "green",
@@ -153,6 +153,7 @@ export function AntdDemo({
   columnGroups?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <ConfigProvider
       direction={getDirection(locale)}
@@ -212,7 +213,7 @@ export function AntdDemo({
             savedViews={demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
-            filters={demoFilterDefs(locale)}
+            filters={filters}
             filterTypes={demoFilterTypes()}
             headerFilters={headerFilters}
           />

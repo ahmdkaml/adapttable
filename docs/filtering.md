@@ -117,10 +117,11 @@ export function PeopleTable() {
   for filters with no column. On a key collision the standalone definition
   wins and a development warning points at the duplicate.
 - Seven built-in types (`FILTER_TYPES`): `text`, `select` (equals),
-  `multiSelect` (one of), `checklist` (Excel-style distinct values with
-  search, select-all and counts — from `source.facets` when present,
-  otherwise `source.allFilteredRows`; a server page that omits both does
-  not offer the widget), `boolean` (any / true / false — never a checkbox),
+  `multiSelect` (wrapping multi-value chips),
+  `checklist` (Excel-style distinct values with search, select-all and
+  counts — from `source.facets` when present, otherwise
+  `source.allFilteredRows`; a server page that omits both does not offer
+  the widget), `boolean` (any / true / false — never a checkbox),
   `dateRange`, `numberRange`.
 - Widgets are operator-first. Text offers equals / not equals / contains /
   not contains / starts with / ends with / empty / not empty. Numbers offer

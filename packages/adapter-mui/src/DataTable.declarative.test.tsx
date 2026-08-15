@@ -269,22 +269,30 @@ describe("declarative DataTable (MUI)", () => {
   it("multiSelect checkboxes accumulate, uncheck, and clear the array key", () => {
     const adapter = mountTable();
     openFilters();
-    const engineering = screen.getByRole("checkbox", { name: "Engineering" });
-    const sales = screen.getByRole("checkbox", { name: "Sales" });
-
-    fireEvent.click(engineering);
+    const field = screen.getByRole("combobox", { name: "Department" });
+    fireEvent.mouseDown(field);
+    fireEvent.click(screen.getByRole("option", { name: "Engineering" }));
     expect(param(adapter, "f_department.name")).toBe("Engineering");
     expect(screen.queryByText("Bob")).toBeNull();
 
-    fireEvent.click(sales);
+    fireEvent.mouseDown(field);
+    fireEvent.click(screen.getByRole("option", { name: "Sales" }));
     expect(param(adapter, "f_department.name")).toBe("Engineering,Sales");
     expect(screen.getByText("Bob")).toBeInTheDocument();
 
-    fireEvent.click(engineering);
+    fireEvent.click(
+      within(screen.getByRole("button", { name: "Engineering" })).getByTestId(
+        "CancelIcon"
+      )
+    );
     expect(param(adapter, "f_department.name")).toBe("Sales");
 
-    // Unchecking the last option writes [] — which clears the key.
-    fireEvent.click(sales);
+    // Removing the last chip writes [] — which clears the key.
+    fireEvent.click(
+      within(screen.getByRole("button", { name: "Sales" })).getByTestId(
+        "CancelIcon"
+      )
+    );
     expect(param(adapter, "f_department.name")).toBeNull();
   });
 
@@ -560,7 +568,7 @@ describe("<AutoFilterForm> (MUI)", () => {
 
   it("async multiSelect options show a spinner while loading, then checkboxes", async () => {
     let resolveOptions!: (options: readonly FilterOption[]) => void;
-    mountTable({
+    const adapter = mountTable({
       columns: [{ key: "firstName" }],
       filters: [
         {
@@ -576,16 +584,17 @@ describe("<AutoFilterForm> (MUI)", () => {
     });
     openFilters();
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByRole("option", { name: "Engineering" })).toBeNull();
 
     await act(async () => {
       resolveOptions([{ value: "Engineering", label: "Engineering" }]);
       // Let the loader's .then handlers run before asserting.
       await Promise.resolve();
     });
-    expect(screen.queryByRole("progressbar")).toBeNull();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Engineering" }));
-    expect(screen.getByRole("checkbox", { name: "Engineering" })).toBeChecked();
+    const field = screen.getByRole("combobox", { name: "Department" });
+    fireEvent.mouseDown(field);
+    fireEvent.click(screen.getByRole("option", { name: "Engineering" }));
+    expect(param(adapter, "f_department.name")).toBe("Engineering");
   });
 
   it("renders option-less select and multiSelect without choices", () => {
@@ -606,8 +615,10 @@ describe("<AutoFilterForm> (MUI)", () => {
         name: "All",
       })
     ).toBeInTheDocument();
-    // …and the option-less group renders its legend with no checkboxes.
-    expect(screen.getByText("Department")).toBeInTheDocument();
+    // …and the option-less Autocomplete is there with no choices.
+    expect(
+      screen.getByRole("combobox", { name: "Department" })
+    ).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
 

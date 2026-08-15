@@ -10,7 +10,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -32,6 +31,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Two-letter initials for the avatar fallback. */
 function initials(name: string): string {
@@ -129,6 +129,7 @@ export function RadixDemo({
   columnGroups?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <Theme
       appearance={dark ? "dark" : "light"}
@@ -183,7 +184,7 @@ export function RadixDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
-            filters={demoFilterDefs(locale)}
+            filters={filters}
             filterTypes={demoFilterTypes()}
           />
         )}

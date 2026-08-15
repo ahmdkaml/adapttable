@@ -8,7 +8,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -32,6 +31,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Inline style carrying the avatar's hue as a CSS custom property, so the
  * Tailwind arbitrary values can theme it per light/dark. */
@@ -170,6 +170,7 @@ export function UnstyledLike({
   columnGroups?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   const styled = withDensity(classNames, density);
   return (
     <DemoBody
@@ -220,7 +221,7 @@ export function UnstyledLike({
             stickyHeader
             headerFilters={headerFilters}
             classNames={styled}
-            filters={demoFilterDefs(locale)}
+            filters={filters}
             filterTypes={demoFilterTypes()}
           />
         );

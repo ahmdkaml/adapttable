@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -339,9 +340,6 @@ function AutoFilterField<TRow>({
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
-      // A multiSelect is a GROUP of checkboxes, named through the group label
-      // via `aria-labelledby`; each box self-labels through its own text and
-      // toggles itself in/out of the current list.
       const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
@@ -355,7 +353,16 @@ function AutoFilterField<TRow>({
           {loading ? (
             <Spinner size="1" />
           ) : (
-            <Flex gap="2" wrap="wrap" role="group" aria-labelledby={id}>
+            <Flex
+              gap="2"
+              wrap="wrap"
+              role="group"
+              aria-labelledby={id}
+              style={{
+                maxHeight: CHECKLIST_LIST_HEIGHT,
+                overflow: "auto",
+              }}
+            >
               {options.map((option, index) => (
                 <Checkbox
                   key={option.value}

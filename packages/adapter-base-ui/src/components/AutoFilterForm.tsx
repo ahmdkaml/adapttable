@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -334,9 +335,6 @@ function AutoFilterField<TRow>({
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
-      // Toggle chips — selected state is the chip chrome, no nested checkbox.
-      // Named through the group label via `aria-labelledby`; each chip is a
-      // `role="checkbox"` so existing a11y semantics / tests stay intact.
       const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
@@ -350,7 +348,16 @@ function AutoFilterField<TRow>({
           {loading ? (
             <Spinner size="1" />
           ) : (
-            <Flex gap="2" wrap="wrap" role="group" aria-labelledby={id}>
+            <Flex
+              gap="2"
+              wrap="wrap"
+              role="group"
+              aria-labelledby={id}
+              style={{
+                maxHeight: CHECKLIST_LIST_HEIGHT,
+                overflow: "auto",
+              }}
+            >
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (

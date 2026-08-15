@@ -16,7 +16,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -38,6 +37,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 /** Chakra-native cell visuals (Avatar · Badge · Progress). */
 const CHAKRA_CELLS: DemoCells = {
@@ -137,6 +137,7 @@ export function ChakraDemo({
   columnGroups?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   return (
     <ChakraProvider value={defaultSystem}>
       {/* Chakra v3 resolves `_dark` tokens under a `.dark` ancestor, so forcing
@@ -187,7 +188,7 @@ export function ChakraDemo({
               resizableColumns
               stickyHeader
               headerFilters={headerFilters}
-              filters={demoFilterDefs(locale)}
+              filters={filters}
               filterTypes={demoFilterTypes()}
             />
           )}

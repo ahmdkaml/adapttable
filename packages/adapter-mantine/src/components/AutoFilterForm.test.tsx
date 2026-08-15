@@ -150,25 +150,29 @@ describe("<AutoFilterForm>", () => {
   it("multiSelect: wraps a scalar URL value and appends on check", () => {
     const { source, setExtra } = makeSource({ tags: "urgent" });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Urgent")).toBeChecked();
-    expect(screen.getByLabelText("Low")).not.toBeChecked();
-    fireEvent.click(screen.getByLabelText("Low"));
+    const field = screen.getByRole("combobox", { name: "Tags" });
+    expect(document.querySelector(".mantine-Pill-label")).toHaveTextContent(
+      "Urgent"
+    );
+    fireEvent.click(field);
+    fireEvent.click(screen.getByRole("option", { name: "Low" }));
     expect(setExtra).toHaveBeenCalledWith("tags", ["urgent", "low"]);
   });
 
   it("multiSelect: unchecking the last value clears with an empty array", () => {
     const { source, setExtra } = makeSource({ tags: ["low"] });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Low")).toBeChecked();
-    fireEvent.click(screen.getByLabelText("Low"));
+    fireEvent.click(document.querySelector(".mantine-Pill-remove")!);
     expect(setExtra).toHaveBeenCalledWith("tags", []);
   });
 
   it("multiSelect: an empty-string value reads as nothing selected", () => {
     const { source } = makeSource({ tags: "" });
     renderForm([TAGS_DEF], source);
-    expect(screen.getByLabelText("Urgent")).not.toBeChecked();
-    expect(screen.getByLabelText("Low")).not.toBeChecked();
+    expect(document.querySelector(".mantine-Pill-label")).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Tags" }));
+    expect(screen.getByRole("option", { name: "Urgent" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Low" })).toBeInTheDocument();
   });
 
   it("select: an async loader shows a disabled placeholder, then the options", async () => {
@@ -208,12 +212,14 @@ describe("<AutoFilterForm>", () => {
       ],
       source
     );
-    // While the loader is in flight: a Loader instead of checkboxes.
+    // While the loader is in flight: a Loader instead of options.
     expect(container.querySelector(".mantine-Loader-root")).not.toBeNull();
-    expect(screen.queryByLabelText("Urgent")).toBeNull();
-    // Loaded: the checkboxes replace the spinner.
-    expect(await screen.findByLabelText("Urgent")).not.toBeChecked();
+    expect(screen.queryByRole("option", { name: "Urgent" })).toBeNull();
+    // Loaded: the searchable field replaces the spinner.
+    const field = await screen.findByRole("combobox", { name: "Tags" });
     expect(container.querySelector(".mantine-Loader-root")).toBeNull();
+    fireEvent.click(field);
+    expect(screen.getByRole("option", { name: "Urgent" })).toBeInTheDocument();
   });
 
   it("numberRange: the operator select lists the localized number operators", () => {

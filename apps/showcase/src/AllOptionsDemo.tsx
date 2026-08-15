@@ -2,7 +2,13 @@ import { startTransition, Suspense, useState } from "react";
 
 import { cssVars } from "./cssVars";
 import type { Locale } from "./data";
-import { type DataMode, type Density, type FiltersUi } from "./Demo";
+import {
+  AdvancedFiltersProvider,
+  type DataMode,
+  type Density,
+  type FiltersUi,
+} from "./Demo";
+import { DemoFilterSetProvider } from "./demoFilters";
 import {
   ADAPTERS,
   Control,
@@ -272,29 +278,33 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
           data-adapter={adapter}
         >
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode={mode}
-              locale={locale}
-              dark={dark}
-              density={density}
-              filtersUi={filtersUi}
-              headerFilters={filtersUi === "header"}
-              columnGroups={columnGroups === "on"}
-              animate={motion === "on"}
-              grouping={grouping === "on"}
-              tree={tree === "on"}
-              nested={nested === "on"}
-              editing={editing === "on"}
-              rowMode={rowMode === "on"}
-              batch={batch === "on"}
-              rowMutations={rowMutations === "on"}
-              rowReorder={rowReorder === "on"}
-              rowPinning={rowPinning === "on"}
-              cellSpan={cellSpan === "on"}
-              extraRows={extraRows === "on"}
-              rowStyle={rowStyle === "on"}
-              urlKey="live"
-            />
+            <DemoFilterSetProvider value="kitchen">
+              <AdvancedFiltersProvider value={true}>
+                <Demo
+                  mode={mode}
+                  locale={locale}
+                  dark={dark}
+                  density={density}
+                  filtersUi={filtersUi}
+                  headerFilters={filtersUi === "header"}
+                  columnGroups={columnGroups === "on"}
+                  animate={motion === "on"}
+                  grouping={grouping === "on"}
+                  tree={tree === "on"}
+                  nested={nested === "on"}
+                  editing={editing === "on"}
+                  rowMode={rowMode === "on"}
+                  batch={batch === "on"}
+                  rowMutations={rowMutations === "on"}
+                  rowReorder={rowReorder === "on"}
+                  rowPinning={rowPinning === "on"}
+                  cellSpan={cellSpan === "on"}
+                  extraRows={extraRows === "on"}
+                  rowStyle={rowStyle === "on"}
+                  urlKey="live"
+                />
+              </AdvancedFiltersProvider>
+            </DemoFilterSetProvider>
           </Suspense>
         </div>
       </div>

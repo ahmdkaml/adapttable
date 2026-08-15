@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type Direction,
   type FilterDef,
@@ -356,12 +357,6 @@ function AutoFilterField<TRow>({
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
     case "multiSelect": {
-      // A multiSelect is a GROUP of checkboxes, not a single labellable
-      // control, so it uses a plain group label (an Ark `Field.Root` would
-      // hijack the labelling onto the first checkbox). Each box self-labels
-      // through its own `Checkbox.Label`, derives its checked state from the
-      // current list, and toggles itself in/out via the input's `onChange`
-      // (the reliable single-source toggle in jsdom and the browser alike).
       const selected = listFilterValues(extra[def.key]);
       const toggle = (value: string) =>
         setExtra(
@@ -381,6 +376,8 @@ function AutoFilterField<TRow>({
               align="flex-start"
               role="group"
               aria-labelledby={id}
+              maxH={`${CHECKLIST_LIST_HEIGHT}px`}
+              overflowY="auto"
             >
               {options.map((option, index) => (
                 <Checkbox.Root
@@ -391,8 +388,6 @@ function AutoFilterField<TRow>({
                   value={option.value}
                   checked={selected.includes(option.value)}
                 >
-                  {/* `onClick` (not `onChange`): Ark sets `checked`
-                      imperatively, desyncing React's change tracker. */}
                   <Checkbox.HiddenInput onClick={() => toggle(option.value)} />
                   <Checkbox.Control />
                   <Checkbox.Label>{option.label}</Checkbox.Label>

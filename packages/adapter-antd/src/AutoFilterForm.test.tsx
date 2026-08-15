@@ -132,7 +132,7 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    expect(screen.getByRole("checkbox", { name: "Admin" })).toBeChecked();
+    expect(screen.getByTitle("Admin")).toBeInTheDocument();
   });
 
   it("treats an empty-string multiSelect value as nothing selected", () => {
@@ -143,7 +143,9 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    expect(screen.getByRole("checkbox", { name: "Admin" })).not.toBeChecked();
+    expect(document.querySelector(".ant-select-selection-item")).toBeNull();
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Role" }));
+    expect(screen.getByTitle("Admin")).toBeInTheDocument();
   });
 
   it("renders only the All option for a select without options", () => {
@@ -198,22 +200,23 @@ describe("<AutoFilterForm> (Ant Design)", () => {
 
   it("shows a small spinner while async multiSelect options load, then the checkboxes", async () => {
     const { loader, resolve } = deferredOptions();
-    const { container } = render(
+    render(
       <AutoFilterForm
         defs={[{ key: "role", type: "multiSelect", options: loader }]}
         source={staticSource({})}
         labels={defaultLabels}
       />
     );
-    expect(container.querySelector(".ant-spin")).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Role" })).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Role" }));
+    expect(screen.queryByTitle("Admin")).toBeNull();
 
     await act(async () => {
       resolve([{ value: "admin", label: "Admin" }]);
       await Promise.resolve();
     });
-    expect(container.querySelector(".ant-spin")).toBeNull();
-    expect(screen.getByRole("checkbox", { name: "Admin" })).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Role" }));
+    expect(screen.getByTitle("Admin")).toBeInTheDocument();
   });
 });
 

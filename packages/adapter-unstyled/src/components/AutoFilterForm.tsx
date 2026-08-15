@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_LIST_HEIGHT,
   defaultFilterRegistry,
   type FilterDef,
   filterLabel,
@@ -211,7 +212,13 @@ function MultiSelectField<TRow>({
       <div
         data-adapttable-part="filter-checkbox-group"
         className={classNames.filterCheckboxGroup}
-        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          maxHeight: CHECKLIST_LIST_HEIGHT,
+          overflow: "auto",
+        }}
       >
         {loading ? (
           <span
@@ -508,7 +515,7 @@ export interface AutoFilterFormProps<TRow> {
 /**
  * The auto-built filter form for the declarative `filters` array: one
  * semantic field per definition (`text` input, `select` with an "All"
- * option, `multiSelect` checkbox list, operator-first `dateRange` /
+ * option, wrapping `multiSelect` chips, operator-first `dateRange` /
  * `numberRange` widgets), each carrying `data-adapttable-part` hooks and
  * `classNames` overrides. Controls read `source.extra` and write through
  * `source.setExtra` / `source.setExtras` — an empty value clears its key.

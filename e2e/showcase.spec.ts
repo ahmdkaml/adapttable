@@ -156,6 +156,12 @@ for (const adapter of ADAPTERS) {
       // so its last field sits below the fold and hovering it would scroll —
       // and a scroll dismisses an anchored popover.
       const form = page.locator('[data-adapttable-part="filters-form"]');
+      await expect(
+        page.getByRole("group", { name: "value picker" })
+      ).toHaveCount(0);
+      await expect(
+        page.locator('[data-adapttable-part="filter-tree"]')
+      ).toHaveCount(0);
       const control = form
         .getByRole("combobox")
         .or(form.getByRole("spinbutton"))

@@ -16,7 +16,6 @@ import {
   DEMO_ORDER_COLUMNS,
   type DemoCells,
   demoConfirm,
-  demoFilterDefs,
   demoFilterTypes,
   demoOrders,
   demoSavedViews,
@@ -40,6 +39,7 @@ import {
   type FiltersUi,
   type PageMode,
 } from "../Demo";
+import { useDemoFilterDefs } from "../demoFilters";
 
 const MUI_CHIP_COLOR = {
   green: "success",
@@ -151,6 +151,7 @@ export function MuiDemo({
   columnGroups?: boolean;
 }>) {
   const s = strings(locale);
+  const filters = useDemoFilterDefs(locale);
   const theme = createTheme({ palette: { mode: dark ? "dark" : "light" } });
   return (
     <ThemeProvider theme={theme}>
@@ -197,7 +198,7 @@ export function MuiDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
-            filters={demoFilterDefs(locale)}
+            filters={filters}
             filterTypes={demoFilterTypes()}
           />
         )}

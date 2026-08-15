@@ -3,13 +3,20 @@ import {
   applyRowReorder,
   type ColumnLayoutState,
   evaluateFilterTree,
+  type QueryFilterGroup,
   type TableSource,
   useColumnLayoutUrlState,
   useFrontendData,
   useQuerySource,
 } from "@adapttable/core";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { type ReactNode, useCallback, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 
 import {
   BASE_COLUMNS,
@@ -27,6 +34,20 @@ export type DataMode = "frontend" | "backend";
 export type PageMode = "paged" | "infinite";
 export type Density = "comfortable" | "compact";
 export type FiltersUi = "popover" | "drawer" | "header";
+
+const AdvancedFiltersContext = createContext(false);
+
+/** Every-option page only — the live demo stays a simple auto form. */
+export const AdvancedFiltersProvider = AdvancedFiltersContext.Provider;
+
+function useAdvancedFilters(): boolean {
+  return useContext(AdvancedFiltersContext);
+}
+
+/** Hide the AND/OR builder without changing the hook's setter contract. */
+function withoutFilterTree<T>(source: TableSource<T>): TableSource<T> {
+  return { ...source, setFilterTree: undefined };
+}
 
 /** A small page size so both modes show real pagination over 30 rows. */
 // Five rows by default: enough to show real data while keeping the
@@ -107,6 +128,8 @@ interface DataProps {
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** AND/OR builder — Every option only. Live demo stays a simple form. */
+  advancedFilters?: boolean;
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -181,6 +204,7 @@ function Frontend({
   cellSpan,
   extraRows,
   rowStyle,
+  advancedFilters,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
@@ -238,13 +262,18 @@ function Frontend({
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
     // The registry comes along: the demo declares a custom filter type, and
     // without it the tree falls back to the built-ins and matches every row.
-    filterTreeFn: (row, tree) =>
-      evaluateFilterTree(
-        tree,
-        row,
-        DEMO_FILTER_RUNTIME.defs,
-        DEMO_FILTER_RUNTIME.registry
-      ),
+    // Live demo omits this — Advanced lives on Every option only.
+    ...(advancedFilters
+      ? {
+          filterTreeFn: (row: Person, tree: QueryFilterGroup) =>
+            evaluateFilterTree(
+              tree,
+              row,
+              DEMO_FILTER_RUNTIME.defs,
+              DEMO_FILTER_RUNTIME.registry
+            ),
+        }
+      : {}),
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
@@ -252,6 +281,7 @@ function Frontend({
     paginationMode: pageMode,
     urlKey,
   });
+  const tableSource = advancedFilters ? source : withoutFilterTree(source);
   return (
     <>
       {editing ? (
@@ -269,7 +299,7 @@ function Frontend({
           Simulate live update
         </button>
       ) : null}
-      {render(source, {
+      {render(tableSource, {
         ...columns,
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
@@ -355,7 +385,13 @@ function Frontend({
   );
 }
 
-function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
+function Backend({
+  render,
+  columns,
+  pageMode,
+  urlKey,
+  advancedFilters,
+}: Readonly<DataProps>) {
   const source = useQuerySource<Person, PeopleParams, PeoplePage>({
     usePaginatedQuery: usePeopleQuery,
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
@@ -363,7 +399,7 @@ function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     defaults: DEFAULTS,
     paginationMode: pageMode,
     urlKey,
-    supports: { filterTree: true, facets: true },
+    supports: { filterTree: Boolean(advancedFilters), facets: true },
     facetKeys: ["team"],
     selectPage: (page) => ({
       rows: page.items,
@@ -372,7 +408,9 @@ function Backend({ render, columns, pageMode, urlKey }: Readonly<DataProps>) {
     }),
   });
   // No onCellEdit — editing stays dormant on the server path.
-  return <>{render(source, columns)}</>;
+  return (
+    <>{render(advancedFilters ? source : withoutFilterTree(source), columns)}</>
+  );
 }
 
 /**
@@ -419,6 +457,7 @@ export function DemoBody({
   rowStyle?: boolean;
   columnGroups?: boolean;
 }>) {
+  const advancedFilters = useAdvancedFilters();
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Only the shared live default is
   // swapped; explicit layouts (the wide showcase's pins) pass through.
@@ -447,6 +486,7 @@ export function DemoBody({
       columns={columns}
       pageMode={pageMode}
       urlKey={urlKey}
+      advancedFilters={advancedFilters}
     />
   ) : (
     <Frontend
@@ -465,6 +505,7 @@ export function DemoBody({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      advancedFilters={advancedFilters}
     />
   );
 }

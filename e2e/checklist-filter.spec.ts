@@ -22,7 +22,7 @@ const checklist = (page: Page) =>
   page.locator('[data-adapttable-part="filter-checklist"]').last();
 
 async function openDemo(page: Page, adapter: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/all-options/");
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();
