@@ -55,7 +55,9 @@ export function SavedViewsMenu({
   return (
     <Popover
       opened={opened}
-      onDismiss={() => setOpened(false)}
+      onChange={(nextOpened) => {
+        if (!nextOpened) setOpened(false);
+      }}
       position="bottom-end"
       withinPortal
       returnFocus

@@ -12,9 +12,9 @@
  *  - Mantine keeps the popover dropdown MOUNTED (just `display:none`) when
  *    closed, so closure is asserted via the trigger's `aria-expanded`, not by
  *    the form unmounting (as the Chakra suite does).
- *  - Escape runs Mantine's controlled `onChange`; outside-click is hand-wired
- *    on `document` so portaled nested Select menus can be excluded without
- *    weakening the no-backdrop dismissal contract.
+ *  - Escape and outside-click are hand-wired on `document`: the former keeps
+ *    supported Mantine floors consistent, and the latter lets portaled nested
+ *    Select menus be excluded without weakening backdrop-less dismissal.
  *  - In drawer mode the trigger is rendered bare (no `Popover.Target`), so it
  *    carries no `aria-expanded`; drawer closure is asserted by the dialog
  *    unmounting.
@@ -191,15 +191,9 @@ describe("filter overlay a11y (axe) — Mantine", () => {
   it("Escape closes the popover", async () => {
     renderTable();
     await openFilterForm();
-    // Escape from inside the open dropdown runs Mantine's controlled
-    // onChange(false) → onCloseFilters → the trigger reports collapsed.
-    fireEvent.keyDown(
-      await screen.findByRole("combobox", {
-        name: "Status",
-        hidden: true,
-      }),
-      { key: "Escape" }
-    );
+    // The adapter listens at document level so the promise holds on Mantine
+    // floors where Popover does not report this Escape through onChange.
+    fireEvent.keyDown(document.body, { key: "Escape" });
     await waitFor(() =>
       expect(trigger()).toHaveAttribute("aria-expanded", "false")
     );

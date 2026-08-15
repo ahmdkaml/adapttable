@@ -50,11 +50,16 @@ export function FilterPopover({
       }
       onClose();
     };
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
     document.addEventListener("mousedown", onOutsidePress);
     document.addEventListener("touchstart", onOutsidePress);
+    document.addEventListener("keydown", onEscape);
     return () => {
       document.removeEventListener("mousedown", onOutsidePress);
       document.removeEventListener("touchstart", onOutsidePress);
+      document.removeEventListener("keydown", onEscape);
     };
   }, [open, onClose]);
 
@@ -67,9 +72,7 @@ export function FilterPopover({
         }}
         closeOnClickOutside={false}
         returnFocus
-        trapFocus
         position={dir === "rtl" ? "bottom-start" : "bottom-end"}
-        preventPositionChangeWhenVisible={false}
         middlewares={{
           shift: { padding: 8 },
           flip: true,
