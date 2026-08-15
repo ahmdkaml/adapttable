@@ -793,10 +793,49 @@ export function useTableChrome<TRow>(
       props.hasChildren,
     ]
   );
+  /**
+   * The same hierarchy with every node open.
+   *
+   * An export scoped to "all" means all the data, and a folded folder is a
+   * display state — the rows inside it matched the filters just the same. The
+   * rendered entries stop at every collapsed node, so exporting from them
+   * silently drops whole subtrees. This is what the export reads instead.
+   */
+  const treeExportEntries = useMemo(
+    () =>
+      treeEntries
+        ? buildTreeEntries<TRow>({
+            rows: source.rows,
+            getRowId,
+            // Every node id: a rendered entry carries its whole subtree in
+            // `descendantIds` whether or not it is open, and roots are always
+            // rendered — so the walked entries name every node in the tree.
+            expandedIds: new Set(
+              treeEntries.flatMap((entry) => [
+                entry.key,
+                ...entry.descendantIds,
+              ])
+            ),
+            getChildren: props.getChildren,
+            getParentId: props.getParentId,
+            hasChildren: props.hasChildren,
+          })
+        : undefined,
+    [
+      treeEntries,
+      source.rows,
+      getRowId,
+      props.getChildren,
+      props.getParentId,
+      props.hasChildren,
+    ]
+  );
   const tree = useMemo(() => {
     if (!treeEntries) return undefined;
     return {
       entries: treeEntries,
+      /** Every node, folded ones included — what an "all" export writes. */
+      allEntries: treeExportEntries,
       // Opening a node fetches its children on the way: the row opens at once
       // and fills when they land, so the chevron never feels stuck behind a
       // request.
@@ -815,6 +854,7 @@ export function useTableChrome<TRow>(
     };
   }, [
     treeEntries,
+    treeExportEntries,
     treeExpansion,
     lazyChildren,
     props.treeColumn,

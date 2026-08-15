@@ -214,7 +214,15 @@ export interface ExportContext<TRow> {
    * The flattened tree, when a tree is armed. Outranks grouping, the same
    * way the table does.
    */
-  tree?: { entries: readonly TreeEntry<TRow>[] };
+  tree?: {
+    entries: readonly TreeEntry<TRow>[];
+    /**
+     * The same hierarchy with every node open. A folded folder is display
+     * state, so `scope: "all"` writes what is inside it — without this, a
+     * collapsed subtree is silently missing from the file.
+     */
+    allEntries?: readonly TreeEntry<TRow>[];
+  };
   /** Caption for a group footer — the table's `labels.groupTotal`. */
   groupTotal?: (label: string) => string;
   /**

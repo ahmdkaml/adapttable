@@ -5035,6 +5035,12 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "all"` — the full filtered+sorted set when the source exposes it
   (frontend does); server-backed sources fall back to the current page unless
   you wire your own download against an export endpoint via `toolbar`.
+
+  **"All" means every row that matched the filters, not every row on screen.**
+  Display state never shrinks an export: a collapsed tree folder still writes
+  the rows inside it, and pagination does not decide what leaves the table.
+  A grouped export keeps its headers and totals around those rows.
+
 - `scope: "selected"` — the ticked rows, in table order. Selection is a set of
   ids, so a row checked on page 1 is still in the file while page 3 is on
   screen. Nothing ticked writes a header-only file.

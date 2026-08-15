@@ -293,6 +293,61 @@ describe("viewFromTreeEntries", () => {
   });
 });
 
+describe("exportViewFromChrome — a folded tree", () => {
+  /** What the table renders with Ada's folder shut: Grace is not there. */
+  const rendered: TreeEntry<Row>[] = [
+    {
+      row: ada,
+      key: "1",
+      level: 0,
+      hasChildren: true,
+      expanded: false,
+      path: [],
+      descendantIds: ["2"],
+    },
+  ];
+  /** The same hierarchy with every node open. */
+  const unfolded: TreeEntry<Row>[] = [
+    { ...rendered[0]!, expanded: true },
+    {
+      row: grace,
+      key: "2",
+      level: 1,
+      hasChildren: false,
+      expanded: false,
+      path: ["1"],
+      descendantIds: [],
+    },
+  ];
+
+  it("writes what is on screen for a page-scoped export", () => {
+    const view = exportViewFromChrome({
+      tree: { entries: rendered, allEntries: unfolded },
+    });
+    expect(view).toEqual([{ role: "data", row: ada, level: 0 }]);
+  });
+
+  it("writes the folded rows too when the scope unfolds", () => {
+    const view = exportViewFromChrome({
+      tree: { entries: rendered, allEntries: unfolded },
+      includeHiddenLeaves: true,
+    });
+    // Grace matched the filters; the folder being shut is display state.
+    expect(view).toEqual([
+      { role: "data", row: ada, level: 0 },
+      { role: "data", row: grace, level: 1 },
+    ]);
+  });
+
+  it("falls back to the rendered entries when no unfolded tree is supplied", () => {
+    const view = exportViewFromChrome({
+      tree: { entries: rendered },
+      includeHiddenLeaves: true,
+    });
+    expect(view).toEqual([{ role: "data", row: ada, level: 0 }]);
+  });
+});
+
 describe("filterExportView", () => {
   it("drops a group that has no remaining leaves, and keeps its footer when it does", () => {
     const view = viewFromGroupedEntries(GROUPED, (label) => `${label} total`);

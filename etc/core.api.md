@@ -1320,6 +1320,7 @@ export interface ExportContext<TRow> {
     summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
     tree?: {
         entries: readonly TreeEntry<TRow>[];
+        allEntries?: readonly TreeEntry<TRow>[];
     };
 }
 
@@ -1395,6 +1396,7 @@ export function exportViewFromChrome<TRow>(options: {
     };
     tree?: {
         entries: readonly TreeEntry<TRow>[];
+        allEntries?: readonly TreeEntry<TRow>[];
     };
     groupTotal?: (label: string) => string; /** Folded or paged-away leaves, for `scope: "all"` / `"selected"`. */
     includeHiddenLeaves?: boolean;
