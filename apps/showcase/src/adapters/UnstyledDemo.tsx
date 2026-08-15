@@ -250,6 +250,8 @@ export function UnstyledDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -271,6 +273,8 @@ export function UnstyledDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -294,6 +298,8 @@ export function UnstyledDemo({
       rowStyle={rowStyle}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
+      headerFilters={headerFilters}
+      columnGroups={columnGroups}
       classNames={TAILWIND}
     />
   );

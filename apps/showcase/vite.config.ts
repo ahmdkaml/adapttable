@@ -101,6 +101,7 @@ export default defineConfig({
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         "export-pdf": page("./export-pdf/index.html"),
+        "all-options": page("./all-options/index.html"),
         mobile: page("./mobile/index.html"),
         scale: page("./scale/index.html"),
         rtl: page("./rtl/index.html"),

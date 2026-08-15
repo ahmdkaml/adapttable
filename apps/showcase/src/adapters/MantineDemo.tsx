@@ -98,6 +98,8 @@ export function MantineDemo({
   cellNavigation,
   forceMobile,
   exportCsv,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -120,6 +122,8 @@ export function MantineDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
   forceMobile?: boolean;
   /**
    * Export configuration for the toolbar button. Defaults to a plain CSV of
@@ -150,7 +154,9 @@ export function MantineDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, MANTINE_CELLS)}
+            columns={makeColumns(locale, MANTINE_CELLS, {
+              groups: columnGroups,
+            })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
@@ -173,7 +179,7 @@ export function MantineDemo({
             animate={animate}
             resizableColumns
             stickyHeader
-            headerFilters
+            headerFilters={headerFilters}
             stickyTop={8}
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}

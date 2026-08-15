@@ -59,6 +59,30 @@ test("non-default kits load on demand (code-split)", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("default live demo keeps the seven pre-353 controls", async ({ page }) => {
+  await page.goto("/");
+  await expect(
+    demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
+  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "data source" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "locale" })).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "filters container" })
+  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "density" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "grouping" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "editing" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "motion" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "tree" })).toHaveCount(0);
+  await expect(
+    demo(page).locator('[data-adapttable-part="filter-header-row"]')
+  ).toHaveCount(0);
+  await expect(
+    demo(page).locator('[data-adapttable-part="column-group-toggle"]')
+  ).toHaveCount(0);
+  await expect(demo(page).getByText("Delivery")).toHaveCount(0);
+});
+
 test("install + StackBlitz CTAs sit under the kit switcher", async ({
   page,
 }) => {

@@ -36,6 +36,8 @@ export function ShadcnDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -57,6 +59,8 @@ export function ShadcnDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   return (
     <UnstyledLike
@@ -80,6 +84,8 @@ export function ShadcnDemo({
       rowStyle={rowStyle}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
+      headerFilters={headerFilters}
+      columnGroups={columnGroups}
       classNames={shadcnClassNames}
     />
   );

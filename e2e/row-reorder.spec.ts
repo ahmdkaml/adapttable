@@ -46,7 +46,7 @@ async function rowName(row: Locator): Promise<string> {
 }
 
 async function openDemo(page: Page, adapter: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/all-options/");
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();

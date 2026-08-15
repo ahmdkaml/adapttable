@@ -142,6 +142,8 @@ export function UnstyledLike({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -164,6 +166,8 @@ export function UnstyledLike({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   const styled = withDensity(classNames, density);
@@ -184,11 +188,14 @@ export function UnstyledLike({
       extraRows={extraRows}
       rowStyle={rowStyle}
       editing={editing}
+      columnGroups={columnGroups}
       render={(source, columns) => {
         return (
           <DataTable
             source={source}
-            columns={makeColumns(locale, TAILWIND_CELLS)}
+            columns={makeColumns(locale, TAILWIND_CELLS, {
+              groups: columnGroups,
+            })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
@@ -211,7 +218,7 @@ export function UnstyledLike({
             animate={animate}
             resizableColumns
             stickyHeader
-            headerFilters
+            headerFilters={headerFilters}
             classNames={styled}
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}

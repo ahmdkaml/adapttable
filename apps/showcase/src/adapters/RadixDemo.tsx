@@ -101,6 +101,8 @@ export function RadixDemo({
   rowStyle,
   editing,
   cellNavigation,
+  headerFilters,
+  columnGroups,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -123,6 +125,8 @@ export function RadixDemo({
   rowStyle?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  headerFilters?: boolean;
+  columnGroups?: boolean;
 }>) {
   const s = strings(locale);
   return (
@@ -155,7 +159,7 @@ export function RadixDemo({
         render={(source, columns) => (
           <DataTable
             source={source}
-            columns={makeColumns(locale, RADIX_CELLS)}
+            columns={makeColumns(locale, RADIX_CELLS, { groups: columnGroups })}
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
@@ -178,7 +182,7 @@ export function RadixDemo({
             animate={animate}
             resizableColumns
             stickyHeader
-            headerFilters
+            headerFilters={headerFilters}
             filters={demoFilterDefs(locale)}
             filterTypes={demoFilterTypes()}
           />
