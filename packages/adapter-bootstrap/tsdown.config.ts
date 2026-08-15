@@ -17,7 +17,13 @@ export default defineConfig({
     dts: format === "es" ? ".d.ts" : ".d.cts",
   }),
   deps: {
-    neverBundle: ["react", "react-dom", "react-bootstrap", "bootstrap", "@adapttable/core"],
+    neverBundle: [
+      "react",
+      "react-dom",
+      "react-bootstrap",
+      "bootstrap",
+      "@adapttable/core",
+    ],
   },
   plugins: [
     babel({
@@ -28,5 +34,3 @@ export default defineConfig({
     }),
   ],
 });
-
-

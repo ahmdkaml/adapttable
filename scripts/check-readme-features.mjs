@@ -55,11 +55,20 @@ const FEATURES = {
   "csv-export": /csv/i,
 };
 
+function isPrivatePackage(dir) {
+  const pkgJson = JSON.parse(
+    readFileSync(join(root, "packages", dir, "package.json"), "utf8")
+  );
+  return pkgJson.private === true;
+}
+
 // Adapters and core all ship the full feature set, so all of them must list
 // it. `cli` and `i18n` cover different ground (scaffolding, locales) but still
 // need a Features section — a package page with none tells a reader nothing.
+// Unpublished (`private: true`) adapters are still in-progress and must not
+// need a marketing README.
 const adapters = readdirSync(join(root, "packages")).filter(
-  (d) => d.startsWith("adapter-") || d === "core"
+  (d) => (d.startsWith("adapter-") || d === "core") && !isPrivatePackage(d)
 );
 const needSectionOnly = ["cli", "i18n"];
 

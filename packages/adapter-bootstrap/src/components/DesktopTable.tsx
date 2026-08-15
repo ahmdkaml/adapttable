@@ -1,20 +1,18 @@
 import type { SharedTableRenderProps } from "@adapttable/core/adapter";
-import { Table } from "react-bootstrap";
+
+import { Table } from "./primitives";
 
 export function DesktopTable<TRow>(
-  props: Readonly<SharedTableRenderProps<TRow>>,
+  props: Readonly<SharedTableRenderProps<TRow>>
 ) {
   const { table, rows } = props;
 
   return (
-    <Table bordered hover responsive>
+    <Table>
       <thead>
         <tr {...table.getHeaderRowProps()}>
           {table.columns.map((column) => (
-            <th
-              key={String(column.key)}
-              {...table.getHeaderCellProps(column)}
-            >
+            <th key={String(column.key)} {...table.getHeaderCellProps(column)}>
               {column.header}
             </th>
           ))}
@@ -23,15 +21,9 @@ export function DesktopTable<TRow>(
 
       <tbody>
         {rows.map((row, index) => (
-          <tr
-            key={table.getRowKey(row)}
-            {...table.getRowProps(row, index)}
-          >
+          <tr key={table.getRowKey(row)} {...table.getRowProps(row, index)}>
             {table.columns.map((column) => (
-              <td
-                key={String(column.key)}
-                {...table.getCellProps(column)}
-              >
+              <td key={String(column.key)} {...table.getCellProps(column)}>
                 {table.getCellContent(column, row, index)}
               </td>
             ))}

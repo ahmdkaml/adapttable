@@ -27,8 +27,10 @@ export interface DataTableClassNames {
 }
 
 /** Props for the React Bootstrap `<DataTable>`. */
-interface DataTablePropsBase<TRow>
-  extends Omit<BaseDataTableProps<TRow>, "source"> {
+interface DataTablePropsBase<TRow> extends Omit<
+  BaseDataTableProps<TRow>,
+  "source"
+> {
   /**
    * Full-control tier: a prebuilt source.
    */
