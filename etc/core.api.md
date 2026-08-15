@@ -2186,6 +2186,35 @@ export function moveGridFocus(from: GridCell, move: GridFocusMove, bounds: GridB
 export const MULTI_SEPARATOR = "\u001F";
 
 // @public
+export interface MultiSelectEditorCheckboxProps {
+    readonly checked: boolean;
+    readonly focusRef?: (node: {
+        focus: () => void;
+    } | null) => void;
+    readonly label: ReactNode;
+    readonly onToggle: () => void;
+    readonly value: string;
+}
+
+// @public
+export function MultiSelectEditorChrome(input: Readonly<MultiSelectEditorChromeProps>): ReactNode;
+
+// @public
+export interface MultiSelectEditorChromeProps {
+    readonly ctrl: EditableCellEditorCtrl;
+    readonly label: string;
+    readonly onKeyDown: (event: KeyboardEvent_2) => void;
+    // (undocumented)
+    readonly slots: MultiSelectEditorSlots;
+}
+
+// @public
+export interface MultiSelectEditorSlots {
+    // (undocumented)
+    readonly Checkbox: (props: MultiSelectEditorCheckboxProps) => ReactNode;
+}
+
+// @public
 export interface NestedTable {
     label?: string;
     table: (defaults: NestedTableDefaults) => ReactNode;

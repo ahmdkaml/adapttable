@@ -2008,16 +2008,16 @@ Without `rowVersion`, only the edited column's stored value counts as a change.
 
 ### The editor set
 
-| `editor`                            | Control           | Commits                         |
-| ----------------------------------- | ----------------- | ------------------------------- |
-| `"text"` (default)                  | text input        | the string                      |
-| `"number"`                          | number input      | `number \| null` (empty → null) |
-| `"boolean"`                         | checkbox          | `true` / `false`                |
-| `"date"`                            | date input        | `"YYYY-MM-DD"`                  |
-| `"datetime"`                        | datetime input    | `"YYYY-MM-DDTHH:mm"`            |
-| `"time"`                            | time input        | `"HH:mm"`                       |
-| `{ type: "select", options }`       | the kit's select  | the chosen value                |
-| `{ type: "multi-select", options }` | a multiple select | the chosen values, an array     |
+| `editor`                            | Control                | Commits                         |
+| ----------------------------------- | ---------------------- | ------------------------------- |
+| `"text"` (default)                  | text input             | the string                      |
+| `"number"`                          | number input           | `number \| null` (empty → null) |
+| `"boolean"`                         | checkbox               | `true` / `false`                |
+| `"date"`                            | date input             | `"YYYY-MM-DD"`                  |
+| `"datetime"`                        | datetime input         | `"YYYY-MM-DDTHH:mm"`            |
+| `"time"`                            | time input             | `"HH:mm"`                       |
+| `{ type: "select", options }`       | the kit's select       | the chosen value                |
+| `{ type: "multi-select", options }` | the kit's multi-select | the chosen values, an array     |
 
 The date, time and checkbox editors use the platform's own controls: they are
 keyboard-complete and localized by the browser, which is a better answer than
@@ -2035,6 +2035,13 @@ Enter would leave a ticked box that changed nothing.
 **A multi-select seeds itself from a stored array** and commits an array back, so
 a host stores exactly what it gave — no separator to parse, no single-value
 special case. An empty selection commits `[]`, not `""`.
+
+Each kit picks several values the way that kit picks several values: Ant Design
+and Mantine open their own multi-select, MUI and Chakra render a multiple list
+box, and Radix Themes and Base UI — whose select holds one value by
+construction — show a group of their own checkboxes. That group is
+`MultiSelectEditorChrome`, core's structure with a `Checkbox` slot, so all three
+kits share one accessible group and none of them ships hand-written markup.
 
 ### Bring your own editor
 
@@ -2364,21 +2371,22 @@ activation wrapper every built-in adapter renders (double-click / Enter / F2
 to begin, with the cell value as the accessible name and the edit hint as
 its `title`).
 
-| Export                                                                   | Purpose                                                                                                         |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `useCellEditing` / `CellEditingState`                                    | The state machine hook and the state it returns.                                                                |
-| `EditableCellGate` / `EditableCellGateProps`                             | Activation wrapper: display content when idle, the kit's editor while active.                                   |
-| `EditableCellEditing`                                                    | The editing bundle adapters receive from the chrome (`chrome.editing`).                                         |
-| `CellEditCommit` / `CellEditTarget`                                      | A commit payload (`row`, `key`, `value`) and the active-cell address.                                           |
-| `CellEditor` / `CellEditorOption`                                        | The column `editor` descriptor and one option of a select editor.                                               |
-| `CellEditKeyAction` / `CellEditKeyOutcome` / `CellEditNavigation`        | Keyboard-flow vocabulary: what a key press means and where focus goes next.                                     |
-| `EditableCellController` / `EditableCellEditorCtrl` / `EditableCellMode` | The controller handed to a custom editor: draft, commit/cancel, mode.                                           |
-| `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`           | The minimal column shape editing reads, plus the two predicates the chrome uses.                                |
-| `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`    | Draft parsing (number editors yield `number \| null`) and editor/option resolution.                             |
-| `useEditValidation` / `EditValidationState` / `UseEditValidationOptions` | Validation state: which cells carry a message, which are still checking, and the `check` that gates one commit. |
-| `CellValidator` / `RowValidator` / `ValidationTarget`                    | The two validator signatures and the cell address a check is about.                                             |
-| `resolveCommitValue`                                                     | The row, column and parsed value a commit resolves to — what a validator judges before the host sees it.        |
-| `editorValidationProps`                                                  | The `aria-invalid` / `aria-describedby` / `aria-busy` a kit's editor spreads while validation is in play.       |
+| Export                                                                                                                   | Purpose                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `useCellEditing` / `CellEditingState`                                                                                    | The state machine hook and the state it returns.                                                                |
+| `EditableCellGate` / `EditableCellGateProps`                                                                             | Activation wrapper: display content when idle, the kit's editor while active.                                   |
+| `EditableCellEditing`                                                                                                    | The editing bundle adapters receive from the chrome (`chrome.editing`).                                         |
+| `CellEditCommit` / `CellEditTarget`                                                                                      | A commit payload (`row`, `key`, `value`) and the active-cell address.                                           |
+| `CellEditor` / `CellEditorOption`                                                                                        | The column `editor` descriptor and one option of a select editor.                                               |
+| `CellEditKeyAction` / `CellEditKeyOutcome` / `CellEditNavigation`                                                        | Keyboard-flow vocabulary: what a key press means and where focus goes next.                                     |
+| `EditableCellController` / `EditableCellEditorCtrl` / `EditableCellMode`                                                 | The controller handed to a custom editor: draft, commit/cancel, mode.                                           |
+| `MultiSelectEditorChrome` / `MultiSelectEditorChromeProps` / `MultiSelectEditorSlots` / `MultiSelectEditorCheckboxProps` | Checkbox-group multi-select editor for kits whose select holds one value.                                       |
+| `EditableColumnLike` / `isCellEditable` / `hasEditableColumns`                                                           | The minimal column shape editing reads, plus the two predicates the chrome uses.                                |
+| `parseCellEditValue` / `resolveCellEditor` / `normalizeEditorOptions`                                                    | Draft parsing (number editors yield `number \| null`) and editor/option resolution.                             |
+| `useEditValidation` / `EditValidationState` / `UseEditValidationOptions`                                                 | Validation state: which cells carry a message, which are still checking, and the `check` that gates one commit. |
+| `CellValidator` / `RowValidator` / `ValidationTarget`                                                                    | The two validator signatures and the cell address a check is about.                                             |
+| `resolveCommitValue`                                                                                                     | The row, column and parsed value a commit resolves to — what a validator judges before the host sees it.        |
+| `editorValidationProps`                                                                                                  | The `aria-invalid` / `aria-describedby` / `aria-busy` a kit's editor spreads while validation is in play.       |
 
 ## Applying changes without a refetch
 
@@ -5824,7 +5832,10 @@ activate control and conflict / undo buttons. A commit arrives as
 vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `CellEditNavigation`. A custom editor receives `EditableCellController` /
 `EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
-the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
+the bundle adapters get from the chrome. `MultiSelectEditorChrome` /
+`MultiSelectEditorChromeProps` is the multi-select editor for kits whose select
+holds one value — a named group of the kit's own checkboxes, filled through
+`MultiSelectEditorSlots` / `MultiSelectEditorCheckboxProps`. `CellEditor` / `CellEditorOption`
 describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
 `normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`. Beyond
 text, number and select it names `boolean`, `date`, `datetime`, `time` and

@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -135,17 +135,34 @@ describe("editor set (antd)", () => {
     );
   });
 
+  /** The values antd shows as chosen, in the order it shows them. */
+  const chosen = () =>
+    [...document.querySelectorAll(".ant-select-selection-item-content")].map(
+      (item) => item.textContent
+    );
+
+  const openMenu = () =>
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Edit cell" }));
+
+  /**
+   * One row of the open menu. Scoped to the dropdown because antd gives the
+   * chosen-value chip the same `title` as the option it came from.
+   */
+  const option = (name: string) =>
+    within(
+      document.querySelector<HTMLElement>(".ant-select-dropdown")!
+    ).getByTitle(name);
+
   it("commits a multi-select as the array it chose", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    expect(select.multiple).toBe(true);
+    expect(document.querySelector(".ant-select-multiple")).not.toBeNull();
     // Seeded from the stored array — no `editValue` needed for the round trip.
-    expect([...select.selectedOptions].map((o) => o.value)).toEqual(["urgent"]);
+    expect(chosen()).toEqual(["urgent"]);
 
-    select.options[1]!.selected = true;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    openMenu();
+    fireEvent.click(option("billable"));
+    fireEvent.blur(document.querySelector(".ant-select-input")!);
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", [
       "urgent",
       "billable",
@@ -155,10 +172,10 @@ describe("editor set (antd)", () => {
   it("commits an empty multi-select as an empty array, not an empty string", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    select.options[0]!.selected = false;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    openMenu();
+    // Clicking a chosen value again un-chooses it, leaving nothing selected.
+    fireEvent.click(option("urgent"));
+    fireEvent.blur(document.querySelector(".ant-select-input")!);
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", []);
   });
 });

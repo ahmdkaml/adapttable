@@ -1,7 +1,12 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { Select } from "@base-ui/react/select";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  isValidElement,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import type { BaseUiAccentColor } from "../types";
 import { Flex, Text } from "../ui";
@@ -50,8 +55,12 @@ export function Checkbox({
   color: _color,
   id,
   value,
+  className,
+  inputRef,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   checked: boolean;
   indeterminate?: boolean;
@@ -60,18 +69,30 @@ export function Checkbox({
   color?: BaseUiAccentColor;
   id?: string;
   value?: string;
+  className?: string;
+  /** Hands the control out, so a cell editor can take focus on mount. */
+  inputRef?: (node: { focus: () => void } | null) => void;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children?: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   const box = (
     <BaseCheckbox.Root
       id={id}
       value={value}
+      ref={inputRef}
       aria-label={children == null ? ariaLabel : undefined}
+      data-adapttable-part={dataPart}
       checked={checked}
       indeterminate={indeterminate}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
-      className="adapttable-checkbox"
+      className={className ?? "adapttable-checkbox"}
+      {...rest}
     >
       <BaseCheckbox.Indicator className="adapttable-checkbox__indicator">
         {indeterminate ? (
@@ -117,19 +138,27 @@ export function NativeSelect({
   value,
   placeholder,
   onValueChange,
+  onKeyDown,
   options,
   width,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
+  ...rest
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
   placeholder?: string;
   onValueChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   options: readonly SelectOption[];
   width?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   const selected = value === "" ? EMPTY_VALUE : value;
   const items = Object.fromEntries(
@@ -153,7 +182,9 @@ export function NativeSelect({
         data-size={size}
         data-variant="outline"
         data-slot="select-trigger"
+        onKeyDown={onKeyDown}
         style={width ? { width } : undefined}
+        {...rest}
       >
         <Select.Value data-slot="select-value" placeholder={placeholder} />
       </Select.Trigger>

@@ -5,16 +5,30 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  MultiSelectEditorChrome,
+  type MultiSelectEditorSlots,
 } from "@adapttable/core";
-import { editorValidationProps } from "@adapttable/core/adapter";
+import {
+  commitBooleanDraft,
+  editorValidationProps,
+} from "@adapttable/core/adapter";
 import { TextField } from "@radix-ui/themes";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { editableCellSlots } from "./kitControls";
-import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
-import { NativeSelect } from "./primitives";
+import { Checkbox, NativeSelect } from "./primitives";
+
+/** The multi-select editor's options, as Radix Themes checkboxes. */
+const multiSelectSlots: MultiSelectEditorSlots = {
+  Checkbox: ({ label, checked, onToggle, focusRef }) => (
+    <Checkbox checked={checked} onToggle={onToggle} inputRef={focusRef}>
+      {label}
+    </Checkbox>
+  ),
+};
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -37,16 +51,27 @@ export function RadixCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <span onKeyDown={onKeyDown}>
+        <Checkbox
+          size="1"
+          aria-label={label}
+          data-adapttable-part="edit-cell-editor"
+          {...editorValidationProps(ctrl)}
+          inputRef={ctrl.focusRef}
+          checked={isDraftChecked(ctrl.draft)}
+          onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
+        />
+      </span>
     );
   }
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
+      <MultiSelectEditorChrome
         ctrl={ctrl}
         label={label}
         onKeyDown={onKeyDown}
+        slots={multiSelectSlots}
       />
     );
   }
@@ -57,8 +82,12 @@ export function RadixCellEditor({
         size="1"
         width="100%"
         aria-label={label}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        triggerRef={ctrl.focusRef}
         value={ctrl.draft}
         options={ctrl.selectOptions}
+        onKeyDown={onKeyDown}
         onValueChange={(value) => {
           ctrl.setDraft(value);
           ctrl.commitOnBlur();

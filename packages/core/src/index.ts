@@ -713,6 +713,12 @@ export {
   type EditableCellSlots,
 } from "./editing/EditableCellGate";
 export {
+  type MultiSelectEditorCheckboxProps,
+  MultiSelectEditorChrome,
+  type MultiSelectEditorChromeProps,
+  type MultiSelectEditorSlots,
+} from "./editing/MultiSelectEditorChrome";
+export {
   type EditConflict,
   type EditConflictChoice,
   type EditConflictHandler,

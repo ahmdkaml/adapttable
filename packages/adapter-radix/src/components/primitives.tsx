@@ -5,7 +5,7 @@ import {
   Text,
   Tooltip as RadixTooltip,
 } from "@radix-ui/themes";
-import { type ReactNode } from "react";
+import { type KeyboardEvent, type ReactNode } from "react";
 
 import type { RadixAccentColor } from "../types";
 
@@ -45,8 +45,12 @@ export function Checkbox({
   color,
   id,
   value,
+  className,
+  inputRef,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   checked: boolean;
   indeterminate?: boolean;
@@ -55,8 +59,17 @@ export function Checkbox({
   color?: RadixAccentColor;
   id?: string;
   value?: string;
+  className?: string;
+  /** Hands the control out, so a cell editor can take focus on mount. */
+  inputRef?: (node: { focus: () => void } | null) => void;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children?: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   const box = (
     <RadixCheckbox
@@ -64,9 +77,13 @@ export function Checkbox({
       value={value}
       size={size}
       color={color}
+      ref={inputRef}
+      className={className}
       aria-label={ariaLabel}
+      data-adapttable-part={dataPart}
       checked={indeterminate ? "indeterminate" : checked}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
+      {...rest}
     />
   );
   if (children == null) return box;
@@ -110,19 +127,30 @@ export function NativeSelect({
   value,
   placeholder,
   onValueChange,
+  onKeyDown,
+  triggerRef,
   options,
   width,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
+  ...rest
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
   placeholder?: string;
   onValueChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
+  /** Hands the trigger out, so a cell editor can take focus on mount. */
+  triggerRef?: (node: { focus: () => void } | null) => void;
   options: readonly SelectOption[];
   width?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   return (
     <Select.Root
@@ -131,10 +159,13 @@ export function NativeSelect({
       onValueChange={(next) => onValueChange(next === EMPTY_VALUE ? "" : next)}
     >
       <Select.Trigger
+        ref={triggerRef}
         aria-label={ariaLabel}
         data-adapttable-part={part}
         placeholder={placeholder}
+        onKeyDown={onKeyDown}
         style={width ? { width } : undefined}
+        {...rest}
       />
       <Select.Content position="popper">
         {options.map((option) => (

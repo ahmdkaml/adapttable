@@ -4,10 +4,12 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
   editorInputType,
+  formatMultiDraft,
   isBooleanEditor,
   isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
 import {
   commitBooleanDraft,
@@ -17,7 +19,6 @@ import { Checkbox, Input, Select } from "antd";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { editableCellSlots } from "./kitControls";
-import { NativeMultiSelectEditor } from "./nativeEditors";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -53,10 +54,23 @@ export function AntdCellEditor({
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
-        ctrl={ctrl}
-        label={label}
+      <Select
+        mode="multiple"
+        status={ctrl.error === undefined ? undefined : "error"}
+        ref={ctrl.focusRef}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        aria-label={label}
+        size="small"
+        style={{ width: "100%" }}
+        options={ctrl.selectOptions.map((option) => ({
+          value: option.value,
+          label: option.label,
+        }))}
+        value={readMultiDraft(ctrl.draft)}
+        onChange={(values: string[]) => ctrl.setDraft(formatMultiDraft(values))}
         onKeyDown={onKeyDown}
+        onBlur={ctrl.commitOnBlur}
       />
     );
   }

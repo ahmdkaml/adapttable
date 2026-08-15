@@ -5,16 +5,21 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
-import { editorValidationProps } from "@adapttable/core/adapter";
+import {
+  commitBooleanDraft,
+  editorValidationProps,
+  multiDraftFromSelect,
+} from "@adapttable/core/adapter";
 import { Input } from "@chakra-ui/react";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { editableCellSlots } from "./kitControls";
-import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
-import { NativeSelect } from "./primitives";
+import { Checkbox, NativeSelect } from "./primitives";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -37,17 +42,41 @@ export function ChakraCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <span onKeyDown={onKeyDown}>
+        <Checkbox
+          size="sm"
+          aria-label={label}
+          data-adapttable-part="edit-cell-editor"
+          {...editorValidationProps(ctrl)}
+          inputRef={ctrl.focusRef}
+          checked={isDraftChecked(ctrl.draft)}
+          onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
+        />
+      </span>
     );
   }
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
-        ctrl={ctrl}
-        label={label}
+      <NativeSelect
+        multiple
+        size="sm"
+        w="100%"
+        aria-label={label}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        value={readMultiDraft(ctrl.draft)}
+        onChange={(event) => ctrl.setDraft(multiDraftFromSelect(event.target))}
         onKeyDown={onKeyDown}
-      />
+        onBlur={ctrl.commitOnBlur}
+        fieldRef={ctrl.focusRef}
+      >
+        {ctrl.selectOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </NativeSelect>
     );
   }
 

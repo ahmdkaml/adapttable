@@ -365,7 +365,10 @@ activate control and conflict / undo buttons. A commit arrives as
 vocabulary is `CellEditKeyAction` / `CellEditKeyOutcome` /
 `CellEditNavigation`. A custom editor receives `EditableCellController` /
 `EditableCellEditorCtrl` and an `EditableCellMode`; `EditableCellEditing` is
-the bundle adapters get from the chrome. `CellEditor` / `CellEditorOption`
+the bundle adapters get from the chrome. `MultiSelectEditorChrome` /
+`MultiSelectEditorChromeProps` is the multi-select editor for kits whose select
+holds one value — a named group of the kit's own checkboxes, filled through
+`MultiSelectEditorSlots` / `MultiSelectEditorCheckboxProps`. `CellEditor` / `CellEditorOption`
 describe the column's `editor` descriptor, resolved by `resolveCellEditor` and
 `normalizeEditorOptions`, with drafts parsed by `parseCellEditValue`. Beyond
 text, number and select it names `boolean`, `date`, `datetime`, `time` and

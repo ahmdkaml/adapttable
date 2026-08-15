@@ -4,21 +4,22 @@ import {
   type EditableCellEditorCtrl,
   EditableCellGate,
   editorInputType,
+  formatMultiDraft,
   isBooleanEditor,
   isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  readMultiDraft,
 } from "@adapttable/core";
 import {
   commitBooleanDraft,
   editorBusyProps,
   editorValidationProps,
 } from "@adapttable/core/adapter";
-import { Checkbox, Select, TextInput } from "@mantine/core";
+import { Checkbox, MultiSelect, Select, TextInput } from "@mantine/core";
 import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { editableCellSlots } from "./kitControls";
-import { NativeMultiSelectEditor } from "./nativeEditors";
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -57,10 +58,21 @@ export function MantineCellEditor({
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
-        ctrl={ctrl}
-        label={label}
+      <MultiSelect
+        error={ctrl.conflict === true ? undefined : ctrl.error}
+        {...editorBusyProps(ctrl)}
+        ref={ctrl.focusRef}
+        data-adapttable-part="edit-cell-editor"
+        aria-label={label}
+        size="xs"
+        data={ctrl.selectOptions.map((option) => ({
+          value: option.value,
+          label: option.label,
+        }))}
+        value={readMultiDraft(ctrl.draft)}
+        onChange={(values) => ctrl.setDraft(formatMultiDraft(values))}
         onKeyDown={onKeyDown}
+        onBlur={ctrl.commitOnBlur}
       />
     );
   }
