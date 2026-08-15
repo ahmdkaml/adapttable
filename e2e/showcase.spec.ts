@@ -216,6 +216,21 @@ for (const adapter of ADAPTERS) {
         })
         .toBe(true);
       expect(behind).not.toBeNull();
+
+      // The panel must cover the page header too — Radix's Dialog overlay
+      // ships with no z-index, so a sticky nav (z-index 40) used to paint
+      // over the drawer while every other kit sat on top.
+      const nav = page.locator(".nav");
+      await expect(nav).toBeVisible();
+      await expect
+        .poll(async () => {
+          return nav.evaluate((node) => {
+            const r = node.getBoundingClientRect();
+            const hit = document.elementFromPoint(r.left + 24, r.top + 12);
+            return hit?.closest(".nav") ? "nav" : "covered";
+          });
+        })
+        .toBe("covered");
     });
 
     test("columns menu opens on top of the table", async ({ page }) => {

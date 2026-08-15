@@ -206,6 +206,13 @@ describe("chrome.tsx branches", () => {
       </Theme>
     );
     expect(await screen.findByText("ltr-body")).toBeInTheDocument();
+    expect(
+      [...document.querySelectorAll("style")].some((node) =>
+        node.textContent?.includes(
+          ".rt-DialogOverlay:has(.adapttable-radix-drawer){z-index:10050}"
+        )
+      )
+    ).toBe(true);
     // activeFilterCount=0 → the drawer's Clear all is disabled.
     expect(
       screen.getByRole("button", { name: defaultLabels.clearAll })
