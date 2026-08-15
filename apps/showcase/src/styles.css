@@ -108,6 +108,9 @@ a {
   color: var(--brand);
   font-weight: 650;
 }
+.nav__mobile {
+  display: none;
+}
 .nav__right {
   margin-inline-start: auto;
   display: flex;
@@ -405,14 +408,160 @@ a {
   background: var(--ink);
   color: var(--page-bg);
 }
+.seg__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
 
-/* Kitchen-sink page: grouped panels instead of one gray dump of toggles. */
+/* Feature Lab: the preview keeps the full canvas; configuration lives in a
+   native modal dialog so it never squeezes the table. */
+.lab-recipes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 10px;
+}
+.lab-recipe {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  text-align: start;
+  color: var(--ink-2);
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.lab-recipe:hover {
+  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+.lab-recipe.is-on {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 38%, var(--page-border));
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+.lab-recipe strong {
+  font-size: 13px;
+}
+.lab-recipe span {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+.lab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  color: var(--ink-2);
+  background: var(--page-surface-2);
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+}
+.lab-toolbar > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.lab-toolbar strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.lab-toolbar span {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lab-config-trigger,
+.lab-drawer__close {
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+.lab-config-trigger:hover,
+.lab-drawer__close:hover {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--page-border));
+}
+.lab-layout {
+  margin-top: 10px;
+  min-width: 0;
+}
+.lab-drawer {
+  inset-block: 12px;
+  inset-inline: auto 12px;
+  width: min(420px, calc(100vw - 24px));
+  height: calc(100dvh - 24px);
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px oklch(0 0 0 / 0.28);
+  overflow: hidden;
+}
+.lab-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.lab-drawer::backdrop {
+  background: oklch(0.08 0.015 264 / 0.38);
+  backdrop-filter: blur(2px);
+}
+.lab-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--page-border);
+}
+.lab-drawer__head > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.lab-drawer__head strong {
+  font-size: 14px;
+}
+.lab-drawer__head span {
+  color: var(--ink-3);
+  font-size: 11px;
+}
 .opt-board {
   display: grid;
   gap: 12px;
-  margin: 18px 0 0;
+  margin: 0;
+  min-width: 0;
+}
+.lab-drawer .opt-board {
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .opt-panel {
+  min-width: 0;
   padding: 14px 16px 12px;
   background: var(--page-surface-2);
   border: 1px solid var(--page-border);
@@ -430,10 +579,35 @@ a {
   flex-wrap: wrap;
   gap: 12px 16px;
   align-items: center;
+  min-width: 0;
 }
 .demo-surface--flush {
-  margin-top: 12px;
+  margin-top: 0;
   border-radius: 14px;
+}
+.lab-preview {
+  min-width: 0;
+}
+.lab-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  color: var(--ink-2);
+  background: var(--page-surface-2);
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+  font-size: 12px;
+}
+.lab-summary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.lab-summary small {
+  flex-basis: 100%;
+  color: var(--ink-3);
 }
 
 /* ---------- the table surface (real adapter mounts inside) ---------- */
@@ -526,6 +700,34 @@ a {
   font-size: 12px;
   color: var(--ink-2);
 }
+.demo-live-update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 9px 10px 9px 12px;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--page-surface) 90%, var(--brand) 10%);
+  border: 1px solid var(--page-border);
+  border-radius: 10px;
+  font-size: 12px;
+}
+.demo-live-update button {
+  flex: none;
+  min-height: 34px;
+  padding: 0 11px;
+  color: var(--page-bg);
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+.demo-live-update button:hover {
+  opacity: 0.88;
+}
 
 /* ---------- footer ---------- */
 .foot {
@@ -582,6 +784,41 @@ a {
   .nav__links {
     display: none;
   }
+  .nav__mobile {
+    position: relative;
+    display: inline-flex;
+    margin-inline-start: auto;
+    min-width: 0;
+  }
+  .nav__mobile select {
+    width: 126px;
+    height: 36px;
+    appearance: none;
+    border: 1px solid var(--page-border);
+    border-radius: 9px;
+    padding-inline: 11px 30px;
+    background: var(--page-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .nav__mobile span {
+    position: absolute;
+    inset-inline-end: 10px;
+    top: 50%;
+    translate: 0 -50%;
+    color: var(--ink-3);
+    pointer-events: none;
+  }
+  .nav__right {
+    margin-inline-start: 0;
+  }
+  .nav__right .nav__docs,
+  .nav__right .nav__cta {
+    display: none;
+  }
   .adapterbar {
     gap: 6px;
     overflow-x: auto;
@@ -597,8 +834,32 @@ a {
     min-width: 118px;
     max-width: 140px;
   }
+  .lab-recipes {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .lab-recipe {
+    flex: 0 0 180px;
+  }
+  .opt-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 560px) {
+  .shell {
+    padding-inline: 14px;
+  }
+  .nav__inner {
+    gap: 12px;
+  }
+  .nav__right {
+    gap: 6px;
+  }
+  .nav__mobile select {
+    width: 112px;
+  }
   .adtab {
     min-width: 104px;
     max-width: 124px;
@@ -607,11 +868,78 @@ a {
   .adtab__l small {
     display: none;
   }
+  .opt-board {
+    grid-template-columns: 1fr;
+  }
+  .lab-toolbar {
+    align-items: stretch;
+  }
+  .lab-config-trigger {
+    min-height: 40px;
+  }
+  .demo-live-update {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .demo-live-update button {
+    min-height: 40px;
+  }
+  .lab-drawer {
+    inset-block: 8px;
+    inset-inline: 8px;
+    width: auto;
+    height: calc(100dvh - 16px);
+  }
+  .lab-drawer .opt-panel__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .lab-drawer .ctrl {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .lab-drawer .seg {
+    display: flex;
+    width: 100%;
+  }
+  .lab-drawer .seg__btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 4px;
+  }
+  .ctrl {
+    width: 100%;
+    min-width: 0;
+  }
+  .ctrl__label {
+    flex: 0 0 auto;
+  }
+  .seg {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+@media (max-width: 360px) {
+  .wm__txt {
+    display: none;
+  }
+  .nav__docs {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

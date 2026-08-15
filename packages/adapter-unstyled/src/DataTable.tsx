@@ -3,7 +3,6 @@ import {
   ExportAnnouncer,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
-  SelectionStatsBar,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -23,6 +22,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { cx } from "./cx";
 import type { DataTableClassNames, DataTableProps } from "./types";

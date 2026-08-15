@@ -44,7 +44,9 @@ for (const adapter of ADAPTERS) {
         .getByRole("button", { name: "On", exact: true })
         .click();
 
-      const row = demo(page).locator("[data-stagger]").first();
+      // Not the source's first row: the demo simulation must follow whichever
+      // visible editor is active after sort/filter changes.
+      const row = demo(page).locator("[data-stagger]").nth(2);
       const activate = row
         .locator('[data-adapttable-part="edit-cell-activate"]')
         .first();

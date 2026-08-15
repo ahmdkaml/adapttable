@@ -28,10 +28,9 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
         each key nests inside the one before it. Add{" "}
         <code>groupAggregates</code> for per-group subtotals — the same mapper{" "}
         <code>summaryRow</code> uses — and every header totals its whole
-        subtree. Collapse a group, edit a cell inside another, and the numbers
-        keep up. Export writes the whole grouped sheet as a spreadsheet —
-        outline levels for each nest, and every group total in the file. All
-        opt-in: omit the props and the table stays flat.
+        subtree. Export writes the whole grouped sheet as a spreadsheet —
+        outline levels for each nest, and every group total in the file. This
+        page stays on grouping; editing has its own focused page.
       </SectionHead>
       <div className="pad-surface">
         <div className="hint-row">
@@ -45,9 +44,6 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Check size={12} /> a footer closes every group with its total
           </span>
           <span className="hint">
-            <Check size={12} /> double-click a cell to edit it in place
-          </span>
-          <span className="hint">
             <Check size={12} /> Export writes the grouped sheet — outline +
             totals
           </span>
@@ -59,9 +55,8 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="grp"
             grouping
-            editing
-            cellNavigation
             exportCsv={EXPORT_GROUPED_AS_XLSX}
+            focused
           />
         </div>
       </div>

@@ -94,11 +94,15 @@ describe("kit header filters (unstyled)", () => {
       target: { value: "Web" },
     });
     expect(screen.getByLabelText("Team")).toHaveValue("Web");
-    fireEvent.click(screen.getByLabelText("Tags"));
+    const tagsTrigger = screen
+      .getAllByLabelText("Tags")
+      .find((element) => element.tagName === "SUMMARY");
+    if (!tagsTrigger) throw new Error("Tags filter trigger was not rendered");
+    fireEvent.click(tagsTrigger);
     fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
     expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
-    expect(screen.getByLabelText("Tags")).toHaveTextContent("2");
+    expect(tagsTrigger).toHaveTextContent("2");
     fireEvent.change(screen.getByLabelText("Core"), {
       target: { value: "true" },
     });

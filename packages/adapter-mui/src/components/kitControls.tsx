@@ -51,6 +51,7 @@ import {
   FormControlLabel,
   IconButton,
   Menu,
+  MenuItem,
   TextField,
 } from "@mui/material";
 import { useState } from "react";
@@ -128,7 +129,7 @@ function HeaderSelect({
       className={className}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{
-        select: { native: true },
+        select: { native: false },
         htmlInput: {
           "aria-label": label,
           "data-adapttable-part": "filter-header-input",
@@ -136,9 +137,9 @@ function HeaderSelect({
       }}
     >
       {options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value}>
           {option.label}
-        </option>
+        </MenuItem>
       ))}
     </TextField>
   );

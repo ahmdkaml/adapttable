@@ -148,9 +148,18 @@ describe("<DataTable> declarative columns + filters (Mantine)", () => {
       within(dropdown).queryByLabelText("Budget Value", { selector: "input" })
     ).toBeNull();
 
-    fireEvent.change(within(dropdown).getByLabelText("Status"), {
-      target: { value: "active" },
-    });
+    fireEvent.click(
+      within(dropdown).getByRole("combobox", {
+        name: "Status",
+        hidden: true,
+      })
+    );
+    fireEvent.click(
+      await screen.findByRole("option", {
+        name: "Active",
+        hidden: true,
+      })
+    );
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.queryByText("Beta")).toBeNull();
     // The chip uses the derived "<label>: <option label>" resolver.

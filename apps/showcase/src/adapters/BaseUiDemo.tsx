@@ -135,6 +135,8 @@ export function BaseUiDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  forceMobile,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -159,6 +161,9 @@ export function BaseUiDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
 }>) {
   const s = strings(locale);
   const filters = useDemoFilterDefs(locale);
@@ -190,23 +195,24 @@ export function BaseUiDemo({
           editHistory={editing}
           findInTable={editing}
           {...columns}
+          forceMobile={forceMobile}
           density={density}
           filtersMode={filtersUi}
           labels={getLabels(locale)}
           locale={locale}
           dir={getDirection(locale)}
           searchPlaceholder={s.search}
-          rowActions={makeActions(locale)}
-          bulkActions={makeBulkActions(locale)}
+          rowActions={focused ? undefined : makeActions(locale)}
+          bulkActions={focused ? undefined : makeBulkActions(locale)}
           confirm={demoConfirm}
-          enableColumnMenu
-          exportCsv
-          savedViews={demoSavedViews(urlKey)}
+          enableColumnMenu={!focused}
+          exportCsv={!focused}
+          savedViews={focused ? undefined : demoSavedViews(urlKey)}
           animate={animate}
           resizableColumns
           stickyHeader
           headerFilters={headerFilters}
-          filters={filters}
+          filters={focused ? undefined : filters}
           filterTypes={demoFilterTypes()}
           accentColor="blue"
         />

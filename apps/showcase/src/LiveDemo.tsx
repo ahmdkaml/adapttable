@@ -27,6 +27,20 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
     ADAPTER_TOKENS.find((a) => a.key === adapter) ?? ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
+  const frontendOnlyReason =
+    mode === "backend"
+      ? "Grouping and editing need the complete frontend row set."
+      : undefined;
+
+  const changeMode = (next: DataMode) => {
+    startTransition(() => {
+      setMode(next);
+      if (next === "backend") {
+        setGrouping("off");
+        setEditing("off");
+      }
+    });
+  };
 
   return (
     <section className="sec shell" id="demo">
@@ -45,9 +59,7 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
           <Segmented
             label="data source"
             value={mode}
-            onChange={(v) => {
-              startTransition(() => setMode(v));
-            }}
+            onChange={changeMode}
             options={[
               { value: "frontend", label: "Frontend" },
               { value: "backend", label: "Backend" },
@@ -103,7 +115,12 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             }}
             options={[
               { value: "off", label: "Off" },
-              { value: "on", label: "On" },
+              {
+                value: "on",
+                label: "On",
+                disabled: Boolean(frontendOnlyReason),
+                title: frontendOnlyReason,
+              },
             ]}
           />
         </Control>
@@ -116,7 +133,12 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
             }}
             options={[
               { value: "off", label: "Off" },
-              { value: "on", label: "On" },
+              {
+                value: "on",
+                label: "On",
+                disabled: Boolean(frontendOnlyReason),
+                title: frontendOnlyReason,
+              },
             ]}
           />
         </Control>

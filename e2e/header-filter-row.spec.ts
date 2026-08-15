@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Compact header filter row — same defs as the panel, desktop only.
  */
@@ -22,13 +24,15 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
   await expect(
     demo(page).locator('[data-adapter="mantine"] [data-stagger]').first()
   ).toBeVisible();
-  if (adapter === "mantine") return;
-  const tab = page.getByTestId(`adapter-${adapter}`);
-  await tab.scrollIntoViewIfNeeded();
-  await tab.click();
-  await expect(
-    demo(page).locator(`[data-adapter="${adapter}"] [data-stagger]`).first()
-  ).toBeVisible();
+  if (adapter !== "mantine") {
+    const tab = page.getByTestId(`adapter-${adapter}`);
+    await tab.scrollIntoViewIfNeeded();
+    await tab.click();
+    await expect(
+      demo(page).locator(`[data-adapter="${adapter}"] [data-stagger]`).first()
+    ).toBeVisible();
+  }
+  await configureFeatureLab(page, "filters container", "Header");
 }
 
 for (const adapter of ADAPTERS) {
@@ -39,17 +43,14 @@ for (const adapter of ADAPTERS) {
       const name = table.getByRole("searchbox", { name: "Person" });
       await expect(name).toBeVisible();
       await name.fill("Ada");
-      await expect(page).toHaveURL(/f_name=/);
+      await expect(page).toHaveURL(/lab\.f_name=/);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
     });
 
     test("keeps the header filter row under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await expect(
         tableScopedHeader(demo(page), adapter).first()

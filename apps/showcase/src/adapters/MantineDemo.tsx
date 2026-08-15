@@ -100,6 +100,7 @@ export function MantineDemo({
   exportCsv,
   headerFilters,
   columnGroups,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -125,6 +126,8 @@ export function MantineDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
   /**
    * Export configuration for the toolbar button. Defaults to a plain CSV of
    * the current page; the grouping demo overrides it to write the grouped
@@ -171,18 +174,18 @@ export function MantineDemo({
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={makeActions(locale)}
-            bulkActions={makeBulkActions(locale)}
+            rowActions={focused ? undefined : makeActions(locale)}
+            bulkActions={focused ? undefined : makeBulkActions(locale)}
             confirm={demoConfirm}
-            enableColumnMenu
-            exportCsv={exportCsv ?? true}
-            savedViews={demoSavedViews(urlKey)}
+            enableColumnMenu={!focused}
+            exportCsv={exportCsv ?? !focused}
+            savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
             stickyTop={8}
-            filters={filters}
+            filters={focused ? undefined : filters}
             filterTypes={demoFilterTypes()}
             forceMobile={forceMobile}
           />

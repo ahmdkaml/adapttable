@@ -83,6 +83,42 @@ test("default live demo keeps the seven pre-353 controls", async ({ page }) => {
   await expect(demo(page).getByText("Delivery")).toHaveCount(0);
 });
 
+test("backend mode resets and disables frontend-only live controls", async ({
+  page,
+}) => {
+  await page.goto("/");
+  for (const group of ["grouping", "editing"]) {
+    await page
+      .getByRole("group", { name: group })
+      .getByRole("button", { name: "On", exact: true })
+      .click();
+  }
+  await page
+    .getByRole("group", { name: "data source" })
+    .getByRole("button", { name: "Backend", exact: true })
+    .click();
+  for (const group of ["grouping", "editing"]) {
+    const control = page.getByRole("group", { name: group });
+    await expect(
+      control.getByRole("button", { name: "Off", exact: true })
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      control.getByRole("button", { name: "On", exact: true })
+    ).toBeDisabled();
+  }
+});
+
+test("mobile nav keeps every demo page reachable", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/");
+  const pageSelect = page.getByRole("combobox", { name: "Demo page" });
+  await expect(pageSelect).toBeVisible();
+  await expect(pageSelect).toHaveValue("demo");
+  await pageSelect.selectOption("columns");
+  await expect(page).toHaveURL(/\/columns\/$/);
+  await expect(pageSelect).toHaveValue("columns");
+});
+
 test("install + StackBlitz CTAs sit under the kit switcher", async ({
   page,
 }) => {
@@ -93,6 +129,79 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
   await expect(
     page.getByRole("link", { name: "Open in StackBlitz" })
   ).toBeVisible();
+});
+
+for (const focused of [
+  { name: "grouping", path: "/grouping/", exportName: /Export XLSX/ },
+  { name: "PDF", path: "/export-pdf/", exportName: /Export PDF/ },
+  { name: "mobile", path: "/mobile/", exportName: null },
+  { name: "RTL", path: "/rtl/", exportName: null },
+] as const) {
+  test(`${focused.name} page keeps only its relevant table chrome`, async ({
+    page,
+  }) => {
+    await page.goto(focused.path);
+    await expect(page.locator("[data-stagger]").first()).toBeVisible();
+    for (const name of ["Filters", "Saved views", "Columns"]) {
+      await expect(page.getByRole("button", { name, exact: true })).toHaveCount(
+        0
+      );
+    }
+    await expect(
+      page.getByRole("columnheader", { name: "Actions" })
+    ).toHaveCount(0);
+    if (focused.exportName) {
+      await expect(
+        page.getByRole("button", { name: focused.exportName })
+      ).toBeVisible();
+    } else {
+      await expect(page.getByRole("button", { name: /^Export/ })).toHaveCount(
+        0
+      );
+    }
+  });
+}
+
+test("mobile page previews the native card layout for every adapter", async ({
+  page,
+}) => {
+  await page.goto("/mobile/");
+  for (const adapter of ADAPTERS) {
+    if (adapter !== "mantine") {
+      await page.getByTestId(`adapter-${adapter}`).click();
+    }
+    const root = page.locator(`[data-adapter="${adapter}"]`);
+    await expect(root.getByRole("list", { name: "Data table" })).toBeVisible();
+    await expect(root.getByRole("columnheader")).toHaveCount(0);
+    expect(
+      await page
+        .locator(".phone-frame")
+        .evaluate((frame) => frame.scrollWidth <= frame.clientWidth)
+    ).toBe(true);
+    if (adapter === "shadcn" || adapter === "tailwind") {
+      const card = root.locator('[data-adapttable-part="card"]').first();
+      const chrome = await card.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return {
+          padding: Number.parseFloat(style.paddingTop),
+          border: Number.parseFloat(style.borderTopWidth),
+        };
+      });
+      expect(chrome.padding).toBeGreaterThan(0);
+      expect(chrome.border).toBeGreaterThan(0);
+    }
+  }
+});
+
+test("antd keeps its sticky header to one compact line", async ({ page }) => {
+  await openDemo(page, "antd");
+  const root = demo(page).locator('[data-adapter="antd"]');
+  const header = root.locator(".ant-table-sticky-holder thead tr").first();
+  const row = root.locator("[data-stagger]").first();
+  const headerBox = await header.boundingBox();
+  const rowBox = await row.boundingBox();
+  expect(headerBox?.height).toBeLessThanOrEqual(64);
+  expect(headerBox?.height ?? 0).toBeLessThan((rowBox?.height ?? 1) * 2);
 });
 
 /** Grouping and editing are opt-in control-bar toggles (off by default). */

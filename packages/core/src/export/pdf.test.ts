@@ -293,7 +293,7 @@ describe("buildTablePdf", () => {
     expect(text).toContain("(Page 3 of 3)");
     // The header repeats; the title does not.
     expect(text.split("(Name)").length).toBeGreaterThan(3);
-    expect((text.match(/\(Many\) Tj/g) ?? []).length).toBe(1);
+    expect(text.match(/\(Many\) Tj/g) ?? []).toHaveLength(1);
   });
 
   it("bolds group and total rows and indents their leaves", () => {

@@ -1,5 +1,5 @@
 import { DataTable } from "@adapttable/chakra";
-import type { NestedTableDefaults } from "@adapttable/core";
+import type { ColumnLayoutState, NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -111,6 +111,9 @@ export function ChakraDemo({
   cellNavigation,
   headerFilters,
   columnGroups,
+  defaultColumnLayout,
+  forceMobile,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -135,6 +138,10 @@ export function ChakraDemo({
   cellNavigation?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
+  forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
 }>) {
   const s = strings(locale);
   const filters = useDemoFilterDefs(locale);
@@ -147,7 +154,7 @@ export function ChakraDemo({
           mode={mode}
           pageMode={pageMode}
           urlKey={urlKey}
-          defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+          defaultColumnLayout={defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT}
           grouping={grouping}
           tree={tree}
           rowMode={rowMode}
@@ -172,23 +179,24 @@ export function ChakraDemo({
               editHistory={editing}
               findInTable={editing}
               {...columns}
+              forceMobile={forceMobile}
               density={density}
               filtersMode={filtersUi}
               labels={getLabels(locale)}
               locale={locale}
               dir={getDirection(locale)}
               searchPlaceholder={s.search}
-              rowActions={makeActions(locale)}
-              bulkActions={makeBulkActions(locale)}
+              rowActions={focused ? undefined : makeActions(locale)}
+              bulkActions={focused ? undefined : makeBulkActions(locale)}
               confirm={demoConfirm}
-              enableColumnMenu
-              exportCsv
-              savedViews={demoSavedViews(urlKey)}
+              enableColumnMenu={!focused}
+              exportCsv={!focused}
+              savedViews={focused ? undefined : demoSavedViews(urlKey)}
               animate={animate}
               resizableColumns
               stickyHeader
               headerFilters={headerFilters}
-              filters={filters}
+              filters={focused ? undefined : filters}
               filterTypes={demoFilterTypes()}
             />
           )}

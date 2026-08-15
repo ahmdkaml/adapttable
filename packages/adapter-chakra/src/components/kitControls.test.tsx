@@ -85,7 +85,7 @@ function TreeHarness() {
 }
 
 describe("kit header filters (chakra)", () => {
-  it("writes every compact header widget", () => {
+  it("writes every compact header widget", async () => {
     renderChakra(<HeaderHarness />);
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "Ada" },
@@ -96,7 +96,7 @@ describe("kit header filters (chakra)", () => {
     });
     expect(screen.getByLabelText("Team")).toHaveValue("Web");
     fireEvent.click(screen.getByLabelText("Tags"));
-    fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: "A" }));
     expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
     expect(screen.getByLabelText("Tags")).toHaveTextContent("2");

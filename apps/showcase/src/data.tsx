@@ -48,6 +48,8 @@ export interface Person {
   utilization?: number;
   /** `YYYY-MM-DD`, once a date edit materializes one. */
   start?: string;
+  /** Demo-only websocket revision used to exercise live-edit conflicts. */
+  revision?: number;
 }
 
 export const PEOPLE = people as Person[];
@@ -400,12 +402,12 @@ export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 };
 
 /**
- * The editing page's default layout: email stays visible there — it is the
- * column its walkthrough (and e2e specs) edit — while team stays hidden so
- * the table still fits without a horizontal scrollbar.
+ * The editing page's default layout: every editable field stays visible.
+ * Timeline is the only display-only column, so hiding it keeps the table
+ * compact without making the page borrow the Columns menu from its showcase.
  */
 export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
-  hidden: ["team"],
+  hidden: ["timeline"],
 };
 
 export function makeColumns(
@@ -446,7 +448,9 @@ export function makeColumns(
           </span>
         </span>
       ),
-      mobileLabel: s.person,
+      // The first mobile field is the card identity block; its Avatar + name
+      // already explain themselves, so repeating "Person" adds visual noise.
+      mobileLabel: "",
     },
     {
       key: "email",
@@ -576,10 +580,12 @@ export function makeColumns(
  */
 export function makeWideColumns(
   locale: Locale,
-  cells: DemoCells
+  cells: DemoCells,
+  options: Readonly<{ groups?: boolean }> = {}
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
+  const grouped = options.groups === true;
   return [
     {
       key: "person",
@@ -608,9 +614,7 @@ export function makeWideColumns(
     {
       key: "role",
       header: s.role,
-      // Adjacent columns sharing a `group` render under one spanning header.
-      // Reordering them apart splits it, so the span never lies about layout.
-      group: s.groupAssignment,
+      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "roleAr" },
       editable: true,
       editor: "text",
@@ -619,7 +623,7 @@ export function makeWideColumns(
     {
       key: "team",
       header: s.team,
-      group: s.groupAssignment,
+      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "teamAr" },
       sortable: true,
       editable: true,
@@ -664,7 +668,7 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      group: s.groupDelivery,
+      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -685,7 +689,7 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      group: s.groupDelivery,
+      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -895,7 +899,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
 }
 
 /**
- * Every-option page only — Team as the Excel checklist so that mode has a
+ * Feature Lab only — Team as the Excel checklist so that mode has a
  * home. The live demo stays on `multiSelect`; the type is configuration,
  * not a control on the page.
  */

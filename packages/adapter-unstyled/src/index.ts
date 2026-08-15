@@ -16,6 +16,7 @@ export {
   ChecklistFilter,
   type ChecklistFilterProps,
 } from "./components/ChecklistFilter";
+export { FillHandle } from "./components/FillHandle";
 export { FilterPanel, type FilterPanelProps } from "./components/FilterPanel";
 export {
   FilterPopover,
@@ -55,6 +56,7 @@ export {
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";
 export type {

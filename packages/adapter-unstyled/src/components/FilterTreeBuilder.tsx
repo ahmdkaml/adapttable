@@ -2,6 +2,7 @@ import {
   type FilterTreeBuilderProps,
   type FilterTreeButtonProps,
   FilterTreeChrome,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeSelectProps,
   type FilterTreeSlots,
@@ -78,10 +79,55 @@ function TreeButton({
   );
 }
 
+function TreeDisclosure({
+  label,
+  expanded,
+  className,
+  summaryClassName,
+  children,
+  onExpandedChange,
+}: FilterTreeDisclosureProps) {
+  return (
+    <details
+      open={expanded}
+      className={className}
+      data-adapttable-part="filter-tree"
+      onToggle={(event) => onExpandedChange(event.currentTarget.open)}
+      style={{
+        marginBlockStart: 4,
+        paddingBlockStart: 8,
+        borderBlockStart:
+          "1px solid color-mix(in srgb, currentColor 14%, transparent)",
+      }}
+    >
+      <summary
+        className={summaryClassName}
+        data-adapttable-part="filter-tree-summary"
+        style={{
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          fontWeight: 600,
+          fontSize: "0.8125rem",
+          paddingBlock: 4,
+          listStyle: "none",
+        }}
+      >
+        {label}
+        <span aria-hidden>{expanded ? "▴" : "▾"}</span>
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 const slots: FilterTreeSlots = {
   Select: TreeSelect,
   Input: TreeInput,
   Button: TreeButton,
+  Disclosure: TreeDisclosure,
 };
 
 /** Native AND/OR builder — compact unlabeled row; native is unstyled's kit. */

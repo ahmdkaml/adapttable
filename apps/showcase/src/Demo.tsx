@@ -37,7 +37,7 @@ export type FiltersUi = "popover" | "drawer" | "header";
 
 const AdvancedFiltersContext = createContext(false);
 
-/** Every-option page only — the live demo stays a simple auto form. */
+/** Feature Lab only — the live demo stays a simple auto form. */
 export const AdvancedFiltersProvider = AdvancedFiltersContext.Provider;
 
 function useAdvancedFilters(): boolean {
@@ -128,7 +128,7 @@ interface DataProps {
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
-  /** AND/OR builder — Every option only. Live demo stays a simple form. */
+  /** AND/OR builder — Feature Lab only. Live demo stays a simple form. */
   advancedFilters?: boolean;
 }
 
@@ -239,20 +239,14 @@ function Frontend({
   const onRowReorder = useCallback((from: number, to: number) => {
     setData((prev) => applyRowReorder(prev, from, to));
   }, []);
-  // A live update under an open editor is the conflict the table asks
-  // about — this is the demo's websocket, not a second commit path.
-  const bumpFirstRow = useCallback(() => {
-    setData((prev) => {
-      const first = prev[0];
-      if (!first) return prev;
-      return [
-        {
-          ...first,
-          name: `${first.name.replace(/ \*$/, "")} *`,
-        },
-        ...prev.slice(1),
-      ];
-    });
+  // A websocket revision can land on whichever row is being edited. Bump all
+  // demo revisions so the control remains truthful after sorting/filtering and
+  // whichever visible cell the reader chose; rowVersion identifies the one
+  // active row without changing any displayed value.
+  const simulateLiveUpdate = useCallback(() => {
+    setData((prev) =>
+      prev.map((row) => ({ ...row, revision: (row.revision ?? 0) + 1 }))
+    );
   }, []);
   const source = useFrontendData<Person>({
     data,
@@ -260,20 +254,15 @@ function Frontend({
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
-    // The registry comes along: the demo declares a custom filter type, and
-    // without it the tree falls back to the built-ins and matches every row.
-    // Live demo omits this — Advanced lives on Every option only.
-    ...(advancedFilters
-      ? {
-          filterTreeFn: (row: Person, tree: QueryFilterGroup) =>
-            evaluateFilterTree(
-              tree,
-              row,
-              DEMO_FILTER_RUNTIME.defs,
-              DEMO_FILTER_RUNTIME.registry
-            ),
-        }
-      : {}),
+    // Keep the headless engine active for deep links and restored query state.
+    // `withoutFilterTree` below hides only the builder UI outside Feature Lab.
+    filterTreeFn: (row: Person, tree: QueryFilterGroup) =>
+      evaluateFilterTree(
+        tree,
+        row,
+        DEMO_FILTER_RUNTIME.defs,
+        DEMO_FILTER_RUNTIME.registry
+      ),
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
@@ -285,25 +274,32 @@ function Frontend({
   return (
     <>
       {editing ? (
-        <button
-          type="button"
-          className="hint"
-          data-adapttable-part="demo-live-update"
-          onMouseDown={(event) => {
-            // A websocket does not steal focus. Prevent the editor from
-            // blur-committing before the row actually changes.
-            event.preventDefault();
-          }}
-          onClick={bumpFirstRow}
-        >
-          Simulate live update
-        </button>
+        <div className="demo-live-update">
+          <span>With an editor open, test an incoming server change.</span>
+          <button
+            type="button"
+            data-adapttable-part="demo-live-update"
+            onMouseDown={(event) => {
+              // A websocket does not steal focus. Prevent the editor from
+              // blur-committing before the row actually changes.
+              event.preventDefault();
+            }}
+            onClick={simulateLiveUpdate}
+          >
+            Simulate incoming update
+          </button>
+        </div>
       ) : null}
       {render(tableSource, {
         ...columns,
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
-        ...(editing ? { onCellEdit } : {}),
+        ...(editing
+          ? {
+              onCellEdit,
+              rowVersion: (row: Person) => row.revision ?? 0,
+            }
+          : {}),
         // Row mode changes the commit unit: every field of the row opens
         // together and arrives as one patch.
         ...(rowMode

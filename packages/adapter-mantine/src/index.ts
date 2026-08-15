@@ -30,6 +30,7 @@ export {
 } from "./components/ChecklistFilter";
 export { EmptyState, type EmptyStateProps } from "./components/EmptyState";
 export { ErrorState, type ErrorStateProps } from "./components/ErrorState";
+export { FillHandle } from "./components/FillHandle";
 export {
   FilterTreeBuilder,
   type FilterTreeBuilderProps,
@@ -67,6 +68,7 @@ export {
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export {
   TableSkeleton,
   type TableSkeletonProps,

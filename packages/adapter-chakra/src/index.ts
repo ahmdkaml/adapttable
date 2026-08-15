@@ -11,6 +11,7 @@ export {
   ChecklistFilter,
   type ChecklistFilterProps,
 } from "./components/ChecklistFilter";
+export { FillHandle } from "./components/FillHandle";
 export {
   FilterTreeBuilder,
   type FilterTreeBuilderProps,
@@ -44,6 +45,7 @@ export {
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export { DataTable } from "./DataTable";
 export type {
   DataTableClassNames,

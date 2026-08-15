@@ -83,7 +83,6 @@ export function Checkbox({
     </BaseCheckbox.Root>
   );
   if (children == null) return box;
-  if (children == null) return box;
   // Native <label> (not Text-as-label): Base UI wires aria-labelledby to the
   // enclosing label id; a plain label keeps the visible text as the name.
   return (

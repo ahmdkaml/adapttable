@@ -119,6 +119,8 @@ export function AntdDemo({
   exportCsv,
   headerFilters,
   columnGroups,
+  forceMobile,
+  focused,
 }: Readonly<{
   mode: DataMode;
   locale: Locale;
@@ -151,6 +153,9 @@ export function AntdDemo({
   exportCsv?: DataTableProps<Person>["exportCsv"];
   headerFilters?: boolean;
   columnGroups?: boolean;
+  forceMobile?: boolean;
+  /** Dedicated pages hide unrelated filter/action/view chrome. */
+  focused?: boolean;
 }>) {
   const s = strings(locale);
   const filters = useDemoFilterDefs(locale);
@@ -169,7 +174,11 @@ export function AntdDemo({
           // The wide showcase pins BOTH edges by default: person at the
           // start, the actions column at the end (it pins like any column).
           wide
-            ? { pinned: { person: "start", actions: "end" } }
+            ? {
+                pinned: focused
+                  ? { person: "start" }
+                  : { person: "start", actions: "end" },
+              }
             : LIVE_DEFAULT_LAYOUT
         }
         grouping={grouping}
@@ -199,21 +208,23 @@ export function AntdDemo({
             editHistory={editing}
             findInTable={editing}
             {...columns}
+            forceMobile={forceMobile}
             density={density}
             filtersMode={filtersUi}
             labels={getLabels(locale)}
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={makeActions(locale)}
-            bulkActions={makeBulkActions(locale)}
+            rowActions={focused ? undefined : makeActions(locale)}
+            bulkActions={focused ? undefined : makeBulkActions(locale)}
             confirm={demoConfirm}
-            enableColumnMenu
-            exportCsv={exportCsv ?? true}
-            savedViews={demoSavedViews(urlKey)}
+            enableColumnMenu={!focused || wide}
+            exportCsv={exportCsv ?? !focused}
+            savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
-            filters={filters}
+            stickyHeader
+            filters={focused ? undefined : filters}
             filterTypes={demoFilterTypes()}
             headerFilters={headerFilters}
           />

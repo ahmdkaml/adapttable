@@ -2887,8 +2887,8 @@ The square paints in the cell's own text colour; `--adapttable-fill-handle`
 changes it. In RTL it sits on the row's inline end, which is the left, and a
 sideways drag follows the same mirroring the arrow keys do.
 
-Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
-in `@adapttable/core/adapter` renders the square itself.
+Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`;
+`FillHandleChrome` passes the active corner to an adapter-owned handle.
 
 ## Find in table
 
@@ -2963,7 +2963,7 @@ in hand rather than the 100,000 in the dataset — the table never totals rows i
 has never seen.
 
 Headless: `selectionStats(options)` returns the figures;
-`SelectionStatsBar` in `@adapttable/core/adapter` renders the strip.
+`SelectionStatsChrome` passes formatted parts to an adapter-owned status bar.
 
 ## Selecting with the pointer, and whole columns
 
@@ -5652,7 +5652,8 @@ the panel UI over that tree — kit controls, same part names. The
 shared layout (no form controls) is `FilterTreeChrome` /
 `FilterTreeChromeProps` / `FilterTreeClassNames` / `FilterTreeSlots` /
 `FilterTreeSelectProps` / `FilterTreeInputProps` /
-`FilterTreeButtonProps` / `FilterTreeOption` on `@adapttable/core/adapter`.
+`FilterTreeButtonProps` / `FilterTreeDisclosureProps` / `FilterTreeOption` on
+`@adapttable/core/adapter`.
 `filterDefs` lets the chrome label tree chips. A `checklist` filter is
 the Excel-style distinct-values widget (`ChecklistFilter` /
 `ChecklistFilterProps` / `useChecklistFilter` / `collectChecklistValues`);
@@ -6056,7 +6057,8 @@ AND/OR trees: `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` /
 `FilterTreeBuilderProps`. Layout (on `@adapttable/core/adapter`):
 `FilterTreeChrome` / `FilterTreeChromeProps` / `FilterTreeClassNames` /
 `FilterTreeSlots` / `FilterTreeSelectProps` / `FilterTreeInputProps` /
-`FilterTreeButtonProps` / `FilterTreeOption`. Chips:
+`FilterTreeButtonProps` / `FilterTreeDisclosureProps` / `FilterTreeOption`.
+Chips:
 `useFilterTreeChips` / `UseFilterTreeChipsOptions` /
 `filterTreeChipLabel`. Checklist (on each adapter): `ChecklistFilter` /
 `ChecklistFilterProps`. Layout (on `@adapttable/core/adapter`):
@@ -6122,9 +6124,10 @@ highlights — and `fillRangeEdits(options)` turns the gesture into `CellEdit`
 values (`FillRangeOptions` in), continuing an arithmetic series when the source
 is one and repeating otherwise. `cellFillHandler(options)` resolves the
 recipient (`CellFillHandlerOptions`), and `batchEditHandler(batch, onCellEdit)`
-is the rule both it and `cellPasteHandler` follow. The square itself is
-`FillHandle` / `FillHandleProps` from `@adapttable/core/adapter`; on
-`<DataTable>` the prop is `onCellFill`. See
+is the rule both it and `cellPasteHandler` follow. Adapters export their
+kit-owned `FillHandle` and render it over `FillHandleChrome` /
+`FillHandleChromeProps` / `FillHandleSlots` / `FillHandleSlotProps` from
+`@adapttable/core/adapter`; on `<DataTable>` the prop is `onCellFill`. See
 [cell navigation](./cell-navigation.md).
 
 **Undo and redo.** `useEditHistory(options)` remembers gestures and replays
@@ -6260,9 +6263,12 @@ selectRange)` is what takes the table's focus to the match the walk is on. Cells
 
 **Selection statistics.** `selectionStats(options)` returns `SelectionStats` —
 `cells`, `numeric`, and `sum` / `average` / `min` / `max`, each `null` when the
-selection holds no numbers (`SelectionStatsOptions` in). `SelectionStatsBar` /
-`SelectionStatsBarProps` from `@adapttable/core/adapter` render the strip, which
-is empty below two cells. On `<DataTable>` the prop is `selectionStats`. See
+selection holds no numbers (`SelectionStatsOptions` in). Adapters export their
+kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
+`SelectionStatsChromeProps` / `SelectionStatsSlots` /
+`SelectionStatsSlotProps` / `SelectionStatPart` from
+`@adapttable/core/adapter`; it is empty below two cells. On `<DataTable>` the
+prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell

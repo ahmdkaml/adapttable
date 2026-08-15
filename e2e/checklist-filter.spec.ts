@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Excel-style checklist — search, check a value, hide other teams.
  */
@@ -35,11 +37,14 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
   ).toBeVisible();
 }
 
-async function openFilters(page: Page, name = "Filters"): Promise<void> {
+async function enableFilterRecipe(page: Page): Promise<void> {
   await page
-    .getByRole("group", { name: "filters container" })
-    .getByRole("button", { name: "Popover", exact: true })
+    .locator(".lab-recipes")
+    .getByRole("button", { name: /^Filters/ })
     .click();
+}
+
+async function openFilters(page: Page, name = "Filters"): Promise<void> {
   const trigger = filtersTrigger(page, name);
   // Open with the toolbar at the top of the viewport. The card is taller than
   // the window, and reaching a field further down makes Playwright scroll —
@@ -55,6 +60,7 @@ for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
     test("checking Core keeps Ada and hides Alan", async ({ page }) => {
       await openDemo(page, adapter);
+      await enableFilterRecipe(page);
       await openFilters(page);
       const box = checklist(page);
       await box.getByLabel("Search values").fill("Core");
@@ -62,7 +68,7 @@ for (const adapter of ADAPTERS) {
         .locator('[data-adapttable-part="filter-checkbox"]')
         .filter({ hasText: /Core/ })
         .click();
-      await expect(page).toHaveURL(/live\.f_team=/);
+      await expect(page).toHaveURL(/lab\.f_team=/);
       const table = demo(page).locator(`[data-adapter="${adapter}"]`);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
@@ -76,10 +82,8 @@ for (const adapter of ADAPTERS) {
 
     test("keeps the checklist under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await enableFilterRecipe(page);
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await openFilters(page, "عوامل التصفية");
       await expect(checklist(page).getByLabel("البحث في القيم")).toBeVisible();

@@ -27,7 +27,12 @@ import { type ReactNode, useId } from "react";
 import type { BaseUiAccentColor } from "../types";
 import { Flex, Spinner, Text, TextField } from "../ui";
 import { ChecklistFilter } from "./ChecklistFilter";
-import { FormField, NativeSelect, type SelectOption } from "./primitives";
+import {
+  Checkbox,
+  FormField,
+  NativeSelect,
+  type SelectOption,
+} from "./primitives";
 
 /**
  * A labelled GROUP wrapper for multi-control fields (the multiSelect chip
@@ -361,29 +366,21 @@ function AutoFilterField<TRow>({
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (
-                  <label
+                  <span
                     key={option.value}
-                    htmlFor={`${id}-${option.value}`}
                     className="adapttable-filter-chip"
                     data-checked={checked ? "true" : "false"}
                     data-accent={accentColor}
                   >
-                    <input
-                      type="checkbox"
-                      id={`${id}-${option.value}`}
+                    <Checkbox
                       checked={checked}
-                      onChange={() => toggle(option.value)}
-                      style={{
-                        position: "absolute",
-                        opacity: 0,
-                        width: 1,
-                        height: 1,
-                        margin: 0,
-                        pointerEvents: "none",
-                      }}
-                    />
-                    {option.label}
-                  </label>
+                      color={accentColor}
+                      value={option.value}
+                      onToggle={() => toggle(option.value)}
+                    >
+                      {option.label}
+                    </Checkbox>
+                  </span>
                 );
               })}
             </Flex>

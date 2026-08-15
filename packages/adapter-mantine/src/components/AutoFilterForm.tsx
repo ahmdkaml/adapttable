@@ -23,7 +23,6 @@ import {
   Input,
   Loader,
   MultiSelect,
-  NativeSelect,
   NumberInput,
   Select,
   Stack,
@@ -82,7 +81,6 @@ function RelativeTokenField({
           const found = RELATIVE_PRESETS.find((p) => p === next);
           if (found) onValue(joinRelativeToken(found, n));
         }}
-        comboboxProps={{ withinPortal: false }}
       />
       {counted && (
         <NumberInput
@@ -190,7 +188,6 @@ function RangeField<TRow>({
           data={data}
           value={op ?? null}
           onChange={handleOp}
-          comboboxProps={{ withinPortal: false }}
         />
         {values}
       </Group>
@@ -214,7 +211,7 @@ function BooleanControl<TRow>({
 }>) {
   const { label, choice, write } = useBooleanFilterWidget(def, source);
   return (
-    <NativeSelect
+    <Select
       size="sm"
       label={label}
       data-adapttable-part="filter-select"
@@ -224,10 +221,10 @@ function BooleanControl<TRow>({
         { value: "false", label: labels.boolFalse },
       ]}
       value={choice}
-      onChange={(e) => {
-        const next = e.currentTarget.value;
+      onChange={(next) => {
         if (next === "" || next === "true" || next === "false") write(next);
       }}
+      allowDeselect={false}
     />
   );
 }
@@ -242,12 +239,13 @@ function SelectControl<TRow>({
     ? [{ value: "", label: "…", disabled: true }]
     : [{ value: "", label: "All" }, ...options];
   return (
-    <NativeSelect
+    <Select
       size="sm"
       label={label}
       data={data}
       value={asText(source.extra[def.key])}
-      onChange={(e) => source.setExtra(def.key, e.currentTarget.value)}
+      onChange={(next) => source.setExtra(def.key, next ?? "")}
+      allowDeselect={false}
     />
   );
 }
@@ -275,7 +273,6 @@ function MultiSelectControl<TRow>({
       onChange={(values) => source.setExtra(def.key, values)}
       disabled={loading}
       rightSection={loading ? <Loader size="xs" /> : undefined}
-      comboboxProps={{ withinPortal: false }}
     />
   );
 }
@@ -311,7 +308,6 @@ function TextFilterField<TRow>({
             const found = ops.find((choice) => choice === next);
             if (found) write(found, value);
           }}
-          comboboxProps={{ withinPortal: false }}
         />
         {needsValue && (
           <TextInput

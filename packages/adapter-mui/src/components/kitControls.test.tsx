@@ -84,6 +84,13 @@ function TreeHarness() {
   );
 }
 
+const pickSelect = (name: string, optionLabel: string) => {
+  fireEvent.mouseDown(screen.getByRole("combobox", { name }));
+  fireEvent.click(
+    screen.getByRole("option", { name: optionLabel, hidden: true })
+  );
+};
+
 describe("kit header filters (mui)", () => {
   it("writes every compact header widget", () => {
     renderMui(<HeaderHarness />);
@@ -91,19 +98,22 @@ describe("kit header filters (mui)", () => {
       target: { value: "Ada" },
     });
     expect(screen.getByLabelText("Name")).toHaveValue("Ada");
-    fireEvent.change(screen.getByLabelText("Team"), {
-      target: { value: "Web" },
-    });
-    expect(screen.getByLabelText("Team")).toHaveValue("Web");
+    pickSelect("Team", "Web");
+    expect(screen.getByRole("combobox", { name: "Team" })).toHaveTextContent(
+      "Web"
+    );
     fireEvent.click(screen.getByLabelText("Tags"));
     fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
     expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
     expect(screen.getByLabelText("Tags")).toHaveTextContent("2");
-    fireEvent.change(screen.getByLabelText("Core"), {
-      target: { value: "true" },
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
     });
-    expect(screen.getByLabelText("Core")).toHaveValue("true");
+    pickSelect("Core", "True");
+    expect(screen.getByRole("combobox", { name: "Core" })).toHaveTextContent(
+      "True"
+    );
     fireEvent.change(screen.getByLabelText("Age"), {
       target: { value: "30" },
     });
@@ -141,19 +151,12 @@ describe("kit header filters (mui)", () => {
       );
     }
     renderMui(<One />);
-    fireEvent.change(screen.getByLabelText("Team"), {
-      target: { value: "Core" },
-    });
-    expect(screen.getByLabelText("Team")).toHaveValue("Core");
+    pickSelect("Team", "Core");
+    expect(screen.getByRole("combobox", { name: "Team" })).toHaveTextContent(
+      "Core"
+    );
   });
 });
-
-const pickSelect = (name: string, optionLabel: string) => {
-  fireEvent.mouseDown(screen.getByRole("combobox", { name }));
-  fireEvent.click(
-    screen.getByRole("option", { name: optionLabel, hidden: true })
-  );
-};
 
 describe("kit filter tree (mui)", () => {
   it("adds a condition and writes the value", () => {

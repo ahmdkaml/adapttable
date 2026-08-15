@@ -2,11 +2,12 @@ import {
   type FilterTreeBuilderProps,
   type FilterTreeButtonProps,
   FilterTreeChrome,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
-import { Button, Input } from "@chakra-ui/react";
+import { Button, Input, Stack } from "@chakra-ui/react";
 
 import { NativeSelect } from "./primitives";
 
@@ -66,10 +67,46 @@ function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
   );
 }
 
+function TreeDisclosure({
+  label,
+  expanded,
+  className,
+  summaryClassName,
+  children,
+  onExpandedChange,
+}: FilterTreeDisclosureProps) {
+  return (
+    <Stack
+      gap={2}
+      mt={1}
+      pt={2}
+      borderTopWidth="1px"
+      className={className}
+      data-adapttable-part="filter-tree"
+    >
+      <Button
+        type="button"
+        size="xs"
+        variant="ghost"
+        justifyContent="space-between"
+        className={summaryClassName}
+        aria-expanded={expanded}
+        data-adapttable-part="filter-tree-summary"
+        onClick={() => onExpandedChange(!expanded)}
+      >
+        {label}
+        <span aria-hidden>{expanded ? "▴" : "▾"}</span>
+      </Button>
+      {expanded ? children : null}
+    </Stack>
+  );
+}
+
 const slots: FilterTreeSlots = {
   Select: TreeSelect,
   Input: TreeInput,
   Button: TreeButton,
+  Disclosure: TreeDisclosure,
 };
 
 /** Chakra AND/OR builder — compact kit controls, no stacked field labels. */

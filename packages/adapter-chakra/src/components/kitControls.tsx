@@ -45,7 +45,14 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import { Button, IconButton, Input } from "@chakra-ui/react";
+import {
+  Button,
+  IconButton,
+  Input,
+  Popover,
+  Portal,
+  Stack,
+} from "@chakra-ui/react";
 
 import { Checkbox, NativeSelect } from "./primitives";
 
@@ -148,77 +155,57 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
-      <summary
-        aria-label={label}
-        data-adapttable-part="filter-header-input"
-        className={className}
-        style={{
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          boxSizing: "border-box",
-          width: "100%",
-          minHeight: 28,
-          paddingInline: 8,
-          border: "1px solid color-mix(in srgb, currentColor 20%, transparent)",
-          borderRadius: 6,
-          background: "var(--chakra-colors-bg, Canvas)",
-          listStyle: "none",
-        }}
-      >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
+    <Popover.Root positioning={{ placement: "bottom-start" }} lazyMount>
+      <Popover.Trigger asChild>
+        <Button
+          type="button"
+          size="xs"
+          variant="outline"
+          width="100%"
+          justifyContent="space-between"
+          aria-label={label}
+          data-adapttable-part="filter-header-input"
+          className={className}
         >
-          {summary}
-        </span>
-        <span aria-hidden>▾</span>
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          background: "var(--chakra-colors-bg, Canvas)",
-          border: "1px solid color-mix(in srgb, currentColor 20%, transparent)",
-          borderRadius: 6,
-          boxShadow: "var(--chakra-shadows-md, 0 8px 20px rgb(0 0 0 / 12%))",
-        }}
-      >
-        {options.map((option) => (
-          <Checkbox
-            key={option.value}
-            size="sm"
-            checked={selected.includes(option.value)}
-            onToggle={() =>
-              onToggle(option.value, !selected.includes(option.value))
-            }
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
           >
-            {option.label}
-          </Checkbox>
-        ))}
-      </div>
-    </details>
+            {summary}
+          </span>
+          <span aria-hidden>▾</span>
+        </Button>
+      </Popover.Trigger>
+      <Portal>
+        <Popover.Positioner>
+          <Popover.Content
+            width="max-content"
+            minWidth="160px"
+            p={2}
+            className={menuClassName}
+            data-adapttable-part="filter-header-menu"
+          >
+            <Stack gap={1.5} maxH="220px" overflowY="auto">
+              {options.map((option) => (
+                <Checkbox
+                  key={option.value}
+                  size="sm"
+                  checked={selected.includes(option.value)}
+                  onToggle={() =>
+                    onToggle(option.value, !selected.includes(option.value))
+                  }
+                >
+                  {option.label}
+                </Checkbox>
+              ))}
+            </Stack>
+          </Popover.Content>
+        </Popover.Positioner>
+      </Portal>
+    </Popover.Root>
   );
 }
 

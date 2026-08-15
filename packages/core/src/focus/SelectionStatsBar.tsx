@@ -1,22 +1,11 @@
-/**
- * The strip that says what the selection adds up to.
- *
- * It is the same bar every spreadsheet puts at the bottom of the window, and
- * it lives in core for the same reason the announcer does: eight adapters
- * would otherwise each decide their own wording, their own number formatting
- * and their own rules about when it appears.
- *
- * It says nothing about a single cell. One cell has no sum worth reading, and
- * a strip that flickers into existence on every arrow press is noise rather
- * than information.
- */
-import type { ReactElement } from "react";
+/** Headless selection-stat formatting; adapters own the visible status bar. */
+import type { ReactNode } from "react";
 
 import type { TableLabels } from "../types";
 import type { SelectionStats } from "./selectionStats";
 
-/** Props for {@link SelectionStatsBar}. */
-export interface SelectionStatsBarProps {
+/** Props for {@link SelectionStatsChrome}. */
+export interface SelectionStatsChromeProps {
   /** The statistics, straight from `shell.selectionStats`. */
   stats: SelectionStats | null;
   /** Labels for each figure; falls back to the built-in English. */
@@ -25,15 +14,35 @@ export interface SelectionStatsBarProps {
   locale?: string;
   /** A kit's own class for the strip. */
   className?: string;
+  /** Adapter-owned visible component. */
+  slots: SelectionStatsSlots;
+}
+
+/** One formatted statistic in display order. */
+export interface SelectionStatPart {
+  readonly key: "count" | "sum" | "average" | "min" | "max";
+  readonly text: string;
+}
+
+/** Props passed to an adapter's selection-status component. */
+export interface SelectionStatsSlotProps {
+  readonly parts: readonly SelectionStatPart[];
+  readonly className?: string;
+}
+
+/** Adapter-owned rendering for {@link SelectionStatsChrome}. */
+export interface SelectionStatsSlots {
+  readonly Stats: (props: SelectionStatsSlotProps) => ReactNode;
 }
 
 /** One figure, or nothing when the selection has no numbers to describe. */
 function figure(
+  key: SelectionStatPart["key"],
   label: string,
   value: number | null,
   format: (value: number) => string
-): string | null {
-  return value === null ? null : `${label} ${format(value)}`;
+): SelectionStatPart | null {
+  return value === null ? null : { key, text: `${label} ${format(value)}` };
 }
 
 /**
@@ -45,40 +54,27 @@ function figure(
  * the range announcement rather than interrupting it, which is the order the
  * two belong in.
  */
-export function SelectionStatsBar({
+export function SelectionStatsChrome({
   stats,
   labels,
   locale,
   className,
-}: Readonly<SelectionStatsBarProps>): ReactElement | null {
+  slots,
+}: Readonly<SelectionStatsChromeProps>): ReactNode {
   if (!stats || stats.cells < 2) return null;
   const format = (value: number) =>
     new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(value);
   const parts = [
-    `${labels?.selectionCount ?? "Count"} ${format(stats.cells)}`,
-    figure(labels?.selectionSum ?? "Sum", stats.sum, format),
-    figure(labels?.selectionAverage ?? "Avg", stats.average, format),
-    figure(labels?.selectionMin ?? "Min", stats.min, format),
-    figure(labels?.selectionMax ?? "Max", stats.max, format),
-  ].filter((part): part is string => part !== null);
+    {
+      key: "count" as const,
+      text: `${labels?.selectionCount ?? "Count"} ${format(stats.cells)}`,
+    },
+    figure("sum", labels?.selectionSum ?? "Sum", stats.sum, format),
+    figure("average", labels?.selectionAverage ?? "Avg", stats.average, format),
+    figure("min", labels?.selectionMin ?? "Min", stats.min, format),
+    figure("max", labels?.selectionMax ?? "Max", stats.max, format),
+  ].filter((part): part is SelectionStatPart => part !== null);
 
-  return (
-    <output
-      data-adapttable-part="selection-stats"
-      className={className}
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "0.25rem 1rem",
-        fontVariantNumeric: "tabular-nums",
-        opacity: 0.8,
-      }}
-    >
-      {parts.map((part) => (
-        <span key={part} data-adapttable-part="selection-stat">
-          {part}
-        </span>
-      ))}
-    </output>
-  );
+  const Stats = slots.Stats;
+  return <Stats parts={parts} className={className} />;
 }

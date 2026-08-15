@@ -160,16 +160,20 @@ describe("FilterHeaderChrome", () => {
 
   it("writes a multi-select from the compact menu", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByLabelText("Tags"));
+    const tagsTrigger = screen
+      .getAllByLabelText("Tags")
+      .find((element) => element.tagName === "SUMMARY");
+    if (!tagsTrigger) throw new Error("Tags filter trigger was not rendered");
+    fireEvent.click(tagsTrigger);
     fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
     expect(screen.getByRole("checkbox", { name: "A" })).toBeChecked();
-    expect(screen.getByLabelText("Tags")).toHaveTextContent("A");
+    expect(tagsTrigger).toHaveTextContent("A");
     fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
     expect(screen.getByRole("checkbox", { name: "B" })).toBeChecked();
-    expect(screen.getByLabelText("Tags")).toHaveTextContent("2");
+    expect(tagsTrigger).toHaveTextContent("2");
     fireEvent.click(screen.getByRole("checkbox", { name: "A" }));
     expect(screen.getByRole("checkbox", { name: "A" })).not.toBeChecked();
-    expect(screen.getByLabelText("Tags")).toHaveTextContent("B");
+    expect(tagsTrigger).toHaveTextContent("B");
   });
 
   it("writes a boolean tri-state", () => {

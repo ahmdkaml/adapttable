@@ -50,6 +50,8 @@ import {
   Button,
   Checkbox,
   NativeSelect,
+  Popover,
+  Stack,
   TextInput,
 } from "@mantine/core";
 
@@ -148,78 +150,51 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
-      <summary
-        aria-label={label}
-        data-adapttable-part="filter-header-input"
-        className={className}
-        style={{
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          boxSizing: "border-box",
-          width: "100%",
-          minHeight: 28,
-          paddingInline: 8,
-          border:
-            "1px solid var(--mantine-color-default-border, color-mix(in srgb, currentColor 24%, transparent))",
-          borderRadius: "var(--mantine-radius-default, 4px)",
-          background: "var(--mantine-color-default, Canvas)",
-          listStyle: "none",
-        }}
-      >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
+    <Popover withinPortal position="bottom-start" shadow="sm">
+      <Popover.Target>
+        <Button
+          type="button"
+          size="compact-xs"
+          variant="default"
+          fullWidth
+          aria-label={label}
+          data-adapttable-part="filter-header-input"
+          className={className}
+          justify="space-between"
+          styles={{ label: { minWidth: 0, width: "100%" } }}
         >
-          {summary}
-        </span>
-        <span aria-hidden>▾</span>
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          background: "var(--mantine-color-body, Canvas)",
-          border:
-            "1px solid var(--mantine-color-default-border, color-mix(in srgb, currentColor 24%, transparent))",
-          borderRadius: "var(--mantine-radius-default, 4px)",
-          boxShadow: "var(--mantine-shadow-sm)",
-        }}
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {summary}
+          </span>
+          <span aria-hidden>▾</span>
+        </Button>
+      </Popover.Target>
+      <Popover.Dropdown
+        data-adapttable-part="filter-header-menu"
+        className={menuClassName}
+        p="xs"
       >
-        {options.map((option) => (
-          <Checkbox
-            key={option.value}
-            size="xs"
-            label={option.label}
-            checked={selected.includes(option.value)}
-            onChange={(event) =>
-              onToggle(option.value, event.currentTarget.checked)
-            }
-          />
-        ))}
-      </div>
-    </details>
+        <Stack gap={6} mah={220} style={{ overflow: "auto" }}>
+          {options.map((option) => (
+            <Checkbox
+              key={option.value}
+              size="xs"
+              label={option.label}
+              checked={selected.includes(option.value)}
+              onChange={(event) =>
+                onToggle(option.value, event.currentTarget.checked)
+              }
+            />
+          ))}
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
   );
 }
 

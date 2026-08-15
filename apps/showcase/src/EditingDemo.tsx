@@ -40,8 +40,8 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Check size={12} /> Ctrl/Cmd+Z undoes · Ctrl/Cmd+F finds in place
           </span>
           <span className="hint">
-            <Bolt size={12} /> Simulate live update asks Keep mine / Take theirs
-            while an editor is open
+            <Bolt size={12} /> Simulate incoming update asks Keep mine / Take
+            theirs while any editor is open
           </span>
         </div>
         <div className="pad-surface__body">
@@ -51,6 +51,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="edit"
             editing
+            focused
           />
         </div>
       </div>

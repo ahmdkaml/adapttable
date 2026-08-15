@@ -6,7 +6,6 @@ import {
 import {
   GridFocusAnnouncer,
   RowReorderAnnouncer,
-  SelectionStatsBar,
   useDataTableShell,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
@@ -27,6 +26,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { SURFACE } from "./surface";

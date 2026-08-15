@@ -88,6 +88,27 @@ const slots: FilterTreeSlots = {
       {label}
     </button>
   ),
+  Disclosure: ({
+    label,
+    expanded,
+    className,
+    summaryClassName,
+    children,
+    onExpandedChange,
+  }) => (
+    <section className={className} data-adapttable-part="filter-tree">
+      <button
+        type="button"
+        className={summaryClassName}
+        aria-expanded={expanded}
+        data-adapttable-part="filter-tree-summary"
+        onClick={() => onExpandedChange(!expanded)}
+      >
+        {label}
+      </button>
+      {expanded ? children : null}
+    </section>
+  ),
 };
 
 function Harness({ initial }: Readonly<{ initial?: QueryFilterGroup }> = {}) {

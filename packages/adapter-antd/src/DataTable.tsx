@@ -62,7 +62,6 @@ import {
   rowIsDirty,
   RowReorderAnnouncer,
   rowReorderDropStyle,
-  SelectionStatsBar,
   tableRenderModel,
   useExportHandler,
   useKeyedVirtualization,
@@ -97,7 +96,11 @@ import {
   useState,
 } from "react";
 
-import { buildColumns, logicalAlign } from "./columns";
+import {
+  ANTD_ACTIONS_COLUMN_WIDTH,
+  buildColumns,
+  logicalAlign,
+} from "./columns";
 import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
@@ -118,6 +121,7 @@ import {
 import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { SkeletonTable } from "./components/SkeletonTable";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
@@ -213,7 +217,7 @@ function antdMinWidth<TRow>(
     widths,
     extra:
       (hasSelection ? 48 : 0) +
-      (hasActions ? 120 : 0) +
+      (hasActions ? ANTD_ACTIONS_COLUMN_WIDTH : 0) +
       (hasReorder ? REORDER_COLUMN_WIDTH : 0),
   });
 }

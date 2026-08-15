@@ -2,11 +2,12 @@ import {
   type FilterTreeBuilderProps,
   type FilterTreeButtonProps,
   FilterTreeChrome,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
-import { Button, Input, InputNumber, Select } from "antd";
+import { Button, Collapse, Input, InputNumber, Select } from "antd";
 
 export type { FilterTreeBuilderProps };
 
@@ -24,7 +25,6 @@ function TreeSelect({
       data-adapttable-part={part}
       value={value}
       onChange={onChange}
-      getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
       options={options.map((option) => ({
         value: option.value,
         label: option.label,
@@ -73,10 +73,50 @@ function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
   );
 }
 
+function TreeDisclosure({
+  label,
+  expanded,
+  className,
+  summaryClassName,
+  children,
+  onExpandedChange,
+}: FilterTreeDisclosureProps) {
+  return (
+    <Collapse
+      ghost
+      size="small"
+      className={className}
+      activeKey={expanded ? ["advanced"] : []}
+      data-adapttable-part="filter-tree"
+      onChange={(keys) => onExpandedChange(keys.includes("advanced"))}
+      style={{
+        marginBlockStart: 4,
+        paddingBlockStart: 8,
+        borderBlockStart: "1px solid var(--ant-color-border-secondary)",
+      }}
+      items={[
+        {
+          key: "advanced",
+          label: (
+            <span
+              className={summaryClassName}
+              data-adapttable-part="filter-tree-summary"
+            >
+              {label}
+            </span>
+          ),
+          children,
+        },
+      ]}
+    />
+  );
+}
+
 const slots: FilterTreeSlots = {
   Select: TreeSelect,
   Input: TreeInput,
   Button: TreeButton,
+  Disclosure: TreeDisclosure,
 };
 
 /** Ant Design AND/OR builder — compact kit Select / Input / Button, no stacked labels. */

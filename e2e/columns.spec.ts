@@ -25,6 +25,22 @@ async function scrollTableX(page: Page, dx: number): Promise<number> {
   }, dx);
 }
 
+test("the focused page has column tools without unrelated table chrome", async ({
+  page,
+}) => {
+  await page.goto("/columns/");
+  await expect(headerCell(page, "Person")).toBeVisible();
+  await expect(page.getByText("Assignment", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Filters", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Saved views", exact: true })
+  ).toHaveCount(0);
+  await expect(headerCell(page, "Actions")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Export XLSX/ })).toBeVisible();
+});
+
 test.describe("columns — pinning", () => {
   test("the default-pinned column holds its offset while the table scrolls sideways", async ({
     page,
@@ -80,14 +96,15 @@ test.describe("columns — pinning", () => {
     const stuckX = await headerX(page, "Status");
     const emailX = await headerX(page, "Email");
 
-    // …then scroll back a little: the floating column slides with the
-    // content, the pinned one does not move a pixel (it is still within its
-    // stuck range).
-    const scroll2 = await scrollTableX(page, -150);
-    expect(scroll2).toBe(maxScroll - 150);
+    // …then scroll back while Status is still within its sticky range: the
+    // floating column slides with the content, the pinned one does not move.
+    // The focused page intentionally has no Actions column, so its maximum
+    // scroll is shorter than the kitchen-sink table's was.
+    const scroll2 = await scrollTableX(page, -20);
+    expect(scroll2).toBe(maxScroll - 20);
     await expect
       .poll(async () => headerX(page, "Email"))
-      .toBeGreaterThan(emailX + 100);
+      .toBeGreaterThan(emailX + 10);
     expect(Math.abs((await headerX(page, "Status")) - stuckX)).toBeLessThan(2);
   });
 });

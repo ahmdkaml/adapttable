@@ -32,7 +32,6 @@ import {
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   headerGroupRows,
   insertExtraRows,
   logicalAlign,
@@ -78,6 +77,7 @@ import {
 import type { RadixAccentColor } from "../types";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,

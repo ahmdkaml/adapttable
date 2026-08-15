@@ -44,7 +44,12 @@ export function FilterPopover({
       // Ignore clicks on the trigger (the toggle handles those) and inside the
       // floating popover content, which antd portals under `.ant-popover`.
       if (target && anchorRef.current?.contains(target)) return;
-      if (target instanceof Element && target.closest(".ant-popover")) {
+      if (
+        target instanceof Element &&
+        target.closest(
+          ".ant-popover, .ant-select-dropdown, .ant-picker-dropdown"
+        )
+      ) {
         return;
       }
       onClose();

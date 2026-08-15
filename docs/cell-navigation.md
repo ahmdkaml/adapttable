@@ -108,8 +108,8 @@ The square paints in the cell's own text colour; `--adapttable-fill-handle`
 changes it. In RTL it sits on the row's inline end, which is the left, and a
 sideways drag follows the same mirroring the arrow keys do.
 
-Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`; `FillHandle`
-in `@adapttable/core/adapter` renders the square itself.
+Headless: `fillDirection`, `fillTargetRange` and `fillRangeEdits`;
+`FillHandleChrome` passes the active corner to an adapter-owned handle.
 
 ## Find in table
 
@@ -184,7 +184,7 @@ in hand rather than the 100,000 in the dataset — the table never totals rows i
 has never seen.
 
 Headless: `selectionStats(options)` returns the figures;
-`SelectionStatsBar` in `@adapttable/core/adapter` renders the strip.
+`SelectionStatsChrome` passes formatted parts to an adapter-owned status bar.
 
 ## Selecting with the pointer, and whole columns
 

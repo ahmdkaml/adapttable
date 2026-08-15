@@ -104,11 +104,22 @@ export interface FilterTreeButtonProps {
   readonly onClick: () => void;
 }
 
+/** Kit disclosure that owns the Advanced section's visible chrome. */
+export interface FilterTreeDisclosureProps {
+  readonly label: string;
+  readonly expanded: boolean;
+  readonly className?: string;
+  readonly summaryClassName?: string;
+  readonly children: ReactNode;
+  readonly onExpandedChange: (expanded: boolean) => void;
+}
+
 /** Adapter-supplied controls for {@link FilterTreeChrome}. */
 export interface FilterTreeSlots {
   readonly Select: (props: FilterTreeSelectProps) => ReactNode;
   readonly Input: (props: FilterTreeInputProps) => ReactNode;
   readonly Button: (props: FilterTreeButtonProps) => ReactNode;
+  readonly Disclosure: (props: FilterTreeDisclosureProps) => ReactNode;
 }
 
 /** One compact condition — field, operator, value, remove on a wrapping row. */
@@ -126,26 +137,6 @@ const TREE_STACK: CSSProperties = {
   flexDirection: "column",
   gap: 8,
   minWidth: 0,
-};
-
-const TREE_SHELL: CSSProperties = {
-  ...TREE_STACK,
-  marginBlockStart: 4,
-  paddingBlockStart: 8,
-  borderBlockStart:
-    "1px solid color-mix(in srgb, currentColor 14%, transparent)",
-};
-
-const TREE_SUMMARY: CSSProperties = {
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  fontWeight: 600,
-  fontSize: "0.8125rem",
-  paddingBlock: 4,
-  listStyle: "none",
 };
 
 const TREE_GROUP: CSSProperties = {
@@ -588,6 +579,7 @@ export function FilterTreeChrome<TRow>({
   const first = defs[0];
   const [expanded, setExpanded] = useState(Boolean(tree));
   if (!commit || !first || defs.length === 0) return null;
+  const Disclosure = slots.Disclosure;
 
   const onAddCondition = (path: readonly number[]) => {
     commit(addFilterTreeCondition(tree, path, newCondition(first, registry)));
@@ -597,21 +589,13 @@ export function FilterTreeChrome<TRow>({
   };
 
   return (
-    <details
-      data-adapttable-part="filter-tree"
+    <Disclosure
+      label={labels.filterTree}
+      expanded={expanded}
       className={classNames.filterTree}
-      style={TREE_SHELL}
-      open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}
+      summaryClassName={classNames.filterTreeSummary}
+      onExpandedChange={setExpanded}
     >
-      <summary
-        data-adapttable-part="filter-tree-summary"
-        className={classNames.filterTreeSummary}
-        style={TREE_SUMMARY}
-      >
-        {labels.filterTree}
-        <span aria-hidden>▾</span>
-      </summary>
       {tree ? (
         <GroupView
           group={tree}
@@ -640,6 +624,6 @@ export function FilterTreeChrome<TRow>({
           onAddGroup={() => onAddGroup([])}
         />
       )}
-    </details>
+    </Disclosure>
   );
 }

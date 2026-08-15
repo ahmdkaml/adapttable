@@ -7,13 +7,13 @@ import {
   type FilterValue,
   filterWidgetKind,
   joinRelativeToken,
+  listFilterValues,
   RELATIVE_PRESET_LABEL_KEYS,
   RELATIVE_PRESETS,
   renderRegisteredFilter,
   splitRelativeToken,
   type TableLabels,
   type TableSource,
-  listFilterValues,
   useBooleanFilterWidget,
   useFilterOptions,
   useRangeFilterWidget,
@@ -24,6 +24,7 @@ import {
   CircularProgress,
   FormControl,
   FormLabel,
+  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
@@ -90,15 +91,15 @@ function TextFilter<TRow>({
           }}
           data-adapttable-part="filter-operator"
           slotProps={{
-            select: { native: true },
+            select: { native: false },
             htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
           {ops.map((choice) => (
-            <option key={choice} value={choice}>
+            <MenuItem key={choice} value={choice}>
               {filterOpLabel(labels, opLabelKeys[choice])}
-            </option>
+            </MenuItem>
           ))}
         </TextField>
         {needsValue && (
@@ -139,13 +140,13 @@ function BooleanFilter<TRow>({
       }}
       data-adapttable-part="filter-select"
       slotProps={{
-        select: { native: true },
+        select: { native: false },
         inputLabel: { shrink: true },
       }}
     >
-      <option value="">{labels.boolAny}</option>
-      <option value="true">{labels.boolTrue}</option>
-      <option value="false">{labels.boolFalse}</option>
+      <MenuItem value="">{labels.boolAny}</MenuItem>
+      <MenuItem value="true">{labels.boolTrue}</MenuItem>
+      <MenuItem value="false">{labels.boolFalse}</MenuItem>
     </TextField>
   );
 }
@@ -162,20 +163,20 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       value={scalarText(source.extra[def.key])}
       onChange={(e) => source.setExtra(def.key, e.target.value)}
       slotProps={{
-        select: { native: true },
+        select: { native: false },
         inputLabel: { shrink: true },
       }}
     >
-      <option value="">All</option>
+      <MenuItem value="">All</MenuItem>
       {loading && (
-        <option value="" disabled>
+        <MenuItem value="" disabled>
           …
-        </option>
+        </MenuItem>
       )}
       {options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value}>
           {option.label}
-        </option>
+        </MenuItem>
       ))}
     </TextField>
   );
@@ -191,7 +192,6 @@ function MultiSelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       {loading ? <CircularProgress color="inherit" size={16} /> : null}
       <Autocomplete
         multiple
-        disablePortal
         options={[...options]}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(left, right) => left.value === right.value}
@@ -236,15 +236,15 @@ function RelativeTokenField({
           if (found) onValue(joinRelativeToken(found, n));
         }}
         slotProps={{
-          select: { native: true },
+          select: { native: false },
           htmlInput: { "aria-label": labels.opRelative },
         }}
         sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
       >
         {RELATIVE_PRESETS.map((p) => (
-          <option key={p} value={p}>
+          <MenuItem key={p} value={p}>
             {labels[RELATIVE_PRESET_LABEL_KEYS[p]]}
-          </option>
+          </MenuItem>
         ))}
       </TextField>
       {counted && (
@@ -327,19 +327,19 @@ function RangeFilter<TRow>({
             write(next, a, b);
           }}
           slotProps={{
-            select: { native: true },
+            select: { native: false },
             htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         >
-          <option value="" />
+          <MenuItem value="" />
           {ops.map((candidate) => (
-            <option key={candidate} value={candidate}>
+            <MenuItem key={candidate} value={candidate}>
               {filterOpLabel(
                 labels,
                 opLabelKeys[candidate as keyof typeof opLabelKeys]
               )}
-            </option>
+            </MenuItem>
           ))}
         </TextField>
         {bounds}
@@ -379,7 +379,7 @@ function FilterField<TRow>({
  * The auto-built filter form: one MUI widget per declarative definition,
  * reading and writing the source's extra-filter bag (so chips, URL state
  * and — on frontend data — the row predicate all stay in sync). Operator
- * and value share a row; native selects stay inline inside the popover.
+ * and value share a row; MUI selects stay inline inside the popover.
  *
  * @typeParam TRow - The row type.
  */

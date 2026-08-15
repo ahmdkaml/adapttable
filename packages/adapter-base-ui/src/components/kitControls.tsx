@@ -45,9 +45,10 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
+import { Popover } from "@base-ui/react/popover";
 
 import { Button, IconButton, TextField } from "../ui";
-import { Checkbox } from "./primitives";
+import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
   BatchEditBarProps,
@@ -107,19 +108,17 @@ function HeaderSelect({
   onChange,
 }: FilterHeaderSelectProps) {
   return (
-    <select
-      aria-label={label}
-      value={value}
-      className={className}
-      data-adapttable-part="filter-header-input"
-      onChange={(event) => onChange(event.target.value)}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <span className={className} style={{ display: "block", width: "100%" }}>
+      <NativeSelect
+        size="1"
+        width="100%"
+        aria-label={label}
+        value={value}
+        options={options}
+        data-adapttable-part="filter-header-input"
+        onValueChange={onChange}
+      />
+    </span>
   );
 }
 
@@ -145,79 +144,62 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
-      <summary
-        aria-label={label}
-        data-adapttable-part="filter-header-input"
-        className={className}
-        style={{
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          boxSizing: "border-box",
-          width: "100%",
-          minHeight: 28,
-          paddingInline: 8,
-          border: "1px solid color-mix(in srgb, currentColor 24%, Canvas)",
-          borderRadius: 6,
-          background: "var(--adapttable-surface, Canvas)",
-          listStyle: "none",
-        }}
-      >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {summary}
-        </span>
-        <span aria-hidden>▾</span>
-      </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
-        style={{
-          position: "absolute",
-          zIndex: 8,
-          top: "100%",
-          insetInlineStart: 0,
-          minWidth: "100%",
-          maxHeight: 220,
-          overflow: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          background: "var(--adapttable-surface, Canvas)",
-          border:
-            "1px solid var(--adapttable-border, color-mix(in srgb, currentColor 24%, Canvas))",
-          borderRadius: 8,
-          boxShadow:
-            "0 10px 15px -3px rgb(0 0 0 / 12%), 0 4px 6px -4px rgb(0 0 0 / 10%)",
-        }}
-      >
-        {options.map((option) => (
-          <Checkbox
-            key={option.value}
+    <Popover.Root>
+      <Popover.Trigger
+        render={
+          <Button
+            type="button"
             size="1"
-            checked={selected.includes(option.value)}
-            onToggle={() =>
-              onToggle(option.value, !selected.includes(option.value))
-            }
+            variant="outline"
+            aria-label={label}
+            data-adapttable-part="filter-header-input"
+            className={className}
+            style={{ width: "100%", justifyContent: "space-between" }}
           >
-            {option.label}
-          </Checkbox>
-        ))}
-      </div>
-    </details>
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {summary}
+            </span>
+            <span aria-hidden>▾</span>
+          </Button>
+        }
+      />
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="start" sideOffset={4}>
+          <Popover.Popup
+            className={menuClassName}
+            data-adapttable-part="filter-header-menu"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              minWidth: 160,
+              maxHeight: 220,
+              overflow: "auto",
+              padding: 8,
+            }}
+          >
+            {options.map((option) => (
+              <Checkbox
+                key={option.value}
+                size="1"
+                checked={selected.includes(option.value)}
+                onToggle={() =>
+                  onToggle(option.value, !selected.includes(option.value))
+                }
+              >
+                {option.label}
+              </Checkbox>
+            ))}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 

@@ -46,6 +46,7 @@ import {
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
 import { Button, Checkbox, Dropdown, Input, Select } from "antd";
+import type { ReactNode } from "react";
 
 export type {
   BatchEditBarProps,
@@ -134,6 +135,54 @@ function HeaderRange({ label, type, value, onChange }: FilterHeaderRangeProps) {
   );
 }
 
+type HeaderMultiMenuProps = Pick<
+  FilterHeaderMultiProps,
+  "options" | "selected" | "menuClassName" | "onToggle"
+>;
+
+function HeaderMultiMenu({
+  options,
+  selected,
+  menuClassName,
+  onToggle,
+}: Readonly<HeaderMultiMenuProps>) {
+  return (
+    <div
+      data-adapttable-part="filter-header-menu"
+      className={menuClassName}
+      style={{
+        maxHeight: 220,
+        overflow: "auto",
+        minWidth: 160,
+        padding: 8,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        background: "var(--ant-color-bg-elevated, Canvas)",
+        boxShadow: "var(--ant-box-shadow-secondary)",
+        borderRadius: 8,
+      }}
+    >
+      {options.map((option) => (
+        <Checkbox
+          key={option.value}
+          checked={selected.includes(option.value)}
+          onChange={(event) => onToggle(option.value, event.target.checked)}
+        >
+          {option.label}
+        </Checkbox>
+      ))}
+    </div>
+  );
+}
+
+function renderHeaderMultiMenu(
+  props: Readonly<HeaderMultiMenuProps>,
+  _origin: ReactNode
+): ReactNode {
+  return <HeaderMultiMenu {...props} />;
+}
+
 function HeaderMulti({
   label,
   summary,
@@ -146,34 +195,12 @@ function HeaderMulti({
   return (
     <Dropdown
       trigger={["click"]}
-      popupRender={() => (
-        <div
-          data-adapttable-part="filter-header-menu"
-          className={menuClassName}
-          style={{
-            maxHeight: 220,
-            overflow: "auto",
-            minWidth: 160,
-            padding: 8,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            background: "var(--ant-color-bg-elevated, Canvas)",
-            boxShadow: "var(--ant-box-shadow-secondary)",
-            borderRadius: 8,
-          }}
-        >
-          {options.map((option) => (
-            <Checkbox
-              key={option.value}
-              checked={selected.includes(option.value)}
-              onChange={(event) => onToggle(option.value, event.target.checked)}
-            >
-              {option.label}
-            </Checkbox>
-          ))}
-        </div>
-      )}
+      popupRender={renderHeaderMultiMenu.bind(null, {
+        options,
+        selected,
+        menuClassName,
+        onToggle,
+      })}
     >
       <Button
         size="small"

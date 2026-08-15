@@ -162,6 +162,8 @@ describe("kit filter tree (antd)", () => {
       target: { value: "Ada" },
     });
     expect(screen.getByLabelText("Value")).toHaveValue("Ada");
-    expect(screen.getByRole("combobox", { name: "Field" })).toBeVisible();
+    const field = screen.getByRole("combobox", { name: "Field" });
+    expect(field).toBeInTheDocument();
+    expect(screen.getByTitle("Name")).toHaveTextContent("Name");
   });
 });

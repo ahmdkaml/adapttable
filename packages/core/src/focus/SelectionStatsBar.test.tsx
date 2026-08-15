@@ -2,9 +2,14 @@
  * The strip itself: when it appears, and what it says.
  */
 import { render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
-import { SelectionStatsBar } from "./SelectionStatsBar";
+import {
+  SelectionStatsChrome,
+  type SelectionStatsChromeProps,
+  type SelectionStatsSlots,
+} from "./SelectionStatsBar";
 
 const STATS = {
   cells: 4,
@@ -15,7 +20,23 @@ const STATS = {
   max: 900,
 };
 
-describe("SelectionStatsBar", () => {
+const slots: SelectionStatsSlots = {
+  Stats: ({ parts }) => (
+    <output>
+      {parts.map((part) => (
+        <span key={part.key}>{part.text}</span>
+      ))}
+    </output>
+  ),
+};
+
+function SelectionStatsBar(
+  props: Readonly<Omit<SelectionStatsChromeProps, "slots">>
+) {
+  return <SelectionStatsChrome {...props} slots={slots} />;
+}
+
+describe("SelectionStatsChrome", () => {
   it("says nothing without statistics", () => {
     const { container } = render(<SelectionStatsBar stats={null} />);
     expect(container).toBeEmptyDOMElement();
@@ -28,6 +49,20 @@ describe("SelectionStatsBar", () => {
       <SelectionStatsBar stats={{ ...STATS, cells: 1 }} />
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("mounts the adapter strip as a component so kit hooks stay valid", () => {
+    const hookedSlots: SelectionStatsSlots = {
+      Stats: ({ parts }) => {
+        const [ready] = useState(true);
+        return ready ? <output>{parts[0]?.text}</output> : null;
+      },
+    };
+    const { rerender } = render(
+      <SelectionStatsChrome stats={null} slots={hookedSlots} />
+    );
+    rerender(<SelectionStatsChrome stats={STATS} slots={hookedSlots} />);
+    expect(screen.getByText("Count 4")).toBeInTheDocument();
   });
 
   it("reads the figures in the host's number format", () => {

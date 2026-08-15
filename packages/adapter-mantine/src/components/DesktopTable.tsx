@@ -28,7 +28,6 @@ import {
   cellsForRow,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -79,6 +78,7 @@ import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 import { HAIRLINE, SURFACE } from "../surface";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,

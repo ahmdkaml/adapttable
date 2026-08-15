@@ -28,7 +28,6 @@ import {
   columnFlexShares,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
-  FillHandle,
   type HeaderGroupCell,
   headerGroupRows,
   REORDER_COLUMN_WIDTH,
@@ -47,6 +46,7 @@ import type {
 
 import { isDangerColor } from "./colors";
 import { EditableDataCell } from "./components/EditableCell";
+import { FillHandle } from "./components/FillHandle";
 import {
   type AdaptTableGroupRow,
   type GroupedDataRecord,
@@ -85,6 +85,13 @@ const RESIZE_HANDLE_STYLE: CSSProperties = {
   touchAction: "none",
   userSelect: "none",
 };
+
+/**
+ * Ant's sticky header is a separate fixed-layout table. A content-sized
+ * sentinel width (for example `1`) collapses in that clone, wraps "Actions"
+ * one character per line, and makes the whole header abnormally tall.
+ */
+export const ANTD_ACTIONS_COLUMN_WIDTH = 120;
 
 /** Readable column label for the resize handle's accessible name. */
 function columnLabel<TRow>(column: ColumnDef<TRow>): string {
@@ -825,7 +832,7 @@ export function buildColumns<TRow>({
     cols.push({
       key: "__actions__",
       title: labels.actions,
-      width: 1,
+      width: ANTD_ACTIONS_COLUMN_WIDTH,
       fixed: actionsFixed ? "right" : undefined,
       onCell: (record: GroupedDataRecord<TRow>) => {
         if (isAdaptTableGroupRow(record) || isAdaptTableExtraRow(record)) {

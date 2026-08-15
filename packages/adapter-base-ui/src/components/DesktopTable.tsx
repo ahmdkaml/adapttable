@@ -32,7 +32,6 @@ import {
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -79,6 +78,7 @@ import type { BaseUiAccentColor } from "../types";
 import { Box, Table, Text } from "../ui";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,

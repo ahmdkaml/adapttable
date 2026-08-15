@@ -12,7 +12,7 @@ type DemoFilterSet = "live" | "kitchen";
 
 const DemoFilterSetContext = createContext<DemoFilterSet>("live");
 
-/** Live demo stays simple; Every option uses the kitchen set. */
+/** Live demo stays simple; Feature Lab recipes can opt into the kitchen set. */
 export const DemoFilterSetProvider = DemoFilterSetContext.Provider;
 
 /** Filter definitions for the current demo page. */

@@ -80,6 +80,12 @@ function openOperator(name: string) {
   fireEvent.mouseDown(screen.getByRole("combobox", { name }));
 }
 
+/** Pick an option from Ant Design's composite Select. */
+function pickSelect(name: string, option: string) {
+  fireEvent.mouseDown(screen.getByRole("combobox", { name }));
+  fireEvent.click(screen.getByTitle(option));
+}
+
 describe("<AutoFilterForm> (Ant Design)", () => {
   it("checklist hides without allFilteredRows and checks a counted value", () => {
     render(
@@ -106,22 +112,29 @@ describe("<AutoFilterForm> (Ant Design)", () => {
   });
 
   it("boolean: tri-state select writes true and clears", () => {
-    const source = staticSource({});
-    render(
-      <AutoFilterForm
-        defs={[{ key: "core", type: "boolean", label: "Core team" }]}
-        source={source}
-        labels={defaultLabels}
-      />
-    );
-    fireEvent.change(screen.getByLabelText("Core team"), {
-      target: { value: "true" },
-    });
-    expect(source.setExtra).toHaveBeenCalledWith("core", "true");
-    fireEvent.change(screen.getByLabelText("Core team"), {
-      target: { value: "" },
-    });
-    expect(source.setExtra).toHaveBeenCalledWith("core", undefined);
+    const write = vi.fn();
+    function Harness() {
+      const [extra, setExtra] = useState<ExtraFilters>({});
+      return (
+        <AutoFilterForm
+          defs={[{ key: "core", type: "boolean", label: "Core team" }]}
+          source={{
+            extra,
+            setExtra: (key, value) => {
+              write(key, value);
+              setExtra((current) => ({ ...current, [key]: value }));
+            },
+            setExtras: vi.fn(),
+          }}
+          labels={defaultLabels}
+        />
+      );
+    }
+    render(<Harness />);
+    pickSelect("Core team", defaultLabels.boolTrue);
+    expect(write).toHaveBeenCalledWith("core", "true");
+    pickSelect("Core team", defaultLabels.boolAny);
+    expect(write).toHaveBeenCalledWith("core", undefined);
   });
 
   it("tolerates a scalar multiSelect value (treats it as one selection)", () => {
@@ -156,9 +169,12 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    const select = screen.getByLabelText<HTMLSelectElement>("City");
-    expect(select.options).toHaveLength(1);
-    expect(select.options[0]).toHaveTextContent("All");
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "City" }));
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(1);
+    const visibleOptions = document.querySelectorAll(".ant-select-item-option");
+    expect(visibleOptions).toHaveLength(1);
+    expect(visibleOptions[0]).toHaveTextContent("All");
   });
 
   it("renders an options-less multiSelect as an empty group", () => {
@@ -174,7 +190,7 @@ describe("<AutoFilterForm> (Ant Design)", () => {
     );
   });
 
-  it("shows a disabled placeholder option while async select options load, then the loaded options", async () => {
+  it("shows the kit loading state while async select options load, then the loaded options", async () => {
     const { loader, resolve } = deferredOptions();
     render(
       <AutoFilterForm
@@ -183,19 +199,19 @@ describe("<AutoFilterForm> (Ant Design)", () => {
         labels={defaultLabels}
       />
     );
-    const select = screen.getByLabelText<HTMLSelectElement>("City");
-    expect(select.options).toHaveLength(2);
-    expect(select.options[1]).toBeDisabled();
-    expect(select.options[1]).toHaveTextContent("…");
+    const select = screen
+      .getByRole("combobox", { name: "City" })
+      .closest(".ant-select");
+    expect(select).toHaveClass("ant-select-loading");
 
     await act(async () => {
       resolve([{ value: "dxb", label: "Dubai" }]);
       await Promise.resolve();
     });
-    expect(select.options).toHaveLength(2);
-    expect(select.options[1]).toHaveTextContent("Dubai");
-    expect(select.options[1]).not.toBeDisabled();
-    expect(select.options[1]).toHaveValue("dxb");
+    expect(select).not.toHaveClass("ant-select-loading");
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "City" }));
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+    expect(screen.getByTitle("Dubai")).toBeInTheDocument();
   });
 
   it("shows a small spinner while async multiSelect options load, then the checkboxes", async () => {

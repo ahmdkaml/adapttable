@@ -148,10 +148,12 @@ export const shadcnClassNames = {
   headerActions: "ms-1 inline-flex items-center gap-0.5",
   tableFooter: "px-3 py-2 text-sm text-muted-foreground",
   resizeHandle: "hover:bg-border",
-  card: "mb-2 rounded-lg border border-border p-3 [[data-density=compact]_&]:p-2",
-  cardRow: "flex justify-between gap-3 py-0.5 text-sm",
-  cardLabel: "text-muted-foreground",
-  cardValue: "font-medium",
+  card: "list-none rounded-xl border border-border bg-card p-3 shadow-sm [[data-density=compact]_&]:p-2",
+  cardRow:
+    "flex items-start justify-between gap-3 py-1 text-sm first-of-type:mb-1 first-of-type:border-b first-of-type:border-border first-of-type:pb-2",
+  cardLabel:
+    "pt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground",
+  cardValue: "min-w-0 text-right font-medium",
   // ── Structure & scroll ──────────────────────────────────────────
   thead: "bg-card",
   headerRow: "align-middle",
@@ -169,7 +171,7 @@ export const shadcnClassNames = {
   fullWidthRow: "border-b border-border bg-muted/30",
   fullWidthCell:
     "px-3 py-2.5 text-sm [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
-  cards: "p-3",
+  cards: "m-0 grid list-none gap-2 p-3",
   cardActions: "mt-2 flex justify-end gap-1 border-t border-border pt-2",
   // ── Header groups (column banding) ──────────────────────────────
   headerGroupRow: "border-b border-border",

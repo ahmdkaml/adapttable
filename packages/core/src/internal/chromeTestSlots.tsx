@@ -174,17 +174,18 @@ function HeaderMulti({
       >
         {summary}
       </summary>
-      <div
-        role="listbox"
-        aria-multiselectable
+      <fieldset
+        aria-label={label}
         style={{
           position: "absolute",
           zIndex: 8,
           top: "100%",
           insetInlineStart: 0,
           minWidth: "100%",
+          minInlineSize: 0,
           maxHeight: 220,
           overflow: "auto",
+          margin: 0,
           padding: 8,
           display: "flex",
           flexDirection: "column",
@@ -209,7 +210,7 @@ function HeaderMulti({
             {option.label}
           </label>
         ))}
-      </div>
+      </fieldset>
     </details>
   );
 }

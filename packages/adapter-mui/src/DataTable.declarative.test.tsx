@@ -120,6 +120,30 @@ const budgetGroup = () => within(screen.getByRole("group", { name: "Budget" }));
 const hiredGroup = () =>
   within(screen.getByRole("group", { name: "Hired At" }));
 
+function openSelect(name: string, root?: HTMLElement) {
+  const control = (root ? within(root) : screen).getByRole("combobox", {
+    name,
+  });
+  fireEvent.mouseDown(control);
+  const menuId = control.getAttribute("aria-controls");
+  const menu = menuId ? document.getElementById(menuId) : null;
+  if (!menu) throw new Error(`MUI select "${name}" did not open`);
+  return within(menu);
+}
+
+function pickSelect(
+  name: string,
+  optionLabel: string | null,
+  root?: HTMLElement
+) {
+  const menu = openSelect(name, root);
+  const option =
+    optionLabel === null
+      ? menu.getAllByRole("option", { hidden: true })[0]!
+      : menu.getByRole("option", { name: optionLabel, hidden: true });
+  fireEvent.click(option);
+}
+
 describe("declarative DataTable (MUI)", () => {
   it("column filter shorthands alone (no filters prop) render the auto form", () => {
     mountTable({
@@ -136,7 +160,9 @@ describe("declarative DataTable (MUI)", () => {
       ],
     });
     openFilters();
-    expect(screen.getByLabelText("Status")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Status" })
+    ).toBeInTheDocument();
   });
 
   it("zero ceremony: select filter narrows rows, raises a chip, clear-all restores", () => {
@@ -144,9 +170,7 @@ describe("declarative DataTable (MUI)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
 
     openFilters();
-    fireEvent.change(screen.getByLabelText("Status"), {
-      target: { value: "active" },
-    });
+    pickSelect("Status", "Active");
 
     // Frontend tier auto-applies the predicate: blocked Bob is gone.
     expect(screen.queryByText("Bob")).toBeNull();
@@ -232,9 +256,7 @@ describe("declarative DataTable (MUI)", () => {
     mountTable({ total: 100, onQueryChange });
 
     openFilters();
-    fireEvent.change(screen.getByLabelText("Status"), {
-      target: { value: "blocked" },
-    });
+    pickSelect("Status", "Blocked");
 
     expect(seen.map((s) => s.status)).toEqual([undefined, "blocked"]);
     expect(seen[0]!.aborted).toBe(true);
@@ -244,13 +266,9 @@ describe("declarative DataTable (MUI)", () => {
   it("boolean filter writes true and clears", () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(screen.getByLabelText("Active"), {
-      target: { value: "true" },
-    });
+    pickSelect("Active", "True");
     expect(param(adapter, "f_active")).toBe("true");
-    fireEvent.change(screen.getByLabelText("Active"), {
-      target: { value: "" },
-    });
+    pickSelect("Active", "Any");
     expect(param(adapter, "f_active")).toBeNull();
   });
 
@@ -301,9 +319,12 @@ describe("declarative DataTable (MUI)", () => {
     openFilters();
     // Number flavour: equal / at-least / at-most / between (plus the clear
     // item) — and a `labels` override localizes the list.
-    const budgetOps = budgetGroup()
-      .getAllByRole("option")
-      .map((option) => option.textContent);
+    const budgetMenu = openSelect(
+      "Operator",
+      screen.getByRole("group", { name: "Budget" })
+    );
+    const budgetOptions = budgetMenu.getAllByRole("option", { hidden: true });
+    const budgetOps = budgetOptions.map((option) => option.textContent);
     expect(budgetOps).toEqual([
       "",
       "Equal",
@@ -316,10 +337,14 @@ describe("declarative DataTable (MUI)", () => {
       "Is any of",
       "Is none of",
     ]);
+    fireEvent.click(budgetOptions[0]!);
     // Date flavour: before / after / on / on-or / between / empty.
-    const hiredOps = hiredGroup()
-      .getAllByRole("option")
-      .map((option) => option.textContent);
+    const hiredMenu = openSelect(
+      "Operator",
+      screen.getByRole("group", { name: "Hired At" })
+    );
+    const hiredOptions = hiredMenu.getAllByRole("option", { hidden: true });
+    const hiredOps = hiredOptions.map((option) => option.textContent);
     expect(hiredOps).toEqual([
       "",
       "Before",
@@ -331,6 +356,7 @@ describe("declarative DataTable (MUI)", () => {
       "Relative",
       "Is empty",
     ]);
+    fireEvent.click(hiredOptions[0]!);
     // Operator-first: no value input until a comparison is chosen.
     expect(budgetGroup().queryByLabelText("Value")).toBeNull();
     expect(budgetGroup().queryByLabelText("From")).toBeNull();
@@ -339,14 +365,18 @@ describe("declarative DataTable (MUI)", () => {
   it("dateRange Relative stores the token and exposes last/next N", () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
-      target: { value: "relative" },
-    });
+    pickSelect(
+      "Operator",
+      "Relative",
+      screen.getByRole("group", { name: "Hired At" })
+    );
     expect(param(adapter, "f_hiredAtOp")).toBe("relative");
     expect(param(adapter, "f_hiredAtFrom")).toBe("today");
-    fireEvent.change(hiredGroup().getByLabelText("Relative"), {
-      target: { value: "last" },
-    });
+    pickSelect(
+      "Relative",
+      "Last N days",
+      screen.getByRole("group", { name: "Hired At" })
+    );
     expect(param(adapter, "f_hiredAtFrom")).toBe("last:7");
     fireEvent.change(hiredGroup().getByLabelText("Value"), {
       target: { value: "14" },
@@ -357,9 +387,11 @@ describe("declarative DataTable (MUI)", () => {
   it('"At least" writes only Min — switching to "At most" migrates it to Max', () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "gte" },
-    });
+    pickSelect(
+      "Operator",
+      "At least",
+      screen.getByRole("group", { name: "Budget" })
+    );
     fireEvent.change(budgetGroup().getByLabelText("Value"), {
       target: { value: "300" },
     });
@@ -370,9 +402,11 @@ describe("declarative DataTable (MUI)", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
     expect(screen.getByText("Cara")).toBeInTheDocument();
 
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "lte" },
-    });
+    pickSelect(
+      "Operator",
+      "At most",
+      screen.getByRole("group", { name: "Budget" })
+    );
     expect(param(adapter, "f_budgetMin")).toBeNull();
     expect(param(adapter, "f_budgetMax")).toBe("300");
     // The typed bound carried across the comparison switch.
@@ -384,9 +418,11 @@ describe("declarative DataTable (MUI)", () => {
   it('"Equal" writes BOTH keys with the one value', () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "eq" },
-    });
+    pickSelect(
+      "Operator",
+      "Equal",
+      screen.getByRole("group", { name: "Budget" })
+    );
     fireEvent.change(budgetGroup().getByLabelText("Value"), {
       target: { value: "500" },
     });
@@ -401,9 +437,11 @@ describe("declarative DataTable (MUI)", () => {
   it('"Between" renders From/To and writes both keys', () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "between" },
-    });
+    pickSelect(
+      "Operator",
+      "Between",
+      screen.getByRole("group", { name: "Budget" })
+    );
     // Two labeled bounds replace the single value input.
     expect(budgetGroup().queryByLabelText("Value")).toBeNull();
     fireEvent.change(budgetGroup().getByLabelText("From"), {
@@ -423,9 +461,11 @@ describe("declarative DataTable (MUI)", () => {
   it("clearing the operator clears the persisted pair", () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "between" },
-    });
+    pickSelect(
+      "Operator",
+      "Between",
+      screen.getByRole("group", { name: "Budget" })
+    );
     fireEvent.change(budgetGroup().getByLabelText("From"), {
       target: { value: "300" },
     });
@@ -433,9 +473,7 @@ describe("declarative DataTable (MUI)", () => {
       target: { value: "600" },
     });
     expect(param(adapter, "f_budgetMin")).toBe("300");
-    fireEvent.change(budgetGroup().getByLabelText("Operator"), {
-      target: { value: "" },
-    });
+    pickSelect("Operator", null, screen.getByRole("group", { name: "Budget" }));
     expect(param(adapter, "f_budgetMin")).toBeNull();
     expect(param(adapter, "f_budgetMax")).toBeNull();
     expect(budgetGroup().queryByLabelText("From")).toBeNull();
@@ -448,7 +486,9 @@ describe("declarative DataTable (MUI)", () => {
   it("URL f_budgetMin=5&f_budgetMax=5 mounts as Equal with the one value", () => {
     mountTable({}, "f_budgetMin=5&f_budgetMax=5");
     openFilters();
-    expect(budgetGroup().getByLabelText("Operator")).toHaveValue("eq");
+    expect(
+      budgetGroup().getByRole("combobox", { name: "Operator" })
+    ).toHaveTextContent("Equal");
     expect(budgetGroup().getByLabelText("Value")).toHaveValue(5);
     // The restored pair predicate applied on mount: no budget equals 5.
     expect(screen.queryByText("Alice")).toBeNull();
@@ -462,9 +502,11 @@ describe("declarative DataTable (MUI)", () => {
   it("dateRange: On-or-after writes From; Between adds To; chips per bound", () => {
     const adapter = mountTable();
     openFilters();
-    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
-      target: { value: "gte" },
-    });
+    pickSelect(
+      "Operator",
+      "On or after",
+      screen.getByRole("group", { name: "Hired At" })
+    );
     fireEvent.change(hiredGroup().getByLabelText("Value"), {
       target: { value: "2025-03-01" },
     });
@@ -473,9 +515,11 @@ describe("declarative DataTable (MUI)", () => {
     // Alice (2025-01-15) hires before the bound.
     expect(screen.queryByText("Alice")).toBeNull();
 
-    fireEvent.change(hiredGroup().getByLabelText("Operator"), {
-      target: { value: "between" },
-    });
+    pickSelect(
+      "Operator",
+      "Between",
+      screen.getByRole("group", { name: "Hired At" })
+    );
     // The single value carried over as the lower bound.
     expect(param(adapter, "f_hiredAtFrom")).toBe("2025-03-01");
     fireEvent.change(hiredGroup().getByLabelText("To"), {
@@ -543,26 +587,37 @@ describe("<AutoFilterForm> (MUI)", () => {
   });
 
   it("async select options load lazily: disabled placeholder, then choices", async () => {
-    const load = vi.fn(() =>
-      Promise.resolve<readonly FilterOption[]>([
-        { value: "active", label: "Active" },
-      ])
+    let resolveOptions!: (options: readonly FilterOption[]) => void;
+    const load = vi.fn(
+      () =>
+        new Promise<readonly FilterOption[]>((resolve) => {
+          resolveOptions = resolve;
+        })
     );
     const adapter = mountTable({
       columns: [{ key: "firstName" }],
       filters: [{ key: "status", type: "select", options: load }],
     });
     openFilters();
-    const select = screen.getByLabelText("Status");
     // While the loader is in flight: the All reset plus one disabled "…" row.
-    expect(within(select).getByRole("option", { name: "…" })).toBeDisabled();
+    const menu = openSelect("Status");
     expect(
-      await within(select).findByRole("option", { name: "Active" })
-    ).toBeInTheDocument();
-    expect(within(select).queryByRole("option", { name: "…" })).toBeNull();
+      menu.getByRole("option", { name: "…", hidden: true })
+    ).toHaveAttribute("aria-disabled", "true");
+    await act(async () => {
+      resolveOptions([{ value: "active", label: "Active" }]);
+      await Promise.resolve();
+    });
+    const active = await screen.findByRole("option", {
+      name: "Active",
+      hidden: true,
+    });
+    expect(
+      screen.queryByRole("option", { name: "…", hidden: true })
+    ).toBeNull();
     expect(load).toHaveBeenCalledTimes(1);
     // The loaded choices write filter state like any static option list.
-    fireEvent.change(select, { target: { value: "active" } });
+    fireEvent.click(active);
     expect(param(adapter, "f_status")).toBe("active");
   });
 
@@ -610,11 +665,13 @@ describe("<AutoFilterForm> (MUI)", () => {
       />
     );
     // The select still offers the "All" reset option…
-    expect(
-      within(screen.getByLabelText("Status")).getByRole("option", {
-        name: "All",
-      })
-    ).toBeInTheDocument();
+    const statusMenu = openSelect("Status");
+    const all = statusMenu.getByRole("option", {
+      name: "All",
+      hidden: true,
+    });
+    expect(all).toBeInTheDocument();
+    fireEvent.click(all);
     // …and the option-less Autocomplete is there with no choices.
     expect(
       screen.getByRole("combobox", { name: "Department" })

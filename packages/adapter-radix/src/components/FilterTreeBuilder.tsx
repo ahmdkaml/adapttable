@@ -2,11 +2,14 @@ import {
   type FilterTreeBuilderProps,
   type FilterTreeButtonProps,
   FilterTreeChrome,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
-import { Button, TextField } from "@radix-ui/themes";
+import { Button, Flex, TextField } from "@radix-ui/themes";
+
+import { NativeSelect } from "./primitives";
 
 export type { FilterTreeBuilderProps };
 
@@ -18,29 +21,17 @@ function TreeSelect({
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <select
-      aria-label={label}
-      data-adapttable-part={part}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      style={{
-        flex: "1 1 8.5rem",
-        minWidth: "8.5rem",
-        height: "var(--space-5)",
-        borderRadius: "var(--radius-2)",
-        border: "1px solid var(--gray-a7)",
-        background: "var(--color-surface)",
-        paddingInline: "var(--space-2)",
-        fontSize: "var(--font-size-1)",
-        color: "inherit",
-      }}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <div style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}>
+      <NativeSelect
+        size="1"
+        width="100%"
+        aria-label={label}
+        data-adapttable-part={part}
+        value={value}
+        options={options}
+        onValueChange={onChange}
+      />
+    </div>
   );
 }
 
@@ -72,10 +63,49 @@ function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
   );
 }
 
+function TreeDisclosure({
+  label,
+  expanded,
+  className,
+  summaryClassName,
+  children,
+  onExpandedChange,
+}: FilterTreeDisclosureProps) {
+  return (
+    <Flex
+      direction="column"
+      gap="2"
+      className={className}
+      data-adapttable-part="filter-tree"
+      style={{
+        marginBlockStart: 4,
+        paddingBlockStart: 8,
+        borderBlockStart: "1px solid var(--gray-a5)",
+      }}
+    >
+      <Button
+        type="button"
+        size="1"
+        variant="ghost"
+        className={summaryClassName}
+        aria-expanded={expanded}
+        data-adapttable-part="filter-tree-summary"
+        onClick={() => onExpandedChange(!expanded)}
+        style={{ justifyContent: "space-between" }}
+      >
+        {label}
+        <span aria-hidden>{expanded ? "▴" : "▾"}</span>
+      </Button>
+      {expanded ? children : null}
+    </Flex>
+  );
+}
+
 const slots: FilterTreeSlots = {
   Select: TreeSelect,
   Input: TreeInput,
   Button: TreeButton,
+  Disclosure: TreeDisclosure,
 };
 
 /** Radix AND/OR builder — compact kit row, no stacked field labels. */

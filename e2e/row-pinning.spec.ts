@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Row pinning across every kit — Pin to top moves the first person into
  * the sticky section and out of the scroll body. RTL uses the same
@@ -36,10 +38,7 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
 }
 
 async function enablePinRows(page: Page): Promise<void> {
-  await page
-    .getByRole("group", { name: "pin rows" })
-    .getByRole("button", { name: "On", exact: true })
-    .click();
+  await configureFeatureLab(page, "pin rows", "On");
 }
 
 async function pinFirstToTop(page: Page, label: string): Promise<void> {
@@ -61,10 +60,7 @@ for (const adapter of ADAPTERS) {
     test("pins the same way under RTL", async ({ page }) => {
       await openDemo(page, adapter);
       await enablePinRows(page);
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await pinFirstToTop(page, "تثبيت في الأعلى");
     });

@@ -204,6 +204,18 @@ describe("filter overlay a11y (axe) — Ant Design", () => {
     });
   });
 
+  it("keeps the popover open while a portaled kit select is used", async () => {
+    renderTable();
+    await openFilterForm();
+    const nestedPopup = document.createElement("div");
+    nestedPopup.className = "ant-select-dropdown";
+    document.body.append(nestedPopup);
+    fireEvent.mouseDown(nestedPopup);
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    nestedPopup.remove();
+    await closeOverlay();
+  });
+
   it("opens the drawer as a modal dialog behind a backdrop, focus-ready", async () => {
     renderTable({ filtersMode: "drawer" });
     fireEvent.click(trigger());

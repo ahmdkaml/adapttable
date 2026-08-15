@@ -37,9 +37,8 @@ test.describe("editing demo page", () => {
   });
 
   // Every editable column the page shows on load, not just the first one that
-  // works. "Team" is editable too but starts hidden (LIVE_DEFAULT_LAYOUT hides
-  // it so revealing it still widens the table past its container), so it is
-  // covered by the reveal test below rather than here.
+  // works. The display-only Timeline stays hidden so this page needs no
+  // Columns menu from the layout showcase.
   for (const column of ["Person", "Email", "Status", "Budget", "Load"]) {
     test(`${column} opens an editor on double-click`, async ({ page }) => {
       await page.goto("/editing/");
@@ -48,18 +47,36 @@ test.describe("editing demo page", () => {
     });
   }
 
-  test("Team edits once revealed from the Columns menu", async ({ page }) => {
+  test("keeps unrelated table chrome out of the editing walkthrough", async ({
+    page,
+  }) => {
     await page.goto("/editing/");
     await expect(page.getByRole("grid").first()).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Team" })).toHaveCount(
-      0
-    );
+    await expect(
+      page.getByRole("button", { name: "Filters", exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Saved views", exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Columns", exact: true })
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Export/ })).toHaveCount(0);
+    await expect(
+      page.getByRole("columnheader", { name: "Team" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Timeline" })
+    ).toHaveCount(0);
+  });
 
-    await page.getByRole("button", { name: "Columns" }).click();
-    await page.getByRole("button", { name: /show column: Team/i }).click();
-    await page.keyboard.press("Escape");
+  test("Team uses its select editor", async ({ page }) => {
+    await page.goto("/editing/");
+    await expect(page.getByRole("grid").first()).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Team" })
+    ).toBeVisible();
 
-    // Team uses a select editor, so this also proves a non-text editor opens.
     await expect(await openEditor(page, "Team")).toBeVisible();
   });
 

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /**
  * Extra rows across every kit — Extras on inserts a separator and a
  * full-width note. RTL uses the same slots; they are ids, not geometry.
@@ -36,10 +38,7 @@ for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
     test("inserts a separator and a full-width note", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "extra rows" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
+      await configureFeatureLab(page, "extra rows", "On");
       await expect(
         demo(page).locator('[data-adapttable-part="separator-row"]').first()
       ).toBeVisible();
@@ -48,14 +47,8 @@ for (const adapter of ADAPTERS) {
 
     test("keeps the same slots under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await page
-        .getByRole("group", { name: "extra rows" })
-        .getByRole("button", { name: "On", exact: true })
-        .click();
-      await page
-        .getByRole("group", { name: "locale" })
-        .getByRole("button", { name: "العربية", exact: true })
-        .click();
+      await configureFeatureLab(page, "extra rows", "On");
+      await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await expect(
         demo(page).locator('[data-adapttable-part="separator-row"]').first()

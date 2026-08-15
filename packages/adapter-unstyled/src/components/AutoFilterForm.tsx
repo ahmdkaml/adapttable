@@ -20,7 +20,7 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
-import { type ReactElement, type ReactNode, useId } from "react";
+import { type ReactElement, type ReactNode } from "react";
 
 import type { DataTableClassNames } from "../types";
 import { ChecklistFilter } from "./ChecklistFilter";
@@ -54,30 +54,35 @@ interface GroupFieldProps {
   children: ReactNode;
 }
 
-/** Labelled stack for multi-control fields — no fieldset box. */
+/** Native labelled group for multi-control fields — no visible fieldset box. */
 function GroupField({
   caption,
   classNames,
   children,
 }: Readonly<GroupFieldProps>) {
-  const labelId = useId();
   return (
-    <div
-      role="group"
-      aria-labelledby={labelId}
+    <fieldset
       data-adapttable-part={FIELD_PART}
       className={classNames.filterField}
-      style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        minWidth: 0,
+        margin: 0,
+        padding: 0,
+        border: 0,
+      }}
     >
-      <div
-        id={labelId}
+      <legend
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
+        style={{ padding: 0 }}
       >
         {caption}
-      </div>
+      </legend>
       {children}
-    </div>
+    </fieldset>
   );
 }
 

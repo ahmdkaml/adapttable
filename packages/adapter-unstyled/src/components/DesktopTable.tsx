@@ -27,7 +27,6 @@ import {
   cellsForRow,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -65,6 +64,7 @@ import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandButton } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,

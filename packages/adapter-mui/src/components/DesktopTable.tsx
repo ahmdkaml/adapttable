@@ -29,7 +29,6 @@ import {
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
-  FillHandle,
   fittedTableStyle,
   headerGroupRows,
   insertExtraRows,
@@ -59,6 +58,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { ExpandToggle } from "./ExpandToggle";
+import { FillHandle } from "./FillHandle";
 import {
   ColumnGroupToggle,
   FilterHeaderRow,

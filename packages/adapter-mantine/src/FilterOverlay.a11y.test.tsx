@@ -12,11 +12,9 @@
  *  - Mantine keeps the popover dropdown MOUNTED (just `display:none`) when
  *    closed, so closure is asserted via the trigger's `aria-expanded`, not by
  *    the form unmounting (as the Chakra suite does).
- *  - Escape and outside-click dismiss listeners are bound to the open overlay,
- *    not `document.body`; the keystroke is therefore dispatched from a control
- *    INSIDE the overlay (where real keyboard focus sits), and the outside
- *    pointer via `mouseDown` on `document.body` — both fire `onDismiss` in
- *    jsdom here.
+ *  - Escape runs Mantine's controlled `onChange`; outside-click is hand-wired
+ *    on `document` so portaled nested Select menus can be excluded without
+ *    weakening the no-backdrop dismissal contract.
  *  - In drawer mode the trigger is rendered bare (no `Popover.Target`), so it
  *    carries no `aria-expanded`; drawer closure is asserted by the dialog
  *    unmounting.
@@ -99,14 +97,17 @@ const trigger = () => screen.getByRole("button", { name: /filters/i });
 
 /**
  * Open the overlay and return a stable container around the declarative form.
- * The "Status" column filter is a Mantine `NativeSelect` (a real `<select>`)
- * found by its label even while the popover dropdown is `display:none` in
- * jsdom (Floating UI never positions it). The container is the popover
- * dropdown (`role="dialog"`) or the drawer body, whichever wraps the control.
+ * The "Status" column filter is a Mantine `Select`, found by its label even
+ * while the popover dropdown is `display:none` in jsdom (Floating UI never
+ * positions it). The container is the popover dropdown (`role="dialog"`) or
+ * the drawer body, whichever wraps the control.
  */
 async function openFilterForm(): Promise<HTMLElement> {
   fireEvent.click(trigger());
-  const status = await screen.findByLabelText("Status");
+  const status = await screen.findByRole("combobox", {
+    name: "Status",
+    hidden: true,
+  });
   return (
     status.closest<HTMLElement>(".mantine-Popover-dropdown") ??
     status.closest<HTMLElement>(".mantine-Drawer-body") ??
@@ -116,13 +117,15 @@ async function openFilterForm(): Promise<HTMLElement> {
 
 /**
  * Dismiss the open popover and wait for its trigger to report collapsed. The
- * dismiss listener is bound to the open dropdown, so Escape is dispatched from
- * a control inside it (where real keyboard focus sits) — `document.body` would
- * be ignored. Mantine keeps the dropdown mounted (hidden) on close, hence the
+ * Escape is dispatched from a control inside it, where real keyboard focus
+ * sits. Mantine keeps the dropdown mounted (hidden) on close, hence the
  * `aria-expanded` assertion rather than waiting for an unmount.
  */
 async function closePopover(): Promise<void> {
-  fireEvent.keyDown(await screen.findByLabelText("Status"), { key: "Escape" });
+  fireEvent.keyDown(
+    await screen.findByRole("combobox", { name: "Status", hidden: true }),
+    { key: "Escape" }
+  );
   await waitFor(() =>
     expect(trigger()).toHaveAttribute("aria-expanded", "false")
   );
@@ -142,7 +145,10 @@ describe("filter overlay a11y (axe) — Mantine", () => {
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
 
     fireEvent.click(trigger());
-    await screen.findByLabelText("Status");
+    await screen.findByRole("combobox", {
+      name: "Status",
+      hidden: true,
+    });
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
 
     // Re-clicking the open trigger closes it (Toolbar's onToggleFilters flips
@@ -185,11 +191,15 @@ describe("filter overlay a11y (axe) — Mantine", () => {
   it("Escape closes the popover", async () => {
     renderTable();
     await openFilterForm();
-    // Escape from inside the open dropdown runs Floating UI's dismiss →
-    // onDismiss → onCloseFilters → the trigger reports collapsed.
-    fireEvent.keyDown(await screen.findByLabelText("Status"), {
-      key: "Escape",
-    });
+    // Escape from inside the open dropdown runs Mantine's controlled
+    // onChange(false) → onCloseFilters → the trigger reports collapsed.
+    fireEvent.keyDown(
+      await screen.findByRole("combobox", {
+        name: "Status",
+        hidden: true,
+      }),
+      { key: "Escape" }
+    );
     await waitFor(() =>
       expect(trigger()).toHaveAttribute("aria-expanded", "false")
     );
@@ -204,13 +214,24 @@ describe("filter overlay a11y (axe) — Mantine", () => {
     renderTable();
     await openFilterForm();
     // The popover has no scrim, so the background stays interactive; a pointer
-    // press outside the dropdown reaches Floating UI's outside-press listener
-    // and dismisses it. (Chakra's Ark equivalent cannot be driven this way in
-    // jsdom; Mantine's `useClickOutside` fires on `mousedown` here.)
+    // press outside the dropdown reaches the adapter's document mousedown
+    // listener and dismisses it. Nested Mantine popups are excluded there.
     fireEvent.mouseDown(document.body);
     await waitFor(() =>
       expect(trigger()).toHaveAttribute("aria-expanded", "false")
     );
+  });
+
+  it("keeps the popover open while a portaled kit select is used", async () => {
+    renderTable();
+    await openFilterForm();
+    const nestedPopup = document.createElement("div");
+    nestedPopup.className = "mantine-Combobox-dropdown";
+    document.body.append(nestedPopup);
+    fireEvent.mouseDown(nestedPopup);
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    nestedPopup.remove();
+    await closePopover();
   });
 
   it("opening the drawer moves focus into the dialog behind a backdrop", async () => {

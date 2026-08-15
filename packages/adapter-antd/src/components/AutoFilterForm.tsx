@@ -75,7 +75,6 @@ function RelativeTokenField({
           const found = RELATIVE_PRESETS.find((p) => p === next);
           if (found) onValue(joinRelativeToken(found, n));
         }}
-        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
         options={RELATIVE_PRESETS.map((p) => ({
           value: p,
           label: labels[RELATIVE_PRESET_LABEL_KEYS[p]],
@@ -157,9 +156,6 @@ function RangeField<TRow>({
           setOp(found);
           write(found, a, b);
         }}
-        // Keep the dropdown inside this (position: relative) field so it
-        // never counts as an outside click for the hosting popover.
-        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
         options={ops.map((choice) => ({
           value: choice,
           label: filterOpLabel(
@@ -215,7 +211,6 @@ function TextFilterField<TRow>({
           const found = ops.find((choice) => choice === next);
           if (found) write(found, value);
         }}
-        getPopupContainer={(trigger: HTMLElement) => trigger.parentElement!}
         options={ops.map((choice) => ({
           value: choice,
           label: filterOpLabel(labels, opLabelKeys[choice]),
@@ -243,21 +238,21 @@ function BooleanFilterField<TRow>({
 }: Readonly<ControlProps<TRow>>) {
   const { label, choice, write } = useBooleanFilterWidget(def, source);
   return (
-    <select
-      className="ant-input ant-input-sm"
+    <Select
+      size="small"
       style={{ width: "100%" }}
       aria-label={label}
       data-adapttable-part="filter-select"
       value={choice}
-      onChange={(event) => {
-        const next = event.target.value;
+      onChange={(next) => {
         if (next === "" || next === "true" || next === "false") write(next);
       }}
-    >
-      <option value="">{labels.boolAny}</option>
-      <option value="true">{labels.boolTrue}</option>
-      <option value="false">{labels.boolFalse}</option>
-    </select>
+      options={[
+        { value: "", label: labels.boolAny },
+        { value: "true", label: labels.boolTrue },
+        { value: "false", label: labels.boolFalse },
+      ]}
+    />
   );
 }
 
@@ -269,9 +264,10 @@ interface ControlProps<TRow> {
 }
 
 /**
- * The kit-native widget for one definition. Every control renders inline
- * (no portal), reads `extra[stateKey]` and writes through `setExtra` /
- * `setExtras` — empty text / empty list clears the key (and its URL param).
+ * The kit-native widget for one definition. Every control reads
+ * `extra[stateKey]` and writes through `setExtra` / `setExtras`; popup menus
+ * use antd's portal so the scrolling filter panel cannot clip them. Empty text
+ * or an empty list clears the key (and its URL param).
  *
  * Select/multiSelect choices resolve through `useFilterOptions`, never by
  * mapping `def.options` directly — the source may be an async loader. While
@@ -296,24 +292,21 @@ function FilterControl<TRow>({
       return <BooleanFilterField def={def} source={source} labels={labels} />;
     case "select":
       return (
-        <select
-          className="ant-input ant-input-sm"
+        <Select
+          size="small"
           style={{ width: "100%" }}
           aria-label={label}
           value={scalarValue(extra[def.key])}
-          onChange={(event) => setExtra(def.key, event.target.value)}
-        >
-          <option value="">All</option>
-          {loading ? (
-            <option disabled>…</option>
-          ) : (
-            options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))
-          )}
-        </select>
+          loading={loading}
+          onChange={(next) => setExtra(def.key, next)}
+          options={[
+            { value: "", label: "All" },
+            ...options.map((option) => ({
+              value: option.value,
+              label: option.label,
+            })),
+          ]}
+        />
       );
     case "checklist":
       return <ChecklistFilter def={def} source={source} labels={labels} />;
@@ -321,9 +314,8 @@ function FilterControl<TRow>({
       return (
         <Select
           mode="multiple"
-          showSearch
+          showSearch={{ optionFilterProp: "label" }}
           allowClear
-          optionFilterProp="label"
           listHeight={240}
           aria-label={label}
           placeholder={label}
@@ -335,7 +327,6 @@ function FilterControl<TRow>({
           }))}
           value={listValue(extra[def.key])}
           onChange={(values) => setExtra(def.key, values.map(String))}
-          getPopupContainer={(node) => node.parentElement ?? document.body}
         />
       );
     case "dateRange":

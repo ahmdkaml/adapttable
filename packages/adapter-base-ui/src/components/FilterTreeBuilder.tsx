@@ -2,12 +2,14 @@ import {
   type FilterTreeBuilderProps,
   type FilterTreeButtonProps,
   FilterTreeChrome,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeSelectProps,
   type FilterTreeSlots,
 } from "@adapttable/core/adapter";
 
-import { Button, TextField } from "../ui";
+import { Button, Flex, TextField } from "../ui";
+import { NativeSelect } from "./primitives";
 
 export type { FilterTreeBuilderProps };
 
@@ -19,22 +21,17 @@ function TreeSelect({
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <select
-      aria-label={label}
-      data-adapttable-part={part}
-      className="adapttable-btn"
-      data-size="1"
-      data-variant="outline"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <div style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}>
+      <NativeSelect
+        size="1"
+        width="100%"
+        aria-label={label}
+        data-adapttable-part={part}
+        value={value}
+        options={options}
+        onValueChange={onChange}
+      />
+    </div>
   );
 }
 
@@ -66,10 +63,49 @@ function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
   );
 }
 
+function TreeDisclosure({
+  label,
+  expanded,
+  className,
+  summaryClassName,
+  children,
+  onExpandedChange,
+}: FilterTreeDisclosureProps) {
+  return (
+    <Flex
+      direction="column"
+      gap="2"
+      className={className}
+      data-adapttable-part="filter-tree"
+      style={{
+        marginBlockStart: 4,
+        paddingBlockStart: 8,
+        borderBlockStart: "1px solid var(--adapttable-border)",
+      }}
+    >
+      <Button
+        type="button"
+        size="1"
+        variant="ghost"
+        className={summaryClassName}
+        aria-expanded={expanded}
+        data-adapttable-part="filter-tree-summary"
+        onClick={() => onExpandedChange(!expanded)}
+        style={{ justifyContent: "space-between" }}
+      >
+        {label}
+        <span aria-hidden>{expanded ? "▴" : "▾"}</span>
+      </Button>
+      {expanded ? children : null}
+    </Flex>
+  );
+}
+
 const slots: FilterTreeSlots = {
   Select: TreeSelect,
   Input: TreeInput,
   Button: TreeButton,
+  Disclosure: TreeDisclosure,
 };
 
 /** Base UI AND/OR builder — compact kit row, no stacked field labels. */

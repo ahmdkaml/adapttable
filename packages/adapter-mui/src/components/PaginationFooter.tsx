@@ -55,7 +55,7 @@ export function Footer({
             label={labels.rowsPerPage}
             value={String(limit)}
             onChange={(e) => setLimit(Number(e.target.value))}
-            sx={{ minWidth: 100 }}
+            sx={{ minWidth: 132 }}
           >
             {pageSizeOptions(limit).map((n) => (
               <MenuItem key={n} value={String(n)}>

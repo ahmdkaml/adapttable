@@ -166,6 +166,7 @@ export {
   FilterTreeChrome,
   type FilterTreeChromeProps,
   type FilterTreeClassNames,
+  type FilterTreeDisclosureProps,
   type FilterTreeInputProps,
   type FilterTreeOption,
   type FilterTreeSelectProps,
@@ -180,14 +181,22 @@ export {
   type FindButtonProps,
   type FindSearchProps,
 } from "./find/FindBar";
-export { FillHandle, type FillHandleProps } from "./focus/FillHandle";
+export {
+  FillHandleChrome,
+  type FillHandleChromeProps,
+  type FillHandleSlotProps,
+  type FillHandleSlots,
+} from "./focus/FillHandle";
 export {
   GridFocusAnnouncer,
   type GridFocusAnnouncerProps,
 } from "./focus/GridFocusAnnouncer";
 export {
-  SelectionStatsBar,
-  type SelectionStatsBarProps,
+  type SelectionStatPart,
+  SelectionStatsChrome,
+  type SelectionStatsChromeProps,
+  type SelectionStatsSlotProps,
+  type SelectionStatsSlots,
 } from "./focus/SelectionStatsBar";
 export {
   GroupMoreButtonChrome,

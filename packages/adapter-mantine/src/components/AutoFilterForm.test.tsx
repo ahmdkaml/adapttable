@@ -6,7 +6,7 @@ import {
   type TableLabels,
   type TableSource,
 } from "@adapttable/core";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderMantine } from "../test-utils";
@@ -75,6 +75,14 @@ const pickOperator = (selectName: string, optionLabel: string) => {
   fireEvent.click(screen.getByRole("option", { name: optionLabel }));
 };
 
+/** Pick an item from a Mantine Select by its accessible control name. */
+const pickSelect = (selectName: string, optionLabel: string) => {
+  fireEvent.click(screen.getByRole("combobox", { name: selectName }));
+  fireEvent.click(
+    screen.getByRole("option", { name: optionLabel, hidden: true })
+  );
+};
+
 const TAGS_DEF: FilterDef<Row> = {
   key: "tags",
   type: "multiSelect",
@@ -129,21 +137,39 @@ describe("<AutoFilterForm>", () => {
 
   it("boolean: tri-state select writes true and clears", () => {
     const { source, setExtra } = makeSource();
-    renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
-    const select = screen.getByLabelText("Core team");
-    fireEvent.change(select, { target: { value: "true" } });
+    const view = renderForm(
+      [{ key: "core", type: "boolean", label: "Core team" }],
+      source
+    );
+    pickSelect("Core team", "True");
     expect(setExtra).toHaveBeenCalledWith("core", "true");
-    fireEvent.change(select, { target: { value: "" } });
-    expect(setExtra).toHaveBeenCalledWith("core", undefined);
+
+    view.unmount();
+    const clearing = makeSource({ core: "true" });
+    renderForm(
+      [{ key: "core", type: "boolean", label: "Core team" }],
+      clearing.source
+    );
+    pickSelect("Core team", "Any");
+    expect(clearing.setExtra).toHaveBeenCalledWith("core", undefined);
   });
 
   it("select: prepends a clearing All option and writes the chosen value", () => {
-    const { source, setExtra } = makeSource();
-    renderForm([{ key: "status", type: "select" }], source);
-    const select = screen.getByLabelText("Status");
-    expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
-    expect(select).toHaveValue("");
-    fireEvent.change(select, { target: { value: "" } });
+    const { source, setExtra } = makeSource({ status: "active" });
+    renderForm(
+      [
+        {
+          key: "status",
+          type: "select",
+          options: [{ value: "active", label: "Active" }],
+        },
+      ],
+      source
+    );
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue(
+      "Active"
+    );
+    pickSelect("Status", "All");
     expect(setExtra).toHaveBeenCalledWith("status", "");
   });
 
@@ -187,16 +213,24 @@ describe("<AutoFilterForm>", () => {
       ],
       source
     );
-    // While the loader is in flight: a single disabled "…" option.
-    const placeholder = screen.getByRole("option", { name: "…" });
-    expect(placeholder).toBeDisabled();
-    expect(screen.queryByRole("option", { name: "All" })).toBeNull();
-    // Loaded: the clearing All entry plus the fetched options.
-    expect(await screen.findByRole("option", { name: "Active" })).toHaveValue(
-      "act"
+    // While the loader is in flight, the closed control shows its placeholder.
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue("…");
+    // Loaded: the clearing All entry plus the fetched option.
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Status" })).toHaveValue(
+        "All"
+      )
     );
-    expect(screen.getByRole("option", { name: "All" })).toHaveValue("");
-    expect(screen.queryByRole("option", { name: "…" })).toBeNull();
+    fireEvent.click(screen.getByRole("combobox", { name: "Status" }));
+    expect(
+      screen.getByRole("option", { name: "Active", hidden: true })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "All", hidden: true })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "…", hidden: true })
+    ).toBeNull();
   });
 
   it("multiSelect: an async loader shows a spinner, then the checkboxes", async () => {
@@ -424,9 +458,7 @@ describe("<AutoFilterForm>", () => {
   it("boolean: writes false", () => {
     const { source, setExtra } = makeSource();
     renderForm([{ key: "core", type: "boolean", label: "Core team" }], source);
-    fireEvent.change(screen.getByLabelText("Core team"), {
-      target: { value: "false" },
-    });
+    pickSelect("Core team", "False");
     expect(setExtra).toHaveBeenCalledWith("core", "false");
   });
 
@@ -442,9 +474,7 @@ describe("<AutoFilterForm>", () => {
       ],
       source
     );
-    fireEvent.change(screen.getByLabelText("Status"), {
-      target: { value: "act" },
-    });
+    pickSelect("Status", "Active");
     expect(setExtra).toHaveBeenCalledWith("status", "act");
   });
 
