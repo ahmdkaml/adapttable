@@ -1,11 +1,10 @@
-import { useDataTableShell } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 export interface DataTableProps<TRow> {
-  columns: Array<{
+  columns: {
     key: keyof TRow & string;
     header: ReactNode;
-  }>;
+  }[];
   data: readonly TRow[];
 }
 
