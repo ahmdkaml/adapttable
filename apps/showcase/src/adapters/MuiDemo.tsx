@@ -127,6 +127,7 @@ export function MuiDemo({
   columnGroups,
   sparkline,
   columnMenu,
+  filterControls,
   forceMobile,
   focused,
 }: Readonly<{
@@ -156,6 +157,8 @@ export function MuiDemo({
   sparkline?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   columnMenu?: boolean;
+  /** Show the Filters control. Defaults to on unless the page is focused. */
+  filterControls?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -212,7 +215,7 @@ export function MuiDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
-            filters={focused ? undefined : filters}
+            filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
           />
         )}

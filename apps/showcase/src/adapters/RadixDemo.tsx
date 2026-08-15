@@ -105,6 +105,7 @@ export function RadixDemo({
   columnGroups,
   sparkline,
   columnMenu,
+  filterControls,
   forceMobile,
   focused,
 }: Readonly<{
@@ -134,6 +135,8 @@ export function RadixDemo({
   sparkline?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   columnMenu?: boolean;
+  /** Show the Filters control. Defaults to on unless the page is focused. */
+  filterControls?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -198,7 +201,7 @@ export function RadixDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
-            filters={focused ? undefined : filters}
+            filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
           />
         )}

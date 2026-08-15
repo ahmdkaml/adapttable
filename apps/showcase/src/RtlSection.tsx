@@ -24,6 +24,10 @@ export function RtlSection({ dark }: Readonly<{ dark: boolean }>) {
             dark={dark}
             urlKey="rtl"
             defaultColumnLayout={RTL_DEFAULT_LAYOUT}
+            // The filters popover is the point of this page: it has to anchor
+            // and flip from the correct edge under RTL, which nothing can show
+            // if `focused` strips the control that opens it.
+            filterControls
             focused
           />
         </div>

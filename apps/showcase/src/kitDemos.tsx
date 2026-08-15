@@ -40,6 +40,7 @@ export type KitDemoProps = Readonly<{
   columnGroups?: boolean;
   sparkline?: boolean;
   columnMenu?: boolean;
+  filterControls?: boolean;
   forceMobile?: boolean;
   pageMode?: PageMode;
   focused?: boolean;

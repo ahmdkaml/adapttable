@@ -113,6 +113,7 @@ export function ChakraDemo({
   columnGroups,
   sparkline,
   columnMenu,
+  filterControls,
   defaultColumnLayout,
   forceMobile,
   focused,
@@ -143,6 +144,8 @@ export function ChakraDemo({
   sparkline?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   columnMenu?: boolean;
+  /** Show the Filters control. Defaults to on unless the page is focused. */
+  filterControls?: boolean;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
@@ -202,7 +205,7 @@ export function ChakraDemo({
               resizableColumns
               stickyHeader
               headerFilters={headerFilters}
-              filters={focused ? undefined : filters}
+              filters={(filterControls ?? !focused) ? filters : undefined}
               filterTypes={demoFilterTypes()}
             />
           )}
