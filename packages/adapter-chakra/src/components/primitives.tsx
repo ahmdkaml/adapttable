@@ -30,6 +30,7 @@ export function Checkbox({
   mb,
   className,
   inputRef,
+  onKeyDown,
   "aria-label": ariaLabel,
   "data-adapttable-part": dataPart,
   children,
@@ -46,6 +47,7 @@ export function Checkbox({
   className?: string;
   /** Hands the real input out, so a cell editor can take focus on mount. */
   inputRef?: (node: HTMLInputElement | null) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   children?: ReactNode;
@@ -76,6 +78,7 @@ export function Checkbox({
       <ChakraCheckbox.HiddenInput
         ref={inputRef}
         aria-label={ariaLabel}
+        onKeyDown={onKeyDown}
         onClick={onToggle ? () => onToggle() : undefined}
         {...rest}
       />

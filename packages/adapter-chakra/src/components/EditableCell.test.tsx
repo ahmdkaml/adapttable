@@ -95,7 +95,7 @@ describe("ChakraCellEditor — multi-select", () => {
       ...over,
     });
 
-  const listBox = () => screen.getByLabelText("Tags") as HTMLSelectElement;
+  const listBox = () => screen.getByLabelText<HTMLSelectElement>("Tags");
 
   it("renders Chakra's select rather than an unstyled one", () => {
     renderChakra(<ChakraCellEditor ctrl={multiCtrl()} label="Tags" />);

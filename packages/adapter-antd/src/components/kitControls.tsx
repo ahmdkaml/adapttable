@@ -425,7 +425,12 @@ function MoreButton({ label, onClick }: GroupMoreButtonSlotProps) {
       type="link"
       size="small"
       data-adapttable-part="group-more"
-      onClick={onClick}
+      // Group headers toggle on click; revealing more rows must not also
+      // fold the group the reader is reading.
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
     >
       {label}
     </Button>

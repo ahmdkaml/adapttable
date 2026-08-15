@@ -42,17 +42,16 @@ export function ChakraCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <span onKeyDown={onKeyDown}>
-        <Checkbox
-          size="sm"
-          aria-label={label}
-          data-adapttable-part="edit-cell-editor"
-          {...editorValidationProps(ctrl)}
-          inputRef={ctrl.focusRef}
-          checked={isDraftChecked(ctrl.draft)}
-          onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
-        />
-      </span>
+      <Checkbox
+        size="sm"
+        aria-label={label}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        inputRef={ctrl.focusRef}
+        checked={isDraftChecked(ctrl.draft)}
+        onKeyDown={onKeyDown}
+        onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
+      />
     );
   }
 

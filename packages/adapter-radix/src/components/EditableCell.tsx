@@ -8,6 +8,7 @@ import {
   isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  type MultiSelectEditorCheckboxProps,
   MultiSelectEditorChrome,
   type MultiSelectEditorSlots,
 } from "@adapttable/core";
@@ -22,12 +23,27 @@ import { editableCellSlots } from "./kitControls";
 import { Checkbox, NativeSelect } from "./primitives";
 
 /** The multi-select editor's options, as Radix Themes checkboxes. */
-const multiSelectSlots: MultiSelectEditorSlots = {
-  Checkbox: ({ label, checked, onToggle, focusRef }) => (
-    <Checkbox checked={checked} onToggle={onToggle} inputRef={focusRef}>
+function MultiSelectOption({
+  label,
+  checked,
+  onToggle,
+  onKeyDown,
+  focusRef,
+}: Readonly<MultiSelectEditorCheckboxProps>) {
+  return (
+    <Checkbox
+      checked={checked}
+      onToggle={onToggle}
+      onKeyDown={onKeyDown}
+      inputRef={focusRef}
+    >
       {label}
     </Checkbox>
-  ),
+  );
+}
+
+const multiSelectSlots: MultiSelectEditorSlots = {
+  Checkbox: MultiSelectOption,
 };
 
 function stopEditKeys(event: KeyboardEvent): void {
@@ -51,17 +67,16 @@ export function RadixCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <span onKeyDown={onKeyDown}>
-        <Checkbox
-          size="1"
-          aria-label={label}
-          data-adapttable-part="edit-cell-editor"
-          {...editorValidationProps(ctrl)}
-          inputRef={ctrl.focusRef}
-          checked={isDraftChecked(ctrl.draft)}
-          onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
-        />
-      </span>
+      <Checkbox
+        size="1"
+        aria-label={label}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        inputRef={ctrl.focusRef}
+        checked={isDraftChecked(ctrl.draft)}
+        onKeyDown={onKeyDown}
+        onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
+      />
     );
   }
 

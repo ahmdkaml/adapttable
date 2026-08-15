@@ -6,11 +6,10 @@
  * fails. These are the keys the checklist and the tree builder hand their kit
  * slots.
  */
+import type { QueryFilterGroup } from "@adapttable/core";
 import { fireEvent, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
-
-import type { QueryFilterGroup } from "@adapttable/core";
 
 import { defaultLabels, type ExtraFilters, type FilterDef } from "../index";
 import { renderRadix } from "../test-utils";

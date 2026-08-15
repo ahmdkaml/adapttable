@@ -31,7 +31,7 @@ const ctrlFor = (
 
 /** A minimal kit: one native checkbox per option, as an adapter would. */
 const slots: MultiSelectEditorSlots = {
-  Checkbox: ({ label, value, checked, onToggle, focusRef }) => (
+  Checkbox: ({ label, value, checked, onToggle, onKeyDown, focusRef }) => (
     <label>
       <input
         type="checkbox"
@@ -39,6 +39,7 @@ const slots: MultiSelectEditorSlots = {
         ref={focusRef}
         checked={checked}
         onChange={() => onToggle()}
+        onKeyDown={onKeyDown}
       />
       {label}
     </label>

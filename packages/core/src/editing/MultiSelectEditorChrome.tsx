@@ -36,6 +36,12 @@ export interface MultiSelectEditorCheckboxProps {
    * does through {@link EditableCellEditorCtrl.focusRef}.
    */
   readonly focusRef?: (node: { focus: () => void } | null) => void;
+  /**
+   * The editor's key handling — Enter commits, Escape cancels. It belongs on
+   * the controls themselves rather than the group: a group is not an
+   * interactive element, and keys arrive at whichever option has focus.
+   */
+  readonly onKeyDown: (event: KeyboardEvent) => void;
 }
 
 /** Adapter-supplied controls for {@link MultiSelectEditorChrome}. */
@@ -97,7 +103,6 @@ export function MultiSelectEditorChrome({
         gap: 8,
         minWidth: 0,
       }}
-      onKeyDown={onKeyDown}
       onBlur={(event) => {
         // Moving between this group's own checkboxes is not leaving the
         // editor — committing there would close the cell on the first Tab.
@@ -112,6 +117,7 @@ export function MultiSelectEditorChrome({
           value={option.value}
           checked={selected.includes(option.value)}
           onToggle={() => toggle(option.value)}
+          onKeyDown={onKeyDown}
           focusRef={index === 0 ? ctrl.focusRef : undefined}
         />
       ))}

@@ -2194,6 +2194,7 @@ export interface MultiSelectEditorCheckboxProps {
         focus: () => void;
     } | null) => void;
     readonly label: ReactNode;
+    readonly onKeyDown: (event: KeyboardEvent_2) => void;
     readonly onToggle: () => void;
     readonly value: string;
 }

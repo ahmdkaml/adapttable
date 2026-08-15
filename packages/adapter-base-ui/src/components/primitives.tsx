@@ -57,6 +57,7 @@ export function Checkbox({
   value,
   className,
   inputRef,
+  onKeyDown,
   "aria-label": ariaLabel,
   "data-adapttable-part": dataPart,
   children,
@@ -72,6 +73,7 @@ export function Checkbox({
   className?: string;
   /** Hands the control out, so a cell editor can take focus on mount. */
   inputRef?: (node: { focus: () => void } | null) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   children?: ReactNode;
@@ -90,6 +92,7 @@ export function Checkbox({
       value={value}
       ref={inputRef}
       aria-label={children == null ? ariaLabel : undefined}
+      onKeyDown={onKeyDown}
       data-adapttable-part={children == null ? dataPart : undefined}
       checked={checked}
       indeterminate={indeterminate}

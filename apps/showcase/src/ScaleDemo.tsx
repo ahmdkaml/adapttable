@@ -395,6 +395,7 @@ function FrontendScaleTable({
   // measured number rather than a claim.
   const [applied, setApplied] = useState(0);
   const [burstMs, setBurstMs] = useState<number | undefined>(undefined);
+  const pipelineName = incremental ? "incremental" : "full";
   const burstStart = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (patches <= 0) return;
@@ -472,9 +473,7 @@ function FrontendScaleTable({
         data-bench-burst-ms={
           burstMs === undefined ? undefined : burstMs.toFixed(2)
         }
-        data-bench-pipeline={
-          patches > 0 ? (incremental ? "incremental" : "full") : undefined
-        }
+        data-bench-pipeline={patches > 0 ? pipelineName : undefined}
       >
         <DataTable
           source={source}

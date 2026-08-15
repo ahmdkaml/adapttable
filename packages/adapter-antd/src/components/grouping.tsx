@@ -234,23 +234,13 @@ export function GroupHeaderCell({
         />
       )}
       {group.more ? (
-        <span
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-          }}
-          role="presentation"
-        >
-          <GroupMoreButton
-            scope={group.more.scope}
-            remaining={group.more.remaining}
-            groupKey={group.more.groupKey}
-            labels={labels}
-            onShowMore={(entry) => onShowMore?.(entry)}
-          />
-        </span>
+        <GroupMoreButton
+          scope={group.more.scope}
+          remaining={group.more.remaining}
+          groupKey={group.more.groupKey}
+          labels={labels}
+          onShowMore={(entry) => onShowMore?.(entry)}
+        />
       ) : (
         <Typography.Text strong data-adapttable-part="group-label">
           {group.footer === true ? labels.groupTotal(group.label) : group.label}
