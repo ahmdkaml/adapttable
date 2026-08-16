@@ -755,6 +755,29 @@ export interface BaseDataTableProps<TRow> {
    */
   toolbarSlots?: ToolbarSlots;
   /**
+   * Let the user choose the row density from the toolbar. Defaults to off.
+   *
+   * The `density` prop is what the table renders; this is the control that
+   * changes it. Pair it with `useDensityUrlState` and the choice survives a
+   * reload and travels in a shared link.
+   */
+  densityChooser?: boolean;
+  /** Called when the user picks a density. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /**
+   * A fullscreen toggle in the toolbar. Defaults to off.
+   *
+   * Fullscreen hides everything outside the table, which is what makes it
+   * useful and also what breaks overlays: a menu portalled to
+   * `document.body` is inside the part being hidden. The table's own
+   * overlays are re-pointed at the fullscreen element while it is on.
+   *
+   * The button hides itself where the browser will not allow fullscreen at
+   * all — an embedded webview, a sandboxed frame — because a control that
+   * cannot work is worse than no control.
+   */
+  fullscreen?: boolean;
+  /**
    * Open the print dialog on the current view.
    *
    * Print is the host's, not the table's: `printTable` opens a browser

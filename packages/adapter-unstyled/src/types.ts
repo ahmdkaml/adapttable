@@ -68,6 +68,10 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The density toggle (when `densityChooser` is set). */
+  densityToggle?: string;
+  /** The fullscreen toggle (when `fullscreen` is set). */
+  fullscreenToggle?: string;
   /** The command palette's surface (when `commandPalette` is set). */
   commandPalette?: string;
   /** Its search box. */

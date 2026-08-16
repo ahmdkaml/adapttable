@@ -17,6 +17,7 @@ import { useFindFocus, useFindInTable } from "./find/useFindInTable";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
+import { useFullscreen } from "./layout/useFullscreen";
 import type { BaseDataTableProps } from "./props";
 import { coveredAddressSet } from "./rows/cellSpan";
 import type { RowPinState } from "./rows/rowPinning";
@@ -35,6 +36,7 @@ import {
   useChromeScrollReset,
   useFilterTriggerToggle,
   useTableChrome,
+  viewControlsToolbar,
 } from "./useTableChrome";
 import { useColumnWindow } from "./virtual/useColumnWindow";
 
@@ -274,6 +276,9 @@ export function useDataTableShell<TRow>(
     resolveExportCsv(props.exportCsv)?.writer?.extension
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  // Fullscreen also decides where every overlay portals: promoted, the rest
+  // of the document is hidden, so a menu on `document.body` is invisible.
+  const fullscreen = useFullscreen(rootRef.current);
   useChromeScrollReset(rootRef, chrome, chromeProps);
   // Name the root the way the scroll box is named: the column menu sizes
   // columns by measuring cells, and it has to know which table is its own.
@@ -422,6 +427,7 @@ export function useDataTableShell<TRow>(
     toolbar: props.toolbar,
     toolbarSlots: props.toolbarSlots,
     ...undoRedoToolbar(props.undoRedoButtons, history, labels),
+    ...viewControlsToolbar(props, fullscreen),
     hasFilters:
       resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&
       Boolean(filtersNode),
@@ -461,6 +467,8 @@ export function useDataTableShell<TRow>(
     setFiltersOpen,
     filtersTrigger,
     rootRef,
+    /** Fullscreen state, and the portal container overlays need with it. */
+    fullscreen,
     /** Size every rendered column to its content. */
     autoSizeColumns,
     autoSizeColumn,

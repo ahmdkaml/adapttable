@@ -263,6 +263,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           items={contextMenu.items}
           at={contextMenu.at}
           onClose={contextMenu.close}
+          container={shell.fullscreen.container}
           labels={labels}
         />
         <SidePanelLayout

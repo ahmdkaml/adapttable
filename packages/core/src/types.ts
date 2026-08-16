@@ -623,6 +623,16 @@ export interface TableLabels {
   commandEmpty?: string;
   /** The command and toolbar entry that opens the print dialog. */
   print?: string;
+  /** Accessible name for the density chooser. */
+  density?: string;
+  /** The roomy layout's caption. */
+  densityComfortable?: string;
+  /** The tight layout's caption. */
+  densityCompact?: string;
+  /** The fullscreen button, before it is on. */
+  enterFullscreen?: string;
+  /** The same button, after. */
+  exitFullscreen?: string;
   /** The context-menu entry that copies the selection. */
   copyCells?: string;
   /** The context-menu entry that cuts it. */

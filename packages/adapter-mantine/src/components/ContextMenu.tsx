@@ -31,9 +31,18 @@ function Surface({
   onClose,
   children,
   className,
+  container,
 }: ContextMenuSurfaceProps) {
   return (
-    <Menu opened onClose={onClose} position="bottom-start" withinPortal>
+    <Menu
+      opened
+      onClose={onClose}
+      position="bottom-start"
+      withinPortal
+      // Fullscreen hides the rest of the document, so the menu has to
+      // portal inside the promoted element rather than onto the body.
+      portalProps={container ? { target: container } : undefined}
+    >
       <Menu.Target>
         <span aria-hidden="true" style={anchorStyle(at)} />
       </Menu.Target>

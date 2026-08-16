@@ -265,6 +265,9 @@ function Harness(props: {
       undoRedoButtons
       statusBar
       commandPalette
+      densityChooser
+      onDensityChange={vi.fn()}
+      fullscreen
       onPrint={vi.fn()}
       contextMenu={{
         // A host entry, so the divider that separates it from the built-ins
@@ -288,7 +291,19 @@ const part = (name: string): Element | null =>
   document.body.querySelector(`[data-adapttable-part="${name}"]`);
 
 /** Mount every state the table can render and union the parts seen. */
+/**
+ * jsdom reports no fullscreen support, and the toggle correctly hides
+ * itself when the browser will not allow it — so the harness says it would.
+ */
+function allowFullscreen() {
+  Object.defineProperty(document, "fullscreenEnabled", {
+    value: true,
+    configurable: true,
+  });
+}
+
 async function renderAllStates(classNames?: DataTableClassNames) {
+  allowFullscreen();
   const seen = new Map<string, Element[]>();
   const absorb = () => {
     for (const [name, els] of collectParts()) {
@@ -536,6 +551,8 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "densityToggle",
+  "fullscreenToggle",
   "commandPalette",
   "commandInput",
   "commandItem",

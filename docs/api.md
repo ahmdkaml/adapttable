@@ -824,6 +824,14 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Density chooser and fullscreen toggle.** `densityChooser` puts a density
+control in the toolbar and reports the choice through `onDensityChange`;
+`fullscreen` puts a fullscreen toggle beside it, and that button hides
+itself where the browser will not allow fullscreen at all. Adapters build
+both from `viewControlsToolbar(props, fullscreen)` / `ViewControlsToolbar`
+in `@adapttable/core/adapter`, which resolves them to present-or-absent so a
+kit renders on presence.
+
 **Fullscreen.** `useFullscreen(element)` promotes the table and returns a
 `FullscreenState`: `active`, `supported`, `toggle`, `exit`, and — the part
 that matters — `container`. The Fullscreen API hides everything outside the

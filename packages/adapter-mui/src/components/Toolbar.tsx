@@ -85,6 +85,10 @@ export function Toolbar<TRow>({
   canRedo,
   undoLabel,
   redoLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   showRowsPerPage,
@@ -257,6 +261,38 @@ export function Toolbar<TRow>({
             onClick={onAddRow}
           >
             {addRowLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            variant="outlined"
+            size="small"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            variant="outlined"
+            size="small"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
           </Button>
         )}
         {toolbarSlots?.end}

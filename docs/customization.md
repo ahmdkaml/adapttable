@@ -268,6 +268,36 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Density and fullscreen
+
+```tsx
+const { density, onDensityChange } = useDensityUrlState();
+
+<DataTable
+  density={density}
+  densityChooser
+  onDensityChange={onDensityChange}
+  fullscreen
+  …
+/>;
+```
+
+`densityChooser` puts the control in the toolbar; `density` is still what
+the table renders, so the host stays in charge. Pairing it with
+`useDensityUrlState` keeps the choice in the URL beside sort and filters, so
+a reload and a shared link both reproduce it.
+
+`fullscreen` adds a toggle. Fullscreen hides everything outside the table,
+which is what makes it useful and also what breaks overlays: a menu
+portalled to `document.body` sits inside the part being hidden, still
+mounted and still focused. The table's own overlays are re-pointed at the
+fullscreen element automatically. If you portal your own, take
+`shell.fullscreen.container` and use it while it is set.
+
+The toggle hides itself where the browser will not allow fullscreen — an
+embedded webview, a sandboxed frame — because a control that cannot work is
+worse than no control.
+
 ## Command palette
 
 ```tsx

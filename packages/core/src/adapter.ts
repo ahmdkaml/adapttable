@@ -256,6 +256,7 @@ export {
   type SidePanelSlots,
   type SidePanelTabProps,
 } from "./layout/SidePanelChrome";
+export { type FullscreenState, useFullscreen } from "./layout/useFullscreen";
 export {
   type PaginationItem,
   paginationItems,
@@ -344,6 +345,8 @@ export {
   type TableBodyRegion,
   type ToolbarChromeProps,
   undoRedoToolbar,
+  type ViewControlsToolbar,
+  viewControlsToolbar,
 } from "./useTableChrome";
 export { ColumnSpacer, type ColumnSpacerProps } from "./virtual/ColumnSpacer";
 export {

@@ -143,6 +143,14 @@ export interface ToolbarChromeProps<TRow> {
   undoLabel?: string;
   /** `labels.redoEdit` — the redo button's caption. */
   redoLabel?: string;
+  /** The density the table is rendering, when the chooser is shown. */
+  density?: "comfortable" | "compact";
+  /** Change it. Present iff the host asked for the chooser. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /** Toggle fullscreen. Present iff asked for AND the browser allows it. */
+  onToggleFullscreen?: () => void;
+  /** Whether the table is fullscreen right now, for the button's state. */
+  isFullscreen?: boolean;
   /** Whether a filters affordance should render. */
   hasFilters: boolean;
   /** Number shown on the filters badge. */
@@ -408,6 +416,46 @@ export interface TableChrome<TRow> {
  * know that `editHistory` exists. Off, the object is empty and the props
  * are absent, which is what keeps an opted-out toolbar identical.
  */
+/**
+ * The density chooser and the fullscreen toggle, or nothing.
+ *
+ * Both resolve to present-or-absent rather than present-and-disabled, so an
+ * adapter renders on presence. The fullscreen half folds in whether the
+ * browser will allow it at all: a toggle that cannot work is worse than no
+ * toggle, and an embedded webview is a real place where it cannot.
+ */
+export interface ViewControlsToolbar {
+  density?: "comfortable" | "compact";
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
+}
+
+export function viewControlsToolbar(
+  props: {
+    densityChooser?: boolean;
+    density?: "comfortable" | "compact";
+    onDensityChange?: (next: "comfortable" | "compact") => void;
+    fullscreen?: boolean;
+  },
+  fullscreen: { supported: boolean; active: boolean; toggle: () => void }
+): ViewControlsToolbar {
+  return {
+    ...(props.densityChooser === true
+      ? {
+          density: props.density ?? "comfortable",
+          onDensityChange: props.onDensityChange,
+        }
+      : {}),
+    ...(props.fullscreen === true && fullscreen.supported
+      ? {
+          onToggleFullscreen: fullscreen.toggle,
+          isFullscreen: fullscreen.active,
+        }
+      : {}),
+  };
+}
+
 export function undoRedoToolbar<TRow>(
   wanted: boolean | undefined,
   history: EditHistoryState<TRow>,

@@ -275,6 +275,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     addRowLabel,
     onUndo,
     onRedo,
+    density: toolbarDensity,
+    onDensityChange,
+    onToggleFullscreen,
+    isFullscreen,
     canUndo,
     canRedo,
     undoLabel,
@@ -471,6 +475,38 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {addRowLabel}
           </button>
         )}
+        {onDensityChange && (
+          <button
+            type="button"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            className={classNames.densityToggle}
+            onClick={() => {
+              onDensityChange(
+                toolbarDensity === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {toolbarDensity === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </button>
+        )}
+        {onToggleFullscreen && (
+          <button
+            type="button"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            className={classNames.fullscreenToggle}
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </button>
+        )}
         {toolbarSlots?.end}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
@@ -537,6 +573,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         items={contextMenu.items}
         at={contextMenu.at}
         onClose={contextMenu.close}
+        container={shell.fullscreen.container}
         labels={labels}
         classNames={classNames}
       />

@@ -68,11 +68,13 @@ import {
   undoRedoToolbar,
   useCommandPalette,
   useExportHandler,
+  useFullscreen,
   useKeyedVirtualization,
   useMountStagger,
   useOffsetHeight,
   useResolvedAdapter,
   useTableContextMenu,
+  viewControlsToolbar,
 } from "@adapttable/core/adapter";
 import {
   Button,
@@ -1558,6 +1560,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasFilters: c.activeFilterCount > 0,
   });
   const rootRef = useRef<HTMLDivElement>(null);
+  // Fullscreen also decides where every overlay portals: promoted, the rest
+  // of the document is hidden, so a menu on `document.body` is invisible.
+  const fullscreen = useFullscreen(rootRef.current);
+  const viewControls = viewControlsToolbar(props, fullscreen);
   useChromeScrollReset(rootRef, c, chromeProps);
   // Same action the shell exposes, wired to this adapter's own root: sizing a
   // column means measuring cells, and the cells are in there.
@@ -1845,6 +1851,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             toolbar={props.toolbar}
             toolbarSlots={props.toolbarSlots}
             {...undoRedoToolbar(props.undoRedoButtons, history, labels)}
+            {...viewControls}
             hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
             activeFilterCount={c.activeFilterCount}
             filters={filtersNode}
@@ -1969,6 +1976,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         items={contextMenu.items}
         at={contextMenu.at}
         onClose={contextMenu.close}
+        container={fullscreen.container}
         labels={labels}
       />
       <StatusBar

@@ -5082,6 +5082,36 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Density and fullscreen
+
+```tsx
+const { density, onDensityChange } = useDensityUrlState();
+
+<DataTable
+  density={density}
+  densityChooser
+  onDensityChange={onDensityChange}
+  fullscreen
+  …
+/>;
+```
+
+`densityChooser` puts the control in the toolbar; `density` is still what
+the table renders, so the host stays in charge. Pairing it with
+`useDensityUrlState` keeps the choice in the URL beside sort and filters, so
+a reload and a shared link both reproduce it.
+
+`fullscreen` adds a toggle. Fullscreen hides everything outside the table,
+which is what makes it useful and also what breaks overlays: a menu
+portalled to `document.body` sits inside the part being hidden, still
+mounted and still focused. The table's own overlays are re-pointed at the
+fullscreen element automatically. If you portal your own, take
+`shell.fullscreen.container` and use it while it is set.
+
+The toggle hides itself where the browser will not allow fullscreen — an
+embedded webview, a sandboxed frame — because a control that cannot work is
+worse than no control.
+
 ## Command palette
 
 ```tsx
@@ -6536,6 +6566,30 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 `@adapttable/core/adapter`; it is empty below two cells. On `<DataTable>` the
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
+
+**Density chooser and fullscreen toggle.** `densityChooser` puts a density
+control in the toolbar and reports the choice through `onDensityChange`;
+`fullscreen` puts a fullscreen toggle beside it, and that button hides
+itself where the browser will not allow fullscreen at all. Adapters build
+both from `viewControlsToolbar(props, fullscreen)` / `ViewControlsToolbar`
+in `@adapttable/core/adapter`, which resolves them to present-or-absent so a
+kit renders on presence.
+
+**Fullscreen.** `useFullscreen(element)` promotes the table and returns a
+`FullscreenState`: `active`, `supported`, `toggle`, `exit`, and — the part
+that matters — `container`. The Fullscreen API hides everything outside the
+promoted element, so an overlay portalled to `document.body` stays mounted,
+focused and announced while being completely invisible. Hand `container` to
+each kit's portal target and menus keep working; ignore it and they vanish.
+State is read from the document rather than remembered, because Escape and
+the browser's own control both leave fullscreen without asking.
+
+**Density in the URL.** `useDensityUrlState(options)` returns a `Density`
+(`"comfortable"` | `"compact"`) and `onDensityChange` to spread onto the
+table, keeping a chosen layout in the URL beside sort and filters so a
+reload or a shared link reproduces it. `UseDensityUrlStateOptions` /
+`UseDensityUrlStateResult` type it. Choosing the default removes the
+parameter rather than restating it.
 
 **Command palette.** `commandPalette` opens a palette on Cmd/Ctrl+K listing
 every table action — `true` for the built-ins, or `CommandPaletteOptions`

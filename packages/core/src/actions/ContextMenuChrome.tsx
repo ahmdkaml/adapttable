@@ -44,6 +44,8 @@ export interface ContextMenuSurfaceProps {
   readonly label: string;
   /** Close it — bind to the kit's own dismiss channel. */
   readonly onClose: () => void;
+  /** Where the kit must portal while fullscreen; `undefined` otherwise. */
+  readonly container?: HTMLElement;
   /** The entries, already rendered through the Item and Separator slots. */
   readonly children: ReactNode;
   readonly className?: string;
@@ -81,6 +83,14 @@ export interface ContextMenuChromeProps {
   labels?: TableLabels;
   /** A kit's own class for the menu. */
   className?: string;
+  /**
+   * Where to portal while the table is fullscreen.
+   *
+   * The Fullscreen API hides everything outside the promoted element, so a
+   * menu portalled to `document.body` is mounted, focused and invisible.
+   * `shell.fullscreen.container` is that element while it is on.
+   */
+  container?: HTMLElement;
   /** Adapter-owned visible components. */
   slots: ContextMenuSlots;
 }
@@ -118,6 +128,7 @@ export function ContextMenuChrome(props: Readonly<ContextMenuChromeProps>) {
         anchorRef={anchorRef}
         label={props.labels?.contextMenu ?? "Table actions"}
         onClose={onClose}
+        container={props.container}
         className={props.className}
       >
         {items.map((item) => (
