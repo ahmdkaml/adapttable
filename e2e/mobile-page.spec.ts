@@ -68,3 +68,30 @@ for (const kit of KITS) {
     await expect(root.getByRole("listitem").first()).toBeVisible();
   });
 }
+
+for (const kit of KITS) {
+  test(`${kit}: a custom card body keeps the list semantics`, async ({
+    page,
+  }) => {
+    await page.goto("/mobile/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    await page.getByRole("button", { name: "Custom card" }).click();
+
+    const root = demo(page).locator(`[data-adapter="${kit}"]`);
+    await expect(root.locator(".demo-person-card").first()).toBeVisible();
+    // The shell is the table's, not the custom body's: a screen reader still
+    // counts cards, and the page still does not scroll sideways.
+    await expect(root.getByRole("listitem").first()).toBeVisible();
+
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+}

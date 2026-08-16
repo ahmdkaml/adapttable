@@ -24,6 +24,7 @@ import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { SidePanelEntry } from "./layout/SidePanelChrome";
 import type { GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
+import type { MobileCardRenderer } from "./rows/mobileCard";
 import type { RowPinState } from "./rows/rowPinning";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
@@ -117,6 +118,19 @@ export interface BaseDataTableProps<TRow> {
    * maps it to its kit's table size.
    */
   density?: "comfortable" | "compact";
+  /**
+   * Replace a mobile card's body with your own layout.
+   *
+   * The card's shell stays: list-item semantics, the selection checkbox, the
+   * expand and tree toggles, reorder controls, row actions and the detail
+   * panel all render around what you return, so a custom card cannot drop the
+   * parts that make the list usable. The `card` argument hands you the fields
+   * the built-in would have laid out — column, label and rendered value,
+   * editors included — so this is a layout decision, not a re-implementation.
+   *
+   * Omit it and the built-in card renders, byte for byte.
+   */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Force the mobile layout (otherwise resolved from the viewport). */
   forceMobile?: boolean;
   /**

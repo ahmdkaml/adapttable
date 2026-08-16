@@ -4,6 +4,7 @@ import {
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
+  type MobileCardRenderer,
   type RowAction,
   type TableLabels,
   treeCardStyle,
@@ -37,6 +38,8 @@ import { RowActionButtons } from "./RowActionButtons";
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
+  /** Replace the card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** This card's place in the tree, when the table is one. */
   treeEntry?: TreeEntry<TRow>;
   /** Open or close this node. */
@@ -121,6 +124,7 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "rowCount",
   // Or a folder opens and its own chevron never turns.
   "treeEntry",
+  "renderCard",
 ];
 
 /**
@@ -163,7 +167,40 @@ function MobileCardBase<TRow>({
   rowReorder,
   windowStart,
   rowCount,
+  renderCard,
 }: Readonly<MobileCardProps<TRow>>) {
+  // Built once and used by both paths, so a custom card shows the very same
+  // value node the built-in would have — cell renderers and editors included.
+  const fields = columns.map((column) => ({
+    column,
+    label: resolveMobileLabel(column),
+    value: (
+      <EditableDataCell
+        activateClassName={classNames.editCellActivate}
+        errorClassName={classNames.editCellError}
+        saveErrorClassName={classNames.editCellSaveError}
+        rollbackClassName={classNames.editCellRollback}
+        editorClassName={classNames.editCellEditor}
+        editing={editing}
+        row={row}
+        column={column}
+        rowId={id}
+        rows={rows}
+        columns={columns}
+        rowKey={getRowId}
+        editLabel={labels.editCell}
+        undoLabel={labels.undoEdit}
+        display={
+          column.Cell ? (
+            <column.Cell row={row} rowIndex={index} />
+          ) : (
+            column.accessor?.(row)
+          )
+        }
+      />
+    ),
+  }));
+
   return (
     <li
       {...rowClickProps(row, onRowClick, index)}
@@ -204,50 +241,30 @@ function MobileCardBase<TRow>({
           onToggle={() => onToggleExpand(id)}
         />
       )}
-      {columns.map((column) => (
-        <div
-          key={column.key}
-          data-adapttable-part="card-row"
-          className={classNames.cardRow}
-        >
-          {resolveMobileLabel(column) && (
-            <span
-              data-adapttable-part="card-label"
-              className={classNames.cardLabel}
+      {renderCard
+        ? renderCard(row, { index, fields, selected, expanded })
+        : fields.map(({ column, label, value }) => (
+            <div
+              key={column.key}
+              data-adapttable-part="card-row"
+              className={classNames.cardRow}
             >
-              {resolveMobileLabel(column)}
-            </span>
-          )}
-          <span
-            data-adapttable-part="card-value"
-            className={classNames.cardValue}
-          >
-            <EditableDataCell
-              activateClassName={classNames.editCellActivate}
-              errorClassName={classNames.editCellError}
-              saveErrorClassName={classNames.editCellSaveError}
-              rollbackClassName={classNames.editCellRollback}
-              editorClassName={classNames.editCellEditor}
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={labels.editCell}
-              undoLabel={labels.undoEdit}
-              display={
-                column.Cell ? (
-                  <column.Cell row={row} rowIndex={index} />
-                ) : (
-                  column.accessor?.(row)
-                )
-              }
-            />
-          </span>
-        </div>
-      ))}
+              {label && (
+                <span
+                  data-adapttable-part="card-label"
+                  className={classNames.cardLabel}
+                >
+                  {label}
+                </span>
+              )}
+              <span
+                data-adapttable-part="card-value"
+                className={classNames.cardValue}
+              >
+                {value}
+              </span>
+            </div>
+          ))}
       {rowReorder && (
         <RowReorderButtons
           reorder={rowReorder}
@@ -322,6 +339,7 @@ export function MobileCards<TRow>({
   pinnedTopRows = [],
   pinnedBottomRows = [],
   extraRows,
+  renderCard,
 }: Readonly<SharedProps<TRow>>) {
   const { columns, selection, labels } = table;
   const entries = orderedCardEntries(
@@ -341,7 +359,7 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderCard = (
+  const cardFor = (
     row: TRow,
     index: number,
     key: string,
@@ -382,6 +400,7 @@ export function MobileCards<TRow>({
         rowCount={rows.length}
         reorderSignature={rowReorderSignature(rowReorder, id, index)}
         clickable={Boolean(onRowClick)}
+        renderCard={renderCard}
       />
     );
   };
@@ -452,7 +471,7 @@ export function MobileCards<TRow>({
                 </li>
               );
             }
-            return renderCard(entry.row, entry.index, entry.key);
+            return cardFor(entry.row, entry.index, entry.key);
           })
         : insertExtraRows(
             bodyRowEntries(entries, tree),
@@ -486,7 +505,7 @@ export function MobileCards<TRow>({
                 </div>
               </li>
             ) : (
-              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
+              cardFor(slot.row, slot.index, slot.key, slot.treeEntry)
             )
           )}
       {paddingBottom > 0 && (

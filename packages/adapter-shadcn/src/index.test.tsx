@@ -50,6 +50,28 @@ function renderHarness(
   return render(<Harness classNames={classNames} density={extra?.density} />);
 }
 
+/** A custom card body reaches through the preset wrapper too. */
+function CardHarness() {
+  const source = useFrontendData<Row>({
+    data: ROWS,
+    urlAdapter: adapter,
+    columns,
+  });
+  return (
+    <DataTable
+      source={source}
+      columns={columns}
+      rowKey={(r) => r.id}
+      forceMobile
+      renderCard={(row, card) => (
+        <p>
+          {row.name} · {card.fields.length}
+        </p>
+      )}
+    />
+  );
+}
+
 /** The error slot reaches through the preset wrapper to the unstyled shell. */
 function ErrorHarness() {
   const source = useFrontendData<Row>({
@@ -115,5 +137,12 @@ describe("@adapttable/shadcn", () => {
     expect(
       container.querySelector('[data-adapttable-part="error"]')
     ).toBeNull();
+  });
+
+  it("passes a custom card body through to the shell", () => {
+    adapter = createMemoryAdapter("");
+    const { getByText } = render(<CardHarness />);
+
+    expect(getByText(/Ada · 1/)).toBeInTheDocument();
   });
 });

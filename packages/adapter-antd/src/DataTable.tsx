@@ -985,6 +985,7 @@ interface DataTableBodyRegionProps<TRow> {
   rowHeight: DataTableProps<TRow>["rowHeight"];
   cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
+  renderCard: DataTableProps<TRow>["renderCard"];
   skeletonRows: number | undefined;
   size: AntdTableSize;
   bordered: boolean;
@@ -1213,6 +1214,7 @@ function DataTableBodyRegion<TRow>(
     rowHeight,
     cardClassName,
     summaryRow,
+    renderCard,
     skeletonRows,
     size,
     bordered,
@@ -1279,6 +1281,7 @@ function DataTableBodyRegion<TRow>(
         grouping={grouping}
         tree={tree}
         renderRowDetail={detailRender}
+        renderCard={renderCard}
         summaryRow={summaryRow}
         {...cardWindow}
         rowReorder={rowReorder}
@@ -1810,6 +1813,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       rowHeight={props.rowHeight}
       cardClassName={classNames?.card}
       summaryRow={props.summaryRow}
+      renderCard={props.renderCard}
       skeletonRows={props.skeletonRows}
       size={size}
       bordered={bordered}

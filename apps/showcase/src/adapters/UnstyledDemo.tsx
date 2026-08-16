@@ -256,6 +256,7 @@ export function UnstyledDemo({
   highlight,
   failure,
   onRecover,
+  customCard,
   realtime,
   editing,
   cellNavigation,
@@ -302,6 +303,7 @@ export function UnstyledDemo({
   highlight?: boolean;
   failure?: Failure;
   onRecover?: () => void;
+  customCard?: boolean;
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
@@ -351,6 +353,7 @@ export function UnstyledDemo({
       highlight={highlight}
       failure={failure}
       onRecover={onRecover}
+      customCard={customCard}
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}

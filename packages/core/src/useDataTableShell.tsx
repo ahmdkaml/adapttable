@@ -411,6 +411,7 @@ export function useDataTableShell<TRow>(
     rowStyle: props.rowStyle,
     rowHeight: props.rowHeight,
     renderRowDetail: chrome.detail?.render,
+    renderCard: props.renderCard,
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,

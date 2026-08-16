@@ -895,6 +895,31 @@ a {
   }
 }
 
+/* ---------- a host's own mobile card ---------- */
+/* What `renderCard` replaces the built-in stack with: the identity as a
+   headline, the rest as a compact grid. */
+.demo-person-card__name {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.demo-person-card__grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+.demo-person-card__grid dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.demo-person-card__grid dd {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 /* ---------- a host's own error state ---------- */
 /* What `slots.error` replaces the built-in with. Plain and unmistakably not
    the kit's, so the Feature Lab's Built-in / Replaced switch reads at a

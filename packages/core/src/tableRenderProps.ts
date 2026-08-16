@@ -30,6 +30,7 @@ import {
 } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
 import { incrementalViewOf } from "./rows/incremental";
+import type { MobileCardRenderer } from "./rows/mobileCard";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
@@ -81,6 +82,8 @@ export interface SharedTableRenderProps<TRow> {
   rowHeight?: RowHeight<TRow>;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Custom mobile-card body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /**

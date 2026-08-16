@@ -44,6 +44,8 @@ export type KitDemoProps = Readonly<{
   failure?: Failure;
   /** What the error state's retry does. */
   onRecover?: () => void;
+  /** Lay the mobile cards out with the demo's own `renderCard`. */
+  customCard?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;

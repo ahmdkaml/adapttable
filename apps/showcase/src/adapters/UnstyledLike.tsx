@@ -150,6 +150,7 @@ export function UnstyledLike({
   highlight,
   failure,
   onRecover,
+  customCard,
   realtime,
   editing,
   cellNavigation,
@@ -197,6 +198,7 @@ export function UnstyledLike({
   highlight?: boolean;
   failure?: Failure;
   onRecover?: () => void;
+  customCard?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -264,6 +266,7 @@ export function UnstyledLike({
       highlight={highlight}
       failure={failure}
       onRecover={onRecover}
+      customCard={customCard}
       realtime={realtime}
       editing={editing}
       columnGroups={columnGroups}

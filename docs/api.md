@@ -68,6 +68,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                                                                                                                                                                  |
 | `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                                                                                                                                                       |
 | `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                                                                                                                                                       |
+| `renderCard`                | `(row, card) => ReactNode`                                      | —               | Replace a mobile card's body; the shell keeps selection, actions and expansion. See [mobile](./mobile.md).                                                                                                                                                                                                                                                                       |
 | `mobileBreakpoint`          | `number`                                                        | `768`           | Width (px) at or below which the card layout takes over. See [mobile](./mobile.md).                                                                                                                                                                                                                                                                                              |
 | `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                                                                                                                                                                  |
 | `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                                                                                                                                                                    |
@@ -835,6 +836,14 @@ clock instead of stacking. Under `prefers-reduced-motion` the mark still
 appears — `animated` goes false and it holds steady, and longer, because a
 steady mark is easier to miss than one that moves. Reduced motion means less
 movement, not less feedback.
+
+**Replacing a mobile card's body.** `renderCard(row, card)` returns the card's
+content; the shell renders around it. `renderCard` has the type `MobileCardRenderer`, and `card` is a
+`MobileCardModel`: `index`,
+`selected`, `expanded`, and `fields` — a `MobileCardField` per column carrying
+its `column`, resolved `label` (`undefined` when the column asked for none) and
+`value`, the same node the built-in would have shown. See
+[mobile](./mobile.md).
 
 **Replacing the error state.** `slots.error` is a `Slot<TableErrorState>`:
 a node, or a function receiving the `TableErrorState` the built-in was

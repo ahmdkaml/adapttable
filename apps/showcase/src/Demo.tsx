@@ -4,6 +4,8 @@ import {
   applyRowReorder,
   type ColumnLayoutState,
   evaluateFilterTree,
+  type MobileCardModel,
+  type MobileCardRenderer,
   type QueryFilterGroup,
   type Slot,
   type TableErrorState,
@@ -74,6 +76,35 @@ const REPLACED_ERROR_SLOT = {
   ),
 };
 
+/**
+ * A host's own card: the identity column as a headline, the rest as a
+ * compact grid. It reuses `card.fields`, so every value — cell renderers and
+ * editors included — is the one the built-in card would have shown.
+ */
+function demoCard(row: Person, card: MobileCardModel<Person>): ReactNode {
+  const [identity, ...rest] = card.fields;
+  return (
+    <div className="demo-person-card">
+      <p className="demo-person-card__name">{identity?.value}</p>
+      <dl className="demo-person-card__grid">
+        {rest.map(({ column, label, value }) => (
+          <div key={column.key}>
+            {label && <dt>{label}</dt>}
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** The demo's own card layout, when that toggle is on. */
+function cardRenderer(
+  customCard: boolean | undefined
+): MobileCardRenderer<Person> | undefined {
+  return customCard ? demoCard : undefined;
+}
+
 /** The failure the lab is simulating, or none. */
 function demoError(failure: Failure | undefined): Error | null {
   return failure && failure !== "off" ? DEMO_FAILURE : null;
@@ -128,6 +159,8 @@ export interface DemoColumnProps {
   rowClassName?: (row: Person, index: number) => string | undefined;
   /** The host's own error state, when the lab is showing a replacement. */
   slots?: { error?: Slot<TableErrorState> };
+  /** The demo's own mobile card layout, when that toggle is on. */
+  renderCard?: MobileCardRenderer<Person>;
   /** `null` forces grouping off even if the URL carries a groupBy. */
   groupBy?: string | readonly string[] | null;
   groupAggregates?: (
@@ -268,6 +301,8 @@ interface DataProps {
   highlight?: boolean;
   /** Fail the load, so the error chrome is on screen. */
   failure?: Failure;
+  /** Lay the mobile cards out with the demo's own `renderCard`. */
+  customCard?: boolean;
   /** What the error state's retry does — here, clear the simulated failure. */
   onRecover?: () => void;
   /** Apply live row patches on a timer, the way a socket feed would. */
@@ -351,6 +386,7 @@ function Frontend({
   highlight,
   failure,
   onRecover,
+  customCard,
   realtime,
   advancedFilters,
 }: Readonly<DataProps>) {
@@ -477,6 +513,7 @@ function Frontend({
         // and a disarmed `useHighlight` simply never returns a class.
         rowClassName: flashClass,
         slots: errorSlots(failure),
+        renderCard: cardRenderer(customCard),
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
         ...(editing
@@ -622,6 +659,7 @@ export function DemoBody({
   highlight,
   failure,
   onRecover,
+  customCard,
   realtime,
   columnGroups,
 }: Readonly<{
@@ -644,6 +682,7 @@ export function DemoBody({
   highlight?: boolean;
   failure?: Failure;
   onRecover?: () => void;
+  customCard?: boolean;
   realtime?: boolean;
   columnGroups?: boolean;
 }>) {
@@ -698,6 +737,7 @@ export function DemoBody({
       highlight={highlight}
       failure={failure}
       onRecover={onRecover}
+      customCard={customCard}
       realtime={realtime}
       advancedFilters={advancedFilters}
     />

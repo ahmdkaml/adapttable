@@ -25,6 +25,7 @@ export function MobileDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState(readKitFromUrl);
   const [phone, setPhone] = useState(true);
   const [pageMode, setPageMode] = useState<PageMode>("infinite");
+  const [customCard, setCustomCard] = useState(false);
   const token =
     ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
     ADAPTER_TOKENS[0];
@@ -39,7 +40,10 @@ export function MobileDemo({ dark }: Readonly<{ dark: boolean }>) {
         layout when you need it. On phones{" "}
         <code>paginationMode=&quot;auto&quot;</code> resolves to infinite scroll
         — both styles are here to try — and every card is tunable per column
-        with <code>mobileLabel</code> and <code>hideOnMobile</code>.
+        with <code>mobileLabel</code> and <code>hideOnMobile</code> — or
+        replaced outright with <code>renderCard</code>, which swaps the
+        card&apos;s body for your own layout while the shell keeps selection,
+        row actions and expansion.
       </SectionHead>
       <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
@@ -80,6 +84,24 @@ export function MobileDemo({ dark }: Readonly<{ dark: boolean }>) {
               Paged
             </button>
           </div>
+          <div className="seg" role="group" aria-label="Card layout">
+            <button
+              type="button"
+              className={`seg__btn${customCard ? "" : " is-on"}`}
+              aria-pressed={!customCard}
+              onClick={() => setCustomCard(false)}
+            >
+              Built-in card
+            </button>
+            <button
+              type="button"
+              className={`seg__btn${customCard ? " is-on" : ""}`}
+              aria-pressed={customCard}
+              onClick={() => setCustomCard(true)}
+            >
+              Custom card
+            </button>
+          </div>
           <span className="hint">
             <Check size={12} /> search and pagination stay identical
           </span>
@@ -100,6 +122,7 @@ export function MobileDemo({ dark }: Readonly<{ dark: boolean }>) {
                   urlKey="mob"
                   forceMobile={phone}
                   pageMode={pageMode}
+                  customCard={customCard}
                   focused
                 />
               </Suspense>

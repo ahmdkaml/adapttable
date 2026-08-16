@@ -56,6 +56,51 @@ layouts.
 - **`rowStyle` / `rowHeight`** apply the same way — see
   [row styling and heights](./row-styling.md).
 
+## Your own card
+
+The built-in card is a stack of labelled fields, which is right for most
+tables and wrong for some: an order wants its total large and its reference
+small; a person wants their avatar beside their name rather than under a
+caption reading "Avatar".
+
+`renderCard` replaces that stack — and only that stack:
+
+```tsx
+<DataTable
+  data={people}
+  columns={columns}
+  rowKey={(r) => r.id}
+  renderCard={(row, card) => (
+    <article className="person-card">
+      <img src={row.avatarUrl} alt="" />
+      <h3>{row.name}</h3>
+      <dl>
+        {card.fields.map(({ column, label, value }) => (
+          <div key={column.key}>
+            {label && <dt>{label}</dt>}
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </article>
+  )}
+/>
+```
+
+The card's shell stays around what you return: the list-item semantics, the
+selection checkbox, the expand and tree toggles, the reorder controls, the row
+actions and the detail panel. A custom card cannot drop the parts that make
+the list usable, because it never owns them.
+
+`card.fields` is what the built-in would have laid out — each field's
+`column`, its resolved `label` (`undefined` when the column asked for none)
+and its `value`, rendered exactly as the built-in renders it, cell renderers
+and editors included. So this is a layout decision, not a re-implementation:
+reuse the values and arrange them your way. `card.selected`, `card.expanded`
+and `card.index` come along for cards that change with their state.
+
+Omit it and the built-in card renders, byte for byte.
+
 ## Where the switch happens
 
 `mobileBreakpoint` is the width, in pixels, at or below which the cards take

@@ -306,6 +306,11 @@ export type {
   SidePanelOptions,
   ToolbarSlots,
 } from "./props";
+export type {
+  MobileCardField,
+  MobileCardModel,
+  MobileCardRenderer,
+} from "./rows/mobileCard";
 export {
   type HighlightedCell,
   type HighlightState,

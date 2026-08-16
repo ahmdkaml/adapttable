@@ -4,6 +4,7 @@ import {
   type ConfirmHandler,
   type EditableCellEditing,
   type GroupedFlatEntry,
+  type MobileCardRenderer,
   type RowAction,
   type RowExpansionState,
   type RowReorderState,
@@ -122,6 +123,8 @@ function SummaryCard<TRow>({
 
 /** Per-card inputs for the memoized {@link CardItemBase}. */
 interface CardItemProps<TRow> {
+  /** Replace the card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** This card's place in the tree, when the table is one. */
   treeEntry?: TreeEntry<TRow>;
   /** Open or close this node. */
@@ -205,6 +208,7 @@ function cardItemPropsEqual<TRow>(
     prev.reorderSignature === next.reorderSignature &&
     prev.windowStart === next.windowStart &&
     prev.rowCount === next.rowCount &&
+    prev.renderCard === next.renderCard &&
     // Or a folder opens and its own chevron never turns.
     prev.treeEntry === next.treeEntry
   );
@@ -237,8 +241,29 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     rowReorder,
     windowStart,
     rowCount,
+    renderCard,
   } = props;
   const actions = rowActions && rowActions.length > 0 ? rowActions : null;
+  // Built once and used by both paths, so a custom card shows the very same
+  // value node the built-in would have — cell renderers and editors included.
+  const fields = columns.map((column) => ({
+    column,
+    label: resolveMobileLabel(column),
+    value: (
+      <EditableDataCell
+        editing={editing}
+        row={row}
+        column={column}
+        rowId={id}
+        rowIndex={rowIndex}
+        rows={rows}
+        columns={columns}
+        rowKey={getRowId}
+        editLabel={labels.editCell}
+        undoLabel={labels.undoEdit}
+      />
+    ),
+  }));
   return (
     <Card
       size="small"
@@ -299,27 +324,19 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
         ) : undefined
       }
     >
-      <Descriptions column={1} size="small" colon={false}>
-        {columns.map((column) => (
-          <Descriptions.Item
-            key={column.key}
-            label={resolveMobileLabel(column)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rowIndex={rowIndex}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={labels.editCell}
-              undoLabel={labels.undoEdit}
-            />
-          </Descriptions.Item>
-        ))}
-      </Descriptions>
+      {renderCard ? (
+        renderCard(row, { index: rowIndex, fields, selected, expanded })
+      ) : (
+        // The whole `Descriptions` goes, not just its items: a
+        // `Descriptions.Item` only means anything inside one.
+        <Descriptions column={1} size="small" colon={false}>
+          {fields.map(({ column, label, value }) => (
+            <Descriptions.Item key={column.key} label={label}>
+              {value}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+      )}
       {rowReorder && (
         <RowReorderButtons
           reorder={rowReorder}
@@ -378,6 +395,7 @@ export function MobileCards<TRow>({
   pinnedTopRows = [],
   pinnedBottomRows = [],
   extraRows,
+  renderCard,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   /** Class applied to every card (merged before `rowClassName`). */
@@ -402,6 +420,8 @@ export function MobileCards<TRow>({
   expansion?: RowExpansionState;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Replace each card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Opt-in editing bundle — omit and cells stay display-only. */
@@ -508,6 +528,7 @@ export function MobileCards<TRow>({
           windowStart={windowStart}
           rowCount={rows.length}
           reorderSignature={rowReorderSignature(rowReorder, id, index)}
+          renderCard={renderCard}
         />
       </li>
     );
