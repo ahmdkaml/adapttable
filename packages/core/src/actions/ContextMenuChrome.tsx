@@ -1,0 +1,115 @@
+/**
+ * The context menu itself: the entries, in order, inside the kit's own menu.
+ *
+ * What this deliberately does NOT do is manage focus. Every kit here ships a
+ * menu primitive that already does — MUI's `Menu`, Mantine's, antd's
+ * `Dropdown`, Radix's and Base UI's menus, and a native `<dialog>`-less
+ * fallback in unstyled — and each of them handles the roving tab stop, the
+ * typeahead, the portal, the z-index and the outside click the way its own
+ * users expect. A second implementation layered on top would fight all of
+ * them, which is the same trap the filters popover documents.
+ *
+ * So the division is: core decides WHAT is in the menu and in what order,
+ * names the parts, and settles the one ordering question a kit would get
+ * wrong — a menu closes before its entry runs, never after. The kit decides
+ * how a menu looks and behaves, because that is what its users installed it
+ * for.
+ *
+ * Closing before running matters more than it looks. An entry that opens a
+ * dialog, moves focus, or re-renders the row underneath it will do so while
+ * the menu is still mounted otherwise, and the menu's own focus restoration
+ * then fights whatever the action just did.
+ */
+import { Fragment, type ReactNode } from "react";
+
+import type { TableLabels } from "../types";
+import type { ContextMenuItem } from "./contextMenuModel";
+import type { ContextMenuPoint } from "./useContextMenu";
+
+/** Props an adapter's menu surface receives. */
+export interface ContextMenuSurfaceProps {
+  /** Where the menu was opened, in viewport coordinates. */
+  readonly at: ContextMenuPoint;
+  /** The accessible name for the menu. */
+  readonly label: string;
+  /** Close it — bind to the kit's own dismiss channel. */
+  readonly onClose: () => void;
+  /** The entries, already rendered through the Item and Separator slots. */
+  readonly children: ReactNode;
+  readonly className?: string;
+}
+
+/** Props an adapter's menu entry receives. */
+export interface ContextMenuItemProps {
+  readonly item: ContextMenuItem;
+  /**
+   * Bind this rather than `item.onSelect`: it closes the menu first, which
+   * an entry that opens a dialog or moves focus depends on.
+   */
+  readonly onSelect: () => void;
+}
+
+/** Adapter-owned rendering for {@link ContextMenuChrome}. */
+export interface ContextMenuSlots {
+  /** The kit's menu, positioned at the point it was opened from. */
+  readonly Surface: (props: ContextMenuSurfaceProps) => ReactNode;
+  /** One entry. */
+  readonly Item: (props: ContextMenuItemProps) => ReactNode;
+  /** The divider between groups of entries. */
+  readonly Separator: () => ReactNode;
+}
+
+/** What the context menu needs to render. */
+export interface ContextMenuChromeProps {
+  /** The entries. Nothing renders when this is empty. */
+  items: readonly ContextMenuItem[];
+  /** Where it was opened, or `null` when it is closed. */
+  at: ContextMenuPoint | null;
+  /** Close it, putting focus back where it came from. */
+  onClose: () => void;
+  /** Labels; falls back to the built-in English. */
+  labels?: TableLabels;
+  /** A kit's own class for the menu. */
+  className?: string;
+  /** Adapter-owned visible components. */
+  slots: ContextMenuSlots;
+}
+
+/**
+ * Renders the open context menu, or nothing.
+ *
+ * @param props - The entries, where they were opened, and the kit's slots.
+ * @returns The menu.
+ */
+export function ContextMenuChrome(props: Readonly<ContextMenuChromeProps>) {
+  const { at, items, onClose, slots } = props;
+  if (!at || items.length === 0) return null;
+  return (
+    <slots.Surface
+      at={at}
+      label={props.labels?.contextMenu ?? "Table actions"}
+      onClose={onClose}
+      className={props.className}
+    >
+      {items.map((item) => (
+        // A Fragment, not an element: anything between `role="menu"` and
+        // its items breaks the menu's own keyboard navigation, and every
+        // kit's menu relies on that structure being exactly what it looks
+        // like. The part name goes on the kit's entry, not on a wrapper.
+        <Fragment key={item.key}>
+          {item.separatorBefore === true && <slots.Separator />}
+          <slots.Item
+            item={item}
+            onSelect={() => {
+              // Close first. An entry that opens a dialog or moves focus
+              // would otherwise do it under a menu that is still mounted,
+              // and the menu's own focus restoration undoes the action's.
+              onClose();
+              item.onSelect();
+            }}
+          />
+        </Fragment>
+      ))}
+    </slots.Surface>
+  );
+}
