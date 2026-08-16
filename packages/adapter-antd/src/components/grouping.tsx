@@ -252,7 +252,12 @@ export function GroupHeaderCell({
         </Typography.Text>
       )}
       {aggregate != null && aggregate !== false ? (
-        <Typography.Text type="secondary">{aggregate}</Typography.Text>
+        <Typography.Text
+          type="secondary"
+          data-adapttable-part="group-aggregate"
+        >
+          {aggregate}
+        </Typography.Text>
       ) : null}
     </Space>
   );
@@ -271,6 +276,7 @@ export function GroupSelectionCheckbox({
   const state = groupSelectionState(group.leafIds, selection.selectedIds);
   return (
     <Checkbox
+      data-adapttable-part="group-select"
       // Name the GROUP, not a row: "Select all: <group>" — the generic
       // row label made every group checkbox indistinguishable.
       aria-label={`${labels.selectAll}: ${group.label}`}

@@ -454,6 +454,9 @@ function selectionCellNode<TRow>(
 ): ReactNode {
   if (isAdaptTableExtraRow(record)) return null;
   if (isAdaptTableGroupRow(record)) {
+    // A group's footer closes the group its header opened, so a checkbox here
+    // would be a second control toggling the same rows. The header owns it.
+    if (record.footer === true) return null;
     return (
       <GroupSelectionCheckbox
         group={record}
