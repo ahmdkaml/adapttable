@@ -648,6 +648,22 @@ export interface TableLabels {
   cutCells?: string;
   /** The control that closes the side panel. */
   closePanel?: string;
+  /** The pivot panel's row-axis zone. */
+  pivotRows?: string;
+  /** The pivot panel's column-axis zone. */
+  pivotColumns?: string;
+  /** The pivot panel's measures zone. */
+  pivotMeasures?: string;
+  /** The control that adds a field to a pivot zone. */
+  pivotAdd?: string;
+  /** Take a field off a pivot zone. */
+  pivotRemove?: string;
+  /** Move a pivot field one step towards the outside. */
+  pivotMoveUp?: string;
+  /** Move a pivot field one step towards the inside. */
+  pivotMoveDown?: string;
+  /** The aggregation chooser on a pivot measure. */
+  pivotAggregation?: string;
   /** Accessible name for entering row edit mode. */
   editRow?: string;
   /** Accessible name for committing a row edit. */

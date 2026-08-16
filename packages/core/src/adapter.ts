@@ -263,6 +263,16 @@ export {
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
+export {
+  type PivotAddProps,
+  type PivotAggProps,
+  type PivotFieldProps,
+  PivotPanelChrome,
+  type PivotPanelChromeProps,
+  type PivotPanelSlots,
+  type PivotPanelSurfaceProps,
+  type PivotZoneProps,
+} from "./pivot/PivotPanelChrome";
 export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
 export {
   EXTRA_ROW_PARTS,

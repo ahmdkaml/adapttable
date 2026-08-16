@@ -65,7 +65,7 @@ const FIXTURES = [
     // capabilities are genuinely shaken out, not merely compressing well. A
     // feature that starts leaking into the base path trips this before the
     // budget notices the bytes.
-    absent: ["toCsv", "Blob", "download", "virtual", "pivot"],
+    absent: ["toCsv", "Blob", "download", "virtual", "PIVOT_BLANK"],
   },
   {
     // The whole surface at once, which no application imports. It is a canary
@@ -78,8 +78,10 @@ const FIXTURES = [
     budgetKB: 93,
     code: `export * from "PKG";`,
     // The optional entries are the proof that "optional" is real: even the
-    // whole main surface at once does not carry them.
-    absent: ["pivot"],
+    // whole main surface at once does not carry them. The marker is an
+    // engine-only name, not the word "pivot" — the panel's LABELS are shared
+    // table labels and do belong in the base bundle.
+    absent: ["PIVOT_BLANK"],
   },
   {
     // What the pivot engine costs the tables that ask for it, and nothing to

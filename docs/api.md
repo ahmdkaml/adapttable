@@ -837,6 +837,16 @@ appears — `animated` goes false and it holds steady, and longer, because a
 steady mark is easier to miss than one that moves. Reduced motion means less
 movement, not less feedback.
 
+**The pivot configuration panel.** `PivotPanelChrome` from
+`@adapttable/core/adapter` renders the three zones and the controls that move
+fields between them; `PivotPanelChromeProps` takes the fields, the config and
+an `onChange`. `PivotPanelSlots` names the five kit-supplied pieces —
+`PivotPanelSurfaceProps` (the body), `PivotZoneProps` (a titled zone),
+`PivotFieldProps` (one field with its move and remove controls),
+`PivotAddProps` (the add control) and `PivotAggProps` (a measure's aggregation
+chooser). Keyboard-first by construction: the move controls are buttons, so
+the panel needs no pointer. See [pivot tables](./pivot.md).
+
 **Replacing a mobile card's body.** `renderCard(row, card)` returns the card's
 content; the shell renders around it. `renderCard` has the type `MobileCardRenderer`, and `card` is a
 `MobileCardModel`: `index`,

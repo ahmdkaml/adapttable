@@ -123,5 +123,40 @@ ordinary thing to want, so `assignField` adds a measure rather than moving one.
 `isPivotReady(config)` is false until something fills the cells — a pivot with
 no measure is a half-built configuration, not an error.
 
+## The configuration panel
+
+`PivotPanelChrome` from `@adapttable/core/adapter` is the panel itself: three
+zones, the fields in each, and the controls that move them. Structure, part
+names, ordering and labels live in core; every visible control is a required
+slot the adapter fills with its own kit's component, so a Mantine panel is
+built from Mantine buttons and an antd panel from antd buttons.
+
+```tsx
+<PivotPanelChrome
+  fields={fields}
+  config={config}
+  onChange={setConfig}
+  slots={slots}
+/>
+```
+
+Its `PivotPanelChromeProps` take the fields, the configuration and a change
+handler — the panel never holds the configuration itself. `PivotPanelSlots`
+names the five pieces a kit supplies, each with its own props type:
+`PivotPanelSurfaceProps` for the body, `PivotZoneProps` for a titled zone,
+`PivotFieldProps` for one field and its move/remove controls, `PivotAddProps`
+for the control that adds a field, and `PivotAggProps` for a measure's
+aggregation chooser.
+
+Every pivot UI in every spreadsheet is drag-and-drop, and every one of them is
+unusable without a mouse. This panel is keyboard-first instead: each field
+carries buttons that move it one step, so the whole thing is drivable with Tab
+and Enter. A kit that wants dragging can add it on top — nothing here forbids
+it and nothing depends on it. The move controls are withheld at each end
+rather than disabled, because a field at the top has nowhere up to go.
+
+Drop it into a [side panel](./customization.md) as that panel's content, and
+the pivot configuration lives beside the table rather than over it.
+
 Related: [row grouping](./row-grouping.md) ·
 [aggregation](./row-grouping.md#aggregates) · [API reference](./api.md)
