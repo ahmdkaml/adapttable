@@ -165,6 +165,8 @@ export const zhTW: Required<TableLabels> = {
   findPrevious: "上一個相符項目",
   findNext: "下一個相符項目",
   findClose: "關閉尋找",
+  sidePanel: "表格設定",
+  closePanel: "關閉面板",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已選取第 ${fromRow} 至 ${toRow} 列、第 ${fromColumn} 至 ${toColumn} 欄，共 ${cells} 個儲存格`,

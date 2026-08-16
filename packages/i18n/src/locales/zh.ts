@@ -165,6 +165,8 @@ export const zh: Required<TableLabels> = {
   findPrevious: "上一个匹配项",
   findNext: "下一个匹配项",
   findClose: "关闭查找",
+  sidePanel: "表格设置",
+  closePanel: "关闭面板",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已选择第 ${fromRow} 至 ${toRow} 行、第 ${fromColumn} 至 ${toColumn} 列，共 ${cells} 个单元格`,

@@ -171,6 +171,8 @@ export const ru: Required<TableLabels> = {
   findPrevious: "Предыдущее совпадение",
   findNext: "Следующее совпадение",
   findClose: "Закрыть поиск",
+  sidePanel: "Настройки таблицы",
+  closePanel: "Закрыть панель",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

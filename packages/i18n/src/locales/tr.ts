@@ -169,6 +169,8 @@ export const tr: Required<TableLabels> = {
   findPrevious: "Önceki eşleşme",
   findNext: "Sonraki eşleşme",
   findClose: "Aramayı kapat",
+  sidePanel: "Tablo ayarları",
+  closePanel: "Paneli kapat",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

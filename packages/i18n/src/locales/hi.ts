@@ -168,6 +168,8 @@ export const hi: Required<TableLabels> = {
   findPrevious: "पिछला मेल",
   findNext: "अगला मेल",
   findClose: "खोज बंद करें",
+  sidePanel: "तालिका सेटिंग्स",
+  closePanel: "पैनल बंद करें",
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `पंक्तियाँ ${fromRow} से ${toRow}, स्तंभ ${fromColumn} से ${toColumn} चयनित, ${cells} सेल`,

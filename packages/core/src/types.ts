@@ -611,6 +611,10 @@ export interface TableLabels {
   /** Accessible name for opening a whole row for editing (`rowEditing`). */
   /** The toolbar control that puts the last edit back (`undoRedoButtons`). */
   redoEdit?: string;
+  /** Accessible name for the side panel's tab strip (`sidePanel`). */
+  sidePanel?: string;
+  /** The control that closes the side panel. */
+  closePanel?: string;
   /** Accessible name for entering row edit mode. */
   editRow?: string;
   /** Accessible name for committing a row edit. */

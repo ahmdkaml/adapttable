@@ -168,6 +168,8 @@ export const ko: Required<TableLabels> = {
   findPrevious: "이전 일치 항목",
   findNext: "다음 일치 항목",
   findClose: "찾기 닫기",
+  sidePanel: "테이블 설정",
+  closePanel: "패널 닫기",
   gridCellPosition: (row, total) => `${total}행 중 ${row}행`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}행부터 ${toRow}행, ${fromColumn}열부터 ${toColumn}열 선택, ${cells}개 셀`,

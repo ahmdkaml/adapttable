@@ -169,6 +169,8 @@ export const fr: Required<TableLabels> = {
   findPrevious: "Résultat précédent",
   findNext: "Résultat suivant",
   findClose: "Fermer la recherche",
+  sidePanel: "Réglages du tableau",
+  closePanel: "Fermer le panneau",
   gridCellPosition: (row, total) => `ligne ${row} sur ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Lignes ${fromRow} à ${toRow}, colonnes ${fromColumn} à ${toColumn} sélectionnées, ${cells} cellules`,

@@ -166,6 +166,8 @@ export const ja: Required<TableLabels> = {
   findPrevious: "前の一致",
   findNext: "次の一致",
   findClose: "検索を閉じる",
+  sidePanel: "テーブル設定",
+  closePanel: "パネルを閉じる",
   gridCellPosition: (row, total) => `${total} 行中 ${row} 行目`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}行目から${toRow}行目、${fromColumn}列目から${toColumn}列目を選択、${cells}セル`,

@@ -166,6 +166,8 @@ export const fa: Required<TableLabels> = {
   findPrevious: "نتیجه قبلی",
   findNext: "نتیجه بعدی",
   findClose: "بستن جستجو",
+  sidePanel: "تنظیمات جدول",
+  closePanel: "بستن پنل",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,
