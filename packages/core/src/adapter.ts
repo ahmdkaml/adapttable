@@ -310,6 +310,7 @@ export {
 } from "./rows/rowStyle";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";
+export { fillSlot, tableErrorState } from "./state/errorState";
 export {
   type SharedTableRenderProps,
   type TableRenderModel,

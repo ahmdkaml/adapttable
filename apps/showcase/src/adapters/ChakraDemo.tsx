@@ -35,6 +35,7 @@ import {
   type DataMode,
   DemoBody,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "../Demo";
@@ -109,6 +110,8 @@ export function ChakraDemo({
   extraRows,
   rowStyle,
   highlight,
+  failure,
+  onRecover,
   realtime,
   editing,
   cellNavigation,
@@ -154,6 +157,8 @@ export function ChakraDemo({
   extraRows?: boolean;
   rowStyle?: boolean;
   highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -221,6 +226,8 @@ export function ChakraDemo({
           extraRows={extraRows}
           rowStyle={rowStyle}
           highlight={highlight}
+          failure={failure}
+          onRecover={onRecover}
           realtime={realtime}
           editing={editing}
           render={(source, columns) => (

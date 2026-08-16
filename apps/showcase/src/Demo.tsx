@@ -5,6 +5,8 @@ import {
   type ColumnLayoutState,
   evaluateFilterTree,
   type QueryFilterGroup,
+  type Slot,
+  type TableErrorState,
   type TableSource,
   updateRow,
   useColumnLayoutUrlState,
@@ -41,6 +43,48 @@ export type DataMode = "frontend" | "backend";
 export type PageMode = "paged" | "infinite";
 export type Density = "comfortable" | "compact";
 export type FiltersUi = "popover" | "drawer" | "header";
+
+/**
+ * Which load-failure state to show: none, the adapter's own, or a
+ * replacement passed through `slots.error`.
+ */
+export type Failure = "off" | "builtin" | "replaced";
+
+/** The failure the lab simulates. */
+const DEMO_FAILURE = new Error("The people service did not answer (503).");
+
+/**
+ * A host's own error state, to sit beside the built-in one.
+ *
+ * Deliberately not a static node: it reads the error it is reporting and
+ * offers the retry the source handed it, which is the whole reason this slot
+ * takes a function.
+ */
+const REPLACED_ERROR_SLOT = {
+  error: ({ error, retry, retrying }: TableErrorState) => (
+    <div className="demo-error" role="alert">
+      <strong>Could not load people</strong>
+      <p>{error.message}</p>
+      {retry && (
+        <button type="button" onClick={retry} disabled={retrying}>
+          {retrying ? "Retrying…" : "Try again"}
+        </button>
+      )}
+    </div>
+  ),
+};
+
+/** The failure the lab is simulating, or none. */
+function demoError(failure: Failure | undefined): Error | null {
+  return failure && failure !== "off" ? DEMO_FAILURE : null;
+}
+
+/** The host's own error state, when the lab is showing a replacement. */
+function errorSlots(
+  failure: Failure | undefined
+): { error: (state: TableErrorState) => ReactNode } | undefined {
+  return failure === "replaced" ? REPLACED_ERROR_SLOT : undefined;
+}
 
 const AdvancedFiltersContext = createContext(false);
 
@@ -82,6 +126,8 @@ export interface DemoColumnProps {
   onRowReorder?: (from: number, to: number, row: Person) => void;
   /** The flash on a changed row — a class, which every adapter honours. */
   rowClassName?: (row: Person, index: number) => string | undefined;
+  /** The host's own error state, when the lab is showing a replacement. */
+  slots?: { error?: Slot<TableErrorState> };
   /** `null` forces grouping off even if the URL carries a groupBy. */
   groupBy?: string | readonly string[] | null;
   groupAggregates?: (
@@ -220,6 +266,10 @@ interface DataProps {
   rowStyle?: boolean;
   /** Flash the row a change just landed on. */
   highlight?: boolean;
+  /** Fail the load, so the error chrome is on screen. */
+  failure?: Failure;
+  /** What the error state's retry does — here, clear the simulated failure. */
+  onRecover?: () => void;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   /** AND/OR builder — Feature Lab only. Live demo stays a simple form. */
@@ -299,6 +349,8 @@ function Frontend({
   extraRows,
   rowStyle,
   highlight,
+  failure,
+  onRecover,
   realtime,
   advancedFilters,
 }: Readonly<DataProps>) {
@@ -373,6 +425,10 @@ function Frontend({
   const feed = useRealtimeFeed(realtime === true, setData);
   const source = useFrontendData<Person>({
     data,
+    error: demoError(failure),
+    // A retry that actually recovers: the demo's "server" answers on the
+    // second ask, so the button is worth pressing.
+    refetch: onRecover,
     columns: BASE_COLUMNS,
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
@@ -420,6 +476,7 @@ function Frontend({
         // table, `rowClassName` is the seam every adapter already honours,
         // and a disarmed `useHighlight` simply never returns a class.
         rowClassName: flashClass,
+        slots: errorSlots(failure),
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
         ...(editing
@@ -563,6 +620,8 @@ export function DemoBody({
   extraRows,
   rowStyle,
   highlight,
+  failure,
+  onRecover,
   realtime,
   columnGroups,
 }: Readonly<{
@@ -583,6 +642,8 @@ export function DemoBody({
   extraRows?: boolean;
   rowStyle?: boolean;
   highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
   realtime?: boolean;
   columnGroups?: boolean;
 }>) {
@@ -635,6 +696,8 @@ export function DemoBody({
       extraRows={extraRows}
       rowStyle={rowStyle}
       highlight={highlight}
+      failure={failure}
+      onRecover={onRecover}
       realtime={realtime}
       advancedFilters={advancedFilters}
     />

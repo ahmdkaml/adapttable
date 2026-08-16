@@ -1,4 +1,5 @@
 import {
+  fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
@@ -271,17 +272,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           side={props.sidePanel?.side}
           body={
             <>
-              {source.error ? (
-                <ErrorState
-                  error={source.error}
-                  labels={labels}
-                  onRetry={
-                    source.refetch ? () => void source.refetch?.() : undefined
-                  }
-                />
-              ) : (
-                bodyByRegion[chrome.body]
-              )}
+              {chrome.errorState
+                ? (fillSlot(slots?.error, chrome.errorState) ?? (
+                    <ErrorState
+                      error={chrome.errorState.error}
+                      labels={labels}
+                      onRetry={chrome.errorState.retry}
+                    />
+                  ))
+                : bodyByRegion[chrome.body]}
             </>
           }
           panel={

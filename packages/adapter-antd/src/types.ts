@@ -1,5 +1,7 @@
 import type {
   BaseDataTableProps,
+  Slot,
+  TableErrorState,
   UrlStateAdapter,
   UseSavedViewsOptions,
   UseTableDataOptions,
@@ -22,6 +24,15 @@ export interface DataTableSlots {
    * `empty` would otherwise replace in both situations.
    */
   noResults?: ReactNode;
+  /**
+   * Replace the load-failure state.
+   *
+   * Unlike the other slots this one also takes a function, because an error
+   * state is about something: the function receives the error being reported
+   * and the retry the source can actually perform, so a replacement can offer
+   * both. Pass a plain node when the message is fixed.
+   */
+  error?: Slot<TableErrorState>;
 }
 
 /** Props for the Ant Design `<DataTable>`. */

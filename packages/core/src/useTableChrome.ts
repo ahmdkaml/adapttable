@@ -71,6 +71,7 @@ import {
 import type { SelectionState } from "./selection/useSelection";
 import { serverGroupEntries } from "./source/queryGroups";
 import type { TableSource } from "./source/TableSource";
+import { type TableErrorState, tableErrorState } from "./state/errorState";
 import { nestedTableDetail } from "./tree/nestedTable";
 import {
   buildTreeEntries,
@@ -272,6 +273,12 @@ export interface TableChrome<TRow> {
   isPaged: boolean;
   /** Which body region to render. */
   body: TableBodyRegion;
+  /**
+   * The load failure to show in place of the body, or `undefined` when the
+   * source is fine. Derived here so every adapter offers a retry on exactly
+   * the same terms — one the source can actually perform.
+   */
+  errorState?: TableErrorState;
   /**
    * Why the body is empty: `"noResults"` when an active search/filter
    * produced zero rows (offer a clear-filters CTA), `"noData"` when the
@@ -624,6 +631,7 @@ export function useTableChrome<TRow>(
 
   const isPaged = source.paginationMode === "paged";
 
+  const errorState = tableErrorState(viewSource);
   let body: TableBodyRegion;
   if (viewSource.isLoading && viewSource.rows.length === 0) body = "skeleton";
   else if (table.isEmpty) body = "empty";
@@ -1168,6 +1176,7 @@ export function useTableChrome<TRow>(
     activeFilterCount,
     isPaged,
     body,
+    errorState,
     emptyVariant,
     isRefreshing,
     clearFilters,

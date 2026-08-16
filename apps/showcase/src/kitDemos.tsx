@@ -13,6 +13,7 @@ import type { Locale, Person } from "./data";
 import {
   type DataMode,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "./Demo";
@@ -39,6 +40,10 @@ export type KitDemoProps = Readonly<{
   rowStyle?: boolean;
   /** Flash the row a change just landed on. */
   highlight?: boolean;
+  /** Fail the load, so the error chrome is on screen. */
+  failure?: Failure;
+  /** What the error state's retry does. */
+  onRecover?: () => void;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;

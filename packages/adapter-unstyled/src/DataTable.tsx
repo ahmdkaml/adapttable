@@ -1,6 +1,7 @@
 import { type TableSource } from "@adapttable/core";
 import {
   ExportAnnouncer,
+  fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
@@ -581,17 +582,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         side={props.sidePanel?.side}
         body={
           <>
-            {viewSource.error ? (
-              <ErrorState
-                error={viewSource.error}
-                labels={labels}
-                onRetry={
-                  viewSource.refetch
-                    ? () => void viewSource.refetch?.()
-                    : undefined
-                }
-                classNames={classNames}
-              />
+            {chrome.errorState ? (
+              (fillSlot(props.slots?.error, chrome.errorState) ?? (
+                <ErrorState
+                  error={chrome.errorState.error}
+                  labels={labels}
+                  onRetry={chrome.errorState.retry}
+                  classNames={classNames}
+                />
+              ))
             ) : (
               <DataTableBody
                 chrome={chrome}

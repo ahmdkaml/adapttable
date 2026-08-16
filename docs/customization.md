@@ -198,8 +198,33 @@ Replace whole sub-components on any adapter:
 ```
 
 `skeleton` replaces the first-load skeleton; `empty` replaces the
-empty-state. The error state is built-in (retry button included) — translate it
-via the `errorTitle` / `errorMessage` / `retry` labels.
+empty-state.
+
+### The error state
+
+`error` replaces the load-failure state. It takes a node like the others, and
+it also takes a function — because an error state is _about_ something:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  slots={{
+    error: ({ error, retry, retrying }) => (
+      <MyAlert message={error.message} onRetry={retry} busy={retrying} />
+    ),
+  }}
+/>
+```
+
+`retry` is `undefined` when the source has nothing to ask again — a static
+`data` array, for instance — so hide your retry control when it is missing
+rather than rendering one that does nothing. `retrying` is true while a retry
+is already in flight.
+
+Leave the slot off and the built-in state renders, retry button included;
+translate it via the `errorTitle` / `errorMessage` / `retry` labels.
 
 ### Two empty states, one optional slot
 

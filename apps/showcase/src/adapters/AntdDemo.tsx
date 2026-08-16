@@ -36,6 +36,7 @@ import {
   type DataMode,
   DemoBody,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "../Demo";
@@ -114,6 +115,8 @@ export function AntdDemo({
   extraRows,
   rowStyle,
   highlight,
+  failure,
+  onRecover,
   realtime,
   editing,
   cellNavigation,
@@ -158,6 +161,8 @@ export function AntdDemo({
   extraRows?: boolean;
   rowStyle?: boolean;
   highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -230,6 +235,8 @@ export function AntdDemo({
         extraRows={extraRows}
         rowStyle={rowStyle}
         highlight={highlight}
+        failure={failure}
+        onRecover={onRecover}
         realtime={realtime}
         editing={editing}
         columnGroups={columnGroups}

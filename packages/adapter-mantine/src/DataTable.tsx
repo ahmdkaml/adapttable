@@ -4,6 +4,7 @@ import {
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
+  fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
@@ -361,22 +362,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           side={props.sidePanel?.side}
           body={
             <>
-              {viewSource.error && (
-                <ErrorState
-                  error={viewSource.error}
-                  title={table.labels.errorTitle}
-                  message={table.labels.errorMessage}
-                  retryLabel={table.labels.retry}
-                  onRetry={
-                    viewSource.refetch
-                      ? () => void viewSource.refetch?.()
-                      : undefined
-                  }
-                  isRetrying={viewSource.isFetching}
-                />
-              )}
-
-              {!viewSource.error && body}
+              {chrome.errorState
+                ? (fillSlot(slots?.error, chrome.errorState) ?? (
+                    <ErrorState
+                      error={chrome.errorState.error}
+                      title={table.labels.errorTitle}
+                      message={table.labels.errorMessage}
+                      retryLabel={table.labels.retry}
+                      onRetry={chrome.errorState.retry}
+                      isRetrying={chrome.errorState.retrying}
+                    />
+                  ))
+                : body}
             </>
           }
           panel={

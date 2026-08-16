@@ -1,5 +1,6 @@
 import { resolveLabels } from "@adapttable/core";
 import {
+  fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
@@ -276,19 +277,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           side={props.sidePanel?.side}
           body={
             <>
-              {viewSource.error ? (
-                <ErrorState
-                  error={viewSource.error}
-                  labels={labels}
-                  onRetry={
-                    viewSource.refetch
-                      ? () => void viewSource.refetch?.()
-                      : undefined
-                  }
-                />
-              ) : (
-                body
-              )}
+              {c.errorState
+                ? (fillSlot(slots?.error, c.errorState) ?? (
+                    <ErrorState
+                      error={c.errorState.error}
+                      labels={labels}
+                      onRetry={c.errorState.retry}
+                    />
+                  ))
+                : body}
             </>
           }
           panel={

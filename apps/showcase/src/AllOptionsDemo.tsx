@@ -1,7 +1,7 @@
 import { getLabels } from "@adapttable/i18n";
 import { FilterDrawer } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
-import { startTransition, Suspense, useId, useState } from "react";
+import { startTransition, Suspense, useCallback, useId, useState } from "react";
 
 import { cssVars } from "./cssVars";
 import type { Locale } from "./data";
@@ -9,6 +9,7 @@ import {
   AdvancedFiltersProvider,
   type DataMode,
   type Density,
+  type Failure,
   type FiltersUi,
 } from "./Demo";
 import { DemoFilterSetProvider } from "./demoFilters";
@@ -176,6 +177,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [palette, setPalette] = useState<OnOff>("off");
   const [chrome, setChrome] = useState<OnOff>("off");
   const [highlight, setHighlight] = useState<OnOff>("off");
+  const [failure, setFailure] = useState<Failure>("off");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -194,6 +196,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
       ? "This control needs the complete frontend row set."
       : undefined;
   const flashReason = flashReasonFor(editingMode, rowMutations);
+  // The retry the error state offers has to do something, or the demo is
+  // showing a button that lies.
+  const recoverFromFailure = useCallback(() => {
+    setFailure("off");
+  }, []);
   const structured = structure === "grouped" || structure === "tree";
   const reorderReason =
     clientOnlyReason ??
@@ -508,6 +515,18 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={chrome}
                       onChange={(next) => customize(setChrome, next)}
                     />
+                    <Control label="Load failure">
+                      <Segmented
+                        label="load failure"
+                        value={failure}
+                        onChange={(next) => customize(setFailure, next)}
+                        options={[
+                          { value: "off", label: "Off" },
+                          { value: "builtin", label: "Built-in" },
+                          { value: "replaced", label: "Replaced" },
+                        ]}
+                      />
+                    </Control>
                     <Toggle
                       label="Flash changed rows"
                       value={highlight}
@@ -659,6 +678,8 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       batch={editingMode === "batch"}
                       rowMutations={rowMutations === "on"}
                       highlight={highlight === "on"}
+                      failure={failure}
+                      onRecover={recoverFromFailure}
                       rowReorder={rowReorder === "on"}
                       rowPinning={rowPinning === "on"}
                       cellSpan={cellSpan === "on"}

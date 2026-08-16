@@ -6,6 +6,7 @@ import { type Locale, type Person } from "../data";
 import {
   type DataMode,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "../Demo";
@@ -253,6 +254,8 @@ export function UnstyledDemo({
   extraRows,
   rowStyle,
   highlight,
+  failure,
+  onRecover,
   realtime,
   editing,
   cellNavigation,
@@ -297,6 +300,8 @@ export function UnstyledDemo({
   extraRows?: boolean;
   rowStyle?: boolean;
   highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
@@ -344,6 +349,8 @@ export function UnstyledDemo({
       extraRows={extraRows}
       rowStyle={rowStyle}
       highlight={highlight}
+      failure={failure}
+      onRecover={onRecover}
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}

@@ -50,6 +50,24 @@ function renderHarness(
   return render(<Harness classNames={classNames} density={extra?.density} />);
 }
 
+/** The error slot reaches through the preset wrapper to the unstyled shell. */
+function ErrorHarness() {
+  const source = useFrontendData<Row>({
+    data: ROWS,
+    urlAdapter: adapter,
+    columns,
+    error: new Error("boom"),
+  });
+  return (
+    <DataTable
+      source={source}
+      columns={columns}
+      rowKey={(r) => r.id}
+      slots={{ error: (state) => <output>mine: {state.error.message}</output> }}
+    />
+  );
+}
+
 describe("@adapttable/shadcn", () => {
   it("renders a shadcn-styled table from a single import", () => {
     const { container, getByText } = renderHarness();
@@ -87,5 +105,15 @@ describe("@adapttable/shadcn", () => {
     expect(
       container.querySelector('[data-adapttable-part="root"]')
     ).toHaveAttribute("data-density", "compact");
+  });
+
+  it("passes the error slot through to the shell", () => {
+    adapter = createMemoryAdapter("");
+    const { getByText, container } = render(<ErrorHarness />);
+
+    expect(getByText(/mine: boom/)).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-adapttable-part="error"]')
+    ).toBeNull();
   });
 });

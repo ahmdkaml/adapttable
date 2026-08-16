@@ -336,6 +336,7 @@ export {
   type UseTableDataOptions,
   type UseTableDataResult,
 } from "./source/useTableData";
+export type { Slot, TableErrorState } from "./state/errorState";
 export {
   type Density,
   useDensityUrlState,

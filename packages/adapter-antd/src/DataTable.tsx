@@ -30,6 +30,7 @@ import {
   type RowReorderState,
   type SelectionState,
   selectionStats,
+  type TableErrorState,
   type TableLabels,
   tableMinWidth,
   type TableSource,
@@ -54,6 +55,7 @@ import {
 import {
   DEFAULT_CARD_SIZE_PX,
   EXTRA_ROW_PARTS,
+  fillSlot,
   GridFocusAnnouncer,
   insertExtraRows,
   isExtraEntry,
@@ -954,6 +956,8 @@ function useGroupingWindow<TRow>(options: {
 /** Props shared by mobile and desktop body regions. */
 interface DataTableBodyRegionProps<TRow> {
   chromeBody: string;
+  /** The load failure to show instead of the body, when there is one. */
+  errorState?: TableErrorState;
   source: TableSource<TRow>;
   /** Editing row universe from chrome — grouped leaf set or page slice. */
   editingRows: readonly TRow[];
@@ -1184,6 +1188,7 @@ function DataTableBodyRegion<TRow>(
   const {
     gridFocus,
     chromeBody,
+    errorState,
     source,
     editingRows,
     table,
@@ -1233,12 +1238,12 @@ function DataTableBodyRegion<TRow>(
   } = props;
 
   let body: ReactNode;
-  if (source.error) {
-    body = (
+  if (errorState) {
+    body = fillSlot(slots?.error, errorState) ?? (
       <ErrorState
-        error={source.error}
+        error={errorState.error}
         labels={labels}
-        onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+        onRetry={errorState.retry}
       />
     );
   } else if (chromeBody === "skeleton") {
@@ -1779,6 +1784,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <DataTableBodyRegion
       gridFocus={gridFocus}
       chromeBody={c.body}
+      errorState={c.errorState}
       source={source}
       editingRows={c.editingRows}
       table={table}
