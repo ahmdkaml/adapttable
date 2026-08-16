@@ -225,3 +225,56 @@ export function SidePanelChrome(props: Readonly<SidePanelChromeProps>) {
     </slots.Frame>
   );
 }
+
+/** What {@link SidePanelLayout} arranges. */
+export interface SidePanelLayoutProps {
+  /** The table itself — everything the panel sits beside. */
+  body: ReactNode;
+  /** The rendered side panel, or nothing when none is open. */
+  panel?: ReactNode;
+  /** Which edge the panel is docked to. Defaults to `"end"`. */
+  side?: "start" | "end";
+}
+
+/**
+ * Put the table and its panel side by side.
+ *
+ * This is structure, not appearance — a flex row and a `min-width: 0` so the
+ * table can still scroll horizontally inside it — which is why it lives in
+ * core rather than in eight copies. Without a panel it renders the body
+ * alone and adds no element at all, so a table that never asks for one has
+ * exactly the DOM it always had.
+ *
+ * It exists as a component rather than as a ternary in each adapter for a
+ * reason worth stating: the same "if the host asked for it, wrap; otherwise
+ * do not" shape written eight times is eight chances to differ, and one
+ * kit's copy already tripped a complexity limit when the status bar took
+ * that form.
+ *
+ * @param props - The body, the panel, and which side it docks to.
+ * @returns The arranged region.
+ */
+export function SidePanelLayout(props: Readonly<SidePanelLayoutProps>) {
+  if (!props.panel) return <>{props.body}</>;
+  return (
+    <div
+      data-adapttable-part="table-region"
+      style={{
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        flexDirection: props.side === "start" ? "row-reverse" : "row",
+      }}
+    >
+      {/* `min-width: 0` is what lets the table keep its own horizontal
+          scrollbar instead of forcing the row wider than its container. */}
+      <div
+        data-adapttable-part="table-region-main"
+        style={{ flex: 1, minWidth: 0 }}
+      >
+        {props.body}
+      </div>
+      {props.panel}
+    </div>
+  );
+}

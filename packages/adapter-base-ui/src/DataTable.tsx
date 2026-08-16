@@ -1,6 +1,7 @@
 import {
   GridFocusAnnouncer,
   RowReorderAnnouncer,
+  SidePanelLayout,
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
@@ -19,6 +20,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
@@ -219,15 +221,38 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             accentColor={accentColor}
           />
         )}
-        {source.error ? (
-          <ErrorState
-            error={source.error}
-            labels={labels}
-            onRetry={source.refetch ? () => void source.refetch?.() : undefined}
-          />
-        ) : (
-          bodyByRegion[chrome.body]
-        )}
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {source.error ? (
+                <ErrorState
+                  error={source.error}
+                  labels={labels}
+                  onRetry={
+                    source.refetch ? () => void source.refetch?.() : undefined
+                  }
+                />
+              ) : (
+                bodyByRegion[chrome.body]
+              )}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={labels}
+              />
+            )
+          }
+        />
         {canLoadMore && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center" py="2">
             <Button

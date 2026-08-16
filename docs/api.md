@@ -824,6 +824,17 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Side panel.** `sidePanel` docks table settings beside the table instead of
+in a popover over them. `SidePanelOptions` types it — `panels`, `open`,
+`onOpenChange`, `side` — and `SidePanelEntry` is one panel (`key`, `label`,
+`content`). It is controlled, because the control that opens it is the
+host's. Adapters build theirs over `SidePanelChrome` / `SidePanelChromeProps`
+/ `SidePanelSlots` / `SidePanelFrameProps` / `SidePanelTabProps` /
+`SidePanelCloseProps` and dock it with `SidePanelLayout` /
+`SidePanelLayoutProps` from `@adapttable/core/adapter`; the tab strip's
+keyboard contract lives in core, not in each kit. See
+[customization](./customization.md#side-panel).
+
 **Status bar.** `statusBar` puts a strip under the table reading the row
 range, how many rows are selected, and what a multi-cell selection adds up
 to. Adapters export their kit-owned `StatusBar` over `StatusBarChrome` /

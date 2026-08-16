@@ -285,7 +285,12 @@ export {
   useGridFocus,
   type UseGridFocusOptions,
 } from "./focus/useGridFocus";
-export type { BaseDataTableProps, ToolbarSlots } from "./props";
+export type { SidePanelEntry } from "./layout/SidePanelChrome";
+export type {
+  BaseDataTableProps,
+  SidePanelOptions,
+  ToolbarSlots,
+} from "./props";
 export {
   type AggregateFn,
   isFilterGroup,

@@ -268,6 +268,55 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Side panel
+
+A popover is right for a control you touch once and dismiss. It is wrong for
+setting a table up — choosing columns, building a filter, arranging a pivot —
+because that is iterative: change one thing, look at the rows, change
+another. A popover closes when you look away, and the rows are behind it
+while it is open.
+
+`sidePanel` docks that work beside the table instead. It is controlled,
+because the control that opens it is yours — `toolbarSlots` is where it
+usually goes:
+
+```tsx
+const [panel, setPanel] = useState<string | null>(null);
+
+<DataTable
+  toolbarSlots={{
+    end: <button onClick={() => setPanel("filters")}>Settings</button>,
+  }}
+  sidePanel={{
+    panels: [
+      { key: "filters", label: "Filters", content: <MyFilters /> },
+      { key: "columns", label: "Columns", content: <MyColumnList /> },
+    ],
+    open: panel,
+    onOpenChange: setPanel,
+    side: "end",
+  }}
+  …
+/>;
+```
+
+`SidePanelOptions` types it and `SidePanelEntry` is one panel — a `key`, a
+`label` and the `content` to show. With more than one panel the labels
+become a real tab strip: one tab stop for the whole strip, arrow keys that
+wrap and carry the selection, Home and End. Escape closes from anywhere
+inside. Putting focus back afterwards is the opener's job, since only it
+knows where focus was.
+
+`side` picks the edge — `"end"` (the default) is the right in a
+left-to-right table and the left in a right-to-left one. Omit `sidePanel`
+and nothing renders, nothing is bundled, and the table's markup is
+unchanged.
+
+Adapters build their panel over `SidePanelChrome` / `SidePanelSlots` /
+`SidePanelFrameProps` / `SidePanelTabProps` / `SidePanelCloseProps` and dock
+it with `SidePanelLayout` / `SidePanelLayoutProps`, all from
+`@adapttable/core/adapter`.
+
 ## Density
 
 ```tsx

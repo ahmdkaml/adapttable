@@ -171,6 +171,24 @@ const A11Y_PARTS = new Set([
  * `cellMatch` / `cellMatchCurrent` are the same shape for find hits and are
  * verified in `findInTable.test.tsx`.
  */
+/**
+ * Parts core's own chrome draws, which no kit can carry a class for.
+ *
+ * The layout host and the side panel's inner structure are rendered by
+ * core, not by this adapter: a kit supplies the frame and the controls and
+ * gets ONE class hook for each, while the region, the header and the body
+ * between them are structure core owns outright. There is nothing here for
+ * an adapter to name, so the two directions of this test cannot apply —
+ * unlike everything else in it, where a missing key is a real gap.
+ */
+const CORE_OWNED = new Set([
+  "table-region",
+  "table-region-main",
+  "side-panel-header",
+  "side-panel-tabs",
+  "side-panel-body",
+]);
+
 const STATE_CLASSES = new Set([
   "cellSelected",
   "groupFooterRow",
@@ -244,6 +262,14 @@ function Harness(props: {
       editHistory
       undoRedoButtons
       statusBar
+      sidePanel={{
+        panels: [
+          { key: "one", label: "One", content: <p>one</p> },
+          { key: "two", label: "Two", content: <p>two</p> },
+        ],
+        open: "one",
+        onOpenChange: vi.fn(),
+      }}
       {...props.override}
     />
   );
@@ -490,6 +516,9 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "sidePanel",
+  "sidePanelTab",
+  "sidePanelClose",
   "statusBar",
   "statusItem",
   "undoButton",
@@ -684,6 +713,7 @@ describe("classNames \u2194 part parity (unstyled)", () => {
     const unmappedParts: string[] = [];
     const unclassed: string[] = [];
     for (const [name, els] of seen) {
+      if (CORE_OWNED.has(name)) continue;
       const key = camel(name) as Key;
       if (!KEYS.includes(key)) {
         unmappedParts.push(name);

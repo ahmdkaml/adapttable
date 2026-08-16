@@ -6,6 +6,7 @@ import {
 import {
   GridFocusAnnouncer,
   RowReorderAnnouncer,
+  SidePanelLayout,
   useDataTableShell,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
@@ -26,6 +27,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
@@ -301,20 +303,43 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
 
-        {viewSource.error && (
-          <ErrorState
-            error={viewSource.error}
-            title={table.labels.errorTitle}
-            message={table.labels.errorMessage}
-            retryLabel={table.labels.retry}
-            onRetry={
-              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-            }
-            isRetrying={viewSource.isFetching}
-          />
-        )}
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {viewSource.error && (
+                <ErrorState
+                  error={viewSource.error}
+                  title={table.labels.errorTitle}
+                  message={table.labels.errorMessage}
+                  retryLabel={table.labels.retry}
+                  onRetry={
+                    viewSource.refetch
+                      ? () => void viewSource.refetch?.()
+                      : undefined
+                  }
+                  isRetrying={viewSource.isFetching}
+                />
+              )}
 
-        {!viewSource.error && body}
+              {!viewSource.error && body}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={table.labels}
+              />
+            )
+          }
+        />
 
         {canLoadMore && viewSource.hasNextPage && (
           <Group ref={loadMoreRef} justify="center" py="xs">

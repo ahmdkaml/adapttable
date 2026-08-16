@@ -19,6 +19,7 @@ import type {
 import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
+import type { SidePanelEntry } from "./layout/SidePanelChrome";
 import type { GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
 import type { RowPinState } from "./rows/rowPinning";
@@ -51,6 +52,28 @@ export interface ToolbarSlots {
   start?: ReactNode;
   /** After every built-in control, before the rows-per-page select. */
   end?: ReactNode;
+}
+
+/**
+ * A side panel docked beside the table.
+ *
+ * Controlled, because the control that opens it is yours: a table settings
+ * button in `toolbarSlots`, an item in your own app bar, a route. The
+ * table never invents a trigger for it, and `open` is the panel's key or
+ * `null` for closed.
+ */
+export interface SidePanelOptions {
+  /** The panels, in tab order. */
+  panels: readonly SidePanelEntry[];
+  /** Which panel is showing, or `null` when the panel is closed. */
+  open: string | null;
+  /** Called with the panel to show, or `null` when it should close. */
+  onOpenChange: (key: string | null) => void;
+  /**
+   * Which edge to dock to. `"end"` (default) is the right in a
+   * left-to-right table and the left in a right-to-left one.
+   */
+  side?: "start" | "end";
 }
 
 /**
@@ -729,6 +752,31 @@ export interface BaseDataTableProps<TRow> {
    * ```
    */
   toolbarSlots?: ToolbarSlots;
+  /**
+   * Dock a settings panel beside the table.
+   *
+   * A popover is right for a control you touch once. It is wrong for
+   * setting a table up — choosing columns, building a filter — because
+   * that is iterative, and a popover closes when you look away with the
+   * rows behind it. Omit this and nothing renders and nothing is bundled.
+   *
+   * ```tsx
+   * const [panel, setPanel] = useState<string | null>(null);
+   *
+   * <DataTable
+   *   toolbarSlots={{
+   *     end: <button onClick={() => setPanel("filters")}>Settings</button>,
+   *   }}
+   *   sidePanel={{
+   *     panels: [{ key: "filters", label: "Filters", content: <MyFilters /> }],
+   *     open: panel,
+   *     onOpenChange: setPanel,
+   *   }}
+   *   …
+   * />
+   * ```
+   */
+  sidePanel?: SidePanelOptions;
   /**
    * Show a status bar under the table. Defaults to false.
    *

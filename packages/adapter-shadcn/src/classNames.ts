@@ -38,6 +38,12 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
   redoButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  sidePanel:
+    "w-[280px] shrink-0 rounded-lg border border-border bg-card p-3 text-card-foreground",
+  sidePanelTab:
+    "inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground",
+  sidePanelClose:
+    "ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground",
   statusBar:
     "flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-2 text-xs text-muted-foreground tabular-nums",
   statusItem: "whitespace-nowrap",

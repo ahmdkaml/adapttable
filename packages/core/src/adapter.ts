@@ -219,6 +219,16 @@ export {
 } from "./hooks/useMountStagger";
 export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
 export {
+  SidePanelChrome,
+  type SidePanelChromeProps,
+  type SidePanelCloseProps,
+  type SidePanelFrameProps,
+  SidePanelLayout,
+  type SidePanelLayoutProps,
+  type SidePanelSlots,
+  type SidePanelTabProps,
+} from "./layout/SidePanelChrome";
+export {
   type PaginationItem,
   paginationItems,
   type PaginationSlot,

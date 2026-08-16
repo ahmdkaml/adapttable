@@ -62,6 +62,7 @@ import {
   rowIsDirty,
   RowReorderAnnouncer,
   rowReorderDropStyle,
+  SidePanelLayout,
   tableRenderModel,
   undoRedoToolbar,
   useExportHandler,
@@ -122,6 +123,7 @@ import {
 import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SidePanel } from "./components/SidePanel";
 import { SkeletonTable } from "./components/SkeletonTable";
 import { StatusBar } from "./components/StatusBar";
 import { Toolbar } from "./components/Toolbar";
@@ -1835,7 +1837,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         <div className={c.body === "desktop" ? classNames?.table : undefined}>
-          {bodyRegion}
+          <SidePanelLayout
+            side={props.sidePanel?.side}
+            body={bodyRegion}
+            panel={
+              props.sidePanel?.open != null && (
+                <SidePanel
+                  panels={props.sidePanel.panels}
+                  openPanel={props.sidePanel.open}
+                  onOpenPanel={props.sidePanel.onOpenChange}
+                  onClose={() => {
+                    props.sidePanel?.onOpenChange(null);
+                  }}
+                  side={props.sidePanel.side}
+                  labels={labels}
+                />
+              )
+            }
+          />
         </div>
         <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.isPaged && !source.error && c.body === "desktop" && (

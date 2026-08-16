@@ -3,6 +3,7 @@ import {
   ExportAnnouncer,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
+  SidePanelLayout,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -22,6 +23,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { cx } from "./cx";
@@ -483,24 +485,48 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       )}
 
-      {viewSource.error ? (
-        <ErrorState
-          error={viewSource.error}
-          labels={labels}
-          onRetry={
-            viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-          }
-          classNames={classNames}
-        />
-      ) : (
-        <DataTableBody
-          chrome={chrome}
-          props={chromeProps}
-          classNames={classNames}
-          labels={labels}
-          tableProps={tableProps}
-        />
-      )}
+      <SidePanelLayout
+        side={props.sidePanel?.side}
+        body={
+          <>
+            {viewSource.error ? (
+              <ErrorState
+                error={viewSource.error}
+                labels={labels}
+                onRetry={
+                  viewSource.refetch
+                    ? () => void viewSource.refetch?.()
+                    : undefined
+                }
+                classNames={classNames}
+              />
+            ) : (
+              <DataTableBody
+                chrome={chrome}
+                props={chromeProps}
+                classNames={classNames}
+                labels={labels}
+                tableProps={tableProps}
+              />
+            )}
+          </>
+        }
+        panel={
+          props.sidePanel?.open != null && (
+            <SidePanel
+              panels={props.sidePanel.panels}
+              openPanel={props.sidePanel.open}
+              onOpenPanel={props.sidePanel.onOpenChange}
+              onClose={() => {
+                props.sidePanel?.onOpenChange(null);
+              }}
+              side={props.sidePanel.side}
+              labels={labels}
+              classNames={classNames}
+            />
+          )
+        }
+      />
 
       {canLoadMore && viewSource.hasNextPage && (
         <div

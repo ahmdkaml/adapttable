@@ -2,6 +2,7 @@ import { resolveLabels } from "@adapttable/core";
 import {
   GridFocusAnnouncer,
   RowReorderAnnouncer,
+  SidePanelLayout,
   useDataTableShell,
   useMountStagger,
 } from "@adapttable/core/adapter";
@@ -27,6 +28,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
+import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
@@ -216,17 +218,40 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
           />
         )}
-        {viewSource.error ? (
-          <ErrorState
-            error={viewSource.error}
-            labels={labels}
-            onRetry={
-              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-            }
-          />
-        ) : (
-          body
-        )}
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {viewSource.error ? (
+                <ErrorState
+                  error={viewSource.error}
+                  labels={labels}
+                  onRetry={
+                    viewSource.refetch
+                      ? () => void viewSource.refetch?.()
+                      : undefined
+                  }
+                />
+              ) : (
+                body
+              )}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={labels}
+              />
+            )
+          }
+        />
         {canLoadMore && viewSource.hasNextPage && (
           <Box
             ref={loadMoreRef}

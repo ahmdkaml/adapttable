@@ -68,6 +68,12 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The docked settings panel (when `sidePanel` is set). */
+  sidePanel?: string;
+  /** One tab in the side panel's strip. */
+  sidePanelTab?: string;
+  /** The side panel's close control. */
+  sidePanelClose?: string;
   /** The status bar under the table (when `statusBar` is set). */
   statusBar?: string;
   /** One figure inside the status bar. */
