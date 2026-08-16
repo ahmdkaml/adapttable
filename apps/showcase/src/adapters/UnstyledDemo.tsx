@@ -265,6 +265,9 @@ export function UnstyledDemo({
   bulkActions,
   statusBar,
   contextMenu,
+  densityChooser,
+  onDensityChange,
+  fullscreen,
   commandPalette,
   onPrint,
   undoRedoButtons,
@@ -306,6 +309,9 @@ export function UnstyledDemo({
   bulkActions?: boolean;
   statusBar?: boolean;
   contextMenu?: boolean;
+  densityChooser?: boolean;
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
   undoRedoButtons?: boolean;
@@ -340,6 +346,9 @@ export function UnstyledDemo({
       cellNavigation={cellNavigation ?? editing}
       statusBar={statusBar}
       contextMenu={contextMenu}
+      densityChooser={densityChooser}
+      onDensityChange={onDensityChange}
+      fullscreen={fullscreen}
       commandPalette={commandPalette}
       onPrint={onPrint}
       undoRedoButtons={undoRedoButtons}

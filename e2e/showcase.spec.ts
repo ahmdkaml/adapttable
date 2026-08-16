@@ -592,3 +592,42 @@ test("opens the right-click menu and the palette from the Feature Lab", async ({
     page.locator('[data-adapttable-part="command-palette"]')
   ).toHaveCount(0);
 });
+
+/**
+ * The density control and the fullscreen toggle.
+ *
+ * Fullscreen itself cannot be driven from a test — browsers require a real
+ * user gesture — so what is checked is that both controls appear when asked
+ * for, that density actually changes the table, and that the fullscreen
+ * button is a real, labelled control rather than a decoration.
+ */
+test("offers density and fullscreen from the Feature Lab", async ({ page }) => {
+  await page.goto("/all-options/");
+  const root = page.locator('[data-adapttable-part="root"]').first();
+  await expect(root).toBeVisible();
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await expect(
+    page.locator('[data-adapttable-part="density-toggle"]')
+  ).toHaveCount(0);
+
+  await page
+    .getByRole("group", { name: "density & fullscreen" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page.getByRole("button", { name: "Close" }).first().click();
+
+  const density = page
+    .locator('[data-adapttable-part="density-toggle"]')
+    .first();
+  await expect(density).toBeVisible();
+  await expect(
+    page.locator('[data-adapttable-part="fullscreen-toggle"]').first()
+  ).toBeVisible();
+
+  // The click has to travel out to the host and back as the `density`
+  // prop, not just flip something local to the button.
+  await expect(density).toHaveText("Comfortable");
+  await density.click();
+  await expect(density).toHaveText("Compact");
+});

@@ -53,6 +53,12 @@ export type KitDemoProps = Readonly<{
   statusBar?: boolean;
   /** Right-click menus on headers, rows and cells. */
   contextMenu?: boolean;
+  /** The toolbar's density control. */
+  densityChooser?: boolean;
+  /** Reports the density the user picked. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /** The toolbar's fullscreen toggle. */
+  fullscreen?: boolean;
   /** The Cmd/Ctrl+K command palette. */
   commandPalette?: boolean;
   /** Makes Print a palette command. */

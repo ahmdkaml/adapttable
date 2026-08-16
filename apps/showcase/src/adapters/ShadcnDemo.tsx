@@ -49,6 +49,9 @@ export function ShadcnDemo({
   bulkActions,
   statusBar,
   contextMenu,
+  densityChooser,
+  onDensityChange,
+  fullscreen,
   commandPalette,
   onPrint,
   undoRedoButtons,
@@ -90,6 +93,9 @@ export function ShadcnDemo({
   bulkActions?: boolean;
   statusBar?: boolean;
   contextMenu?: boolean;
+  densityChooser?: boolean;
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
   undoRedoButtons?: boolean;
@@ -124,6 +130,9 @@ export function ShadcnDemo({
       cellNavigation={cellNavigation ?? editing}
       statusBar={statusBar}
       contextMenu={contextMenu}
+      densityChooser={densityChooser}
+      onDensityChange={onDensityChange}
+      fullscreen={fullscreen}
       commandPalette={commandPalette}
       onPrint={onPrint}
       undoRedoButtons={undoRedoButtons}

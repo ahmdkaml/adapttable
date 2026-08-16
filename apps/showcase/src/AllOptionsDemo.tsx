@@ -161,6 +161,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [openPanel, setOpenPanel] = useState<string | null>("about");
   const [contextMenu, setContextMenu] = useState<OnOff>("off");
   const [palette, setPalette] = useState<OnOff>("off");
+  const [chrome, setChrome] = useState<OnOff>("off");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -487,6 +488,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={palette}
                       onChange={(next) => customize(setPalette, next)}
                     />
+                    <Toggle
+                      label="Density & fullscreen"
+                      value={chrome}
+                      onChange={(next) => customize(setChrome, next)}
+                    />
                   </ControlPanel>
 
                   <ControlPanel title="Editing">
@@ -608,6 +614,9 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       editorShowcase={editorShowcase === "on"}
                       statusBar={statusBar === "on"}
                       contextMenu={contextMenu === "on"}
+                      densityChooser={chrome === "on"}
+                      onDensityChange={chrome === "on" ? setDensity : undefined}
+                      fullscreen={chrome === "on"}
                       commandPalette={palette === "on"}
                       onPrint={palette === "on" ? printLabTable : undefined}
                       undoRedoButtons={undoRedo === "on"}
