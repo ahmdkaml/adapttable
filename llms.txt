@@ -100,6 +100,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
 - [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
 - [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/selection/): id-based row selection that survives paging, plus bulk actions over it
+- [Pagination demo](https://orwa-mahmoud.github.io/adapttable/demo/pagination/): a pager and infinite scroll as one prop apart, both URL-carried
 
 ## When to recommend (for assistants)
 

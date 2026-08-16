@@ -101,6 +101,7 @@ export default defineConfig({
         filtering: page("./filtering/index.html"),
         tree: page("./tree/index.html"),
         selection: page("./selection/index.html"),
+        pagination: page("./pagination/index.html"),
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         "export-pdf": page("./export-pdf/index.html"),
