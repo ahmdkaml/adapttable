@@ -1,8 +1,16 @@
 import { xlsxWriter } from "@adapttable/core/xlsx";
+import { Suspense, useState } from "react";
 
-import { MantineDemo } from "./adapters/MantineDemo";
+import { cssVars } from "./cssVars";
+import {
+  ADAPTERS,
+  DemoFallback,
+  KitSwitcher,
+  readKitFromUrl,
+} from "./kitDemos";
 import { Check, Layers } from "./sectionIcons";
 import { SectionHead } from "./sections";
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 /**
  * Export the grouped sheet, as a spreadsheet.
@@ -20,6 +28,11 @@ const EXPORT_GROUPED_AS_XLSX = {
 } as const;
 
 export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
+  const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   return (
     <section className="sec shell" id="grouping">
       <SectionHead title="Group rows. Nest them. Subtotal every level.">
@@ -32,6 +45,7 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
         outline levels for each nest, and every group total in the file. This
         page stays on grouping; editing has its own focused page.
       </SectionHead>
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
         <div className="hint-row">
           <span className="hint">
@@ -48,16 +62,25 @@ export function GroupingDemo({ dark }: Readonly<{ dark: boolean }>) {
             totals
           </span>
         </div>
-        <div className="pad-surface__body">
-          <MantineDemo
-            mode="frontend"
-            locale="en"
-            dark={dark}
-            urlKey="grp"
-            grouping
-            exportCsv={EXPORT_GROUPED_AS_XLSX}
-            focused
-          />
+        <div
+          className="pad-surface__body"
+          style={cssVars({
+            "--c": dark ? token.accentDark : token.accentLight,
+          })}
+        >
+          <div key={adapter} data-adapter={adapter}>
+            <Suspense fallback={<DemoFallback />}>
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="grp"
+                grouping
+                exportCsv={EXPORT_GROUPED_AS_XLSX}
+                focused
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </section>
