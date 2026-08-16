@@ -127,6 +127,7 @@ export function MuiDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   exportCsv,
   columnMenu,
   filterControls,
@@ -158,6 +159,8 @@ export function MuiDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
@@ -210,6 +213,7 @@ export function MuiDemo({
                 : makeColumns(locale, MUI_CELLS, {
                     groups: columnGroups,
                     sparkline,
+                    editors: editorShowcase,
                   })
             }
             rowKey={(r) => r.id}

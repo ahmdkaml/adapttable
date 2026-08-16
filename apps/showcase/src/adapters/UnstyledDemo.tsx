@@ -257,6 +257,7 @@ export function UnstyledDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   exportCsv,
   columnMenu,
   filterControls,
@@ -288,6 +289,7 @@ export function UnstyledDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  editorShowcase?: boolean;
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
   columnMenu?: boolean;
@@ -322,6 +324,7 @@ export function UnstyledDemo({
       headerFilters={headerFilters}
       columnGroups={columnGroups}
       sparkline={sparkline}
+      editorShowcase={editorShowcase}
       exportCsv={exportCsv}
       columnMenu={columnMenu}
       filterControls={filterControls}

@@ -113,6 +113,7 @@ export function ChakraDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   exportCsv,
   columnMenu,
   filterControls,
@@ -145,6 +146,8 @@ export function ChakraDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
@@ -200,6 +203,7 @@ export function ChakraDemo({
                   : makeColumns(locale, CHAKRA_CELLS, {
                       groups: columnGroups,
                       sparkline,
+                      editors: editorShowcase,
                     })
               }
               rowKey={(r) => r.id}

@@ -120,6 +120,7 @@ export function AntdDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   columnMenu,
   filterControls,
   forceMobile,
@@ -157,6 +158,8 @@ export function AntdDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
@@ -210,6 +213,7 @@ export function AntdDemo({
                 : makeColumns(locale, ANTD_CELLS, {
                     groups: columnGroups,
                     sparkline,
+                    editors: editorShowcase,
                   })
             }
             rowKey={(r) => r.id}

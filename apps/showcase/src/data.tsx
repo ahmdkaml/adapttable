@@ -15,6 +15,7 @@ import {
   buildFilterRuntime,
   computed,
   defaultFilterRegistry,
+  formatMultiDraft,
   resolveFilterDefs,
   resolveFilterRegistry,
 } from "@adapttable/core";
@@ -51,6 +52,10 @@ export interface Person {
   start?: string;
   /** Demo-only websocket revision used to exercise live-edit conflicts. */
   revision?: number;
+  /** Editable override for the boolean editor. */
+  remote?: boolean;
+  /** Editable override for the multi-select editor. */
+  skills?: string[];
 }
 
 export const PEOPLE = people as Person[];
@@ -127,6 +132,8 @@ interface Strings {
   person: string;
   email: string;
   trend: string;
+  remote: string;
+  skills: string;
   role: string;
   team: string;
   status: string;
@@ -160,6 +167,8 @@ const STRINGS: Record<Locale, Strings> = {
     person: "Person",
     email: "Email",
     trend: "Trend",
+    remote: "Remote",
+    skills: "Skills",
     role: "Role",
     team: "Team",
     status: "Status",
@@ -187,6 +196,8 @@ const STRINGS: Record<Locale, Strings> = {
     person: "الشخص",
     email: "البريد الإلكتروني",
     trend: "الاتجاه",
+    remote: "عن بُعد",
+    skills: "المهارات",
     role: "الدور",
     team: "الفريق",
     status: "الحالة",
@@ -417,11 +428,42 @@ export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 export function makeColumns(
   locale: Locale,
   cells: DemoCells,
-  options?: { groups?: boolean; sparkline?: boolean }
+  options?: { groups?: boolean; sparkline?: boolean; editors?: boolean }
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
   const grouped = options?.groups === true;
+  // The boolean and multi-select editors, which no other column uses — off
+  // unless a page asks, so the frozen live demo is untouched.
+  const editors: ColumnDef<Person>[] = options?.editors
+    ? [
+        {
+          key: "remote",
+          header: s.remote,
+          accessor: (row) => (isRemote(row) ? "✓" : "—"),
+          sortValue: (row) => (isRemote(row) ? 1 : 0),
+          sortable: true,
+          editable: true,
+          editor: "boolean",
+          editValue: (row) => String(isRemote(row)),
+          width: 110,
+          mobileLabel: s.remote,
+        },
+        {
+          key: "skills",
+          header: s.skills,
+          accessor: (row) => personSkills(row).join(", ") || "—",
+          editable: true,
+          editor: {
+            type: "multi-select",
+            options: SKILLS.map((value) => ({ value, label: value })),
+          },
+          editValue: (row) => formatMultiDraft(personSkills(row)),
+          width: 180,
+          mobileLabel: s.skills,
+        },
+      ]
+    : [];
   // Off unless a page asks for it: the live demo is frozen, and the trend
   // column belongs to the Feature Lab's sparkline toggle.
   const trend: ColumnDef<Person>[] = options?.sparkline
@@ -472,6 +514,7 @@ export function makeColumns(
       mobileLabel: "",
     },
     ...trend,
+    ...editors,
     {
       key: "email",
       header: s.email,
@@ -806,6 +849,20 @@ export function budget(row: Person): number {
 
 export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
+}
+
+/** Derived until a cell edit materializes one — the boolean editor's column. */
+export function isRemote(row: Person): boolean {
+  return row.remote ?? Number(row.id) % 3 === 0;
+}
+
+/** The values the multi-select editor offers, and what each row starts with. */
+export const SKILLS = ["react", "typescript", "design", "infra"] as const;
+
+export function personSkills(row: Person): string[] {
+  if (row.skills) return row.skills;
+  const seed = Number(row.id) || 1;
+  return SKILLS.filter((_, index) => (seed >> index) % 2 === 1);
 }
 
 /** Eight weeks of load, derived so the sparkline needs no second seed. */

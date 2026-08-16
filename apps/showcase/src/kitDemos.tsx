@@ -41,6 +41,8 @@ export type KitDemoProps = Readonly<{
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   columnMenu?: boolean;
   filterControls?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */

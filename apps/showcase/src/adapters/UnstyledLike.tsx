@@ -151,6 +151,7 @@ export function UnstyledLike({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   exportCsv,
   columnMenu,
   filterControls,
@@ -183,6 +184,8 @@ export function UnstyledLike({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
@@ -238,6 +241,7 @@ export function UnstyledLike({
                 : makeColumns(locale, TAILWIND_CELLS, {
                     groups: columnGroups,
                     sparkline,
+                    editors: editorShowcase,
                   })
             }
             rowKey={(r) => r.id}

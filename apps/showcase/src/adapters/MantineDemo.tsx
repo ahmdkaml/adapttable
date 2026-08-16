@@ -102,6 +102,7 @@ export function MantineDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  editorShowcase,
   columnMenu,
   filterControls,
   wide,
@@ -131,6 +132,8 @@ export function MantineDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
@@ -186,6 +189,7 @@ export function MantineDemo({
                 : makeColumns(locale, MANTINE_CELLS, {
                     groups: columnGroups,
                     sparkline,
+                    editors: editorShowcase,
                   })
             }
             rowKey={(r) => r.id}
