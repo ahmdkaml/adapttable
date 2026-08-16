@@ -38,6 +38,13 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
   redoButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  commandPalette:
+    "rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg",
+  commandInput:
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
+  commandItem:
+    "flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  commandEmpty: "px-2 py-3 text-sm text-muted-foreground",
   contextMenu:
     "min-w-[10rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
   contextMenuItem:

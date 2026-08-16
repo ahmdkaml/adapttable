@@ -150,9 +150,6 @@ export function CommandPaletteChrome(
 
   useEffect(() => {
     if (!open) return;
-    // Remembered before focus moves, so closing can put it back.
-    opener.current = document.activeElement;
-    input.current?.focus();
     setQuery("");
     setActive(0);
     return () => {
@@ -213,7 +210,9 @@ export function CommandPaletteChrome(
       onClose={onClose}
       className={props.className}
     >
-      <div ref={surface} data-adapttable-part="command-palette">
+      {/* A layout wrapper for the focus trap's bounds — the kit's
+          surface around it is the element worth a part name. */}
+      <div ref={surface}>
         <slots.Input
           inputProps={{
             value: query,
@@ -222,8 +221,22 @@ export function CommandPaletteChrome(
               setActive(0);
             },
             onKeyDown,
+            // Focus is taken when the element ARRIVES, not when the
+            // palette opens. Several kits render their dialog through a
+            // portal that mounts a tick later, so an effect on `open`
+            // reaches for an input that does not exist yet and focus is
+            // left on the body.
             ref: (element) => {
+              const arrived = element !== null && input.current !== element;
               input.current = element;
+              if (!arrived) return;
+              // The opener is captured HERE, immediately before focus
+              // moves — not in an effect. The ref runs during commit and
+              // the effect after it, so an effect would record the input
+              // this line is about to focus and close would restore focus
+              // to a node that no longer exists.
+              opener.current ??= document.activeElement;
+              element.focus();
             },
             role: "combobox",
             "aria-expanded": true,

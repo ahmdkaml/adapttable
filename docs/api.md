@@ -824,6 +824,23 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Command palette.** `commandPalette` opens a palette on Cmd/Ctrl+K listing
+every table action — `true` for the built-ins, or `CommandPaletteOptions`
+(`{ commands, shortcuts }`) to add your own and remap the chord. A `Command`
+IS a `ContextMenuItem`, so an action is written once and offered in both
+places rather than drifting between them; `tableCommands(options)` builds the
+target-free ones (print, export, clear filters) and `filterCommands(commands,
+query)` is the case- and accent-folded substring match the input runs.
+`onPrint` on `<DataTable>` is what makes Print appear. Shortcuts are data:
+`Shortcut` is a chord and a command key, `DEFAULT_SHORTCUTS` is Cmd/Ctrl+K,
+and `useShortcuts(options)` binds them — `mod` means Cmd on a Mac and Ctrl
+elsewhere. Adapters build theirs over `CommandPaletteChrome` /
+`CommandPaletteChromeProps` / `CommandPaletteSlots` /
+`CommandPaletteSurfaceProps` / `CommandPaletteInputProps` /
+`CommandPaletteItemProps` and arm it with `useCommandPalette` (returning a
+`TableCommandPalette`), from `@adapttable/core/adapter`. See
+[customization](./customization.md#command-palette).
+
 **Context menus.** `contextMenu` arms right-click menus for headers, rows and
 cells — `true` for the built-ins, or `ContextMenuOptions` (`{ items }`) to
 append your own behind a divider. `ContextMenuItem` is one entry (`key`,

@@ -188,6 +188,7 @@ const CORE_OWNED = new Set([
   "side-panel-tabs",
   "side-panel-body",
   "context-menu-anchor",
+  "command-list",
 ]);
 
 const STATE_CLASSES = new Set([
@@ -263,6 +264,8 @@ function Harness(props: {
       editHistory
       undoRedoButtons
       statusBar
+      commandPalette
+      onPrint={vi.fn()}
       contextMenu={{
         // A host entry, so the divider that separates it from the built-ins
         // renders too.
@@ -320,6 +323,14 @@ async function renderAllStates(classNames?: DataTableClassNames) {
     fireEvent.click(headerBox);
     absorb();
   }
+  // The palette exists only once its shortcut is pressed.
+  fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+  absorb();
+  // The empty state exists only for a query that matches nothing.
+  fireEvent.change(part("command-input")!, { target: { value: "zzzz" } });
+  absorb();
+  fireEvent.keyDown(part("command-input")!, { key: "Escape" });
+
   // A right-click, which is the only way the context menu exists at all.
   fireEvent.contextMenu(part("cell")!, { clientX: 5, clientY: 5 });
   absorb();
@@ -525,6 +536,10 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "commandPalette",
+  "commandInput",
+  "commandItem",
+  "commandEmpty",
   "contextMenu",
   "contextMenuItem",
   "contextMenuSeparator",

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { CommandPaletteOptions } from "./actions/useCommandPalette";
 import type { ContextMenuOptions } from "./actions/useTableContextMenu";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
@@ -753,6 +754,41 @@ export interface BaseDataTableProps<TRow> {
    * ```
    */
   toolbarSlots?: ToolbarSlots;
+  /**
+   * Open the print dialog on the current view.
+   *
+   * Print is the host's, not the table's: `printTable` opens a browser
+   * dialog and `downloadExportFile` cannot, so there is no core button for
+   * it. Wire this and it becomes a command in the palette and an entry
+   * anywhere else commands are listed — opt-in chrome rather than a
+   * permanent control.
+   *
+   * ```tsx
+   * import { printTable } from "@adapttable/core/pdf";
+   *
+   * <DataTable onPrint={() => printTable({ rows, columns })} … />
+   * ```
+   */
+  onPrint?: () => void;
+  /**
+   * A command palette, opened with Cmd/Ctrl+K. Defaults to off.
+   *
+   * It lists the table's own actions — print, export, clear filters, each
+   * appearing only when wired — and anything you add. Its entries are the
+   * same objects the context menus take, so an action is written once and
+   * offered in both places rather than drifting between them.
+   *
+   * ```tsx
+   * <DataTable
+   *   commandPalette={{
+   *     commands: [{ key: "audit", label: "Open audit log", onSelect: open }],
+   *     shortcuts: [{ chord: "ctrl+shift+p", command: "command-palette" }],
+   *   }}
+   *   …
+   * />
+   * ```
+   */
+  commandPalette?: boolean | CommandPaletteOptions;
   /**
    * Right-click menus for headers, rows and cells. Defaults to off.
    *

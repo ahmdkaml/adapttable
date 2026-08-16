@@ -68,6 +68,14 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The command palette's surface (when `commandPalette` is set). */
+  commandPalette?: string;
+  /** Its search box. */
+  commandInput?: string;
+  /** One command row. */
+  commandItem?: string;
+  /** The "nothing matched" line. */
+  commandEmpty?: string;
   /** The right-click menu (when `contextMenu` is set). */
   contextMenu?: string;
   /** One entry in it. */

@@ -50,11 +50,19 @@ export {
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
+export type { Command } from "./actions/commandRegistry";
+export { filterCommands, tableCommands } from "./actions/commandRegistry";
 export type {
   ContextMenuActions,
   ContextMenuItem,
   ContextMenuTarget,
 } from "./actions/contextMenuModel";
+export type { CommandPaletteOptions } from "./actions/useCommandPalette";
+export {
+  DEFAULT_SHORTCUTS,
+  type Shortcut,
+  useShortcuts,
+} from "./actions/useShortcuts";
 export type { ContextMenuOptions } from "./actions/useTableContextMenu";
 export {
   aggregate,

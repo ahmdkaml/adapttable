@@ -101,4 +101,14 @@ describe("side panel and status bar (chakra)", () => {
       document.querySelector('[data-adapttable-part="side-panel"]')
     ).toBeNull();
   });
+
+  it("docks to the start when asked, and marks the open tab", () => {
+    table({ sidePanel: { ...panel, side: "start" } });
+    const frame = document.querySelector('[data-adapttable-part="side-panel"]');
+
+    expect(frame?.getAttribute("data-side")).toBe("start");
+    expect(
+      screen.getByRole("tab", { name: "One" }).getAttribute("aria-selected")
+    ).toBe("true");
+  });
 });

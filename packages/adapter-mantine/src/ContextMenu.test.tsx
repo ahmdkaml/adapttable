@@ -99,4 +99,28 @@ describe("context menu (mantine)", () => {
 
     expect(screen.getByText("Audit")).toBeInTheDocument();
   });
+
+  it("marks a destructive entry and one it cannot run", () => {
+    table({
+      contextMenu: {
+        items: () => [
+          {
+            key: "del",
+            label: "Delete",
+            danger: true,
+            separatorBefore: true,
+            onSelect: vi.fn(),
+          },
+          { key: "no", label: "Locked", disabled: true, onSelect: vi.fn() },
+        ],
+      },
+    });
+    fireEvent.contextMenu(
+      document.querySelector('[data-adapttable-part="header-cell"]')!,
+      { clientX: 5, clientY: 5 }
+    );
+
+    expect(screen.getByText("Delete")).toBeInTheDocument();
+    expect(screen.getByText("Locked")).toBeInTheDocument();
+  });
 });

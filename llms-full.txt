@@ -5082,6 +5082,38 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Command palette
+
+```tsx
+<DataTable commandPalette onPrint={() => printTable({ rows, columns })} … />
+```
+
+Cmd/Ctrl+K opens a palette listing every action the table can perform. Type
+to filter, arrows to move, Enter to run, Escape to close.
+
+Its entries are the same objects the context menus take. That is the point:
+an action written once appears in both, and cannot gain a condition in one
+and not the other.
+
+```tsx
+<DataTable
+  commandPalette={{
+    commands: [{ key: "audit", label: "Open audit log", onSelect: open }],
+    shortcuts: [{ chord: "ctrl+shift+p", command: "command-palette" }],
+  }}
+  …
+/>
+```
+
+Shortcuts are data, not a key handler, because remapping is not a
+preference — your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+and Ctrl elsewhere, so one chord is right on both. Pass `shortcuts: []` to
+bind nothing and open the palette from your own control instead.
+
+Print lives here rather than in the toolbar: `printTable` opens a browser
+dialog, so it is the host's call to make. Wire `onPrint` and it becomes a
+command; leave it out and it is not offered.
+
 ## Context menus
 
 ```tsx
@@ -6504,6 +6536,23 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 `@adapttable/core/adapter`; it is empty below two cells. On `<DataTable>` the
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
+
+**Command palette.** `commandPalette` opens a palette on Cmd/Ctrl+K listing
+every table action — `true` for the built-ins, or `CommandPaletteOptions`
+(`{ commands, shortcuts }`) to add your own and remap the chord. A `Command`
+IS a `ContextMenuItem`, so an action is written once and offered in both
+places rather than drifting between them; `tableCommands(options)` builds the
+target-free ones (print, export, clear filters) and `filterCommands(commands,
+query)` is the case- and accent-folded substring match the input runs.
+`onPrint` on `<DataTable>` is what makes Print appear. Shortcuts are data:
+`Shortcut` is a chord and a command key, `DEFAULT_SHORTCUTS` is Cmd/Ctrl+K,
+and `useShortcuts(options)` binds them — `mod` means Cmd on a Mac and Ctrl
+elsewhere. Adapters build theirs over `CommandPaletteChrome` /
+`CommandPaletteChromeProps` / `CommandPaletteSlots` /
+`CommandPaletteSurfaceProps` / `CommandPaletteInputProps` /
+`CommandPaletteItemProps` and arm it with `useCommandPalette` (returning a
+`TableCommandPalette`), from `@adapttable/core/adapter`. See
+[customization](./customization.md#command-palette).
 
 **Context menus.** `contextMenu` arms right-click menus for headers, rows and
 cells — `true` for the built-ins, or `ContextMenuOptions` (`{ items }`) to

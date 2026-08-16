@@ -7,6 +7,7 @@ import {
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
+  useCommandPalette,
   useDataTableShell,
   useTableContextMenu,
 } from "@adapttable/core/adapter";
@@ -19,6 +20,7 @@ import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkActionBar } from "./components/BulkActionBar";
 import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
@@ -165,6 +167,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     },
     sortBy: shell.source.sortBy,
     sortDir: shell.source.sortDir,
+  });
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels: table.labels,
+    onPrint: props.onPrint,
+    onExport: shell.toolbarProps.onExportCsv,
+    onClearFilters: chrome.clearFilters,
+    hasFilters: chrome.activeFilterCount > 0,
   });
   const { isMobile, confirm } = chrome;
   const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
@@ -331,6 +344,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
 
+        <CommandPalette
+          commands={palette.commands}
+          open={palette.open}
+          onClose={palette.close}
+          labels={table.labels}
+        />
         <ContextMenu
           items={contextMenu.items}
           at={contextMenu.at}

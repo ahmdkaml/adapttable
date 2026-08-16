@@ -13,6 +13,14 @@
  */
 
 export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
+export {
+  CommandPaletteChrome,
+  type CommandPaletteChromeProps,
+  type CommandPaletteInputProps,
+  type CommandPaletteItemProps,
+  type CommandPaletteSlots,
+  type CommandPaletteSurfaceProps,
+} from "./actions/CommandPaletteChrome";
 export { resolveDisabledReason } from "./actions/confirm";
 export {
   ContextMenuChrome,
@@ -32,6 +40,10 @@ export {
   useBulkBarState,
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
+export {
+  type TableCommandPalette,
+  useCommandPalette,
+} from "./actions/useCommandPalette";
 export {
   type TableContextMenu,
   useTableContextMenu,

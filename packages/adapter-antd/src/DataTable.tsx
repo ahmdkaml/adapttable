@@ -65,6 +65,7 @@ import {
   SidePanelLayout,
   tableRenderModel,
   undoRedoToolbar,
+  useCommandPalette,
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
@@ -108,6 +109,7 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
 import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
@@ -1522,6 +1524,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // it without the host retyping a translated string.
     resolveExportCsv(props.exportCsv)?.writer?.extension
   );
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels,
+    onPrint: props.onPrint,
+    onExport: exportHandler.onExportCsv,
+    onClearFilters: c.clearFilters,
+    hasFilters: c.activeFilterCount > 0,
+  });
   const rootRef = useRef<HTMLDivElement>(null);
   useChromeScrollReset(rootRef, c, chromeProps);
   // Same action the shell exposes, wired to this adapter's own root: sizing a
@@ -1924,6 +1937,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <CommandPalette
+        commands={palette.commands}
+        open={palette.open}
+        onClose={palette.close}
+        labels={labels}
+      />
       <ContextMenu
         items={contextMenu.items}
         at={contextMenu.at}

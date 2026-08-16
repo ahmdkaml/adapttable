@@ -268,6 +268,38 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Command palette
+
+```tsx
+<DataTable commandPalette onPrint={() => printTable({ rows, columns })} … />
+```
+
+Cmd/Ctrl+K opens a palette listing every action the table can perform. Type
+to filter, arrows to move, Enter to run, Escape to close.
+
+Its entries are the same objects the context menus take. That is the point:
+an action written once appears in both, and cannot gain a condition in one
+and not the other.
+
+```tsx
+<DataTable
+  commandPalette={{
+    commands: [{ key: "audit", label: "Open audit log", onSelect: open }],
+    shortcuts: [{ chord: "ctrl+shift+p", command: "command-palette" }],
+  }}
+  …
+/>
+```
+
+Shortcuts are data, not a key handler, because remapping is not a
+preference — your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+and Ctrl elsewhere, so one chord is right on both. Pass `shortcuts: []` to
+bind nothing and open the palette from your own control instead.
+
+Print lives here rather than in the toolbar: `printTable` opens a browser
+dialog, so it is the host's call to make. Wire `onPrint` and it becomes a
+command; leave it out and it is not offered.
+
 ## Context menus
 
 ```tsx
