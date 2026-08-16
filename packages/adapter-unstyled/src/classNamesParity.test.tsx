@@ -174,8 +174,8 @@ const A11Y_PARTS = new Set([
 /**
  * Parts core's own chrome draws, which no kit can carry a class for.
  *
- * The layout host and the side panel's inner structure are rendered by
- * core, not by this adapter: a kit supplies the frame and the controls and
+ * The layout host, the side panel's inner structure and the context menu's
+ * anchor are rendered by core, not by this adapter: a kit supplies the frame and the controls and
  * gets ONE class hook for each, while the region, the header and the body
  * between them are structure core owns outright. There is nothing here for
  * an adapter to name, so the two directions of this test cannot apply —
@@ -187,6 +187,7 @@ const CORE_OWNED = new Set([
   "side-panel-header",
   "side-panel-tabs",
   "side-panel-body",
+  "context-menu-anchor",
 ]);
 
 const STATE_CLASSES = new Set([
@@ -262,6 +263,11 @@ function Harness(props: {
       editHistory
       undoRedoButtons
       statusBar
+      contextMenu={{
+        // A host entry, so the divider that separates it from the built-ins
+        // renders too.
+        items: () => [{ key: "audit", label: "Audit", onSelect: vi.fn() }],
+      }}
       sidePanel={{
         panels: [
           { key: "one", label: "One", content: <p>one</p> },
@@ -314,6 +320,9 @@ async function renderAllStates(classNames?: DataTableClassNames) {
     fireEvent.click(headerBox);
     absorb();
   }
+  // A right-click, which is the only way the context menu exists at all.
+  fireEvent.contextMenu(part("cell")!, { clientX: 5, clientY: 5 });
+  absorb();
   fireEvent.click(part("column-menu-button")!);
   absorb();
   const more = part("column-menu-more");
@@ -516,6 +525,9 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "contextMenu",
+  "contextMenuItem",
+  "contextMenuSeparator",
   "sidePanel",
   "sidePanelTab",
   "sidePanelClose",

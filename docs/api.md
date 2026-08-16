@@ -824,6 +824,21 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Context menus.** `contextMenu` arms right-click menus for headers, rows and
+cells — `true` for the built-ins, or `ContextMenuOptions` (`{ items }`) to
+append your own behind a divider. `ContextMenuItem` is one entry (`key`,
+`label`, `onSelect`, and optional `disabled` / `danger` / `separatorBefore`);
+`ContextMenuTarget` is what was clicked; `ContextMenuActions` are the handlers
+the built-in entries call. Every route in works: right-click, Shift+F10, the
+menu key, and a long press. Adapters build theirs over `ContextMenuChrome` /
+`ContextMenuChromeProps` / `ContextMenuSlots` / `ContextMenuSurfaceProps` /
+`ContextMenuItemProps` and arm it with `useTableContextMenu` (returning a
+`TableContextMenu`: `regionProps` to bind once, plus `items`, `at` and
+`close`), all from `@adapttable/core/adapter`. The surface slot receives an
+`anchorRef` — a zero-size element at the click point — because every kit's
+menu positions against an element rather than coordinates. See
+[customization](./customization.md#context-menus).
+
 **Context-menu targets.** `resolveContextTarget(from, rowFor)` works out
 which header, row or cell an event happened in, returning a
 `ResolvedContextTarget` — the target and the element to put focus back on —

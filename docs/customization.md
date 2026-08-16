@@ -268,6 +268,45 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Context menus
+
+```tsx
+<DataTable contextMenu … />
+```
+
+Right-click a header and it offers that column's actions — sort, filter, pin,
+hide. Right-click a cell and it offers copy and cut. Each entry appears only
+when the handler behind it is wired and the column allows it: a menu that
+lists "Hide column" over a column locked against hiding reads as broken
+rather than as forbidden.
+
+Every route in works, because a right-click-only menu is one half the people
+who need it cannot reach:
+
+| Route    | Opens with                           |
+| -------- | ------------------------------------ |
+| Pointer  | Right-click                          |
+| Keyboard | Shift+F10, or the dedicated menu key |
+| Touch    | Press and hold                       |
+
+Escape closes it and puts focus back where it came from. A press that travels
+more than a few pixels is a scroll, not a menu.
+
+Add your own entries with `{ items }`. They land behind a divider, so a
+custom action is never mistaken for a built-in one:
+
+```tsx
+<DataTable
+  contextMenu={{
+    items: (target) =>
+      target.kind === "row"
+        ? [{ key: "audit", label: "Open audit log", onSelect: () => open(target.rowId) }]
+        : [],
+  }}
+  …
+/>
+```
+
 ## Side panel
 
 A popover is right for a control you touch once and dismiss. It is wrong for

@@ -15,6 +15,13 @@
 export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
 export { resolveDisabledReason } from "./actions/confirm";
 export {
+  ContextMenuChrome,
+  type ContextMenuChromeProps,
+  type ContextMenuItemProps,
+  type ContextMenuSlots,
+  type ContextMenuSurfaceProps,
+} from "./actions/ContextMenuChrome";
+export {
   resolveContextTarget,
   type ResolvedContextTarget,
   ROW_ID_ATTRIBUTE,
@@ -25,6 +32,10 @@ export {
   useBulkBarState,
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
+export {
+  type TableContextMenu,
+  useTableContextMenu,
+} from "./actions/useTableContextMenu";
 export {
   type ColumnGroupToggleButtonProps,
   ColumnGroupToggleChrome,

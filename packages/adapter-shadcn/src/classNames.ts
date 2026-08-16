@@ -38,6 +38,11 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
   redoButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  contextMenu:
+    "min-w-[10rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+  contextMenuItem:
+    "flex w-full items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none data-[danger]:text-destructive",
+  contextMenuSeparator: "-mx-1 my-1 h-px bg-border",
   sidePanel:
     "w-[280px] shrink-0 rounded-lg border border-border bg-card p-3 text-card-foreground",
   sidePanelTab:

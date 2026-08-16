@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { ContextMenuOptions } from "./actions/useTableContextMenu";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
 import type {
@@ -752,6 +753,20 @@ export interface BaseDataTableProps<TRow> {
    * ```
    */
   toolbarSlots?: ToolbarSlots;
+  /**
+   * Right-click menus for headers, rows and cells. Defaults to off.
+   *
+   * `true` takes the built-in entries — sort, filter, pin and hide on a
+   * header; copy and cut on a cell — each appearing only when the handler
+   * behind it is wired and the column allows it. Pass `{ items }` to append
+   * your own, which land behind a divider so a custom action is never
+   * mistaken for a built-in one.
+   *
+   * Every route in works: right-click, Shift+F10 and the menu key for the
+   * keyboard, and a long press for touch. Escape closes and puts focus back
+   * where it came from.
+   */
+  contextMenu?: boolean | ContextMenuOptions<TRow>;
   /**
    * Dock a settings panel beside the table.
    *

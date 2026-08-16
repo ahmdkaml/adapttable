@@ -68,6 +68,12 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The right-click menu (when `contextMenu` is set). */
+  contextMenu?: string;
+  /** One entry in it. */
+  contextMenuItem?: string;
+  /** The divider between groups of entries. */
+  contextMenuSeparator?: string;
   /** The docked settings panel (when `sidePanel` is set). */
   sidePanel?: string;
   /** One tab in the side panel's strip. */

@@ -6,6 +6,7 @@ import {
   SidePanelLayout,
   useDataTableShell,
   useMountStagger,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
@@ -13,6 +14,7 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterPanel } from "./components/FilterPanel";
@@ -172,6 +174,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels,
+    rowFor: (rowId) =>
+      viewSource.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        viewSource.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        setFiltersOpen(true);
+      },
+    },
+    sortBy: viewSource.sortBy,
+    sortDir: viewSource.sortDir,
+  });
   const chromeProps: ResolvedDataTableProps<TRow> = {
     ...props,
     source: viewSource,
@@ -245,6 +272,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <div
       ref={rootRef}
       dir={dir}
+      {...contextMenu.regionProps}
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}
       data-density={density}
@@ -485,6 +513,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       )}
 
+      <ContextMenu
+        items={contextMenu.items}
+        at={contextMenu.at}
+        onClose={contextMenu.close}
+        labels={labels}
+        classNames={classNames}
+      />
       <SidePanelLayout
         side={props.sidePanel?.side}
         body={

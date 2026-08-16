@@ -50,6 +50,12 @@ export {
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
+export type {
+  ContextMenuActions,
+  ContextMenuItem,
+  ContextMenuTarget,
+} from "./actions/contextMenuModel";
+export type { ContextMenuOptions } from "./actions/useTableContextMenu";
 export {
   aggregate,
   AGGREGATE_NAMES,
