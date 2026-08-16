@@ -32,7 +32,13 @@ export function BulkBar({
   } = useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
   return (
-    <Flex gap="2" justify="between" wrap="wrap" align="center">
+    <Flex
+      data-adapttable-part="bulk-bar"
+      gap="2"
+      justify="between"
+      wrap="wrap"
+      align="center"
+    >
       {expandable ? (
         <Flex gap="2" wrap="wrap" align="center">
           <Text size="2">{banner.text}</Text>

@@ -45,6 +45,7 @@ export function ShadcnDemo({
   exportCsv,
   columnMenu,
   filterControls,
+  bulkActions,
   wide,
   defaultColumnLayout,
   forceMobile,
@@ -78,6 +79,7 @@ export function ShadcnDemo({
   exportCsv?: DataTableProps<Person>["exportCsv"];
   columnMenu?: boolean;
   filterControls?: boolean;
+  bulkActions?: boolean;
   wide?: boolean;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
@@ -112,6 +114,7 @@ export function ShadcnDemo({
       exportCsv={exportCsv}
       columnMenu={columnMenu}
       filterControls={filterControls}
+      bulkActions={bulkActions}
       wide={wide}
       defaultColumnLayout={defaultColumnLayout}
       forceMobile={forceMobile}

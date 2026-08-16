@@ -31,7 +31,12 @@ export function BulkBar({
   } = useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
   return (
-    <HStack gap={2} justify="space-between" flexWrap="wrap">
+    <HStack
+      data-adapttable-part="bulk-bar"
+      gap={2}
+      justify="space-between"
+      flexWrap="wrap"
+    >
       {expandable ? (
         <HStack gap={2} flexWrap="wrap">
           <Text fontSize="sm">{banner.text}</Text>

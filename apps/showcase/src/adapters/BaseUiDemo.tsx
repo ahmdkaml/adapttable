@@ -141,6 +141,7 @@ export function BaseUiDemo({
   exportCsv,
   columnMenu,
   filterControls,
+  bulkActions,
   wide,
   forceMobile,
   focused,
@@ -177,6 +178,9 @@ export function BaseUiDemo({
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. Defaults to on
+   *  unless the page is focused. */
+  bulkActions?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   forceMobile?: boolean;
@@ -239,7 +243,9 @@ export function BaseUiDemo({
           dir={getDirection(locale)}
           searchPlaceholder={s.search}
           rowActions={focused ? undefined : makeActions(locale)}
-          bulkActions={focused ? undefined : makeBulkActions(locale)}
+          bulkActions={
+            (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
+          }
           confirm={demoConfirm}
           enableColumnMenu={columnMenu ?? !focused}
           exportCsv={exportCsv ?? !focused}

@@ -75,6 +75,7 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
   }
   return (
     <Alert
+      data-adapttable-part="bulk-bar"
       type={errorMessage === null ? "info" : "error"}
       banner
       title={message}

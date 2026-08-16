@@ -45,6 +45,8 @@ export type KitDemoProps = Readonly<{
   editorShowcase?: boolean;
   columnMenu?: boolean;
   filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. */
+  bulkActions?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   /** The column layout a page starts from. */

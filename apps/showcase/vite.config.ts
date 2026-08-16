@@ -100,6 +100,7 @@ export default defineConfig({
         columns: page("./columns/index.html"),
         filtering: page("./filtering/index.html"),
         tree: page("./tree/index.html"),
+        selection: page("./selection/index.html"),
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         "export-pdf": page("./export-pdf/index.html"),

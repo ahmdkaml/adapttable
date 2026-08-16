@@ -34,7 +34,7 @@ export function BulkActionBar({
   const errorMessage = bulkActionErrorMessage(error);
   const ids = [...selectedIds];
   return (
-    <Stack gap="xs">
+    <Stack data-adapttable-part="bulk-bar" gap="xs">
       <Group justify="space-between" wrap="wrap" gap="sm">
         <Text fz="sm">{labels.selectedCount(selectedCount)}</Text>
         <Group gap="xs" wrap="wrap">

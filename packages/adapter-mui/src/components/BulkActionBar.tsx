@@ -40,6 +40,7 @@ export function BulkBar({
   const showBanner = headerState === "all" && total > visibleIds.length;
   return (
     <Stack
+      data-adapttable-part="bulk-bar"
       direction="row"
       spacing={1}
       useFlexGap

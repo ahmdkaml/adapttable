@@ -123,6 +123,7 @@ export function AntdDemo({
   editorShowcase,
   columnMenu,
   filterControls,
+  bulkActions,
   forceMobile,
   focused,
 }: Readonly<{
@@ -164,6 +165,9 @@ export function AntdDemo({
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. Defaults to on
+   *  unless the page is focused. */
+  bulkActions?: boolean;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -231,7 +235,9 @@ export function AntdDemo({
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
             rowActions={focused ? undefined : makeActions(locale)}
-            bulkActions={focused ? undefined : makeBulkActions(locale)}
+            bulkActions={
+              (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
+            }
             confirm={demoConfirm}
             enableColumnMenu={columnMenu ?? !focused}
             exportCsv={exportCsv ?? !focused}

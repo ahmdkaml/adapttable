@@ -96,6 +96,7 @@ export type DemoPage =
   | "columns"
   | "filtering"
   | "tree"
+  | "selection"
   | "editing"
   | "grouping"
   | "export-pdf"
@@ -111,6 +112,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "columns", label: "Columns", path: "columns" },
   { key: "filtering", label: "Filtering", path: "filtering" },
   { key: "tree", label: "Tree", path: "tree" },
+  { key: "selection", label: "Selection", path: "selection" },
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "export-pdf", label: "PDF", path: "export-pdf" },
