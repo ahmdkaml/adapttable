@@ -6,6 +6,7 @@ import {
   type ColumnDef,
   columnsHaveFooter,
   type ConfirmHandler,
+  type EditHistoryState,
   type FilterRuntime,
   type GridFocusState,
   type GroupByInput,
@@ -1340,6 +1341,62 @@ function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
  *
  * @typeParam TRow - The row type.
  */
+/**
+ * The grid's own state: where the window starts, find, focus, and the
+ * selection's arithmetic.
+ *
+ * antd builds its chrome by hand rather than through `useDataTableShell`,
+ * so it calls these four directly. Grouping them keeps `DataTable` — which
+ * assembles the entire adapter — from carrying their branches too.
+ */
+function useAntdGridState<TRow>(
+  props: Readonly<DataTableProps<TRow>>,
+  c: ReturnType<typeof useTableChrome<TRow>>,
+  history: EditHistoryState<TRow>
+) {
+  // antd builds its own chrome rather than using `useDataTableShell`, so it
+  // calls the focus hook directly. Same derivation as the shell's: the row count
+  // is the DATASET total and `windowStart` is where the rendered slice begins, so
+  // Ctrl+End reaches the real last row and the ARIA counts stay truthful under
+  // virtualization.
+  const windowStart =
+    c.source.paginationMode === "paged"
+      ? Math.max(0, (c.source.page - 1) * c.source.limit)
+      : 0;
+  const find = useFindInTable<TRow>({
+    enabled: props.findInTable === true,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
+  const gridFocus = useGridFocus<TRow>({
+    enabled: props.cellNavigation === true,
+    rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
+    columns: c.columnLayout.visibleColumns,
+    rows: c.source.rows,
+    firstRowIndex: windowStart,
+    dir: props.dir,
+    labels: c.table.labels,
+    onCut: props.onCellCut,
+    onPaste: asGesture(cellPasteHandler(props), history.record),
+    onFill: asGesture(cellFillHandler(props), history.record),
+    onUndo: history.undo,
+    onRedo: history.redo,
+    onFind: find.openBar,
+    matchKeys: find.matchKeys,
+    currentMatch: find.current,
+  });
+  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
+  const stats = selectionStats({
+    enabled: props.selectionStats === true,
+    range: gridFocus.range,
+    rows: c.source.rows,
+    columns: c.columnLayout.visibleColumns,
+    firstRowIndex: windowStart,
+  });
+  return { windowStart, find, gridFocus, stats };
+}
+
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const {
     slots,
@@ -1419,46 +1476,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,
   };
   const c = useTableChrome<TRow>(chromeProps);
-  // antd builds its own chrome rather than using `useDataTableShell`, so it
-  // calls the focus hook directly. Same derivation as the shell's: the row count
-  // is the DATASET total and `windowStart` is where the rendered slice begins, so
-  // Ctrl+End reaches the real last row and the ARIA counts stay truthful under
-  // virtualization.
-  const windowStart =
-    c.source.paginationMode === "paged"
-      ? Math.max(0, (c.source.page - 1) * c.source.limit)
-      : 0;
-  const find = useFindInTable<TRow>({
-    enabled: props.findInTable === true,
-    rows: c.source.rows,
-    columns: c.columnLayout.visibleColumns,
-    firstRowIndex: windowStart,
-  });
-  const gridFocus = useGridFocus<TRow>({
-    enabled: props.cellNavigation === true,
-    rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
-    columns: c.columnLayout.visibleColumns,
-    rows: c.source.rows,
-    firstRowIndex: windowStart,
-    dir: props.dir,
-    labels: c.table.labels,
-    onCut: props.onCellCut,
-    onPaste: asGesture(cellPasteHandler(props), history.record),
-    onFill: asGesture(cellFillHandler(props), history.record),
-    onUndo: history.undo,
-    onRedo: history.redo,
-    onFind: find.openBar,
-    matchKeys: find.matchKeys,
-    currentMatch: find.current,
-  });
-  useFindFocus(find.current, gridFocus.focusCell, gridFocus.selectRange);
-  const stats = selectionStats({
-    enabled: props.selectionStats === true,
-    range: gridFocus.range,
-    rows: c.source.rows,
-    columns: c.columnLayout.visibleColumns,
-    firstRowIndex: windowStart,
-  });
+  const { windowStart, find, gridFocus, stats } = useAntdGridState(
+    props,
+    c,
+    history
+  );
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   // The injected actions column is first-class in column management: it lives
