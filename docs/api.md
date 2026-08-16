@@ -824,6 +824,16 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Highlighting a row.** `useHighlight(enabled)` returns a `HighlightState`:
+`flashRow(rowId)`, `flashCell({ rowId, columnKey })` (a `HighlightedCell`),
+`clear()`, `isRowHighlighted` / `isCellHighlighted`, and `animated`. Marks
+are keyed by row id rather than position, so one survives the sort, filter
+or page change that moves the row. Flashing the same row again restarts its
+clock instead of stacking. Under `prefers-reduced-motion` the mark still
+appears — `animated` goes false and it holds steady, and longer, because a
+steady mark is easier to miss than one that moves. Reduced motion means less
+movement, not less feedback.
+
 **Density chooser and fullscreen toggle.** `densityChooser` puts a density
 control in the toolbar and reports the choice through `onDensityChange`;
 `fullscreen` puts a fullscreen toggle beside it, and that button hides

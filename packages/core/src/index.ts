@@ -307,6 +307,11 @@ export type {
   ToolbarSlots,
 } from "./props";
 export {
+  type HighlightedCell,
+  type HighlightState,
+  useHighlight,
+} from "./rows/useHighlight";
+export {
   type AggregateFn,
   isFilterGroup,
   type QueryAggregate,

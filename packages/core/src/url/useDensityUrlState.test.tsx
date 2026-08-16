@@ -107,6 +107,16 @@ describe("useDensityUrlState", () => {
     expect(urlAdapter.search).toContain("page=2");
   });
 
+  it("hydrates from the adapter it was given, not from the address bar", () => {
+    // The server snapshot has to agree with the first client render or
+    // React tears the tree down and rebuilds it. Only an explicit adapter
+    // is trusted to be consistent across both.
+    const urlAdapter = memoryAdapter("density=compact");
+    const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
+
+    expect(result.current.density).toBe("compact");
+  });
+
   it("namespaces itself so two tables on a page do not collide", () => {
     const urlAdapter = memoryAdapter();
     const { result } = renderHook(() =>

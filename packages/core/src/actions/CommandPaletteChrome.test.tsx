@@ -177,6 +177,15 @@ describe("CommandPaletteChrome", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("moves the highlight to whatever the pointer is over", () => {
+    setup();
+    fireEvent.mouseEnter(screen.getByText("Export CSV"));
+
+    // The pointer and the arrows drive the same highlight, or the two
+    // disagree the moment someone uses both.
+    expect(activeOption()).toHaveTextContent("Export CSV");
+  });
+
   it("closes on Escape", () => {
     const { onClose } = setup();
     fireEvent.keyDown(input(), { key: "Escape" });

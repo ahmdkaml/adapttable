@@ -93,6 +93,19 @@ describe("useCommandPalette", () => {
     expect(state()).toBe("open");
   });
 
+  it("ignores a shortcut bound to some other command", () => {
+    render(
+      <Harness
+        commandPalette={{
+          shortcuts: [{ chord: "ctrl+j", command: "something-else" }],
+        }}
+      />
+    );
+    fireEvent.keyDown(document, { key: "j", ctrlKey: true });
+
+    expect(state()).toBe("closed");
+  });
+
   it("binds nothing when the prop is absent", () => {
     render(<Harness commandPalette={false} />);
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
