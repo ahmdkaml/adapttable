@@ -7,9 +7,10 @@ import {
   useServerData,
 } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
-import { DataTable } from "@adapttable/mantine";
-import { MantineProvider } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { KitSwitcher, readKitFromUrl } from "./kitDemos";
+import { KitProvider, kitTable } from "./kitProviders";
 
 interface BigPerson {
   id: number;
@@ -270,6 +271,7 @@ function ServerScaleTable({
   virtualCols,
   variableHeight,
   dark,
+  kit,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
@@ -277,6 +279,7 @@ function ServerScaleTable({
   virtualCols: boolean;
   variableHeight: boolean;
   dark: boolean;
+  kit: string;
 }>) {
   const [page, setPage] = useState({ from: 0, limit: 500 });
   const rows = useMemo(
@@ -296,9 +299,10 @@ function ServerScaleTable({
       setPage({ from: (query.page - 1) * query.limit, limit: query.limit });
     },
   });
+  const Table = kitTable<BigPerson>(kit);
   return (
-    <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-      <DataTable
+    <KitProvider kit={kit} dark={dark}>
+      <Table
         source={source}
         columns={columns}
         rowKey={(r) => String(r.id)}
@@ -311,12 +315,13 @@ function ServerScaleTable({
         stickyHeader
         stickyTop={62}
       />
-    </MantineProvider>
+    </KitProvider>
   );
 }
 
 /** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
 export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [kit, setKit] = useState(readKitFromUrl);
   const {
     total,
     virtual,
@@ -331,32 +336,41 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     variableHeight,
   } = scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
+  const switcher = <KitSwitcher adapter={kit} dark={dark} onChange={setKit} />;
   if (server) {
     return (
-      <ServerScaleTable
+      <>
+        {switcher}
+        <ServerScaleTable
+          total={total}
+          columns={columns}
+          virtual={virtual}
+          virtualCols={virtualCols}
+          variableHeight={variableHeight}
+          dark={dark}
+          kit={kit}
+        />
+      </>
+    );
+  }
+  return (
+    <>
+      {switcher}
+      <FrontendScaleTable
         total={total}
         columns={columns}
         virtual={virtual}
         virtualCols={virtualCols}
         variableHeight={variableHeight}
+        all={all}
+        edit={edit}
+        patches={patches}
+        incremental={incremental}
+        tree={tree}
         dark={dark}
+        kit={kit}
       />
-    );
-  }
-  return (
-    <FrontendScaleTable
-      total={total}
-      columns={columns}
-      virtual={virtual}
-      virtualCols={virtualCols}
-      variableHeight={variableHeight}
-      all={all}
-      edit={edit}
-      patches={patches}
-      incremental={incremental}
-      tree={tree}
-      dark={dark}
-    />
+    </>
   );
 }
 
@@ -373,6 +387,7 @@ function FrontendScaleTable({
   incremental,
   tree,
   dark,
+  kit,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
@@ -385,6 +400,7 @@ function FrontendScaleTable({
   incremental: boolean;
   tree: boolean;
   dark: boolean;
+  kit: string;
 }>) {
   const initial = useMemo(() => makeBigList(total), [total]);
   const [rows, setRows] = useState<readonly BigPerson[]>(initial);
@@ -464,8 +480,9 @@ function FrontendScaleTable({
     paginationMode: "infinite",
     defaults: { limit: all ? total : 500 },
   });
+  const Table = kitTable<BigPerson>(kit);
   return (
-    <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
+    <KitProvider kit={kit} dark={dark}>
       {/* The benchmark reads these to know the burst finished and how long
           it took: the count to wait on, the elapsed time to report. */}
       <div
@@ -475,7 +492,7 @@ function FrontendScaleTable({
         }
         data-bench-pipeline={patches > 0 ? pipelineName : undefined}
       >
-        <DataTable
+        <Table
           source={source}
           columns={columns}
           rowKey={(r) => String(r.id)}
@@ -510,6 +527,6 @@ function FrontendScaleTable({
           }
         />
       </div>
-    </MantineProvider>
+    </KitProvider>
   );
 }

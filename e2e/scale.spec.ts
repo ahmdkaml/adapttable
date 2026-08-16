@@ -28,3 +28,37 @@ test.describe("scale — virtualization", () => {
     expect(await rows.count()).toBeGreaterThan(0);
   });
 });
+
+/**
+ * The scale page across kits.
+ *
+ * It mounts a table directly rather than through an adapter demo, so it was
+ * single-kit until the provider registry existed — and virtualization is a
+ * per-kit claim: the window is the shell's, but each kit renders the rows.
+ */
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
+for (const kit of KITS) {
+  test(`${kit}: windows 50k rows down to a viewport`, async ({ page }) => {
+    await page.goto("/scale/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
+    // The whole point: the DOM holds a window, not the dataset.
+    await expect
+      .poll(async () => page.locator("table tbody tr").count())
+      .toBeLessThan(120);
+  });
+}
