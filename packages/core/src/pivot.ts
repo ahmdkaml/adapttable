@@ -42,6 +42,13 @@ export {
   type PivotRowKind,
 } from "./pivot/pivotModel";
 export {
+  deserializePivot,
+  serializePivot,
+  usePivotUrlState,
+  type UsePivotUrlStateOptions,
+  type UsePivotUrlStateResult,
+} from "./pivot/pivotUrlState";
+export {
   type QueryPivotPage,
   type QueryPivotRow,
   type ServerPivotOptions,

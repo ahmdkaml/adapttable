@@ -283,7 +283,7 @@ function cellsOf<TRow>(
   leaves: readonly PivotColumnLeaf[],
   columnDimensions: readonly string[],
   byKey: ReadonlyMap<string, ColumnDef<TRow>>,
-  aggregatorFor: (measure: PivotMeasure) => Aggregator,
+  aggregate: (leaf: PivotColumnLeaf) => Aggregator,
   format: PivotOptions<TRow>["format"]
 ): ReactNode[] {
   return leaves.map((leaf) => {
@@ -306,7 +306,7 @@ function cellsOf<TRow>(
       // really there, the same rule the summary row follows.
       if (value !== undefined && value !== null) values.push(value);
     }
-    const result = aggregatorFor(leaf.measure)(values);
+    const result = aggregate(leaf)(values);
     return format ? format(result, leaf.measure) : result;
   });
 }
@@ -340,7 +340,6 @@ export function pivot<TRow>(
   const byKey = new Map(columns?.map((column) => [column.key, column]));
   const subtotals = config.subtotals ?? true;
   const grandTotals = config.grandTotals ?? true;
-  const aggregatorFor = makeAggregatorLookup(config.measures);
 
   const columnPaths = distinctPaths(rows, config.columns, byKey);
   const columnLeaves = columnLeavesOf(
@@ -361,7 +360,7 @@ export function pivot<TRow>(
       columnLeaves,
       config.columns,
       byKey,
-      aggregatorFor,
+      (leaf) => aggregatorOf(leaf.measure),
       format
     );
 
@@ -474,20 +473,17 @@ function rowsUnder<TRow>(
   );
 }
 
-/** Resolve each measure's aggregator once, rather than per cell. */
-function makeAggregatorLookup(
-  measures: readonly PivotMeasure[]
-): (measure: PivotMeasure) => Aggregator {
-  const resolved = new Map<PivotMeasure, Aggregator>();
-  for (const measure of measures) {
-    resolved.set(
-      measure,
-      typeof measure.agg === "string"
-        ? builtInAggregator(measure.agg)
-        : measure.agg
-    );
-  }
-  return (measure) => resolved.get(measure) ?? (() => undefined);
+/**
+ * The aggregator a measure names.
+ *
+ * Resolved per measure rather than looked up per cell: a lookup would need a
+ * fallback for a miss that cannot happen, and unreachable code is worse than
+ * a function call.
+ */
+function aggregatorOf(measure: PivotMeasure): Aggregator {
+  return typeof measure.agg === "string"
+    ? builtInAggregator(measure.agg)
+    : measure.agg;
 }
 
 /**

@@ -1,0 +1,147 @@
+/**
+ * The pivot configuration in the URL, so a built pivot survives a reload and
+ * can be sent to someone.
+ *
+ * A pivot is the most expensive table state there is to rebuild by hand —
+ * two axes, an order on each, and a measure list — which makes it the state
+ * most worth putting in a link. It sits alongside sort, filters and column
+ * layout for exactly the reason those do.
+ *
+ * The serialization is compact and readable rather than JSON-in-a-parameter:
+ * `pivot=rows:region,team;cols:quarter;sum:amount`. A URL someone might read
+ * or hand-edit should look like something, and the round trip is tested
+ * rather than assumed.
+ *
+ * Custom aggregators cannot be serialized — a function has no URL form. A
+ * configuration carrying one keeps working in memory and simply does not
+ * write that measure to the URL, because a link that silently turned a custom
+ * aggregation into `sum` would be worse than a link that omits it.
+ */
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+
+import type { AggregateName } from "../aggregate/aggregate";
+import { type UrlStateAdapter, useResolvedAdapter } from "../url/adapter";
+import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
+import type { PivotConfig, PivotMeasure } from "./pivotModel";
+
+const AGGREGATIONS: readonly AggregateName[] = [
+  "sum",
+  "avg",
+  "count",
+  "min",
+  "max",
+];
+
+/** Whether a string names a built-in aggregation. */
+function isAggregateName(value: string): value is AggregateName {
+  return (AGGREGATIONS as readonly string[]).includes(value);
+}
+
+/**
+ * Write a configuration as a URL parameter value.
+ *
+ * @param config - The configuration to serialize.
+ * @returns The parameter value, or `""` when there is nothing to say.
+ */
+export function serializePivot(config: PivotConfig): string {
+  const parts: string[] = [];
+  if (config.rows.length > 0) parts.push(`rows:${config.rows.join(",")}`);
+  if (config.columns.length > 0) parts.push(`cols:${config.columns.join(",")}`);
+  for (const measure of config.measures) {
+    // A function has no URL form. Omitting it beats writing `sum` and
+    // quietly changing what the link computes.
+    if (typeof measure.agg !== "string") continue;
+    parts.push(`${measure.agg}:${measure.key}`);
+  }
+  return parts.join(";");
+}
+
+/**
+ * Read a configuration back from a URL parameter value.
+ *
+ * Unknown segments are ignored rather than throwing: a URL is user input,
+ * and a hand-edited one should degrade to a simpler pivot instead of an
+ * error page.
+ *
+ * @param raw - The parameter value.
+ * @returns The configuration it describes.
+ */
+export function deserializePivot(raw: string | null): PivotConfig {
+  if (!raw) return EMPTY_PIVOT_CONFIG;
+  let rows: readonly string[] = [];
+  let columns: readonly string[] = [];
+  const measures: PivotMeasure[] = [];
+  for (const part of raw.split(";")) {
+    const at = part.indexOf(":");
+    if (at < 0) continue;
+    const head = part.slice(0, at);
+    const body = part.slice(at + 1);
+    if (body === "") continue;
+    if (head === "rows") rows = body.split(",");
+    else if (head === "cols") columns = body.split(",");
+    else if (isAggregateName(head)) measures.push({ key: body, agg: head });
+  }
+  return { rows, columns, measures };
+}
+
+/** What {@link usePivotUrlState} needs. */
+export interface UsePivotUrlStateOptions {
+  urlAdapter?: UrlStateAdapter;
+  urlSync?: boolean;
+  urlKey?: string;
+  /** The pivot before anyone has built one. Defaults to empty. */
+  defaultConfig?: PivotConfig;
+}
+
+/** The controlled pair to hand the panel and the engine. */
+export interface UsePivotUrlStateResult {
+  config: PivotConfig;
+  onConfigChange: (next: PivotConfig) => void;
+}
+
+/**
+ * Keep the pivot configuration in the URL.
+ *
+ * @param options - See {@link UsePivotUrlStateOptions}.
+ * @returns The configuration and the setter to give the panel.
+ */
+export function usePivotUrlState(
+  options: UsePivotUrlStateOptions = {}
+): UsePivotUrlStateResult {
+  const { urlAdapter, urlSync, urlKey, defaultConfig } = options;
+  const ns = urlKey ? `${urlKey}.` : "";
+  const resolved = useResolvedAdapter(urlAdapter, urlSync ?? true);
+  // Same SSR rule as the other URL hooks: only an explicit adapter is
+  // trusted to be hydration-consistent.
+  const search = useSyncExternalStore(
+    (onChange) => resolved.subscribe(onChange),
+    () => resolved.getSearch(),
+    () => (urlAdapter ? urlAdapter.getSearch() : "")
+  );
+  // The change that has not reached the URL yet.
+  const [pending, setPending] = useState<PivotConfig | null>(null);
+
+  const config = useMemo(() => {
+    if (pending) return pending;
+    const raw = new URLSearchParams(search).get(`${ns}pivot`);
+    if (raw === null) return defaultConfig ?? EMPTY_PIVOT_CONFIG;
+    return deserializePivot(raw);
+  }, [pending, search, ns, defaultConfig]);
+
+  const onConfigChange = useCallback(
+    (next: PivotConfig) => {
+      setPending(next);
+      const params = new URLSearchParams(resolved.getSearch());
+      const value = serializePivot(next);
+      // An empty pivot writes no parameter: a URL should carry what someone
+      // built, not restate the nothing the table starts with.
+      if (value === "") params.delete(`${ns}pivot`);
+      else params.set(`${ns}pivot`, value);
+      resolved.setSearch(params.toString());
+      setPending(null);
+    },
+    [resolved, ns]
+  );
+
+  return { config, onConfigChange };
+}

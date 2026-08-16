@@ -205,5 +205,37 @@ count, or that has no subtotals, should not have to send empty fields to say
 so. A cell the server omits is an empty cell, never a zero — the same rule the
 local engine follows for a value that will not add up.
 
+## In the URL
+
+A pivot is the most expensive table state there is to rebuild by hand — two
+axes, an order on each, and a measure list — which makes it the state most
+worth putting in a link:
+
+```tsx
+import { usePivotUrlState } from "@adapttable/core/pivot";
+
+const { config, onConfigChange } = usePivotUrlState();
+
+<PivotPanel fields={fields} config={config} onChange={onConfigChange} />;
+```
+
+The parameter is compact and readable rather than JSON in a query string:
+
+```
+?pivot=rows:region,team;cols:quarter;sum:amount;count:amount
+```
+
+`serializePivot` and `deserializePivot` are exported for saved views and
+anywhere else a configuration has to be stored. The round trip is tested, not
+assumed, and a hand-edited value degrades to a simpler pivot instead of
+throwing — a URL is user input.
+
+An empty pivot writes no parameter, and `urlKey` namespaces it so two tables
+can share one URL.
+
+A custom aggregator has no URL form, so a measure carrying one keeps working
+in memory and is left out of the link. Writing `sum` instead would quietly
+change what the link computes.
+
 Related: [row grouping](./row-grouping.md) ·
 [aggregation](./row-grouping.md#aggregates) · [API reference](./api.md)

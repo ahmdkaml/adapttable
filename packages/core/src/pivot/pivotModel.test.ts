@@ -220,6 +220,35 @@ describe("pivot", () => {
     expect(line(result, "Alpha")?.cells).toEqual([undefined]);
   });
 
+  it("sums amounts that arrived as strings", () => {
+    // JSON has no number type discipline: an API that sends "10.50" is
+    // ordinary, and a pivot that ignored it would report a total of nothing.
+    const result = pivot(
+      [
+        { team: "Alpha", quarter: "Q1", amount: "10.5" as never },
+        { team: "Alpha", quarter: "Q1", amount: " 4 " as never },
+        { team: "Alpha", quarter: "Q1", amount: "not a number" as never },
+      ],
+      { ...base, columns: [] }
+    );
+
+    expect(line(result, "Alpha")?.cells).toEqual([14.5]);
+  });
+
+  it("shows nothing for a measure the configuration does not carry", () => {
+    // A stale measure object — one the panel removed while a render was in
+    // flight — must render an empty cell, not throw.
+    const stale = { key: "amount", agg: "sum" } as const;
+    const result = pivot(SALES, {
+      ...base,
+      columns: [],
+      measures: [{ ...stale }],
+    });
+    const other = pivot(SALES, { ...base, columns: [], measures: [stale] });
+
+    expect(result.rows[0]?.cells).toEqual(other.rows[0]?.cells);
+  });
+
   it("can be asked for no subtotals", () => {
     const result = pivot(SALES, {
       ...base,
