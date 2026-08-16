@@ -268,6 +268,53 @@ rather than repeating them, so turning it on does not print them twice.
 All three are off unless asked for: omit them and nothing renders and nothing
 is bundled.
 
+## Highlighting a row
+
+After a save or an import, the row that changed is somewhere in a list of a
+thousand. `useHighlight` marks it for a moment:
+
+```tsx
+const highlight = useHighlight(true);
+
+<DataTable
+  rowClassName={(row) =>
+    highlight.isRowHighlighted(row.id) ? "flash" : undefined
+  }
+  …
+/>;
+
+// after a save
+highlight.flashRow(saved.id);
+```
+
+There is no new prop for this on purpose. `rowClassName` already reaches
+every adapter, so the highlight is a class you compute — which means it works
+in all nine kits and looks like the rest of your design system rather than
+like ours.
+
+Marks are keyed by row id, so one survives the sort, filter or page change
+that moves the row. Flashing the same row again restarts its clock rather
+than stacking.
+
+`animated` is false when the user has asked for reduced motion. The mark
+still appears and still clears — it holds steady, and holds longer, because a
+steady mark is easier to miss than one that moves. Reduced motion means less
+movement, not less feedback, so branch on `animated` to pick a class rather
+than to skip the highlight:
+
+```tsx
+rowClassName={(row) =>
+  highlight.isRowHighlighted(row.id)
+    ? highlight.animated
+      ? "flash flash--animated"
+      : "flash"
+    : undefined
+}
+```
+
+`flashCell({ rowId, columnKey })` and `isCellHighlighted` do the same for one
+cell, for a column's `Cell` renderer to read.
+
 ## Density and fullscreen
 
 ```tsx
