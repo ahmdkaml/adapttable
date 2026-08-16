@@ -396,6 +396,8 @@ function DesktopRowBase<TRow>({
         {...(live.rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowPinSide ? undefined : measureRef}
         data-index={index}
+        data-adapttable-part="row"
+        data-row-id={id}
         data-row-pin={rowPinSide}
         {...gridFocus?.getRowPropsAt(focusIndex)}
         data-stagger=""

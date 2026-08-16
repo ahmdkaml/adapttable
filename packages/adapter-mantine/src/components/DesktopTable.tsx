@@ -640,6 +640,8 @@ function DesktopRowBase<TRow>({
       <Table.Tr
         role="row"
         data-index={index}
+        data-adapttable-part="row"
+        data-row-id={id}
         data-row-pin={rowPinSide}
         {...gridFocus?.getRowPropsAt(focusIndex)}
         aria-selected={selected}

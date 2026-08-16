@@ -482,6 +482,8 @@ function DesktopRowImpl<TRow>({
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         data-stagger=""
+        data-adapttable-part="row"
+        data-row-id={id}
         data-row-pin={rowPinSide}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={rowMeasureRef}

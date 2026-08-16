@@ -170,6 +170,8 @@ export interface TableElementProps extends Props {
  */
 export interface RowElementProps extends Props {
   role: string;
+  /** The row's id, so an event can be traced back to the row it happened in. */
+  "data-row-id": string;
   "data-index": number;
   "aria-selected"?: boolean;
 }
@@ -433,6 +435,10 @@ export function useDataTable<TRow>(
       return mergeProps<RowElementProps>(
         {
           role: "row",
+          // The id an event can be traced back to. It lives here because
+          // this is the row's prop-getter — the kits that assemble their
+          // row props by hand instead carry it on the element.
+          "data-row-id": id,
           "data-index": index,
           "aria-selected": hasBulk ? selected : undefined,
         },

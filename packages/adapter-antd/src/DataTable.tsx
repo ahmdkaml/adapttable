@@ -260,6 +260,7 @@ function resolveScroll(
 type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
   "data-row-pin"?: RowPinSide;
   "data-adapttable-part"?: string;
+  "data-row-id"?: string;
   "data-stagger"?: string;
   "data-dirty"?: string;
   "data-collapsed"?: string;
@@ -339,6 +340,12 @@ function antdOnRow<TRow>(options: {
     // antd builds its own <tr>, so the absolute aria-rowindex arrives
     // here rather than through a spread on the element.
     ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
+    // antd builds its own <tr>, so the part name and the row id arrive here
+    // rather than through a spread on the element. The part goes BEFORE the
+    // pin attrs on purpose: antd owns one tbody, so a pinned row marks its
+    // section through this same attribute and has to keep winning it.
+    "data-adapttable-part": "row",
+    "data-row-id": id,
     ...pin,
     style: { ...visual, ...reorderStyle, ...pin.style },
     "data-stagger": "",
