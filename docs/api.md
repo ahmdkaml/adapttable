@@ -824,6 +824,22 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Fullscreen.** `useFullscreen(element)` promotes the table and returns a
+`FullscreenState`: `active`, `supported`, `toggle`, `exit`, and — the part
+that matters — `container`. The Fullscreen API hides everything outside the
+promoted element, so an overlay portalled to `document.body` stays mounted,
+focused and announced while being completely invisible. Hand `container` to
+each kit's portal target and menus keep working; ignore it and they vanish.
+State is read from the document rather than remembered, because Escape and
+the browser's own control both leave fullscreen without asking.
+
+**Density in the URL.** `useDensityUrlState(options)` returns a `Density`
+(`"comfortable"` | `"compact"`) and `onDensityChange` to spread onto the
+table, keeping a chosen layout in the URL beside sort and filters so a
+reload or a shared link reproduces it. `UseDensityUrlStateOptions` /
+`UseDensityUrlStateResult` type it. Choosing the default removes the
+parameter rather than restating it.
+
 **Command palette.** `commandPalette` opens a palette on Cmd/Ctrl+K listing
 every table action — `true` for the built-ins, or `CommandPaletteOptions`
 (`{ commands, shortcuts }`) to add your own and remap the chord. A `Command`

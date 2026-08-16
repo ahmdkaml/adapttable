@@ -300,6 +300,7 @@ export {
   type UseGridFocusOptions,
 } from "./focus/useGridFocus";
 export type { SidePanelEntry } from "./layout/SidePanelChrome";
+export { type FullscreenState, useFullscreen } from "./layout/useFullscreen";
 export type {
   BaseDataTableProps,
   SidePanelOptions,
@@ -330,6 +331,12 @@ export {
   type UseTableDataOptions,
   type UseTableDataResult,
 } from "./source/useTableData";
+export {
+  type Density,
+  useDensityUrlState,
+  type UseDensityUrlStateOptions,
+  type UseDensityUrlStateResult,
+} from "./url/useDensityUrlState";
 export {
   type ChromeBodyData,
   type TableChrome,
