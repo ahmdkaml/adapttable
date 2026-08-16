@@ -48,6 +48,9 @@ export function ShadcnDemo({
   filterControls,
   bulkActions,
   statusBar,
+  contextMenu,
+  commandPalette,
+  onPrint,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -86,6 +89,9 @@ export function ShadcnDemo({
   filterControls?: boolean;
   bulkActions?: boolean;
   statusBar?: boolean;
+  contextMenu?: boolean;
+  commandPalette?: boolean;
+  onPrint?: () => void;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   wide?: boolean;
@@ -117,6 +123,9 @@ export function ShadcnDemo({
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       statusBar={statusBar}
+      contextMenu={contextMenu}
+      commandPalette={commandPalette}
+      onPrint={onPrint}
       undoRedoButtons={undoRedoButtons}
       sidePanel={sidePanel}
       headerFilters={headerFilters}

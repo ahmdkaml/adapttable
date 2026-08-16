@@ -99,6 +99,16 @@ const SIDE_PANELS = [
   },
 ];
 
+/**
+ * Print, for the palette's Print command.
+ *
+ * `printTable` opens a browser dialog, which is why it is the host's to
+ * call — the table offers the command and this decides what it prints.
+ */
+function printLabTable(): void {
+  window.print();
+}
+
 function Toggle({
   label,
   value,
@@ -149,6 +159,8 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [undoRedo, setUndoRedo] = useState<OnOff>("off");
   const [settingsPanel, setSettingsPanel] = useState<OnOff>("off");
   const [openPanel, setOpenPanel] = useState<string | null>("about");
+  const [contextMenu, setContextMenu] = useState<OnOff>("off");
+  const [palette, setPalette] = useState<OnOff>("off");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -465,6 +477,16 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={settingsPanel}
                       onChange={(next) => customize(setSettingsPanel, next)}
                     />
+                    <Toggle
+                      label="Right-click menus"
+                      value={contextMenu}
+                      onChange={(next) => customize(setContextMenu, next)}
+                    />
+                    <Toggle
+                      label="Command palette (⌘K)"
+                      value={palette}
+                      onChange={(next) => customize(setPalette, next)}
+                    />
                   </ControlPanel>
 
                   <ControlPanel title="Editing">
@@ -585,6 +607,9 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       sparkline={sparkline === "on"}
                       editorShowcase={editorShowcase === "on"}
                       statusBar={statusBar === "on"}
+                      contextMenu={contextMenu === "on"}
+                      commandPalette={palette === "on"}
+                      onPrint={palette === "on" ? printLabTable : undefined}
                       undoRedoButtons={undoRedo === "on"}
                       sidePanel={
                         settingsPanel === "on"

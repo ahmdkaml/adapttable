@@ -120,6 +120,9 @@ export function ChakraDemo({
   filterControls,
   bulkActions,
   statusBar,
+  contextMenu,
+  commandPalette,
+  onPrint,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -165,6 +168,9 @@ export function ChakraDemo({
    *  unless the page is focused. */
   bulkActions?: boolean;
   statusBar?: boolean;
+  contextMenu?: boolean;
+  commandPalette?: boolean;
+  onPrint?: () => void;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -224,6 +230,9 @@ export function ChakraDemo({
               nestedTable={nested ? nestedOrders : undefined}
               cellNavigation={cellNavigation ?? editing}
               statusBar={statusBar}
+              contextMenu={contextMenu}
+              commandPalette={commandPalette}
+              onPrint={onPrint}
               undoRedoButtons={undoRedoButtons}
               sidePanel={sidePanel}
               selectionStats={editing}

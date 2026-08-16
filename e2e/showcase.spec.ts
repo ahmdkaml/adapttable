@@ -540,3 +540,55 @@ test("adds toolbar chrome only when the Feature Lab asks", async ({ page }) => {
     0
   );
 });
+
+/**
+ * The two chrome features from #333 and #335, where a user meets them.
+ *
+ * Both are keyboard-first and both fail silently when their binding is
+ * missing — a menu that never opens, a palette that never appears — so the
+ * routes are exercised rather than trusted.
+ */
+test("opens the right-click menu and the palette from the Feature Lab", async ({
+  page,
+}) => {
+  await page.goto("/all-options/");
+  await expect(
+    page.locator('[data-adapttable-part="root"]').first()
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await page
+    .getByRole("group", { name: "right-click menus" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page
+    .getByRole("group", { name: "command palette (⌘k)" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page.getByRole("button", { name: "Close" }).first().click();
+
+  // Shift+F10 on a header — the keyboard route a right-click-only menu
+  // leaves out.
+  const header = page.locator('[data-adapttable-part="header-cell"]').first();
+  await header.click({ button: "right" });
+  await expect(
+    page.locator('[data-adapttable-part="context-menu"]').first()
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page
+    .locator('[data-adapttable-part="command-palette"]')
+    .first();
+  await expect(palette).toBeVisible();
+
+  // Focus lands in the search box, which is the whole point of a palette.
+  await expect(
+    page.locator('[data-adapttable-part="command-input"]').first()
+  ).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(
+    page.locator('[data-adapttable-part="command-palette"]')
+  ).toHaveCount(0);
+});

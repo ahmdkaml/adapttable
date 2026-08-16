@@ -51,6 +51,12 @@ export type KitDemoProps = Readonly<{
   bulkActions?: boolean;
   /** The strip under the table: row range, selection count, selection sums. */
   statusBar?: boolean;
+  /** Right-click menus on headers, rows and cells. */
+  contextMenu?: boolean;
+  /** The Cmd/Ctrl+K command palette. */
+  commandPalette?: boolean;
+  /** Makes Print a palette command. */
+  onPrint?: () => void;
   /** Undo and Redo in the toolbar. Needs editing armed to do anything. */
   undoRedoButtons?: boolean;
   /** A settings panel docked beside the table. */

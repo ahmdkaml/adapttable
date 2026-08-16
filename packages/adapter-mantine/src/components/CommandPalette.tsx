@@ -24,18 +24,29 @@ function Surface({
   className,
 }: CommandPaletteSurfaceProps) {
   return (
-    <Modal
+    // The compound API, not the shorthand: `Modal` puts every prop on its
+    // ROOT, which is a zero-size wrapper. The part name has to land on the
+    // element a user sees, as it does in every other kit.
+    <Modal.Root
       opened
       onClose={onClose}
       // Core owns the focus trap and moves focus into the search box;
       // Mantine's own trap would take it straight back to the surface.
       trapFocus={false}
-      title={label}
-      className={className}
-      data-adapttable-part="command-palette"
     >
-      {children}
-    </Modal>
+      <Modal.Overlay />
+      <Modal.Content
+        aria-label={label}
+        className={className}
+        data-adapttable-part="command-palette"
+      >
+        <Modal.Header>
+          <Modal.Title>{label}</Modal.Title>
+          <Modal.CloseButton />
+        </Modal.Header>
+        <Modal.Body>{children}</Modal.Body>
+      </Modal.Content>
+    </Modal.Root>
   );
 }
 

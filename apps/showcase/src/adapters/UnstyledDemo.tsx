@@ -264,6 +264,9 @@ export function UnstyledDemo({
   filterControls,
   bulkActions,
   statusBar,
+  contextMenu,
+  commandPalette,
+  onPrint,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -302,6 +305,9 @@ export function UnstyledDemo({
   filterControls?: boolean;
   bulkActions?: boolean;
   statusBar?: boolean;
+  contextMenu?: boolean;
+  commandPalette?: boolean;
+  onPrint?: () => void;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   wide?: boolean;
@@ -333,6 +339,9 @@ export function UnstyledDemo({
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
       statusBar={statusBar}
+      contextMenu={contextMenu}
+      commandPalette={commandPalette}
+      onPrint={onPrint}
       undoRedoButtons={undoRedoButtons}
       sidePanel={sidePanel}
       headerFilters={headerFilters}
