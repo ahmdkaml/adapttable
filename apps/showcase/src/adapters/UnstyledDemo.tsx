@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import type { DataTableClassNames } from "@adapttable/unstyled";
 
 import { type Locale } from "../data";
@@ -258,6 +259,7 @@ export function UnstyledDemo({
   columnMenu,
   filterControls,
   wide,
+  defaultColumnLayout,
   forceMobile,
   focused,
 }: Readonly<{
@@ -287,6 +289,7 @@ export function UnstyledDemo({
   columnMenu?: boolean;
   filterControls?: boolean;
   wide?: boolean;
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -318,6 +321,7 @@ export function UnstyledDemo({
       columnMenu={columnMenu}
       filterControls={filterControls}
       wide={wide}
+      defaultColumnLayout={defaultColumnLayout}
       forceMobile={forceMobile}
       focused={focused}
       classNames={TAILWIND}

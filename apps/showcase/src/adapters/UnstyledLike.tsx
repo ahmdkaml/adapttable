@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
@@ -149,6 +150,7 @@ export function UnstyledLike({
   columnMenu,
   filterControls,
   wide,
+  defaultColumnLayout,
   forceMobile,
   focused,
 }: Readonly<{
@@ -182,6 +184,8 @@ export function UnstyledLike({
   filterControls?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /** The column layout the page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -203,7 +207,7 @@ export function UnstyledLike({
                 ? { person: "start" }
                 : { person: "start", actions: "end" },
             }
-          : LIVE_DEFAULT_LAYOUT
+          : (defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT)
       }
       grouping={grouping}
       tree={tree}

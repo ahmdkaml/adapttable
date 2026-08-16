@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import type { DataTableProps } from "@adapttable/mantine";
 import {
   type ComponentType,
@@ -44,6 +45,8 @@ export type KitDemoProps = Readonly<{
   filterControls?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /** The column layout a page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   /** Arrow-key cell navigation and Shift+arrow range selection. */
   cellNavigation?: boolean;
   /** The toolbar Export button's configuration. */

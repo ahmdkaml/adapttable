@@ -1,3 +1,4 @@
+import type { ColumnLayoutState } from "@adapttable/core";
 import { shadcnClassNames } from "@adapttable/shadcn";
 
 import { type Locale } from "../data";
@@ -42,6 +43,7 @@ export function ShadcnDemo({
   columnMenu,
   filterControls,
   wide,
+  defaultColumnLayout,
   forceMobile,
   focused,
 }: Readonly<{
@@ -71,6 +73,7 @@ export function ShadcnDemo({
   columnMenu?: boolean;
   filterControls?: boolean;
   wide?: boolean;
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   focused?: boolean;
 }>) {
@@ -102,6 +105,7 @@ export function ShadcnDemo({
       columnMenu={columnMenu}
       filterControls={filterControls}
       wide={wide}
+      defaultColumnLayout={defaultColumnLayout}
       forceMobile={forceMobile}
       focused={focused}
       classNames={shadcnClassNames}

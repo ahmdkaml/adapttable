@@ -42,3 +42,47 @@ test("the filters popover opens on screen, anchored to its trigger", async ({
   // And it belongs to its trigger rather than floating somewhere else.
   expect(card!.y).toBeGreaterThanOrEqual(anchor!.y - 1);
 });
+
+/**
+ * RTL is a per-kit claim: each adapter positions its own popover, so a kit
+ * that anchors from the wrong edge is only visible in that kit.
+ */
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
+for (const kit of KITS) {
+  test(`${kit}: mirrors the table and keeps its popover on screen`, async ({
+    page,
+  }) => {
+    await page.goto("/rtl/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    await expect(root.locator('[dir="rtl"]').first()).toBeVisible();
+
+    await root.getByRole("button", { name: "عوامل التصفية" }).click();
+    const popover = page
+      .locator('[data-adapttable-part="filters-form"]')
+      .first();
+    await expect(popover).toBeVisible();
+    const card = await popover.boundingBox();
+    const width = await page.evaluate(
+      () => document.documentElement.clientWidth
+    );
+    expect(card).not.toBeNull();
+    expect(card!.x).toBeGreaterThanOrEqual(-1);
+    expect(card!.x + card!.width).toBeLessThanOrEqual(width + 1);
+  });
+}
