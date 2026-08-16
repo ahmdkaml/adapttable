@@ -94,6 +94,7 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
 export type DemoPage =
   | "demo"
   | "columns"
+  | "filtering"
   | "editing"
   | "grouping"
   | "export-pdf"
@@ -107,6 +108,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "demo", label: "Live demo", path: "" },
   { key: "all-options", label: "Feature Lab", path: "all-options" },
   { key: "columns", label: "Columns", path: "columns" },
+  { key: "filtering", label: "Filtering", path: "filtering" },
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "export-pdf", label: "PDF", path: "export-pdf" },

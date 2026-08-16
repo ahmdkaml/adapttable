@@ -98,6 +98,7 @@ export default defineConfig({
       input: {
         main: page("./index.html"),
         columns: page("./columns/index.html"),
+        filtering: page("./filtering/index.html"),
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         "export-pdf": page("./export-pdf/index.html"),

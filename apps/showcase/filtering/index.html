@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <meta
+      name="description"
+      content="AdaptTable React table filter demo — text and number operators, date ranges, a value checklist, an AND/OR filter builder, removable chips, and the whole filter state in the URL."
+    />
+    <link
+      rel="canonical"
+      href="https://orwa-mahmoud.github.io/adapttable/demo/filtering/"
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content="React data table filters — AdaptTable demo" />
+    <meta property="og:description" content="AdaptTable React table filter demo — text and number operators, date ranges, a value checklist, an AND/OR filter builder, removable chips, and the whole filter state in the URL." />
+    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/filtering/" />
+    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="React data table filters — AdaptTable demo" />
+    <meta name="twitter:description" content="AdaptTable React table filter demo — text and number operators, date ranges, a value checklist, an AND/OR filter builder, removable chips, and the whole filter state in the URL." />
+    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"AdaptTable React table filter demo — text and number operators, date ranges, a value checklist, an AND/OR filter builder, removable chips, and the whole filter state in the URL.","url":"https://orwa-mahmoud.github.io/adapttable/demo/filtering/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
+    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <title>React data table filters — AdaptTable demo</title>
+    <script>
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.01em;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Replaced by React on mount — see the note in the showcase root
+         index.html for why the served HTML carries content at all. -->
+    <div id="root">
+      <main class="at-fallback">
+        <h1>React data table filters</h1>
+        <p>
+          Declare what a column filters by and the table builds the control.
+          Text and number columns get operators — contains, equals, greater
+          than, between — dates get ranges with relative presets like "last 30
+          days", and a checklist column offers the values actually present in
+          the data, with counts. Nothing here is a bespoke filter panel: each
+          kit renders the popover and its inputs with its own components.
+        </p>
+        <h2>What you can drive here</h2>
+        <ul>
+          <li>
+            Open Filters and combine several at once — each active filter shows
+            as a chip that removes itself when clicked.
+          </li>
+          <li>
+            Switch between the popover and a filter row under the header, which
+            is the same state rendered in a different place.
+          </li>
+          <li>
+            Build an AND/OR tree for the conditions a single row of inputs
+            cannot express, and nest groups inside it.
+          </li>
+          <li>
+            Watch the address bar: the whole filter state is in the URL, so a
+            filtered view is a link you can send to someone.
+          </li>
+          <li>Switch UI kit and see the same filters in that kit's controls.</li>
+        </ul>
+        <p>
+          Documentation: <a href="/adapttable/filtering/">filtering</a>,
+          <a href="/adapttable/url-state/">URL state</a>,
+          <a href="/adapttable/customization/">customization</a>. Other demos:
+          <a href="/adapttable/demo/">the main showcase</a>,
+          <a href="/adapttable/demo/all-options/">the Feature Lab</a>.
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-filtering.tsx"></script>
+  </body>
+</html>

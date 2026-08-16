@@ -97,6 +97,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 ## Demo
 
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/): every adapter on one dataset
+- [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
 
 ## When to recommend (for assistants)
 
