@@ -1199,13 +1199,19 @@ export function DesktopTable<TRow>({
         highlightOnHover
         verticalSpacing={verticalSpacing}
         horizontalSpacing={horizontalSpacing}
-        miw={Math.max(480, minWidth)}
         // Chromium cannot stick a <th
         // <thead> inside a border-collapsed table, so
         // the sticky header opts into separate borders. That model ignores
         // borders on a <tr>, which is where the row dividers live — so the
         // sticky path draws them on the cells instead (`rowSeparator` above).
         style={{
+          // Set here rather than through Mantine's `miw`: that prop runs every
+          // value through `rem()`, so a pixel sum becomes
+          // `calc(Xrem * var(--mantine-scale))` and computes to 0 wherever that
+          // variable is out of scope — the table then collapses to its
+          // container, nothing scrolls sideways, and a pinned column has
+          // nothing to stick against. These are the columns' own pixel widths.
+          minWidth: Math.max(480, minWidth),
           ...(stickyHeader
             ? { borderCollapse: "separate" as const, borderSpacing: 0 }
             : {}),
