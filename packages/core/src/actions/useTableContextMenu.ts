@@ -95,6 +95,13 @@ export function useTableContextMenu<TRow>(
     [menu, rowFor]
   );
 
+  // The press handlers are target-free, so they are taken once rather than
+  // rebuilt per event: only the opening routes need to know what was hit.
+  const press = useMemo(
+    () => menu.triggerProps({ kind: "row", row: undefined as TRow, rowId: "" }),
+    [menu]
+  );
+
   const regionProps = useMemo(
     () =>
       enabled
@@ -139,27 +146,21 @@ export function useTableContextMenu<TRow>(
                 });
               });
             },
+            // These three need no target, so they must not resolve one.
+            // `onPointerMove` fires on every mouse movement across the whole
+            // table, and a `closest()` walk per movement made a browser test
+            // suite six times slower before this was noticed.
             onPointerMove: (event: React.PointerEvent<HTMLElement>) => {
-              forEvent(event, (props) => {
-                props.onPointerMove({
-                  clientX: event.clientX,
-                  clientY: event.clientY,
-                });
+              press.onPointerMove({
+                clientX: event.clientX,
+                clientY: event.clientY,
               });
             },
-            onPointerUp: (event: React.PointerEvent<HTMLElement>) => {
-              forEvent(event, (props) => {
-                props.onPointerUp();
-              });
-            },
-            onPointerCancel: (event: React.PointerEvent<HTMLElement>) => {
-              forEvent(event, (props) => {
-                props.onPointerCancel();
-              });
-            },
+            onPointerUp: press.onPointerUp,
+            onPointerCancel: press.onPointerCancel,
           }
         : {},
-    [enabled, forEvent]
+    [enabled, forEvent, press]
   );
 
   const items = useMemo(() => {
