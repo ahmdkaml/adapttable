@@ -268,7 +268,9 @@ function MobileCardBase<TRow>({
         {expanded && renderDetail && (
           // Inside the card — and therefore inside the measured element —
           // so virtualization keeps accurate card heights.
-          <Box sx={{ mt: 1 }}>{renderDetail(row)}</Box>
+          <Box data-adapttable-part="card-detail" sx={{ mt: 1 }}>
+            {renderDetail(row)}
+          </Box>
         )}
       </CardContent>
     </Card>
@@ -381,6 +383,7 @@ export function MobileCards<TRow>({
   return (
     <Stack
       spacing={compact ? 1 : 1.5}
+      data-adapttable-part="cards"
       role="list"
       aria-label={table.getTableProps()["aria-label"]}
     >
@@ -452,7 +455,11 @@ export function MobileCards<TRow>({
             )
           )}
       {summaryCells && (
-        <Card variant="outlined" role="listitem">
+        <Card
+          data-adapttable-part="summary-card"
+          variant="outlined"
+          role="listitem"
+        >
           <CardContent
             sx={compact ? { p: 1.25, "&:last-child": { pb: 1.25 } } : undefined}
           >

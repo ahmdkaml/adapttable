@@ -259,7 +259,11 @@ function MobileCardBase<TRow>({
           rowCount={rowCount}
         />
       )}
-      {expanded && <Box pt="1">{renderDetail?.(row)}</Box>}
+      {expanded && (
+        <Box data-adapttable-part="card-detail" pt="1">
+          {renderDetail?.(row)}
+        </Box>
+      )}
       {editing?.rowEditing && (
         <RowEditActions
           rowEditing={editing.rowEditing}
@@ -380,6 +384,7 @@ export function MobileCards<TRow>({
     <Flex
       direction="column"
       gap={compact ? "2" : "3"}
+      data-adapttable-part="cards"
       role="list"
       aria-label={table.getTableProps()["aria-label"]}
     >
@@ -449,7 +454,12 @@ export function MobileCards<TRow>({
         <Box aria-hidden style={{ height: paddingBottom }} />
       )}
       {summary && (
-        <Card size={compact ? "1" : "2"} role="listitem" className={className}>
+        <Card
+          data-adapttable-part="summary-card"
+          size={compact ? "1" : "2"}
+          role="listitem"
+          className={className}
+        >
           {columns.map((column) => {
             const value = summary[column.key];
             // Columns absent from the summary are skipped — a card has no grid

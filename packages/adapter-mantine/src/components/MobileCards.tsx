@@ -298,7 +298,9 @@ function MobileCardBase<TRow>({
             rowCount={rowCount}
           />
         )}
-        {expanded && renderDetail && <div>{renderDetail(row)}</div>}
+        {expanded && renderDetail && (
+          <div data-adapttable-part="card-detail">{renderDetail(row)}</div>
+        )}
         {editing?.rowEditing && (
           <RowEditActions
             rowEditing={editing.rowEditing}
@@ -463,6 +465,7 @@ export function MobileCards<TRow>({
     <Stack
       gap={compact ? "xs" : "sm"}
       ref={bodyRef}
+      data-adapttable-part="cards"
       className={className}
       {...table.getTableProps({ role: "list" })}
     >
@@ -537,7 +540,13 @@ export function MobileCards<TRow>({
         <div aria-hidden style={{ height: paddingBottom }} />
       )}
       {summaryCells && (
-        <Card withBorder radius="md" padding={cardPadding} role="listitem">
+        <Card
+          data-adapttable-part="summary-card"
+          withBorder
+          radius="md"
+          padding={cardPadding}
+          role="listitem"
+        >
           <Stack gap={cardGap}>
             {columns
               .filter((column) => summaryCells[column.key] !== undefined)

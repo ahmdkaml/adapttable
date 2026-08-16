@@ -98,6 +98,10 @@ function partsOf(pkg) {
 
 function main() {
   const byKit = new Map(SHELL_KITS.map((pkg) => [pkg, partsOf(pkg)]));
+  // adapter-unstyled renders the native fallback for every piece of shared
+  // chrome, so a name it emits is shared by definition — the reference for
+  // telling "this kit's own part" from "a part the others forgot".
+  const shellParts = partsOf("adapter-unstyled");
   const everyPart = new Set([...byKit.values()].flatMap((set) => [...set]));
 
   const failures = [];
@@ -106,11 +110,14 @@ function main() {
       (pkg) =>
         !byKit.get(pkg).has(part) && EXPECTED_GAPS[pkg]?.[part] === undefined
     );
-    // A part only one kit renders is that kit's own; a part most render and
-    // one does not is the drift this exists to catch.
-    if (missing.length === 0 || missing.length === SHELL_KITS.length - 1) {
-      continue;
-    }
+    if (missing.length === 0) continue;
+    // A part only ONE themed kit renders is usually that kit's own — unless
+    // adapter-unstyled renders it too, which makes it shared chrome the other
+    // five simply never named. `cards` sat in exactly that state: antd and
+    // unstyled emitted it, five kits rendered the list without naming it, and
+    // treating "one kit" as "kit-specific" hid it.
+    const shared = shellParts.has(part);
+    if (!shared && missing.length === SHELL_KITS.length - 1) continue;
     failures.push({ part, missing });
   }
 
