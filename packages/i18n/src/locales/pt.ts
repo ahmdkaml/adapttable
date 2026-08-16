@@ -114,6 +114,7 @@ export const pt: Required<TableLabels> = {
   exportFailed: "Falha na exportação",
   editCell: "Editar célula",
   undoEdit: "Desfazer",
+  redoEdit: "Refazer",
   editRow: "Editar linha",
   saveRow: "Salvar linha",
   pendingRows: (count) =>

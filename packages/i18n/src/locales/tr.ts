@@ -113,6 +113,7 @@ export const tr: Required<TableLabels> = {
   exportFailed: "Dışa aktarma başarısız",
   editCell: "Hücreyi düzenle",
   undoEdit: "Geri al",
+  redoEdit: "Yinele",
   editRow: "Satırı düzenle",
   saveRow: "Satırı kaydet",
   pendingRows: (count) =>

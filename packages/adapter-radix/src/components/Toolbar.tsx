@@ -43,6 +43,13 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -100,6 +107,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <Box style={{ flex: 1, minWidth: 160, maxWidth: 360 }}>
           <TextField.Root
@@ -153,6 +161,30 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              size="2"
+              variant="soft"
+              color="gray"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              size="2"
+              variant="soft"
+              color="gray"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <Button
             size="2"
@@ -179,6 +211,7 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <NativeSelect
             size="2"

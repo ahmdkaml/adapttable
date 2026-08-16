@@ -68,6 +68,14 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The status bar under the table (when `statusBar` is set). */
+  statusBar?: string;
+  /** One figure inside the status bar. */
+  statusItem?: string;
+  /** The Undo toolbar button (when `undoRedoButtons` is set). */
+  undoButton?: string;
+  /** The Redo toolbar button (when `undoRedoButtons` is set). */
+  redoButton?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

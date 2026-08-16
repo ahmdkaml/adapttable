@@ -78,6 +78,13 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
   hasFilters,
   activeFilterCount,
   showRowsPerPage,
@@ -133,6 +140,7 @@ export function Toolbar<TRow>({
         justifyContent: "space-between",
       }}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <TextField
           size="small"
@@ -196,6 +204,28 @@ export function Toolbar<TRow>({
         )}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* MUI's own progress indicator in the button's icon slot rather
@@ -229,6 +259,7 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <TextField
             select

@@ -114,6 +114,7 @@ export const he: Required<TableLabels> = {
   exportFailed: "הייצוא נכשל",
   editCell: "עריכת תא",
   undoEdit: "בטל",
+  redoEdit: "בצע שוב",
   editRow: "ערוך שורה",
   saveRow: "שמור שורה",
   pendingRows: (count) =>

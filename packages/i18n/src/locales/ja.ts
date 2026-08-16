@@ -112,6 +112,7 @@ export const ja: Required<TableLabels> = {
   exportFailed: "エクスポートに失敗しました",
   editCell: "セルを編集",
   undoEdit: "元に戻す",
+  redoEdit: "やり直す",
   editRow: "行を編集",
   saveRow: "行を保存",
   pendingRows: (count) =>

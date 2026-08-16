@@ -113,6 +113,7 @@ export const hi: Required<TableLabels> = {
   exportFailed: "निर्यात विफल",
   editCell: "सेल संपादित करें",
   undoEdit: "पूर्ववत करें",
+  redoEdit: "फिर से करें",
   editRow: "पंक्ति संपादित करें",
   saveRow: "पंक्ति सहेजें",
   pendingRows: (count) =>

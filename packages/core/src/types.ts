@@ -609,6 +609,9 @@ export interface TableLabels {
    */
   undoEdit?: string;
   /** Accessible name for opening a whole row for editing (`rowEditing`). */
+  /** The toolbar control that puts the last edit back (`undoRedoButtons`). */
+  redoEdit?: string;
+  /** Accessible name for entering row edit mode. */
   editRow?: string;
   /** Accessible name for committing a row edit. */
   saveRow?: string;

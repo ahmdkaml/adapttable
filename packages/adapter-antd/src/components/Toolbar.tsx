@@ -30,6 +30,13 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
   hasFilters,
   activeFilterCount,
   filters,
@@ -74,6 +81,7 @@ export function Toolbar<TRow>({
 
   return (
     <Flex gap="small" wrap align="center" justify="space-between">
+      {toolbarSlots?.start}
       {searchable !== false && (
         <Input
           type="search"
@@ -123,6 +131,24 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* antd's own loading Button: the spinner replaces its icon slot
@@ -147,6 +173,7 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <Select
             style={{ minWidth: 110 }}

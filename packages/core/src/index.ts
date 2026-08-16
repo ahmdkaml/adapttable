@@ -285,7 +285,7 @@ export {
   useGridFocus,
   type UseGridFocusOptions,
 } from "./focus/useGridFocus";
-export type { BaseDataTableProps } from "./props";
+export type { BaseDataTableProps, ToolbarSlots } from "./props";
 export {
   type AggregateFn,
   isFilterGroup,

@@ -19,7 +19,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { ensureBaseUiStyles } from "./injectStyles";
@@ -268,7 +268,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={shell.source.rows.length}
+        page={shell.source.page}
+        limit={shell.source.limit}
+        total={shell.source.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={labels}
         locale={props.locale}

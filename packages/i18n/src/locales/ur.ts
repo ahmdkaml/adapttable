@@ -114,6 +114,7 @@ export const ur: Required<TableLabels> = {
   exportFailed: "برآمد ناکام ہو گئی",
   editCell: "سیل میں ترمیم",
   undoEdit: "واپس کریں",
+  redoEdit: "دوبارہ کریں",
   editRow: "قطار میں ترمیم کریں",
   saveRow: "قطار محفوظ کریں",
   pendingRows: (count) =>

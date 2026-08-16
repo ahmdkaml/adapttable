@@ -113,6 +113,7 @@ export const fa: Required<TableLabels> = {
   exportFailed: "خروجی گرفتن ناموفق بود",
   editCell: "ویرایش سلول",
   undoEdit: "بازگردانی",
+  redoEdit: "بازانجام",
   editRow: "ویرایش ردیف",
   saveRow: "ذخیره ردیف",
   pendingRows: (count) =>

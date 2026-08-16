@@ -16,6 +16,7 @@ import { useBatchEditing } from "./editing/batchEditing";
 import { useDirtyCells } from "./editing/dirtyCells";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import { useEditConflict } from "./editing/editConflict";
+import type { EditHistoryState } from "./editing/editHistory";
 import { useEditLifecycle } from "./editing/editingEvents";
 import { useRowEditing } from "./editing/rowEditing";
 import { useCellSaveState } from "./editing/saveState";
@@ -47,7 +48,7 @@ import { useEventCallback } from "./hooks/useEventCallback";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
-import type { BaseDataTableProps } from "./props";
+import type { BaseDataTableProps, ToolbarSlots } from "./props";
 import { insertExtraRows } from "./rows/extraRows";
 import {
   configureIncrementalView,
@@ -117,8 +118,31 @@ export interface ToolbarChromeProps<TRow> {
   searchPlaceholder?: string;
   /** Options for an explicit sort-by control. */
   sortByOptions?: SortByOption[];
-  /** Extra caller-supplied toolbar content. */
+  /** Extra caller-supplied toolbar content, in the middle region. */
   toolbar?: ReactNode;
+  /** Caller-supplied content for the two ends of the toolbar. */
+  toolbarSlots?: ToolbarSlots;
+  /**
+   * Put the last edit back. Set only when the host asked for the buttons
+   * (`undoRedoButtons`) AND `editHistory` is armed, so an adapter renders
+   * the pair on presence and never has to check two things.
+   */
+  onUndo?: () => void;
+  /** Do the last undone edit again. Present with {@link onUndo}. */
+  onRedo?: () => void;
+  /**
+   * Whether there is anything to undo. The button is disabled, not
+   * hidden — a control that vanishes moves the ones beside it, and a
+   * toolbar that reflows while someone is working is worse than a button
+   * that is briefly unavailable.
+   */
+  canUndo?: boolean;
+  /** Whether there is anything to redo. */
+  canRedo?: boolean;
+  /** `labels.undoEdit` — the undo button's caption. */
+  undoLabel?: string;
+  /** `labels.redoEdit` — the redo button's caption. */
+  redoLabel?: string;
   /** Whether a filters affordance should render. */
   hasFilters: boolean;
   /** Number shown on the filters badge. */
@@ -375,6 +399,31 @@ export interface TableChrome<TRow> {
  * @param props - The adapter's {@link BaseDataTableProps}.
  * @returns The {@link TableChrome} orchestration result.
  */
+/**
+ * The undo/redo half of a toolbar's props, or nothing at all.
+ *
+ * Two conditions have to hold — the host asked for the buttons, and there
+ * is a history for them to drive — and resolving both here means an
+ * adapter renders the pair on `onUndo` being present and never has to
+ * know that `editHistory` exists. Off, the object is empty and the props
+ * are absent, which is what keeps an opted-out toolbar identical.
+ */
+export function undoRedoToolbar<TRow>(
+  wanted: boolean | undefined,
+  history: EditHistoryState<TRow>,
+  labels: TableLabels
+): Partial<ToolbarChromeProps<TRow>> {
+  if (wanted !== true || !history.enabled) return {};
+  return {
+    onUndo: history.undo,
+    onRedo: history.redo,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+    undoLabel: labels.undoEdit,
+    redoLabel: labels.redoEdit,
+  };
+}
+
 export function useTableChrome<TRow>(
   props: BaseDataTableProps<TRow>
 ): TableChrome<TRow> {

@@ -31,6 +31,16 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90",
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  // Undo and Redo are the toolbar's quietest pair: they sit disabled most of
+  // the time, so they take the outline treatment and the muted disabled state
+  // rather than a filled one that would keep drawing the eye.
+  undoButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  redoButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  statusBar:
+    "flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-2 text-xs text-muted-foreground tabular-nums",
+  statusItem: "whitespace-nowrap",
   cellSelected: "bg-accent",
   // Find hits keep the browser's convention rather than a theme token: amber
   // for every match, a stronger amber for the one you are on.

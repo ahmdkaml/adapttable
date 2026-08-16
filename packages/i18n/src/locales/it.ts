@@ -113,6 +113,7 @@ export const it: Required<TableLabels> = {
   exportFailed: "Esportazione non riuscita",
   editCell: "Modifica cella",
   undoEdit: "Annulla",
+  redoEdit: "Ripeti",
   editRow: "Modifica riga",
   saveRow: "Salva riga",
   pendingRows: (count) =>

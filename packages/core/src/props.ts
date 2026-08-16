@@ -38,6 +38,22 @@ import type {
 } from "./types";
 
 /**
+ * Where a host's own toolbar controls go.
+ *
+ * The toolbar reads Search · custom · Filters · Saved views · Columns ·
+ * Undo/Redo · Export · Add · Rows per page, and that order is the same in
+ * every kit. These name the two places outside it, so a control can be
+ * put before everything or after everything without an adapter having to
+ * know what the control is.
+ */
+export interface ToolbarSlots {
+  /** Ahead of the search input. */
+  start?: ReactNode;
+  /** After every built-in control, before the rows-per-page select. */
+  end?: ReactNode;
+}
+
+/**
  * The UI-agnostic prop surface shared by every AdaptTable adapter's
  * `<DataTable>`. Adapters extend this with kit-specific extras (slots,
  * classNames, animation, …) so the common contract lives in one place.
@@ -696,6 +712,42 @@ export interface BaseDataTableProps<TRow> {
   cellNavigation?: boolean;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
+  /**
+   * Named regions of the toolbar, for controls that have to sit somewhere
+   * specific rather than in the middle.
+   *
+   * `toolbar` is the middle region and stays exactly what it was: content
+   * between the search input and the built-in buttons. These two are the
+   * ends, which is where an app's own view switcher or a "back" control
+   * belongs — ahead of everything, or after it.
+   *
+   * ```tsx
+   * <DataTable
+   *   toolbarSlots={{ start: <BackButton />, end: <HelpLink /> }}
+   *   …
+   * />
+   * ```
+   */
+  toolbarSlots?: ToolbarSlots;
+  /**
+   * Show a status bar under the table. Defaults to false.
+   *
+   * It reads how many rows are on screen, how many are selected, and what
+   * a multi-cell selection adds up to — the line a spreadsheet user
+   * glances at without thinking. The sums appear only with
+   * `selectionStats` armed; the counts are always there.
+   */
+  statusBar?: boolean;
+  /**
+   * Show Undo and Redo buttons in the toolbar. Defaults to false.
+   *
+   * The keyboard shortcuts and `table.editHistory` are the always-on path
+   * — this is the visible one, for an app whose users will not find
+   * Ctrl+Z. The buttons render only when `editHistory` is armed, and
+   * disable rather than disappear when there is nothing to undo or redo,
+   * so the toolbar does not change width as the user works.
+   */
+  undoRedoButtons?: boolean;
   /** Confirmation handler for actions; defaults to `window.confirm`. */
   confirm?: ConfirmHandler;
   /** Number of skeleton rows while loading. Defaults to the page size. */

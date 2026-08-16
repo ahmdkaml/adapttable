@@ -241,6 +241,9 @@ function Harness(props: {
       groupAggregates={() => ({ qty: "agg" })}
       renderRowDetail={(r) => <div>{r.name}</div>}
       onCellEdit={vi.fn()}
+      editHistory
+      undoRedoButtons
+      statusBar
       {...props.override}
     />
   );
@@ -487,6 +490,10 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "statusBar",
+  "statusItem",
+  "undoButton",
+  "redoButton",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",

@@ -22,7 +22,7 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { cx } from "./cx";
 import type { DataTableClassNames, DataTableProps } from "./types";
@@ -128,6 +128,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     bulkActions,
     classNames = NO_CLASSNAMES,
     toolbar,
+    toolbarSlots,
     animate = false,
   } = props;
 
@@ -230,6 +231,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     exportLabel,
     onAddRow,
     addRowLabel,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
+    undoLabel,
+    redoLabel,
   } = shell.toolbarProps;
 
   return (
@@ -262,6 +269,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           rowGap: 8,
         }}
       >
+        {toolbarSlots?.start}
         {props.searchable !== false && (
           <span
             data-adapttable-part="search-field"
@@ -360,6 +368,28 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             sortDir={viewSource.sortDir}
           />
         )}
+        {onUndo && onRedo && (
+          <>
+            <button
+              type="button"
+              data-adapttable-part="undo-button"
+              className={classNames.undoButton}
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </button>
+            <button
+              type="button"
+              data-adapttable-part="redo-button"
+              className={classNames.redoButton}
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </button>
+          </>
+        )}
         {onExportCsv && (
           <>
             <button
@@ -398,6 +428,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {addRowLabel}
           </button>
         )}
+        {toolbarSlots?.end}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
             source={viewSource}
@@ -507,10 +538,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           showRowsPerPage={!chrome.grouping}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={viewSource.rows.length}
+        page={viewSource.page}
+        limit={viewSource.limit}
+        total={viewSource.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={labels}
         locale={props.locale}
+        classNames={classNames}
       />
     </div>
   );

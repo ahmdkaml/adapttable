@@ -30,6 +30,7 @@ import {
 import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
 import { useRowPinningUrlState } from "./url/useRowPinningUrlState";
 import {
+  undoRedoToolbar,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
@@ -419,6 +420,8 @@ export function useDataTableShell<TRow>(
     searchPlaceholder: props.searchPlaceholder,
     sortByOptions: props.sortByOptions,
     toolbar: props.toolbar,
+    toolbarSlots: props.toolbarSlots,
+    ...undoRedoToolbar(props.undoRedoButtons, history, labels),
     hasFilters:
       resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&
       Boolean(filtersNode),

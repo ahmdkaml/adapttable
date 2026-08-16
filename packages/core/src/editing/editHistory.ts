@@ -41,6 +41,15 @@ export interface UseEditHistoryOptions<TRow> {
 
 /** What {@link useEditHistory} returns. */
 export interface EditHistoryState<TRow> {
+  /**
+   * Whether the host armed a history at all.
+   *
+   * `canUndo` answers "is there something to put back", which is false
+   * both when the feature is off and when nothing has been edited yet.
+   * Chrome that should not exist without a history needs the other
+   * question, and this is it.
+   */
+  enabled: boolean;
   /** Whether anything can be undone right now. */
   canUndo: boolean;
   /** Whether anything can be redone right now. */
@@ -177,6 +186,7 @@ export function useEditHistory<TRow>(
 
   return useMemo(
     () => ({
+      enabled,
       canUndo: enabled && counts.past > 0,
       canRedo: enabled && counts.future > 0,
       undo,

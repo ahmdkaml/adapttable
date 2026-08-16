@@ -63,6 +63,7 @@ import {
   RowReorderAnnouncer,
   rowReorderDropStyle,
   tableRenderModel,
+  undoRedoToolbar,
   useExportHandler,
   useKeyedVirtualization,
   useMountStagger,
@@ -121,8 +122,8 @@ import {
 import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
 import { SkeletonTable } from "./components/SkeletonTable";
+import { StatusBar } from "./components/StatusBar";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
@@ -1770,6 +1771,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             searchPlaceholder={props.searchPlaceholder}
             sortByOptions={props.sortByOptions}
             toolbar={props.toolbar}
+            toolbarSlots={props.toolbarSlots}
+            {...undoRedoToolbar(props.undoRedoButtons, history, labels)}
             hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
             activeFilterCount={c.activeFilterCount}
             filters={filtersNode}
@@ -1867,7 +1870,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={source.rows.length}
+        page={source.page}
+        limit={source.limit}
+        total={source.total}
+        selected={c.table.selection?.selectedCount ?? 0}
         stats={stats}
         labels={c.table.labels}
         locale={props.locale}

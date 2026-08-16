@@ -115,6 +115,7 @@ export const ru: Required<TableLabels> = {
   exportFailed: "Не удалось выполнить экспорт",
   editCell: "Изменить ячейку",
   undoEdit: "Отменить",
+  redoEdit: "Повторить",
   editRow: "Изменить строку",
   saveRow: "Сохранить строку",
   pendingRows: (count) =>

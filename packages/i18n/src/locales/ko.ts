@@ -112,6 +112,7 @@ export const ko: Required<TableLabels> = {
   exportFailed: "내보내기 실패",
   editCell: "셀 편집",
   undoEdit: "되돌리기",
+  redoEdit: "다시 실행",
   editRow: "행 편집",
   saveRow: "행 저장",
   pendingRows: (count) =>

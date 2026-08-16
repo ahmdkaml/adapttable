@@ -34,11 +34,12 @@ function Stats({ parts, className }: SelectionStatsSlotProps) {
   );
 }
 
-const slots: SelectionStatsSlots = { Stats };
+/** The kit's stats rendering, shared with the status bar that hosts it. */
+export const statsSlots: SelectionStatsSlots = { Stats };
 
 /** MUI-owned status bar for the headless selection statistics. */
 export function SelectionStatsBar(
   props: Readonly<Omit<SelectionStatsChromeProps, "slots">>
 ) {
-  return <SelectionStatsChrome {...props} slots={slots} />;
+  return <SelectionStatsChrome {...props} slots={statsSlots} />;
 }

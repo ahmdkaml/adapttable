@@ -112,6 +112,7 @@ export const zh: Required<TableLabels> = {
   exportFailed: "导出失败",
   editCell: "编辑单元格",
   undoEdit: "撤销",
+  redoEdit: "重做",
   editRow: "编辑行",
   saveRow: "保存行",
   pendingRows: (count) =>

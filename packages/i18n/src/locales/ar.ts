@@ -114,6 +114,7 @@ export const ar: Required<TableLabels> = {
   exportFailed: "فشل التصدير",
   editCell: "تعديل الخلية",
   undoEdit: "تراجع",
+  redoEdit: "إعادة",
   editRow: "تعديل الصف",
   saveRow: "حفظ الصف",
   pendingRows: (count) =>

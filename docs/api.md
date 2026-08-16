@@ -824,6 +824,24 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Status bar.** `statusBar` puts a strip under the table reading the row
+range, how many rows are selected, and what a multi-cell selection adds up
+to. Adapters export their kit-owned `StatusBar` over `StatusBarChrome` /
+`StatusBarChromeProps` / `StatusBarSlots` / `StatusBarSlotProps` /
+`StatusBarItem` from `@adapttable/core/adapter`. It hosts the selection
+figures rather than repeating them: with `enabled` false the chrome renders
+those alone, which is why an adapter has one element here and no branch. The
+row range comes from the same arithmetic the pagination footer uses. See
+[customization](./customization.md#toolbar-and-status-bar).
+
+**Toolbar regions and undo/redo.** `toolbar` fills the middle of the toolbar;
+`toolbarSlots` (`ToolbarSlots` — `start`, `end`) fills either end.
+`undoRedoButtons` adds Undo and Redo, which render only when `editHistory` is
+armed and disable rather than disappear; `undoRedoToolbar(wanted, history,
+labels)` from `@adapttable/core/adapter` is the one rule both wiring paths
+resolve that with. Labels are `undoEdit` and `redoEdit`. See
+[customization](./customization.md#toolbar-and-status-bar).
+
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves
 `formatValue` → `exportValue` → `sortValue` → `accessor` when that yields a

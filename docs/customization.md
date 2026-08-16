@@ -226,6 +226,48 @@ Set only `empty` and it still covers both states, exactly as before — but the
 built-in clear-filters action goes with it, so give your replacement a way to
 reset the query.
 
+## Toolbar and status bar
+
+`toolbar` has always filled the middle of the toolbar — between the search
+input and the built-in buttons. `toolbarSlots` fills the two ends:
+
+```tsx
+<DataTable
+  toolbarSlots={{ start: <BackButton />, end: <HelpLink /> }}
+  toolbar={<ViewSwitcher />}
+  …
+/>
+```
+
+The order is the same in every kit: `start` · Search · `toolbar` · Filters ·
+Saved views · Columns · Undo/Redo · Export · Add · `end` · Rows per page.
+
+`undoRedoButtons` adds Undo and Redo to that row. They render only when
+`editHistory` is armed, and they disable rather than disappear when there is
+nothing to put back — a toolbar that reflows while someone is working is
+worse than a button that is briefly unavailable. The keyboard shortcuts and
+`table.editHistory` are unchanged and stay the always-on path; this is the
+visible one, for users who will not find Ctrl+Z.
+
+```tsx
+<DataTable
+  onCellEdit={saveCell}
+  editHistory
+  undoRedoButtons
+  statusBar
+  …
+/>
+```
+
+`statusBar` puts a strip under the table: the row range, how many rows are
+selected, and — with `selectionStats` armed — what the selected cells add up
+to. The range is the one the pagination footer shows, from the same
+arithmetic, so the two never disagree. The strip hosts the selection figures
+rather than repeating them, so turning it on does not print them twice.
+
+All three are off unless asked for: omit them and nothing renders and nothing
+is bundled.
+
 ## Density
 
 ```tsx

@@ -34,6 +34,13 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -92,6 +99,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <InputGroup
           maxW="360px"
@@ -151,6 +159,28 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* Chakra's own loading Button: its Spinner replaces the label and
@@ -179,6 +209,7 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <NativeSelect
             size="sm"

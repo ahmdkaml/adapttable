@@ -199,6 +199,13 @@ export {
   type SelectionStatsSlots,
 } from "./focus/SelectionStatsBar";
 export {
+  StatusBarChrome,
+  type StatusBarChromeProps,
+  type StatusBarItem,
+  type StatusBarSlotProps,
+  type StatusBarSlots,
+} from "./focus/StatusBarChrome";
+export {
   GroupMoreButtonChrome,
   type GroupMoreButtonChromeProps,
   type GroupMoreButtonProps,
@@ -298,6 +305,7 @@ export {
   type FilterTriggerToggle,
   type TableBodyRegion,
   type ToolbarChromeProps,
+  undoRedoToolbar,
 } from "./useTableChrome";
 export { ColumnSpacer, type ColumnSpacerProps } from "./virtual/ColumnSpacer";
 export {

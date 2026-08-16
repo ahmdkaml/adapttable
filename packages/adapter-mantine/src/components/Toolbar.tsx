@@ -31,6 +31,13 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
   hasFilters,
   activeFilterCount,
   onToggleFilters,
@@ -89,6 +96,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <TextInput
           {...searchProps}
@@ -132,6 +140,28 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <Button.Group>
+            <Button
+              variant="default"
+              size="sm"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </Button.Group>
+        )}
         {onExportCsv && (
           <>
             {/* Mantine's own loading Button: it swaps in the kit's Loader and
@@ -159,6 +189,7 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <Group gap="xs" align="center">
             <Text fz="xs" c="dimmed">

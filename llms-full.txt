@@ -5040,6 +5040,48 @@ Set only `empty` and it still covers both states, exactly as before — but the
 built-in clear-filters action goes with it, so give your replacement a way to
 reset the query.
 
+## Toolbar and status bar
+
+`toolbar` has always filled the middle of the toolbar — between the search
+input and the built-in buttons. `toolbarSlots` fills the two ends:
+
+```tsx
+<DataTable
+  toolbarSlots={{ start: <BackButton />, end: <HelpLink /> }}
+  toolbar={<ViewSwitcher />}
+  …
+/>
+```
+
+The order is the same in every kit: `start` · Search · `toolbar` · Filters ·
+Saved views · Columns · Undo/Redo · Export · Add · `end` · Rows per page.
+
+`undoRedoButtons` adds Undo and Redo to that row. They render only when
+`editHistory` is armed, and they disable rather than disappear when there is
+nothing to put back — a toolbar that reflows while someone is working is
+worse than a button that is briefly unavailable. The keyboard shortcuts and
+`table.editHistory` are unchanged and stay the always-on path; this is the
+visible one, for users who will not find Ctrl+Z.
+
+```tsx
+<DataTable
+  onCellEdit={saveCell}
+  editHistory
+  undoRedoButtons
+  statusBar
+  …
+/>
+```
+
+`statusBar` puts a strip under the table: the row range, how many rows are
+selected, and — with `selectionStats` armed — what the selected cells add up
+to. The range is the one the pagination footer shows, from the same
+arithmetic, so the two never disagree. The strip hosts the selection figures
+rather than repeating them, so turning it on does not print them twice.
+
+All three are off unless asked for: omit them and nothing renders and nothing
+is bundled.
+
 ## Density
 
 ```tsx
@@ -6374,6 +6416,24 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 `@adapttable/core/adapter`; it is empty below two cells. On `<DataTable>` the
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
+
+**Status bar.** `statusBar` puts a strip under the table reading the row
+range, how many rows are selected, and what a multi-cell selection adds up
+to. Adapters export their kit-owned `StatusBar` over `StatusBarChrome` /
+`StatusBarChromeProps` / `StatusBarSlots` / `StatusBarSlotProps` /
+`StatusBarItem` from `@adapttable/core/adapter`. It hosts the selection
+figures rather than repeating them: with `enabled` false the chrome renders
+those alone, which is why an adapter has one element here and no branch. The
+row range comes from the same arithmetic the pagination footer uses. See
+[customization](./customization.md#toolbar-and-status-bar).
+
+**Toolbar regions and undo/redo.** `toolbar` fills the middle of the toolbar;
+`toolbarSlots` (`ToolbarSlots` — `start`, `end`) fills either end.
+`undoRedoButtons` adds Undo and Redo, which render only when `editHistory` is
+armed and disable rather than disappear; `undoRedoToolbar(wanted, history,
+labels)` from `@adapttable/core/adapter` is the one rule both wiring paths
+resolve that with. Labels are `undoEdit` and `redoEdit`. See
+[customization](./customization.md#toolbar-and-status-bar).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell
 as a string for anything that cannot render JSX. It resolves

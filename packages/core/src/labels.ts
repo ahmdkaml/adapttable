@@ -115,6 +115,7 @@ export const defaultLabels: Required<TableLabels> = {
   exportFailed: "Export failed",
   editCell: "Edit cell",
   undoEdit: "Undo",
+  redoEdit: "Redo",
   editRow: "Edit row",
   saveRow: "Save row",
   pendingRows: (count) =>
