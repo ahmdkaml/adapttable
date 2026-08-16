@@ -10,17 +10,11 @@ import { expect, type Page, test } from "@playwright/test";
  * selection is a set of ids, not a slice of the rendered page.
  */
 
-/**
- * antd is absent on purpose: its selection column comes from antd's own
- * `rowSelection` API rather than the shared shell, so it does not carry
- * `selection-cell` / `selection-header` yet. It gets its own test below, which
- * asserts the behaviour rather than the parts — so the gap is covered, not
- * hidden, and this list is what closing it should grow to.
- */
 const KITS = [
   "mantine",
   "mui",
   "chakra",
+  "antd",
   "radix",
   "base-ui",
   "shadcn",
@@ -113,23 +107,3 @@ for (const kit of KITS) {
     ).toBeVisible();
   });
 }
-
-test("antd selects rows too, through its own selection column", async ({
-  page,
-}) => {
-  await page.goto("/selection/");
-  const tab = page.getByTestId("adapter-antd");
-  await tab.scrollIntoViewIfNeeded();
-  await tab.click();
-  const root = demo(page).locator('[data-adapter="antd"]');
-  await expect(root.first()).toBeVisible();
-
-  // antd builds this column itself, so it is addressed by antd's own class
-  // until the shared part names reach it.
-  const cell = root.locator("td.ant-table-selection-column").first();
-  await expect(cell).toBeVisible();
-  await cell.getByRole("checkbox").first().click({ force: true });
-  await expect(
-    page.locator('[data-adapttable-part="bulk-bar"]').first()
-  ).toBeVisible();
-});

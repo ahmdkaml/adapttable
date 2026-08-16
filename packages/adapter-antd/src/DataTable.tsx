@@ -490,13 +490,22 @@ function buildRowSelection<TRow>(
       };
     },
     // Group headers render a tri-state over leaf ids; leaf rows keep antd's node.
-    renderCell: (_checked, record, _index, originNode) =>
-      selectionCellNode(record, selection, labels, originNode),
+    //
+    // The part goes on a wrapper INSIDE the cell, not on the cell: antd owns
+    // the selection column's <td> and `rowSelection` exposes only its content.
+    // Every other adapter tags the cell itself, so this is the one placement
+    // that differs — findable, but one element in.
+    renderCell: (_checked, record, _index, originNode) => (
+      <span data-adapttable-part="selection-cell">
+        {selectionCellNode(record, selection, labels, originNode)}
+      </span>
+    ),
     // Select-all is driven by the custom `columnTitle` checkbox below; with
     // `columnTitle` set antd never renders its own header checkbox, so an
     // `onSelectAll` callback could never fire.
     columnTitle: (
       <Checkbox
+        data-adapttable-part="selection-header"
         aria-label={labels.selectAll}
         checked={selection.headerState === "all"}
         indeterminate={selection.headerState === "some"}
