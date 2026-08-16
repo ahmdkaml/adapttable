@@ -5,6 +5,7 @@ import {
   SidePanelLayout,
   useDataTableShell,
   useMountStagger,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import {
   Box,
@@ -20,6 +21,7 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -101,6 +103,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: c.allColumns,
+    labels: labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        c.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
   const { confirm } = c;
   const tableProps = { ...shell.tableProps, size };
   useMountStagger(rootRef, [viewSource.rows.length, c.isMobile], {
@@ -171,6 +198,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Paper
       ref={rootRef}
+      {...contextMenu.regionProps}
       variant="outlined"
       dir={props.dir}
       className={
@@ -218,6 +246,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
           />
         )}
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          labels={labels}
+        />
         <SidePanelLayout
           side={props.sidePanel?.side}
           body={

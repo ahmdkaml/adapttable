@@ -70,6 +70,7 @@ import {
   useMountStagger,
   useOffsetHeight,
   useResolvedAdapter,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import {
   Button,
@@ -107,6 +108,7 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ContextMenu } from "./components/ContextMenu";
 import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -1465,6 +1467,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const rowActions = c.rowActions;
   const hasRowActions = rowActions !== undefined;
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: c.allColumns,
+    labels,
+    rowFor: (rowId) => source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        gridFocus?.copyCells();
+      },
+      onSort: (key, dir) => {
+        source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        c.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        setFiltersOpen(true);
+      },
+    },
+    sortBy: source.sortBy,
+    sortDir: source.sortDir,
+  });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop. The selection and full column
@@ -1763,6 +1790,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <div
       ref={rootRef}
+      {...contextMenu.regionProps}
       dir={props.dir}
       className={
         [className, classNames?.root].filter(Boolean).join(" ") || undefined
@@ -1896,6 +1924,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
+      <ContextMenu
+        items={contextMenu.items}
+        at={contextMenu.at}
+        onClose={contextMenu.close}
+        labels={labels}
+      />
       <StatusBar
         enabled={props.statusBar === true}
         shown={source.rows.length}

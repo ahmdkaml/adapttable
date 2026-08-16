@@ -1,5 +1,11 @@
 ---
 "@adapttable/core": minor
+"@adapttable/mantine": minor
+"@adapttable/mui": minor
+"@adapttable/chakra": minor
+"@adapttable/antd": minor
+"@adapttable/radix": minor
+"@adapttable/base-ui": minor
 "@adapttable/unstyled": minor
 "@adapttable/shadcn": minor
 ---
@@ -16,5 +22,7 @@ from.
 `copyCells` on the grid-focus state copies a given cell, or the selection when
 given none — the route a context menu needs and the key handler never did.
 
-Available in `@adapttable/unstyled` and `@adapttable/shadcn`; the themed kits
-follow.
+Every kit renders it with its own overlay — MUI's and Mantine's menus, Radix's
+dropdown, and the Popover each of Chakra, antd and Base UI already builds its
+column menu on — so positioning, portalling and dismissal behave the way that
+kit's overlays always do.

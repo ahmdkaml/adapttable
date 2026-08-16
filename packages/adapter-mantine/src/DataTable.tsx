@@ -8,6 +8,7 @@ import {
   RowReorderAnnouncer,
   SidePanelLayout,
   useDataTableShell,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
@@ -18,6 +19,7 @@ import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkActionBar } from "./components/BulkActionBar";
 import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorState } from "./components/ErrorState";
@@ -139,6 +141,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels: table.labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
   const { isMobile, confirm } = chrome;
   const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
 
@@ -208,6 +235,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   return (
     <Paper
+      {...contextMenu.regionProps}
       ref={rootRef}
       p="xs"
       radius="md"
@@ -303,6 +331,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
 
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          labels={table.labels}
+        />
         <SidePanelLayout
           side={props.sidePanel?.side}
           body={

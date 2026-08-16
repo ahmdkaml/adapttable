@@ -5,6 +5,7 @@ import {
   type TableBodyRegion,
   useDataTableShell,
   useMountStagger,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
@@ -12,6 +13,7 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -83,6 +85,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowReorder,
     toolbarProps,
   } = shell;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
   const tableProps = { ...shell.tableProps, size, accentColor };
   useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
     enabled: animate,
@@ -143,6 +170,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Box
       ref={rootRef}
+      {...contextMenu.regionProps}
       dir={props.dir}
       className={["adapttable-base-ui", props.classNames?.root]
         .filter(Boolean)
@@ -221,6 +249,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             accentColor={accentColor}
           />
         )}
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          labels={labels}
+        />
         <SidePanelLayout
           side={props.sidePanel?.side}
           body={
