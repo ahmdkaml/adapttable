@@ -64,7 +64,7 @@ export function BulkActionBar({
       </Group>
       <ScopeBanner selection={selection} total={total} labels={labels} />
       {errorMessage !== null && (
-        <Text fz="sm" c="red" role="alert">
+        <Text data-adapttable-part="bulk-error" fz="sm" c="red" role="alert">
           {`${labels.errorTitle}: ${errorMessage}`}
         </Text>
       )}
@@ -90,20 +90,35 @@ function ScopeBanner({
     return null;
   }
   return (
-    <Group role="status" gap="xs" wrap="wrap">
+    <Group
+      role="status"
+      data-adapttable-part="select-all-banner"
+      gap="xs"
+      wrap="wrap"
+    >
       {selection.allMatching ? (
         <>
-          <Text fz="sm">{labels.allMatchingSelected(total)}</Text>
-          <Button size="xs" variant="subtle" onClick={selection.clear}>
+          <Text fz="sm" data-adapttable-part="select-all-text">
+            {labels.allMatchingSelected(total)}
+          </Text>
+          <Button
+            size="xs"
+            variant="subtle"
+            data-adapttable-part="select-all-button"
+            onClick={selection.clear}
+          >
             {labels.clearAll}
           </Button>
         </>
       ) : (
         <>
-          <Text fz="sm">{labels.pageSelected(selection.selectedCount)}</Text>
+          <Text fz="sm" data-adapttable-part="select-all-text">
+            {labels.pageSelected(selection.selectedCount)}
+          </Text>
           <Button
             size="xs"
             variant="light"
+            data-adapttable-part="select-all-button"
             onClick={selection.selectAllMatching}
           >
             {labels.selectAllMatching(total)}
@@ -129,6 +144,7 @@ function BulkButton({
   const ineligible = reason !== undefined;
   const button = (
     <Button
+      data-adapttable-part="bulk-button"
       size="xs"
       color={action.color}
       leftSection={action.icon}

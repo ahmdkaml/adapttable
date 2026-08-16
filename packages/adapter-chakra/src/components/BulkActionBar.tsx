@@ -38,9 +38,16 @@ export function BulkBar({
       flexWrap="wrap"
     >
       {expandable ? (
-        <HStack gap={2} flexWrap="wrap">
-          <Text fontSize="sm">{banner.text}</Text>
+        <HStack
+          data-adapttable-part="select-all-banner"
+          gap={2}
+          flexWrap="wrap"
+        >
+          <Text data-adapttable-part="select-all-text" fontSize="sm">
+            {banner.text}
+          </Text>
           <Button
+            data-adapttable-part="select-all-button"
             size="xs"
             variant="plain"
             colorPalette={accentColor}
@@ -67,6 +74,7 @@ export function BulkBar({
           return (
             <Tooltip key={action.key} label={reason ?? ""} disabled={!reason}>
               <Button
+                data-adapttable-part="bulk-button"
                 size="xs"
                 colorPalette={action.color ?? accentColor}
                 disabled={reason !== undefined || pending !== null}
@@ -79,7 +87,12 @@ export function BulkBar({
           );
         })}
         {errorMessage !== null && (
-          <Text fontSize="sm" color="red.500" role="alert">
+          <Text
+            data-adapttable-part="bulk-error"
+            fontSize="sm"
+            color="red.500"
+            role="alert"
+          >
             {`${labels.errorTitle}: ${errorMessage}`}
           </Text>
         )}

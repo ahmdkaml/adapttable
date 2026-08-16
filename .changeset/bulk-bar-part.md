@@ -7,6 +7,8 @@
 "@adapttable/base-ui": patch
 ---
 
-The bulk action bar carries its `bulk-bar` part name. Only
-`@adapttable/unstyled` emitted it, so an app styling or testing the bar got a
-different answer per kit.
+The bulk action bar carries its part names in every kit. `bulk-bar`,
+`bulk-button`, `bulk-error`, `select-all-banner`, `select-all-text` and
+`select-all-button` were emitted by `@adapttable/unstyled` alone, so an app
+styling or testing the selection bar got a different answer per kit. All seven
+adapters now name the same elements.

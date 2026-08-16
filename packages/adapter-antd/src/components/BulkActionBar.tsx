@@ -21,9 +21,17 @@ function bannerLine(
   disabled: boolean
 ) {
   return (
-    <Space size={4} wrap>
-      <Typography.Text>{text}</Typography.Text>
-      <Button size="small" type="link" disabled={disabled} onClick={onClick}>
+    <Space size={4} wrap data-adapttable-part="select-all-banner">
+      <Typography.Text data-adapttable-part="select-all-text">
+        {text}
+      </Typography.Text>
+      <Button
+        size="small"
+        type="link"
+        data-adapttable-part="select-all-button"
+        disabled={disabled}
+        onClick={onClick}
+      >
         {actionLabel}
       </Button>
     </Space>
@@ -81,7 +89,10 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
       title={message}
       description={
         errorMessage === null ? undefined : (
-          <span role="alert">{`${labels.errorTitle}: ${errorMessage}`}</span>
+          <span
+            data-adapttable-part="bulk-error"
+            role="alert"
+          >{`${labels.errorTitle}: ${errorMessage}`}</span>
         )
       }
       action={
@@ -96,6 +107,7 @@ export function BulkBar(props: Readonly<BulkBarChromeProps>) {
           </Button>
           {bulkActions.map((action) => (
             <Button
+              data-adapttable-part="bulk-button"
               key={action.key}
               size="small"
               type="primary"
