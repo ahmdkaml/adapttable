@@ -73,9 +73,11 @@ import { RowReorderButtonsProps } from '@adapttable/core/adapter';
 import { RowReorderHandleProps } from '@adapttable/core/adapter';
 import { SavedView } from '@adapttable/core';
 import { SelectionStatsChromeProps } from '@adapttable/core/adapter';
+import { Slot } from '@adapttable/core';
 import { SortableValue } from '@adapttable/core';
 import { SortByOption } from '@adapttable/core';
 import { SortDirection } from '@adapttable/core';
+import { TableErrorState } from '@adapttable/core';
 import { TableLabels } from '@adapttable/core';
 import { TableQuery } from '@adapttable/core';
 import { TableSource } from '@adapttable/core';
@@ -242,6 +244,14 @@ export interface DataTableClassNames {
     columnMenuTitle?: string;
     // (undocumented)
     columnMenuVisibility?: string;
+    commandEmpty?: string;
+    commandInput?: string;
+    commandItem?: string;
+    commandPalette?: string;
+    contextMenu?: string;
+    contextMenuItem?: string;
+    contextMenuSeparator?: string;
+    densityToggle?: string;
     detailCell?: string;
     detailRow?: string;
     editCellActivate?: string;
@@ -311,6 +321,7 @@ export interface DataTableClassNames {
     filterTreeRemove?: string;
     filterTreeSummary?: string;
     footer?: string;
+    fullscreenToggle?: string;
     fullWidthCell?: string;
     fullWidthRow?: string;
     groupAggregate?: string;
@@ -351,6 +362,7 @@ export interface DataTableClassNames {
     pageNumber?: string;
     pagePrev?: string;
     pager?: string;
+    redoButton?: string;
     refreshIndicator?: string;
     reorderCell?: string;
     reorderHeader?: string;
@@ -380,11 +392,16 @@ export interface DataTableClassNames {
     selectionHeader?: string;
     separatorCell?: string;
     separatorRow?: string;
+    sidePanel?: string;
+    sidePanelClose?: string;
+    sidePanelTab?: string;
     // (undocumented)
     sortButton?: string;
     sortIndex?: string;
     // (undocumented)
     sortSelect?: string;
+    statusBar?: string;
+    statusItem?: string;
     summary?: string;
     summaryCard?: string;
     summaryCell?: string;
@@ -401,6 +418,7 @@ export interface DataTableClassNames {
     treeCell?: string;
     treeSpacer?: string;
     treeToggle?: string;
+    undoButton?: string;
     viewsButton?: string;
     viewsDelete?: string;
     viewsDivider?: string;
@@ -420,6 +438,7 @@ export type DataTableProps<TRow> = DataTablePropsBase<TRow> & DataModeProps<TRow
 // @public
 export interface DataTableSlots {
     empty?: ReactNode;
+    error?: Slot<TableErrorState>;
     noResults?: ReactNode;
     skeleton?: ReactNode;
 }

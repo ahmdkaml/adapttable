@@ -108,13 +108,16 @@ export interface BaseDataTableProps<TRow> {
     collapsibleColumnGroups?: boolean;
     columnLayout?: ColumnLayoutState;
     columns: ColumnDef<TRow>[];
+    commandPalette?: boolean | CommandPaletteOptions;
     confirm?: ConfirmHandler;
     confirmDeleteRow?: boolean;
+    contextMenu?: boolean | ContextMenuOptions<TRow>;
     defaultColumnLayout?: Partial<ColumnLayoutState>;
     defaults?: Partial<TableQueryParams> & {
         extra?: ExtraFilters;
     };
     density?: "comfortable" | "compact";
+    densityChooser?: boolean;
     dir?: Direction;
     dirtyIndicators?: boolean;
     editConflictPolicy?: EditConflictPolicy;
@@ -137,6 +140,7 @@ export interface BaseDataTableProps<TRow> {
     fitColumns?: boolean;
     forceMobile?: boolean;
     formatEditError?: (error: unknown) => string;
+    fullscreen?: boolean;
     getCellSpan?: GetCellSpan<TRow>;
     getChildren?: (row: TRow) => readonly TRow[] | undefined;
     getParentId?: (row: TRow) => string | undefined;
@@ -154,6 +158,7 @@ export interface BaseDataTableProps<TRow> {
     labels?: TableLabels;
     locale?: string;
     maxHeight?: number;
+    mobileBreakpoint?: number;
     mobileIdentityColumns?: number;
     multiSort?: boolean;
     nestedTable?: NestedTableFor<TRow>;
@@ -168,6 +173,7 @@ export interface BaseDataTableProps<TRow> {
     onCollapsedGroupIdsChange?: (ids: string[]) => void;
     onColumnLayoutChange?: (next: ColumnLayoutState) => void;
     onDeleteRow?: (row: TRow) => unknown;
+    onDensityChange?: (next: "comfortable" | "compact") => void;
     onDuplicateRow?: (row: TRow) => unknown;
     onEditCancel?: EditEventHandler<TRow>;
     onEditCommit?: EditEventHandler<TRow>;
@@ -180,6 +186,7 @@ export interface BaseDataTableProps<TRow> {
     onGroupLoadMore?: (groupKey: string) => void;
     onLoadChildren?: (row: TRow) => void | Promise<void>;
     onPinnedRowIdsChange?: (next: RowPinState) => void;
+    onPrint?: () => void;
     onRowClick?: (row: TRow) => void;
     onRowEdit?: (row: TRow, patch: Readonly<Record<string, unknown>>) => unknown;
     onRowReorder?: (from: number, to: number, row: TRow) => void;
@@ -189,6 +196,7 @@ export interface BaseDataTableProps<TRow> {
     paginationMode?: PaginationMode;
     pinnedRowIds?: RowPinState;
     prefetch?: (row: TRow) => void;
+    renderCard?: MobileCardRenderer<TRow>;
     renderRowDetail?: (row: TRow) => ReactNode;
     resizableColumns?: boolean;
     rowActions?: RowAction<TRow>[];
@@ -206,16 +214,20 @@ export interface BaseDataTableProps<TRow> {
     selectedIds?: readonly string[];
     selectionGetId?: (row: TRow) => string;
     selectionStats?: boolean;
+    sidePanel?: SidePanelOptions;
     skeletonRows?: number;
     sortByOptions?: SortByOption[];
     source: TableSource<TRow>;
+    statusBar?: boolean;
     stickyHeader?: boolean;
     stickyTop?: number;
     summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
     tableFooter?: ReactNode;
     tableLabel?: string;
     toolbar?: ReactNode;
+    toolbarSlots?: ToolbarSlots;
     treeColumn?: string;
+    undoRedoButtons?: boolean;
     validateRow?: RowValidator<TRow>;
     virtualize?: boolean;
     virtualizeColumns?: boolean;
@@ -669,6 +681,7 @@ export interface ColumnDef<TRow> {
     parseValue?: (draft: string, row: TRow) => unknown;
     renderFooter?: (ctx: ColumnFooterContext<TRow>) => ReactNode;
     renderHeader?: (ctx: ColumnHeaderContext<TRow>) => ReactNode;
+    responsivePriority?: number;
     rowSpan?: number | ((row: TRow) => number);
     sortable?: boolean;
     sortValue?: (row: TRow) => SortableValue;
@@ -794,6 +807,15 @@ export function columnsHaveFooter<TRow>(columns: readonly ColumnDef<TRow>[]): bo
 export function columnText<TRow>(column: ColumnDef<TRow>, row: TRow): string;
 
 // @public
+export type Command = ContextMenuItem;
+
+// @public
+export interface CommandPaletteOptions {
+    commands?: readonly Command[];
+    shortcuts?: readonly Shortcut[];
+}
+
+// @public
 export function compareValues(a: SortableValue, b: SortableValue): number;
 
 // @public
@@ -837,6 +859,46 @@ export interface ConfirmRequest {
     onConfirm: () => void;
     title: string;
 }
+
+// @public
+export interface ContextMenuActions<TRow> {
+    onCopy?: (target: ContextMenuTarget<TRow>) => void;
+    onCut?: (target: ContextMenuTarget<TRow>) => void;
+    onFilter?: (columnKey: string) => void;
+    onHide?: (columnKey: string) => void;
+    onSort?: (columnKey: string, direction: "asc" | "desc") => void;
+    onTogglePin?: (columnKey: string) => void;
+}
+
+// @public
+export interface ContextMenuItem {
+    danger?: boolean;
+    disabled?: boolean;
+    key: string;
+    label: string;
+    onSelect: () => void;
+    separatorBefore?: boolean;
+}
+
+// @public
+export interface ContextMenuOptions<TRow> {
+    items?: (target: ContextMenuTarget<TRow>) => readonly ContextMenuItem[];
+}
+
+// @public
+export type ContextMenuTarget<TRow> = {
+    kind: "header";
+    columnKey: string;
+} | {
+    kind: "row";
+    row: TRow;
+    rowId: string;
+} | {
+    kind: "cell";
+    row: TRow;
+    rowId: string;
+    columnKey: string;
+};
 
 // @public
 export const COUNT_OPERATOR_SYMBOL: Record<CountOperator, string>;
@@ -944,6 +1006,9 @@ export type DateOp = (typeof DATE_OPS)[number];
 export const DEFAULT_LIMIT = 25;
 
 // @public
+export const DEFAULT_SHORTCUTS: readonly Shortcut[];
+
+// @public
 export const defaultConfirm: ConfirmHandler;
 
 // @public
@@ -960,6 +1025,9 @@ export function defaultSearchText<TRow>(row: TRow): string;
 
 // @public
 export const DELETE_ROW_ACTION_KEY = "adapttable:delete-row";
+
+// @public
+export type Density = "comfortable" | "compact";
 
 // @public
 export type Direction = "ltr" | "rtl";
@@ -1261,6 +1329,7 @@ export interface EditHistoryState<TRow> {
     canRedo: boolean;
     canUndo: boolean;
     clear: () => void;
+    enabled: boolean;
     record: (edits: readonly CellEdit<TRow>[]) => void;
     redo: () => number;
     undo: () => number;
@@ -1552,6 +1621,9 @@ export type FilterChromeMode = "popover" | "drawer" | "header";
 export function filterColumnMenuRows<TRow>(rows: readonly ColumnMenuRow<TRow>[], query: string): ColumnMenuRow<TRow>[];
 
 // @public
+export function filterCommands(commands: readonly Command[], query: string): Command[];
+
+// @public
 export interface FilterDef<TRow = unknown> {
     column?: string;
     getValue?: (row: TRow) => unknown;
@@ -1792,6 +1864,15 @@ export function formatGroupLabel(value: unknown, blankLabel?: string): string;
 export function formatMultiDraft(values: readonly string[]): string;
 
 // @public
+export interface FullscreenState {
+    active: boolean;
+    container: HTMLElement | undefined;
+    exit: () => void;
+    supported: boolean;
+    toggle: () => void;
+}
+
+// @public
 export type GetCellSpan<TRow> = (args: GetCellSpanArgs<TRow>) => CellSpanRequest | undefined;
 
 // @public
@@ -1839,6 +1920,7 @@ export function gridFocusMoveForKey(press: GridKeyPress, dir?: Direction): GridF
 export interface GridFocusState {
     active: GridCell | null;
     announcement: string;
+    copyCells: (cell?: GridCell, cut?: boolean) => void;
     enabled: boolean;
     fillHandleCell: GridCell | null;
     fillHandleLabel: string;
@@ -2011,6 +2093,24 @@ export type HeaderSelectionState = "all" | "some" | "none";
 
 // @public
 export function hideAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layout: UseColumnLayoutResult<TRow>): void;
+
+// @public
+export interface HighlightedCell {
+    // (undocumented)
+    columnKey: string;
+    // (undocumented)
+    rowId: string;
+}
+
+// @public
+export interface HighlightState {
+    animated: boolean;
+    clear: () => void;
+    flashCell: (cell: HighlightedCell) => void;
+    flashRow: (rowId: string) => void;
+    isCellHighlighted: (rowId: string, columnKey: string) => boolean;
+    isRowHighlighted: (rowId: string) => boolean;
+}
 
 // @public
 export function humanizeKey(key: string): string;
@@ -2223,6 +2323,24 @@ export function measureColumnWidth(root: Element | null, key: string): number | 
 export function mergeProps<T extends Props>(base: T, overrides?: Props): T;
 
 // @public
+export interface MobileCardField<TRow> {
+    column: ColumnDef<TRow>;
+    label: string | undefined;
+    value: ReactNode;
+}
+
+// @public
+export interface MobileCardModel<TRow> {
+    expanded: boolean;
+    fields: readonly MobileCardField<TRow>[];
+    index: number;
+    selected: boolean;
+}
+
+// @public
+export type MobileCardRenderer<TRow> = (row: TRow, card: MobileCardModel<TRow>) => ReactNode;
+
+// @public
 export function moveGridFocus(from: GridCell, move: GridFocusMove, bounds: GridBounds, covered?: (cell: GridCell) => boolean): GridCell;
 
 // @public
@@ -2266,7 +2384,7 @@ export interface NestedTable {
 
 // @public
 export interface NestedTableDefaults {
-    density: Density | undefined;
+    density: Density$1 | undefined;
     labels: TableLabels | undefined;
     searchable: boolean;
     tableLabel: string;
@@ -2774,6 +2892,7 @@ export interface RowElementProps extends Props {
     "aria-selected"?: boolean;
     // (undocumented)
     "data-index": number;
+    "data-row-id": string;
     // (undocumented)
     role: string;
 }
@@ -3048,10 +3167,34 @@ export interface ServerGroupEntriesOptions<TRow> {
 export function setFilterTreeCombinator(tree: QueryFilterGroup, path: readonly number[], combinator: QueryFilterGroup["combinator"]): QueryFilterGroup;
 
 // @public
+export interface Shortcut {
+    chord: string;
+    command: string;
+}
+
+// @public
 export function showAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layout: UseColumnLayoutResult<TRow>): void;
 
 // @public
+export interface SidePanelEntry {
+    content: ReactNode;
+    key: string;
+    label: string;
+}
+
+// @public
+export interface SidePanelOptions {
+    onOpenChange: (key: string | null) => void;
+    open: string | null;
+    panels: readonly SidePanelEntry[];
+    side?: "start" | "end";
+}
+
+// @public
 export function singleCellRange(cell: GridCell): CellRange;
+
+// @public
+export type Slot<TState> = ReactNode | ((state: TState) => ReactNode);
 
 // @public
 export type SortableValue = string | number | boolean | null | undefined;
@@ -3127,9 +3270,11 @@ export interface TableChrome<TRow> {
         render: (row: TRow) => ReactNode; /** Expansion state for the chevrons. */
         expansion: RowExpansionState;
     };
+    droppedColumns: readonly string[];
     editing?: EditableCellEditing<TRow>;
     editingRows: readonly TRow[];
     emptyVariant: "noData" | "noResults";
+    errorState?: TableErrorState;
     getRowId: (row: TRow) => string;
     grouping?: {
         groupBy: readonly string[];
@@ -3151,6 +3296,7 @@ export interface TableChrome<TRow> {
     isPaged: boolean;
     isRefreshing: boolean;
     mergedChips: readonly ActiveFilterChip[];
+    rootRef: RefObject<HTMLDivElement | null>;
     rowActions?: RowAction<TRow>[];
     rowMutations: RowMutationsState<TRow>;
     rowPinning?: RowPinningState<TRow>;
@@ -3164,6 +3310,9 @@ export interface TableChrome<TRow> {
         columnKey?: string;
     };
 }
+
+// @public
+export function tableCommands(options: TableCommandOptions): Command[];
 
 // @public
 export interface TableEditHistoryProps<TRow> {
@@ -3185,6 +3334,13 @@ export interface TableElementProps extends Props {
 }
 
 // @public
+export interface TableErrorState {
+    error: Error;
+    retry?: () => void;
+    retrying: boolean;
+}
+
+// @public
 export interface TableLabels {
     // (undocumented)
     actions?: string;
@@ -3203,14 +3359,24 @@ export interface TableLabels {
     checklistSearch?: string;
     // (undocumented)
     clearAll?: string;
+    closePanel?: string;
     collapseColumnGroup?: string;
     collapseGroup?: string;
     collapseRow?: string;
     columnActions?: string;
     columns?: string;
+    commandEmpty?: string;
+    commandPalette?: string;
+    commandSearch?: string;
+    contextMenu?: string;
+    copyCells?: string;
+    cutCells?: string;
     deleteRow?: string;
     deleteRowConfirm?: string;
     deleteView?: string;
+    density?: string;
+    densityComfortable?: string;
+    densityCompact?: string;
     duplicateRow?: string;
     editCell?: string;
     editConflict?: string;
@@ -3218,10 +3384,12 @@ export interface TableLabels {
     editRedone?: (cells: number) => string;
     editRow?: string;
     editUndone?: (cells: number) => string;
+    enterFullscreen?: string;
     // (undocumented)
     errorMessage?: string;
     // (undocumented)
     errorTitle?: string;
+    exitFullscreen?: string;
     expandColumnGroup?: string;
     expandGroup?: string;
     expandRow?: string;
@@ -3318,6 +3486,8 @@ export interface TableLabels {
     pinToBottom?: string;
     pinToTop?: string;
     previousPage?: string;
+    print?: string;
+    redoEdit?: string;
     relLastN?: string;
     relNextN?: string;
     relPreviousMonth?: string;
@@ -3366,6 +3536,7 @@ export interface TableLabels {
         to: number;
         total: number;
     }) => string;
+    sidePanel?: string;
     sortAscending?: string;
     // (undocumented)
     sortBy?: string;
@@ -3514,6 +3685,12 @@ export type TextOp = (typeof TEXT_OPS)[number];
 
 // @public
 export function toggleCollapsedColumnGroup(collapsedIds: readonly string[], id: string): string[];
+
+// @public
+export interface ToolbarSlots {
+    end?: ReactNode;
+    start?: ReactNode;
+}
 
 // @public
 export function treeCardStyle(level: number): {
@@ -3792,6 +3969,28 @@ export interface UseDataTableResult<TRow> {
 export function useDebounce<T>(value: T, delay?: number): T;
 
 // @public
+export function useDensityUrlState(options?: UseDensityUrlStateOptions): UseDensityUrlStateResult;
+
+// @public
+export interface UseDensityUrlStateOptions {
+    defaultDensity?: Density;
+    // (undocumented)
+    urlAdapter?: UrlStateAdapter;
+    // (undocumented)
+    urlKey?: string;
+    // (undocumented)
+    urlSync?: boolean;
+}
+
+// @public
+export interface UseDensityUrlStateResult {
+    // (undocumented)
+    density: Density;
+    // (undocumented)
+    onDensityChange: (next: Density) => void;
+}
+
+// @public
 export function useDirtyCells(options?: UseDirtyCellsOptions): DirtyCellState;
 
 // @public
@@ -3879,6 +4078,9 @@ export interface UseFrontendDataOptions<TRow> extends Pick<UseTableUrlStateOptio
 }
 
 // @public
+export function useFullscreen(element: HTMLElement | null): FullscreenState;
+
+// @public
 export function useGridFocus<TRow>(options: UseGridFocusOptions<TRow>): GridFocusState;
 
 // @public
@@ -3932,6 +4134,9 @@ export interface UseGroupCollapseUrlStateResult {
 export function useGroupPaging(): GroupPagingState;
 
 // @public
+export function useHighlight(enabled: boolean): HighlightState;
+
+// @public
 export function useHorizontalOverflow<E extends HTMLElement>(): HorizontalOverflow<E>;
 
 // @public
@@ -3948,7 +4153,7 @@ export interface UseInfiniteScrollOptions {
 }
 
 // @public
-export function useIsMobile(): boolean;
+export function useIsMobile(px?: number): boolean;
 
 // @public
 export function useLazyChildren<TRow>(options: UseLazyChildrenOptions<TRow>): LazyChildrenState<TRow>;
@@ -4117,6 +4322,9 @@ export interface UseServerDataOptions<TRow> extends Pick<UseTableUrlStateOptions
 }
 
 // @public
+export function useShortcuts(options: UseShortcutsOptions): void;
+
+// @public (undocumented)
 export function useTableChrome<TRow>(props: BaseDataTableProps<TRow>): TableChrome<TRow>;
 
 // @public

@@ -70,9 +70,11 @@ import { RowReorderButtonsProps } from '@adapttable/core/adapter';
 import { RowReorderHandleProps } from '@adapttable/core/adapter';
 import { SavedView } from '@adapttable/core';
 import { SelectionStatsChromeProps } from '@adapttable/core/adapter';
+import { Slot } from '@adapttable/core';
 import { SortableValue } from '@adapttable/core';
 import { SortByOption } from '@adapttable/core';
 import { SortDirection } from '@adapttable/core';
+import { TableErrorState } from '@adapttable/core';
 import { TableLabels } from '@adapttable/core';
 import { TableQuery } from '@adapttable/core';
 import { TableSource } from '@adapttable/core';
@@ -176,6 +178,7 @@ export type DataTableProps<TRow> = DataTablePropsBase<TRow> & DataModeProps<TRow
 // @public
 export interface DataTableSlots {
     empty?: ReactNode;
+    error?: Slot<TableErrorState>;
     noResults?: ReactNode;
     skeleton?: ReactNode;
 }

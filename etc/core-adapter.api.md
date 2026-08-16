@@ -455,7 +455,114 @@ export interface ColumnWindow<TRow> {
 }
 
 // @public
+export function CommandPaletteChrome(props: Readonly<CommandPaletteChromeProps>): JSX.Element | null;
+
+// @public
+export interface CommandPaletteChromeProps {
+    className?: string;
+    commands: readonly Command[];
+    labels?: TableLabels;
+    onClose: () => void;
+    open: boolean;
+    slots: CommandPaletteSlots;
+}
+
+// @public
+export interface CommandPaletteInputProps {
+    readonly inputProps: {
+        readonly value: string;
+        readonly onChange: (next: string) => void;
+        readonly onKeyDown: (event: KeyboardEvent_2<HTMLElement>) => void;
+        readonly ref: (element: HTMLInputElement | null) => void;
+        readonly role: "combobox";
+        readonly "aria-expanded": true;
+        readonly "aria-controls": string;
+        readonly "aria-activedescendant": string | undefined;
+        readonly "aria-label": string;
+        readonly placeholder: string;
+        readonly "data-adapttable-part": "command-input";
+    };
+}
+
+// @public
+export interface CommandPaletteItemProps {
+    // (undocumented)
+    readonly active: boolean;
+    // (undocumented)
+    readonly command: Command;
+    readonly itemProps: {
+        readonly id: string;
+        readonly role: "option";
+        readonly "aria-selected": boolean;
+        readonly "aria-disabled": boolean | undefined;
+        readonly "data-adapttable-part": "command-item";
+        readonly onClick: () => void;
+        readonly onMouseEnter: () => void;
+    };
+}
+
+// @public
+export interface CommandPaletteSlots {
+    readonly Empty: (props: {
+        readonly message: string;
+    }) => ReactNode;
+    readonly Input: (props: CommandPaletteInputProps) => ReactNode;
+    readonly Item: (props: CommandPaletteItemProps) => ReactNode;
+    readonly Surface: (props: CommandPaletteSurfaceProps) => ReactNode;
+}
+
+// @public
+export interface CommandPaletteSurfaceProps {
+    // (undocumented)
+    readonly children: ReactNode;
+    // (undocumented)
+    readonly className?: string;
+    readonly label: string;
+    readonly onClose: () => void;
+}
+
+// @public
 export function commitBooleanDraft(ctrl: EditableCellEditorCtrl, checked: boolean): void;
+
+// @public
+export function ContextMenuChrome(props: Readonly<ContextMenuChromeProps>): JSX.Element | null;
+
+// @public
+export interface ContextMenuChromeProps {
+    at: ContextMenuPoint | null;
+    className?: string;
+    container?: HTMLElement;
+    items: readonly ContextMenuItem[];
+    labels?: TableLabels;
+    onClose: () => void;
+    slots: ContextMenuSlots;
+}
+
+// @public
+export interface ContextMenuItemProps {
+    // (undocumented)
+    readonly item: ContextMenuItem;
+    readonly onSelect: () => void;
+}
+
+// @public
+export interface ContextMenuSlots {
+    readonly Item: (props: ContextMenuItemProps) => ReactNode;
+    readonly Separator: () => ReactNode;
+    readonly Surface: (props: ContextMenuSurfaceProps) => ReactNode;
+}
+
+// @public
+export interface ContextMenuSurfaceProps {
+    readonly anchorRef: RefObject<HTMLElement | null>;
+    readonly at: ContextMenuPoint;
+    readonly children: ReactNode;
+    // (undocumented)
+    readonly className?: string;
+    readonly container?: HTMLElement;
+    readonly label: string;
+    readonly onClose: () => void;
+}
 
 // @public
 export type DataModeProps<TRow> = {
@@ -649,6 +756,9 @@ export interface FillHandleSlots {
     // (undocumented)
     readonly Handle: (props: FillHandleSlotProps) => ReactNode;
 }
+
+// @public
+export function fillSlot<TState>(slot: Slot<TState> | undefined, state: TState): ReactNode;
 
 // @public
 export function filterColumnMenuRows<TRow>(rows: readonly ColumnMenuRow<TRow>[], query: string): ColumnMenuRow<TRow>[];
@@ -1039,6 +1149,15 @@ export function focusEditorOnMount(node: {
 } | null): void;
 
 // @public
+export interface FullscreenState {
+    active: boolean;
+    container: HTMLElement | undefined;
+    exit: () => void;
+    supported: boolean;
+    toggle: () => void;
+}
+
+// @public
 export function GridFocusAnnouncer(input: Readonly<GridFocusAnnouncerProps>): ReactElement | null;
 
 // @public
@@ -1184,7 +1303,7 @@ export function nestedTableDetail<TRow>(options: {
 
 // @public
 export interface NestedTableParent {
-    density?: Density;
+    density?: Density$1;
     labels?: TableLabels;
 }
 
@@ -1292,6 +1411,16 @@ export interface ResizableVirtualizer {
 }
 
 // @public
+export function resolveContextTarget<TRow>(from: Element, rowFor: (rowId: string) => TRow | undefined): ResolvedContextTarget<TRow> | null;
+
+// @public
+export interface ResolvedContextTarget<TRow> {
+    element: HTMLElement;
+    // (undocumented)
+    target: ContextMenuTarget<TRow>;
+}
+
+// @public
 export function resolveDisabledReason(reason: string | undefined): string | undefined;
 
 // @public
@@ -1308,6 +1437,9 @@ export function resolveVirtualRows<TRow>(rows: readonly TRow[], rowKey: (row: TR
 
 // @public
 export const ROW_DND_MIME = "application/x-adapttable-row";
+
+// @public
+export const ROW_ID_ATTRIBUTE = "data-row-id";
 
 // @public
 export interface RowClickProps {
@@ -1659,6 +1791,7 @@ export interface SharedTableRenderProps<TRow> {
     pinnedTopRows?: readonly TRow[];
     pinOffset?: (key: string) => PinOffset | undefined;
     prefetch?: (row: TRow) => void;
+    renderCard?: MobileCardRenderer<TRow>;
     renderRowDetail?: (row: TRow) => ReactNode;
     reorderPinned?: boolean;
     resizeLabel?: string;
@@ -1690,10 +1823,135 @@ export interface SharedTableRenderProps<TRow> {
 export function showAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layout: UseColumnLayoutResult<TRow>): void;
 
 // @public
+export function SidePanelChrome(props: Readonly<SidePanelChromeProps>): JSX.Element | null;
+
+// @public
+export interface SidePanelChromeProps {
+    className?: string;
+    idPrefix?: string;
+    labels?: TableLabels;
+    onClose: () => void;
+    onOpenPanel: (key: string) => void;
+    openPanel: string;
+    panels: readonly SidePanelEntry[];
+    side?: "start" | "end";
+    slots: SidePanelSlots;
+}
+
+// @public
+export interface SidePanelCloseProps {
+    // (undocumented)
+    readonly label: string;
+    // (undocumented)
+    readonly onClose: () => void;
+}
+
+// @public
+export interface SidePanelFrameProps {
+    readonly children: ReactNode;
+    // (undocumented)
+    readonly className?: string;
+    readonly side: "start" | "end";
+}
+
+// @public
+export function SidePanelLayout(props: Readonly<SidePanelLayoutProps>): JSX.Element;
+
+// @public
+export interface SidePanelLayoutProps {
+    body: ReactNode;
+    panel?: ReactNode;
+    side?: "start" | "end";
+}
+
+// @public
+export interface SidePanelSlots {
+    readonly Close: (props: SidePanelCloseProps) => ReactNode;
+    readonly Frame: (props: SidePanelFrameProps) => ReactNode;
+    readonly Tab: (props: SidePanelTabProps) => ReactNode;
+}
+
+// @public
+export interface SidePanelTabProps {
+    readonly buttonProps: {
+        readonly id: string;
+        readonly role: "tab";
+        readonly type: "button";
+        readonly tabIndex: number;
+        readonly "aria-selected": boolean;
+        readonly "aria-controls": string;
+        readonly "data-adapttable-part": "side-panel-tab";
+        readonly onClick: () => void;
+        readonly onKeyDown: (event: KeyboardEvent_2<HTMLElement>) => void;
+    };
+    // (undocumented)
+    readonly panel: SidePanelEntry;
+    // (undocumented)
+    readonly selected: boolean;
+}
+
+// @public
 export function sortArrow(sort: unknown): string;
 
 // @public
+export function StatusBarChrome(props: Readonly<StatusBarChromeProps>): JSX.Element;
+
+// @public
+export interface StatusBarChromeProps {
+    className?: string;
+    enabled: boolean;
+    labels?: TableLabels;
+    limit?: number;
+    locale?: string;
+    page?: number;
+    selected: number;
+    shown: number;
+    slots: StatusBarSlots;
+    stats: SelectionStats | null;
+    total?: number;
+}
+
+// @public
+export interface StatusBarItem {
+    readonly key: "rows" | "selected";
+    readonly text: string;
+}
+
+// @public
+export interface StatusBarSlotProps {
+    // (undocumented)
+    readonly className?: string;
+    readonly items: readonly StatusBarItem[];
+    readonly stats: ReactNode;
+}
+
+// @public
+export interface StatusBarSlots {
+    readonly Bar: (props: StatusBarSlotProps) => ReactNode;
+    readonly stats: SelectionStatsSlots;
+}
+
+// @public
 export type TableBodyRegion = "skeleton" | "empty" | "mobile" | "desktop";
+
+// @public
+export interface TableCommandPalette {
+    close: () => void;
+    commands: readonly Command[];
+    open: boolean;
+    show: () => void;
+}
+
+// @public
+export interface TableContextMenu {
+    at: ContextMenuPoint | null;
+    close: () => void;
+    items: readonly ContextMenuItem[];
+    regionProps: Record<string, unknown>;
+}
+
+// @public
+export function tableErrorState<TRow>(source: TableSource<TRow>): TableErrorState | undefined;
 
 // @public
 export interface TableRenderModel<TRow> {
@@ -1725,7 +1983,10 @@ export function toggleCollapsedColumnGroup(collapsedIds: readonly string[], id: 
 export interface ToolbarChromeProps<TRow> {
     activeFilterCount: number;
     addRowLabel?: string;
+    canRedo?: boolean;
+    canUndo?: boolean;
     columnMenu?: ReactNode;
+    density?: "comfortable" | "compact";
     dir?: "ltr" | "rtl";
     exportAnnouncement?: string;
     exportBusy?: boolean;
@@ -1733,10 +1994,16 @@ export interface ToolbarChromeProps<TRow> {
     exportStatus?: ExportStatus;
     filtersOpen: boolean;
     hasFilters: boolean;
+    isFullscreen?: boolean;
     onAddRow?: () => void;
+    onDensityChange?: (next: "comfortable" | "compact") => void;
     onExportCsv?: () => void;
     onFiltersTriggerPointerDown?: () => void;
+    onRedo?: () => void;
     onToggleFilters: () => void;
+    onToggleFullscreen?: () => void;
+    onUndo?: () => void;
+    redoLabel?: string;
     savedViewsMenu?: ReactNode;
     searchable?: boolean;
     searchPlaceholder?: string;
@@ -1744,6 +2011,8 @@ export interface ToolbarChromeProps<TRow> {
     sortByOptions?: SortByOption[];
     table: UseDataTableResult<TRow>;
     toolbar?: ReactNode;
+    toolbarSlots?: ToolbarSlots;
+    undoLabel?: string;
 }
 
 // @public
@@ -1806,6 +2075,9 @@ export interface TreeToggleSlots {
     readonly Button: (props: TreeToggleButtonProps) => ReactNode;
 }
 
+// @public (undocumented)
+export function undoRedoToolbar<TRow>(wanted: boolean | undefined, history: EditHistoryState<TRow>, labels: TableLabels): Partial<ToolbarChromeProps<TRow>>;
+
 // @public
 export function unpinAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layout: UseColumnLayoutResult<TRow>): void;
 
@@ -1834,6 +2106,9 @@ export interface UseColumnWindowOptions<TRow> {
 }
 
 // @public
+export function useCommandPalette(options: UseCommandPaletteOptions): TableCommandPalette;
+
+// @public
 export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, renderAutoForm: (defs: readonly FilterDef<TRow>[], source: TableSource<TRow>, registry: FilterTypeRegistry) => ReactNode): {
     gridFocus: GridFocusState; /** What the selection adds up to; `null` unless `selectionStats` is set. */
     selectionStats: SelectionStats | null; /** Undo/redo controls; inert unless `editHistory` is set. */
@@ -1849,7 +2124,8 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
     filtersOpen: boolean;
     setFiltersOpen: Dispatch<SetStateAction<boolean>>;
     filtersTrigger: FilterTriggerToggle;
-    rootRef: RefObject<HTMLDivElement | null>; /** Size every rendered column to its content. */
+    rootRef: RefObject<HTMLDivElement | null>; /** Fullscreen state, and the portal container overlays need with it. */
+    fullscreen: FullscreenState; /** Size every rendered column to its content. */
     autoSizeColumns: () => number;
     autoSizeColumn: (key: string) => number;
     loadMoreRef: RefObject<HTMLDivElement | null>;
@@ -1904,6 +2180,7 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
         rowStyle: RowStyle<TRow> | undefined;
         rowHeight: RowHeight<TRow> | undefined;
         renderRowDetail: ((row: TRow) => ReactNode) | undefined;
+        renderCard: MobileCardRenderer<TRow> | undefined;
         summaryRow: ((rows: readonly TRow[]) => Partial<Record<string, ReactNode>>) | undefined;
         expansion: RowExpansionState | undefined;
         editing: EditableCellEditing<TRow> | undefined;
@@ -1930,11 +2207,6 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
         exportStatus: ExportStatus;
         exportAnnouncement: string;
         exportLabel: string;
-        table: UseDataTableResult<TRow>;
-        searchable: boolean;
-        searchPlaceholder: string | undefined;
-        sortByOptions: SortByOption[] | undefined;
-        toolbar: ReactNode;
         hasFilters: boolean;
         activeFilterCount: number;
         filters: ReactNode;
@@ -1942,11 +2214,35 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
         showRowsPerPage: boolean;
         onAddRow: (() => void) | undefined;
         addRowLabel: string;
+        density?: "comfortable" | "compact";
+        onDensityChange?: ((next: "comfortable" | "compact") => void) | undefined;
+        onToggleFullscreen?: (() => void) | undefined;
+        isFullscreen?: boolean;
+        table: UseDataTableResult<TRow>;
+        searchable: boolean;
+        searchPlaceholder: string;
+        sortByOptions: SortByOption[];
+        toolbar: ReactNode;
+        toolbarSlots: ToolbarSlots;
+        onUndo?: (() => void) | undefined;
+        onRedo?: (() => void) | undefined;
+        canUndo?: boolean | undefined;
+        canRedo?: boolean | undefined;
+        undoLabel?: string | undefined;
+        redoLabel?: string | undefined;
+        filtersOpen?: boolean | undefined;
+        onToggleFilters?: (() => void) | undefined;
+        onFiltersTriggerPointerDown?: (() => void) | undefined;
+        savedViewsMenu?: ReactNode;
+        columnMenu?: ReactNode;
     };
 };
 
 // @public
 export function useExportHandler(handler: (() => void | Promise<void>) | undefined, labels?: TableLabels, format?: string): ExportHandlerState;
+
+// @public
+export function useFullscreen(element: HTMLElement | null): FullscreenState;
 
 // @public
 export function useKeyedVirtualization(options: {
@@ -1973,6 +2269,33 @@ export function useRowPairMeasurer(virtualizer: ResizableVirtualizer | undefined
 
 // @public
 export function useSummaryCells<TRow>(summaryRow: ((rows: readonly TRow[]) => Partial<Record<string, ReactNode>>) | undefined, rows: readonly TRow[]): Partial<Record<string, ReactNode>> | undefined;
+
+// @public
+export function useTableContextMenu<TRow>(options: TableContextMenuOptions<TRow>): TableContextMenu;
+
+// @public
+export interface ViewControlsToolbar {
+    // (undocumented)
+    density?: "comfortable" | "compact";
+    // (undocumented)
+    isFullscreen?: boolean;
+    // (undocumented)
+    onDensityChange?: (next: "comfortable" | "compact") => void;
+    // (undocumented)
+    onToggleFullscreen?: () => void;
+}
+
+// @public (undocumented)
+export function viewControlsToolbar(props: {
+    densityChooser?: boolean;
+    density?: "comfortable" | "compact";
+    onDensityChange?: (next: "comfortable" | "compact") => void;
+    fullscreen?: boolean;
+}, fullscreen: {
+    supported: boolean;
+    active: boolean;
+    toggle: () => void;
+}): ViewControlsToolbar;
 
 // @public
 export interface VirtualTableRow<TRow> {
