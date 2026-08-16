@@ -7,12 +7,16 @@
  * two standard fonts, and one content stream per page. Everything else
  * in the format is optional.
  *
- * Helvetica is one of the fourteen fonts every reader already has, so the
- * file embeds nothing. That is also the limit: glyphs outside WinAnsi
- * become `?` on the page. The original characters still travel in
- * `/ActualText` (copy-paste and a screen reader see them), and
- * {@link openPrintLayout} is the path that paints every script — the
- * browser has the fonts, this writer does not.
+ * Helvetica is one of the fourteen fonts every reader already has, so by
+ * default the file embeds nothing and stays a few kilobytes. That is also
+ * the limit: glyphs outside WinAnsi become `?` on the page.
+ *
+ * Hand it a font and that limit lifts. `font` takes a TrueType file as
+ * bytes; the writer subsets it to the glyphs the table used, embeds it,
+ * shapes Arabic into its presentation forms and reorders right-to-left
+ * text for drawing. See `./pdfFont` and `./arabicText` for how. The
+ * original characters still travel in `/ActualText`, so copy-paste and a
+ * screen reader read the logical string either way.
  *
  * Values resolve exactly as they do for CSV and XLSX. What differs is
  * pagination: a column's width, a group's outline and a page break are
@@ -27,11 +31,20 @@ import {
   type ExportWriter,
 } from "./exportWriter";
 import {
+  embeddedFace,
+  hex4,
+  type PdfBody,
+  pdfLiteral,
+  standardFace,
+  type TextFace,
+} from "./pdfFont";
+import {
   exportCellText,
   type PrintPageBreak,
   type PrintPageSize,
   resolvePrintDirection,
 } from "./printLayout";
+import { parseSfnt } from "./sfnt";
 
 /** Options the writer and {@link buildTablePdf} share. */
 export interface PdfWriterOptions {
@@ -50,6 +63,27 @@ export interface PdfWriterOptions {
    * also starts a page before each top-level group after the first.
    */
   pageBreak?: PrintPageBreak;
+  /**
+   * A TrueType font to draw with, as the file's bytes.
+   *
+   * Omit it and the PDF uses Helvetica and embeds nothing, which is right
+   * for a Latin table. Supply one and the writer embeds a subset of it —
+   * only the glyphs this table used — which is what lets the file draw
+   * Arabic, Chinese, Cyrillic or anything else the font covers, instead of
+   * the `?` a built-in face has to fall back to.
+   *
+   * ```ts
+   * const font = await fetch("/fonts/NotoSansArabic-Regular.ttf")
+   *   .then((res) => res.arrayBuffer());
+   *
+   * pdfWriter({ font, direction: "rtl" });
+   * ```
+   *
+   * The font must have TrueType outlines — a `.ttf`, or an `.otf` built
+   * from one. A CFF-flavoured OpenType file is rejected with a message
+   * saying so rather than embedded whole.
+   */
+  font?: Uint8Array | ArrayBuffer;
 }
 
 interface PageBox {
@@ -62,6 +96,7 @@ interface DrawContext {
   colWidths: number[];
   colXs: number[];
   rtl: boolean;
+  face: TextFace;
 }
 
 const MARGIN = 36;
@@ -74,37 +109,6 @@ const CELL_PAD = 4;
 const INDENT = 12;
 const HEADER_FILL = "0.9 0.9 0.9";
 const GROUP_FILL = "0.95 0.95 0.95";
-
-/** WinAnsi bytes for the characters Latin-1 does not share with CP1252. */
-const WIN1252 = new Map<number, number>([
-  [0x20ac, 0x80],
-  [0x201a, 0x82],
-  [0x0192, 0x83],
-  [0x201e, 0x84],
-  [0x2026, 0x85],
-  [0x2020, 0x86],
-  [0x2021, 0x87],
-  [0x02c6, 0x88],
-  [0x2030, 0x89],
-  [0x0160, 0x8a],
-  [0x2039, 0x8b],
-  [0x0152, 0x8c],
-  [0x017d, 0x8e],
-  [0x2018, 0x91],
-  [0x2019, 0x92],
-  [0x201c, 0x93],
-  [0x201d, 0x94],
-  [0x2022, 0x95],
-  [0x2013, 0x96],
-  [0x2014, 0x97],
-  [0x02dc, 0x98],
-  [0x2122, 0x99],
-  [0x0161, 0x9a],
-  [0x203a, 0x9b],
-  [0x0153, 0x9c],
-  [0x017e, 0x9e],
-  [0x0178, 0x9f],
-]);
 
 function pageBox(size: PrintPageSize = "a4-landscape"): PageBox {
   if (size === "a4") return { width: 595, height: 842 };
@@ -133,51 +137,6 @@ function concatBytes(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-function winAnsiByte(code: number): number | undefined {
-  if (code >= 0x20 && code <= 0x7e) return code;
-  if (code >= 0xa0 && code <= 0xff) return code;
-  return WIN1252.get(code);
-}
-
-function glyphWidth(code: number): number {
-  const byte = winAnsiByte(code);
-  if (byte === undefined) return 556;
-  if (byte === 32 || byte === 105 || byte === 108 || byte === 116) {
-    return 278;
-  }
-  if (byte === 109 || byte === 119 || byte === 77 || byte === 87) {
-    return 833;
-  }
-  if (byte >= 65 && byte <= 90) return 667;
-  return 556;
-}
-
-function textWidth(text: string, fontSize: number): number {
-  let units = 0;
-  for (const ch of text) {
-    units += glyphWidth(ch.codePointAt(0) ?? 32);
-  }
-  return (units * fontSize) / 1000;
-}
-
-function fitText(text: string, maxPt: number, fontSize: number): string {
-  if (textWidth(text, fontSize) <= maxPt) return text;
-  const ellipsis = "…";
-  if (textWidth(ellipsis, fontSize) > maxPt) return ellipsis;
-  let end = text.length;
-  while (
-    end > 0 &&
-    textWidth(text.slice(0, end) + ellipsis, fontSize) > maxPt
-  ) {
-    end -= 1;
-  }
-  return end === 0 ? ellipsis : text.slice(0, end) + ellipsis;
-}
-
-function hex4(value: number): string {
-  return value.toString(16).toUpperCase().padStart(4, "0");
-}
-
 /** UTF-16BE with a BOM, as `/ActualText` hex strings require. */
 function utf16BeHex(text: string): string {
   let hex = "FEFF";
@@ -194,29 +153,45 @@ function utf16BeHex(text: string): string {
   return `<${hex}>`;
 }
 
-function octalByte(code: number): string {
-  return `\\${code.toString(8).padStart(3, "0")}`;
+/**
+ * How wide the text is once drawn.
+ *
+ * Shaping happens first, because it changes the answer: an Arabic letter's
+ * medial form is narrower than its isolated one, and measuring the letters
+ * as typed would leave every joined word short of its column.
+ */
+function drawnWidth(
+  text: string,
+  fontSize: number,
+  ctx: Pick<DrawContext, "face" | "rtl">
+): number {
+  return ctx.face.measure(ctx.face.order(text, ctx.rtl), fontSize);
 }
 
 /**
- * A PDF literal string. Non-ASCII WinAnsi bytes are octal so the content
- * stream stays ASCII and byte offsets equal character offsets.
+ * Trim text to a column, with an ellipsis.
+ *
+ * The cut is made on the logical string, not the drawn one, so a
+ * right-to-left sentence loses its end rather than its beginning and the
+ * ellipsis lands where the reader stopped reading.
  */
-function pdfLiteral(text: string): string {
-  let out = "(";
-  for (const ch of text) {
-    const code = winAnsiByte(ch.codePointAt(0) ?? 0);
-    if (code === undefined) {
-      out += "?";
-      continue;
-    }
-    if (code === 0x5c) out += "\\\\";
-    else if (code === 0x28) out += String.raw`\(`;
-    else if (code === 0x29) out += String.raw`\)`;
-    else if (code >= 32 && code <= 126) out += String.fromCodePoint(code);
-    else out += octalByte(code);
+function fitText(
+  text: string,
+  maxPt: number,
+  fontSize: number,
+  ctx: Pick<DrawContext, "face" | "rtl">
+): string {
+  if (drawnWidth(text, fontSize, ctx) <= maxPt) return text;
+  const ellipsis = "…";
+  if (drawnWidth(ellipsis, fontSize, ctx) > maxPt) return ellipsis;
+  let end = text.length;
+  while (
+    end > 0 &&
+    drawnWidth(text.slice(0, end) + ellipsis, fontSize, ctx) > maxPt
+  ) {
+    end -= 1;
   }
-  return `${out})`;
+  return end === 0 ? ellipsis : text.slice(0, end) + ellipsis;
 }
 
 function contentTop(box: PageBox, titled: boolean): number {
@@ -319,7 +294,7 @@ interface CellTextOptions {
   height: number;
   indent: number;
   bold: boolean;
-  rtl: boolean;
+  ctx: DrawContext;
 }
 
 function cellText({
@@ -330,20 +305,22 @@ function cellText({
   height,
   indent,
   bold,
-  rtl,
+  ctx,
 }: Readonly<CellTextOptions>): string {
+  const { face, rtl } = ctx;
   const max = Math.max(8, w - CELL_PAD * 2 - indent);
-  const shown = fitText(text, max, FONT_SIZE);
-  const drawn = textWidth(shown, FONT_SIZE);
+  const shown = fitText(text, max, FONT_SIZE, ctx);
+  const ordered = face.order(shown, rtl);
+  const drawn = face.measure(ordered, FONT_SIZE);
   const tx = rtl ? x + w - CELL_PAD - indent - drawn : x + CELL_PAD + indent;
   const ty = y - height + 5;
-  const font = bold ? "/F2" : "/F1";
+  const weight = face.boldRun(bold);
   return (
     `q\n${num(x)} ${num(y - height)} ${num(w)} ${num(height)} re W n\n` +
-    `BT\n${font} ${String(FONT_SIZE)} Tf\n` +
+    `BT\n${face.fontRef(bold)} ${String(FONT_SIZE)} Tf\n` +
     `1 0 0 1 ${num(Math.max(x, tx))} ${num(ty)} Tm\n` +
     `/Span << /ActualText ${utf16BeHex(text)} >> BDC\n` +
-    `${pdfLiteral(shown)} Tj\nEMC\nET\nQ\n`
+    `${weight.open}${face.operand(ordered)} Tj\n${weight.close}EMC\nET\nQ\n`
   );
 }
 
@@ -373,7 +350,7 @@ function drawCells(
           height,
           indent,
           bold: style.bold,
-          rtl: ctx.rtl,
+          ctx,
         })
       );
     }
@@ -383,19 +360,26 @@ function drawCells(
 
 function drawTitle(title: string, ctx: DrawContext): string {
   const y = ctx.box.height - MARGIN - 14;
-  const x = ctx.rtl ? ctx.box.width - MARGIN - textWidth(title, 12) : MARGIN;
+  const ordered = ctx.face.order(title, ctx.rtl);
+  const width = ctx.face.measure(ordered, 12);
+  const x = ctx.rtl ? ctx.box.width - MARGIN - width : MARGIN;
+  const weight = ctx.face.boldRun(true);
   return (
-    `BT\n/F2 12 Tf\n1 0 0 1 ${num(Math.max(MARGIN, x))} ${num(y)} Tm\n` +
-    `${pdfLiteral(title)} Tj\nET\n`
+    `BT\n${ctx.face.fontRef(true)} 12 Tf\n` +
+    `1 0 0 1 ${num(Math.max(MARGIN, x))} ${num(y)} Tm\n` +
+    `${weight.open}${ctx.face.operand(ordered)} Tj\n${weight.close}ET\n`
   );
 }
 
 function drawFooter(page: number, pageCount: number, ctx: DrawContext): string {
+  // This label is written here, in one script, so it is laid out left to
+  // right whichever way the table runs.
   const label = `Page ${String(page)} of ${String(pageCount)}`;
-  const x = (ctx.box.width - textWidth(label, 8)) / 2;
+  const x = (ctx.box.width - ctx.face.measure(label, 8)) / 2;
   return (
-    `BT\n/F1 8 Tf\n1 0 0 1 ${num(x)} ${num(MARGIN - 4)} Tm\n` +
-    `${pdfLiteral(label)} Tj\nET\n`
+    `BT\n${ctx.face.fontRef(false)} 8 Tf\n` +
+    `1 0 0 1 ${num(x)} ${num(MARGIN - 4)} Tm\n` +
+    `${ctx.face.operand(label)} Tj\nET\n`
   );
 }
 
@@ -466,35 +450,61 @@ function streamObject(body: string): string {
   return `<< /Length ${String(bytes.byteLength)} >>\nstream\n${body}\nendstream`;
 }
 
-function pageObject(contentId: number, box: PageBox): string {
+function pageObject(
+  contentId: number,
+  box: PageBox,
+  fontResources: string
+): string {
   return (
     "<< /Type /Page /Parent 2 0 R " +
     `/MediaBox [0 0 ${String(box.width)} ${String(box.height)}] ` +
     `/Contents ${String(contentId)} 0 R ` +
-    "/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>"
+    `/Resources << /Font ${fontResources} >> >>`
   );
+}
+
+/**
+ * The document title in the `/Info` dictionary.
+ *
+ * A literal string is WinAnsi, which is all a Latin title needs and is
+ * what this has always written. A title the built-in face cannot spell
+ * goes as UTF-16 instead, so a reader's window caption and a file
+ * manager's preview show the words rather than question marks.
+ */
+function infoTitle(title: string, face: TextFace): string {
+  return face.embedded ? utf16BeHex(title) : pdfLiteral(title);
 }
 
 function compilePdf(
   title: string,
   streams: readonly string[],
-  box: PageBox
+  box: PageBox,
+  face: TextFace
 ): Uint8Array<ArrayBuffer> {
   const kids: string[] = [];
-  const pageBodies: string[] = [];
+  const pageBodies: PdfBody[] = [];
+  // Font objects go after the pages, so their ids are only known once the
+  // page count is.
+  const firstFontId = 6 + streams.length * 2;
+  const fontResources = face.fontResources(firstFontId);
   streams.forEach((stream, index) => {
     const pageId = 6 + index * 2;
     const contentId = pageId + 1;
     kids.push(`${String(pageId)} 0 R`);
-    pageBodies.push(pageObject(contentId, box), streamObject(stream));
+    pageBodies.push(
+      pageObject(contentId, box, fontResources),
+      streamObject(stream)
+    );
   });
-  const objects = [
+  const extras = face.extraObjects(firstFontId);
+  const objects: PdfBody[] = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${String(streams.length)} >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-    `<< /Title ${pdfLiteral(title)} /Producer (AdaptTable) >>`,
+    `<< /Title ${infoTitle(title, face)} /Producer (AdaptTable) >>`,
     ...pageBodies,
+    ...extras,
   ];
   const header = new Uint8Array([
     0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xe2, 0xe3,
@@ -504,9 +514,12 @@ function compilePdf(
   const offsets = [0];
   let offset = header.byteLength;
   objects.forEach((body, index) => {
-    const obj = `${String(index + 1)} 0 obj\n${body}\nendobj\n`;
+    const bytes = concatBytes([
+      ascii(`${String(index + 1)} 0 obj\n`),
+      typeof body === "string" ? ascii(body) : body,
+      ascii("\nendobj\n"),
+    ]);
     offsets.push(offset);
-    const bytes = ascii(obj);
     chunks.push(bytes);
     offset += bytes.byteLength;
   });
@@ -525,7 +538,8 @@ function compilePdf(
 function makeContext(
   table: ExportTable,
   box: PageBox,
-  rtl: boolean
+  rtl: boolean,
+  face: TextFace
 ): DrawContext {
   const usable = box.width - MARGIN * 2;
   const widths = columnWidths(table, usable);
@@ -534,7 +548,12 @@ function makeContext(
     colWidths: widths,
     colXs: columnXs(widths, MARGIN, rtl),
     rtl,
+    face,
   };
+}
+
+function faceFor(font: PdfWriterOptions["font"]): TextFace {
+  return font === undefined ? standardFace() : embeddedFace(parseSfnt(font));
 }
 
 function pdfBytes(
@@ -543,7 +562,8 @@ function pdfBytes(
 ): Uint8Array<ArrayBuffer> {
   const box = pageBox(options.pageSize);
   const rtl = resolvePrintDirection(options.direction) === "rtl";
-  const ctx = makeContext(table, box, rtl);
+  const face = faceFor(options.font);
+  const ctx = makeContext(table, box, rtl, face);
   const pages = paginate(
     table.rows.length,
     table.rowMeta,
@@ -558,7 +578,7 @@ function pdfBytes(
       pageCount: pages.length,
     })
   );
-  return compilePdf(options.title ?? "Table", streams, box);
+  return compilePdf(options.title ?? "Table", streams, box, face);
 }
 
 function titleFromFilename(filename: string): string {

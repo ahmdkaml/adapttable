@@ -39,12 +39,71 @@ top-level group starts a new page (`pageBreak: "group"`). Paper defaults
 to A4 landscape; direction inherits `document.documentElement.dir` when
 omitted, so print matches what the reader is looking at.
 
-The PDF is written by hand (Helvetica, one page tree, no dependency).
-Glyphs outside WinAnsi paint as `?` and still travel in `/ActualText`.
-Scripts the standard fonts cannot draw — Arabic, CJK, emoji — belong on
-the print path: the browser has the fonts, and "Save as PDF" from that
-dialog is the Unicode-complete file. A font subsetter would be a
-dependency, and this entry exists so a CSV export never takes one.
+The PDF is written by hand (one page tree, no dependency). By default it
+draws in Helvetica and embeds nothing, so the file stays a few kilobytes
+and the alphabet stops at WinAnsi — glyphs outside it paint as `?` and
+still travel in `/ActualText`. Give it a font and that limit lifts; see
+[Fonts and non-Latin text](#fonts-and-non-latin-text) below.
+
+## Fonts and non-Latin text
+
+`font` takes a TrueType file as bytes — `Uint8Array` or `ArrayBuffer` —
+and the writer embeds a **subset** of it: only the glyphs this table
+drew. A 421 KB Arabic face becomes about 20 KB in the file, which is what
+makes the option usable on a CJK font at all.
+
+```tsx
+import { pdfWriter } from "@adapttable/core/pdf";
+
+const font = await fetch("/fonts/NotoSansArabic-Regular.ttf").then((res) =>
+  res.arrayBuffer()
+);
+
+<DataTable
+  exportCsv={{
+    scope: "all",
+    writer: pdfWriter({ font, direction: "rtl", title: "تقرير المبيعات" }),
+    filename: "report.pdf",
+  }}
+  …
+/>;
+```
+
+Arabic needs more than glyphs, and it gets it. Letters take their
+contextual shapes — initial, medial, final, isolated — lam and alef
+become the single glyph they are written as, and right-to-left runs are
+reordered for drawing with the Unicode bidirectional algorithm's
+reordering rule, so a Latin product name, a date or a price inside an
+Arabic sentence still reads forwards and brackets face the right way.
+The logical string travels untouched in `/ActualText` and in the font's
+`/ToUnicode` map, so copy-paste, search and a screen reader read the
+sentence as written whatever order it was drawn in. Hebrew, Persian and
+Urdu reorder the same way; Persian and Urdu letters shape too.
+
+CJK needs neither shaping nor reordering — embed the font and the
+subsetter does the rest.
+
+What the option does not do:
+
+- **OpenType shaping (GSUB).** Contextual alternates and a font's own
+  ligature tables need a shaping engine, which is a dependency. Shapes
+  come from the Unicode presentation forms instead: correct, readable,
+  connected Arabic, drawn plainly where a face's own design would go
+  further.
+- **Bold.** A PDF font resource is one face, so a header row is stroked
+  as well as filled rather than switching to a bold file.
+- **Characters the font does not cover** — colour emoji, or Latin in an
+  Arabic-only face — draw as `?`, the same fallback the built-in face
+  uses. Pick a font that covers the scripts the table holds.
+- **CFF-flavoured OpenType.** Those store outlines as PostScript
+  charstrings; the writer throws with a message saying so rather than
+  embedding megabytes whole. Use the `.ttf` build of the same family.
+
+`openPrintLayout` and `printTable` take `font` too, and embed it whole as
+an `@font-face` — the browser shapes text itself and needs every glyph.
+Print does not require it: the browser already has fonts. Pass it when
+the printed page must match the downloaded one, or when the machine doing
+the printing cannot be assumed to have a face for the script.
 
 Mobile cards use the same button and the same file. `hideOnMobile` never
 shrinks an export; print and PDF are the column view, not a card list.

@@ -526,7 +526,10 @@ Print is a different verb: `openPrintLayout` (an `ExportTable`) and
 `printTable` (rows and columns) load `buildPrintDocument` into a hidden
 iframe. `buildPrintTableHtml` is the `<table>` alone; `printStyles` is the
 stylesheet. `PrintLayoutOptions` / `PdfWriterOptions` / `PrintPageSize`
-configure title, direction and paper. See
+configure title, direction and paper. Both option types take `font` — a
+TrueType file as bytes — which the PDF writer subsets and embeds so the
+download draws Arabic, CJK or any script the built-in face cannot; Arabic
+is shaped into its contextual forms and reordered right to left. See
 [PDF export and print layout](./export-pdf.md).
 
 **Sparkline columns.** `@adapttable/core/sparkline` adds `Sparkline` /

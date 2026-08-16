@@ -7,11 +7,14 @@
  * file back the way a reader does: the header, the xref table, every
  * object's promised offset, and the stream lengths the page tree cites.
  */
+import { createHash } from "node:crypto";
+
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
 import { buildExportTable } from "./exportWriter";
 import { buildTablePdf, pdfWriter } from "./pdf";
+import { fontCovering } from "./testFont";
 
 interface Row {
   name: string;
@@ -511,5 +514,236 @@ describe("pdfWriter", () => {
     const bytes = part instanceof Uint8Array ? part : new Uint8Array();
     const text = latin1(bytes);
     expect(text).toContain("/MediaBox [0 0 612 792]");
+  });
+});
+
+/**
+ * The font-embedding path.
+ *
+ * The question these answer is not "did it write a font" but "did it write
+ * the right glyphs, in the right order". A PDF that embeds a font and then
+ * draws Arabic letters in the order they were typed is a file that opens,
+ * renders, and reads backwards — so the assertions follow each cell's
+ * glyph indices back through the `/ToUnicode` map to the characters they
+ * stand for.
+ */
+describe("buildTablePdf with an embedded font", () => {
+  /** The characters the fixtures draw, plus the shapes they draw them in. */
+  const COVERED = [
+    0x20,
+    0x2e,
+    0x30,
+    0x31,
+    0x32,
+    0x33,
+    0x34,
+    0x35,
+    0x36,
+    0x37,
+    0x38,
+    0x39,
+    ...Array.from({ length: 26 }, (_, i) => 0x41 + i),
+    ...Array.from({ length: 26 }, (_, i) => 0x61 + i),
+    0x0627,
+    0x0628,
+    0x062d,
+    0x0631,
+    0x0645,
+    0x0644,
+    0xfe8d,
+    0xfe8e,
+    0xfe8f,
+    0xfe90,
+    0xfe91,
+    0xfe92,
+    0xfea1,
+    0xfea3,
+    0xfead,
+    0xfeae,
+    0xfee1,
+    0xfee3,
+    0xfedd,
+    0xfefb,
+  ];
+
+  const FONT = fontCovering(COVERED, { postScriptName: "FixtureSans" });
+
+  interface ArabicRow {
+    label: string;
+    note: string;
+  }
+
+  const ARABIC_COLUMNS: ColumnDef<ArabicRow>[] = [
+    { key: "label", header: "Label", accessor: (row) => row.label },
+    { key: "note", header: "Note", accessor: (row) => row.note },
+  ];
+
+  const arabicPdf = (rows: ArabicRow[], direction?: "ltr" | "rtl") =>
+    latin1(
+      buildTablePdf({
+        rows,
+        columns: ARABIC_COLUMNS,
+        font: FONT,
+        direction,
+      })
+    );
+
+  /** Glyph index to character, read out of the document's `/ToUnicode`. */
+  function toUnicode(text: string): Map<number, number> {
+    const map = new Map<number, number>();
+    for (const match of text.matchAll(/<([0-9A-F]{4})> <([0-9A-F]{4})>/g)) {
+      map.set(
+        Number.parseInt(match[1] ?? "", 16),
+        Number.parseInt(match[2] ?? "", 16)
+      );
+    }
+    return map;
+  }
+
+  /** The characters one cell drew, in the order it drew them. */
+  function drawnIn(text: string, logical: string): number[] {
+    const marker = `/Span << /ActualText <FEFF${[...logical]
+      .map((ch) =>
+        (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")
+      )
+      .join("")}> >> BDC\n`;
+    const at = text.indexOf(marker);
+    expect(at).toBeGreaterThan(-1);
+    const operand = /^<([0-9A-F]*)>/.exec(text.slice(at + marker.length));
+    const glyphs = (operand?.[1] ?? "").match(/.{4}/g) ?? [];
+    const map = toUnicode(text);
+    return glyphs.map((hex) => map.get(Number.parseInt(hex, 16)) ?? 0);
+  }
+
+  it("still writes a well-formed file", () => {
+    assertWellFormed(
+      buildTablePdf({ rows: ROWS, columns: COLUMNS, font: FONT })
+    );
+  });
+
+  it("embeds the font as a subset composite font", () => {
+    const text = arabicPdf([{ label: "مرحبا", note: "Hello" }]);
+
+    expect(text).toContain("/Subtype /Type0");
+    expect(text).toContain("/Encoding /Identity-H");
+    expect(text).toContain("/Subtype /CIDFontType2");
+    expect(text).toContain("/CIDToGIDMap /Identity");
+    expect(text).toContain("/FontFile2");
+    expect(text).toContain("/Type /FontDescriptor");
+    // The six-letter tag every subset carries, before the family name.
+    expect(text).toMatch(/\/BaseFont \/[A-Z]{6}\+FixtureSans/);
+  });
+
+  it("points the pages at the embedded font instead of Helvetica", () => {
+    const text = arabicPdf([{ label: "مرحبا", note: "Hello" }]);
+
+    expect(text).toContain("/Resources << /Font << /F3 ");
+    expect(text).toContain("/F3 9 Tf");
+  });
+
+  it("draws Arabic in its presentation forms, not its base letters", () => {
+    const text = arabicPdf([{ label: "مرحبا", note: "" }]);
+
+    // Initial meem, final reh, initial hah, medial beh, final alef.
+    expect(drawnIn(text, "مرحبا")).toEqual([
+      0xfe8e, 0xfe92, 0xfea3, 0xfeae, 0xfee3,
+    ]);
+  });
+
+  it("draws a right-to-left cell in right-to-left order", () => {
+    const text = arabicPdf([{ label: "مرحبا", note: "" }], "rtl");
+    const order = drawnIn(text, "مرحبا");
+
+    // The alef is typed last and drawn first; the meem the other way round.
+    expect(order.at(0)).toBe(0xfe8e);
+    expect(order.at(-1)).toBe(0xfee3);
+  });
+
+  it("keeps a Latin run forwards inside a right-to-left cell", () => {
+    const text = arabicPdf([{ label: "لا Ada", note: "" }], "rtl");
+
+    expect(drawnIn(text, "لا Ada")).toEqual([0x41, 0x64, 0x61, 0x20, 0xfefb]);
+  });
+
+  it("carries the logical string in ActualText whichever way it drew", () => {
+    const text = arabicPdf([{ label: "مرحبا", note: "" }], "rtl");
+
+    expect(text).toContain("/ActualText <FEFF06450631062D06280627>");
+  });
+
+  it("writes the header row with a stroke rather than a bold face", () => {
+    const text = arabicPdf([{ label: "x", note: "y" }]);
+
+    // One font resource, so weight is drawn rather than selected.
+    expect(text).toContain("2 Tr");
+    expect(text).not.toContain("/F2 9 Tf");
+  });
+
+  it("carries a non-Latin title into the document metadata", () => {
+    const text = latin1(
+      buildTablePdf({
+        rows: [{ label: "x", note: "y" }],
+        columns: ARABIC_COLUMNS,
+        font: FONT,
+        title: "مرحبا",
+      })
+    );
+
+    expect(text).toContain("/Title <FEFF06450631062D06280627>");
+  });
+
+  it("embeds far less than the font it was given", () => {
+    const big = fontCovering([
+      ...COVERED,
+      ...Array.from({ length: 2000 }, (_, i) => 0x4e00 + i),
+    ]);
+    const bytes = buildTablePdf({
+      rows: [{ label: "Ada", note: "Lovelace" }],
+      columns: ARABIC_COLUMNS,
+      font: big,
+    });
+
+    expect(bytes.byteLength).toBeLessThan(big.byteLength / 4);
+  });
+
+  it("says so when the font is one it cannot subset", () => {
+    expect(() =>
+      buildTablePdf({ rows: ROWS, columns: COLUMNS, font: new Uint8Array(64) })
+    ).toThrow(/not a TrueType/);
+  });
+
+  it("reaches the writer through the exportCsv option", () => {
+    const writer = pdfWriter({ font: FONT, direction: "rtl" });
+    const table = buildExportTable(
+      [{ label: "مرحبا", note: "" }],
+      ARABIC_COLUMNS
+    );
+    const built = writer.build({ table, filename: "report.pdf" });
+    const part = built.parts[0];
+
+    expect(
+      latin1(part instanceof Uint8Array ? part : new Uint8Array())
+    ).toContain("/FontFile2");
+  });
+});
+
+describe("the file a table with no font writes", () => {
+  it("has not moved a byte", () => {
+    // The default path embeds nothing and must keep producing exactly what
+    // it produced before fonts existed: a reader that renders one of these
+    // renders all of them.
+    const bytes = buildTablePdf({
+      rows: [
+        { name: "Ada Lovelace", age: 36, zip: "London", active: true },
+        { name: "José Ñuñez", age: 45, zip: "Málaga", active: false },
+      ],
+      columns: COLUMNS,
+      title: "Report",
+    });
+
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+      "cfaf9b6b49af63d028a99ae1b43aecd511f5b658454e7db389649bed11d0d760"
+    );
+    expect(latin1(bytes)).not.toContain("/FontFile2");
   });
 });

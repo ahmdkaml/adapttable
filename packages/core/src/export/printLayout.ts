@@ -52,6 +52,20 @@ export interface PrintLayoutOptions {
    * a page per group. `"group"` starts each top-level group on a new page.
    */
   pageBreak?: PrintPageBreak;
+  /**
+   * A font for the printed document, as the file's bytes.
+   *
+   * The browser already has fonts and shapes text with them, so print
+   * needs nothing here to render Arabic or Chinese correctly — unlike the
+   * PDF writer's `font` option, which is what makes those scripts
+   * possible at all in a downloaded file. Supply it when the printed page
+   * has to match the PDF exactly, or when the machine doing the printing
+   * cannot be assumed to have a face for the script.
+   *
+   * It is embedded whole, as an `@font-face` the document carries with
+   * it. Nothing is subset: the browser needs every glyph it might shape.
+   */
+  font?: Uint8Array | ArrayBuffer;
 }
 
 /**
@@ -247,22 +261,46 @@ function headerRow(table: ExportTable): string {
 }
 
 /**
+ * A font file as a `data:` URL.
+ *
+ * The bytes are turned into a string in chunks: spreading a whole font
+ * into `String.fromCharCode` is hundreds of thousands of arguments in one
+ * call, which overflows the stack on every engine.
+ */
+function fontDataUrl(font: Uint8Array | ArrayBuffer): string {
+  const bytes = font instanceof Uint8Array ? font : new Uint8Array(font);
+  const CHUNK = 0x8000;
+  let binary = "";
+  for (let at = 0; at < bytes.byteLength; at += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(at, at + CHUNK));
+  }
+  return `data:font/ttf;base64,${btoa(binary)}`;
+}
+
+/**
  * The print stylesheet: repeating headers, row/group keep-together, and
  * column widths the table already decided.
  *
- * @param options - Paper size and whether top-level groups start a page.
+ * @param options - Paper size, page-break behaviour, and a font to embed.
  * @returns A CSS string, ready for a `<style>` element.
  */
 export function printStyles(options?: PrintLayoutOptions): string {
   const paper = pageSizeCss(options?.pageSize);
+  const face = options?.font
+    ? "@font-face{font-family:AdaptTablePrint;font-display:block;" +
+      `src:url(${fontDataUrl(options.font)}) format("truetype")}`
+    : "";
+  const family = options?.font ? "AdaptTablePrint," : "";
   const groupBreak =
     options?.pageBreak === "group"
       ? 'table.adapttable-print-break-group tbody.print-group[data-level="0"] + tbody.print-group[data-level="0"]{break-before:page;page-break-before:always}'
       : "";
   return (
+    face +
     `@page{size:${paper};margin:12mm}` +
     "html,body{margin:0;padding:0;background:#fff;color:#111;" +
-    'font:11pt/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}' +
+    `font:11pt/1.35 ${family}` +
+    'system-ui,-apple-system,"Segoe UI",sans-serif}' +
     "table.adapttable-print{width:100%;border-collapse:collapse;" +
     "table-layout:fixed}" +
     "table.adapttable-print caption{caption-side:top;text-align:start;" +
