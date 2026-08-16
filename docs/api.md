@@ -837,6 +837,10 @@ appears — `animated` goes false and it holds steady, and longer, because a
 steady mark is easier to miss than one that moves. Reduced motion means less
 movement, not less feedback.
 
+**`PivotPanel`** is each adapter's pre-wired configuration panel — import it
+from your kit and pass `fields`, `config` and `onChange`. It is
+`PivotPanelChrome` with that kit's slots already filled.
+
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move
 fields between them; `PivotPanelChromeProps` takes the fields, the config and

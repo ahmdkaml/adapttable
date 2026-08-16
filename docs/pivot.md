@@ -131,6 +131,17 @@ names, ordering and labels live in core; every visible control is a required
 slot the adapter fills with its own kit's component, so a Mantine panel is
 built from Mantine buttons and an antd panel from antd buttons.
 
+Every adapter ships it pre-wired as `PivotPanel`, so a host imports one
+component rather than assembling slots:
+
+```tsx
+import { PivotPanel } from "@adapttable/mantine";
+
+<PivotPanel fields={fields} config={config} onChange={setConfig} />;
+```
+
+Underneath, `PivotPanel` is `PivotPanelChrome` with that kit's slots filled in:
+
 ```tsx
 <PivotPanelChrome
   fields={fields}

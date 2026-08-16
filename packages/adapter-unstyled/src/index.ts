@@ -51,6 +51,7 @@ export {
   TreeToggle,
   type TreeToggleProps,
 } from "./components/kitControls";
+export { PivotPanel } from "./components/PivotPanel";
 export {
   type SavedViewsLabels,
   SavedViewsMenu,

@@ -20,9 +20,9 @@ const FIELDS: PivotField[] = [
 ];
 
 const slots: PivotPanelSlots = {
-  Surface: ({ children }) => <div>{children}</div>,
-  Zone: ({ zone, label, children }) => (
-    <section aria-label={label} data-zone={zone}>
+  Surface: ({ children, ...rest }) => <div {...rest}>{children}</div>,
+  Zone: ({ zone, label, children, ...rest }) => (
+    <section aria-label={label} data-zone={zone} {...rest}>
       {children}
     </section>
   ),
@@ -35,8 +35,9 @@ const slots: PivotPanelSlots = {
     moveDownLabel,
     removeLabel,
     aggregation,
+    ...rest
   }) => (
-    <div data-field={label}>
+    <div data-field={label} {...rest}>
       <span>{label}</span>
       {onMoveUp && (
         <button type="button" onClick={onMoveUp}>

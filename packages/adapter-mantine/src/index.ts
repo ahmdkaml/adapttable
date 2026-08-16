@@ -8,6 +8,7 @@
  * @packageDocumentation
  */
 
+export { PivotPanel } from "./components/PivotPanel";
 export { DataTable } from "./DataTable";
 export type {
   DataTableClassNames,
