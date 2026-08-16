@@ -615,6 +615,14 @@ export interface TableLabels {
   sidePanel?: string;
   /** Accessible name for a context menu (`contextMenu`). */
   contextMenu?: string;
+  /** Accessible name for the command palette dialog. */
+  commandPalette?: string;
+  /** Placeholder and label for the palette's search box. */
+  commandSearch?: string;
+  /** Shown when a query matches no command. */
+  commandEmpty?: string;
+  /** The command and toolbar entry that opens the print dialog. */
+  print?: string;
   /** The context-menu entry that copies the selection. */
   copyCells?: string;
   /** The context-menu entry that cuts it. */
