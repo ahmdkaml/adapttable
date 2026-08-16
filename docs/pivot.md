@@ -90,5 +90,38 @@ quietly disappearing is how a pivot table ends up lying about a total.
 A value that is not summable is absent, not zero — a missing budget is not a
 $0 budget, so a cell with nothing to add up reads as empty.
 
+## Building the configuration
+
+The panel a user drags fields around in is a separate concern from the pivot
+itself, and the part of it that is not a widget lives here too:
+
+```tsx
+import {
+  assignField,
+  availableFields,
+  moveField,
+  removeField,
+  setMeasureAgg,
+  EMPTY_PIVOT_CONFIG,
+} from "@adapttable/core/pivot";
+
+const [config, setConfig] = useState(EMPTY_PIVOT_CONFIG);
+
+setConfig(assignField(config, "team", "rows")); // put Team on the rows axis
+setConfig(moveField(config, "rows", 1, -1)); // one step out — the keyboard path
+setConfig(setMeasureAgg(config, 0, "avg"));
+```
+
+Every operation returns a new configuration and none of them can produce an
+invalid one: placing a dimension on one axis takes it off the other rather than
+pivoting the same field twice, an index past the end appends, and a step past
+either end is a no-op rather than a wrap. Measures are the exception to "one
+field, one axis" — summing and counting the same column in one pivot is an
+ordinary thing to want, so `assignField` adds a measure rather than moving one.
+
+`availableFields(fields, config)` is what the panel's unused list shows, and
+`isPivotReady(config)` is false until something fills the cells — a pivot with
+no measure is a half-built configuration, not an error.
+
 Related: [row grouping](./row-grouping.md) ·
 [aggregation](./row-grouping.md#aggregates) · [API reference](./api.md)

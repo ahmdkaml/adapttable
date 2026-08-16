@@ -16,6 +16,19 @@
  * ```
  */
 export {
+  assignField,
+  availableFields,
+  EMPTY_PIVOT_CONFIG,
+  isPivotReady,
+  measureLabel,
+  moveField,
+  PIVOT_ZONES,
+  type PivotField,
+  type PivotZone,
+  removeField,
+  setMeasureAgg,
+} from "./pivot/pivotConfigModel";
+export {
   pivot,
   PIVOT_BLANK,
   PIVOT_GRAND_TOTAL_KEY,
