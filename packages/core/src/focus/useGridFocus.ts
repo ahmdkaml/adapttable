@@ -214,6 +214,14 @@ export interface GridFocusState {
    * preview its own way. `null` unless a fill is being dragged.
    */
   fillPreview: CellRange | null;
+  /**
+   * Copy or cut without the keyboard.
+   *
+   * Ctrl+C always has a focused range. A context menu does not — a
+   * right-click on a cell with nothing selected has to copy that cell — so
+   * an explicit cell wins and the selection is the fallback.
+   */
+  copyCells: (cell?: GridCell, cut?: boolean) => void;
 }
 
 /**
@@ -384,6 +392,22 @@ export function useGridFocus<TRow>(
     pending.current = null;
     element.focus();
   }, [enabled, active, rows, firstRowIndex]);
+
+  /**
+   * Copy or cut, for a caller that is not the keyboard.
+   *
+   * The key handler always has a focused range to work from. A context
+   * menu does not: a right-click on a cell with nothing selected should
+   * copy THAT cell, so an explicit one wins and the selection is the
+   * fallback rather than the requirement.
+   */
+  const copyCells = useEventCallback((cell?: GridCell, cut?: boolean) => {
+    const selection: CellRange | null = cell
+      ? { anchor: cell, head: cell }
+      : range;
+    if (!selection) return;
+    copySelection(selection, cut === true);
+  });
 
   /** Ctrl/Cmd+C and Ctrl/Cmd+X — the rectangle, as a spreadsheet reads it. */
   const copySelection = useEventCallback(
@@ -783,6 +807,7 @@ export function useGridFocus<TRow>(
       getFillHandleProps,
       fillHandleLabel: labels?.gridFillHandle ?? "Fill from selection",
       fillPreview: enabled ? fillPreview : null,
+      copyCells,
     }),
     [
       enabled,
@@ -802,6 +827,7 @@ export function useGridFocus<TRow>(
       getFillHandleProps,
       labels,
       fillPreview,
+      copyCells,
     ]
   );
 }
