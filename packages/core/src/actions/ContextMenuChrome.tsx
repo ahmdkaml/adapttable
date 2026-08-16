@@ -20,7 +20,7 @@
  * the menu is still mounted otherwise, and the menu's own focus restoration
  * then fights whatever the action just did.
  */
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, type RefObject, useRef } from "react";
 
 import type { TableLabels } from "../types";
 import type { ContextMenuItem } from "./contextMenuModel";
@@ -30,6 +30,16 @@ import type { ContextMenuPoint } from "./useContextMenu";
 export interface ContextMenuSurfaceProps {
   /** Where the menu was opened, in viewport coordinates. */
   readonly at: ContextMenuPoint;
+  /**
+   * A zero-size element sitting at exactly that point.
+   *
+   * Every kit's menu anchors to an ELEMENT, not to coordinates — that is
+   * how it decides which way to flip near an edge and where to portal to.
+   * A right-click has coordinates and no element, so core puts one there.
+   * Anchor the kit's menu to this and its positioning, flipping and
+   * collision handling all work the way that kit's users expect.
+   */
+  readonly anchorRef: RefObject<HTMLElement | null>;
   /** The accessible name for the menu. */
   readonly label: string;
   /** Close it — bind to the kit's own dismiss channel. */
@@ -83,33 +93,53 @@ export interface ContextMenuChromeProps {
  */
 export function ContextMenuChrome(props: Readonly<ContextMenuChromeProps>) {
   const { at, items, onClose, slots } = props;
+  const anchorRef = useRef<HTMLElement | null>(null);
   if (!at || items.length === 0) return null;
   return (
-    <slots.Surface
-      at={at}
-      label={props.labels?.contextMenu ?? "Table actions"}
-      onClose={onClose}
-      className={props.className}
-    >
-      {items.map((item) => (
-        // A Fragment, not an element: anything between `role="menu"` and
-        // its items breaks the menu's own keyboard navigation, and every
-        // kit's menu relies on that structure being exactly what it looks
-        // like. The part name goes on the kit's entry, not on a wrapper.
-        <Fragment key={item.key}>
-          {item.separatorBefore === true && <slots.Separator />}
-          <slots.Item
-            item={item}
-            onSelect={() => {
-              // Close first. An entry that opens a dialog or moves focus
-              // would otherwise do it under a menu that is still mounted,
-              // and the menu's own focus restoration undoes the action's.
-              onClose();
-              item.onSelect();
-            }}
-          />
-        </Fragment>
-      ))}
-    </slots.Surface>
+    <>
+      {/* The anchor. Fixed rather than absolute because the coordinates
+          came from a pointer event and are viewport-relative; zero-size and
+          `pointer-events: none` so it can never take a click of its own. */}
+      <span
+        ref={anchorRef}
+        aria-hidden="true"
+        data-adapttable-part="context-menu-anchor"
+        style={{
+          position: "fixed",
+          left: at.x,
+          top: at.y,
+          width: 0,
+          height: 0,
+          pointerEvents: "none",
+        }}
+      />
+      <slots.Surface
+        at={at}
+        anchorRef={anchorRef}
+        label={props.labels?.contextMenu ?? "Table actions"}
+        onClose={onClose}
+        className={props.className}
+      >
+        {items.map((item) => (
+          // A Fragment, not an element: anything between `role="menu"` and
+          // its items breaks the menu's own keyboard navigation, and every
+          // kit's menu relies on that structure being exactly what it looks
+          // like. The part name goes on the kit's entry, not on a wrapper.
+          <Fragment key={item.key}>
+            {item.separatorBefore === true && <slots.Separator />}
+            <slots.Item
+              item={item}
+              onSelect={() => {
+                // Close first. An entry that opens a dialog or moves focus
+                // would otherwise do it under a menu that is still mounted,
+                // and the menu's own focus restoration undoes the action's.
+                onClose();
+                item.onSelect();
+              }}
+            />
+          </Fragment>
+        ))}
+      </slots.Surface>
+    </>
   );
 }

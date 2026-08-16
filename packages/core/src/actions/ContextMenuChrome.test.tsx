@@ -13,13 +13,14 @@ import { describe, expect, it, vi } from "vitest";
 import { ContextMenuChrome, type ContextMenuSlots } from "./ContextMenuChrome";
 
 const slots: ContextMenuSlots = {
-  Surface: ({ at, label, children, className }) => (
+  Surface: ({ at, label, children, className, anchorRef }) => (
     <div
       role="menu"
       aria-label={label}
       className={className}
       data-testid="menu"
       data-at={`${String(at.x)},${String(at.y)}`}
+      data-anchored={anchorRef.current ? "yes" : "no"}
     >
       {children}
     </div>
@@ -184,5 +185,43 @@ describe("ContextMenuChrome", () => {
       "data-danger"
     );
     expect(screen.getByRole("menuitem", { name: "Locked" })).toBeDisabled();
+  });
+
+  it("puts a zero-size anchor at the point the kit's menu can attach to", () => {
+    render(
+      <ContextMenuChrome
+        items={ITEMS}
+        at={{ x: 40, y: 90 }}
+        onClose={vi.fn()}
+        slots={slots}
+      />
+    );
+    const anchor = document.querySelector<HTMLElement>(
+      '[data-adapttable-part="context-menu-anchor"]'
+    );
+
+    // Every kit's menu positions against an element, not coordinates; a
+    // right-click has coordinates and no element, so core supplies one.
+    expect(anchor).not.toBeNull();
+    expect(anchor?.style.position).toBe("fixed");
+    expect(anchor?.style.left).toBe("40px");
+    expect(anchor?.style.top).toBe("90px");
+    // It must never be able to take a click meant for the row beneath it.
+    expect(anchor?.style.pointerEvents).toBe("none");
+  });
+
+  it("has no anchor when there is no menu", () => {
+    render(
+      <ContextMenuChrome
+        items={ITEMS}
+        at={null}
+        onClose={vi.fn()}
+        slots={slots}
+      />
+    );
+
+    expect(
+      document.querySelector('[data-adapttable-part="context-menu-anchor"]')
+    ).toBeNull();
   });
 });
