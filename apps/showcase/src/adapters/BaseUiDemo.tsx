@@ -1,4 +1,4 @@
-import { DataTable } from "@adapttable/base-ui";
+import { DataTable, type DataTableProps } from "@adapttable/base-ui";
 import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 
@@ -137,6 +137,7 @@ export function BaseUiDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  exportCsv,
   columnMenu,
   filterControls,
   wide,
@@ -168,6 +169,8 @@ export function BaseUiDemo({
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
@@ -235,7 +238,7 @@ export function BaseUiDemo({
           bulkActions={focused ? undefined : makeBulkActions(locale)}
           confirm={demoConfirm}
           enableColumnMenu={columnMenu ?? !focused}
-          exportCsv={!focused}
+          exportCsv={exportCsv ?? !focused}
           savedViews={focused ? undefined : demoSavedViews(urlKey)}
           animate={animate}
           resizableColumns

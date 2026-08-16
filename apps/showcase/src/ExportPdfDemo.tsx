@@ -4,11 +4,19 @@ import {
   viewFromGroupedEntries,
 } from "@adapttable/core";
 import { pdfWriter, printTable } from "@adapttable/core/pdf";
+import { Suspense, useState } from "react";
 
-import { MantineDemo } from "./adapters/MantineDemo";
+import { cssVars } from "./cssVars";
 import { budget, PEOPLE, type Person, personStatus } from "./data";
+import {
+  ADAPTERS,
+  DemoFallback,
+  KitSwitcher,
+  readKitFromUrl,
+} from "./kitDemos";
 import { Check, Layers } from "./sectionIcons";
 import { SectionHead } from "./sections";
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 /**
  * Export the grouped sheet, as a PDF.
@@ -77,6 +85,11 @@ function printPeople(): void {
 }
 
 export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
+  const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   return (
     <section className="sec shell" id="export-pdf">
       <SectionHead title="Download a PDF. Print a grouped view.">
@@ -91,6 +104,7 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
         or filter state. There is no core Print button. Scripts the hand-written
         PDF cannot draw belong on that print path.
       </SectionHead>
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
         <div
           className="hint-row"
@@ -112,16 +126,25 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
             Print
           </button>
         </div>
-        <div className="pad-surface__body">
-          <MantineDemo
-            mode="frontend"
-            locale="en"
-            dark={dark}
-            urlKey="pdf"
-            grouping
-            exportCsv={EXPORT_GROUPED_AS_PDF}
-            focused
-          />
+        <div
+          className="pad-surface__body"
+          style={cssVars({
+            "--c": dark ? token.accentDark : token.accentLight,
+          })}
+        >
+          <div key={adapter} data-adapter={adapter}>
+            <Suspense fallback={<DemoFallback />}>
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="pdf"
+                grouping
+                exportCsv={EXPORT_GROUPED_AS_PDF}
+                focused
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </section>

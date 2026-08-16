@@ -68,3 +68,34 @@ test.describe("pdf export", () => {
     expect([...bytes.subarray(0, 4)]).toEqual(PDF_MAGIC);
   });
 });
+
+/**
+ * The export button is toolbar chrome each adapter renders itself, so a kit
+ * that never draws it offers no way to export at all.
+ */
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
+for (const kit of KITS) {
+  test(`${kit}: offers the export button on the PDF page`, async ({ page }) => {
+    await page.goto("/export-pdf/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    await expect(
+      root.getByRole("button", { name: "Export PDF" }).first()
+    ).toBeVisible();
+  });
+}

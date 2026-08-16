@@ -1,7 +1,8 @@
 import type { ColumnLayoutState } from "@adapttable/core";
 import { shadcnClassNames } from "@adapttable/shadcn";
+import type { DataTableProps } from "@adapttable/unstyled";
 
-import { type Locale } from "../data";
+import { type Locale, type Person } from "../data";
 import {
   type DataMode,
   type Density,
@@ -40,6 +41,7 @@ export function ShadcnDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  exportCsv,
   columnMenu,
   filterControls,
   wide,
@@ -70,6 +72,8 @@ export function ShadcnDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
   columnMenu?: boolean;
   filterControls?: boolean;
   wide?: boolean;
@@ -102,6 +106,7 @@ export function ShadcnDemo({
       headerFilters={headerFilters}
       columnGroups={columnGroups}
       sparkline={sparkline}
+      exportCsv={exportCsv}
       columnMenu={columnMenu}
       filterControls={filterControls}
       wide={wide}

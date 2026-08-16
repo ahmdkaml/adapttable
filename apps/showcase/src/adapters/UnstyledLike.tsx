@@ -1,7 +1,11 @@
 import type { ColumnLayoutState } from "@adapttable/core";
 import type { NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
-import { DataTable, type DataTableClassNames } from "@adapttable/unstyled";
+import {
+  DataTable,
+  type DataTableClassNames,
+  type DataTableProps,
+} from "@adapttable/unstyled";
 import type { CSSProperties } from "react";
 
 import {
@@ -147,6 +151,7 @@ export function UnstyledLike({
   headerFilters,
   columnGroups,
   sparkline,
+  exportCsv,
   columnMenu,
   filterControls,
   wide,
@@ -179,6 +184,8 @@ export function UnstyledLike({
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
   columnMenu?: boolean;
   /** Show the Filters control. Defaults to on unless the page is focused. */
   filterControls?: boolean;
@@ -251,7 +258,7 @@ export function UnstyledLike({
             bulkActions={focused ? undefined : makeBulkActions(locale)}
             confirm={demoConfirm}
             enableColumnMenu={columnMenu ?? !focused}
-            exportCsv={!focused}
+            exportCsv={exportCsv ?? !focused}
             savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
