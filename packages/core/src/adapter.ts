@@ -14,6 +14,11 @@
 
 export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
 export { resolveDisabledReason } from "./actions/confirm";
+export {
+  resolveContextTarget,
+  type ResolvedContextTarget,
+  ROW_ID_ATTRIBUTE,
+} from "./actions/contextMenuRegion";
 export { bulkActionErrorMessage } from "./actions/useBulkActionRunner";
 export {
   type BulkBarState,

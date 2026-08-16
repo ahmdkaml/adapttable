@@ -824,6 +824,16 @@ kit-owned `SelectionStatsBar` and render it over `SelectionStatsChrome` /
 prop is `selectionStats`. See
 [cell navigation](./cell-navigation.md).
 
+**Context-menu targets.** `resolveContextTarget(from, rowFor)` works out
+which header, row or cell an event happened in, returning a
+`ResolvedContextTarget` — the target and the element to put focus back on —
+or `null` when there is no menu there. It reads the `data-adapttable-part`
+names and `ROW_ID_ATTRIBUTE` (`data-row-id`), which every kit's rows and
+header cells carry, so an adapter binds one set of handlers to the element
+containing all three rather than to each of them. Precedence: a cell inside a
+row wins, a header cell is neither, and a click on the row outside any data
+cell is a row target.
+
 **Side panel.** `sidePanel` docks table settings beside the table instead of
 in a popover over them. `SidePanelOptions` types it — `panels`, `open`,
 `onOpenChange`, `side` — and `SidePanelEntry` is one panel (`key`, `label`,
