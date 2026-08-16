@@ -36,6 +36,7 @@ export function ShadcnDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   editing,
   cellNavigation,
@@ -79,6 +80,7 @@ export function ShadcnDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
@@ -125,6 +127,7 @@ export function ShadcnDemo({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      highlight={highlight}
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}

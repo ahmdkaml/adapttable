@@ -108,6 +108,7 @@ export function ChakraDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   editing,
   cellNavigation,
@@ -152,6 +153,7 @@ export function ChakraDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -218,6 +220,7 @@ export function ChakraDemo({
           cellSpan={cellSpan}
           extraRows={extraRows}
           rowStyle={rowStyle}
+          highlight={highlight}
           realtime={realtime}
           editing={editing}
           render={(source, columns) => (

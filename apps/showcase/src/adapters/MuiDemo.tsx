@@ -122,6 +122,7 @@ export function MuiDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   editing,
   cellNavigation,
@@ -165,6 +166,7 @@ export function MuiDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -228,6 +230,7 @@ export function MuiDemo({
         cellSpan={cellSpan}
         extraRows={extraRows}
         rowStyle={rowStyle}
+        highlight={highlight}
         realtime={realtime}
         editing={editing}
         render={(source, columns) => (

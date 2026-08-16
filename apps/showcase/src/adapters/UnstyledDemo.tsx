@@ -252,6 +252,7 @@ export function UnstyledDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   editing,
   cellNavigation,
@@ -295,6 +296,7 @@ export function UnstyledDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
@@ -341,6 +343,7 @@ export function UnstyledDemo({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      highlight={highlight}
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}

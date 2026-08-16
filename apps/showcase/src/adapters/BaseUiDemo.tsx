@@ -132,6 +132,7 @@ export function BaseUiDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   editing,
   cellNavigation,
@@ -175,6 +176,7 @@ export function BaseUiDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   editing?: boolean;
@@ -236,6 +238,7 @@ export function BaseUiDemo({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      highlight={highlight}
       realtime={realtime}
       editing={editing}
       render={(source, columns) => (

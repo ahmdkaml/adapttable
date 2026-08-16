@@ -140,6 +140,19 @@ function Toggle({
   );
 }
 
+/**
+ * Why the flash toggle is unavailable, or `undefined` when it is not: the
+ * mark lands on the row a change touched, so with nothing changing there is
+ * nothing to see.
+ */
+function flashReasonFor(
+  editingMode: EditingMode,
+  rowMutations: OnOff
+): string | undefined {
+  if (editingMode !== "off" || rowMutations !== "off") return undefined;
+  return "Turn on editing or row mutations first — the flash marks the row a change landed on.";
+}
+
 export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState(readKitFromUrl);
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -162,6 +175,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [contextMenu, setContextMenu] = useState<OnOff>("off");
   const [palette, setPalette] = useState<OnOff>("off");
   const [chrome, setChrome] = useState<OnOff>("off");
+  const [highlight, setHighlight] = useState<OnOff>("off");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -179,6 +193,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
     mode === "backend"
       ? "This control needs the complete frontend row set."
       : undefined;
+  const flashReason = flashReasonFor(editingMode, rowMutations);
   const structured = structure === "grouped" || structure === "tree";
   const reorderReason =
     clientOnlyReason ??
@@ -493,6 +508,12 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={chrome}
                       onChange={(next) => customize(setChrome, next)}
                     />
+                    <Toggle
+                      label="Flash changed rows"
+                      value={highlight}
+                      disabledOn={flashReason}
+                      onChange={(next) => customize(setHighlight, next)}
+                    />
                   </ControlPanel>
 
                   <ControlPanel title="Editing">
@@ -637,6 +658,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       rowMode={editingMode === "row"}
                       batch={editingMode === "batch"}
                       rowMutations={rowMutations === "on"}
+                      highlight={highlight === "on"}
                       rowReorder={rowReorder === "on"}
                       rowPinning={rowPinning === "on"}
                       cellSpan={cellSpan === "on"}

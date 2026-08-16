@@ -9,6 +9,7 @@ import {
   updateRow,
   useColumnLayoutUrlState,
   useFrontendData,
+  useHighlight,
   useQuerySource,
 } from "@adapttable/core";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -79,6 +80,8 @@ export interface DemoColumnProps {
   collapsibleColumnGroups?: boolean;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
   onRowReorder?: (from: number, to: number, row: Person) => void;
+  /** The flash on a changed row — a class, which every adapter honours. */
+  rowClassName?: (row: Person, index: number) => string | undefined;
   /** `null` forces grouping off even if the URL carries a groupBy. */
   groupBy?: string | readonly string[] | null;
   groupAggregates?: (
@@ -215,6 +218,8 @@ interface DataProps {
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Flash the row a change just landed on. */
+  highlight?: boolean;
   /** Apply live row patches on a timer, the way a socket feed would. */
   realtime?: boolean;
   /** AND/OR builder — Feature Lab only. Live demo stays a simple form. */
@@ -293,6 +298,7 @@ function Frontend({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   advancedFilters,
 }: Readonly<DataProps>) {
@@ -300,6 +306,10 @@ function Frontend({
   const [data, setData] = useState<readonly Person[]>(() =>
     PEOPLE.map((row) => ({ ...row }))
   );
+  // The demo owns the data, so the demo is what knows which row changed —
+  // exactly where a real app would flash it. Note there is no highlight prop
+  // on the table: `rowClassName` is the seam, so this works in every kit.
+  const flash = useHighlight(highlight === true);
   const onCellEdit = useCallback(
     (row: Person, key: string, nextValue: unknown) => {
       const field = EDIT_FIELD[key] ?? (key as keyof Person);
@@ -308,23 +318,34 @@ function Frontend({
           r.id === row.id ? { ...r, [field]: nextValue as never } : r
         )
       );
+      flash.flashRow(row.id);
     },
-    []
+    [flash]
   );
   const onBatchEdit = useCallback(
     (edits: readonly { row: Person; patch: Record<string, unknown> }[]) => {
       setData((prev) => prev.map((row) => applyEdits(row, edits)));
+      for (const edit of edits) flash.flashRow(edit.row.id);
     },
-    []
+    [flash]
   );
   // Adding, copying and removing rows: the table asks, the demo owns the list —
   // the same one-way flow a real app's mutation would follow.
+  // The new row is built before the update rather than inside it: a state
+  // updater must stay pure, and the flash needs the id it produced.
   const onAddRow = useCallback(() => {
-    setData((prev) => [blankPerson(prev), ...prev]);
-  }, []);
-  const onDuplicateRow = useCallback((row: Person) => {
-    setData((prev) => [{ ...row, id: nextId(prev) }, ...prev]);
-  }, []);
+    const added = blankPerson(data);
+    setData((prev) => [added, ...prev]);
+    flash.flashRow(added.id);
+  }, [data, flash]);
+  const onDuplicateRow = useCallback(
+    (row: Person) => {
+      const copy = { ...row, id: nextId(data) };
+      setData((prev) => [copy, ...prev]);
+      flash.flashRow(copy.id);
+    },
+    [data, flash]
+  );
   const onDeleteRow = useCallback((row: Person) => {
     setData((prev) => prev.filter((r) => r.id !== row.id));
   }, []);
@@ -340,6 +361,15 @@ function Frontend({
       prev.map((row) => ({ ...row, revision: (row.revision ?? 0) + 1 }))
     );
   }, []);
+  // Two classes, not one: the mark holds steady under reduced motion, so the
+  // user still learns which row changed without anything moving.
+  const flashClass = useCallback(
+    (row: Person) => {
+      if (!flash.isRowHighlighted(row.id)) return undefined;
+      return flash.animated ? "demo-flash demo-flash--animated" : "demo-flash";
+    },
+    [flash]
+  );
   const feed = useRealtimeFeed(realtime === true, setData);
   const source = useFrontendData<Person>({
     data,
@@ -386,6 +416,10 @@ function Frontend({
       {realtime ? <RealtimeFeed lines={feed} /> : null}
       {render(tableSource, {
         ...columns,
+        // Always wired, never conditional: there is no highlight prop on the
+        // table, `rowClassName` is the seam every adapter already honours,
+        // and a disarmed `useHighlight` simply never returns a class.
+        rowClassName: flashClass,
         // Both features are strictly opt-in: the toggles mirror the API —
         // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
         ...(editing
@@ -405,6 +439,7 @@ function Frontend({
                     r.id === row.id ? applyRowPatch(r, patch) : r
                   )
                 );
+                flash.flashRow(row.id);
               },
             }
           : {}),
@@ -527,6 +562,7 @@ export function DemoBody({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
   realtime,
   columnGroups,
 }: Readonly<{
@@ -546,6 +582,7 @@ export function DemoBody({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
   realtime?: boolean;
   columnGroups?: boolean;
 }>) {
@@ -597,6 +634,7 @@ export function DemoBody({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      highlight={highlight}
       realtime={realtime}
       advancedFilters={advancedFilters}
     />

@@ -895,6 +895,29 @@ a {
   }
 }
 
+/* ---------- the flash on a row that just changed ---------- */
+/* `useHighlight` decides WHICH row is marked and for how long; what the mark
+   looks like is the host's, which is why this lives in the demo's own
+   stylesheet and not in any adapter. */
+.demo-flash > td,
+.demo-flash > th,
+.demo-flash[data-adapttable-part="mobile-card"] {
+  background-color: color-mix(in srgb, var(--c) 18%, transparent);
+}
+.demo-flash--animated > td,
+.demo-flash--animated > th,
+.demo-flash--animated[data-adapttable-part="mobile-card"] {
+  animation: demo-flash-fade 1.5s ease-out;
+}
+@keyframes demo-flash-fade {
+  from {
+    background-color: color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  to {
+    background-color: color-mix(in srgb, var(--c) 18%, transparent);
+  }
+}
+
 /* ---------- mobile demo: the phone frame ---------- */
 /* A desktop visitor sees the phone experience without resizing: the table
    renders inside a phone-sized bezel while `forceMobile` pins the card
