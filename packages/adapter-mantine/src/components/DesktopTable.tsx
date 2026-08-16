@@ -215,7 +215,14 @@ function HeaderCell<TRow>({
   /** Cell-navigation props for this header — column selection. */
   columnProps?: Record<string, unknown>;
 }>) {
-  const cellProps = { ...table.getHeaderCellProps(column), ...columnProps };
+  // The part name is added here rather than taken from the prop-getter:
+  // the kits that pull only `aria-sort` out of it would not get one, so the
+  // name lives on each kit's header element and stays consistent.
+  const cellProps = {
+    "data-adapttable-part": "header-cell",
+    ...table.getHeaderCellProps(column),
+    ...columnProps,
+  };
   const headerStyle = {
     ...cellProps.style,
     ...stickyStyle,

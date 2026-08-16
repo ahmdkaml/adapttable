@@ -44,4 +44,21 @@ describe("structural row parts (antd)", () => {
       "r2",
     ]);
   });
+
+  it("names its header cells", () => {
+    render(
+      <>
+        <DataTable
+          data={ROWS}
+          columns={COLS}
+          rowKey={(r) => r.id}
+          urlSync={false}
+        />
+      </>
+    );
+
+    expect(
+      document.querySelector('[data-adapttable-part="header-cell"]')
+    ).not.toBeNull();
+  });
 });

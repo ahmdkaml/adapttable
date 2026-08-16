@@ -1218,6 +1218,7 @@ export function DesktopTable<TRow>({
               return (
                 <Table.ColumnHeader
                   key={column.key}
+                  data-adapttable-part="header-cell"
                   {...(gridFocus?.getColumnHeaderProps(headerIndex, {
                     sortable: column.sortable,
                   }) ?? {})}

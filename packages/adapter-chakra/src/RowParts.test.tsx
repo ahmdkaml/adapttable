@@ -45,4 +45,21 @@ describe("structural row parts (chakra)", () => {
       "r2",
     ]);
   });
+
+  it("names its header cells", () => {
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <DataTable
+          data={ROWS}
+          columns={COLS}
+          rowKey={(r) => r.id}
+          urlSync={false}
+        />
+      </ChakraProvider>
+    );
+
+    expect(
+      document.querySelector('[data-adapttable-part="header-cell"]')
+    ).not.toBeNull();
+  });
 });

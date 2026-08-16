@@ -45,4 +45,21 @@ describe("structural row parts (mantine)", () => {
       "r2",
     ]);
   });
+
+  it("names its header cells", () => {
+    render(
+      <MantineProvider>
+        <DataTable
+          data={ROWS}
+          columns={COLS}
+          rowKey={(r) => r.id}
+          urlSync={false}
+        />
+      </MantineProvider>
+    );
+
+    expect(
+      document.querySelector('[data-adapttable-part="header-cell"]')
+    ).not.toBeNull();
+  });
 });

@@ -734,6 +734,7 @@ export function buildColumns<TRow>({
             onToggleSortLevel
           );
           return {
+            "data-adapttable-part": "header-cell",
             "data-column-key": column.key,
             ...gridFocus?.getColumnHeaderProps(columnIndex, {
               sortable: column.sortable,
