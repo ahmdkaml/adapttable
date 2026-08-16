@@ -1,8 +1,22 @@
-import { MantineDemo } from "./adapters/MantineDemo";
+import { Suspense, useState } from "react";
+
+import { cssVars } from "./cssVars";
+import {
+  ADAPTERS,
+  DemoFallback,
+  KitSwitcher,
+  readKitFromUrl,
+} from "./kitDemos";
 import { Bolt, Check } from "./sectionIcons";
 import { SectionHead } from "./sections";
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
+  const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   return (
     <section className="sec shell" id="editing">
       <SectionHead title="Edit a cell in place. Your handler owns the write.">
@@ -21,6 +35,7 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
         put a whole paste back in one press — through your handler, never behind
         your back.
       </SectionHead>
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
         <div className="hint-row">
           <span className="hint">
@@ -44,15 +59,24 @@ export function EditingDemo({ dark }: Readonly<{ dark: boolean }>) {
             theirs while any editor is open
           </span>
         </div>
-        <div className="pad-surface__body">
-          <MantineDemo
-            mode="frontend"
-            locale="en"
-            dark={dark}
-            urlKey="edit"
-            editing
-            focused
-          />
+        <div
+          className="pad-surface__body"
+          style={cssVars({
+            "--c": dark ? token.accentDark : token.accentLight,
+          })}
+        >
+          <div key={adapter} data-adapter={adapter}>
+            <Suspense fallback={<DemoFallback />}>
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="edit"
+                editing
+                focused
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </section>

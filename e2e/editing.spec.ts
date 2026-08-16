@@ -108,3 +108,38 @@ test.describe("editing demo page", () => {
     await expect(cell.filter({ hasText: original })).toHaveCount(1);
   });
 });
+
+/**
+ * Editing has to open in every kit, not just the one that loads first — the
+ * editors are kit-native controls now, so "it works" is a per-kit claim.
+ */
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
+for (const kit of KITS) {
+  test(`${kit}: opens an editor on the editing page`, async ({ page }) => {
+    await page.goto("/editing/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    // antd puts a zero-height measure row first — it carries the header text,
+    // so only its lack of a box tells it apart from a real row.
+    const row = root.locator("tbody tr:visible").first();
+    await row.locator("td").nth(1).dblclick();
+    await expect(
+      root.locator('[data-adapttable-part="edit-cell-editor"]').first()
+    ).toBeVisible();
+  });
+}
