@@ -81,6 +81,15 @@ export interface ColumnDef<TRow> {
   renderFooter?: (ctx: ColumnFooterContext<TRow>) => ReactNode;
   /** Native tooltip on the header caption. */
   headerTooltip?: string;
+  /**
+   * How readily this column is given up when the table is too narrow for all
+   * of them. Priority 1 is kept longest, in the ordinary sense of the word.
+   *
+   * A column that omits it is never dropped, so the columns carrying the
+   * row's identity stay by saying nothing — and a table where nobody sets it
+   * behaves exactly as it did before.
+   */
+  responsivePriority?: number;
   /** Host-provided controls after the caption, before the resize handle. */
   headerActions?: ReactNode;
   /**

@@ -7,6 +7,7 @@ import {
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
 import { resolveColumns } from "./columns/resolveColumns";
+import { responsiveColumns } from "./columns/responsiveColumns";
 import {
   useColumnLayout,
   type UseColumnLayoutResult,
@@ -48,6 +49,7 @@ import { useEventCallback } from "./hooks/useEventCallback";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
+import { useElementWidth } from "./layout/useElementWidth";
 import type { BaseDataTableProps, ToolbarSlots } from "./props";
 import { insertExtraRows } from "./rows/extraRows";
 import {
@@ -271,6 +273,13 @@ export interface TableChrome<TRow> {
   activeFilterCount: number;
   /** Whether the resolved pagination mode is `"paged"`. */
   isPaged: boolean;
+  /**
+   * The table root. Owned here so the width that drives progressive column
+   * hiding is measured on the table itself, in both wiring paths.
+   */
+  rootRef: RefObject<HTMLDivElement | null>;
+  /** Column keys progressive hiding gave up at the current width. */
+  droppedColumns: readonly string[];
   /** Which body region to render. */
   body: TableBodyRegion;
   /**
@@ -490,6 +499,7 @@ export function useTableChrome<TRow>(
     labels,
     dir,
     forceMobile,
+    mobileBreakpoint,
     mobileIdentityColumns,
     onRowsChange,
     bulkActions,
@@ -506,7 +516,7 @@ export function useTableChrome<TRow>(
     defaultColumnLayout,
   } = props;
 
-  const autoMobile = useIsMobile();
+  const autoMobile = useIsMobile(mobileBreakpoint);
   const isMobile = forceMobile ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
@@ -519,6 +529,12 @@ export function useTableChrome<TRow>(
 
   // User column layout (hide/order/…) applied on top of the declared columns,
   // before device filtering inside useDataTable. The menu uses `allColumns`.
+  // The chrome owns the root ref so both wiring paths measure the same
+  // element: the width that decides progressive hiding has to be the table's
+  // own, not the window's.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const rootWidth = useElementWidth(rootRef);
+
   const columnLayout = useColumnLayout<TRow>({
     columns: resolvedColumns,
     layout: columnLayoutProp,
@@ -563,9 +579,22 @@ export function useTableChrome<TRow>(
     };
   }, [groupingArmed, source]);
 
+  // Progressive hiding sits between the user's own hidden set and what is
+  // rendered: it is a fact about the viewport, not a choice the user made,
+  // so it never reaches the layout state, the URL or a saved view.
+  const responsive = useMemo(
+    () =>
+      responsiveColumns({
+        columns: columnLayout.visibleColumns,
+        available: rootWidth,
+        widths: columnLayout.state.widths,
+      }),
+    [columnLayout.visibleColumns, columnLayout.state.widths, rootWidth]
+  );
+
   const table = useDataTable<TRow>({
     source: viewSource,
-    columns: columnLayout.visibleColumns,
+    columns: responsive.columns,
     rowKey,
     tableLabel,
     labels,
@@ -1175,6 +1204,8 @@ export function useTableChrome<TRow>(
     mergedChips,
     activeFilterCount,
     isPaged,
+    rootRef,
+    droppedColumns: responsive.dropped,
     body,
     errorState,
     emptyVariant,

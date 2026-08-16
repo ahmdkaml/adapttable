@@ -101,7 +101,6 @@ import {
   type UIEventHandler,
   useCallback,
   useMemo,
-  useRef,
   useState,
 } from "react";
 
@@ -1564,7 +1563,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     onClearFilters: c.clearFilters,
     hasFilters: c.activeFilterCount > 0,
   });
-  const rootRef = useRef<HTMLDivElement>(null);
+  // The chrome owns it: progressive column hiding measures this element.
+  const rootRef = c.rootRef;
   // Fullscreen also decides where every overlay portals: promoted, the rest
   // of the document is hidden, so a menu on `document.body` is invisible.
   const fullscreen = useFullscreen(rootRef.current);
@@ -1578,11 +1578,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       c.columnLayout.visibleColumns.map((column) => column.key),
       c.columnLayout.setWidth
     );
-  }, [c.columnLayout]);
+  }, [c.columnLayout, rootRef]);
   const onAutoSizeColumn = useCallback(
     (key: string) =>
       autoSizeAllColumns(rootRef.current, [key], c.columnLayout.setWidth),
-    [c.columnLayout]
+    [c.columnLayout, rootRef]
   );
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,

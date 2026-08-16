@@ -275,7 +275,8 @@ export function useDataTableShell<TRow>(
     // it without the host retyping a translated string.
     resolveExportCsv(props.exportCsv)?.writer?.extension
   );
-  const rootRef = useRef<HTMLDivElement>(null);
+  // The chrome owns it: progressive column hiding measures this element.
+  const rootRef = chrome.rootRef;
   // Fullscreen also decides where every overlay portals: promoted, the rest
   // of the document is hidden, so a menu on `document.body` is invisible.
   const fullscreen = useFullscreen(rootRef.current);
@@ -298,12 +299,12 @@ export function useDataTableShell<TRow>(
         chrome.columnLayout.visibleColumns.map((column) => column.key),
         chrome.columnLayout.setWidth
       ),
-    [chrome.columnLayout]
+    [chrome.columnLayout, rootRef]
   );
   const autoSizeColumn = useCallback(
     (key: string) =>
       autoSizeAllColumns(rootRef.current, [key], chrome.columnLayout.setWidth),
-    [chrome.columnLayout]
+    [chrome.columnLayout, rootRef]
   );
   const {
     virtualization,

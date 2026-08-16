@@ -4349,6 +4349,57 @@ layouts.
 - **`rowStyle` / `rowHeight`** apply the same way — see
   [row styling and heights](./row-styling.md).
 
+## Where the switch happens
+
+`mobileBreakpoint` is the width, in pixels, at or below which the cards take
+over. It defaults to 768 — a phone in portrait.
+
+```tsx
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={(r) => r.id}
+  mobileBreakpoint={1024}
+/>
+```
+
+Raise it when the table lives in a sidebar or a split pane: the viewport says
+"desktop" while the table itself has a phone's width to work with, and the
+default would keep a five-column table in a 300px column. Lower it when the
+table is the whole page and its columns are narrow enough to survive.
+
+## The width in between
+
+Between "everything fits" and "narrow enough for cards" there is a long middle
+where a table has too many columns. The usual outcomes are a horizontal
+scrollbar nobody finds, or columns squeezed until nothing is legible — neither
+is a decision.
+
+`responsivePriority` is the decision, made by the person who knows the data:
+
+```tsx
+const columns = [
+  { key: "name", header: "Name", width: 200 },
+  { key: "team", header: "Team", width: 160, responsivePriority: 1 },
+  { key: "note", header: "Note", width: 240, responsivePriority: 2 },
+];
+```
+
+Priority 1 is kept longest, in the ordinary sense of the word. As the table
+narrows, `note` goes first, then `team`. `name` never goes — a column that
+omits `responsivePriority` is never dropped, which is how the columns carrying
+the row's identity stay put by saying nothing. A table where no column sets it
+behaves exactly as it did before.
+
+The budget is arithmetic on each column's declared `width` (a resize wins over
+it, and a column with no width is budgeted at 150px), so it settles in one pass
+and gives the same answer every time. There is no measure-drop-remeasure loop,
+which is what makes tables that do it flicker.
+
+A dropped column is a fact about the viewport, not a choice the user made: it
+never reaches the layout state, the URL or a saved view, and the column menu
+still lists it.
+
 ## It composes with everything else
 
 - **Grouping** renders group header blocks between cards, with the same
@@ -5846,6 +5897,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.                                                                                    |
 | `multiSort`               | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed).                                                                                  |
 | `sortByOptions`           | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                                                                                                                |
+| `responsivePriority`      | `number`                            | —       | How readily this column is given up when the table is too narrow. Priority 1 is kept longest; omitting it means never dropped. See [mobile](./mobile.md).                           |
 | `mobileIdentityColumns`   | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                                                                                                              |
 
 ### Filters & search
@@ -5882,6 +5934,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `dir`                       | `"ltr" \| "rtl"`                                                | `"ltr"`         | Text direction.                                                                                                                                                                                                                                                                                                                                                                  |
 | `locale`                    | `string`                                                        | —               | Active locale tag (e.g. `"ar"`, `"ar-EG"`) driving per-column `i18n` data-path resolution.                                                                                                                                                                                                                                                                                       |
 | `density`                   | `"comfortable" \| "compact"`                                    | `"comfortable"` | Row density; each adapter maps it to its kit's table size.                                                                                                                                                                                                                                                                                                                       |
+| `mobileBreakpoint`          | `number`                                                        | `768`           | Width (px) at or below which the card layout takes over. See [mobile](./mobile.md).                                                                                                                                                                                                                                                                                              |
 | `forceMobile`               | `boolean`                                                       | viewport        | Force the mobile layout instead of resolving from the viewport.                                                                                                                                                                                                                                                                                                                  |
 | `toolbar`                   | `ReactNode`                                                     | —               | Inline toolbar slot for custom controls (view toggles, etc.).                                                                                                                                                                                                                                                                                                                    |
 | `exportCsv`                 | `boolean \| ExportCsvOptions<TRow>`                             | `false`         | Opt-in Export CSV toolbar button. `true` → `export.csv` + current page. `scope` picks the rows (`"page"`, `"all"`, `"selected"`), `columns` picks the fields (`"visible"`, `"all"`, or an explicit key list), and `onBeforeExport` / `onAfterExport` can rename, cancel or observe. A server source without `allFilteredRows` falls back to the current page with a dev warning. |

@@ -56,6 +56,57 @@ layouts.
 - **`rowStyle` / `rowHeight`** apply the same way — see
   [row styling and heights](./row-styling.md).
 
+## Where the switch happens
+
+`mobileBreakpoint` is the width, in pixels, at or below which the cards take
+over. It defaults to 768 — a phone in portrait.
+
+```tsx
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={(r) => r.id}
+  mobileBreakpoint={1024}
+/>
+```
+
+Raise it when the table lives in a sidebar or a split pane: the viewport says
+"desktop" while the table itself has a phone's width to work with, and the
+default would keep a five-column table in a 300px column. Lower it when the
+table is the whole page and its columns are narrow enough to survive.
+
+## The width in between
+
+Between "everything fits" and "narrow enough for cards" there is a long middle
+where a table has too many columns. The usual outcomes are a horizontal
+scrollbar nobody finds, or columns squeezed until nothing is legible — neither
+is a decision.
+
+`responsivePriority` is the decision, made by the person who knows the data:
+
+```tsx
+const columns = [
+  { key: "name", header: "Name", width: 200 },
+  { key: "team", header: "Team", width: 160, responsivePriority: 1 },
+  { key: "note", header: "Note", width: 240, responsivePriority: 2 },
+];
+```
+
+Priority 1 is kept longest, in the ordinary sense of the word. As the table
+narrows, `note` goes first, then `team`. `name` never goes — a column that
+omits `responsivePriority` is never dropped, which is how the columns carrying
+the row's identity stay put by saying nothing. A table where no column sets it
+behaves exactly as it did before.
+
+The budget is arithmetic on each column's declared `width` (a resize wins over
+it, and a column with no width is budgeted at 150px), so it settles in one pass
+and gives the same answer every time. There is no measure-drop-remeasure loop,
+which is what makes tables that do it flicker.
+
+A dropped column is a fact about the viewport, not a choice the user made: it
+never reaches the layout state, the URL or a saved view, and the column menu
+still lists it.
+
 ## It composes with everything else
 
 - **Grouping** renders group header blocks between cards, with the same

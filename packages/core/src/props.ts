@@ -120,6 +120,16 @@ export interface BaseDataTableProps<TRow> {
   /** Force the mobile layout (otherwise resolved from the viewport). */
   forceMobile?: boolean;
   /**
+   * The width, in pixels, at or below which the card layout takes over.
+   * Defaults to 768 — a phone in portrait.
+   *
+   * Raise it when the table lives in a sidebar or a split pane, where the
+   * viewport says "desktop" while the table has a phone's width to work
+   * with. Lower it when the table is the whole page and its columns are
+   * narrow enough to survive.
+   */
+  mobileBreakpoint?: number;
+  /**
    * Initial state applied while the URL is silent about a key — e.g.
    * `defaults={{ limit: 10, sortBy: "name" }}`. The user's own changes
    * (and explicit URL params) always win.
