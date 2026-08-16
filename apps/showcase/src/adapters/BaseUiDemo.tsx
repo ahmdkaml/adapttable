@@ -143,6 +143,9 @@ export function BaseUiDemo({
   columnMenu,
   filterControls,
   bulkActions,
+  statusBar,
+  undoRedoButtons,
+  sidePanel,
   wide,
   forceMobile,
   focused,
@@ -184,6 +187,9 @@ export function BaseUiDemo({
   /** Bulk actions, which are what turn row selection on. Defaults to on
    *  unless the page is focused. */
   bulkActions?: boolean;
+  statusBar?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   forceMobile?: boolean;
@@ -235,6 +241,9 @@ export function BaseUiDemo({
           rowKey={(r) => r.id}
           nestedTable={nested ? nestedOrders : undefined}
           cellNavigation={cellNavigation ?? editing}
+          statusBar={statusBar}
+          undoRedoButtons={undoRedoButtons}
+          sidePanel={sidePanel}
           selectionStats={editing}
           editHistory={editing}
           findInTable={editing}

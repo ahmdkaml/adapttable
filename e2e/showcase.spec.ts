@@ -482,3 +482,61 @@ for (const adapter of ADAPTERS) {
     });
   });
 }
+
+/**
+ * The three pieces of chrome #334 added, exercised where a user meets them.
+ *
+ * Each is off by default, which is the part a unit test cannot show: the
+ * Lab's table renders without them until the toggle is thrown.
+ */
+test("adds toolbar chrome only when the Feature Lab asks", async ({ page }) => {
+  await page.goto("/all-options/");
+  await expect(
+    page.locator('[data-adapttable-part="root"]').first()
+  ).toBeVisible();
+
+  await expect(page.locator('[data-adapttable-part="status-bar"]')).toHaveCount(
+    0
+  );
+  await expect(page.locator('[data-adapttable-part="side-panel"]')).toHaveCount(
+    0
+  );
+
+  // The Lab keeps its controls in a drawer; nothing below exists until it
+  // is open, which is also the proof that the table starts without them.
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await page
+    .getByRole("group", { name: "status bar" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await expect(
+    page.locator('[data-adapttable-part="status-bar"]').first()
+  ).toBeVisible();
+
+  await page
+    .getByRole("group", { name: "side panel" })
+    .getByRole("button", { name: "On" })
+    .click();
+  const panel = page.locator('[data-adapttable-part="side-panel"]').first();
+  await expect(panel).toBeVisible();
+
+  // The tab strip is a real one: arrows move the selection, and wrap.
+  await panel.getByRole("tab", { name: "About" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "Keyboard" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+  await page.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "About" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+
+  // Escape closes it from inside.
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-adapttable-part="side-panel"]')).toHaveCount(
+    0
+  );
+});

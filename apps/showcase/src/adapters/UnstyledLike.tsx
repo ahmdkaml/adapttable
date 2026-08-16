@@ -157,6 +157,9 @@ export function UnstyledLike({
   columnMenu,
   filterControls,
   bulkActions,
+  statusBar,
+  undoRedoButtons,
+  sidePanel,
   wide,
   defaultColumnLayout,
   forceMobile,
@@ -199,6 +202,9 @@ export function UnstyledLike({
   /** Bulk actions, which are what turn row selection on. Defaults to on
    *  unless the page is focused. */
   bulkActions?: boolean;
+  statusBar?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   /** The column layout the page starts from. */
@@ -255,6 +261,9 @@ export function UnstyledLike({
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
+            statusBar={statusBar}
+            undoRedoButtons={undoRedoButtons}
+            sidePanel={sidePanel}
             selectionStats={editing}
             editHistory={editing}
             findInTable={editing}

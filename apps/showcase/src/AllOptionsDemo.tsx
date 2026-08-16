@@ -69,6 +69,36 @@ const RECIPES: readonly {
   },
 ];
 
+/**
+ * The Lab's own panels.
+ *
+ * `sidePanel` takes content, not a feature flag — the table docks whatever
+ * the host puts in it. These two show that: a note, and the same guidance
+ * the Lab prints elsewhere, rendered inside the panel instead of above it.
+ */
+const SIDE_PANELS = [
+  {
+    key: "about",
+    label: "About",
+    content: (
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+        A docked panel keeps the rows visible while you change them. Its
+        contents are yours — a column list, a filter form, a pivot builder.
+      </p>
+    ),
+  },
+  {
+    key: "keys",
+    label: "Keyboard",
+    content: (
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+        Arrow keys move between tabs and wrap at the ends, Home and End jump to
+        them, and Escape closes the panel from anywhere inside it.
+      </p>
+    ),
+  },
+];
+
 function Toggle({
   label,
   value,
@@ -115,6 +145,10 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [columnGroups, setColumnGroups] = useState<OnOff>("off");
   const [sparkline, setSparkline] = useState<OnOff>("off");
   const [editorShowcase, setEditorShowcase] = useState<OnOff>("off");
+  const [statusBar, setStatusBar] = useState<OnOff>("off");
+  const [undoRedo, setUndoRedo] = useState<OnOff>("off");
+  const [settingsPanel, setSettingsPanel] = useState<OnOff>("off");
+  const [openPanel, setOpenPanel] = useState<string | null>("about");
   const [editingMode, setEditingMode] = useState<EditingMode>("off");
   const [rowMutations, setRowMutations] = useState<OnOff>("off");
   const [rowReorder, setRowReorder] = useState<OnOff>("off");
@@ -411,6 +445,26 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       value={editorShowcase}
                       onChange={(next) => customize(setEditorShowcase, next)}
                     />
+                    <Toggle
+                      label="Status bar"
+                      value={statusBar}
+                      onChange={(next) => customize(setStatusBar, next)}
+                    />
+                    <Toggle
+                      label="Undo / Redo buttons"
+                      value={undoRedo}
+                      disabledOn={
+                        editingMode === "off"
+                          ? "Turn on an editing mode first — the buttons drive the edit history."
+                          : undefined
+                      }
+                      onChange={(next) => customize(setUndoRedo, next)}
+                    />
+                    <Toggle
+                      label="Side panel"
+                      value={settingsPanel}
+                      onChange={(next) => customize(setSettingsPanel, next)}
+                    />
                   </ControlPanel>
 
                   <ControlPanel title="Editing">
@@ -530,6 +584,17 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       columnGroups={columnGroups === "on"}
                       sparkline={sparkline === "on"}
                       editorShowcase={editorShowcase === "on"}
+                      statusBar={statusBar === "on"}
+                      undoRedoButtons={undoRedo === "on"}
+                      sidePanel={
+                        settingsPanel === "on"
+                          ? {
+                              panels: SIDE_PANELS,
+                              open: openPanel,
+                              onOpenChange: setOpenPanel,
+                            }
+                          : undefined
+                      }
                       animate={motion === "on"}
                       grouping={structure === "grouped"}
                       tree={structure === "tree"}

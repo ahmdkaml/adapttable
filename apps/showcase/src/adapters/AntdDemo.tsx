@@ -125,6 +125,9 @@ export function AntdDemo({
   columnMenu,
   filterControls,
   bulkActions,
+  statusBar,
+  undoRedoButtons,
+  sidePanel,
   forceMobile,
   focused,
 }: Readonly<{
@@ -171,6 +174,9 @@ export function AntdDemo({
   /** Bulk actions, which are what turn row selection on. Defaults to on
    *  unless the page is focused. */
   bulkActions?: boolean;
+  statusBar?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -227,6 +233,9 @@ export function AntdDemo({
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
+            statusBar={statusBar}
+            undoRedoButtons={undoRedoButtons}
+            sidePanel={sidePanel}
             selectionStats={editing}
             editHistory={editing}
             findInTable={editing}

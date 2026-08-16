@@ -47,6 +47,9 @@ export function ShadcnDemo({
   columnMenu,
   filterControls,
   bulkActions,
+  statusBar,
+  undoRedoButtons,
+  sidePanel,
   wide,
   defaultColumnLayout,
   forceMobile,
@@ -82,6 +85,9 @@ export function ShadcnDemo({
   columnMenu?: boolean;
   filterControls?: boolean;
   bulkActions?: boolean;
+  statusBar?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   wide?: boolean;
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
@@ -110,6 +116,9 @@ export function ShadcnDemo({
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
+      statusBar={statusBar}
+      undoRedoButtons={undoRedoButtons}
+      sidePanel={sidePanel}
       headerFilters={headerFilters}
       columnGroups={columnGroups}
       sparkline={sparkline}

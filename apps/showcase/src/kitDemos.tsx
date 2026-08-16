@@ -49,6 +49,12 @@ export type KitDemoProps = Readonly<{
   filterControls?: boolean;
   /** Bulk actions, which are what turn row selection on. */
   bulkActions?: boolean;
+  /** The strip under the table: row range, selection count, selection sums. */
+  statusBar?: boolean;
+  /** Undo and Redo in the toolbar. Needs editing armed to do anything. */
+  undoRedoButtons?: boolean;
+  /** A settings panel docked beside the table. */
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   /** The column layout a page starts from. */
