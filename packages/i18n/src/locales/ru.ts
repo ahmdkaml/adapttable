@@ -172,6 +172,9 @@ export const ru: Required<TableLabels> = {
   findNext: "Следующее совпадение",
   findClose: "Закрыть поиск",
   sidePanel: "Настройки таблицы",
+  contextMenu: "Действия таблицы",
+  copyCells: "Копировать",
+  cutCells: "Вырезать",
   closePanel: "Закрыть панель",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

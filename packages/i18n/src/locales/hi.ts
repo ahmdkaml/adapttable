@@ -169,6 +169,9 @@ export const hi: Required<TableLabels> = {
   findNext: "अगला मेल",
   findClose: "खोज बंद करें",
   sidePanel: "तालिका सेटिंग्स",
+  contextMenu: "तालिका क्रियाएँ",
+  copyCells: "कॉपी करें",
+  cutCells: "काटें",
   closePanel: "पैनल बंद करें",
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

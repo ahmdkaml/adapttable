@@ -168,6 +168,9 @@ export const he: Required<TableLabels> = {
   findNext: "התוצאה הבאה",
   findClose: "סגירת החיפוש",
   sidePanel: "הגדרות טבלה",
+  contextMenu: "פעולות טבלה",
+  copyCells: "העתק",
+  cutCells: "גזור",
   closePanel: "סגור חלונית",
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

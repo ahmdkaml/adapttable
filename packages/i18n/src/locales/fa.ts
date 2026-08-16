@@ -167,6 +167,9 @@ export const fa: Required<TableLabels> = {
   findNext: "نتیجه بعدی",
   findClose: "بستن جستجو",
   sidePanel: "تنظیمات جدول",
+  contextMenu: "اقدامات جدول",
+  copyCells: "کپی",
+  cutCells: "برش",
   closePanel: "بستن پنل",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

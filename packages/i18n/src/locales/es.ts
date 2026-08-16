@@ -167,6 +167,9 @@ export const es: Required<TableLabels> = {
   findNext: "Resultado siguiente",
   findClose: "Cerrar la búsqueda",
   sidePanel: "Ajustes de la tabla",
+  contextMenu: "Acciones de la tabla",
+  copyCells: "Copiar",
+  cutCells: "Cortar",
   closePanel: "Cerrar panel",
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

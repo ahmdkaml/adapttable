@@ -613,6 +613,12 @@ export interface TableLabels {
   redoEdit?: string;
   /** Accessible name for the side panel's tab strip (`sidePanel`). */
   sidePanel?: string;
+  /** Accessible name for a context menu (`contextMenu`). */
+  contextMenu?: string;
+  /** The context-menu entry that copies the selection. */
+  copyCells?: string;
+  /** The context-menu entry that cuts it. */
+  cutCells?: string;
   /** The control that closes the side panel. */
   closePanel?: string;
   /** Accessible name for entering row edit mode. */

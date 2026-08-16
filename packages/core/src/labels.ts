@@ -166,6 +166,9 @@ export const defaultLabels: Required<TableLabels> = {
   findNext: "Next match",
   findClose: "Close find",
   sidePanel: "Table settings",
+  contextMenu: "Table actions",
+  copyCells: "Copy",
+  cutCells: "Cut",
   closePanel: "Close panel",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

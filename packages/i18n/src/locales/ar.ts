@@ -168,6 +168,9 @@ export const ar: Required<TableLabels> = {
   findNext: "النتيجة التالية",
   findClose: "إغلاق البحث",
   sidePanel: "إعدادات الجدول",
+  contextMenu: "إجراءات الجدول",
+  copyCells: "نسخ",
+  cutCells: "قص",
   closePanel: "إغلاق اللوحة",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

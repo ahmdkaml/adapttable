@@ -168,6 +168,9 @@ export const ur: Required<TableLabels> = {
   findNext: "اگلی مماثلت",
   findClose: "تلاش بند کریں",
   sidePanel: "ٹیبل کی ترتیبات",
+  contextMenu: "ٹیبل کی کارروائیاں",
+  copyCells: "کاپی کریں",
+  cutCells: "کاٹیں",
   closePanel: "پینل بند کریں",
   gridCellPosition: (row, total) => `${total} میں سے سطر ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

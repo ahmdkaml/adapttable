@@ -9,7 +9,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SidePanelChrome, type SidePanelSlots } from "./SidePanelChrome";
+import {
+  SidePanelChrome,
+  SidePanelLayout,
+  type SidePanelSlots,
+} from "./SidePanelChrome";
 
 const slots: SidePanelSlots = {
   Frame: ({ children, side, className }) => (
@@ -191,5 +195,52 @@ describe("SidePanelChrome", () => {
     expect(screen.getByRole("tab", { name: "Filters" }).id).toBe(
       "second-tab-filters"
     );
+  });
+});
+
+describe("SidePanelLayout", () => {
+  it("adds no element at all when there is no panel", () => {
+    const { container } = render(
+      <SidePanelLayout body={<p data-testid="body">rows</p>} />
+    );
+
+    expect(screen.getByTestId("body")).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-adapttable-part="table-region"]')
+    ).toBeNull();
+  });
+
+  it("puts the two side by side once there is one", () => {
+    const { container } = render(
+      <SidePanelLayout body={<p>rows</p>} panel={<aside>panel</aside>} />
+    );
+    const region = container.querySelector(
+      '[data-adapttable-part="table-region"]'
+    );
+
+    expect(region).not.toBeNull();
+    // `min-width: 0` is what lets the table keep its own scrollbar rather
+    // than forcing the row wider than its container.
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-adapttable-part="table-region-main"]'
+      )?.style.minWidth
+    ).toBe("0px");
+  });
+
+  it("reverses the row to dock at the start", () => {
+    const { container } = render(
+      <SidePanelLayout
+        body={<p>rows</p>}
+        panel={<aside>p</aside>}
+        side="start"
+      />
+    );
+
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-adapttable-part="table-region"]'
+      )?.style.flexDirection
+    ).toBe("row-reverse");
   });
 });

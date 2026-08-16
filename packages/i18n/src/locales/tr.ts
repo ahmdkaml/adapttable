@@ -170,6 +170,9 @@ export const tr: Required<TableLabels> = {
   findNext: "Sonraki eşleşme",
   findClose: "Aramayı kapat",
   sidePanel: "Tablo ayarları",
+  contextMenu: "Tablo eylemleri",
+  copyCells: "Kopyala",
+  cutCells: "Kes",
   closePanel: "Paneli kapat",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>

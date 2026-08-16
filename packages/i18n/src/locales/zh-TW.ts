@@ -166,6 +166,9 @@ export const zhTW: Required<TableLabels> = {
   findNext: "下一個相符項目",
   findClose: "關閉尋找",
   sidePanel: "表格設定",
+  contextMenu: "表格操作",
+  copyCells: "複製",
+  cutCells: "剪下",
   closePanel: "關閉面板",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
