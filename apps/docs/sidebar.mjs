@@ -34,6 +34,7 @@ export const sidebar = [
       { label: "Full-width and separator rows", slug: "full-width-rows" },
       { label: "Row styling and heights", slug: "row-styling" },
       { label: "Row grouping", slug: "row-grouping" },
+      { label: "Pivot tables", slug: "pivot" },
       { label: "Tree data", slug: "tree-data" },
       { label: "Column management", slug: "column-management" },
       { label: "Saved views", slug: "saved-views" },

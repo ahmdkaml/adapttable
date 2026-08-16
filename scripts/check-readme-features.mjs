@@ -36,6 +36,7 @@ const FEATURES = {
   pagination: /paginat/i,
   "row-expansion": /row expansion/i,
   "row-grouping": /grouping/i,
+  pivot: /pivot/i,
   "row-reordering": /row reorder/i,
   "row-pinning": /row pinn/i,
   "row-spanning": /row (and column )?spann|cell spann/i,

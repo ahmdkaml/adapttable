@@ -12,6 +12,7 @@ export default defineConfig({
     "src/xlsx.ts",
     "src/pdf.ts",
     "src/sparkline.ts",
+    "src/pivot.ts",
   ],
   format: ["esm", "cjs"],
   dts: true,

@@ -3585,6 +3585,103 @@ rows are grouped by team with a budget subtotal per group.
 
 ---
 
+# React pivot table — rows, columns and measures
+
+Grouping answers "what is the total per team". A pivot answers "what is the
+total per team **per quarter**" — and that second dimension has to become
+columns that were never in the data.
+
+`@adapttable/core/pivot` is a separate entry, so a table that never pivots
+never downloads the engine. It costs 1.4 KB gzipped to the tables that import
+it and nothing to the rest, which the bundle budget checks on every build.
+
+## The shape
+
+```tsx
+import { pivot } from "@adapttable/core/pivot";
+
+const result = pivot(sales, {
+  rows: ["region", "team"], // down the side, outermost first
+  columns: ["quarter"], // across the top
+  measures: [{ key: "amount", agg: "sum" }],
+});
+```
+
+`pivot` is the whole calculation and none of the rendering. It returns:
+
+| Field          | What it is                                                            |
+| -------------- | --------------------------------------------------------------------- |
+| `columnLeaves` | The rendered columns, left to right — the order every row's cells use |
+| `columnTree`   | The header tree, each node carrying the `span` its header cell needs  |
+| `rows`         | Every line of the body, in render order                               |
+| `rowDepth`     | How many dimensions are down the side                                 |
+
+Each line has a `kind` — `"leaf"`, `"subtotal"` or `"grandTotal"` — a `depth`
+for indentation, a `label`, a `count` of the source rows it covers, and one
+cell per entry of `columnLeaves`.
+
+## Measures
+
+A measure is a column key and an aggregation:
+
+```tsx
+measures: [
+  { key: "amount", agg: "sum" },
+  { key: "amount", agg: "count", label: "Deals" },
+];
+```
+
+`sum`, `avg`, `count`, `min` and `max` are built in; anything else is a
+function over the values found, the same `Aggregator` shape the summary row
+and group aggregates take:
+
+```tsx
+measures: [{ key: "amount", agg: (values) => `${values.length} sales` }];
+```
+
+Every measure repeats under every column path, so two measures under three
+quarters is six columns — the header tree's spans already account for it.
+
+Values resolve through a column's `sortValue` when you pass `columns`, exactly
+as sorting, grouping and the summary row do. A pivot that read raw fields
+would disagree with the footer of the same table:
+
+```tsx
+pivot(sales, config, { columns });
+```
+
+## Subtotals, totals and collapsing
+
+Subtotals are on by default: every level above the innermost gets a line, and
+those lines come **before** their children rather than after. That is what
+makes collapsing work — a collapsed group still shows its own line with its
+own totals instead of vanishing.
+
+```tsx
+const result = pivot(sales, config, { collapsed: new Set(["EU"]) });
+```
+
+A subtotal line's `key` is its collapse key. Collapsing changes what is shown
+and never what is computed: the grand total is the same number either way.
+
+Turn either off with `subtotals: false` / `grandTotals: false`. The grand-total
+**column** only appears when something splits the columns — without column
+dimensions it would repeat the only column there is.
+
+## What it does not throw away
+
+A row whose dimension value is missing gets its own bucket, labelled `—`
+(`PIVOT_BLANK`), rather than being dropped. Rows falling into no bucket and
+quietly disappearing is how a pivot table ends up lying about a total.
+
+A value that is not summable is absent, not zero — a missing budget is not a
+$0 budget, so a cell with nothing to add up reads as empty.
+
+Related: [row grouping](./row-grouping.md) ·
+[aggregation](./row-grouping.md#aggregates) · [API reference](./api.md)
+
+---
+
 # React table tree data — hierarchical rows with expand/collapse
 
 Some data is a hierarchy before anyone asks a question of it: a folder holds

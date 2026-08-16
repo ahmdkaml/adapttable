@@ -65,7 +65,7 @@ const FIXTURES = [
     // capabilities are genuinely shaken out, not merely compressing well. A
     // feature that starts leaking into the base path trips this before the
     // budget notices the bytes.
-    absent: ["toCsv", "Blob", "download", "virtual"],
+    absent: ["toCsv", "Blob", "download", "virtual", "pivot"],
   },
   {
     // The whole surface at once, which no application imports. It is a canary
@@ -77,6 +77,18 @@ const FIXTURES = [
     pkg: "core",
     budgetKB: 93,
     code: `export * from "PKG";`,
+    // The optional entries are the proof that "optional" is real: even the
+    // whole main surface at once does not carry them.
+    absent: ["pivot"],
+  },
+  {
+    // What the pivot engine costs the tables that ask for it, and nothing to
+    // the tables that do not — see the `absent` checks above.
+    name: "core · pivot",
+    pkg: "core",
+    entryFile: "pivot.js",
+    budgetKB: 5,
+    code: `export { pivot } from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.
@@ -239,7 +251,15 @@ const FIXTURES = [
  */
 async function measure(fixture, dir) {
   const entry = join(dir, "entry.js");
-  const target = join(ROOT, "packages", fixture.pkg, "dist", "index.js");
+  // Optional entries (`@adapttable/core/pivot` and friends) build to their
+  // own file, and measuring them is the only way to say what they cost.
+  const target = join(
+    ROOT,
+    "packages",
+    fixture.pkg,
+    "dist",
+    fixture.entryFile ?? "index.js"
+  );
   writeFileSync(entry, fixture.code.replaceAll("PKG", target));
 
   const bundle = await Rolldown.rolldown({

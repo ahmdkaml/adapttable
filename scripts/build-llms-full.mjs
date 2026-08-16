@@ -36,6 +36,7 @@ const DOCS = [
   "row-styling.md",
   "cell-navigation.md",
   "row-grouping.md",
+  "pivot.md",
   "tree-data.md",
   "column-management.md",
   "saved-views.md",

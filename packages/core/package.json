@@ -78,6 +78,16 @@
         "default": "./dist/pdf.cjs"
       }
     },
+    "./pivot": {
+      "import": {
+        "types": "./dist/pivot.d.ts",
+        "default": "./dist/pivot.js"
+      },
+      "require": {
+        "types": "./dist/pivot.d.cts",
+        "default": "./dist/pivot.cjs"
+      }
+    },
     "./sparkline": {
       "import": {
         "types": "./dist/sparkline.d.ts",
