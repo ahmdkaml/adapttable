@@ -14,7 +14,9 @@ const labels = {
   sortBy: "Sort by",
   filters: "Filters",
   rowsPerPage: "Rows per page",
-} as Required<Pick<TableLabels, "search" | "sortBy" | "filters" | "rowsPerPage">>;
+} as Required<
+  Pick<TableLabels, "search" | "sortBy" | "filters" | "rowsPerPage">
+>;
 
 function makeToolbarProps(): ToolbarProps<Row> {
   const onSearchChange = vi.fn();
@@ -39,7 +41,7 @@ function makeToolbarProps(): ToolbarProps<Row> {
         value: "test query",
         placeholder: overrides?.placeholder ?? "Search...",
         onChange: onSearchChange,
-        }),
+      }),
     } as unknown as ToolbarProps<Row>["table"],
     searchable: true,
     sortByOptions: [
@@ -68,9 +70,13 @@ describe("Toolbar", () => {
 
     expect(screen.getByLabelText(labels.search)).toBeInTheDocument();
     expect(screen.getByLabelText(labels.sortBy)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Filters/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Filters/i })
+    ).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Export CSV" })
+    ).toBeInTheDocument();
   });
 
   it("handles search input change", () => {
@@ -81,7 +87,10 @@ describe("Toolbar", () => {
       role: "searchbox",
       "aria-label": labels.search,
       value: "",
-      placeholder: typeof overrides?.placeholder === "string" ? overrides.placeholder : "Search...",
+      placeholder:
+        typeof overrides?.placeholder === "string"
+          ? overrides.placeholder
+          : "Search...",
       onChange,
     });
 

@@ -1,8 +1,5 @@
 import type { ColumnDef } from "@adapttable/core";
-import {
-  columnResizeHandleProps,
-  tableMinWidth,
-} from "@adapttable/core";
+import { columnResizeHandleProps, tableMinWidth } from "@adapttable/core";
 import {
   columnFlexShares,
   columnSizeStyle,
@@ -98,15 +95,17 @@ export function DesktopTable<TRow>(
                 const pinStyle = getPinStyle(offset, 2);
                 const width = offset
                   ? pinnedColumnWidth(column, columnWidths)
-                  : columnWidths?.[key] ?? column.width;
-                const sizing = columnSizeStyle(column, flexShares, columnWidths?.[key]);
+                  : (columnWidths?.[key] ?? column.width);
+                const sizing = columnSizeStyle(
+                  column,
+                  flexShares,
+                  columnWidths?.[key]
+                );
 
                 const sortButton = table.getSortButtonProps?.(column);
-                const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
-                  | "ascending"
-                  | "descending"
-                  | "none"
-                  | undefined;
+                const ariaSort = table.getHeaderCellProps(column)[
+                  "aria-sort"
+                ] as "ascending" | "descending" | "none" | undefined;
 
                 return (
                   <th
@@ -114,7 +113,9 @@ export function DesktopTable<TRow>(
                     {...table.getHeaderCellProps(column)}
                     aria-sort={ariaSort}
                     style={{
-                      position: pinStyle.position ?? (setWidth ? "relative" : undefined),
+                      position:
+                        pinStyle.position ??
+                        (setWidth ? "relative" : undefined),
                       width,
                       minWidth: width,
                       ...sizing,
@@ -155,15 +156,22 @@ export function DesktopTable<TRow>(
 
           <tbody>
             {rows.map((row, rowIndex) => (
-              <tr key={table.getRowKey(row)} {...table.getRowProps(row, rowIndex)}>
+              <tr
+                key={table.getRowKey(row)}
+                {...table.getRowProps(row, rowIndex)}
+              >
                 {columns.map((column) => {
                   const key = String(column.key);
                   const offset = pinOffset?.(column.key);
                   const pinStyle = getPinStyle(offset, 1);
                   const width = offset
                     ? pinnedColumnWidth(column, columnWidths)
-                    : columnWidths?.[key] ?? column.width;
-                  const sizing = columnSizeStyle(column, flexShares, columnWidths?.[key]);
+                    : (columnWidths?.[key] ?? column.width);
+                  const sizing = columnSizeStyle(
+                    column,
+                    flexShares,
+                    columnWidths?.[key]
+                  );
 
                   return (
                     <td

@@ -73,7 +73,7 @@ describe("Bootstrap ColumnMenu", () => {
         layout={layout}
         labels={labels}
         onAutoSize={() => undefined}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -106,14 +106,14 @@ describe("Bootstrap ColumnMenu", () => {
         layout={fakeLayout()}
         labels={labels}
         onAutoSize={() => undefined}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
 
     fireEvent.change(
       screen.getByRole("searchbox", { name: "Search columns" }),
-      { target: { value: "bravo" } },
+      { target: { value: "bravo" } }
     );
 
     expect(screen.getByText("Bravo")).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("Bootstrap ColumnMenu", () => {
         labels={labels}
         hasRowActions
         onAutoSize={() => undefined}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));
@@ -154,7 +154,7 @@ describe("Bootstrap ColumnMenu", () => {
         labels={labels}
         hasRowReorder
         onAutoSize={() => undefined}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Columns" }));

@@ -76,13 +76,24 @@ function ColumnMenuRowItem<TRow>({
     : {};
 
   return (
-    <div data-adapttable-part="column-menu-item" data-hidden={hidden || undefined} data-pinned={pinned}>
+    <div
+      data-adapttable-part="column-menu-item"
+      data-hidden={hidden || undefined}
+      data-pinned={pinned}
+    >
       <div className="d-flex align-items-center gap-1 py-1" {...dragProps}>
         <Button
           size="sm"
           variant="light"
           disabled={!canMove}
-          {...(canMove ? columnReorderKeyProps(key, index, layout.move, `${labels.moveStart} / ${labels.moveEnd}: ${name}`) : {})}
+          {...(canMove
+            ? columnReorderKeyProps(
+                key,
+                index,
+                layout.move,
+                `${labels.moveStart} / ${labels.moveEnd}: ${name}`
+              )
+            : {})}
         >
           ⋮⋮
         </Button>
@@ -97,7 +108,11 @@ function ColumnMenuRowItem<TRow>({
         >
           {hidden ? "○" : "●"}
         </Button>
-        <span className={`flex-grow-1 ${hidden ? "text-muted text-decoration-line-through" : ""}`}>{name}</span>
+        <span
+          className={`flex-grow-1 ${hidden ? "text-muted text-decoration-line-through" : ""}`}
+        >
+          {name}
+        </span>
         <Button
           size="sm"
           variant={pinned ? "secondary" : "light"}
@@ -119,7 +134,10 @@ function ColumnMenuRowItem<TRow>({
       </div>
 
       {open && (
-        <div className="d-flex flex-column ms-4 mb-1" data-adapttable-part="column-menu-submenu">
+        <div
+          className="d-flex flex-column ms-4 mb-1"
+          data-adapttable-part="column-menu-submenu"
+        >
           {actions.map((action) => (
             <Button
               key={action.id}
@@ -176,7 +194,10 @@ function ReservedColumnRow({
   const pinLabel = getReservedPinLabel(pinned, pinSide, labels);
 
   return (
-    <div className="d-flex align-items-center gap-1 py-1" data-adapttable-part="column-menu-item">
+    <div
+      className="d-flex align-items-center gap-1 py-1"
+      data-adapttable-part="column-menu-item"
+    >
       <Button
         size="sm"
         variant="link"
@@ -186,8 +207,17 @@ function ReservedColumnRow({
       >
         {hidden ? "○" : "●"}
       </Button>
-      <span className={`flex-grow-1 ${hidden ? "text-muted text-decoration-line-through" : ""}`}>{name}</span>
-      <Button size="sm" variant={pinned ? "secondary" : "light"} aria-label={`${pinLabel}: ${name}`} onClick={onPin}>
+      <span
+        className={`flex-grow-1 ${hidden ? "text-muted text-decoration-line-through" : ""}`}
+      >
+        {name}
+      </span>
+      <Button
+        size="sm"
+        variant={pinned ? "secondary" : "light"}
+        aria-label={`${pinLabel}: ${name}`}
+        onClick={onPin}
+      >
         📌
       </Button>
     </div>
@@ -219,12 +249,18 @@ export function ColumnMenu<TRow>({
 
   return (
     <Dropdown align="end" dir={dir}>
-      <Dropdown.Toggle size="sm" variant="outline-secondary" data-adapttable-part="column-menu-button">
+      <Dropdown.Toggle
+        size="sm"
+        variant="outline-secondary"
+        data-adapttable-part="column-menu-button"
+      >
         {labels.columns}
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="p-2" style={{ minWidth: 260 }}>
-        <div className="small fw-semibold text-uppercase text-muted px-1 pb-1">{labels.columns}</div>
+        <div className="small fw-semibold text-uppercase text-muted px-1 pb-1">
+          {labels.columns}
+        </div>
 
         <Form.Control
           type="search"
@@ -237,10 +273,31 @@ export function ColumnMenu<TRow>({
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        <div className="d-flex gap-1 mb-2" data-adapttable-part="column-menu-bulk">
-          <Button size="sm" variant="link" onClick={() => showAllColumns(rows, layout)}>{labels.showAllColumns}</Button>
-          <Button size="sm" variant="link" onClick={() => hideAllColumns(rows, layout)}>{labels.hideAllColumns}</Button>
-          <Button size="sm" variant="link" onClick={() => unpinAllColumns(rows, layout)}>{labels.unpinAllColumns}</Button>
+        <div
+          className="d-flex gap-1 mb-2"
+          data-adapttable-part="column-menu-bulk"
+        >
+          <Button
+            size="sm"
+            variant="link"
+            onClick={() => showAllColumns(rows, layout)}
+          >
+            {labels.showAllColumns}
+          </Button>
+          <Button
+            size="sm"
+            variant="link"
+            onClick={() => hideAllColumns(rows, layout)}
+          >
+            {labels.hideAllColumns}
+          </Button>
+          <Button
+            size="sm"
+            variant="link"
+            onClick={() => unpinAllColumns(rows, layout)}
+          >
+            {labels.unpinAllColumns}
+          </Button>
         </div>
 
         {rows.map((row) => (
@@ -268,7 +325,12 @@ export function ColumnMenu<TRow>({
             labels={labels}
             pinSide="start"
             onToggle={() => layout.toggleVisible(REORDER_COLUMN_KEY)}
-            onPin={() => layout.setPinned(REORDER_COLUMN_KEY, reorderPinned ? undefined : "start")}
+            onPin={() =>
+              layout.setPinned(
+                REORDER_COLUMN_KEY,
+                reorderPinned ? undefined : "start"
+              )
+            }
           />
         )}
 
@@ -280,14 +342,23 @@ export function ColumnMenu<TRow>({
             labels={labels}
             pinSide="end"
             onToggle={() => layout.toggleVisible(ACTIONS_COLUMN_KEY)}
-            onPin={() => layout.setPinned(ACTIONS_COLUMN_KEY, actionsPinned ? undefined : "end")}
+            onPin={() =>
+              layout.setPinned(
+                ACTIONS_COLUMN_KEY,
+                actionsPinned ? undefined : "end"
+              )
+            }
           />
         )}
 
         <Dropdown.Divider />
 
-        <Button size="sm" variant="link" onClick={onAutoSize}>{labels.autoSizeColumns}</Button>
-        <Button size="sm" variant="link" onClick={() => layout.reset()}>{labels.resetColumns}</Button>
+        <Button size="sm" variant="link" onClick={onAutoSize}>
+          {labels.autoSizeColumns}
+        </Button>
+        <Button size="sm" variant="link" onClick={() => layout.reset()}>
+          {labels.resetColumns}
+        </Button>
       </Dropdown.Menu>
     </Dropdown>
   );
