@@ -124,6 +124,14 @@ export function useTableContextMenu<TRow>(
               });
             },
             onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+              // The key is checked BEFORE the target is resolved. This fires
+              // on every keystroke in the table, typing in a cell editor
+              // included, and resolving a target first would put a DOM walk
+              // behind each one — the same mistake the pointer handlers made.
+              const opens =
+                event.key === "ContextMenu" ||
+                (event.shiftKey && event.key === "F10");
+              if (!opens) return;
               const prevent = () => {
                 event.preventDefault();
               };
