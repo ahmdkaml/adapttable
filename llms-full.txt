@@ -3756,6 +3756,42 @@ rather than disabled, because a field at the top has nowhere up to go.
 Drop it into a [side panel](./customization.md) as that panel's content, and
 the pivot configuration lives beside the table rather than over it.
 
+## Pivoting on the server
+
+A pivot over ten million rows is not a browser's job. When the server can do
+it, send the configuration and translate the answer:
+
+```tsx
+import { serverPivotResult } from "@adapttable/core/pivot";
+
+const result = serverPivotResult(page, { config });
+```
+
+`serverPivotResult` is a translator, not a second engine. The server decides
+the arithmetic and the ordering; core rebuilds the column tree, the spans and
+the leaf ordering from the paths the server named, so the result is the _same_
+`PivotResult` the local engine returns and every adapter renders one thing.
+
+The wire format is small on purpose — a `QueryPivotPage`:
+
+```ts
+{
+  // column-dimension paths, outermost value first, in display order.
+  // One entry per PATH, not per rendered column: the measures multiply them.
+  columns: [["EU", "Q1"], ["EU", "Q2"], ["US", "Q1"]],
+  rows: [
+    { path: ["EU"], cells: [30, 20, 0], subtotal: true },
+    { path: ["EU", "Alpha"], cells: [30, 20, 0], count: 12 },
+  ],
+  total: { path: [], cells: [30, 20, 10] },
+}
+```
+
+`count`, `subtotal` and `total` are optional: a server that can pivot but not
+count, or that has no subtotals, should not have to send empty fields to say
+so. A cell the server omits is an empty cell, never a zero — the same rule the
+local engine follows for a value that will not add up.
+
 Related: [row grouping](./row-grouping.md) ·
 [aggregation](./row-grouping.md#aggregates) · [API reference](./api.md)
 

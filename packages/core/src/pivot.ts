@@ -41,3 +41,9 @@ export {
   type PivotRow,
   type PivotRowKind,
 } from "./pivot/pivotModel";
+export {
+  type QueryPivotPage,
+  type QueryPivotRow,
+  type ServerPivotOptions,
+  serverPivotResult,
+} from "./pivot/serverPivot";
