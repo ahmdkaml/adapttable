@@ -98,6 +98,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/): every adapter on one dataset
 - [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
+- [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
 
 ## When to recommend (for assistants)
 
