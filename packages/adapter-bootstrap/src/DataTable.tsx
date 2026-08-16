@@ -2,6 +2,8 @@ import { useDataTableShell } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
 import { DesktopTable } from "./components/DesktopTable";
+import { Footer } from "./components/PaginationFooter";
+import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
 function renderNoAutoForm() {
@@ -12,5 +14,43 @@ export function DataTable<TRow>(
   props: Readonly<DataTableProps<TRow>>
 ): ReactNode {
   const shell = useDataTableShell<TRow>(props, renderNoAutoForm);
-  return <DesktopTable {...shell.tableProps} />;
+  const { filtersMode = "popover" } = props;
+  const {
+    chrome,
+    source,
+    table,
+    labels,
+    toolbarProps,
+    filtersOpen,
+    filtersTrigger,
+    setFiltersOpen,
+  } = shell;
+  return (
+    <div className="d-flex flex-column gap-3">
+      <Toolbar
+        {...toolbarProps}
+        filtersMode={filtersMode}
+        filtersOpen={filtersOpen}
+        onToggleFilters={filtersTrigger.onClick}
+        onCloseFilters={() => setFiltersOpen(false)}
+      />
+      <DesktopTable {...shell.tableProps} />
+
+      {props.tableFooter ? (
+        <div data-adapttable-part="table-footer">{props.tableFooter}</div>
+      ) : null}
+
+      {chrome.showFooter && (
+        <Footer
+          pagination={table.pagination}
+          total={source.total}
+          limit={source.limit}
+          setPage={source.setPage}
+          setLimit={source.setLimit}
+          labels={labels}
+          showRowsPerPage={!chrome.grouping}
+        />
+      )}
+    </div>
+  );
 }
