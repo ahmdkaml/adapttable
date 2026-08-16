@@ -688,6 +688,7 @@ function DesktopRowBase<TRow>({
         )}
         {selected !== undefined && (
           <Table.Td
+            data-adapttable-part="selection-cell"
             ta="center"
             style={{ ...selectionCellStyle, ...edgeRowPin }}
           >
@@ -1270,6 +1271,7 @@ export function DesktopTable<TRow>({
             </When>
             {selection && (
               <Table.Th
+                data-adapttable-part="selection-header"
                 w={selectionWidth}
                 ta="center"
                 style={selectionHeaderStyle}

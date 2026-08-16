@@ -452,6 +452,7 @@ function DesktopRowBase<TRow>({
         )}
         {hasSelection && (
           <Table.Cell
+            data-adapttable-part="selection-cell"
             style={{
               ...edgeCellStyle(
                 "start",
@@ -1167,6 +1168,7 @@ export function DesktopTable<TRow>({
             </When>
             {selection && (
               <Table.ColumnHeader
+                data-adapttable-part="selection-header"
                 {...stickyTh}
                 style={edgeCellStyle(
                   "start",

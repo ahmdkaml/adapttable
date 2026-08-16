@@ -522,7 +522,12 @@ function DesktopRowImpl<TRow>({
           </TableCell>
         )}
         {hasSelection && (
-          <TableCell padding="checkbox" sx={sx.selection} style={edgeRowPin}>
+          <TableCell
+            data-adapttable-part="selection-cell"
+            padding="checkbox"
+            sx={sx.selection}
+            style={edgeRowPin}
+          >
             <Checkbox
               slotProps={{ input: { "aria-label": selectRowLabel } }}
               checked={selected}
@@ -1019,6 +1024,7 @@ export function DesktopTable<TRow>({
             )}
             {selection && (
               <TableCell
+                data-adapttable-part="selection-header"
                 padding="checkbox"
                 sx={edgeHeadSx("start", hasStartPin, selectionLead)}
               >
