@@ -16,9 +16,19 @@ async function headerX(page: Page, name: string): Promise<number> {
   return box.x;
 }
 
-/** Scroll the table's horizontal container and return the resulting offset. */
+/**
+ * Scroll the table's horizontal container and return the resulting offset.
+ *
+ * Every kit owns its own scroll box — antd wraps the body in one of its own,
+ * the shared shell names it as a part — so this finds whichever is present
+ * rather than hard-coding one kit's class.
+ */
 async function scrollTableX(page: Page, dx: number): Promise<number> {
-  const scroller = page.locator(".ant-table-content, .ant-table-body").first();
+  const scroller = page
+    .locator(
+      '[data-adapttable-part="scroll-box"], .ant-table-content, .ant-table-body'
+    )
+    .first();
   return scroller.evaluate((el, delta) => {
     el.scrollLeft += delta;
     return el.scrollLeft;
@@ -180,3 +190,47 @@ test.describe("columns — export the selected range", () => {
     expect(sheet).not.toContain('<c r="C1"');
   });
 });
+
+/**
+ * The page's subject has to work in every kit, not just the one that loads
+ * first. Both halves have been broken here before: the Columns menu was gated
+ * on an antd-only flag, and the wide column set collapsed to fit in Mantine
+ * because a pixel min-width was being rem-scaled to zero.
+ */
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
+for (const kit of KITS) {
+  test(`${kit}: offers the Columns menu over a table that scrolls sideways`, async ({
+    page,
+  }) => {
+    await page.goto("/columns/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    await expect(
+      root.locator('[data-adapttable-part="column-menu-button"]').first()
+    ).toBeVisible();
+
+    // Fixed column widths must push the table past its container, or there is
+    // nothing to scroll and nothing for a pinned column to stick against.
+    const overflow = await root.evaluate((el) =>
+      [...el.querySelectorAll("*")].some(
+        (node) => node.scrollWidth > node.clientWidth + 20
+      )
+    );
+    expect(overflow, `${kit} table does not overflow sideways`).toBe(true);
+  });
+}

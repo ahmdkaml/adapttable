@@ -1,8 +1,16 @@
 import { xlsxWriter } from "@adapttable/core/xlsx";
+import { Suspense, useState } from "react";
 
-import { AntdDemo } from "./adapters/AntdDemo";
+import { cssVars } from "./cssVars";
+import {
+  ADAPTERS,
+  DemoFallback,
+  KitSwitcher,
+  readKitFromUrl,
+} from "./kitDemos";
 import { Columns, Keyboard, Pin, Resize } from "./sectionIcons";
 import { SectionHead } from "./sections";
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 const EXPORT_RANGE_AS_XLSX = {
   scope: "range",
@@ -11,6 +19,11 @@ const EXPORT_RANGE_AS_XLSX = {
 } as const;
 
 export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
+  const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   return (
     <section className="sec shell" id="columns">
       <SectionHead title="Wide tables, fully handled.">
@@ -21,6 +34,7 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
         Shift to select a range, and export exactly that range. No row grouping,
         editing, or spanning header groups compete with the column layout.
       </SectionHead>
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
         <div className="hint-row">
           <span className="hint">
@@ -36,21 +50,30 @@ export function ColumnsDemo({ dark }: Readonly<{ dark: boolean }>) {
             <Keyboard size={12} /> Shift+arrow selects a range to export
           </span>
         </div>
-        <div className="pad-surface__body">
-          <AntdDemo
-            mode="frontend"
-            locale="en"
-            dark={dark}
-            urlKey="cols"
-            wide
-            // This page IS the column tools, so it says so rather than
-            // inheriting the menu from whether the column set happens to be
-            // wide — a coupling that left every kit but antd without one.
-            columnMenu
-            cellNavigation
-            exportCsv={EXPORT_RANGE_AS_XLSX}
-            focused
-          />
+        <div
+          className="pad-surface__body"
+          style={cssVars({
+            "--c": dark ? token.accentDark : token.accentLight,
+          })}
+        >
+          <div key={adapter} data-adapter={adapter}>
+            <Suspense fallback={<DemoFallback />}>
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="cols"
+                wide
+                // This page IS the column tools, so it says so rather than
+                // inheriting the menu from whether the column set happens to be
+                // wide — a coupling that left every kit but antd without one.
+                columnMenu
+                cellNavigation
+                exportCsv={EXPORT_RANGE_AS_XLSX}
+                focused
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </section>
