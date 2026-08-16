@@ -132,6 +132,7 @@ export function BaseUiDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   editing,
   cellNavigation,
   headerFilters,
@@ -165,6 +166,8 @@ export function BaseUiDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   headerFilters?: boolean;
@@ -215,6 +218,7 @@ export function BaseUiDemo({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      realtime={realtime}
       editing={editing}
       render={(source, columns) => (
         <DataTable

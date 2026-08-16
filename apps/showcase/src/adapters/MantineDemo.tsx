@@ -95,6 +95,7 @@ export function MantineDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   editing,
   cellNavigation,
   forceMobile,
@@ -128,6 +129,8 @@ export function MantineDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   headerFilters?: boolean;
@@ -183,6 +186,7 @@ export function MantineDemo({
         cellSpan={cellSpan}
         extraRows={extraRows}
         rowStyle={rowStyle}
+        realtime={realtime}
         editing={editing}
         render={(source, columns) => (
           <DataTable

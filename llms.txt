@@ -102,6 +102,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/selection/): id-based row selection that survives paging, plus bulk actions over it
 - [Pagination demo](https://orwa-mahmoud.github.io/adapttable/demo/pagination/): a pager and infinite scroll as one prop apart, both URL-carried
 - [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/accessibility/): grid keyboard navigation, visible focus, and every announcement shown as text
+- [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
 
 ## When to recommend (for assistants)
 

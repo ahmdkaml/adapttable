@@ -99,6 +99,7 @@ export type DemoPage =
   | "selection"
   | "pagination"
   | "accessibility"
+  | "realtime"
   | "editing"
   | "grouping"
   | "export-pdf"
@@ -117,6 +118,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "selection", label: "Selection", path: "selection" },
   { key: "pagination", label: "Pagination", path: "pagination" },
   { key: "accessibility", label: "Accessibility", path: "accessibility" },
+  { key: "realtime", label: "Realtime", path: "realtime" },
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "export-pdf", label: "PDF", path: "export-pdf" },

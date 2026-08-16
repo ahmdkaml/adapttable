@@ -113,6 +113,7 @@ export function AntdDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   editing,
   cellNavigation,
   wide,
@@ -146,6 +147,8 @@ export function AntdDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -206,6 +209,7 @@ export function AntdDemo({
         cellSpan={cellSpan}
         extraRows={extraRows}
         rowStyle={rowStyle}
+        realtime={realtime}
         editing={editing}
         columnGroups={columnGroups}
         render={(source, columns) => (

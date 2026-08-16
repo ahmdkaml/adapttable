@@ -146,6 +146,7 @@ export function UnstyledLike({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   editing,
   cellNavigation,
   headerFilters,
@@ -180,6 +181,8 @@ export function UnstyledLike({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
   headerFilters?: boolean;
@@ -233,6 +236,7 @@ export function UnstyledLike({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      realtime={realtime}
       editing={editing}
       columnGroups={columnGroups}
       render={(source, columns) => {

@@ -1,10 +1,12 @@
 import type { GroupNode } from "@adapttable/core";
 import {
+  applyRowPatchesWithLog,
   applyRowReorder,
   type ColumnLayoutState,
   evaluateFilterTree,
   type QueryFilterGroup,
   type TableSource,
+  updateRow,
   useColumnLayoutUrlState,
   useFrontendData,
   useQuerySource,
@@ -12,9 +14,12 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   createContext,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -26,6 +31,7 @@ import {
   LIVE_DEFAULT_LAYOUT,
   PEOPLE,
   type Person,
+  personName,
   reportsTo,
 } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
@@ -110,6 +116,87 @@ function usePeopleQuery(params: PeopleParams) {
   });
 }
 
+/** How often the realtime page applies a patch, in ms. */
+const REALTIME_INTERVAL_MS = 1200;
+
+/** The budget the nth live update writes — deterministic, so tests can rely on it. */
+function realtimeBudget(tick: number): number {
+  return 40000 + ((tick * 7919) % 160000);
+}
+
+/**
+ * Apply the nth live update.
+ *
+ * Through the patch API rather than by rebuilding the array: the log rides on
+ * the returned rows, which is what lets the incremental engine re-run search,
+ * filters and sort for the touched row only. Copying the result would drop it.
+ */
+function nextRealtimeRows(
+  rows: readonly Person[],
+  tick: number
+): readonly Person[] {
+  const target = rows[tick % rows.length];
+  if (!target) return rows;
+  return applyRowPatchesWithLog(
+    rows,
+    [updateRow<Person>(target.id, { budget: realtimeBudget(tick) })],
+    (row) => row.id
+  ).rows;
+}
+
+/** The feed line for the nth update, newest first, capped. */
+function nextRealtimeFeed(lines: readonly string[], tick: number): string[] {
+  const target = PEOPLE[tick % PEOPLE.length];
+  if (!target) return [...lines];
+  const line = `${personName(target, "en")} · budget → ${realtimeBudget(tick)}`;
+  return [line, ...lines].slice(0, 6);
+}
+
+/**
+ * Drive a live feed of row patches, and report what was applied.
+ *
+ * Its own hook rather than an effect inside the table body: the timer, the
+ * patch and the transcript are one concern, and inlining them pushed the
+ * caller past its complexity budget.
+ */
+function useRealtimeFeed(
+  enabled: boolean,
+  setData: Dispatch<SetStateAction<readonly Person[]>>
+): string[] {
+  const [feed, setFeed] = useState<string[]>([]);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let tick = 0;
+    const id = setInterval(() => {
+      const at = tick++;
+      setData((prev) => nextRealtimeRows(prev, at));
+      setFeed((lines) => nextRealtimeFeed(lines, at));
+    }, REALTIME_INTERVAL_MS);
+    return () => {
+      clearInterval(id);
+    };
+  }, [enabled, setData]);
+  return feed;
+}
+
+/** What the live feed has applied, newest first. */
+function RealtimeFeed({ lines }: Readonly<{ lines: readonly string[] }>) {
+  return (
+    <div className="demo-live-update" data-testid="realtime-feed">
+      <span>Applied updates</span>
+      {lines.length === 0 ? (
+        <span>waiting for the first patch…</span>
+      ) : (
+        <ol>
+          {lines.map((line, index) => (
+            <li key={`${line}-${String(index)}`}>{line}</li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 interface DataProps {
   render: TableRender;
   columns: DemoColumnProps;
@@ -128,6 +215,8 @@ interface DataProps {
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   /** AND/OR builder — Feature Lab only. Live demo stays a simple form. */
   advancedFilters?: boolean;
 }
@@ -204,10 +293,13 @@ function Frontend({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   advancedFilters,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
-  const [data, setData] = useState(() => PEOPLE.map((row) => ({ ...row })));
+  const [data, setData] = useState<readonly Person[]>(() =>
+    PEOPLE.map((row) => ({ ...row }))
+  );
   const onCellEdit = useCallback(
     (row: Person, key: string, nextValue: unknown) => {
       const field = EDIT_FIELD[key] ?? (key as keyof Person);
@@ -248,6 +340,7 @@ function Frontend({
       prev.map((row) => ({ ...row, revision: (row.revision ?? 0) + 1 }))
     );
   }, []);
+  const feed = useRealtimeFeed(realtime === true, setData);
   const source = useFrontendData<Person>({
     data,
     columns: BASE_COLUMNS,
@@ -290,6 +383,7 @@ function Frontend({
           </button>
         </div>
       ) : null}
+      {realtime ? <RealtimeFeed lines={feed} /> : null}
       {render(tableSource, {
         ...columns,
         // Both features are strictly opt-in: the toggles mirror the API —
@@ -433,6 +527,7 @@ export function DemoBody({
   cellSpan,
   extraRows,
   rowStyle,
+  realtime,
   columnGroups,
 }: Readonly<{
   mode: DataMode;
@@ -451,6 +546,7 @@ export function DemoBody({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  realtime?: boolean;
   columnGroups?: boolean;
 }>) {
   const advancedFilters = useAdvancedFilters();
@@ -501,6 +597,7 @@ export function DemoBody({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      realtime={realtime}
       advancedFilters={advancedFilters}
     />
   );

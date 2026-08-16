@@ -37,6 +37,8 @@ export type KitDemoProps = Readonly<{
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
