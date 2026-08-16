@@ -8,7 +8,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 
 export interface ToolbarProps<TRow> extends ToolbarChromeProps<TRow> {
-  filtersMode: "popover" | "drawer";
+  filtersMode: "header" | "popover" | "drawer";
   filters?: ReactNode;
   onCloseFilters: () => void;
   onClearFilters: () => void;

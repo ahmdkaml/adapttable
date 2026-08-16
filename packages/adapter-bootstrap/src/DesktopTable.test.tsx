@@ -1,5 +1,5 @@
 import type { SharedTableRenderProps } from "@adapttable/core/adapter";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DesktopTable } from "./components/DesktopTable";
@@ -17,20 +17,34 @@ const rows: Person[] = [
 
 function makeProps(): SharedTableRenderProps<Person> {
   const columns = [
-    { key: "name", header: "Name" },
-    { key: "email", header: "Email" },
+    { key: "name", header: "Name", sortable: true },
+    { key: "email", header: <span>Email Node</span>, sortable: false },
   ];
 
   return {
     table: {
       columns,
+      labels: { sortBy: "Sort by" },
       getHeaderRowProps: () => ({}),
-      getHeaderCellProps: () => ({}),
+      getHeaderCellProps: (col: any) => ({
+        "aria-sort": col.key === "name" ? "ascending" : undefined,
+      }),
       getRowProps: () => ({}),
       getCellProps: () => ({}),
       getRowKey: (row: Person) => row.id,
-      getCellContent: (column: (typeof columns)[number], row: Person) =>
-        String(row[column.key as keyof Person] ?? ""),
+      getCellContent: (column: any, row: Person) => {
+        const key = column.key as keyof Person;
+        return row[key] ? String(row[key]) : null;
+      },
+      getSortButtonProps: (column: any) =>
+        column.sortable
+          ? {
+              type: "button" as const,
+              disabled: false,
+              "aria-label": `Sort by: ${column.header}`,
+              onClick: vi.fn(),
+            }
+          : undefined,
     } as unknown as SharedTableRenderProps<Person>["table"],
     rows,
     confirm: () => undefined,
@@ -39,19 +53,24 @@ function makeProps(): SharedTableRenderProps<Person> {
 }
 
 describe("DesktopTable", () => {
-  it("renders column headers", () => {
+  it("renders column headers, handles sorting click and fallback header key", () => {
     const props = makeProps();
-    const { rerender } = render(<DesktopTable {...props} />);
+    const sortClick = vi.fn();
+    props.table.getSortButtonProps = (column: any) => ({
+      type: "button" as const,
+      disabled: false,
+      "aria-label": `Sort by: ${column?.header ?? ""}`,
+      onClick: sortClick,
+    });
 
-    expect(
-      screen.getByRole("columnheader", { name: "Name" })
-    ).toBeInTheDocument();
+    render(<DesktopTable {...props} />);
 
-    expect(
-      screen.getByRole("columnheader", { name: "Email" })
-    ).toBeInTheDocument();
+    const sortButton = screen.getByRole("button", { name: "Sort by: Name" });
+    expect(sortButton).toBeInTheDocument();
+    fireEvent.click(sortButton);
+    expect(sortClick).toHaveBeenCalled();
 
-    rerender(<DesktopTable {...props} />);
+    expect(screen.getByText("Email Node")).toBeInTheDocument();
   });
 
   it("renders row values", () => {
@@ -67,18 +86,59 @@ describe("DesktopTable", () => {
     render(<DesktopTable {...makeProps()} rows={[]} />);
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: "Name" })
+      screen.getByRole("columnheader", { name: /Name/ })
     ).toBeInTheDocument();
   });
 
-  it("uses the core cell renderer", () => {
+  it("falls back to column.accessor when table.getCellContent is undefined", () => {
     const props = makeProps();
-    const getCellContent = vi.fn(props.table.getCellContent);
+    const tableWithoutCellContent = { ...props.table };
+    delete (tableWithoutCellContent as any).getCellContent;
+
+    const columnsWithAccessor = [
+      {
+        key: "name",
+        header: "Name",
+        accessor: (row: Person) => `Acc-${row.name}`,
+      },
+    ];
 
     render(
-      <DesktopTable {...props} table={{ ...props.table, getCellContent }} />
+      <DesktopTable
+        {...props}
+        table={
+          {
+            ...tableWithoutCellContent,
+            columns: columnsWithAccessor,
+          } as any
+        }
+      />
     );
 
-    expect(getCellContent).toHaveBeenCalled();
+    expect(screen.getByText("Acc-Alice")).toBeInTheDocument();
+  });
+
+  it("handles pinned columns (start and end offsets), column widths, and resize handle", () => {
+    const setWidth = vi.fn();
+    const props = makeProps();
+
+    render(
+      <DesktopTable
+        {...props}
+        setWidth={setWidth}
+        fitColumns={true}
+        columnWidths={{ name: 150, email: 200 }}
+        pinOffset={(key) => {
+          if (key === "name") return { side: "start", inset: 0 };
+          if (key === "email") return { side: "end", inset: 10 };
+          return undefined;
+        }}
+      />
+    );
+
+    const resizeHandles = document.querySelectorAll(
+      '[aria-label*="Resize column"]'
+    );
+    expect(resizeHandles.length).toBeGreaterThan(0);
   });
 });

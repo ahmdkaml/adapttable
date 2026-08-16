@@ -1,7 +1,6 @@
 import { useDataTableShell } from "@adapttable/core/adapter";
 import type { ReactNode } from "react";
 
-import { ColumnMenu } from "./components/ColumnMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { Footer } from "./components/PaginationFooter";
 import { Toolbar } from "./components/Toolbar";
@@ -34,24 +33,6 @@ export function DataTable<TRow>(
         filtersOpen={filtersOpen}
         onToggleFilters={filtersTrigger.onClick}
         onCloseFilters={() => setFiltersOpen(false)}
-        columnMenu={
-          props.enableColumnMenu && !chrome.isMobile ? (
-            <ColumnMenu
-              allColumns={chrome.allColumns}
-              onAutoSize={shell.autoSizeColumns}
-              onAutoSizeColumn={shell.autoSizeColumn}
-              onSortColumn={(key, dir) => source.setSort(key, dir)}
-              onFilterColumn={() => setFiltersOpen(true)}
-              sortBy={source.sortBy}
-              sortDir={source.sortDir}
-              layout={chrome.columnLayout}
-              labels={table.labels}
-              hasRowActions={shell.hasRowActions}
-              hasRowReorder={shell.hasRowReorder}
-              dir={props.dir}
-            />
-          ) : undefined
-        }
       />
       <DesktopTable {...shell.tableProps} />
 
