@@ -179,6 +179,13 @@ export function buildFormulaColumns<TRow extends object>(
    * value to differ — "30", 30, "30" — and `computed` derives all three from
    * one value by design. The dependency graph above is still the shared one;
    * only this memo is local.
+   *
+   * The cache is keyed on the row OBJECT, so update a row by replacing it —
+   * the way React state is written anyway — never by mutating it in place. The
+   * signature covers the fields a formula reads directly, but a formula
+   * reading another FORMULA column holds only that column's name as its
+   * dependency, and a name is not a value: mutating the row underneath leaves
+   * the outer formula showing the answer to the previous data.
    */
   interface Memo {
     deps: string;

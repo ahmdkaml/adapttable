@@ -74,6 +74,16 @@ describe("parsing", () => {
     expect(shown('="a" & "b" & "c"')).toBe("abc");
   });
 
+  it("reports what it does not support rather than guessing", () => {
+    // Exponent and scientific notation are knowingly out of the grammar. What
+    // the assertion is for is that each one is REPORTED: reading `1e5` as 1
+    // would be a wrong number with nothing on screen to question.
+    expect(parseFormula("=2^3").ok).toBe(false);
+    expect(parseFormula("=2^3").message).toContain("^");
+    expect(parseFormula("=1e5").ok).toBe(false);
+    expect(parseFormula("=1e5").message).toContain("e");
+  });
+
   it("reads a bracketed name so a column can contain spaces", () => {
     expect(shown("=[Unit Cost] * 2")).toBe("8");
   });

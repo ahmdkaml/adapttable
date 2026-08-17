@@ -3902,6 +3902,16 @@ primary    → number | string | reference | call | "(" expression ")"
 Comparisons bind loosest of all, so `="a" & "b" = "ab"` compares two whole
 strings and is `TRUE`.
 
+## Not supported, knowingly
+
+`^` (exponent) and scientific notation (`1e5`) are outside the grammar. Both
+are **reported**, never reinterpreted: `parseFormula` answers `ok: false` with
+the character it stopped on, `buildFormulaColumns` names the column in
+`errors`, and that column's cells read `#ERROR!`. Write `x * x` for a square.
+
+The absence is deliberate — a formula language grows one "just add" at a time —
+and an absence that says so beats one that quietly reads `1e5` as `1`.
+
 ## Values are tagged, and errors are values
 
 A value is `{ kind: "number" | "text" | "boolean" | "blank" | "error" }`
