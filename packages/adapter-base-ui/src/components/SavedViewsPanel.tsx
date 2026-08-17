@@ -11,9 +11,23 @@ import {
 
 import { Badge, Button, Flex, Text, TextField } from "../ui";
 
+/** The adapter's own class list, in the order `DataTable` writes it. */
+function classes(...parts: (string | undefined)[]): string {
+  return parts.filter(Boolean).join(" ");
+}
+
 const slots: SavedViewsPanelSlots = {
+  // The adapter's tokens live on `adapttable-base-ui`, and a panel mounted
+  // beside the table rather than inside it is outside that scope — without the
+  // class every `var(--adapttable-*)` in here resolves to nothing and the kit's
+  // own controls paint as bare text.
   Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <Flex direction="column" gap="2" className={className} {...rest}>
+    <Flex
+      direction="column"
+      gap="2"
+      className={classes("adapttable-base-ui", className)}
+      {...rest}
+    >
       {children}
     </Flex>
   ),

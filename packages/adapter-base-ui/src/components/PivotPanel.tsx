@@ -13,9 +13,23 @@ import {
 import { Button, Flex, Text } from "../ui";
 import { NativeSelect } from "./primitives";
 
+/** The adapter's own class list, in the order `DataTable` writes it. */
+function classes(...parts: (string | undefined)[]): string {
+  return parts.filter(Boolean).join(" ");
+}
+
 const slots: PivotPanelSlots = {
+  // The adapter's tokens live on `adapttable-base-ui`, and a panel mounted
+  // beside the table rather than inside it is outside that scope — without the
+  // class every `var(--adapttable-*)` in here resolves to nothing and the kit's
+  // own controls paint as bare text.
   Surface: ({ children, className, ...rest }: PivotPanelSurfaceProps) => (
-    <Flex direction="column" gap="3" className={className} {...rest}>
+    <Flex
+      direction="column"
+      gap="3"
+      className={classes("adapttable-base-ui", className)}
+      {...rest}
+    >
       {children}
     </Flex>
   ),
