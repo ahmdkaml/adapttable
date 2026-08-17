@@ -1,10 +1,11 @@
+import { buildFormulaColumns } from "@adapttable/core/formula";
 import { getLabels } from "@adapttable/i18n";
 import { FilterDrawer } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
 import { startTransition, Suspense, useCallback, useId, useState } from "react";
 
 import { cssVars } from "./cssVars";
-import type { Locale } from "./data";
+import type { Locale, Person } from "./data";
 import {
   AdvancedFiltersProvider,
   type DataMode,
@@ -101,6 +102,19 @@ const SIDE_PANELS = [
 ];
 
 /**
+ * The Lab's formula column, built once.
+ *
+ * It reads `team` and `role` — fields every row carries on both tiers — so the
+ * toggle holds in every combination the Lab can reach, the server path
+ * included. Typing your own formula belongs on the /formulas/ page; here the
+ * point is that a computed column composes with grouping, editing, pinning and
+ * the rest rather than standing apart from them.
+ */
+const LAB_FORMULA_COLUMNS = buildFormulaColumns<Person>([
+  { key: "tag", header: "Tag", formula: '=UPPER(team) & " · " & role' },
+]).columns;
+
+/**
  * Print, for the palette's Print command.
  *
  * `printTable` opens a browser dialog, which is why it is the host's to
@@ -168,6 +182,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [structure, setStructure] = useState<Structure>("flat");
   const [columnGroups, setColumnGroups] = useState<OnOff>("off");
   const [sparkline, setSparkline] = useState<OnOff>("off");
+  const [formulaColumn, setFormulaColumn] = useState<OnOff>("off");
   const [editorShowcase, setEditorShowcase] = useState<OnOff>("off");
   const [statusBar, setStatusBar] = useState<OnOff>("off");
   const [undoRedo, setUndoRedo] = useState<OnOff>("off");
@@ -275,6 +290,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
       setStructure(next === "structure" ? "grouped" : "flat");
       setColumnGroups(next === "structure" ? "on" : "off");
       setSparkline("off");
+      setFormulaColumn("off");
       setEditorShowcase("off");
       setEditingMode(next === "editing" ? "cell" : "off");
       resetRows();
@@ -476,6 +492,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       onChange={(next) => customize(setSparkline, next)}
                     />
                     <Toggle
+                      label="Formula column"
+                      value={formulaColumn}
+                      onChange={(next) => customize(setFormulaColumn, next)}
+                    />
+                    <Toggle
                       label="Boolean & multi-select editors"
                       value={editorShowcase}
                       onChange={(next) => customize(setEditorShowcase, next)}
@@ -651,6 +672,9 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       headerFilters={filtersUi === "header"}
                       columnGroups={columnGroups === "on"}
                       sparkline={sparkline === "on"}
+                      formulaColumns={
+                        formulaColumn === "on" ? LAB_FORMULA_COLUMNS : undefined
+                      }
                       editorShowcase={editorShowcase === "on"}
                       statusBar={statusBar === "on"}
                       contextMenu={contextMenu === "on"}

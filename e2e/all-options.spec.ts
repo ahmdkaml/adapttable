@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { configureFeatureLab } from "./feature-lab";
+
 /** Feature Lab: working recipes, guarded controls, and a real table preview. */
 
 const ADAPTERS = [
@@ -274,4 +276,18 @@ test("Feature Lab stays contained on mobile in dark mode across every kit", asyn
     await page.keyboard.press("Escape");
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
   }
+});
+
+test("the formula column toggle holds on both data tiers", async ({ page }) => {
+  await page.goto("/all-options/");
+  await configureFeatureLab(page, "formula column", "On");
+
+  // `=UPPER(team) & " · " & role`, computed per row from fields the rows carry
+  // on either tier — which is why the toggle needs no guard.
+  const cell = (kit: string) =>
+    page.locator(`#demo [data-adapter="${kit}"] tbody [data-column-key="tag"]`);
+  await expect(cell("mantine").first()).toHaveText("CORE · Engineer");
+
+  await configureFeatureLab(page, "data source", "Backend");
+  await expect(cell("mantine").first()).toHaveText("CORE · Engineer");
 });
