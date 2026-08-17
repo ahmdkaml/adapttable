@@ -1,12 +1,31 @@
-import type { ColumnDef } from "@adapttable/core";
+import type { ColumnDef, SidePanelEntry } from "@adapttable/core";
+import { useSavedViews } from "@adapttable/core";
 import { buildFormulaColumns } from "@adapttable/core/formula";
+import {
+  isPivotReady,
+  type PivotConfig,
+  usePivotUrlState,
+} from "@adapttable/core/pivot";
 import { getLabels } from "@adapttable/i18n";
-import { FilterDrawer } from "@adapttable/mantine";
+import { type DataTableProps, FilterDrawer } from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
-import { startTransition, Suspense, useCallback, useId, useState } from "react";
+import {
+  type ReactNode,
+  startTransition,
+  Suspense,
+  useCallback,
+  useId,
+  useState,
+} from "react";
 
 import { cssVars } from "./cssVars";
-import type { Locale, Person } from "./data";
+import {
+  demoSavedViews,
+  type Locale,
+  type Person,
+  PIVOT_FIELDS,
+  PIVOT_PEOPLE,
+} from "./data";
 import {
   AdvancedFiltersProvider,
   type DataMode,
@@ -24,6 +43,8 @@ import {
   readKitFromUrl,
   Segmented,
 } from "./kitDemos";
+import { kitPivotPanel, KitProvider, kitSavedViewsPanel } from "./kitProviders";
+import { PivotTableView } from "./PivotTableView";
 import { SectionHead } from "./sections";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
@@ -73,34 +94,96 @@ const RECIPES: readonly {
 ];
 
 /**
- * The Lab's own panels.
+ * The Lab's docked pivot builder.
  *
- * `sidePanel` takes content, not a feature flag — the table docks whatever
- * the host puts in it. These two show that: a note, and the same guidance
- * the Lab prints elsewhere, rendered inside the panel instead of above it.
+ * `sidePanel` takes content, not a feature flag, and this is the content the
+ * docked panel exists for: setting a table up is iterative — change an axis,
+ * look at the numbers, change another — which a popover cannot do because it
+ * closes when you look away. The panel is the kit's own, so switching the Lab's
+ * kit switches the builder with the table.
  */
-const SIDE_PANELS = [
-  {
-    key: "about",
-    label: "About",
-    content: (
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-        A docked panel keeps the rows visible while you change them. Its
-        contents are yours — a column list, a filter form, a pivot builder.
-      </p>
-    ),
-  },
-  {
-    key: "keys",
-    label: "Keyboard",
-    content: (
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-        Arrow keys move between tabs and wrap at the ends, Home and End jump to
-        them, and Escape closes the panel from anywhere inside it.
-      </p>
-    ),
-  },
-];
+function LabPivotPanel({
+  kit,
+  config,
+  onChange,
+}: Readonly<{
+  kit: string;
+  config: PivotConfig;
+  onChange: (next: PivotConfig) => void;
+}>) {
+  const Panel = kitPivotPanel(kit);
+  return (
+    <Suspense fallback={null}>
+      <Panel
+        fields={PIVOT_FIELDS}
+        config={config}
+        onChange={onChange}
+        labels={getLabels("en")}
+      />
+    </Suspense>
+  );
+}
+
+/**
+ * The Lab's docked saved views — the same store the toolbar's Views menu
+ * reads, so a view saved there is a view this manages.
+ */
+function LabSavedViewsPanel({ kit }: Readonly<{ kit: string }>) {
+  const Panel = kitSavedViewsPanel(kit);
+  const views = useSavedViews(demoSavedViews("lab"));
+  return (
+    <Suspense fallback={null}>
+      <Panel
+        views={views.views}
+        onApply={views.apply}
+        onRename={views.rename}
+        onMove={views.move}
+        onSetDefault={views.setDefault}
+        onRemove={views.remove}
+        labels={getLabels("en")}
+      />
+    </Suspense>
+  );
+}
+
+/**
+ * What the Lab docks beside its rows: the pivot builder, the saved views, and
+ * a note about the panel's own keyboard.
+ *
+ * Two of the three are real components from the kit in use — the panel is a
+ * place to put a table's controls, so a demo of it that renders prose about
+ * what could go there demonstrates nothing.
+ */
+function labPanels(
+  kit: string,
+  config: PivotConfig,
+  onConfigChange: (next: PivotConfig) => void
+): readonly SidePanelEntry[] {
+  return [
+    {
+      key: "pivot",
+      label: "Pivot",
+      content: (
+        <LabPivotPanel kit={kit} config={config} onChange={onConfigChange} />
+      ),
+    },
+    {
+      key: "views",
+      label: "Views",
+      content: <LabSavedViewsPanel kit={kit} />,
+    },
+    {
+      key: "keys",
+      label: "Keyboard",
+      content: (
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+          Arrow keys move between tabs and wrap at the ends, Home and End jump
+          to them, and Escape closes the panel from anywhere inside it.
+        </p>
+      ),
+    },
+  ];
+}
 
 /**
  * The Lab's formula column, built once.
@@ -176,6 +259,100 @@ function flashReasonFor(
   return "Turn on editing or row mutations first — the flash marks the row a change landed on.";
 }
 
+/** What the summary line calls the current interaction. */
+function interactionSummaryOf(
+  editingMode: EditingMode,
+  rowFeatures: number
+): string {
+  if (editingMode !== "off") return `${editingMode} editing`;
+  if (rowFeatures > 0) return `${String(rowFeatures)} row features`;
+  return "read only";
+}
+
+/** What the summary line calls the current row shape. */
+function rowsSummaryOf(pivoted: boolean, structure: Structure): string {
+  return pivoted ? "pivoted by the panel" : `${structure} rows`;
+}
+
+/** The note under the summary when two options cannot both apply. */
+function compatibilityNoteFor(
+  clientOnly: boolean,
+  structured: boolean
+): ReactNode {
+  if (clientOnly) {
+    return (
+      <small>
+        Backend mode keeps server query, filters, paging, and column state
+        active. Client-only row features are disabled.
+      </small>
+    );
+  }
+  if (structured) {
+    return (
+      <small>
+        Reorder and pin are disabled because grouped/tree rows do not have one
+        stable flat row index.
+      </small>
+    );
+  }
+  return null;
+}
+
+/** The Lab's pivot state: what the docked builder edits, and the folds. */
+function useLabPivot() {
+  const { config, onConfigChange, collapsed, onCollapsedChange } =
+    usePivotUrlState({ urlKey: "lab" });
+  const onToggleFold = (key: string) => {
+    const next = new Set(collapsed);
+    if (!next.delete(key)) next.add(key);
+    onCollapsedChange(next);
+  };
+  return {
+    config,
+    collapsed,
+    onConfigChange,
+    onToggleFold,
+    ready: isPivotReady(config),
+  };
+}
+
+/**
+ * The Lab's rows: the pivot the docked builder configured, or the table itself.
+ *
+ * The panel travels with whichever one is showing — it is what pivoted the
+ * table, so a pivot that hid its own builder would be a table with no way back.
+ */
+function LabRows({
+  pivot,
+  pivoted,
+  kit,
+  dark,
+  sidePanel,
+  children,
+}: Readonly<{
+  pivot: ReturnType<typeof useLabPivot>;
+  pivoted: boolean;
+  kit: string;
+  dark: boolean;
+  sidePanel: DataTableProps<Person>["sidePanel"];
+  children: ReactNode;
+}>) {
+  if (!pivoted) return <>{children}</>;
+  return (
+    <KitProvider kit={kit} dark={dark}>
+      <PivotTableView
+        kit={kit}
+        rows={PIVOT_PEOPLE}
+        fields={PIVOT_FIELDS}
+        config={pivot.config}
+        collapsed={pivot.collapsed}
+        onToggleFold={pivot.onToggleFold}
+        sidePanel={sidePanel}
+      />
+    </KitProvider>
+  );
+}
+
 export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [adapter, setAdapter] = useState(readKitFromUrl);
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -195,7 +372,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [statusBar, setStatusBar] = useState<OnOff>("off");
   const [undoRedo, setUndoRedo] = useState<OnOff>("off");
   const [settingsPanel, setSettingsPanel] = useState<OnOff>("off");
-  const [openPanel, setOpenPanel] = useState<string | null>("about");
+  const [openPanel, setOpenPanel] = useState<string | null>("pivot");
   const [contextMenu, setContextMenu] = useState<OnOff>("off");
   const [palette, setPalette] = useState<OnOff>("off");
   const [chrome, setChrome] = useState<OnOff>("off");
@@ -209,11 +386,30 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [extraRows, setExtraRows] = useState<OnOff>("off");
   const [rowStyle, setRowStyle] = useState<OnOff>("off");
 
+  // The pivot the docked builder edits. It travels in the URL with the rest of
+  // the Lab's table state, and a saved view captures the same parameter.
+  const pivot = useLabPivot();
+
   const token =
     ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
     ADAPTER_TOKENS[0];
   const accent = dark ? token.accentDark : token.accentLight;
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
+  /**
+   * The panel drives the table it is docked in: put a field on Rows and a
+   * measure in the cells and the Lab's rows become that pivot. Guarded by the
+   * side-panel toggle like every Lab control — a pivot the reader cannot reach
+   * the builder for would be a table with no way back.
+   */
+  const panelOn = settingsPanel === "on";
+  const pivoted = panelOn && pivot.ready;
+  const sidePanel = panelOn
+    ? {
+        panels: labPanels(adapter, pivot.config, pivot.onConfigChange),
+        open: openPanel,
+        onOpenChange: setOpenPanel,
+      }
+    : undefined;
   const clientOnlyReason =
     mode === "backend"
       ? "This control needs the complete frontend row set."
@@ -244,31 +440,18 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
     rowStyle,
   ].filter((value) => value === "on").length;
   const optionsHeadingId = useId();
-  let interactionSummary = "read only";
-  if (editingMode !== "off") {
-    interactionSummary = `${editingMode} editing`;
-  } else if (enabledRowFeatures > 0) {
-    interactionSummary = `${enabledRowFeatures} row features`;
-  }
+  const interactionSummary = interactionSummaryOf(
+    editingMode,
+    enabledRowFeatures
+  );
+  const rowsSummary = rowsSummaryOf(pivoted, structure);
   const configSummary = `${
     RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"
-  }: ${mode}, ${filtersUi} filters, ${structure} rows, ${interactionSummary}`;
-  let compatibilityNote = null;
-  if (clientOnlyReason) {
-    compatibilityNote = (
-      <small>
-        Backend mode keeps server query, filters, paging, and column state
-        active. Client-only row features are disabled.
-      </small>
-    );
-  } else if (structured) {
-    compatibilityNote = (
-      <small>
-        Reorder and pin are disabled because grouped/tree rows do not have one
-        stable flat row index.
-      </small>
-    );
-  }
+  }: ${mode}, ${filtersUi} filters, ${rowsSummary}, ${interactionSummary}`;
+  const compatibilityNote = compatibilityNoteFor(
+    Boolean(clientOnlyReason),
+    structured
+  );
 
   const resetRows = () => {
     setRowMutations("off");
@@ -653,7 +836,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
               {RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"}
             </strong>
             <span>
-              {mode} · {filtersUi} filters · {structure} rows ·{" "}
+              {mode} · {filtersUi} filters · {rowsSummary} ·{" "}
               {interactionSummary}
             </span>
             {compatibilityNote}
@@ -668,58 +851,60 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
               key={adapter}
               data-adapter={adapter}
             >
-              <Suspense fallback={<DemoFallback />}>
-                <DemoFilterSetProvider value={filterSet}>
-                  <AdvancedFiltersProvider value={advancedFilters}>
-                    <Demo
-                      mode={mode}
-                      locale={locale}
-                      dark={dark}
-                      density={density}
-                      filtersUi={filtersUi}
-                      headerFilters={filtersUi === "header"}
-                      columnGroups={columnGroups === "on"}
-                      sparkline={sparkline === "on"}
-                      formulaColumns={labFormulaColumns(formulaColumn)}
-                      editorShowcase={editorShowcase === "on"}
-                      statusBar={statusBar === "on"}
-                      contextMenu={contextMenu === "on"}
-                      densityChooser={chrome === "on"}
-                      onDensityChange={chrome === "on" ? setDensity : undefined}
-                      fullscreen={chrome === "on"}
-                      commandPalette={palette === "on"}
-                      onPrint={palette === "on" ? printLabTable : undefined}
-                      undoRedoButtons={undoRedo === "on"}
-                      sidePanel={
-                        settingsPanel === "on"
-                          ? {
-                              panels: SIDE_PANELS,
-                              open: openPanel,
-                              onOpenChange: setOpenPanel,
-                            }
-                          : undefined
-                      }
-                      animate={motion === "on"}
-                      grouping={structure === "grouped"}
-                      tree={structure === "tree"}
-                      nested={structure === "nested"}
-                      editing={editingMode === "cell"}
-                      rowMode={editingMode === "row"}
-                      batch={editingMode === "batch"}
-                      rowMutations={rowMutations === "on"}
-                      highlight={highlight === "on"}
-                      failure={failure}
-                      onRecover={recoverFromFailure}
-                      rowReorder={rowReorder === "on"}
-                      rowPinning={rowPinning === "on"}
-                      cellSpan={cellSpan === "on"}
-                      extraRows={extraRows === "on"}
-                      rowStyle={rowStyle === "on"}
-                      urlKey="lab"
-                    />
-                  </AdvancedFiltersProvider>
-                </DemoFilterSetProvider>
-              </Suspense>
+              <LabRows
+                pivot={pivot}
+                pivoted={pivoted}
+                kit={adapter}
+                dark={dark}
+                sidePanel={sidePanel}
+              >
+                <Suspense fallback={<DemoFallback />}>
+                  <DemoFilterSetProvider value={filterSet}>
+                    <AdvancedFiltersProvider value={advancedFilters}>
+                      <Demo
+                        mode={mode}
+                        locale={locale}
+                        dark={dark}
+                        density={density}
+                        filtersUi={filtersUi}
+                        headerFilters={filtersUi === "header"}
+                        columnGroups={columnGroups === "on"}
+                        sparkline={sparkline === "on"}
+                        formulaColumns={labFormulaColumns(formulaColumn)}
+                        editorShowcase={editorShowcase === "on"}
+                        statusBar={statusBar === "on"}
+                        contextMenu={contextMenu === "on"}
+                        densityChooser={chrome === "on"}
+                        onDensityChange={
+                          chrome === "on" ? setDensity : undefined
+                        }
+                        fullscreen={chrome === "on"}
+                        commandPalette={palette === "on"}
+                        onPrint={palette === "on" ? printLabTable : undefined}
+                        undoRedoButtons={undoRedo === "on"}
+                        sidePanel={sidePanel}
+                        animate={motion === "on"}
+                        grouping={structure === "grouped"}
+                        tree={structure === "tree"}
+                        nested={structure === "nested"}
+                        editing={editingMode === "cell"}
+                        rowMode={editingMode === "row"}
+                        batch={editingMode === "batch"}
+                        rowMutations={rowMutations === "on"}
+                        highlight={highlight === "on"}
+                        failure={failure}
+                        onRecover={recoverFromFailure}
+                        rowReorder={rowReorder === "on"}
+                        rowPinning={rowPinning === "on"}
+                        cellSpan={cellSpan === "on"}
+                        extraRows={extraRows === "on"}
+                        rowStyle={rowStyle === "on"}
+                        urlKey="lab"
+                      />
+                    </AdvancedFiltersProvider>
+                  </DemoFilterSetProvider>
+                </Suspense>
+              </LabRows>
             </div>
           </div>
         </div>

@@ -278,6 +278,62 @@ test("Feature Lab stays contained on mobile in dark mode across every kit", asyn
   }
 });
 
+test("the docked pivot builder pivots the Lab's own table", async ({
+  page,
+}) => {
+  // What the side panel is FOR: a builder beside the rows it changes. The Lab
+  // used to dock a paragraph about what could go there, which demonstrated
+  // nothing — this drives the real panel and reads the result off the table.
+  await page.goto("/all-options/");
+  await configureFeatureLab(page, "side panel", "On");
+
+  const panel = page.locator('[data-adapttable-part="side-panel"]').first();
+  await expect(panel).toBeVisible();
+  await panel.getByRole("tab", { name: "Pivot" }).click();
+  const zones = panel.locator('[data-adapttable-part="pivot-zone"]');
+  await expect(zones).toHaveCount(3);
+
+  // Team down the side, budget in the cells — the smallest pivot there is.
+  const addTo = async (zone: string, field: string) => {
+    const add = panel
+      .getByRole("group", { name: zone })
+      .getByRole("combobox", { name: "Add field" });
+    await add.click();
+    await page.getByRole("option", { name: field, exact: true }).click();
+  };
+  await addTo("Rows", "Team");
+  await addTo("Measures", "Budget");
+
+  // The Lab's rows are now that pivot, with its grand total — and the builder
+  // is still docked beside it, which is the only way back.
+  const pivot = page.getByTestId("pivot-table");
+  await expect(pivot).toBeVisible();
+  await expect(
+    pivot.locator('tbody [data-column-key="pivot-row"]').first()
+  ).not.toBeEmpty();
+  await expect(pivot.getByText("Grand total")).toBeVisible();
+  await expect(
+    panel.locator('[data-adapttable-part="pivot-panel"]')
+  ).toBeVisible();
+  // And it travels: the pivot is in the URL under the Lab's own namespace.
+  await expect(page).toHaveURL(/lab\.pivot=/);
+});
+
+test("the docked views panel manages the table's saved views", async ({
+  page,
+}) => {
+  await page.goto("/all-options/");
+  await configureFeatureLab(page, "side panel", "On");
+
+  const panel = page.locator('[data-adapttable-part="side-panel"]').first();
+  await panel.getByRole("tab", { name: "Views" }).click();
+
+  // The real panel, wired to the same store the toolbar's Views menu reads.
+  await expect(
+    panel.locator('[data-adapttable-part="saved-views-panel"]')
+  ).toBeVisible();
+});
+
 test("the formula column toggle holds on both data tiers", async ({ page }) => {
   await page.goto("/all-options/");
   await configureFeatureLab(page, "formula column", "On");

@@ -522,14 +522,15 @@ test("adds toolbar chrome only when the Feature Lab asks", async ({ page }) => {
   await expect(panel).toBeVisible();
 
   // The tab strip is a real one: arrows move the selection, and wrap.
-  await panel.getByRole("tab", { name: "About" }).focus();
+  await panel.getByRole("tab", { name: "Pivot" }).focus();
   await page.keyboard.press("ArrowRight");
-  await expect(panel.getByRole("tab", { name: "Keyboard" })).toHaveAttribute(
+  await expect(panel.getByRole("tab", { name: "Views" })).toHaveAttribute(
     "aria-selected",
     "true"
   );
   await page.keyboard.press("ArrowRight");
-  await expect(panel.getByRole("tab", { name: "About" })).toHaveAttribute(
+  await page.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "Pivot" })).toHaveAttribute(
     "aria-selected",
     "true"
   );
