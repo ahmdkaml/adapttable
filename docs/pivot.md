@@ -33,6 +33,66 @@ Each line has a `kind` — `"leaf"`, `"subtotal"` or `"grandTotal"` — a `depth
 for indentation, a `label`, a `count` of the source rows it covers, and one
 cell per entry of `columnLeaves`.
 
+## Rendering it with your kit
+
+`pivot` returns data, and a pivot has three shapes an ordinary table does not:
+header cells that span, a row-header area down the side, and lines that are
+totals rather than data. `pivotTableModel` maps them onto mechanisms the table
+already has, so the result goes straight into the `DataTable` you are already
+using:
+
+```tsx
+import { pivot, pivotTableModel } from "@adapttable/core/pivot";
+import { DataTable } from "@adapttable/mantine";
+
+const result = pivot(sales, config, { collapsed });
+const model = pivotTableModel(result, { fields, labels });
+
+<DataTable {...model} />;
+```
+
+The table is your kit's, with its own header groups, footer and sticky header —
+nothing here draws a `<table>`:
+
+| What the engine returns | What it becomes                                         |
+| ----------------------- | ------------------------------------------------------- |
+| `columnTree`            | `column.group`, one header row per level, spans and all |
+| `columnLeaves`          | One column each, keyed `pivot-0`, `pivot-1`, …          |
+| `rows`                  | The table's rows, keyed by the engine's own line key    |
+| The grand-total line    | `summaryRow` — the column-aligned footer                |
+| The grand-total column  | Its own header group, captioned from `labels`           |
+
+The row-header column is keyed `PIVOT_ROW_COLUMN_KEY` (`"pivot-row"`) and each
+measure column carries its `PivotColumnLeaf` in `column.meta.pivotLeaf`, so a
+host can find the measure and the column path behind any cell.
+
+Options are all optional: `fields` captions the measures (the same list the
+panel takes), `labels` localizes the grand-total captions, `rowHeader` names the
+corner cell — pass your row dimensions' captions, or take the localized "Rows" —
+and `indent` is the pixels per nesting level down the side.
+
+**The fold control is yours.** Core ships no user-facing controls, so
+`renderRowHeader` hands you each body line and you render what it needs — a
+subtotal line's `kind` says it is foldable and its `key` is the collapse key:
+
+```tsx
+pivotTableModel(result, {
+  renderRowHeader: (row) =>
+    row.kind === "subtotal" ? (
+      <Button variant="subtle" onClick={() => toggle(row.key)}>
+        {row.label}
+      </Button>
+    ) : (
+      row.label
+    ),
+});
+```
+
+Rows that are totals are marked for styling: every row-header cell carries
+`data-adapttable-part="pivot-row-header"` with a `data-pivot-kind` of `leaf`,
+`subtotal` or `grandTotal`, and the row itself is yours through the table's
+`rowClassName`.
+
 ## Measures
 
 A measure is a column key and an aggregation:

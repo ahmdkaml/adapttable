@@ -925,6 +925,17 @@ an `onChange`. `PivotPanelSlots` names the five kit-supplied pieces —
 chooser). Keyboard-first by construction: the move controls are buttons, so
 the panel needs no pointer. See [pivot tables](./pivot.md).
 
+**A pivot, as table props.** `pivotTableModel(result, options)` from
+`@adapttable/core/pivot` turns a `PivotResult` into a `PivotTableModel` — the
+`columns`, `rows`, `rowKey` and `summaryRow` a `DataTable` takes — so the pivot
+is rendered by your kit rather than by markup of your own. The column tree
+becomes `column.group`, the grand total becomes the footer, and the row-header
+column is keyed `PIVOT_ROW_COLUMN_KEY`. `PivotTableModelOptions` are the
+`fields` that caption the measures, the `labels` behind the grand-total
+captions, the corner cell's `rowHeader`, the per-level `indent`, and
+`renderRowHeader` — where a fold control goes, since core ships no controls.
+See [pivot tables](./pivot.md#rendering-it-with-your-kit).
+
 **Replacing a mobile card's body.** `renderCard(row, card)` returns the card's
 content; the shell renders around it. `renderCard` has the type `MobileCardRenderer`, and `card` is a
 `MobileCardModel`: `index`,
