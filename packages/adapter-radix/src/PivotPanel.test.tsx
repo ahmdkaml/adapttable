@@ -95,6 +95,18 @@ describe("PivotPanel", () => {
     ).toHaveLength(0);
   });
 
+  it("shows the add control's placeholder, never the empty sentinel", () => {
+    render(<Harness />);
+
+    // The wrapper maps the cleared value onto a token because this kit's
+    // `Select.Item` forbids an empty value; a list with no empty CHOICE has no
+    // such item, and naming it left the trigger blank instead of saying what
+    // the control does.
+    const add = zone("Rows").querySelector('[aria-label="Add field"]');
+    expect(add?.textContent).toContain("Add field");
+    expect(add?.textContent).not.toContain("__adapttable_empty__");
+  });
+
   it("puts an aggregation chooser on a measure", () => {
     render(
       <Harness

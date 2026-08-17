@@ -165,10 +165,15 @@ export function NativeSelect({
   "aria-busy"?: true;
   "data-conflict"?: "";
 }>) {
+  // Radix reads `""` as "nothing selected" and paints the placeholder, which
+  // is what a cleared select should show. The sentinel is only for a list that
+  // offers an empty CHOICE ("Any"), because `Select.Item` forbids an empty
+  // value — naming it when no such item exists left the trigger blank instead.
+  const offersEmpty = options.some((option) => option.value === "");
   return (
     <Select.Root
       size={size}
-      value={value === "" ? EMPTY_VALUE : value}
+      value={value === "" && offersEmpty ? EMPTY_VALUE : value}
       onValueChange={(next) => onValueChange(next === EMPTY_VALUE ? "" : next)}
     >
       <Select.Trigger

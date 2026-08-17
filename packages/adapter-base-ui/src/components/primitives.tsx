@@ -144,6 +144,19 @@ export interface SelectOption {
 const EMPTY_VALUE = "__adapttable_empty__";
 
 /**
+ * What the kit's Select is given for a caller's value.
+ *
+ * A cleared select shows the placeholder, and Base UI shows one only for a
+ * value it has no item for — `null`. The sentinel is for a list that offers an
+ * empty CHOICE ("Any"): naming it when no such item exists printed the
+ * sentinel itself where the placeholder belonged.
+ */
+function selectedValue(value: string, offersEmpty: boolean): string | null {
+  if (value !== "") return value;
+  return offersEmpty ? EMPTY_VALUE : null;
+}
+
+/**
  * Controlled select over Base UI `Select.*`, with empty-value sentinel
  * round-trip for placeholder / clear choices.
  */
@@ -176,13 +189,13 @@ export function NativeSelect({
   "aria-busy"?: true;
   "data-conflict"?: "";
 }>) {
-  const selected = value === "" ? EMPTY_VALUE : value;
   const items = Object.fromEntries(
     options.map((option) => [
       option.value === "" ? EMPTY_VALUE : option.value,
       option.label,
     ])
   );
+  const selected = selectedValue(value, EMPTY_VALUE in items);
   return (
     <Select.Root
       value={selected}
