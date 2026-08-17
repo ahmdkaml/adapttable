@@ -65,14 +65,7 @@ const FIXTURES = [
     // capabilities are genuinely shaken out, not merely compressing well. A
     // feature that starts leaking into the base path trips this before the
     // budget notices the bytes.
-    absent: [
-      "toCsv",
-      "Blob",
-      "download",
-      "virtual",
-      "PIVOT_BLANK",
-      "parseFormula",
-    ],
+    absent: ["toCsv", "Blob", "download", "virtual", "PIVOT_BLANK"],
   },
   {
     // The whole surface at once, which no application imports. It is a canary
@@ -88,7 +81,7 @@ const FIXTURES = [
     // whole main surface at once does not carry them. The marker is an
     // engine-only name, not the word "pivot" — the panel's LABELS are shared
     // table labels and do belong in the base bundle.
-    absent: ["PIVOT_BLANK", "parseFormula"],
+    absent: ["PIVOT_BLANK"],
   },
   {
     // What the pivot engine costs the tables that ask for it, and nothing to
@@ -98,15 +91,6 @@ const FIXTURES = [
     entryFile: "pivot.js",
     budgetKB: 5,
     code: `export { pivot } from "PKG";`,
-  },
-  {
-    // Same promise for the formula engine: a parser nobody imports is a
-    // parser nobody pays for.
-    name: "core · formula",
-    pkg: "core",
-    entryFile: "formula.js",
-    budgetKB: 6,
-    code: `export { buildFormulaColumns } from "PKG";`,
   },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.

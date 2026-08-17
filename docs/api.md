@@ -874,18 +874,6 @@ everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 `URLSearchParams`; `ServerFilterValue` is one filter's value. See
 [server queries](./server-queries.md).
 
-**Formulas.** `buildFormulaColumns(specs)` from `@adapttable/core/formula`
-turns `FormulaColumnSpec`s into columns, returning a `FormulaColumnsResult`:
-the columns, the `errors` that would not parse, and any `cycles`. A value is a
-tagged `FormulaValue` (`FormulaErrorCode`, `FORMULA_ERRORS`, `FORMULA_BLANK`),
-built with `formulaNumber` / `formulaText` / `formulaBoolean` / `formulaError`
-or read off a row with `toFormulaValue`, rendered with `formulaDisplay`,
-compared with `formulaSortValue`, and tested with `isFormulaError`.
-`parseFormula` returns a `ParseResult` holding a `FormulaNode` tree
-(`BinaryOp`), `formulaRefs` names what a formula reads, `evaluateFormula` runs
-one against a `FormulaScope`, and `FORMULA_FUNCTIONS` lists the built-ins. See
-[formulas](./formulas.md).
-
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move
 fields between them; `PivotPanelChromeProps` takes the fields, the config and

@@ -78,16 +78,6 @@
         "default": "./dist/pdf.cjs"
       }
     },
-    "./formula": {
-      "import": {
-        "types": "./dist/formula.d.ts",
-        "default": "./dist/formula.js"
-      },
-      "require": {
-        "types": "./dist/formula.d.cts",
-        "default": "./dist/formula.cjs"
-      }
-    },
     "./pivot": {
       "import": {
         "types": "./dist/pivot.d.ts",

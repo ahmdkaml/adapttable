@@ -13,7 +13,6 @@ export default defineConfig({
     "src/pdf.ts",
     "src/sparkline.ts",
     "src/pivot.ts",
-    "src/formula.ts",
   ],
   format: ["esm", "cjs"],
   dts: true,
