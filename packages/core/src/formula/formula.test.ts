@@ -55,6 +55,25 @@ describe("parsing", () => {
     expect(shown("=(2+3)*4")).toBe("20");
   });
 
+  it("joins with & only after the arithmetic, the way a spreadsheet does", () => {
+    // `&` sits BELOW + and -: the sums finish, then the pieces join. Sharing
+    // the additive level read this as ("a" & 2) + 3 and answered #VALUE!.
+    expect(shown('="a" & 2 + 3')).toBe("a5");
+    expect(shown('=1+2 & "x" & 3*4')).toBe("3x12");
+    expect(shown('=quantity - 1 & "/" & quantity + 1')).toBe("2/4");
+  });
+
+  it("joins before it compares, so a comparison sees both whole strings", () => {
+    expect(shown('="a"&"b" = "ab"')).toBe("TRUE");
+    expect(shown('="a"&"b" <> "ab"')).toBe("FALSE");
+    // A comparison still binds loosest of all: this is (1+2) = 3.
+    expect(shown("=1+2 = 3")).toBe("TRUE");
+  });
+
+  it("joins left to right", () => {
+    expect(shown('="a" & "b" & "c"')).toBe("abc");
+  });
+
   it("reads a bracketed name so a column can contain spaces", () => {
     expect(shown("=[Unit Cost] * 2")).toBe("8");
   });

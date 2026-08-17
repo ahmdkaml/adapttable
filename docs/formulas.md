@@ -54,14 +54,18 @@ add" at a time until it is a programming language nobody can secure:
 
 ```
 expression → comparison
-comparison → sum ( ("=" | "<>" | "<" | "<=" | ">" | ">=") sum )?
-sum        → product ( ("+" | "-" | "&") product )*
+comparison → concat ( ("=" | "<>" | "<" | "<=" | ">" | ">=") concat )?
+concat     → sum ( "&" sum )*
+sum        → product ( ("+" | "-") product )*
 product    → unary ( ("*" | "/") unary )*
 unary      → "-" unary | primary
 primary    → number | string | reference | call | "(" expression ")"
 ```
 
-`&` concatenates, as it does in a spreadsheet.
+`&` concatenates, as it does in a spreadsheet, and it binds **below** `+` and
+`-`: `="a" & 2 + 3` is `"a5"`, because the arithmetic finishes before the join.
+Comparisons bind loosest of all, so `="a" & "b" = "ab"` compares two whole
+strings and is `TRUE`.
 
 ## Values are tagged, and errors are values
 

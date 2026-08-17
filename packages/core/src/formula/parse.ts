@@ -13,8 +13,9 @@
  *
  * ```
  * expression → comparison
- * comparison → sum ( ("=" | "<>" | "<" | "<=" | ">" | ">=") sum )?
- * sum        → product ( ("+" | "-" | "&") product )*
+ * comparison → concat ( ("=" | "<>" | "<" | "<=" | ">" | ">=") concat )?
+ * concat     → sum ( "&" sum )*
+ * sum        → product ( ("+" | "-") product )*
  * product    → unary ( ("*" | "/") unary )*
  * unary      → "-" unary | primary
  * primary    → number | string | reference | call | "(" expression ")"
@@ -22,9 +23,14 @@
  * reference  → NAME | "[" any-text "]"
  * ```
  *
- * `&` concatenates, as it does in a spreadsheet. Bracketed references exist
- * so a column called "Unit Price" can be named without inventing an escaping
- * rule for spaces.
+ * `&` concatenates, as it does in a spreadsheet — and it binds BELOW `+` and
+ * `-`, also as it does in a spreadsheet: `="a" & 2 + 3` is `"a5"`, because the
+ * arithmetic finishes before the join. Sharing the additive level instead read
+ * it as `("a" & 2) + 3` and answered `#VALUE!`, which is the arithmetic of a
+ * language nobody writes formulas in.
+ *
+ * Bracketed references exist so a column called "Unit Price" can be named
+ * without inventing an escaping rule for spaces.
  *
  * A parse failure is a returned error, not an exception: the formula bar has
  * to show something useful while someone is still typing, and half a formula
@@ -234,11 +240,10 @@ function product(cursor: Cursor): FormulaNode {
 function additiveOp(cursor: Cursor): BinaryOp | undefined {
   if (cursor.take("+")) return "+";
   if (cursor.take("-")) return "-";
-  if (cursor.take("&")) return "&";
   return undefined;
 }
 
-/** `sum → product ( ("+" | "-" | "&") product )*` */
+/** `sum → product ( ("+" | "-") product )*` */
 function sum(cursor: Cursor): FormulaNode {
   let left = product(cursor);
   for (;;) {
@@ -248,12 +253,29 @@ function sum(cursor: Cursor): FormulaNode {
   }
 }
 
-/** `comparison → sum ( COMPARISON sum )?` — one level, as spreadsheets have. */
+/**
+ * `concat → sum ( "&" sum )*` — its own level, below the arithmetic and above
+ * the comparisons, which is where a spreadsheet puts it. Left-associative, so
+ * `=a & b & c` joins in reading order.
+ */
+function concat(cursor: Cursor): FormulaNode {
+  let left = sum(cursor);
+  while (cursor.take("&")) {
+    left = { kind: "binary", op: "&", left, right: sum(cursor) };
+  }
+  return left;
+}
+
+/**
+ * `comparison → concat ( COMPARISON concat )?` — one level, as spreadsheets
+ * have. Both sides join first, so `="a" & "b" = "ab"` compares two strings
+ * rather than concatenating a comparison.
+ */
 function expression(cursor: Cursor): FormulaNode {
-  const left = sum(cursor);
+  const left = concat(cursor);
   const op = COMPARISONS.find((candidate) => cursor.take(candidate));
   if (!op) return left;
-  return { kind: "binary", op, left, right: sum(cursor) };
+  return { kind: "binary", op, left, right: concat(cursor) };
 }
 
 /**
