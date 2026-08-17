@@ -121,6 +121,9 @@ function main() {
   const BASE_UI = {
     "@adapttable/base-ui": `file:${tarballs["@adapttable/base-ui"]}`,
   };
+  const SERVER = {
+    "@adapttable/server": `file:${tarballs["@adapttable/server"]}`,
+  };
 
   // On a Version Packages PR the bumped versions exist only as tarballs —
   // the registry doesn't have them yet. Every scratch app therefore pins
@@ -143,7 +146,7 @@ function main() {
         version: "0.0.0",
         private: true,
         type: "module",
-        dependencies: { ...CORE, ...UNSTYLED, ...BASE_UI, ...REACT },
+        dependencies: { ...CORE, ...UNSTYLED, ...BASE_UI, ...SERVER, ...REACT },
         overrides: OVERRIDES,
         devDependencies: {
           typescript: "^6.0.0",
@@ -157,27 +160,46 @@ function main() {
   writeFileSync(
     join(resDir, "esm.mjs"),
     `import { DataTable } from "@adapttable/unstyled";
-import { useQuerySource } from "@adapttable/core";
+import { tableQueryKey, useQuerySource } from "@adapttable/core";
 import { useDataTableShell } from "@adapttable/core/adapter";
+import { pivot } from "@adapttable/core/pivot";
+import { parseTableQuery } from "@adapttable/server";
 if (typeof DataTable !== "function" && typeof DataTable !== "object")
   throw new Error("unstyled DataTable missing from ESM entry");
 if (typeof useQuerySource !== "function")
   throw new Error("core useQuerySource missing from ESM entry");
 if (typeof useDataTableShell !== "function")
   throw new Error("core/adapter useDataTableShell missing from ESM entry");
+if (typeof pivot !== "function")
+  throw new Error("core/pivot missing from ESM entry");
+if (typeof parseTableQuery !== "function")
+  throw new Error("server parseTableQuery missing from ESM entry");
+// Neither TanStack Query nor SWR is installed in this consumer. The cache
+// helpers still work, which is the whole types-only-peer promise: importing
+// them must not drag either library in.
+if (tableQueryKey({ page: 1, limit: 25 })[0] !== "adapttable")
+  throw new Error("tableQueryKey did not build a key without a query library");
 console.log("esm ok");
 `
   );
   writeFileSync(
     join(resDir, "cjs.cjs"),
     `const { DataTable } = require("@adapttable/unstyled");
-const { useQuerySource } = require("@adapttable/core");
+const { tableQueryKey, useQuerySource } = require("@adapttable/core");
 const { useDataTableShell } = require("@adapttable/core/adapter");
+const { pivot } = require("@adapttable/core/pivot");
+const { parseTableQuery } = require("@adapttable/server");
 if (!DataTable) throw new Error("unstyled DataTable missing from CJS entry");
 if (typeof useQuerySource !== "function")
   throw new Error("core useQuerySource missing from CJS entry");
 if (typeof useDataTableShell !== "function")
   throw new Error("core/adapter useDataTableShell missing from CJS entry");
+if (typeof pivot !== "function")
+  throw new Error("core/pivot missing from CJS entry");
+if (typeof parseTableQuery !== "function")
+  throw new Error("server parseTableQuery missing from CJS entry");
+if (typeof tableQueryKey !== "function")
+  throw new Error("core tableQueryKey missing from CJS entry");
 console.log("cjs ok");
 `
   );
