@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Every adapter README must advertise every feature the library ships.
+ * The root README and every adapter README must advertise every feature the
+ * library ships.
  *
  * This exists because it failed in the worst way: cell editing, row grouping,
  * CSV export, column management, virtualization, saved views and row expansion
@@ -105,15 +106,22 @@ for (const page of documented) {
   }
 }
 
-for (const adapter of adapters) {
-  const path = join(root, "packages", adapter, "README.md");
-  const readme = readFileSync(path, "utf8");
+// The root README is the first page anyone reads — GitHub, the npm org, every
+// search result — and it froze the same way the adapter lists did: pivot,
+// formulas, tree data, PDF export, keyboard navigation and SSR all shipped
+// with a docs page and none of them reached the feature table. It is held to
+// the same contract as the packages it advertises.
+const readmes = [
+  "README.md",
+  ...adapters.map((a) => `packages/${a}/README.md`),
+];
+
+for (const relative of readmes) {
+  const readme = readFileSync(join(root, relative), "utf8");
   const section = /^## Features\n([\s\S]*?)(?=^## )/m.exec(readme);
 
   if (!section) {
-    problems.push(
-      `packages/${adapter}/README.md has no "## Features" section.`
-    );
+    problems.push(`${relative} has no "## Features" section.`);
     continue;
   }
 
@@ -122,9 +130,7 @@ for (const adapter of adapters) {
     .map(([name]) => name);
 
   if (missing.length > 0) {
-    problems.push(
-      `packages/${adapter}/README.md does not mention: ${missing.join(", ")}`
-    );
+    problems.push(`${relative} does not mention: ${missing.join(", ")}`);
   }
 }
 
@@ -146,6 +152,6 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `README feature parity: ${adapters.length} packages × ` +
+  `README feature parity: ${readmes.length} READMEs × ` +
     `${Object.keys(FEATURES).length} features, all present.`
 );
