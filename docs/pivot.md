@@ -193,17 +193,25 @@ The wire format is small on purpose — a `QueryPivotPage`:
   // One entry per PATH, not per rendered column: the measures multiply them.
   columns: [["EU", "Q1"], ["EU", "Q2"], ["US", "Q1"]],
   rows: [
-    { path: ["EU"], cells: [30, 20, 0], subtotal: true },
-    { path: ["EU", "Alpha"], cells: [30, 20, 0], count: 12 },
+    { path: ["EU"], cells: [30, 20, 0], totals: [50], subtotal: true },
+    { path: ["EU", "Alpha"], cells: [30, 20, 0], totals: [50], count: 12 },
   ],
-  total: { path: [], cells: [30, 20, 10] },
+  total: { path: [], cells: [30, 20, 10], totals: [60] },
 }
 ```
 
-`count`, `subtotal` and `total` are optional: a server that can pivot but not
-count, or that has no subtotals, should not have to send empty fields to say
-so. A cell the server omits is an empty cell, never a zero — the same rule the
-local engine follows for a value that will not add up.
+`count`, `subtotal`, `totals` and `total` are optional: a server that can pivot
+but not count, or that has no subtotals, should not have to send empty fields to
+say so. A cell the server omits is an empty cell, never a zero — the same rule
+the local engine follows for a value that will not add up.
+
+The grand-total **column** follows the local rule: it is there when
+`grandTotals` is on, which is the default, and something splits the columns. Its
+values are each line's `totals`, one per measure, because that column is
+arithmetic rather than shape — summing sums is not how an average or a minimum
+totals, so core does not guess it. Send `totals` and the column carries numbers;
+omit it and the column is empty, like any other cell nobody sent; ask for
+`grandTotals: false` and there is no column at all.
 
 ## In the URL
 

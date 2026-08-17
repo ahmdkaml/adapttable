@@ -16,13 +16,15 @@ const config: PivotConfig = {
   measures: [{ key: "amount", agg: "sum" }],
 };
 
+// A whole answer: two quarters across the top, a row per team, each line's own
+// total for the grand-total column, and the grand-total line at the end.
 const page: QueryPivotPage = {
   columns: [["Q1"], ["Q2"]],
   rows: [
-    { path: ["Alpha"], cells: [10, 20], count: 2 },
-    { path: ["Beta"], cells: [30, 40], count: 2 },
+    { path: ["Alpha"], cells: [10, 20], totals: [30], count: 2 },
+    { path: ["Beta"], cells: [30, 40], totals: [70], count: 2 },
   ],
-  total: { path: [], cells: [40, 60], count: 4 },
+  total: { path: [], cells: [40, 60], totals: [100], count: 4 },
 };
 
 describe("serverPivotResult", () => {
@@ -30,7 +32,7 @@ describe("serverPivotResult", () => {
     const result = serverPivotResult(page, { config });
 
     expect(result.rows.map((row) => row.label)).toEqual(["Alpha", "Beta", ""]);
-    expect(result.rows[0]?.cells).toEqual([10, 20]);
+    expect(result.rows[0]?.cells).toEqual([10, 20, 30]);
   });
 
   it("marks the total line as the grand total", () => {
@@ -38,22 +40,26 @@ describe("serverPivotResult", () => {
     const grand = result.rows.find((row) => row.key === PIVOT_GRAND_TOTAL_KEY);
 
     expect(grand?.kind).toBe("grandTotal");
-    expect(grand?.cells).toEqual([40, 60]);
+    expect(grand?.cells).toEqual([40, 60, 100]);
   });
 
   it("produces the same shape the local engine does", () => {
-    // Not the same numbers — the same SHAPE. An adapter renders one thing.
+    // Not the same numbers — the same SHAPE, from the same configuration. Every
+    // leaf, including the grand-total column: a host moving a table from the
+    // local engine to a server-backed one must not lose a column on the way,
+    // and a comparison that filtered the total leaves out could not see it go.
     const local = pivot(
       [
         { team: "Alpha", quarter: "Q1", amount: 10 },
         { team: "Alpha", quarter: "Q2", amount: 20 },
       ],
-      { ...config, grandTotals: false }
+      config
     );
     const remote = serverPivotResult(
       {
         columns: [["Q1"], ["Q2"]],
-        rows: [{ path: ["Alpha"], cells: [10, 20] }],
+        rows: [{ path: ["Alpha"], cells: [10, 20], totals: [30] }],
+        total: { path: [], cells: [10, 20], totals: [30] },
       },
       { config }
     );
@@ -63,9 +69,81 @@ describe("serverPivotResult", () => {
       Object.keys(local).sort(byName)
     );
     expect(remote.rowDepth).toBe(local.rowDepth);
-    expect(remote.columnLeaves.map((leaf) => leaf.path)).toEqual(
-      local.columnLeaves.filter((leaf) => !leaf.total).map((leaf) => leaf.path)
+    // The keys are the contract: column-level state travels on them, so a leaf
+    // key that agreed on the path and disagreed on the byte between it and the
+    // measure would be a different column with the same header.
+    const leaf = (l: {
+      key: string;
+      path: readonly string[];
+      total: boolean;
+    }) => [l.key, l.path, l.total] as const;
+    expect(remote.columnLeaves.map(leaf)).toEqual(local.columnLeaves.map(leaf));
+    expect(remote.rows.map((row) => [row.key, row.kind, row.depth])).toEqual(
+      local.rows.map((row) => [row.key, row.kind, row.depth])
     );
+  });
+
+  it("keeps the grand-total column the configuration asked for", () => {
+    const result = serverPivotResult(
+      {
+        columns: [["Q1"], ["Q2"]],
+        rows: [{ path: ["Alpha"], cells: [10, 20], totals: [30] }],
+      },
+      { config }
+    );
+
+    expect(result.columnLeaves.map((column) => column.total)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+    expect(result.rows[0]?.cells).toEqual([10, 20, 30]);
+  });
+
+  it("leaves the total column empty when the server does not total", () => {
+    // Summing sums is not how an average totals, so core does not guess. An
+    // absent `totals` is an absent value, the same rule an absent cell follows.
+    const result = serverPivotResult(
+      { columns: [["Q1"]], rows: [{ path: ["Alpha"], cells: [10] }] },
+      { config }
+    );
+
+    expect(result.columnLeaves).toHaveLength(2);
+    expect(result.rows[0]?.cells).toEqual([10, undefined]);
+  });
+
+  it("has no total column when grand totals are off", () => {
+    const result = serverPivotResult(
+      { columns: [["Q1"]], rows: [{ path: ["Alpha"], cells: [10] }] },
+      { config: { ...config, grandTotals: false } }
+    );
+
+    expect(result.columnLeaves.every((column) => !column.total)).toBe(true);
+  });
+
+  it("has no total column when nothing splits the columns", () => {
+    // It would repeat the only column there is — the local engine's rule.
+    const result = serverPivotResult(
+      { columns: [[]], rows: [{ path: ["Alpha"], cells: [10] }] },
+      { config: { ...config, columns: [] } }
+    );
+
+    expect(result.columnLeaves).toHaveLength(1);
+    expect(result.columnLeaves[0]?.total).toBe(false);
+  });
+
+  it("totals the grand-total line into the corner cell", () => {
+    const result = serverPivotResult(
+      {
+        columns: [["Q1"], ["Q2"]],
+        rows: [{ path: ["Alpha"], cells: [10, 20], totals: [30] }],
+        total: { path: [], cells: [10, 20], totals: [30] },
+      },
+      { config }
+    );
+    const grand = result.rows.find((row) => row.key === PIVOT_GRAND_TOTAL_KEY);
+
+    expect(grand?.cells).toEqual([10, 20, 30]);
   });
 
   it("rebuilds the column header tree with its spans", () => {
@@ -88,10 +166,12 @@ describe("serverPivotResult", () => {
   });
 
   it("multiplies the server's column paths by the measures", () => {
+    // The total column is multiplied too: one path and two measures is two
+    // columns of numbers and two of totals.
     const result = serverPivotResult(
       {
         columns: [["Q1"]],
-        rows: [{ path: ["Alpha"], cells: [10, 1] }],
+        rows: [{ path: ["Alpha"], cells: [10, 1], totals: [10, 1] }],
       },
       {
         config: {
@@ -104,14 +184,15 @@ describe("serverPivotResult", () => {
       }
     );
 
-    expect(result.columnLeaves).toHaveLength(2);
-    expect(result.rows[0]?.cells).toEqual([10, 1]);
+    expect(result.columnLeaves).toHaveLength(4);
+    expect(result.rows[0]?.cells).toEqual([10, 1, 10, 1]);
   });
 
   it("treats a cell the server omitted as empty, not zero", () => {
+    // Grand totals off, so the one empty cell is the one the server skipped.
     const result = serverPivotResult(
       { columns: [["Q1"], ["Q2"]], rows: [{ path: ["Alpha"], cells: [10] }] },
-      { config }
+      { config: { ...config, grandTotals: false } }
     );
 
     expect(result.rows[0]?.cells).toEqual([10, undefined]);
@@ -139,7 +220,7 @@ describe("serverPivotResult", () => {
       format: (value) => `$${typeof value === "number" ? value : ""}`,
     });
 
-    expect(result.rows[0]?.cells).toEqual(["$10", "$20"]);
+    expect(result.rows[0]?.cells).toEqual(["$10", "$20", "$30"]);
   });
 
   it("renders a server answer with no total at all", () => {

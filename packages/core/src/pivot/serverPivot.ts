@@ -19,12 +19,17 @@
  *
  * The wire format is deliberately small. A server that can pivot but cannot
  * count rows, or that has no subtotals, should not have to send empty fields
- * to say so — so `count` and `subtotal` are optional, and a missing cell is
- * an empty cell rather than a zero.
+ * to say so — so `count`, `subtotal` and `totals` are optional, and a missing
+ * cell is an empty cell rather than a zero.
  */
 import type { ReactNode } from "react";
 
-import { PIVOT_GRAND_TOTAL_KEY, pivotLeafKey, pivotPathKey } from "./pivotKeys";
+import {
+  PIVOT_GRAND_TOTAL_KEY,
+  pivotLeafKey,
+  pivotPathKey,
+  pivotTotalLeafKey,
+} from "./pivotKeys";
 import type {
   PivotColumnLeaf,
   PivotConfig,
@@ -45,6 +50,19 @@ export interface QueryPivotRow {
    * an empty cell.
    */
   cells: readonly unknown[];
+  /**
+   * This line's values for the grand-total **column**, one per measure in
+   * measure order.
+   *
+   * That column exists whenever the configuration asks for grand totals and
+   * something splits the columns — the local engine's rule, so a table moving
+   * from one engine to the other keeps the same columns. What core cannot do is
+   * compute it: summing sums is not how an average or a minimum totals. So a
+   * server that does not send this leaves the column empty, exactly as an
+   * omitted cell is empty, and a configuration with `grandTotals: false` does
+   * not ask for it at all.
+   */
+  totals?: readonly unknown[];
   /** How many source rows this line covers, when the server counts. */
   count?: number;
   /** Whether this line totals the lines beneath it rather than being one. */
@@ -129,10 +147,30 @@ export function serverPivotResult(
       });
     }
   }
+  // Where `cells` stops and `totals` starts. The grand-total column follows
+  // every path column, in measure order, so a total leaf's position past this
+  // point IS its measure index.
+  const columnCells = leaves.length;
+  // The local engine's rule, followed here so that moving a table from local to
+  // server keeps the columns it had: a grand-total column means something only
+  // when the columns are split by something, and it is what `grandTotals` asks
+  // for, which defaults to on.
+  if ((config.grandTotals ?? true) && config.columns.length > 0) {
+    for (const measure of config.measures) {
+      leaves.push({
+        key: pivotTotalLeafKey(measure.key),
+        path: [],
+        measure,
+        total: true,
+      });
+    }
+  }
 
   const cellsOf = (row: QueryPivotRow): ReactNode[] =>
     leaves.map((leaf, index) => {
-      const value = row.cells[index];
+      const value = leaf.total
+        ? row.totals?.[index - columnCells]
+        : row.cells[index];
       // A cell the server did not send is empty, not zero — the same rule the
       // local engine follows for a value that will not add up.
       const node = (value ?? undefined) as ReactNode;
