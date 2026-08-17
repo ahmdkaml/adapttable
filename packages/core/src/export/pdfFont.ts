@@ -175,7 +175,7 @@ function subsetTag(name: string, glyphs: readonly number[]): string {
   let hash = 0x811c9dc5;
   const seed = `${name}:${glyphs.join(",")}`;
   for (let i = 0; i < seed.length; i++) {
-    hash = Math.imul(hash ^ seed.charCodeAt(i), 0x01000193) >>> 0;
+    hash = Math.imul(hash ^ (seed.codePointAt(i) ?? 0), 0x01000193) >>> 0;
   }
   let tag = "";
   for (let i = 0; i < 6; i++) {

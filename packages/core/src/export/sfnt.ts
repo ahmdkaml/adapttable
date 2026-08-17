@@ -641,7 +641,7 @@ export function subsetSfnt(font: Sfnt, order: readonly number[]): Uint8Array {
   tags.forEach((tag, index) => {
     const data = built.get(tag) ?? new Uint8Array(0);
     const at = 12 + index * 16;
-    for (let i = 0; i < 4; i++) header[at + i] = tag.charCodeAt(i);
+    for (let i = 0; i < 4; i++) header[at + i] = tag.codePointAt(i) ?? 0;
     headerView.setUint32(at + 4, checksum(data));
     headerView.setUint32(at + 8, offset);
     headerView.setUint32(at + 12, data.byteLength);
