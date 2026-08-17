@@ -122,8 +122,16 @@ export function usePivotUrlState(
     [resolved, param]
   );
 
+  // What the setters below read. Two of them share one parameter, and a render
+  // is not guaranteed between them: a handler that changes the configuration and
+  // the folded set in one batch would otherwise write the second change over the
+  // first, because both would have read the state this render was built from.
+  const latest = useRef<PivotUrlState>(state);
+  latest.current = state;
+
   const change = useCallback(
     (next: PivotUrlState) => {
+      latest.current = next;
       setPending(next);
       if (flushTimer.current) clearTimeout(flushTimer.current);
       flushTimer.current = setTimeout(() => {
@@ -140,16 +148,16 @@ export function usePivotUrlState(
       // The folded keys ride along: a field moved on an axis does not unfold
       // what the reader had folded, and a key whose group is gone simply
       // matches nothing.
-      change({ config: next, collapsed: state.collapsed });
+      change({ config: next, collapsed: latest.current.collapsed });
     },
-    [change, state.collapsed]
+    [change]
   );
 
   const onCollapsedChange = useCallback(
     (next: ReadonlySet<string>) => {
-      change({ config: state.config, collapsed: [...next] });
+      change({ config: latest.current.config, collapsed: [...next] });
     },
-    [change, state.config]
+    [change]
   );
 
   // Flush a pending change on unmount, so the last move a reader made before

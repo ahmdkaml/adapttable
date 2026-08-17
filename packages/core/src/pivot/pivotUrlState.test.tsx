@@ -209,6 +209,26 @@ describe("usePivotUrlState", () => {
     );
   });
 
+  it("keeps both halves when one batch changes both", () => {
+    // The two setters share one parameter, and React need not render between
+    // them: the second must build on the first rather than on the state the
+    // render was built from.
+    const urlAdapter = createMemoryAdapter("");
+    const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
+
+    act(() => {
+      result.current.onConfigChange({
+        ...EMPTY_PIVOT_CONFIG,
+        rows: ["region", "team"],
+      });
+      result.current.onCollapsedChange(new Set(["EU"]));
+    });
+    flushUrl();
+
+    expect(result.current.config.rows).toEqual(["region", "team"]);
+    expect([...result.current.collapsed]).toEqual(["EU"]);
+  });
+
   it("folds nothing until something says so", () => {
     const urlAdapter = createMemoryAdapter("?pivot=rows:team;sum:amount");
     const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
