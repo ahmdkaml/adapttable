@@ -149,7 +149,8 @@ export interface UseSavedViewsResult {
   rename: (from: string, to: string) => void;
   /**
    * Move a view one step through the list. Past either end does nothing
-   * rather than wrapping.
+   * rather than wrapping, and a view this reader may not change does not move
+   * at all.
    */
   move: (name: string, delta: -1 | 1) => void;
   /**
@@ -443,11 +444,17 @@ export function useSavedViews({
   const move = useCallback(
     (name: string, delta: -1 | 1) => {
       const index = views.findIndex((view) => view.name === name);
+      const moved = views[index];
+      // Read-only is refused here for the same reason rename, setDefault and
+      // remove refuse it: the panel disables a read-only row's move controls,
+      // and a hook that accepted the move anyway would let code do what the
+      // UI said was impossible.
+      if (!moved || moved.readOnly === true) return;
       const target = index + delta;
-      if (index < 0 || target < 0 || target >= views.length) return;
+      if (target < 0 || target >= views.length) return;
       const next = [...views];
-      const [moved] = next.splice(index, 1);
-      if (moved) next.splice(target, 0, moved);
+      next.splice(index, 1);
+      next.splice(target, 0, moved);
       persist(next);
     },
     [views, persist]

@@ -651,6 +651,20 @@ describe("useSavedViews", () => {
       expect(reloaded.current.views.filter((v) => v.isDefault)).toHaveLength(1);
       expect(reloaded.current.defaultView?.name).toBe("C");
     });
+
+    it("refuses to move a view this reader does not own", async () => {
+      // The panel disables a read-only row's move controls; the hook has to
+      // agree, exactly as it does for rename, set-default and delete.
+      const store = makeServer([
+        { name: "Theirs", search: "t.q=x", visibility: "team", readOnly: true },
+        B,
+      ]);
+      const result = await opened(store, 2);
+
+      act(() => result.current.move("Theirs", 1));
+
+      expect(names(result)).toEqual(["Theirs", "B"]);
+    });
   });
 
   it("captures every piece of state the table can put in a URL", () => {

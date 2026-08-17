@@ -26,6 +26,8 @@ is already taken — silently merging two views is how a rename loses one.
 `move(name, -1 | 1)` steps a view through the list and stops at either end
 rather than wrapping. `setDefault(name)` marks the view the table opens with;
 naming the same view again clears it, and only one view can ever hold it.
+Rename, move, set-default and delete all refuse a view this reader does not own,
+so the panel's disabled controls and the hook agree.
 
 Every operation is a no-op on a name that is not there, so a management UI
 cannot get the list into a state the table will not accept.
