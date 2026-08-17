@@ -1,3 +1,4 @@
+import "./kitStyles";
 import "./styles.css";
 
 import { StrictMode } from "react";

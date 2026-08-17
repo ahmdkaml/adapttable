@@ -1,5 +1,4 @@
-import "@mantine/core/styles.css";
-import "./tailwind.css";
+import "./kitStyles";
 import "./styles.css";
 
 import { StrictMode } from "react";

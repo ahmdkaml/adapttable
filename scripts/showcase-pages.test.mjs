@@ -28,6 +28,50 @@ const entriesOnDisk = () => {
 
 const sorted = (values) => [...values].sort((a, b) => a.localeCompare(b));
 
+/** The shared module every page entry loads its kit stylesheets from. */
+const KIT_STYLES = "./kitStyles";
+
+/**
+ * The static kit stylesheets that module owns. MUI, Chakra, Ant Design and
+ * `@adapttable/base-ui` inject their own CSS at runtime, and Radix Themes'
+ * 800 KB sheet loads with the Radix chunk — these two are the whole eager set.
+ */
+const KIT_SHEETS = ["@mantine/core/styles.css", "./tailwind.css"];
+
+/** The one non-kit stylesheet an entry loads directly: the showcase's chrome. */
+const CHROME_SHEET = "./styles.css";
+
+const MODULE_SCRIPT = /<script\b[^>]*\btype="module"[^>]*>/gi;
+
+const SRC = /\bsrc="([^"]+)"/;
+
+const SIDE_EFFECT_IMPORT = /^import\s+"([^"]+)";/gm;
+
+/** The module script a page's HTML boots, as a path under the showcase root. */
+const entryModuleOf = (html) => {
+  const tag = (html.match(MODULE_SCRIPT) ?? []).find((candidate) =>
+    SRC.test(candidate)
+  );
+  const src = tag?.match(SRC)?.[1];
+  // Vite resolves a root-absolute `src` against the showcase package root.
+  return src?.startsWith("/") ? src.slice(1) : src;
+};
+
+const sideEffectImportsIn = (source) =>
+  [...source.matchAll(SIDE_EFFECT_IMPORT)].map((match) => match[1]);
+
+/** Every page that boots a bundle, as `{ page, module, source }`. */
+const bootingPages = () =>
+  SHOWCASE_PAGES.map((page) => {
+    const html = readFileSync(join(SHOWCASE, page.html), "utf8");
+    const module = entryModuleOf(html);
+    return {
+      page,
+      module,
+      source: module ? readFileSync(join(SHOWCASE, module), "utf8") : null,
+    };
+  }).filter((entry) => entry.module);
+
 describe("the showcase page manifest", () => {
   it("lists every page directory, and only pages that exist", () => {
     assert.deepEqual(
@@ -55,6 +99,63 @@ describe("the showcase page manifest", () => {
       if (indexable) continue;
       const source = readFileSync(join(SHOWCASE, html), "utf8");
       assert.equal(isRedirectPage(source), true, html);
+    }
+  });
+});
+
+/**
+ * Every page carries a kit switcher, so every page can be asked to render any
+ * kit — and a kit whose stylesheet never loaded renders bare HTML. The
+ * stylesheets therefore belong to one shared module, and this walks the
+ * manifest to prove no page entry skips it.
+ */
+describe("the kit stylesheets every showcase page loads", () => {
+  it("boots a module from every page that is not a redirect", () => {
+    for (const page of SHOWCASE_PAGES) {
+      const html = readFileSync(join(SHOWCASE, page.html), "utf8");
+      const module = entryModuleOf(html);
+      if (isRedirectPage(html)) continue;
+      assert.ok(module, `${page.html} boots no module script`);
+      assert.equal(
+        existsSync(join(SHOWCASE, module)),
+        true,
+        `${page.html} boots ${module}, which does not exist`
+      );
+    }
+  });
+
+  it("imports the shared kit-styles module from every page entry", () => {
+    for (const { page, module, source } of bootingPages()) {
+      assert.ok(
+        sideEffectImportsIn(source).includes(KIT_STYLES),
+        `${module} (${page.route}) does not import "${KIT_STYLES}" — every kit ` +
+          `the switcher offers on that page would render unstyled`
+      );
+    }
+  });
+
+  it("leaves every kit stylesheet to that module alone", () => {
+    for (const { module, source } of bootingPages()) {
+      for (const imported of sideEffectImportsIn(source)) {
+        if (imported === KIT_STYLES || imported === CHROME_SHEET) continue;
+        assert.ok(
+          !imported.endsWith(".css"),
+          `${module} imports "${imported}" directly — kit stylesheets belong ` +
+            `in "${KIT_STYLES}", which every entry already loads`
+        );
+      }
+    }
+  });
+
+  it("carries every static kit stylesheet in that module", () => {
+    const source = readFileSync(join(SHOWCASE, "src/kitStyles.ts"), "utf8");
+    const imports = sideEffectImportsIn(source);
+    for (const sheet of KIT_SHEETS) {
+      assert.ok(
+        imports.includes(sheet),
+        `src/kitStyles.ts no longer imports "${sheet}" — the pages that ` +
+          `depend on it import the module, not the sheet`
+      );
     }
   });
 });
