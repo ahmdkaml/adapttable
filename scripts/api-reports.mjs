@@ -9,9 +9,12 @@
  * reports and runs in CI's package job, so a surface change arrives with the
  * report that shows it.
  *
- * Entries: every library package's main entry, plus core's `/adapter`
- * subpath (the builder-tier surface). The cli scaffolder has no importable
- * API and is skipped, matching smoke-dist.
+ * Entries: every importable entry point every library package advertises,
+ * read from its `exports` map the way smoke-dist reads it — so core's
+ * `/adapter`, `/xlsx`, `/pdf`, `/formula`, `/pivot`, `/query` and `/sparkline`
+ * are each extracted, and a subpath added tomorrow is covered the day it
+ * ships. The cli scaffolder has no importable API and is skipped, matching
+ * smoke-dist.
  *
  * Packages must be built first (`pnpm build`).
  */
@@ -43,21 +46,34 @@ const PACKAGES = readdirSync(join(REPO_ROOT, "packages")).filter(
   (dir) => dir !== "cli"
 );
 
-/** One extraction target per public entry point. */
+/**
+ * One extraction target per public entry point, taken from the `exports` map.
+ *
+ * `./package.json` is not an API and `./styles.css` is not typed, so a subpath
+ * counts only when it names a bare module. A hand-written list of entries is a
+ * list that goes stale silently: core shipped `/xlsx`, `/pdf`, `/sparkline`,
+ * `/query`, `/pivot` and `/formula` while only `.` and `/adapter` were
+ * extracted, which left most of the public surface able to change shape with
+ * no report to show it.
+ */
 function targets() {
   const list = [];
   for (const dir of PACKAGES) {
-    list.push({
-      dir,
-      report: `${dir}.api.md`,
-      entry: join(REPO_ROOT, "packages", dir, "dist", "index.d.ts"),
-    });
+    const manifest = JSON.parse(
+      readFileSync(join(REPO_ROOT, "packages", dir, "package.json"), "utf8")
+    );
+    const subpaths = Object.keys(manifest.exports ?? { ".": {} }).filter(
+      (key) => key === "." || !key.slice(2).includes(".")
+    );
+    for (const key of subpaths.sort()) {
+      const name = key === "." ? "index" : key.slice(2);
+      list.push({
+        dir,
+        report: key === "." ? `${dir}.api.md` : `${dir}-${name}.api.md`,
+        entry: join(REPO_ROOT, "packages", dir, "dist", `${name}.d.ts`),
+      });
+    }
   }
-  list.push({
-    dir: "core",
-    report: "core-adapter.api.md",
-    entry: join(REPO_ROOT, "packages", "core", "dist", "adapter.d.ts"),
-  });
   return list;
 }
 

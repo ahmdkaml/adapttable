@@ -255,9 +255,10 @@ jobs:
         run: pnpm build
 
       # The committed etc/*.api.md reports are the reviewable form of the
-      # public surface. This byte-compares a fresh extraction against them, so
-      # an export that changes shape has to arrive with the report that shows
-      # it — the reports went five weeks stale before this step existed.
+      # public surface — one per entry point every library package advertises,
+      # core's seven subpaths included. This byte-compares a fresh extraction
+      # against all of them, so an export that changes shape has to arrive with
+      # the report that shows it.
       - name: Check the extracted API reports are current
         run: pnpm api:check
 
