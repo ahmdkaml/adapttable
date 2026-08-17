@@ -91,7 +91,7 @@ describe("documented classNames (radix)", () => {
   it("puts filterCheckbox on each checklist option", () => {
     renderRadix(<Checklist />);
     // One per distinct value, and the class is on the part it names.
-    expect(withClass("box-cls").length).toBe(2);
+    expect(withClass("box-cls")).toHaveLength(2);
     expect(
       document.querySelector('[data-adapttable-part="filter-checkbox"]')
     ).toHaveClass("box-cls");
@@ -99,7 +99,7 @@ describe("documented classNames (radix)", () => {
 
   it("puts filterChecklistCount on each option's count", () => {
     renderRadix(<Checklist />);
-    expect(withClass("count-cls").length).toBe(2);
+    expect(withClass("count-cls")).toHaveLength(2);
   });
 
   it("still drives the checklist with the classes applied", () => {
