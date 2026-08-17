@@ -85,6 +85,8 @@ export function Toolbar<TRow>({
   canRedo,
   undoLabel,
   redoLabel,
+  onPrint,
+  printLabel,
   density,
   onDensityChange,
   onToggleFullscreen,
@@ -261,6 +263,16 @@ export function Toolbar<TRow>({
             onClick={onAddRow}
           >
             {addRowLabel}
+          </Button>
+        )}
+        {onPrint && (
+          <Button
+            variant="outlined"
+            size="small"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
           </Button>
         )}
         {onDensityChange && (

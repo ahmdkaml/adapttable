@@ -121,6 +121,7 @@ export function MantineDemo({
   fullscreen,
   commandPalette,
   onPrint,
+  printButton,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -176,6 +177,7 @@ export function MantineDemo({
   fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
+  printButton?: boolean;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -250,6 +252,7 @@ export function MantineDemo({
             fullscreen={fullscreen}
             commandPalette={commandPalette}
             onPrint={onPrint}
+            printButton={printButton}
             undoRedoButtons={undoRedoButtons}
             sidePanel={sidePanel}
             selectionStats={editing}

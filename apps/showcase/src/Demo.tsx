@@ -386,6 +386,24 @@ function pageDefaults(tree: boolean, large: boolean): { limit: number } {
   return large ? LARGE_DEFAULTS : DEFAULTS;
 }
 
+/**
+ * How the rows arrive.
+ *
+ * The row window measures a scroll, not a page: a paged body renders the page
+ * it is on, whole. So the large set reads through infinite scroll — a hundred
+ * at a time, only the visible ones in the DOM. A pager and a window are
+ * alternatives, not layers.
+ *
+ * Anything else passes `pageMode` through untouched — `undefined` included,
+ * which is how the hook keeps resolving its own default per viewport.
+ */
+function paginationFor(
+  large: boolean,
+  pageMode: PageMode | undefined
+): PageMode | undefined {
+  return large ? "infinite" : pageMode;
+}
+
 /** The next free id, so an added row never collides with a seeded one. */
 function nextId(rows: readonly Person[]): string {
   return String(
@@ -570,11 +588,7 @@ function Frontend({
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
     defaults: pageDefaults(tree === true, large === true),
-    // The row window measures a scroll, not a page: a paged body renders the
-    // page it is on, whole. So the large mode reads the same rows through
-    // infinite scroll — a hundred at a time, and only the visible ones in the
-    // DOM. A pager and a window are alternatives, not layers.
-    paginationMode: large ? "infinite" : pageMode,
+    paginationMode: paginationFor(large === true, pageMode),
     urlKey,
   });
   const tableSource = advancedFilters ? source : withoutFilterTree(source);

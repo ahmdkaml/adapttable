@@ -39,6 +39,12 @@ top-level group starts a new page (`pageBreak: "group"`). Paper defaults
 to A4 landscape; direction inherits `document.documentElement.dir` when
 omitted, so print matches what the reader is looking at.
 
+What to print stays the host's call — the table never picks the rows for a
+dialog it cannot open. Wire `onPrint` and Print becomes a palette command; add
+`printButton` and the toolbar draws a Print button beside the view controls,
+captioned from `labels.print`. Both are opt-in, and the button needs the
+handler as well as the option, so neither can appear on its own.
+
 The PDF is written by hand (one page tree, no dependency). By default it
 draws in Helvetica and embeds nothing, so the file stays a few kilobytes
 and the alphabet stops at WinAnsi — glyphs outside it paint as `?` and

@@ -31,6 +31,7 @@ import {
 import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
 import { useRowPinningUrlState } from "./url/useRowPinningUrlState";
 import {
+  printToolbar,
   undoRedoToolbar,
   useChromeBodyData,
   useChromeScrollReset,
@@ -429,6 +430,7 @@ export function useDataTableShell<TRow>(
     toolbar: props.toolbar,
     toolbarSlots: props.toolbarSlots,
     ...undoRedoToolbar(props.undoRedoButtons, history, labels),
+    ...printToolbar(props.printButton, props.onPrint, labels),
     ...viewControlsToolbar(props, fullscreen),
     hasFilters:
       resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&

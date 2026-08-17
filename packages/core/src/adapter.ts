@@ -362,6 +362,7 @@ export {
 export {
   type BulkBarChromeProps,
   type FilterTriggerToggle,
+  printToolbar,
   type TableBodyRegion,
   type ToolbarChromeProps,
   undoRedoToolbar,

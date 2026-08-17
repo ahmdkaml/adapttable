@@ -82,8 +82,10 @@ export type KitDemoProps = Readonly<{
   fullscreen?: boolean;
   /** The Cmd/Ctrl+K command palette. */
   commandPalette?: boolean;
-  /** Makes Print a palette command. */
+  /** What Print prints — a palette command, and the toolbar button's action. */
   onPrint?: () => void;
+  /** A Print button in the toolbar. Needs `onPrint` to draw anything. */
+  printButton?: boolean;
   /** Undo and Redo in the toolbar. Needs editing armed to do anything. */
   undoRedoButtons?: boolean;
   /** A settings panel docked beside the table. */

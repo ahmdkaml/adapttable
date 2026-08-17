@@ -67,9 +67,9 @@ function useArabicFont(enabled: boolean): ArrayBuffer | undefined {
 }
 
 /**
- * Print columns are primitives with stated widths so the host-owned Print
- * control shows the same groups and proportions the PDF paginates — not
- * the JSX cells the on-screen table paints.
+ * Print columns are primitives with stated widths so the Print dialog shows
+ * the same groups and proportions the PDF paginates — not the JSX cells the
+ * on-screen table paints.
  */
 function printColumns(locale: Locale): ColumnDef<Person>[] {
   const s = strings(locale);
@@ -167,15 +167,16 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
         Pass <code>pdfWriter</code> on <code>exportCsv</code> and the toolbar
         says <strong>Export PDF</strong> — the same seam as CSV and XLSX,{" "}
         <code>{'scope: "all"'}</code> so every grouped row leaves the file.
-        Print is a different verb: a host-owned control calls{" "}
-        <code>printTable</code> (which loads <code>openPrintLayout</code>) so
-        the browser dialog sees column widths, nested groups and page breaks.
-        This button builds its sample from the same rows and columns; in an app,
-        pass the table&apos;s current view when print must follow live collapse
-        or filter state. There is no core Print button. Switch to العربية and
-        both paths take a <code>font</code>: the download embeds a subset of it
-        and draws joined, right-to-left Arabic, and print carries the same face
-        so the two match.
+        Print is a different verb, and the handler stays the host&apos;s:{" "}
+        <code>onPrint</code> here calls <code>printTable</code> (which loads{" "}
+        <code>openPrintLayout</code>) so the browser dialog sees column widths,
+        nested groups and page breaks, and <code>printButton</code> is what puts
+        the <strong>Print</strong> button in the toolbar beside Export. This one
+        builds its sample from the same rows and columns; in an app, pass the
+        table&apos;s current view when print must follow live collapse or filter
+        state. Switch to العربية and both paths take a <code>font</code>: the
+        download embeds a subset of it and draws joined, right-to-left Arabic,
+        and print carries the same face so the two match.
       </SectionHead>
       <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
@@ -194,7 +195,7 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
               <Check size={12} />{" "}
               {locale === "ar"
                 ? "Amiri embedded as a subset — shaped, right to left"
-                : "Print is host-owned — same view, browser dialog"}
+                : "Print is opt-in toolbar chrome — same view, browser dialog"}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -209,15 +210,6 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
                 ]}
               />
             </Control>
-            <button
-              type="button"
-              className="nav__cta"
-              onClick={() => {
-                printPeople(locale, font);
-              }}
-            >
-              Print
-            </button>
           </div>
         </div>
         <div
@@ -235,6 +227,10 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
                 urlKey="pdf"
                 grouping
                 exportCsv={exportCsv}
+                onPrint={() => {
+                  printPeople(locale, font);
+                }}
+                printButton
                 focused
               />
             </Suspense>

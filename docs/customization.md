@@ -283,7 +283,8 @@ input and the built-in buttons. `toolbarSlots` fills the two ends:
 ```
 
 The order is the same in every kit: `start` · Search · `toolbar` · Filters ·
-Saved views · Columns · Undo/Redo · Export · Add · `end` · Rows per page.
+Saved views · Columns · Undo/Redo · Export · Add · Print · Density ·
+Fullscreen · `end` · Rows per page.
 
 `undoRedoButtons` adds Undo and Redo to that row. They render only when
 `editHistory` is armed, and they disable rather than disappear when there is
@@ -308,8 +309,25 @@ to. The range is the one the pagination footer shows, from the same
 arithmetic, so the two never disagree. The strip hosts the selection figures
 rather than repeating them, so turning it on does not print them twice.
 
-All three are off unless asked for: omit them and nothing renders and nothing
-is bundled.
+`printButton` adds a Print button beside the view controls. It needs two
+things, not one: the option, and an `onPrint` handler saying what to print.
+Either alone draws nothing — a button that opens no dialog would be worse than
+no button, and a handler on its own stays what it always was, the palette's
+Print command. The caption is `labels.print`, the same string the command
+uses.
+
+```tsx
+import { printTable } from "@adapttable/core/pdf";
+
+<DataTable
+  onPrint={() => printTable({ rows, columns })}
+  printButton
+  …
+/>;
+```
+
+All of them are off unless asked for: omit them and nothing renders and
+nothing is bundled.
 
 ## Highlighting a row
 

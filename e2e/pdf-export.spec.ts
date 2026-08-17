@@ -164,7 +164,36 @@ for (const kit of KITS) {
       root.getByRole("button", { name: "Export PDF" }).first()
     ).toBeVisible();
   });
+
+  test(`${kit}: draws the Print toolbar entry`, async ({ page }) => {
+    await page.goto("/export/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    // Opt-in chrome, so a kit that never draws it leaves the reader with the
+    // palette shortcut or nothing at all. antd assembles its toolbar props by
+    // hand rather than through the shell, which is exactly where this drifts.
+    const button = page
+      .locator(`[data-adapter="${kit}"] [data-adapttable-part="print-button"]`)
+      .first();
+    await expect(button).toBeVisible();
+    await expect(button).toHaveText(/Print/i);
+  });
 }
+
+/** The caption is `labels.print`, so it turns over with the table's locale. */
+test("the Print entry speaks the table's language", async ({ page }) => {
+  await page.goto("/export/");
+  const button = page
+    .locator('[data-adapter="mantine"] [data-adapttable-part="print-button"]')
+    .first();
+  await expect(button).toHaveText("Print");
+
+  await page.getByRole("button", { name: "العربية" }).click();
+  await expect(button).toHaveText("طباعة");
+});
 
 /**
  * The address this demo used to live at is published — in docs, in llms.txt,

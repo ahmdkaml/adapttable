@@ -644,7 +644,10 @@ export interface TableLabels {
   commandSearch?: string;
   /** Shown when a query matches no command. */
   commandEmpty?: string;
-  /** The command and toolbar entry that opens the print dialog. */
+  /**
+   * The palette command that opens the print dialog, and the caption on the
+   * toolbar button when `printButton` asks for one.
+   */
   print?: string;
   /** Accessible name for the density chooser. */
   density?: string;

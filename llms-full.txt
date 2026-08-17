@@ -5427,6 +5427,12 @@ top-level group starts a new page (`pageBreak: "group"`). Paper defaults
 to A4 landscape; direction inherits `document.documentElement.dir` when
 omitted, so print matches what the reader is looking at.
 
+What to print stays the host's call — the table never picks the rows for a
+dialog it cannot open. Wire `onPrint` and Print becomes a palette command; add
+`printButton` and the toolbar draws a Print button beside the view controls,
+captioned from `labels.print`. Both are opt-in, and the button needs the
+handler as well as the option, so neither can appear on its own.
+
 The PDF is written by hand (one page tree, no dependency). By default it
 draws in Helvetica and embeds nothing, so the file stays a few kilobytes
 and the alphabet stops at WinAnsi — glyphs outside it paint as `?` and
@@ -6071,7 +6077,8 @@ input and the built-in buttons. `toolbarSlots` fills the two ends:
 ```
 
 The order is the same in every kit: `start` · Search · `toolbar` · Filters ·
-Saved views · Columns · Undo/Redo · Export · Add · `end` · Rows per page.
+Saved views · Columns · Undo/Redo · Export · Add · Print · Density ·
+Fullscreen · `end` · Rows per page.
 
 `undoRedoButtons` adds Undo and Redo to that row. They render only when
 `editHistory` is armed, and they disable rather than disappear when there is
@@ -6096,8 +6103,25 @@ to. The range is the one the pagination footer shows, from the same
 arithmetic, so the two never disagree. The strip hosts the selection figures
 rather than repeating them, so turning it on does not print them twice.
 
-All three are off unless asked for: omit them and nothing renders and nothing
-is bundled.
+`printButton` adds a Print button beside the view controls. It needs two
+things, not one: the option, and an `onPrint` handler saying what to print.
+Either alone draws nothing — a button that opens no dialog would be worse than
+no button, and a handler on its own stays what it always was, the palette's
+Print command. The caption is `labels.print`, the same string the command
+uses.
+
+```tsx
+import { printTable } from "@adapttable/core/pdf";
+
+<DataTable
+  onPrint={() => printTable({ rows, columns })}
+  printButton
+  …
+/>;
+```
+
+All of them are off unless asked for: omit them and nothing renders and
+nothing is bundled.
 
 ## Highlighting a row
 
@@ -7851,7 +7875,10 @@ row range comes from the same arithmetic the pagination footer uses. See
 `undoRedoButtons` adds Undo and Redo, which render only when `editHistory` is
 armed and disable rather than disappear; `undoRedoToolbar(wanted, history,
 labels)` from `@adapttable/core/adapter` is the one rule both wiring paths
-resolve that with. Labels are `undoEdit` and `redoEdit`. See
+resolve that with. Labels are `undoEdit` and `redoEdit`. `printButton` adds a
+Print button, which renders only when `onPrint` is also wired;
+`printToolbar(wanted, onPrint, labels)` resolves that pair the same way, and
+the caption is `labels.print`. See
 [customization](./customization.md#toolbar-and-status-bar).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell

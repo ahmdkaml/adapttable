@@ -146,6 +146,14 @@ export interface ToolbarChromeProps<TRow> {
   undoLabel?: string;
   /** `labels.redoEdit` — the redo button's caption. */
   redoLabel?: string;
+  /**
+   * Open the print dialog. Set only when the host asked for the button
+   * (`printButton`) AND wired `onPrint`, so an adapter renders on presence
+   * and never has to check two things.
+   */
+  onPrint?: () => void;
+  /** `labels.print` — the print button's caption. */
+  printLabel?: string;
   /** The density the table is rendering, when the chooser is shown. */
   density?: "comfortable" | "compact";
   /** Change it. Present iff the host asked for the chooser. */
@@ -486,6 +494,32 @@ export function undoRedoToolbar<TRow>(
     undoLabel: labels.undoEdit,
     redoLabel: labels.redoEdit,
   };
+}
+
+/** The print button's half of a toolbar's props. */
+export interface PrintToolbar {
+  onPrint?: () => void;
+  printLabel?: string;
+}
+
+/**
+ * The print button's half of a toolbar's props, or nothing at all.
+ *
+ * Two conditions again — the host asked for the button, and there is a handler
+ * for it to call — resolved here so an adapter renders on `onPrint` being
+ * present. `onPrint` alone stays what it has always been: a palette command.
+ *
+ * Not generic, unlike {@link undoRedoToolbar}: neither prop mentions the row
+ * type, and a `Partial<ToolbarChromeProps<TRow>>` return with no `TRow` in the
+ * arguments infers `unknown` and widens the whole spread at every call site.
+ */
+export function printToolbar(
+  wanted: boolean | undefined,
+  onPrint: (() => void) | undefined,
+  labels: TableLabels
+): PrintToolbar {
+  if (wanted !== true || onPrint === undefined) return {};
+  return { onPrint, printLabel: labels.print };
 }
 
 export function useTableChrome<TRow>(

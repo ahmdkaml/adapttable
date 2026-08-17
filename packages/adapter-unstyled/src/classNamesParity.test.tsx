@@ -263,6 +263,7 @@ function Harness(props: {
       onCellEdit={vi.fn()}
       editHistory
       undoRedoButtons
+      printButton
       statusBar
       commandPalette
       densityChooser
@@ -567,6 +568,7 @@ const KEYS = [
   "statusItem",
   "undoButton",
   "redoButton",
+  "printButton",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",

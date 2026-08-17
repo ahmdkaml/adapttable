@@ -38,6 +38,10 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
   redoButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  // Print sits with the view controls and is never disabled, so it takes the
+  // outline treatment without the muted state the undo pair needs.
+  printButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   densityToggle:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
   fullscreenToggle:

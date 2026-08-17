@@ -284,6 +284,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     canRedo,
     undoLabel,
     redoLabel,
+    onPrint,
+    printLabel,
   } = shell.toolbarProps;
 
   return (
@@ -474,6 +476,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onClick={onAddRow}
           >
             {addRowLabel}
+          </button>
+        )}
+        {onPrint && (
+          <button
+            type="button"
+            data-adapttable-part="print-button"
+            className={classNames.printButton}
+            onClick={onPrint}
+          >
+            {printLabel}
           </button>
         )}
         {onDensityChange && (

@@ -804,11 +804,11 @@ export interface BaseDataTableProps<TRow> {
   /**
    * Open the print dialog on the current view.
    *
-   * Print is the host's, not the table's: `printTable` opens a browser
-   * dialog and `downloadExportFile` cannot, so there is no core button for
-   * it. Wire this and it becomes a command in the palette and an entry
-   * anywhere else commands are listed — opt-in chrome rather than a
-   * permanent control.
+   * What gets printed is the host's: `printTable` opens a browser dialog and
+   * `downloadExportFile` cannot, so the table asks and the host decides.
+   * Wire this and it becomes a command in the palette and an entry anywhere
+   * else commands are listed. Add {@link printButton} for a toolbar control
+   * as well — opt-in chrome either way, never a permanent button.
    *
    * ```tsx
    * import { printTable } from "@adapttable/core/pdf";
@@ -894,6 +894,16 @@ export interface BaseDataTableProps<TRow> {
    * so the toolbar does not change width as the user works.
    */
   undoRedoButtons?: boolean;
+  /**
+   * Show a Print button in the toolbar. Defaults to false.
+   *
+   * The palette command is the always-on path once {@link onPrint} is wired
+   * — this is the visible one, for an app whose users will not reach for
+   * Cmd/Ctrl+K. It renders only when both are set: a button that opens
+   * nothing would be worse than no button, so the option alone draws
+   * nothing and the handler alone stays a command.
+   */
+  printButton?: boolean;
   /** Confirmation handler for actions; defaults to `window.confirm`. */
   confirm?: ConfirmHandler;
   /** Number of skeleton rows while loading. Defaults to the page size. */

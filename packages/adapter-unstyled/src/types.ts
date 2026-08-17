@@ -102,6 +102,8 @@ export interface DataTableClassNames {
   undoButton?: string;
   /** The Redo toolbar button (when `undoRedoButtons` is set). */
   redoButton?: string;
+  /** The Print toolbar button (when `printButton` and `onPrint` are set). */
+  printButton?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**

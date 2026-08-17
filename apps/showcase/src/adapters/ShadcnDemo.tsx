@@ -61,6 +61,7 @@ export function ShadcnDemo({
   fullscreen,
   commandPalette,
   onPrint,
+  printButton,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -113,6 +114,7 @@ export function ShadcnDemo({
   fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
+  printButton?: boolean;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   wide?: boolean;
@@ -154,6 +156,7 @@ export function ShadcnDemo({
       fullscreen={fullscreen}
       commandPalette={commandPalette}
       onPrint={onPrint}
+      printButton={printButton}
       undoRedoButtons={undoRedoButtons}
       sidePanel={sidePanel}
       headerFilters={headerFilters}

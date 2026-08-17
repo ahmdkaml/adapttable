@@ -59,6 +59,7 @@ import {
   GridFocusAnnouncer,
   insertExtraRows,
   isExtraEntry,
+  printToolbar,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
@@ -1871,6 +1872,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             toolbar={props.toolbar}
             toolbarSlots={props.toolbarSlots}
             {...undoRedoToolbar(props.undoRedoButtons, history, labels)}
+            {...printToolbar(props.printButton, props.onPrint, labels)}
             {...viewControls}
             hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
             activeFilterCount={c.activeFilterCount}

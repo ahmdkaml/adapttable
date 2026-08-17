@@ -1044,7 +1044,10 @@ row range comes from the same arithmetic the pagination footer uses. See
 `undoRedoButtons` adds Undo and Redo, which render only when `editHistory` is
 armed and disable rather than disappear; `undoRedoToolbar(wanted, history,
 labels)` from `@adapttable/core/adapter` is the one rule both wiring paths
-resolve that with. Labels are `undoEdit` and `redoEdit`. See
+resolve that with. Labels are `undoEdit` and `redoEdit`. `printButton` adds a
+Print button, which renders only when `onPrint` is also wired;
+`printToolbar(wanted, onPrint, labels)` resolves that pair the same way, and
+the caption is `labels.print`. See
 [customization](./customization.md#toolbar-and-status-bar).
 
 **Reading a cell as text.** `columnText(column, row)` returns a column's cell

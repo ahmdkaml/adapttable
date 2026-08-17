@@ -139,6 +139,7 @@ export function AntdDemo({
   fullscreen,
   commandPalette,
   onPrint,
+  printButton,
   undoRedoButtons,
   sidePanel,
   forceMobile,
@@ -202,6 +203,7 @@ export function AntdDemo({
   fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
+  printButton?: boolean;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   forceMobile?: boolean;
@@ -274,6 +276,7 @@ export function AntdDemo({
             fullscreen={fullscreen}
             commandPalette={commandPalette}
             onPrint={onPrint}
+            printButton={printButton}
             undoRedoButtons={undoRedoButtons}
             sidePanel={sidePanel}
             selectionStats={editing}

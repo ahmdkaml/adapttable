@@ -125,6 +125,7 @@ export function RadixDemo({
   fullscreen,
   commandPalette,
   onPrint,
+  printButton,
   undoRedoButtons,
   sidePanel,
   wide,
@@ -183,6 +184,7 @@ export function RadixDemo({
   fullscreen?: boolean;
   commandPalette?: boolean;
   onPrint?: () => void;
+  printButton?: boolean;
   undoRedoButtons?: boolean;
   sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
@@ -260,6 +262,7 @@ export function RadixDemo({
             fullscreen={fullscreen}
             commandPalette={commandPalette}
             onPrint={onPrint}
+            printButton={printButton}
             undoRedoButtons={undoRedoButtons}
             sidePanel={sidePanel}
             selectionStats={editing}

@@ -154,9 +154,9 @@
             The file honours group headers, column widths and page breaks.
           </li>
           <li>
-            Print is a host-owned control: it calls
-            <code>printTable</code> / <code>openPrintLayout</code>, not a second
-            toolbar button from core.
+            Print is opt-in chrome over a host-owned handler: this page wires
+            <code>printTable</code> to <code>onPrint</code>, and
+            <code>printButton</code> is what puts a Print button in the toolbar.
           </li>
         </ul>
         <p>

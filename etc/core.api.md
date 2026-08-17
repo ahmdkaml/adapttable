@@ -196,6 +196,7 @@ export interface BaseDataTableProps<TRow> {
     paginationMode?: PaginationMode;
     pinnedRowIds?: RowPinState;
     prefetch?: (row: TRow) => void;
+    printButton?: boolean;
     renderCard?: MobileCardRenderer<TRow>;
     renderRowDetail?: (row: TRow) => ReactNode;
     resizableColumns?: boolean;
@@ -2901,6 +2902,7 @@ export interface RowEditingState<TRow> {
 export interface RowElementProps extends Props {
     // (undocumented)
     "aria-selected"?: boolean;
+    "data-adapttable-part": "row";
     // (undocumented)
     "data-index": number;
     "data-row-id": string;

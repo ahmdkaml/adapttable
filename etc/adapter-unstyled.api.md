@@ -364,6 +364,7 @@ export interface DataTableClassNames {
     pageNumber?: string;
     pagePrev?: string;
     pager?: string;
+    printButton?: string;
     redoButton?: string;
     refreshIndicator?: string;
     reorderCell?: string;

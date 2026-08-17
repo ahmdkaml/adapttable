@@ -1470,6 +1470,9 @@ export interface PivotZoneProps {
 }
 
 // @public
+export function printToolbar<TRow>(wanted: boolean | undefined, onPrint: (() => void) | undefined, labels: TableLabels): Partial<ToolbarChromeProps<TRow>>;
+
+// @public
 export const REORDER_COLUMN_WIDTH = 40;
 
 // @public
@@ -2150,10 +2153,12 @@ export interface ToolbarChromeProps<TRow> {
     onDensityChange?: (next: "comfortable" | "compact") => void;
     onExportCsv?: () => void;
     onFiltersTriggerPointerDown?: () => void;
+    onPrint?: () => void;
     onRedo?: () => void;
     onToggleFilters: () => void;
     onToggleFullscreen?: () => void;
     onUndo?: () => void;
+    printLabel?: string;
     redoLabel?: string;
     savedViewsMenu?: ReactNode;
     searchable?: boolean;
@@ -2366,24 +2371,26 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
         onAddRow: (() => void) | undefined;
         addRowLabel: string;
         density?: "comfortable" | "compact";
-        onDensityChange?: ((next: "comfortable" | "compact") => void) | undefined;
-        onToggleFullscreen?: (() => void) | undefined;
+        onDensityChange?: (next: "comfortable" | "compact") => void;
+        onToggleFullscreen?: () => void;
         isFullscreen?: boolean;
-        table: UseDataTableResult<TRow>;
+        table: UseDataTableResult<TRow> | UseDataTableResult<unknown>;
         searchable: boolean;
         searchPlaceholder: string;
         sortByOptions: SortByOption[];
         toolbar: ReactNode;
         toolbarSlots: ToolbarSlots;
-        onUndo?: (() => void) | undefined;
-        onRedo?: (() => void) | undefined;
-        canUndo?: boolean | undefined;
-        canRedo?: boolean | undefined;
-        undoLabel?: string | undefined;
-        redoLabel?: string | undefined;
+        onUndo?: () => void;
+        onRedo?: () => void;
+        canUndo?: boolean;
+        canRedo?: boolean;
+        undoLabel?: string;
+        redoLabel?: string;
+        onPrint?: () => void;
+        printLabel?: string;
         filtersOpen?: boolean | undefined;
         onToggleFilters?: (() => void) | undefined;
-        onFiltersTriggerPointerDown?: (() => void) | undefined;
+        onFiltersTriggerPointerDown?: () => void;
         savedViewsMenu?: ReactNode;
         columnMenu?: ReactNode;
     };

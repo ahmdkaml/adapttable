@@ -208,10 +208,12 @@ function labFormulaColumns(
 }
 
 /**
- * Print, for the palette's Print command.
+ * What Print prints.
  *
- * `printTable` opens a browser dialog, which is why it is the host's to
- * call — the table offers the command and this decides what it prints.
+ * `printTable` opens a browser dialog, which is why it is the host's to call —
+ * the table offers the entry and this decides what it prints. Wired
+ * unconditionally: the palette lists it when the palette is on, the toolbar
+ * draws a button when `printButton` is on, and neither is the other's gate.
  */
 function printLabTable(): void {
   window.print();
@@ -397,6 +399,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [openPanel, setOpenPanel] = useState<string | null>("pivot");
   const [contextMenu, setContextMenu] = useState<OnOff>("off");
   const [palette, setPalette] = useState<OnOff>("off");
+  const [printButton, setPrintButton] = useState<OnOff>("off");
   const [chrome, setChrome] = useState<OnOff>("off");
   const [highlight, setHighlight] = useState<OnOff>("off");
   const [failure, setFailure] = useState<Failure>("off");
@@ -784,6 +787,11 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       onChange={(next) => customize(setPalette, next)}
                     />
                     <Toggle
+                      label="Print button"
+                      value={printButton}
+                      onChange={(next) => customize(setPrintButton, next)}
+                    />
+                    <Toggle
                       label="Density & fullscreen"
                       value={chrome}
                       onChange={(next) => customize(setChrome, next)}
@@ -941,7 +949,8 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                         }
                         fullscreen={chrome === "on"}
                         commandPalette={palette === "on"}
-                        onPrint={palette === "on" ? printLabTable : undefined}
+                        onPrint={printLabTable}
+                        printButton={printButton === "on"}
                         undoRedoButtons={undoRedo === "on"}
                         sidePanel={sidePanel}
                         animate={motion === "on"}
