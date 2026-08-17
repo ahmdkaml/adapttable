@@ -36,9 +36,19 @@ export {
   type FormulaColumnsResult,
 } from "./formula/formulaColumn";
 export {
+  deserializeFormulaColumns,
+  serializeFormulaColumns,
+} from "./formula/formulaUrlCodec";
+export {
   type BinaryOp,
   type FormulaNode,
   formulaRefs,
   parseFormula,
   type ParseResult,
 } from "./formula/parse";
+export {
+  FORMULA_URL_WRITE_DEBOUNCE_MS,
+  useFormulaUrlState,
+  type UseFormulaUrlStateOptions,
+  type UseFormulaUrlStateResult,
+} from "./formula/useFormulaUrlState";

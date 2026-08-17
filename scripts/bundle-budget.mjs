@@ -110,17 +110,24 @@ const FIXTURES = [
   },
   {
     // The React-free half of the model, which a backend imports instead of the
-    // table: the filter-tree and pivot URL codecs and nothing else. Measured
-    // 0.5 KB. The absences carry the promise — `useState` is the load-bearing
-    // one, because an entry that names a hook has a React peer no route handler
-    // can satisfy, and `PIVOT_BLANK` says the codec did not drag the engine in
-    // behind it.
+    // table: the filter-tree, pivot and formula-column URL codecs and nothing
+    // else. Measured 0.7 KB. The absences carry the promise — `useState` is the
+    // load-bearing one, because an entry that names a hook has a React peer no
+    // route handler can satisfy; `PIVOT_BLANK` says the codec did not drag the
+    // engine in behind it, and `parseFormula` says the same for the formula
+    // parser, which reading a link must never reach.
     name: "core · query",
     pkg: "core",
     entryFile: "query.js",
     budgetKB: 1,
-    code: `export { parseFilterTree, deserializePivot } from "PKG";`,
-    absent: ["useState", "useSyncExternalStore", "PIVOT_BLANK", "toCsv"],
+    code: `export { parseFilterTree, deserializePivot, deserializeFormulaColumns } from "PKG";`,
+    absent: [
+      "useState",
+      "useSyncExternalStore",
+      "PIVOT_BLANK",
+      "toCsv",
+      "parseFormula",
+    ],
   },
   {
     // What a route handler pays to parse and validate a shared link: measured

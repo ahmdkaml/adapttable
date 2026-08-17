@@ -880,8 +880,10 @@ everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 model a backend needs and no more: the `ft=1.{…}` codec (`parseFilterTree`,
 `serializeFilterTree`, `isActiveFilterTree`, `FILTER_TREE_PARAM`,
 `FILTER_TREE_VERSION`), the `pivot=rows:…` codec (`serializePivot`,
-`deserializePivot`), `isFilterGroup` for walking a tree, and the types they
-speak in — `QueryCondition`, `QueryFilterGroup`, `SortLevel`, `SortDirection`,
+`deserializePivot`), the `formula=key:text` codec (`serializeFormulaColumns`,
+`deserializeFormulaColumns`, `FormulaColumnSpec`), `isFilterGroup` for walking a
+tree, and the types they speak in — `QueryCondition`, `QueryFilterGroup`,
+`SortLevel`, `SortDirection`,
 and the pivot pair `PivotConfig` (`rows`, `columns`, `measures`, `subtotals`,
 `grandTotals`) and `PivotMeasure` (a column `key`, an `agg`, an optional
 `label`). Every name is the same one `@adapttable/core` exports, from the same
@@ -900,6 +902,16 @@ compared with `formulaSortValue`, and tested with `isFormulaError`.
 (`BinaryOp`), `formulaRefs` names what a formula reads, `evaluateFormula` runs
 one against a `FormulaScope`, and `FORMULA_FUNCTIONS` lists the built-ins. See
 [formulas](./formulas.md).
+
+**Formulas in the URL.** `useFormulaUrlState({ urlAdapter, urlSync, urlKey,
+defaultFormulas })` from `@adapttable/core/formula` returns a
+`UseFormulaUrlStateResult` — the `formulas` to hand `buildFormulaColumns`, and
+an `onFormulasChange` that persists them; `UseFormulaUrlStateOptions` names the
+options and `FORMULA_URL_WRITE_DEBOUNCE_MS` is the trailing debounce on the URL
+write. `serializeFormulaColumns` and `deserializeFormulaColumns` are the
+encoding on its own, exported from `@adapttable/core/formula` and from the
+React-free `@adapttable/core/query`; reading produces `FormulaColumnSpec`s and
+never evaluates anything. Saved views capture the parameter with the rest.
 
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move

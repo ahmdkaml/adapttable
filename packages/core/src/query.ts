@@ -8,15 +8,20 @@
  * string.
  *
  * So the parts of the model that are pure — the AND/OR filter-tree encoding,
- * the pivot encoding, and the types that describe them — are exported here as
- * well, from an entry that imports nothing. No hooks, no components, no
- * `"use client"` boundary: this file is the one place in the package a backend
- * can import and stay a backend.
+ * the pivot encoding, the formula-column encoding, and the types that describe
+ * them — are exported here as well, from an entry that imports nothing. No
+ * hooks, no components, no `"use client"` boundary: this file is the one place
+ * in the package a backend can import and stay a backend.
  *
- * Every name here is also exported from `@adapttable/core` or
- * `@adapttable/core/pivot`, from the same source module. This entry is a
- * narrower door onto the same room, not a second copy of it — the encoding a
- * server reads is byte-for-byte the encoding the table wrote.
+ * Every name here is also exported from `@adapttable/core`,
+ * `@adapttable/core/pivot` or `@adapttable/core/formula`, from the same source
+ * module. This entry is a narrower door onto the same room, not a second copy
+ * of it — the encoding a server reads is byte-for-byte the encoding the table
+ * wrote.
+ *
+ * Reading a formula column here yields its TEXT. Nothing in this entry parses
+ * or evaluates one, which is what makes it safe to decode a link somebody else
+ * sent.
  *
  * ```ts
  * import { parseFilterTree, isFilterGroup } from "@adapttable/core/query";
@@ -36,6 +41,11 @@ export {
   parseFilterTree,
   serializeFilterTree,
 } from "./filters/filterTreeCodec";
+export type { FormulaColumnSpec } from "./formula/formulaColumn";
+export {
+  deserializeFormulaColumns,
+  serializeFormulaColumns,
+} from "./formula/formulaUrlCodec";
 export type { PivotConfig, PivotMeasure } from "./pivot/pivotModel";
 export { deserializePivot, serializePivot } from "./pivot/pivotUrlCodec";
 export type { SortLevel } from "./sort/compare";

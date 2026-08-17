@@ -292,6 +292,37 @@ describe("useSavedViews", () => {
       expect(after.get("t.colHide")).toBe("email");
     });
 
+    it("applies a view that predates formula columns, unchanged", () => {
+      // A view saved before the parameter existed says nothing about formula
+      // columns, and applying it must do exactly what it did then: lay its own
+      // params over the table, invent nothing, and leave other tables alone.
+      const storage = fakeStorage({ views: LEGACY_FIXTURE });
+      const adapter = createMemoryAdapter(
+        "t.q=changed&t.formula=total:%3D1&other.formula=keep:%3D2"
+      );
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+
+      act(() => result.current.apply("Q1 report"));
+
+      const after = new URLSearchParams(adapter.getSearch());
+      expect(after.get("t.q")).toBe("ali");
+      expect(after.get("t.sortBy")).toBe("name");
+      expect(after.get("t.colHide")).toBe("email");
+      // The view held no formula column, and a view is the whole of this
+      // table's state — so the live one goes, exactly as a pre-formula view
+      // already displaced a live pivot.
+      expect(after.get("t.formula")).toBeNull();
+      // Another table's formula is not this view's business.
+      expect(after.get("other.formula")).toBe("keep:=2");
+    });
+
     it("stamps the current version on what it read", () => {
       const storage = fakeStorage({ views: LEGACY_FIXTURE });
       const { result } = renderHook(() =>
@@ -803,6 +834,7 @@ describe("useSavedViews", () => {
       "t.rowPin=3:top",
       "t.density=compact",
       "t.pivot=rows:team;sum:budget",
+      "t.formula=total:%3Dquantity%20*%202:Total",
       "t.f_team=core",
       "t.page=2",
       "t.limit=25",

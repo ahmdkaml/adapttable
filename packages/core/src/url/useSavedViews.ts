@@ -12,6 +12,7 @@ import {
   PARAM_COL_WIDTHS,
   PARAM_DENSITY,
   PARAM_FILTER_TREE,
+  PARAM_FORMULA,
   PARAM_GROUP_BY,
   PARAM_GROUP_CLOSED,
   PARAM_LIMIT,
@@ -210,13 +211,16 @@ const BARE_PARAMS = [
   PARAM_COL_WIDTHS,
   PARAM_COL_GROUPS,
   PARAM_ROW_PIN,
-  // The advanced filter tree, collapsed groups, density and the pivot. A
-  // view that captured everything EXCEPT these looked like it worked and
-  // then quietly dropped the most laboriously built parts of the state.
+  // The advanced filter tree, collapsed groups, density, the pivot and the
+  // typed formula columns. A view that captured everything EXCEPT these looked
+  // like it worked and then quietly dropped the most laboriously built parts of
+  // the state — and a formula is the one part nobody can rebuild from memory,
+  // because the table never offered it: someone wrote it.
   PARAM_FILTER_TREE,
   PARAM_GROUP_CLOSED,
   PARAM_DENSITY,
   PARAM_PIVOT,
+  PARAM_FORMULA,
 ];
 
 /**

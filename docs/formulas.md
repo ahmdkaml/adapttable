@@ -4,7 +4,7 @@ A column whose value is `=[Unit Price] * Quantity`, typed by the user rather
 than written by you.
 
 `@adapttable/core/formula` is a separate entry, so a table with no computed
-columns never downloads a parser. It costs 2.6 KB gzipped to the tables that
+columns never downloads a parser. It costs 2.7 KB gzipped to the tables that
 import it and nothing to the rest, which the bundle budget checks on every
 build.
 
@@ -114,6 +114,50 @@ being counted as zero and scattered among real values.
 
 Export receives the same value a spreadsheet would. Formatting is never applied
 to an error: showing `#DIV/0!` as `$#DIV/0!` would hide which cell went wrong.
+
+## Share and save formulas
+
+A typed formula is the one piece of table state nobody can rebuild from memory,
+because the table never offered it — someone wrote it. So it travels in the URL
+with sort, filters and the pivot:
+
+```tsx
+import {
+  buildFormulaColumns,
+  useFormulaUrlState,
+} from "@adapttable/core/formula";
+
+const { formulas, onFormulasChange } = useFormulaUrlState({
+  urlKey: "people",
+  defaultFormulas: [
+    { key: "total", header: "Total", formula: "=[Unit Price] * Quantity" },
+  ],
+});
+const {
+  columns: computed,
+  errors,
+  cycles,
+} = buildFormulaColumns<Row>(formulas);
+```
+
+The parameter is `formula=total:%3D%5BUnit%20Price%5D%20*%20Quantity:Total` —
+one `key:formula[:header]` entry per column, `;`-separated, every field
+percent-encoded so a formula may contain the delimiters. Writes are debounced
+(`FORMULA_URL_WRITE_DEBOUNCE_MS`), so a bar that writes while someone types
+does not out-run Safari's `replaceState` limit; reads stay instant.
+
+[Saved views](./saved-views.md) capture the parameter with the rest of the
+table's state, so "Margin analysis" is a view like any other. A view saved
+before formula columns existed carries none, and applying it clears them — the
+same thing a pre-pivot view does to a live pivot.
+
+`serializeFormulaColumns` and `deserializeFormulaColumns` are the encoding on
+its own, exported from `@adapttable/core/formula` and from the React-free
+`@adapttable/core/query` — the entry a route handler, loader or plain Node
+service imports to read a shared link. **Reading never evaluates.** The codec
+hands back the text; a hand-edited entry it cannot make sense of is dropped,
+and a formula that will not parse arrives as the text it is, because half a
+formula is the normal state of one being written.
 
 ## Building a formula bar
 

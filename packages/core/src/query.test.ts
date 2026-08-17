@@ -14,6 +14,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import * as formula from "./formula";
 import * as core from "./index";
 import * as pivot from "./pivot";
 import * as query from "./query";
@@ -31,6 +32,27 @@ describe("@adapttable/core/query", () => {
   it("re-exports the pivot entry's own codec, not a copy", () => {
     expect(query.serializePivot).toBe(pivot.serializePivot);
     expect(query.deserializePivot).toBe(pivot.deserializePivot);
+  });
+
+  it("re-exports the formula entry's own codec, not a copy", () => {
+    expect(query.serializeFormulaColumns).toBe(formula.serializeFormulaColumns);
+    expect(query.deserializeFormulaColumns).toBe(
+      formula.deserializeFormulaColumns
+    );
+  });
+
+  it("reads a formula column as text, and never as something to run", () => {
+    // The whole point of decoding a link on a server: a route handler can see
+    // WHICH columns a link asks for without the parser — or anything that could
+    // run one — being anywhere in the process.
+    const raw = query.serializeFormulaColumns([
+      { key: "total", header: "Total", formula: "=[Unit Price] * Quantity" },
+    ]);
+    expect(query.deserializeFormulaColumns(raw)).toEqual([
+      { key: "total", header: "Total", formula: "=[Unit Price] * Quantity" },
+    ]);
+    expect(query).not.toHaveProperty("parseFormula");
+    expect(query).not.toHaveProperty("evaluateFormula");
   });
 
   it("decodes what the table encodes", () => {

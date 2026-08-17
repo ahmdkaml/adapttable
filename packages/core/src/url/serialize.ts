@@ -67,6 +67,9 @@ export const PARAM_DENSITY = "density";
 /** The pivot configuration. See `@adapttable/core/pivot`. */
 export const PARAM_PIVOT = "pivot";
 
+/** The user-typed formula columns. See `@adapttable/core/formula`. */
+export const PARAM_FORMULA = "formula";
+
 /** Read a 1-based page number, falling back when absent/invalid. */
 export function readPage(
   params: URLSearchParams,
