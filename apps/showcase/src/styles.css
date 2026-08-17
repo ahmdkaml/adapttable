@@ -1060,6 +1060,23 @@ a {
   font-weight: 700;
   background: color-mix(in srgb, var(--c) 14%, transparent);
 }
+/* The control that folds a group away. A button rather than a click handler on
+   the cell: folding is an action, and one a keyboard has to reach. */
+.pivot-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.pivot-fold__mark {
+  font-size: 0.7em;
+  opacity: 0.7;
+}
 
 /* ---------- a host's own mobile card ---------- */
 /* What `renderCard` replaces the built-in stack with: the identity as a

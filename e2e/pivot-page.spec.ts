@@ -87,6 +87,36 @@ test("puts the whole configuration in the URL", async ({ page }) => {
   ).toHaveCount(0);
 });
 
+test("a folded group travels in the link, and comes back folded", async ({
+  page,
+}) => {
+  // Two row dimensions, so there are subtotal lines to fold — and the URL that
+  // asks for them is itself the first half of the round trip.
+  await page.goto("/pivot/?p.pivot=rows:team,role;cols:status;sum:budget");
+
+  const lines = table(page).locator("tbody tr");
+  const before = await lines.count();
+  const fold = table(page).getByTestId("pivot-fold").first();
+  await expect(fold).toHaveAttribute("aria-expanded", "true");
+
+  await fold.click();
+
+  // The group keeps its own line with its own total; what goes is the detail
+  // beneath it.
+  await expect(fold).toHaveAttribute("aria-expanded", "false");
+  const after = await lines.count();
+  expect(after).toBeLessThan(before);
+  await expect(page).toHaveURL(/hide%3A|hide:/);
+
+  // The link reproduces it: same rows, same fold, on a fresh load.
+  await page.goto(page.url());
+  await expect(table(page).locator("tbody tr")).toHaveCount(after);
+  await expect(table(page).getByTestId("pivot-fold").first()).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+});
+
 test("changing a measure's aggregation changes the numbers", async ({
   page,
 }) => {

@@ -1,4 +1,4 @@
-import { pivot, usePivotUrlState } from "@adapttable/core/pivot";
+import { pivot, type PivotRow, usePivotUrlState } from "@adapttable/core/pivot";
 import { PivotPanel } from "@adapttable/mantine";
 import { Suspense, useMemo } from "react";
 
@@ -50,18 +50,25 @@ const money = new Intl.NumberFormat("en", {
  */
 export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
   const rows = usePivotRows();
-  const { config, onConfigChange } = usePivotUrlState({
-    urlKey: "p",
-    defaultConfig: START,
-  });
+  const { config, onConfigChange, collapsed, onCollapsedChange } =
+    usePivotUrlState({
+      urlKey: "p",
+      defaultConfig: START,
+    });
   const result = useMemo(
     () =>
       pivot(rows, config, {
+        collapsed,
         format: (value) =>
           typeof value === "number" ? money.format(value) : value,
       }),
-    [rows, config]
+    [rows, config, collapsed]
   );
+  const onToggleFold = (key: string) => {
+    const next = new Set(collapsed);
+    if (!next.delete(key)) next.add(key);
+    onCollapsedChange(next);
+  };
 
   return (
     <section className="sec shell" id="pivot">
@@ -69,9 +76,10 @@ export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
         Grouping answers &ldquo;what is the total per team&rdquo;. A pivot
         answers &ldquo;what is the total per team <em>per status</em>&rdquo; —
         and that second dimension becomes columns the data never had. Move
-        fields between the three zones with the buttons; the whole configuration
-        lives in the URL, so the pivot you build is the pivot you can send
-        someone.
+        fields between the three zones with the buttons, and fold a subtotal
+        group away by its own line. All of it lives in the URL — the axes, the
+        measures and what you folded — so the pivot you build is the pivot you
+        can send someone.
       </SectionHead>
       <div className="pad-surface">
         <div className="pivot-layout">
@@ -123,7 +131,11 @@ export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
                       colSpan={Math.max(result.rowDepth, 1)}
                       style={{ paddingInlineStart: `${row.depth * 16 + 8}px` }}
                     >
-                      {row.kind === "grandTotal" ? "Grand total" : row.label}
+                      <RowHeader
+                        row={row}
+                        folded={collapsed.has(row.key)}
+                        onToggleFold={onToggleFold}
+                      />
                     </th>
                     {row.cells.map((cell, index) => (
                       <td key={result.columnLeaves[index]?.key ?? index}>
@@ -138,6 +150,44 @@ export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * What a line is called down the side — and, on a subtotal line, the control
+ * that folds the group away.
+ *
+ * A collapsed group keeps its own line with its own totals, so folding hides
+ * detail without hiding the number. The fold travels in the URL with the rest of
+ * the pivot, which is why the button is wired to the hook rather than to local
+ * state: the link someone sends shows what they were looking at.
+ */
+function RowHeader({
+  row,
+  folded,
+  onToggleFold,
+}: Readonly<{
+  row: PivotRow;
+  folded: boolean;
+  onToggleFold: (key: string) => void;
+}>) {
+  if (row.kind === "grandTotal") return <>Grand total</>;
+  if (row.kind !== "subtotal") return <>{row.label}</>;
+  return (
+    <button
+      type="button"
+      className="pivot-fold"
+      aria-expanded={!folded}
+      data-testid="pivot-fold"
+      onClick={() => {
+        onToggleFold(row.key);
+      }}
+    >
+      <span aria-hidden="true" className="pivot-fold__mark">
+        {folded ? "▶" : "▼"}
+      </span>
+      {row.label}
+    </button>
   );
 }
 
