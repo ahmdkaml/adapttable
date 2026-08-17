@@ -731,7 +731,9 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 4px 3px 9px;
+  /* Logical, so the remove control keeps the narrow side under RTL too. */
+  padding-block: 3px;
+  padding-inline: 9px 4px;
   font-size: 12px;
   background: var(--page-surface);
   border: 1px solid var(--page-border);

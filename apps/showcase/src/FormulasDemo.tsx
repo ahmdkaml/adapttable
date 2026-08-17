@@ -75,7 +75,7 @@ const EXAMPLES: readonly {
 
 /** A column key a formula can reference: a bare name, as the grammar takes it. */
 function keyFrom(name: string, taken: readonly FormulaColumnSpec[]): string {
-  const slug = name.replaceAll(/[^A-Za-z0-9_]/g, "");
+  const slug = name.replaceAll(/\W/g, "");
   if (slug !== "" && !taken.some((spec) => spec.key === slug)) return slug;
   let n = taken.length + 1;
   while (taken.some((spec) => spec.key === `fx${String(n)}`)) n++;
@@ -194,8 +194,9 @@ function FormulaBar({
         ))}
         {cycles.length > 0 && (
           <span className="hint">
-            <Warning size={12} /> {[...cycles].sort().join(" and ")} reference
-            each other — every cell reads #CYCLE! instead of recursing
+            <Warning size={12} />{" "}
+            {[...cycles].sort((a, b) => a.localeCompare(b)).join(" and ")}{" "}
+            reference each other — every cell reads #CYCLE! instead of recursing
           </span>
         )}
       </div>

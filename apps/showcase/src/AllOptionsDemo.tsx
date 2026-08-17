@@ -1,3 +1,4 @@
+import type { ColumnDef } from "@adapttable/core";
 import { buildFormulaColumns } from "@adapttable/core/formula";
 import { getLabels } from "@adapttable/i18n";
 import { FilterDrawer } from "@adapttable/mantine";
@@ -113,6 +114,13 @@ const SIDE_PANELS = [
 const LAB_FORMULA_COLUMNS = buildFormulaColumns<Person>([
   { key: "tag", header: "Tag", formula: '=UPPER(team) & " · " & role' },
 ]).columns;
+
+/** The Lab's formula columns while the toggle is on, and none while it is off. */
+function labFormulaColumns(
+  toggle: OnOff
+): readonly ColumnDef<Person>[] | undefined {
+  return toggle === "on" ? LAB_FORMULA_COLUMNS : undefined;
+}
 
 /**
  * Print, for the palette's Print command.
@@ -672,9 +680,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       headerFilters={filtersUi === "header"}
                       columnGroups={columnGroups === "on"}
                       sparkline={sparkline === "on"}
-                      formulaColumns={
-                        formulaColumn === "on" ? LAB_FORMULA_COLUMNS : undefined
-                      }
+                      formulaColumns={labFormulaColumns(formulaColumn)}
                       editorShowcase={editorShowcase === "on"}
                       statusBar={statusBar === "on"}
                       contextMenu={contextMenu === "on"}

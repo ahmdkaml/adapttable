@@ -67,7 +67,8 @@ export function useFormulaUrlState(
   options: UseFormulaUrlStateOptions = {}
 ): UseFormulaUrlStateResult {
   const { urlAdapter, urlSync, urlKey, defaultFormulas } = options;
-  const param = `${urlKey ? `${urlKey}.` : ""}${PARAM_FORMULA}`;
+  const ns = urlKey ? `${urlKey}.` : "";
+  const param = `${ns}${PARAM_FORMULA}`;
   const resolved = useResolvedAdapter(urlAdapter, urlSync ?? true);
   // Same SSR rule as the other URL hooks: only an explicit adapter is trusted
   // to be hydration-consistent; the default history adapter hydrates from "".

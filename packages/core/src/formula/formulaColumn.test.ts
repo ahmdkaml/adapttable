@@ -9,7 +9,6 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { useFrontendData } from "../source/useFrontendData";
-import type { ColumnDef } from "../types";
 import { createMemoryAdapter } from "../url/adapter";
 import { FORMULA_ERRORS } from "./evaluate";
 import { buildFormulaColumns, type FormulaColumnSpec } from "./formulaColumn";
@@ -47,7 +46,7 @@ function sortedIds(
   const { result } = renderHook(() =>
     useFrontendData<Row>({
       data: ROWS,
-      columns: columns as ColumnDef<Row>[],
+      columns,
       urlAdapter: createMemoryAdapter(search),
       paginationMode: "paged",
       defaults: { limit: 10 },
