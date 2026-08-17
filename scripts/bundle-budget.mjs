@@ -111,7 +111,10 @@ const FIXTURES = [
   {
     // The React-free half of the model, which a backend imports instead of the
     // table: the filter-tree, pivot and formula-column URL codecs and nothing
-    // else. Measured 0.7 KB. The absences carry the promise — `useState` is the
+    // else. Measured 0.8 KB, the pivot codec included: it carries the switches
+    // and the folded groups a shared link names, which a route handler reads
+    // with the same function the table wrote them with. The ceiling holds.
+    // The absences carry the promise — `useState` is the
     // load-bearing one, because an entry that names a hook has a React peer no
     // route handler can satisfy; `PIVOT_BLANK` says the codec did not drag the
     // engine in behind it, and `parseFormula` says the same for the formula
@@ -131,7 +134,7 @@ const FIXTURES = [
   },
   {
     // What a route handler pays to parse and validate a shared link: measured
-    // 1.5 KB, the parser plus the codecs it reads through `@adapttable/core/query`.
+    // 1.6 KB, the parser plus the codecs it reads through `@adapttable/core/query`.
     // React is external in every fixture here, so an accidental React import
     // would not show as bytes — the graph walk in `scripts/smoke-dist.mjs` is
     // what enforces its absence, and these markers are the cheap second look.
