@@ -21,6 +21,8 @@ import {
 import { cssVars } from "./cssVars";
 import {
   demoSavedViews,
+  LARGE_ROW_COUNT,
+  LARGE_TEAM_COUNT,
   type Locale,
   type Person,
   PIVOT_FIELDS,
@@ -259,6 +261,13 @@ function flashReasonFor(
   return "Turn on editing or row mutations first — the flash marks the row a change landed on.";
 }
 
+/** What the summary line calls each data source. */
+const MODE_SUMMARY: Record<DataMode, string> = {
+  frontend: "frontend",
+  backend: "backend",
+  large: `${LARGE_ROW_COUNT.toLocaleString("en")} frontend rows`,
+};
+
 /** What the summary line calls the current interaction. */
 function interactionSummaryOf(
   editingMode: EditingMode,
@@ -276,9 +285,22 @@ function rowsSummaryOf(pivoted: boolean, structure: Structure): string {
 
 /** The note under the summary when two options cannot both apply. */
 function compatibilityNoteFor(
+  mode: DataMode,
   clientOnly: boolean,
   structured: boolean
 ): ReactNode {
+  if (mode === "large") {
+    return (
+      <small>
+        Large data loads {LARGE_ROW_COUNT.toLocaleString("en")} generated rows
+        over {String(LARGE_TEAM_COUNT)} teams — a hundred at a time through
+        infinite scroll, windowed, so the DOM holds a viewport and the team
+        checklist windows its options too. The demo owns its rows and rewrites
+        the whole list on every write, so the controls that write are disabled,
+        and grouping the whole set into subtotals is disabled with it.
+      </small>
+    );
+  }
   if (clientOnly) {
     return (
       <small>
@@ -414,6 +436,30 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
     mode === "backend"
       ? "This control needs the complete frontend row set."
       : undefined;
+  // Every write in this demo rebuilds the whole array — the honest shape for
+  // thirty rows, and the reason a control that writes is off over forty
+  // thousand. An app would patch one row; the demo is not pretending to.
+  const wholeSetWriteReason =
+    mode === "large"
+      ? `A write here rewrites all ${LARGE_ROW_COUNT.toLocaleString("en")} rows — the demo owns the list, and at this size that is not a demo of anything.`
+      : undefined;
+  // The org chart is derived from the seed: the first person on each of the
+  // five teams leads it. The generated directory shares no ids with that map,
+  // so every row would come back parentless.
+  const treeReason =
+    clientOnlyReason ??
+    (mode === "large"
+      ? "The org chart is declared from the thirty-row seed, so the generated rows have no parent to point at."
+      : undefined);
+  // The Lab groups by team then status. Over the generated directory that is
+  // 480 groups, each with a subtotal read from its whole subtree, built from
+  // the full set before a single row can paint — and the page stops answering.
+  const groupedReason =
+    clientOnlyReason ??
+    (mode === "large"
+      ? "Grouping by team and status over the full set is 480 subtotal groups, and building them locks the page at this size."
+      : undefined);
+  const editingReason = clientOnlyReason ?? wholeSetWriteReason;
   const flashReason = flashReasonFor(editingMode, rowMutations);
   // The retry the error state offers has to do something, or the demo is
   // showing a button that lies.
@@ -423,6 +469,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const structured = structure === "grouped" || structure === "tree";
   const reorderReason =
     clientOnlyReason ??
+    wholeSetWriteReason ??
     (structured
       ? "Row reorder is unavailable while grouped or tree rows are active."
       : undefined);
@@ -447,8 +494,9 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const rowsSummary = rowsSummaryOf(pivoted, structure);
   const configSummary = `${
     RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"
-  }: ${mode}, ${filtersUi} filters, ${rowsSummary}, ${interactionSummary}`;
+  }: ${MODE_SUMMARY[mode]}, ${filtersUi} filters, ${rowsSummary}, ${interactionSummary}`;
   const compatibilityNote = compatibilityNoteFor(
+    mode,
     Boolean(clientOnlyReason),
     structured
   );
@@ -509,6 +557,18 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
         setStructure("flat");
         setEditingMode("off");
         resetRows();
+      }
+      if (next === "large") {
+        // The checklist comes with the rows. A hundred and twenty teams is
+        // what the windowed list exists for, and a `select` over them would
+        // be the wrong control shown at the one size that proves the point.
+        setFilterSet("kitchen");
+        if (structure !== "flat" && structure !== "nested") {
+          setStructure("flat");
+        }
+        setEditingMode("off");
+        setRowMutations("off");
+        setRowReorder("off");
       }
     });
   };
@@ -599,6 +659,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                         options={[
                           { value: "frontend", label: "Frontend" },
                           { value: "backend", label: "Backend" },
+                          { value: "large", label: "Large data" },
                         ]}
                       />
                     </Control>
@@ -654,14 +715,14 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                           {
                             value: "grouped",
                             label: "Grouped",
-                            disabled: Boolean(clientOnlyReason),
-                            title: clientOnlyReason,
+                            disabled: Boolean(groupedReason),
+                            title: groupedReason,
                           },
                           {
                             value: "tree",
                             label: "Tree",
-                            disabled: Boolean(clientOnlyReason),
-                            title: clientOnlyReason,
+                            disabled: Boolean(treeReason),
+                            title: treeReason,
                           },
                           {
                             value: "nested",
@@ -758,20 +819,20 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                           {
                             value: "cell",
                             label: "Cell",
-                            disabled: Boolean(clientOnlyReason),
-                            title: clientOnlyReason,
+                            disabled: Boolean(editingReason),
+                            title: editingReason,
                           },
                           {
                             value: "row",
                             label: "Row",
-                            disabled: Boolean(clientOnlyReason),
-                            title: clientOnlyReason,
+                            disabled: Boolean(editingReason),
+                            title: editingReason,
                           },
                           {
                             value: "batch",
                             label: "Batch",
-                            disabled: Boolean(clientOnlyReason),
-                            title: clientOnlyReason,
+                            disabled: Boolean(editingReason),
+                            title: editingReason,
                           },
                         ]}
                       />
@@ -782,7 +843,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                     <Toggle
                       label="Add / delete"
                       value={rowMutations}
-                      disabledOn={clientOnlyReason}
+                      disabledOn={clientOnlyReason ?? wholeSetWriteReason}
                       onChange={(next) => customize(setRowMutations, next)}
                     />
                     <Toggle
@@ -836,7 +897,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
               {RECIPES.find((item) => item.key === recipe)?.label ?? "Custom"}
             </strong>
             <span>
-              {mode} · {filtersUi} filters · {rowsSummary} ·{" "}
+              {MODE_SUMMARY[mode]} · {filtersUi} filters · {rowsSummary} ·{" "}
               {interactionSummary}
             </span>
             {compatibilityNote}

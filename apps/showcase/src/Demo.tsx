@@ -37,6 +37,7 @@ import {
   DEMO_GROUP_AGGREGATES,
   EDITING_DEFAULT_LAYOUT,
   LIVE_DEFAULT_LAYOUT,
+  makeLargeDirectory,
   PEOPLE,
   type Person,
   personName,
@@ -46,7 +47,13 @@ import {
 } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
-export type DataMode = "frontend" | "backend";
+/**
+ * Where the rows come from.
+ *
+ * `large` is the frontend path over a generated directory rather than the
+ * thirty-row seed — same hook, same props, forty thousand rows.
+ */
+export type DataMode = "frontend" | "backend" | "large";
 export type PageMode = "paged" | "infinite";
 export type Density = "comfortable" | "compact";
 export type FiltersUi = "popover" | "drawer" | "header";
@@ -141,6 +148,18 @@ function withoutFilterTree<T>(source: TableSource<T>): TableSource<T> {
 // whole table (and often the footer) on one screen.
 const DEFAULTS = { limit: 5 };
 const TREE_DEFAULTS = { limit: 30 };
+/**
+ * A page large enough for the row window to be a window.
+ *
+ * Five rows would mount five rows, which proves nothing about scale. A
+ * hundred per page puts more rows on the page than fit on the screen, so the
+ * virtualizer has something to leave out — and still leaves four hundred
+ * pages for the pager to walk.
+ */
+const LARGE_DEFAULTS = { limit: 100 };
+
+/** The row height the large mode's virtual window measures against, in px. */
+const LARGE_ROW_ESTIMATE = 48;
 
 /**
  * The URL-persisted column controls every adapter demo spreads onto its
@@ -290,6 +309,11 @@ interface DataProps {
   pageMode?: PageMode;
   /** URL-param namespace, so each table on the page has isolated state. */
   urlKey?: string;
+  /**
+   * Load the generated directory instead of the thirty-row seed, and window
+   * the rows: a hundred per page, only the visible ones in the DOM.
+   */
+  large?: boolean;
   /** Opt-in feature toggles — off renders the plain table (package DNA). */
   grouping?: boolean;
   editing?: boolean;
@@ -341,6 +365,25 @@ function withDerivedFields(rows: readonly Person[]): Person[] {
     budget: budget(row),
     utilization: utilization(row),
   }));
+}
+
+/**
+ * The rows a frontend table starts from.
+ *
+ * The large directory is generated here rather than at module scope, so a
+ * page that never asks for it never builds it — and it arrives with its
+ * derived fields written on, since a formula reads fields, not accessors.
+ */
+function seedRows(large: boolean, derivedFields: boolean): Person[] {
+  if (large) return withDerivedFields(makeLargeDirectory());
+  if (derivedFields) return withDerivedFields(PEOPLE);
+  return PEOPLE.map((row) => ({ ...row }));
+}
+
+/** The page size each row shape asks for. */
+function pageDefaults(tree: boolean, large: boolean): { limit: number } {
+  if (tree) return TREE_DEFAULTS;
+  return large ? LARGE_DEFAULTS : DEFAULTS;
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -404,6 +447,7 @@ function Frontend({
   columns,
   pageMode,
   urlKey,
+  large,
   grouping,
   editing,
   tree,
@@ -424,11 +468,9 @@ function Frontend({
   derivedFields,
   formulaColumns,
 }: Readonly<DataProps>) {
-  // Clone so cell edits never mutate the shared PEOPLE seed.
+  // Cloned, so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState<readonly Person[]>(() =>
-    derivedFields
-      ? withDerivedFields(PEOPLE)
-      : PEOPLE.map((row) => ({ ...row }))
+    seedRows(large === true, derivedFields === true)
   );
   // The demo owns the data, so the demo is what knows which row changed —
   // exactly where a real app would flash it. Note there is no highlight prop
@@ -527,8 +569,12 @@ function Frontend({
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
-    defaults: tree ? TREE_DEFAULTS : DEFAULTS,
-    paginationMode: pageMode,
+    defaults: pageDefaults(tree === true, large === true),
+    // The row window measures a scroll, not a page: a paged body renders the
+    // page it is on, whole. So the large mode reads the same rows through
+    // infinite scroll — a hundred at a time, and only the visible ones in the
+    // DOM. A pager and a window are alternatives, not layers.
+    paginationMode: large ? "infinite" : pageMode,
     urlKey,
   });
   const tableSource = advancedFilters ? source : withoutFilterTree(source);
@@ -554,6 +600,12 @@ function Frontend({
       {realtime ? <RealtimeFeed lines={feed} /> : null}
       {render(tableSource, {
         ...columns,
+        // A hundred rows per page, and the DOM holds only the ones on screen.
+        // The estimate matches the height the row-style toggle sets, so the
+        // two never disagree about how tall a row is.
+        ...(large
+          ? { virtualize: true, estimateRowSize: LARGE_ROW_ESTIMATE }
+          : {}),
         // Always wired, never conditional: there is no highlight prop on the
         // table, `rowClassName` is the seam every adapter already honours,
         // and a disarmed `useHighlight` simply never returns a class.
@@ -770,11 +822,16 @@ export function DemoBody({
       advancedFilters={advancedFilters}
     />
   ) : (
+    // Keyed on the mode: the seed rows are state, so switching between the
+    // thirty-row set and the generated directory has to start the hook over
+    // rather than keep the list it already had.
     <Frontend
+      key={mode}
       render={render}
       columns={columns}
       pageMode={pageMode}
       urlKey={urlKey}
+      large={mode === "large"}
       grouping={grouping}
       editing={editing}
       tree={tree}

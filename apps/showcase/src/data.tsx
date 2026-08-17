@@ -932,6 +932,174 @@ export const PIVOT_PEOPLE: readonly Person[] = PEOPLE.map((person) => ({
   utilization: person.utilization ?? utilization(person),
 }));
 
+/* ── The large directory (Feature Lab, "Large data") ────────────────── */
+
+/** How many rows the Feature Lab's large-data mode holds. */
+export const LARGE_ROW_COUNT = 40_000;
+
+/**
+ * The areas the large directory's squads belong to.
+ *
+ * Twelve areas × ten squads is {@link LARGE_TEAM_COUNT} distinct values in
+ * the `team` column — well past the forty-value line where the checklist
+ * filter stops rendering every option and starts windowing them. That
+ * threshold is the reason this dataset exists: five teams can never show it.
+ */
+const LARGE_AREAS = [
+  "Core",
+  "Platform",
+  "Data",
+  "Web",
+  "Mobile",
+  "Infra",
+  "Payments",
+  "Identity",
+  "Search",
+  "Growth",
+  "Billing",
+  "Support",
+] as const;
+
+const LARGE_AREAS_AR = [
+  "الأساس",
+  "المنصة",
+  "البيانات",
+  "الويب",
+  "الجوال",
+  "البنية",
+  "المدفوعات",
+  "الهوية",
+  "البحث",
+  "النمو",
+  "الفواتير",
+  "الدعم",
+] as const;
+
+/** Squads per area. */
+const LARGE_SQUADS = 10;
+
+/** Distinct values the large directory's `team` column carries. */
+export const LARGE_TEAM_COUNT = LARGE_AREAS.length * LARGE_SQUADS;
+
+const LARGE_FIRST = [
+  "Ada",
+  "Alan",
+  "Grace",
+  "Linus",
+  "Barbara",
+  "Ken",
+  "Margaret",
+  "Edsger",
+  "Radia",
+  "Tim",
+  "Anita",
+  "Donald",
+  "Frances",
+  "Vint",
+  "Shafi",
+  "Leslie",
+] as const;
+
+const LARGE_FIRST_AR = [
+  "آدا",
+  "آلان",
+  "غريس",
+  "لينوس",
+  "باربرا",
+  "كين",
+  "مارغريت",
+  "إدسخر",
+  "راديا",
+  "تيم",
+  "أنيتا",
+  "دونالد",
+  "فرانسيس",
+  "فينت",
+  "شافي",
+  "ليزلي",
+] as const;
+
+const LARGE_LAST = [
+  "Lovelace",
+  "Turing",
+  "Hopper",
+  "Torvalds",
+  "Liskov",
+  "Thompson",
+  "Hamilton",
+  "Dijkstra",
+  "Perlman",
+  "Berners-Lee",
+  "Borg",
+  "Knuth",
+  "Allen",
+  "Cerf",
+  "Goldwasser",
+  "Lamport",
+  "Sutherland",
+] as const;
+
+const LARGE_ROLES = [
+  "Engineer",
+  "Designer",
+  "Researcher",
+  "Manager",
+  "Analyst",
+  "Architect",
+  "Writer",
+  "Producer",
+] as const;
+
+const LARGE_ROLES_AR = [
+  "مهندس",
+  "مصمم",
+  "باحث",
+  "مدير",
+  "محلل",
+  "معماري",
+  "كاتب",
+  "منتج",
+] as const;
+
+/**
+ * Build a directory of `count` people.
+ *
+ * Ids are the sequence `1…count` as strings, which is what every derived
+ * accessor in this file reads — `budget`, `utilization`, `personStatus`,
+ * `startDate`, `loadHistory` and the sparkline all key off `Number(row.id)`.
+ * So a generated row answers every column the small seed answers, and the
+ * two datasets differ in size and in team spread, nothing else.
+ *
+ * Nothing calls this at module scope: forty thousand rows built on import
+ * would be paid for by every page that reads this file. The Feature Lab
+ * builds them when the reader asks for them.
+ */
+export function makeLargeDirectory(count = LARGE_ROW_COUNT): Person[] {
+  return Array.from({ length: count }, (_, index) => largePerson(index));
+}
+
+/** One row of the large directory, addressed by its position. */
+function largePerson(index: number): Person {
+  const area = index % LARGE_AREAS.length;
+  const squad = Math.floor(index / LARGE_AREAS.length) % LARGE_SQUADS;
+  const first = index % LARGE_FIRST.length;
+  const last = (index * 7) % LARGE_LAST.length;
+  const role = (index * 5) % LARGE_ROLES.length;
+  const team = `${LARGE_AREAS[area]} ${String(squad + 1).padStart(2, "0")}`;
+  const teamAr = `${LARGE_AREAS_AR[area]} ${String(squad + 1).padStart(2, "0")}`;
+  return {
+    id: String(index + 1),
+    name: `${LARGE_FIRST[first]} ${LARGE_LAST[last]}`,
+    // The id keeps the address unique where a name repeats.
+    email: `${LARGE_FIRST[first].toLowerCase()}.${index + 1}@example.com`,
+    role: LARGE_ROLES[role],
+    team,
+    nameAr: `${LARGE_FIRST_AR[first]} ${LARGE_LAST[last]}`,
+    roleAr: LARGE_ROLES_AR[role],
+    teamAr,
+  };
+}
+
 export function formatDate(date: Date, locale: Locale = "en"): string {
   return new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     month: "short",
