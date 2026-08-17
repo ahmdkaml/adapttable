@@ -397,7 +397,6 @@ function DesktopRowBase<TRow>(
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowMeasureRef(rowPinSide, measureRowPair, index, measureElement)}
-        data-adapttable-part="row"
         data-row-pin={rowPinSide}
         data-stagger=""
         data-selected={selected ? "" : undefined}

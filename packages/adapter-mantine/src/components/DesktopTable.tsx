@@ -372,6 +372,14 @@ interface DesktopRowProps<TRow> {
   spanSignature: string;
   /** Core's cell prop-getter — identity-stable for the table's lifetime. */
   getCellProps: UseDataTableResult<TRow>["getCellProps"];
+  /**
+   * Core's row prop-getter — the part name, `role`, the row id, the dataset
+   * index and `aria-selected` in one spread. Uncompared (see
+   * {@link UncomparedRowProp}): its identity changes with every selection
+   * change, while everything it emits is already determined by a compared
+   * prop, so a held row can never show a stale value.
+   */
+  getRowProps: UseDataTableResult<TRow>["getRowProps"];
   /** Cell-navigation getters; absent unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
   /** Selected state; `undefined` when selection is off (no checkbox cell). */
@@ -452,9 +460,12 @@ interface DesktopRowProps<TRow> {
  * The style-ish props the comparator deliberately skips: they are rebuilt
  * every parent render, and their visual output is exactly determined by
  * `pinSignature` (plus the compared inputs) — comparing their identities
- * would only defeat the memo.
+ * would only defeat the memo. `getRowProps` joins them for the same reason:
+ * core rebuilds it on every selection change, and its output moves only with
+ * `row`, `sourceIndex`, `selected` and `hasSelection`, all compared.
  */
 type UncomparedRowProp =
+  | "getRowProps"
   | "pinStyleFor"
   | "selectionCellStyle"
   | "expansionCellStyle"
@@ -579,6 +590,7 @@ function DesktopRowBase<TRow>({
   columns,
   bodyCells,
   getCellProps,
+  getRowProps,
   gridFocus,
   selected,
   selectLabel,
@@ -645,13 +657,9 @@ function DesktopRowBase<TRow>({
   return (
     <>
       <Table.Tr
-        role="row"
-        data-index={index}
-        data-adapttable-part="row"
-        data-row-id={id}
-        data-row-pin={rowPinSide}
+        {...getRowProps(row, focusIndex)}
         {...gridFocus?.getRowPropsAt(focusIndex)}
-        aria-selected={selected}
+        data-row-pin={rowPinSide}
         {...rowClickProps(row, onRowClick, focusIndex)}
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
@@ -1137,6 +1145,7 @@ export function DesktopTable<TRow>({
         bodyCells={cellsForRow(cellsByRow, id)}
         spanSignature={rowSpanSignature(cellsForRow(cellsByRow, id))}
         getCellProps={table.getCellProps}
+        getRowProps={table.getRowProps}
         gridFocus={gridFocus}
         selected={selection?.isSelected(id)}
         selectLabel={labels.selectRow}
@@ -1405,6 +1414,7 @@ export function DesktopTable<TRow>({
                       cellsForRow(cellsByRow, id)
                     )}
                     getCellProps={table.getCellProps}
+                    getRowProps={table.getRowProps}
                     gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}
@@ -1505,6 +1515,7 @@ export function DesktopTable<TRow>({
                       cellsForRow(cellsByRow, id)
                     )}
                     getCellProps={table.getCellProps}
+                    getRowProps={table.getRowProps}
                     gridFocus={gridFocus}
                     selected={selection?.isSelected(id)}
                     selectLabel={labels.selectRow}

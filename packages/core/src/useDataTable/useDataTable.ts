@@ -170,6 +170,8 @@ export interface TableElementProps extends Props {
  */
 export interface RowElementProps extends Props {
   role: string;
+  /** The structural part name every kit's body row carries. */
+  "data-adapttable-part": "row";
   /** The row's id, so an event can be traced back to the row it happened in. */
   "data-row-id": string;
   "data-index": number;
@@ -435,9 +437,12 @@ export function useDataTable<TRow>(
       return mergeProps<RowElementProps>(
         {
           role: "row",
+          // The part name a host styles and tests against, emitted here so
+          // one spread names the row in every kit that renders one.
+          "data-adapttable-part": "row",
           // The id an event can be traced back to. It lives here because
-          // this is the row's prop-getter — the kits that assemble their
-          // row props by hand instead carry it on the element.
+          // this is the row's prop-getter — antd, whose <Table> builds its
+          // own <tr>, carries both through `onRow` instead.
           "data-row-id": id,
           "data-index": index,
           "aria-selected": hasBulk ? selected : undefined,

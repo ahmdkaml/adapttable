@@ -22,6 +22,7 @@ import {
   type TableLabels,
   tableMinWidth,
   type TreeEntry,
+  type UseDataTableResult,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
@@ -276,6 +277,13 @@ const edgeCellStyle = (side: PinSide, active: boolean, z: number, shift = 0) =>
  * row, without ever calling a stale closure.
  */
 interface DesktopRowApi<TRow> {
+  /**
+   * Core's row prop-getter — the part name, `role`, the row id, the dataset
+   * index and `aria-selected` in one spread. It rides this ref like the other
+   * per-render values: core rebuilds it on every selection change, while
+   * everything it emits moves only with a compared prop.
+   */
+  getRowProps: UseDataTableResult<TRow>["getRowProps"];
   selection: SelectionState | null;
   expansion?: RowExpansionState;
   rowActions?: RowAction<TRow>[];
@@ -437,6 +445,8 @@ function DesktopRowBase<TRow>({
   return (
     <>
       <Table.Row
+        {...live.getRowProps(row, focusIndex)}
+        {...gridFocus?.getRowPropsAt(focusIndex)}
         {...rowClickProps(
           row,
           hasRowClick ? activateRow : undefined,
@@ -445,11 +455,7 @@ function DesktopRowBase<TRow>({
         {...(live.rowReorder?.dropProps(index, row, live.windowStart) ?? {})}
         {...(live.rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowPinSide ? undefined : measureRef}
-        data-index={index}
-        data-adapttable-part="row"
-        data-row-id={id}
         data-row-pin={rowPinSide}
-        {...gridFocus?.getRowPropsAt(focusIndex)}
         data-stagger=""
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}
@@ -816,6 +822,7 @@ export function DesktopTable<TRow>({
   // re-assigned every render so event handlers always see the latest values
   // without their identity ever becoming a compared prop.
   const rowApi: DesktopRowApi<TRow> = {
+    getRowProps: table.getRowProps,
     selection,
     expansion,
     rowActions,

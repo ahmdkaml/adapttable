@@ -20,10 +20,11 @@ const COLS: ColumnDef<Row>[] = [
 /**
  * The structural part names, checked by rendering.
  *
- * The parts-parity script greps adapter source, so it cannot see a name that
- * arrives through one of core's prop-getters, and it compares only names at
- * least one themed kit already emits. `row` fell through both gaps. This
- * asserts on the DOM the user actually gets.
+ * `row` is not written in this package at all: it arrives with the rest of the
+ * row's identity from core's `getRowProps`, which this kit spreads on its body
+ * row. `header-cell` is the opposite case — written on the kit's own header
+ * element. A grep over adapter source can only see the second kind, so both
+ * are asserted here on the DOM the host actually gets.
  */
 describe("structural row parts (mantine)", () => {
   it("names its body rows and says which row each one is", () => {
@@ -43,6 +44,16 @@ describe("structural row parts (mantine)", () => {
     expect([...rows].map((el) => el.getAttribute("data-row-id"))).toEqual([
       "r1",
       "r2",
+    ]);
+    // The whole spread landed, not just the name: the row's role and its
+    // dataset index come from the same getter.
+    expect([...rows].map((el) => el.getAttribute("role"))).toEqual([
+      "row",
+      "row",
+    ]);
+    expect([...rows].map((el) => el.getAttribute("data-index"))).toEqual([
+      "0",
+      "1",
     ]);
   });
 

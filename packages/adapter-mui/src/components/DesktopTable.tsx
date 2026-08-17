@@ -19,6 +19,7 @@ import {
   type TableLabels,
   tableMinWidth,
   type TreeEntry,
+  type UseDataTableResult,
   useHorizontalOverflow,
 } from "@adapttable/core";
 import {
@@ -338,6 +339,14 @@ interface DesktopRowProps<TRow> {
      least latest-dispatching via useStableToggle), so a skipped row never
      holds a stale handler. */
   id: string;
+  /**
+   * Core's row prop-getter — the part name, `role`, the row id, the dataset
+   * index and `aria-selected` in one spread. Uncompared on purpose: its
+   * identity changes with the selection state, and everything it can emit is
+   * already determined by a compared prop (`row`, `sourceIndex`, `selected`,
+   * `hasSelection`), so a row that skips a render cannot show a stale value.
+   */
+  getRowProps: UseDataTableResult<TRow>["getRowProps"];
   rowActions?: RowAction<TRow>[];
   confirm: ConfirmHandler;
   renderRowDetail?: (row: TRow) => ReactNode;
@@ -420,6 +429,7 @@ function DesktopRowImpl<TRow>({
   treeColumnKey: treeKey,
   onToggleTree,
   index,
+  getRowProps,
   gridFocus,
   selected,
   expanded,
@@ -473,6 +483,8 @@ function DesktopRowImpl<TRow>({
   return (
     <>
       <TableRow
+        {...getRowProps(row, focusIndex)}
+        {...gridFocus?.getRowPropsAt(focusIndex)}
         {...rowClickProps(row, onRowClick, focusIndex)}
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
@@ -482,13 +494,9 @@ function DesktopRowImpl<TRow>({
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         data-stagger=""
-        data-adapttable-part="row"
-        data-row-id={id}
         data-row-pin={rowPinSide}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={rowMeasureRef}
-        data-index={index}
-        {...gridFocus?.getRowPropsAt(focusIndex)}
         hover
         selected={selected}
         onMouseEnter={prefetch ? () => prefetch(row) : undefined}
@@ -909,6 +917,7 @@ export function DesktopTable<TRow>({
         key={id}
         row={row}
         index={sourceIndex}
+        getRowProps={table.getRowProps}
         gridFocus={gridFocus}
         selected={selection?.isSelected(id) ?? false}
         expanded={isExpanded ? isExpanded(id) : false}
@@ -1229,6 +1238,7 @@ export function DesktopTable<TRow>({
                     key={entry.key}
                     row={entry.row}
                     index={entry.index}
+                    getRowProps={table.getRowProps}
                     gridFocus={gridFocus}
                     selected={selection?.isSelected(id) ?? false}
                     expanded={isExpanded ? isExpanded(id) : false}
@@ -1325,6 +1335,7 @@ export function DesktopTable<TRow>({
                 return (
                   <DesktopRow
                     gridFocus={gridFocus}
+                    getRowProps={table.getRowProps}
                     key={key}
                     row={row}
                     index={index}

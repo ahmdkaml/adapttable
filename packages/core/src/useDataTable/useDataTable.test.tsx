@@ -256,6 +256,21 @@ describe("useDataTable", () => {
       expect(props["data-index"]).toBe(0);
     });
 
+    it("getRowProps names the row part and its id", () => {
+      const { result } = mount();
+      const props = result.current.getRowProps(ROWS[1]!, 1);
+      expect(props["data-adapttable-part"]).toBe("row");
+      expect(props["data-row-id"]).toBe(ROWS[1]!.id);
+      expect(props["data-index"]).toBe(1);
+      // A kit that names its own section keeps winning: overrides merge last,
+      // which is how antd's pinned rows stay `pinned-top` / `pinned-bottom`.
+      expect(
+        result.current.getRowProps(ROWS[1]!, 1, {
+          "data-adapttable-part": "pinned-top",
+        })["data-adapttable-part"]
+      ).toBe("pinned-top");
+    });
+
     it("getCellProps applies logical (RTL-aware) alignment", () => {
       const { result } = mount();
       const props = result.current.getCellProps(cols[1]!);
