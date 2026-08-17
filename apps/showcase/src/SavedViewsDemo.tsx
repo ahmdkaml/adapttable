@@ -1,12 +1,14 @@
 import type { SavedView } from "@adapttable/core";
 import { useSavedViews } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
-import { DataTable, SavedViewsPanel } from "@adapttable/mantine";
-import { MantineProvider } from "@mantine/core";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 
+import { cssVars } from "./cssVars";
 import { BASE_COLUMNS, PEOPLE, type Person } from "./data";
+import { KitSwitcher, readKitFromUrl } from "./kitDemos";
+import { KitProvider, kitSavedViewsPanel, kitTable } from "./kitProviders";
 import { SectionHead } from "./sections";
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 /**
  * A view this reader did not create, to show what a shared one looks like.
@@ -44,11 +46,16 @@ function useDemoStorage() {
 }
 
 /**
- * The saved-views page: a table, the views menu, and the management panel.
- * Only view controls — the point of the page is what a view is worth, not
- * the rest of the table.
+ * The saved-views page: a table, the views menu, and the management panel — in
+ * whichever kit the reader picks, because a management panel is as much a kit's
+ * own component as the table beside it. Only view controls: the point of the
+ * page is what a view is worth, not the rest of the table.
  */
 export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
   const storage = useDemoStorage();
   const [migrated, setMigrated] = useState<string[]>([]);
   const views = useSavedViews({
@@ -62,6 +69,8 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
       return view;
     },
   });
+  const SavedViewsPanel = kitSavedViewsPanel(adapter);
+  const Table = kitTable<Person>(adapter);
 
   return (
     <section className="sec shell" id="saved-views">
@@ -72,19 +81,29 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
         table opens with. A shared view someone else owns arrives read-only and
         says so.
       </SectionHead>
-      <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-        <div className="pad-surface">
-          <div className="pivot-layout">
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
+      <div className="pad-surface">
+        <KitProvider kit={adapter} dark={dark}>
+          <div
+            className="pivot-layout"
+            style={cssVars({
+              "--c": dark ? token.accentDark : token.accentLight,
+            })}
+            data-adapter={adapter}
+            key={adapter}
+          >
             <div>
-              <SavedViewsPanel
-                views={views.views}
-                onApply={views.apply}
-                onRename={views.rename}
-                onMove={views.move}
-                onSetDefault={views.setDefault}
-                onRemove={views.remove}
-                labels={getLabels("en")}
-              />
+              <Suspense fallback={null}>
+                <SavedViewsPanel
+                  views={views.views}
+                  onApply={views.apply}
+                  onRename={views.rename}
+                  onMove={views.move}
+                  onSetDefault={views.setDefault}
+                  onRemove={views.remove}
+                  labels={getLabels("en")}
+                />
+              </Suspense>
               {migrated.length > 0 && (
                 <p className="hint" data-testid="migrated">
                   Upgraded on load: {migrated.join(", ")}
@@ -92,18 +111,20 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
               )}
             </div>
             <div>
-              <DataTable<Person>
-                data={PEOPLE}
-                columns={BASE_COLUMNS}
-                rowKey={(row) => row.id}
-                urlKey="sv"
-                savedViews={{ storageKey: "showcase-views", storage }}
-                labels={getLabels("en")}
-              />
+              <Suspense fallback={null}>
+                <Table
+                  data={PEOPLE}
+                  columns={BASE_COLUMNS}
+                  rowKey={(row) => row.id}
+                  urlKey="sv"
+                  savedViews={{ storageKey: "showcase-views", storage }}
+                  labels={getLabels("en")}
+                />
+              </Suspense>
             </div>
           </div>
-        </div>
-      </MantineProvider>
+        </KitProvider>
+      </div>
     </section>
   );
 }

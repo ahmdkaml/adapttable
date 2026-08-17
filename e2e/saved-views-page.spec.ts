@@ -10,6 +10,17 @@ import { expect, type Page, test } from "@playwright/test";
  * table still loading.
  */
 
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
 const panel = (page: Page) =>
   page.locator('[data-adapttable-part="saved-views-panel"]');
 const rowFor = (page: Page, name: string) =>
@@ -109,3 +120,36 @@ test("marks a default, and only one", async ({ page }) => {
       .filter({ hasText: /Default/ })
   ).toHaveCount(1);
 });
+
+for (const kit of KITS) {
+  test(`${kit}: manages the views with its own controls`, async ({ page }) => {
+    await page.goto("/saved-views/");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    const rows = root.locator('[data-adapttable-part="saved-view-row"]');
+
+    // The panel is this kit's, and the parts are the same in all of them —
+    // including the badge that says a shared view is not yours to change.
+    await expect(rows).toHaveCount(2);
+    await expect(
+      root.locator('[data-adapttable-part="saved-view-readonly"]')
+    ).toHaveText("Read-only");
+    await expect(
+      rows.filter({ hasText: "Team: engineering" }).getByRole("button", {
+        name: "Rename view",
+      })
+    ).toBeDisabled();
+
+    // Applying a view drives the table beside it: the link carries the search.
+    await rows
+      .filter({ hasText: "Legacy view" })
+      .getByRole("button", { name: "Apply view" })
+      .click();
+    await expect(page).toHaveURL(/sv\.q=a/);
+  });
+}
