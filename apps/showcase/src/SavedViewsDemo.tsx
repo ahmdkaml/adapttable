@@ -68,8 +68,13 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
     storage,
     urlKey: "sv",
     migrate: (view, from) => {
+      // One line per view, however many times the load runs — under
+      // StrictMode it runs twice, and a note that names the same view twice
+      // reads as two upgraded views. The guard compares what is stored, not
+      // the bare name it is built from.
+      const upgraded = `${view.name} (v${from})`;
       setMigrated((seen) =>
-        seen.includes(view.name) ? seen : [...seen, `${view.name} (v${from})`]
+        seen.includes(upgraded) ? seen : [...seen, upgraded]
       );
       return view;
     },
