@@ -1,21 +1,18 @@
 import "@mantine/core/styles.css";
 import "./styles.css";
 
-import { MantineProvider } from "@mantine/core";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { PageShell } from "./PageShell";
 import { PivotDemo } from "./PivotDemo";
 
+// No provider here: the page mounts each kit's own, so switching the kit
+// switches the panel and the table together.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PageShell active="pivot" root="..">
-      {(dark) => (
-        <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-          <PivotDemo dark={dark} />
-        </MantineProvider>
-      )}
+      {(dark) => <PivotDemo dark={dark} />}
     </PageShell>
   </StrictMode>
 );

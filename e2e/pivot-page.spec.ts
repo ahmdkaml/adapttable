@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 /**
  * The /pivot/ page.
@@ -8,9 +8,41 @@ import { expect, type Page, test } from "@playwright/test";
  * keyboard. So the tests here drive the panel with keys and check the
  * arithmetic that appears — a pivot whose subtotals disagree with its grand
  * total is worse than no pivot.
+ *
+ * The table is the kit's own `DataTable` fed by `pivotTableModel`, so the
+ * columns are found the way every other page finds them: by `data-column-key`,
+ * which is `pivot-row` for the row headers and `pivot-N` for the Nth rendered
+ * column of the pivot. Those hold across the switcher.
  */
 
+const KITS = [
+  "mantine",
+  "mui",
+  "chakra",
+  "antd",
+  "radix",
+  "base-ui",
+  "shadcn",
+  "tailwind",
+] as const;
+
 const table = (page: Page) => page.getByTestId("pivot-table");
+
+/** Every body cell of one pivot column, top to bottom. */
+const cells = (root: Locator, key: string) =>
+  root.locator(`tbody [data-column-key="${key}"]`);
+
+/**
+ * The grand-total line: the table's own summary row, aligned under the columns.
+ *
+ * Where a kit puts it is the kit's business — Mantine, MUI, antd and the native
+ * shell use a real `<tfoot>`, Radix and Base UI a marked last row — so the
+ * cross-kit assertions find it by its caption and only the default kit's tests
+ * reach for the footer element itself.
+ */
+const footer = (root: Locator) => root.locator("tfoot");
+
+const parse = (text: string) => Number(text.replaceAll(/[^0-9.-]/g, "")) || 0;
 
 test("opens already pivoted, with a header row per column value", async ({
   page,
@@ -23,7 +55,16 @@ test("opens already pivoted, with a header row per column value", async ({
   await expect(page.getByRole("group", { name: "Columns" })).toContainText(
     "Status"
   );
+  // The column dimension became a spanning header row above the measures —
+  // the kit's own header groups, from the engine's column tree.
+  await expect(
+    table(page).locator("thead tr").first().locator("th")
+  ).not.toHaveCount(0);
   await expect(table(page).locator("tbody tr")).not.toHaveCount(0);
+  // Rows down the side are captioned by the dimension they answer for.
+  await expect(
+    table(page).locator('thead [data-column-key="pivot-row"]')
+  ).toContainText("Team");
 });
 
 test("totals every column, and the grand total agrees with the rows", async ({
@@ -31,20 +72,29 @@ test("totals every column, and the grand total agrees with the rows", async ({
 }) => {
   await page.goto("/pivot/");
 
-  const grand = table(page).locator('tr[data-kind="grandTotal"]');
-  await expect(grand).toBeVisible();
+  const total = footer(table(page)).locator('[data-column-key="pivot-0"]');
+  await expect(total).toBeVisible();
 
-  // Every currency cell in the first column, summed, must equal the total.
-  const numbers = await table(page)
-    .locator('tbody tr:not([data-kind="grandTotal"]) td:nth-of-type(1)')
-    .allTextContents();
-  const total = await grand.locator("td").first().textContent();
-
-  const parse = (text: string) => Number(text.replaceAll(/[^0-9.-]/g, "")) || 0;
+  // Every currency cell in the first pivot column, summed, must equal the
+  // footer's cell for that same column.
+  const numbers = await cells(table(page), "pivot-0").allTextContents();
   const summed = numbers.reduce((sum, text) => sum + parse(text), 0);
   expect(numbers.length).toBeGreaterThan(1);
   expect(summed).toBeGreaterThan(0);
-  expect(parse(total ?? "")).toBe(summed);
+  expect(parse((await total.textContent()) ?? "")).toBe(summed);
+});
+
+test("the grand total is the table's footer, not one more line of data", async ({
+  page,
+}) => {
+  await page.goto("/pivot/");
+
+  await expect(footer(table(page))).toContainText("Grand total");
+  // And it is NOT in the body: two places to read one number is how they end
+  // up disagreeing.
+  await expect(
+    table(page).locator("tbody").getByText("Grand total")
+  ).toHaveCount(0);
 });
 
 test("builds a pivot with the keyboard alone", async ({ page }) => {
@@ -60,7 +110,7 @@ test("builds a pivot with the keyboard alone", async ({ page }) => {
   await expect(rows).toContainText("Role");
   // A second dimension brings subtotal lines with it.
   await expect(
-    table(page).locator('tr[data-kind="subtotal"]').first()
+    table(page).locator("tbody tr.pivot-line--subtotal").first()
   ).toBeVisible();
 });
 
@@ -124,9 +174,7 @@ test("changing a measure's aggregation changes the numbers", async ({
 
   // The grand total, not the first data cell: a single team/status pair can
   // legitimately be empty, and an empty cell proves nothing either way.
-  const grandCell = table(page)
-    .locator('tr[data-kind="grandTotal"] td')
-    .first();
+  const grandCell = footer(table(page)).locator('[data-column-key="pivot-0"]');
   const before = await grandCell.textContent();
 
   const agg = page
@@ -137,3 +185,28 @@ test("changing a measure's aggregation changes the numbers", async ({
 
   await expect(grandCell).not.toHaveText(before ?? "");
 });
+
+for (const kit of KITS) {
+  test(`${kit}: renders the pivot with its own table`, async ({ page }) => {
+    // Two row dimensions, so a subtotal line and its fold control are on
+    // screen in every kit rather than only where the default puts them.
+    await page.goto("/pivot/?p.pivot=rows:team,role;cols:status;sum:budget");
+    if (kit !== "mantine") {
+      const tab = page.getByTestId(`adapter-${kit}`);
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+    }
+    const root = page.locator(`[data-adapter="${kit}"]`);
+    await expect(root.first()).toBeVisible();
+    const pivot = root.getByTestId("pivot-table");
+
+    // The engine's numbers, the kit's pixels: the row headers, a measure
+    // column, the fold control on a subtotal, and the grand-total line.
+    await expect(
+      pivot.locator('tbody [data-column-key="pivot-row"]').first()
+    ).not.toBeEmpty();
+    await expect(cells(pivot, "pivot-0").first()).toBeVisible();
+    await expect(pivot.getByTestId("pivot-fold").first()).toBeVisible();
+    await expect(pivot.getByText("Grand total")).toBeVisible();
+  });
+}

@@ -907,6 +907,31 @@ export function personStatus(row: Person): DemoStatus {
   return row.status ?? STATUSES[Number(row.id) % STATUSES.length];
 }
 
+/** The fields this dataset offers a pivot, in the order the panel lists them. */
+export const PIVOT_FIELDS = [
+  { key: "team", label: "Team" },
+  { key: "role", label: "Role" },
+  { key: "status", label: "Status" },
+  { key: "budget", label: "Budget" },
+  { key: "utilization", label: "Utilization" },
+];
+
+/**
+ * The rows a pivot reads.
+ *
+ * A pivot resolves a dimension or a measure from a FIELD, not from a column's
+ * accessor, so the values this demo derives from the id have to be on the row
+ * before it can group or sum them. Materialized once, and shared by the /pivot/
+ * page and the Feature Lab's docked pivot builder, so both pivot the identical
+ * thirty rows.
+ */
+export const PIVOT_PEOPLE: readonly Person[] = PEOPLE.map((person) => ({
+  ...person,
+  status: person.status ?? personStatus(person),
+  budget: person.budget ?? budget(person),
+  utilization: person.utilization ?? utilization(person),
+}));
+
 export function formatDate(date: Date, locale: Locale = "en"): string {
   return new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     month: "short",

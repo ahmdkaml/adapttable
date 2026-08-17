@@ -1019,46 +1019,35 @@ a {
 /* The panel beside the table, and a table that reads as a spreadsheet: the
    subtotal and grand-total lines have to be distinguishable from the data
    lines or the numbers are ambiguous. */
+/* The panel column is sized for the widest kit's controls: a measure row is a
+   caption, an aggregation select and three buttons, and MUI's select is roomier
+   than Mantine's — a column that fits one kit spills in another. */
 .pivot-layout {
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   align-items: start;
 }
-@media (max-width: 860px) {
+.pivot-layout > * {
+  min-width: 0;
+}
+@media (max-width: 900px) {
   .pivot-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 .pivot-table-wrap {
-  overflow-x: auto;
+  min-width: 0;
 }
-.pivot-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 0.85rem;
-}
-.pivot-table :is(th, td) {
-  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-  padding: 6px 10px;
-  text-align: start;
-  white-space: nowrap;
-}
-.pivot-table td {
-  text-align: end;
-  font-variant-numeric: tabular-nums;
-}
-.pivot-table thead th {
-  font-weight: 600;
-  background: color-mix(in srgb, currentColor 5%, transparent);
-}
-.pivot-table tr[data-kind="subtotal"] {
+/* The table itself is the kit's — these only mark the lines that are totals
+   rather than data, through `rowClassName`, the seam every adapter honours.
+   Without it a subtotal reads as one more row of the data it sums. */
+.pivot-line--subtotal {
   font-weight: 600;
   background: color-mix(in srgb, var(--c) 8%, transparent);
 }
-.pivot-table tr[data-kind="grandTotal"] {
-  font-weight: 700;
-  background: color-mix(in srgb, var(--c) 14%, transparent);
+.pivot-line td {
+  font-variant-numeric: tabular-nums;
 }
 /* The control that folds a group away. A button rather than a click handler on
    the cell: folding is an action, and one a keyboard has to reach. */

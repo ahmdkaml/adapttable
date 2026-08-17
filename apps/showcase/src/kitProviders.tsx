@@ -1,4 +1,13 @@
-import { DataTable, type DataTableProps } from "@adapttable/mantine";
+import type {
+  PivotPanelChromeProps,
+  SavedViewsPanelChromeProps,
+} from "@adapttable/core/adapter";
+import {
+  DataTable,
+  type DataTableProps,
+  PivotPanel,
+  SavedViewsPanel,
+} from "@adapttable/mantine";
 import { MantineProvider } from "@mantine/core";
 import { type ComponentType, lazy, type ReactNode, Suspense } from "react";
 
@@ -169,4 +178,79 @@ export function kitTable<TRow>(
 ): ComponentType<DataTableProps<TRow>> {
   const table = TABLES[kit] ?? TABLES.mantine;
   return table as unknown as ComponentType<DataTableProps<TRow>>;
+}
+
+/** A panel every kit pre-wires: chrome from core, controls from the kit. */
+type PivotPanelComponent = ComponentType<Omit<PivotPanelChromeProps, "slots">>;
+type SavedViewsPanelComponent = ComponentType<
+  Omit<SavedViewsPanelChromeProps, "slots">
+>;
+
+/**
+ * Each kit's pivot configuration panel.
+ *
+ * A page that switches kits has to switch these with the table: a Mantine
+ * table beside an antd panel is exactly the mismatch the slots law exists to
+ * prevent, and it is the kind of mismatch a demo gets away with because
+ * nothing type-checks the pairing.
+ */
+const PIVOT_PANELS: Record<string, PivotPanelComponent> = {
+  mantine: PivotPanel,
+  mui: lazy(async () => ({
+    default: (await import("@adapttable/mui")).PivotPanel,
+  })),
+  chakra: lazy(async () => ({
+    default: (await import("@adapttable/chakra")).PivotPanel,
+  })),
+  antd: lazy(async () => ({
+    default: (await import("@adapttable/antd")).PivotPanel,
+  })),
+  radix: lazy(async () => ({
+    default: (await import("@adapttable/radix")).PivotPanel,
+  })),
+  "base-ui": lazy(async () => ({
+    default: (await import("@adapttable/base-ui")).PivotPanel,
+  })),
+  shadcn: lazy(async () => ({
+    default: (await import("@adapttable/shadcn")).PivotPanel,
+  })),
+  tailwind: lazy(async () => ({
+    default: (await import("@adapttable/unstyled")).PivotPanel,
+  })),
+};
+
+/** Each kit's saved-views management panel. */
+const SAVED_VIEWS_PANELS: Record<string, SavedViewsPanelComponent> = {
+  mantine: SavedViewsPanel,
+  mui: lazy(async () => ({
+    default: (await import("@adapttable/mui")).SavedViewsPanel,
+  })),
+  chakra: lazy(async () => ({
+    default: (await import("@adapttable/chakra")).SavedViewsPanel,
+  })),
+  antd: lazy(async () => ({
+    default: (await import("@adapttable/antd")).SavedViewsPanel,
+  })),
+  radix: lazy(async () => ({
+    default: (await import("@adapttable/radix")).SavedViewsPanel,
+  })),
+  "base-ui": lazy(async () => ({
+    default: (await import("@adapttable/base-ui")).SavedViewsPanel,
+  })),
+  shadcn: lazy(async () => ({
+    default: (await import("@adapttable/shadcn")).SavedViewsPanel,
+  })),
+  tailwind: lazy(async () => ({
+    default: (await import("@adapttable/unstyled")).SavedViewsPanel,
+  })),
+};
+
+/** `kit`'s pivot panel, falling back to Mantine's for an unknown key. */
+export function kitPivotPanel(kit: string): PivotPanelComponent {
+  return PIVOT_PANELS[kit] ?? PivotPanel;
+}
+
+/** `kit`'s saved-views panel, falling back to Mantine's for an unknown key. */
+export function kitSavedViewsPanel(kit: string): SavedViewsPanelComponent {
+  return SAVED_VIEWS_PANELS[kit] ?? SavedViewsPanel;
 }

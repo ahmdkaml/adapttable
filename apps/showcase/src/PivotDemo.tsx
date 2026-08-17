@@ -1,18 +1,14 @@
-import { pivot, type PivotRow, usePivotUrlState } from "@adapttable/core/pivot";
-import { PivotPanel } from "@adapttable/mantine";
-import { Suspense, useMemo } from "react";
+import { usePivotUrlState } from "@adapttable/core/pivot";
+import { getLabels } from "@adapttable/i18n";
+import { Suspense, useState } from "react";
 
-import { budget, PEOPLE, type Person, personStatus, utilization } from "./data";
+import { cssVars } from "./cssVars";
+import { PIVOT_FIELDS, PIVOT_PEOPLE } from "./data";
+import { KitSwitcher, readKitFromUrl } from "./kitDemos";
+import { kitPivotPanel, KitProvider } from "./kitProviders";
+import { PivotTableView } from "./PivotTableView";
 import { SectionHead } from "./sections";
-
-/** The fields this dataset offers a pivot. */
-const FIELDS = [
-  { key: "team", label: "Team" },
-  { key: "role", label: "Role" },
-  { key: "status", label: "Status" },
-  { key: "budget", label: "Budget" },
-  { key: "utilization", label: "Utilization" },
-];
+import { ADAPTER_TOKENS } from "./themeTokens";
 
 /** Where the demo starts: something already pivoted, so the page shows a pivot. */
 const START = {
@@ -21,54 +17,27 @@ const START = {
   measures: [{ key: "budget", agg: "sum" as const }],
 };
 
-/** The rows, with the derived fields materialized so a pivot can read them. */
-function usePivotRows(): Person[] {
-  return useMemo(
-    () =>
-      PEOPLE.map((person) => ({
-        ...person,
-        status: person.status ?? personStatus(person),
-        // The demo derives these from the id until an edit materializes
-        // them, and a pivot has to read numbers, not undefined.
-        budget: person.budget ?? budget(person),
-        utilization: person.utilization ?? utilization(person),
-      })),
-    []
-  );
-}
-
-const money = new Intl.NumberFormat("en", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
 /**
  * The pivot page: one dataset, the configuration panel, and the table it
- * produces. Nothing else — the point of the page is the shape of a pivot,
- * not the rest of the table's features.
+ * produces — in whichever kit the reader picks. Nothing else — the point of the
+ * page is the shape of a pivot, not the rest of the table's features.
  */
 export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const rows = usePivotRows();
+  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const token =
+    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
+    ADAPTER_TOKENS[0];
   const { config, onConfigChange, collapsed, onCollapsedChange } =
     usePivotUrlState({
       urlKey: "p",
       defaultConfig: START,
     });
-  const result = useMemo(
-    () =>
-      pivot(rows, config, {
-        collapsed,
-        format: (value) =>
-          typeof value === "number" ? money.format(value) : value,
-      }),
-    [rows, config, collapsed]
-  );
   const onToggleFold = (key: string) => {
     const next = new Set(collapsed);
     if (!next.delete(key)) next.add(key);
     onCollapsedChange(next);
   };
+  const PivotPanel = kitPivotPanel(adapter);
 
   return (
     <section className="sec shell" id="pivot">
@@ -79,119 +48,39 @@ export function PivotDemo({ dark }: Readonly<{ dark: boolean }>) {
         fields between the three zones with the buttons, and fold a subtotal
         group away by its own line. All of it lives in the URL — the axes, the
         measures and what you folded — so the pivot you build is the pivot you
-        can send someone.
+        can send someone. The table is the kit&rsquo;s own: same result, same
+        header tree, rendered by whichever adapter you pick.
       </SectionHead>
+      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
-        <div className="pivot-layout">
-          <Suspense fallback={null}>
-            <PivotPanel
-              fields={FIELDS}
+        <KitProvider kit={adapter} dark={dark}>
+          <div
+            className="pivot-layout"
+            data-adapter={adapter}
+            key={adapter}
+            style={cssVars({
+              "--c": dark ? token.accentDark : token.accentLight,
+            })}
+          >
+            <Suspense fallback={null}>
+              <PivotPanel
+                fields={PIVOT_FIELDS}
+                config={config}
+                onChange={onConfigChange}
+                labels={getLabels("en")}
+              />
+            </Suspense>
+            <PivotTableView
+              kit={adapter}
+              rows={PIVOT_PEOPLE}
+              fields={PIVOT_FIELDS}
               config={config}
-              onChange={onConfigChange}
+              collapsed={collapsed}
+              onToggleFold={onToggleFold}
             />
-          </Suspense>
-          <div className="pivot-table-wrap">
-            <table
-              className="pivot-table"
-              data-dark={dark ? "" : undefined}
-              data-testid="pivot-table"
-            >
-              <thead>
-                {config.columns.length > 0 && (
-                  <tr>
-                    <th scope="col" colSpan={Math.max(result.rowDepth, 1)} />
-                    {result.columnTree.map((node) => (
-                      <th
-                        key={node.path.join("/")}
-                        scope="colgroup"
-                        colSpan={node.span}
-                      >
-                        {node.label}
-                      </th>
-                    ))}
-                  </tr>
-                )}
-                <tr>
-                  <th scope="col" colSpan={Math.max(result.rowDepth, 1)}>
-                    {config.rows.map((key) => labelFor(key)).join(" / ") ||
-                      "Total"}
-                  </th>
-                  {result.columnLeaves.map((leaf) => (
-                    <th key={leaf.key} scope="col">
-                      {leaf.total ? "Total" : labelFor(leaf.measure.key)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map((row) => (
-                  <tr key={row.key} data-kind={row.kind}>
-                    <th
-                      scope="row"
-                      colSpan={Math.max(result.rowDepth, 1)}
-                      style={{ paddingInlineStart: `${row.depth * 16 + 8}px` }}
-                    >
-                      <RowHeader
-                        row={row}
-                        folded={collapsed.has(row.key)}
-                        onToggleFold={onToggleFold}
-                      />
-                    </th>
-                    {row.cells.map((cell, index) => (
-                      <td key={result.columnLeaves[index]?.key ?? index}>
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        </div>
+        </KitProvider>
       </div>
     </section>
   );
-}
-
-/**
- * What a line is called down the side — and, on a subtotal line, the control
- * that folds the group away.
- *
- * A collapsed group keeps its own line with its own totals, so folding hides
- * detail without hiding the number. The fold travels in the URL with the rest of
- * the pivot, which is why the button is wired to the hook rather than to local
- * state: the link someone sends shows what they were looking at.
- */
-function RowHeader({
-  row,
-  folded,
-  onToggleFold,
-}: Readonly<{
-  row: PivotRow;
-  folded: boolean;
-  onToggleFold: (key: string) => void;
-}>) {
-  if (row.kind === "grandTotal") return <>Grand total</>;
-  if (row.kind !== "subtotal") return <>{row.label}</>;
-  return (
-    <button
-      type="button"
-      className="pivot-fold"
-      aria-expanded={!folded}
-      data-testid="pivot-fold"
-      onClick={() => {
-        onToggleFold(row.key);
-      }}
-    >
-      <span aria-hidden="true" className="pivot-fold__mark">
-        {folded ? "▶" : "▼"}
-      </span>
-      {row.label}
-    </button>
-  );
-}
-
-/** A field's caption, for the headers. */
-function labelFor(key: string): string {
-  return FIELDS.find((field) => field.key === key)?.label ?? key;
 }
