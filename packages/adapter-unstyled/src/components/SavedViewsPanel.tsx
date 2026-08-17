@@ -8,6 +8,7 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
+import type { CSSProperties } from "react";
 
 import type { DataTableClassNames } from "../types";
 import { ClassNamesProvider, useClassNames } from "./classNamesContext";
@@ -18,9 +19,10 @@ import { ClassNamesProvider, useClassNames } from "./classNamesContext";
  * The classes are the map's, on the two keys the saved-views *menu* already
  * uses for these two shapes: `viewsItem` for a captioned control, `viewsDelete`
  * for a compact one. One preset therefore styles the menu and the panel that
- * manages it. The row stays in normal flow — a flex container here would
- * activate the `flex-1` a preset puts on `viewsItem` for the menu's full-width
- * name and stretch every button to match.
+ * manages it. A preset writes those keys for the menu, where `viewsItem` is the
+ * full-width name of one view — so the chrome's `control` layout follows the
+ * class on each button: here they are six siblings that keep their own
+ * captions, not one that fills the row.
  *
  * The slot reads the map from context rather than closing over it, which is
  * what keeps the rename box from being remounted — and losing the caret —
@@ -44,65 +46,82 @@ function Row({
   moveDownLabel,
   setDefaultLabel,
   removeLabel,
+  layout,
   ...rest
 }: SavedViewsPanelRowProps) {
   const { viewsRow, viewsItem, viewsDelete } = useClassNames();
   return (
-    <div className={viewsRow} {...rest}>
-      <span>{name}</span>
-      {readOnly && (
-        <span data-adapttable-part="saved-view-readonly">{readOnlyLabel}</span>
-      )}
-      {isDefault && (
-        <span data-adapttable-part="saved-view-default">{defaultLabel}</span>
-      )}
-      <button type="button" className={viewsItem} onClick={onApply}>
-        {applyLabel}
-      </button>
-      {(onRename ?? readOnly) && (
+    <div className={viewsRow} style={layout.row} {...rest}>
+      <div style={layout.caption} data-adapttable-part="saved-view-caption">
+        <span>{name}</span>
+        {readOnly && (
+          <span data-adapttable-part="saved-view-readonly">
+            {readOnlyLabel}
+          </span>
+        )}
+        {isDefault && (
+          <span data-adapttable-part="saved-view-default">{defaultLabel}</span>
+        )}
+      </div>
+      <div style={layout.controls} data-adapttable-part="saved-view-controls">
         <button
           type="button"
           className={viewsItem}
-          onClick={onRename}
-          disabled={!onRename}
+          style={layout.control}
+          onClick={onApply}
         >
-          {renameLabel}
+          {applyLabel}
         </button>
-      )}
-      <button
-        type="button"
-        className={viewsDelete}
-        onClick={onMoveUp}
-        disabled={!onMoveUp}
-        aria-label={moveUpLabel}
-      >
-        {"\u2191"}
-      </button>
-      <button
-        type="button"
-        className={viewsDelete}
-        onClick={onMoveDown}
-        disabled={!onMoveDown}
-        aria-label={moveDownLabel}
-      >
-        {"\u2193"}
-      </button>
-      <button
-        type="button"
-        className={viewsItem}
-        onClick={onSetDefault}
-        disabled={!onSetDefault}
-      >
-        {setDefaultLabel}
-      </button>
-      <button
-        type="button"
-        className={viewsItem}
-        onClick={onRemove}
-        disabled={!onRemove}
-      >
-        {removeLabel}
-      </button>
+        {(onRename ?? readOnly) && (
+          <button
+            type="button"
+            className={viewsItem}
+            style={layout.control}
+            onClick={onRename}
+            disabled={!onRename}
+          >
+            {renameLabel}
+          </button>
+        )}
+        <button
+          type="button"
+          className={viewsDelete}
+          style={layout.control}
+          onClick={onMoveUp}
+          disabled={!onMoveUp}
+          aria-label={moveUpLabel}
+        >
+          {"\u2191"}
+        </button>
+        <button
+          type="button"
+          className={viewsDelete}
+          style={layout.control}
+          onClick={onMoveDown}
+          disabled={!onMoveDown}
+          aria-label={moveDownLabel}
+        >
+          {"\u2193"}
+        </button>
+        <button
+          type="button"
+          className={viewsItem}
+          style={layout.control}
+          onClick={onSetDefault}
+          disabled={!onSetDefault}
+        >
+          {setDefaultLabel}
+        </button>
+        <button
+          type="button"
+          className={viewsItem}
+          style={layout.control}
+          onClick={onRemove}
+          disabled={!onRemove}
+        >
+          {removeLabel}
+        </button>
+      </div>
     </div>
   );
 }
@@ -134,9 +153,21 @@ function Input({
   );
 }
 
+/**
+ * The panel body. Every other kit stacks its rows with the kit's own Stack;
+ * native has none, and a row that wraps its controls onto a second line runs
+ * into the next view's name without one.
+ */
+const PANEL: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+  minWidth: 0,
+};
+
 const slots: SavedViewsPanelSlots = {
   Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <div className={className} {...rest}>
+    <div className={className} style={PANEL} {...rest}>
       {children}
     </div>
   ),

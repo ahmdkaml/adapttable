@@ -61,47 +61,79 @@ const slots: SavedViewsPanelSlots = {
     moveDownLabel,
     setDefaultLabel,
     removeLabel,
+    layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
-    <Flex gap={4} align="center" {...rest}>
-      <Typography.Text style={{ flex: 1 }}>{name}</Typography.Text>
-      {readOnly && (
-        <Tag data-adapttable-part="saved-view-readonly">{readOnlyLabel}</Tag>
-      )}
-      {isDefault && (
-        <Tag data-adapttable-part="saved-view-default">{defaultLabel}</Tag>
-      )}
-      <Button size="small" onClick={onApply}>
-        {applyLabel}
-      </Button>
-      {(onRename ?? readOnly) && (
-        <Button size="small" onClick={onRename} disabled={!onRename}>
-          {renameLabel}
+    <div style={layout.row} {...rest}>
+      <div style={layout.caption} data-adapttable-part="saved-view-caption">
+        <Typography.Text>{name}</Typography.Text>
+        {readOnly && (
+          <Tag
+            data-adapttable-part="saved-view-readonly"
+            style={{ marginInlineEnd: 0 }}
+          >
+            {readOnlyLabel}
+          </Tag>
+        )}
+        {isDefault && (
+          <Tag
+            data-adapttable-part="saved-view-default"
+            style={{ marginInlineEnd: 0 }}
+          >
+            {defaultLabel}
+          </Tag>
+        )}
+      </div>
+      <div style={layout.controls} data-adapttable-part="saved-view-controls">
+        <Button size="small" style={layout.control} onClick={onApply}>
+          {applyLabel}
         </Button>
-      )}
-      <Button
-        size="small"
-        onClick={onMoveUp}
-        disabled={!onMoveUp}
-        aria-label={moveUpLabel}
-      >
-        {"\u2191"}
-      </Button>
-      <Button
-        size="small"
-        onClick={onMoveDown}
-        disabled={!onMoveDown}
-        aria-label={moveDownLabel}
-      >
-        {"\u2193"}
-      </Button>
-      <Button size="small" onClick={onSetDefault} disabled={!onSetDefault}>
-        {setDefaultLabel}
-      </Button>
-      <Button size="small" onClick={onRemove} disabled={!onRemove}>
-        {removeLabel}
-      </Button>
-    </Flex>
+        {(onRename ?? readOnly) && (
+          <Button
+            size="small"
+            style={layout.control}
+            onClick={onRename}
+            disabled={!onRename}
+          >
+            {renameLabel}
+          </Button>
+        )}
+        <Button
+          size="small"
+          style={layout.control}
+          onClick={onMoveUp}
+          disabled={!onMoveUp}
+          aria-label={moveUpLabel}
+        >
+          {"\u2191"}
+        </Button>
+        <Button
+          size="small"
+          style={layout.control}
+          onClick={onMoveDown}
+          disabled={!onMoveDown}
+          aria-label={moveDownLabel}
+        >
+          {"\u2193"}
+        </Button>
+        <Button
+          size="small"
+          style={layout.control}
+          onClick={onSetDefault}
+          disabled={!onSetDefault}
+        >
+          {setDefaultLabel}
+        </Button>
+        <Button
+          size="small"
+          style={layout.control}
+          onClick={onRemove}
+          disabled={!onRemove}
+        >
+          {removeLabel}
+        </Button>
+      </div>
+    </div>
   ),
 };
 

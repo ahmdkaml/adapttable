@@ -11,14 +11,67 @@
  * reorder. Renaming is an inline text input rather than a modal prompt — the
  * name is right there, and a dialog to change one word is a dialog too many.
  *
- * Structure, ordering, part names and labels live here. Every visible control
- * is a required slot the adapter fills with its own kit's component.
+ * Structure, ordering, part names, labels and the row's layout live here.
+ * Every visible control is a required slot the adapter fills with its own
+ * kit's component.
  */
-import { type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { resolveLabels } from "../labels";
 import type { TableLabels } from "../types";
 import type { SavedView } from "./useSavedViews";
+
+/**
+ * The row's own shape: a caption line, and a control group that wraps under it
+ * when the panel is too narrow to hold both.
+ *
+ * A panel is mounted in a sidebar as often as in a page, and a row laid out by
+ * each adapter drifted exactly as far as each kit's default: six controls in a
+ * no-wrap flex row truncated their captions to "Set a", and six controls in
+ * normal flow ran into the next view's name. Both are the same missing
+ * decision, so the decision lives here and every kit spreads it — the caption
+ * and its badges keep a gap, the controls stay one group, and a control keeps
+ * the width of its own label.
+ */
+const ROW: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 8,
+  minWidth: 0,
+};
+
+/** The name and its badges, together and never touching. */
+const CAPTION: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 8,
+  // Grows to hold the row's width, but gives the controls their own line
+  // rather than squeezing them once the panel is narrower than this.
+  flex: "1 1 10rem",
+  minWidth: 0,
+};
+
+/** Every control, wrapping within the group instead of leaving it. */
+const CONTROLS: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 4,
+  minWidth: 0,
+};
+
+/** One control, at the width of its own caption — never stretched or clipped. */
+const CONTROL: CSSProperties = { flex: "0 0 auto" };
+
+/** Held once so a row's props keep their identity between renders. */
+const ROW_LAYOUT = {
+  row: ROW,
+  caption: CAPTION,
+  controls: CONTROLS,
+  control: CONTROL,
+} as const;
 
 /** Props an adapter's panel surface receives. */
 export interface SavedViewsPanelSurfaceProps {
@@ -67,6 +120,18 @@ export interface SavedViewsPanelRowProps {
   readonly moveDownLabel: string;
   readonly setDefaultLabel: string;
   readonly removeLabel: string;
+  /**
+   * The row's layout, owned by the chrome so a panel reads the same in every
+   * kit: `row` on the row itself, `caption` on the group holding the name and
+   * its badges, `controls` on the group holding the buttons, and `control` on
+   * each button. The kit supplies the components; these supply the shape.
+   */
+  readonly layout: {
+    readonly row: CSSProperties;
+    readonly caption: CSSProperties;
+    readonly controls: CSSProperties;
+    readonly control: CSSProperties;
+  };
   /** Spread onto the row — the public part name. */
   readonly "data-adapttable-part": "saved-view-row";
 }
@@ -177,6 +242,7 @@ export function SavedViewsPanelChrome({
         <Row
           key={view.name}
           data-adapttable-part="saved-view-row"
+          layout={ROW_LAYOUT}
           isDefault={view.isDefault === true}
           readOnly={view.readOnly === true}
           defaultLabel={labels.defaultViewBadge}

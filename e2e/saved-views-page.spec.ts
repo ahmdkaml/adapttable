@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 /**
  * The /saved-views/ page.
@@ -28,6 +28,37 @@ const rowFor = (page: Page, name: string) =>
     hasText: name,
   });
 
+/**
+ * How far a row's controls miss their panel, in pixels: `spill` past their own
+ * group, `past` the panel's edge, `clipped` off a caption. Six controls in a
+ * narrow panel is the case every kit got wrong in its own way — truncated to
+ * "Set a" in one, spilling into the next view's row in another — so the
+ * question is measured rather than eyeballed.
+ */
+async function fitOf(target: Locator) {
+  return target.evaluate((root) => {
+    const edge = root.getBoundingClientRect().right;
+    let past = 0;
+    let spill = 0;
+    let clipped = 0;
+    for (const group of root.querySelectorAll(
+      '[data-adapttable-part="saved-view-controls"]'
+    )) {
+      // The group wraps within its own box instead of running out of it.
+      spill = Math.max(spill, group.scrollWidth - group.clientWidth);
+      for (const button of group.querySelectorAll("button")) {
+        past = Math.max(past, button.getBoundingClientRect().right - edge);
+        // Nothing is squeezed until its caption reads "Set a": the button, and
+        // the label a kit draws inside it, are both at full width.
+        for (const box of [button, ...button.querySelectorAll("*")]) {
+          clipped = Math.max(clipped, box.scrollWidth - box.clientWidth);
+        }
+      }
+    }
+    return { past, spill, clipped };
+  });
+}
+
 test("lists the seeded views", async ({ page }) => {
   await page.goto("/saved-views/");
 
@@ -39,9 +70,44 @@ test("lists the seeded views", async ({ page }) => {
 test("a view saved by an older table still loads", async ({ page }) => {
   await page.goto("/saved-views/");
 
-  // The page reports what it upgraded on the way in.
-  await expect(page.getByTestId("migrated")).toContainText("Legacy view");
+  // The page reports what it upgraded on the way in — each view once. The
+  // load runs twice under StrictMode, and a note naming one view twice reads
+  // as two upgraded views.
+  const note = page.getByTestId("migrated");
+  await expect(note).toContainText("Legacy view");
+  expect((await note.innerText()).match(/Legacy view/g)).toHaveLength(1);
 });
+
+test("every column says what it holds", async ({ page }) => {
+  await page.goto("/saved-views/");
+
+  const headers = page.locator("thead th");
+  await expect(headers).toHaveCount(5);
+  for (const cell of await headers.all()) {
+    // A header of nothing but a sort caret is a column nobody can read.
+    expect((await cell.innerText()).trim()).not.toBe("");
+  }
+});
+
+for (const width of [1440, 1024]) {
+  test(`a view's controls stay in the panel at ${String(width)}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/saved-views/");
+
+    await expect(
+      panel(page)
+        .locator('[data-adapttable-part="saved-view-controls"]')
+        .first()
+    ).toBeVisible();
+
+    const fit = await fitOf(panel(page));
+    expect(fit.spill).toBeLessThanOrEqual(1);
+    expect(fit.past).toBeLessThanOrEqual(1);
+    expect(fit.clipped).toBeLessThanOrEqual(1);
+  });
+}
 
 test("a shared view is visibly read-only, not silently inert", async ({
   page,
@@ -144,6 +210,15 @@ for (const kit of KITS) {
         name: "Rename view",
       })
     ).toBeDisabled();
+
+    // Six controls in a panel this narrow is where each kit used to fail in
+    // its own way, so every kit is measured, not only the one that opens.
+    const fit = await fitOf(
+      root.locator('[data-adapttable-part="saved-views-panel"]')
+    );
+    expect(fit.spill).toBeLessThanOrEqual(1);
+    expect(fit.past).toBeLessThanOrEqual(1);
+    expect(fit.clipped).toBeLessThanOrEqual(1);
 
     // Applying a view drives the table beside it: the link carries the search.
     await rows

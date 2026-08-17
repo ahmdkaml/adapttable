@@ -8,7 +8,7 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Badge, Button, HStack, Input, Stack, Text } from "@chakra-ui/react";
+import { Badge, Button, Input, Stack, Text } from "@chakra-ui/react";
 
 import { subtleText } from "../styles";
 
@@ -63,74 +63,87 @@ const slots: SavedViewsPanelSlots = {
     moveDownLabel,
     setDefaultLabel,
     removeLabel,
+    layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
-    <HStack gap={1} {...rest}>
-      <Text fontSize="sm" flex="1">
-        {name}
-      </Text>
-      {readOnly && (
-        <Badge
-          size="sm"
-          variant="outline"
-          data-adapttable-part="saved-view-readonly"
-        >
-          {readOnlyLabel}
-        </Badge>
-      )}
-      {isDefault && (
-        <Badge size="sm" data-adapttable-part="saved-view-default">
-          {defaultLabel}
-        </Badge>
-      )}
-      <Button size="xs" variant="outline" onClick={onApply}>
-        {applyLabel}
-      </Button>
-      {(onRename ?? readOnly) && (
+    <div style={layout.row} {...rest}>
+      <div style={layout.caption} data-adapttable-part="saved-view-caption">
+        <Text fontSize="sm">{name}</Text>
+        {readOnly && (
+          <Badge
+            size="sm"
+            variant="outline"
+            data-adapttable-part="saved-view-readonly"
+          >
+            {readOnlyLabel}
+          </Badge>
+        )}
+        {isDefault && (
+          <Badge size="sm" data-adapttable-part="saved-view-default">
+            {defaultLabel}
+          </Badge>
+        )}
+      </div>
+      <div style={layout.controls} data-adapttable-part="saved-view-controls">
         <Button
           size="xs"
           variant="outline"
-          onClick={onRename}
-          disabled={!onRename}
+          style={layout.control}
+          onClick={onApply}
         >
-          {renameLabel}
+          {applyLabel}
         </Button>
-      )}
-      <Button
-        size="xs"
-        variant="outline"
-        onClick={onMoveUp}
-        disabled={!onMoveUp}
-        aria-label={moveUpLabel}
-      >
-        {"\u2191"}
-      </Button>
-      <Button
-        size="xs"
-        variant="outline"
-        onClick={onMoveDown}
-        disabled={!onMoveDown}
-        aria-label={moveDownLabel}
-      >
-        {"\u2193"}
-      </Button>
-      <Button
-        size="xs"
-        variant="outline"
-        onClick={onSetDefault}
-        disabled={!onSetDefault}
-      >
-        {setDefaultLabel}
-      </Button>
-      <Button
-        size="xs"
-        variant="outline"
-        onClick={onRemove}
-        disabled={!onRemove}
-      >
-        {removeLabel}
-      </Button>
-    </HStack>
+        {(onRename ?? readOnly) && (
+          <Button
+            size="xs"
+            variant="outline"
+            style={layout.control}
+            onClick={onRename}
+            disabled={!onRename}
+          >
+            {renameLabel}
+          </Button>
+        )}
+        <Button
+          size="xs"
+          variant="outline"
+          style={layout.control}
+          onClick={onMoveUp}
+          disabled={!onMoveUp}
+          aria-label={moveUpLabel}
+        >
+          {"\u2191"}
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          style={layout.control}
+          onClick={onMoveDown}
+          disabled={!onMoveDown}
+          aria-label={moveDownLabel}
+        >
+          {"\u2193"}
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          style={layout.control}
+          onClick={onSetDefault}
+          disabled={!onSetDefault}
+        >
+          {setDefaultLabel}
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          style={layout.control}
+          onClick={onRemove}
+          disabled={!onRemove}
+        >
+          {removeLabel}
+        </Button>
+      </div>
+    </div>
   ),
 };
 

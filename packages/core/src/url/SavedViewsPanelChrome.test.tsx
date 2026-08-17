@@ -6,6 +6,7 @@
  * abandoned without changing anything.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { CSSProperties } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -173,6 +174,30 @@ describe("SavedViewsPanelChrome", () => {
 
     expect(handlers.onRename).not.toHaveBeenCalled();
     expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("hands every row the same wrapping layout", () => {
+    const seen: Record<string, CSSProperties>[] = [];
+    renderPanel({
+      slots: {
+        ...slots,
+        Row: ({ name, layout, ...rest }) => {
+          seen.push(layout);
+          return <div {...rest}>{name}</div>;
+        },
+      },
+    });
+
+    // The row wraps, the caption never touches its badge, and a control keeps
+    // its own width: the three decisions that stop a narrow panel from
+    // truncating its buttons or spilling them into the next view's row.
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe(seen[1]);
+    const layout = seen[0]!;
+    expect(layout.row).toMatchObject({ display: "flex", flexWrap: "wrap" });
+    expect(layout.caption?.gap).toBeGreaterThan(0);
+    expect(layout.controls).toMatchObject({ flexWrap: "wrap" });
+    expect(layout.control).toMatchObject({ flex: "0 0 auto" });
   });
 
   it("says so when nothing has been saved", () => {

@@ -50,6 +50,25 @@ describe("SavedViewsPanel", () => {
     ).not.toBeNull();
   });
 
+  it("groups the caption and the controls so a narrow panel wraps them", () => {
+    renderPanel();
+
+    const row = rows()[0]!;
+    const caption = row.querySelector(
+      '[data-adapttable-part="saved-view-caption"]'
+    );
+    const controls = row.querySelector(
+      '[data-adapttable-part="saved-view-controls"]'
+    );
+    expect(caption).not.toBeNull();
+    expect(controls).not.toBeNull();
+    // Every control belongs to the group: one left outside it wraps on its
+    // own and lands under the next view's name.
+    expect(controls?.querySelectorAll("button")).toHaveLength(
+      row.querySelectorAll("button").length
+    );
+  });
+
   it("marks the default view", () => {
     renderPanel();
 
