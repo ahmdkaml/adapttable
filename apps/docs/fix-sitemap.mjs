@@ -18,18 +18,34 @@ const SITE = "https://orwa-mahmoud.github.io/adapttable";
 /**
  * Demo pages, each its own Vite entry in `apps/showcase`. Keep in step with
  * the `input` map in apps/showcase/vite.config.ts — adding a page there
- * without adding it here leaves it undiscoverable from the sitemap.
+ * without adding it here leaves it undiscoverable from the sitemap, which is
+ * how nine live pages (filtering, tree, selection, pagination, accessibility,
+ * realtime, pivot, saved views and the Feature Lab) stayed unlisted while the
+ * docs linked to them as "see it working".
+ *
+ * `/demo/export-pdf/` is deliberately absent: it is a meta-refresh stub kept
+ * so published links do not 404, and a redirect in a sitemap asks Google to
+ * index the page it redirects away from.
  */
 const DEMO_PAGES = [
   "/demo/",
+  "/demo/accessibility/",
+  "/demo/all-options/",
   "/demo/columns/",
   "/demo/editing/",
   "/demo/export/",
+  "/demo/filtering/",
   "/demo/formulas/",
   "/demo/grouping/",
   "/demo/mobile/",
+  "/demo/pagination/",
+  "/demo/pivot/",
+  "/demo/realtime/",
   "/demo/rtl/",
+  "/demo/saved-views/",
   "/demo/scale/",
+  "/demo/selection/",
+  "/demo/tree/",
 ];
 
 const dist = new URL("./dist/", import.meta.url);
