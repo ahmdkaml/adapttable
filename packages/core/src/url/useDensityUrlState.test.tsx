@@ -47,18 +47,37 @@ function flushUrl() {
 }
 
 describe("useDensityUrlState", () => {
-  it("is comfortable until something says otherwise", () => {
-    const urlAdapter = memoryAdapter();
+  // Reading, in each state the parameter can arrive in. Every row names the
+  // behaviour it stands for, so a failure still reports which reading broke.
+  it.each([
+    {
+      name: "is comfortable until something says otherwise",
+      search: "",
+      density: "comfortable",
+    },
+    {
+      name: "reads what the URL already carries",
+      search: "density=compact",
+      density: "compact",
+    },
+    {
+      name: "ignores a value the table does not have",
+      search: "density=enormous",
+      density: "comfortable",
+    },
+    {
+      // The server snapshot has to agree with the first client render or
+      // React tears the tree down and rebuilds it. Only an explicit adapter
+      // is trusted to be consistent across both.
+      name: "hydrates from the adapter it was given, not from the address bar",
+      search: "density=compact",
+      density: "compact",
+    },
+  ])("$name", ({ search, density }) => {
+    const urlAdapter = memoryAdapter(search);
     const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
 
-    expect(result.current.density).toBe("comfortable");
-  });
-
-  it("reads what the URL already carries", () => {
-    const urlAdapter = memoryAdapter("density=compact");
-    const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
-
-    expect(result.current.density).toBe("compact");
+    expect(result.current.density).toBe(density);
   });
 
   it("writes a choice into the URL", () => {
@@ -166,13 +185,6 @@ describe("useDensityUrlState", () => {
     expect(urlAdapter.search).toContain("density=comfortable");
   });
 
-  it("ignores a value the table does not have", () => {
-    const urlAdapter = memoryAdapter("density=enormous");
-    const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
-
-    expect(result.current.density).toBe("comfortable");
-  });
-
   it("keeps other parameters intact", () => {
     const urlAdapter = memoryAdapter("sort=name&page=2");
     const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
@@ -183,16 +195,6 @@ describe("useDensityUrlState", () => {
 
     expect(urlAdapter.search).toContain("sort=name");
     expect(urlAdapter.search).toContain("page=2");
-  });
-
-  it("hydrates from the adapter it was given, not from the address bar", () => {
-    // The server snapshot has to agree with the first client render or
-    // React tears the tree down and rebuilds it. Only an explicit adapter
-    // is trusted to be consistent across both.
-    const urlAdapter = memoryAdapter("density=compact");
-    const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
-
-    expect(result.current.density).toBe("compact");
   });
 
   it("namespaces itself so two tables on a page do not collide", () => {

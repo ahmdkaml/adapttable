@@ -89,27 +89,16 @@ describe("resolveContextTarget", () => {
     expect(found?.target.kind).toBe("row");
   });
 
-  it("has no answer for a header with no column", () => {
+  // Everything that resolves to nothing at all. Each row keeps the name of
+  // the case it stands for, so a regression still says which one answered.
+  it.each([
+    { name: "has no answer for a header with no column", id: "no-key" },
+    { name: "has no answer for a row with no id", id: "row-no-id" },
+    { name: "has no answer for a row that is no longer there", id: "row-gone" },
+    { name: "has no answer outside the table", id: "outside" },
+  ])("$name", ({ id }) => {
     build(TABLE);
 
-    expect(resolveContextTarget<Row>(at("no-key"), rowFor)).toBeNull();
-  });
-
-  it("has no answer for a row with no id", () => {
-    build(TABLE);
-
-    expect(resolveContextTarget<Row>(at("row-no-id"), rowFor)).toBeNull();
-  });
-
-  it("has no answer for a row that is no longer there", () => {
-    build(TABLE);
-
-    expect(resolveContextTarget<Row>(at("row-gone"), rowFor)).toBeNull();
-  });
-
-  it("has no answer outside the table", () => {
-    build(TABLE);
-
-    expect(resolveContextTarget<Row>(at("outside"), rowFor)).toBeNull();
+    expect(resolveContextTarget<Row>(at(id), rowFor)).toBeNull();
   });
 });
