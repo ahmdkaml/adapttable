@@ -249,6 +249,23 @@ function swallow(): void {
   return undefined;
 }
 
+/**
+ * What one operation changed, in a store's terms.
+ *
+ * `localStorage` takes the whole array in a single write and needs none of
+ * this. A store owns one view at a time, so an operation has to name every
+ * view whose stored copy is stale — and a default switch makes TWO stale: the
+ * view that gains the flag and the view that loses it. A cleared flag that
+ * never reaches the store comes back set at the next `list()`, and then two
+ * views claim a field that allows one.
+ */
+interface StoreWrites {
+  /** Views whose stored copy is stale, each written through `save`. */
+  readonly saved?: readonly SavedView[];
+  /** A name whose stored copy must go. */
+  readonly removed?: string;
+}
+
 /** A view without its default flag, so the stored shape stays minimal. */
 function omitDefault(view: SavedView): SavedView {
   if (view.isDefault === undefined) return view;
@@ -363,13 +380,18 @@ export function useSavedViews({
   }, [storageKey, reloads]);
 
   const persist = useCallback(
-    (next: SavedView[], changed?: SavedView, removed?: string) => {
+    (next: SavedView[], writes: StoreWrites = {}) => {
       setViews(next);
       if (store) {
         // The store owns one view at a time, not the list: sending the whole
-        // list back would overwrite what other people changed meanwhile.
-        if (removed !== undefined) void store.remove(removed).catch(swallow);
-        if (changed) void store.save(changed).catch(swallow);
+        // list back would overwrite what other people changed meanwhile. So
+        // every stale view is written on its own.
+        if (writes.removed !== undefined) {
+          void store.remove(writes.removed).catch(swallow);
+        }
+        for (const view of writes.saved ?? []) {
+          void store.save(view).catch(swallow);
+        }
         return;
       }
       try {
@@ -389,7 +411,9 @@ export function useSavedViews({
         version: SAVED_VIEW_VERSION,
         ...(visibility === "private" ? {} : { visibility }),
       };
-      persist([...views.filter((v) => v.name !== name), view], view);
+      persist([...views.filter((v) => v.name !== name), view], {
+        saved: [view],
+      });
     },
     [views, persist, resolved, ns, visibility]
   );
@@ -410,8 +434,7 @@ export function useSavedViews({
         views.map((view) =>
           view.name === from ? { ...view, name: trimmed } : view
         ),
-        { ...target, name: trimmed },
-        from
+        { saved: [{ ...target, name: trimmed }], removed: from }
       );
     },
     [views, persist]
@@ -432,19 +455,23 @@ export function useSavedViews({
 
   const setDefault = useCallback(
     (name: string) => {
-      if (!views.some((view) => view.name === name)) return;
       const target = views.find((view) => view.name === name);
-      if (target?.readOnly === true) return;
+      if (!target || target.readOnly === true) return;
       // Toggling: naming the current default again clears it.
       const already = views.find((view) => view.isDefault)?.name === name;
       const next: SavedView[] = views.map((view) => {
         const isDefault = !already && view.name === name;
         return isDefault ? { ...view, isDefault } : omitDefault(view);
       });
-      persist(
-        next,
-        next.find((view) => view.name === name)
-      );
+      // Every view the switch touches has to reach the store, not only the one
+      // that gains the flag: a cleared flag that never gets written comes back
+      // set at the next `list()`, and then two views claim to be the default.
+      // `omitDefault` hands back the very same object when there is nothing to
+      // clear, so a changed identity is exactly the set of stale views — which
+      // also settles a store already holding more than one default.
+      persist(next, {
+        saved: next.filter((view, index) => view !== views[index]),
+      });
     },
     [views, persist]
   );
@@ -477,8 +504,7 @@ export function useSavedViews({
       if (!target || target.readOnly === true) return;
       persist(
         views.filter((v) => v.name !== name),
-        undefined,
-        name
+        { removed: name }
       );
     },
     [views, persist]

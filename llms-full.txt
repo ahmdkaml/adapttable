@@ -4453,6 +4453,11 @@ the list back would overwrite whatever other people changed between the load
 and the save. A store that cannot be reached leaves the list empty rather than
 throwing into a render — the table still works, the views simply are not there.
 
+One gesture can be more than one write. Switching the default saves **two**
+views — the one that gains the flag and the one that loses it — because a
+cleared flag that never reached the store comes back set, and then two views
+claim to be the default.
+
 ### Views you may not change
 
 A view carries `visibility` (`"private"` or `"team"`) and `readOnly`. A team

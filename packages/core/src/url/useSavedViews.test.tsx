@@ -6,6 +6,7 @@ import { createMemoryAdapter } from "./adapter";
 import {
   SAVED_VIEW_VERSION,
   type SavedView,
+  type SavedViewsStore,
   useSavedViews,
 } from "./useSavedViews";
 
@@ -538,6 +539,117 @@ describe("useSavedViews", () => {
           isDefault: true,
         },
       ]);
+    });
+  });
+
+  describe("managing the list in a store", () => {
+    // The same operations as above, against a store instead of this browser.
+    // `localStorage` writes the whole array, so it cannot get the list and the
+    // storage out of step; a store is written one view at a time, and every
+    // defect here was invisible until the list was read back.
+
+    const A: SavedView = {
+      name: "A",
+      search: "t.q=a",
+      version: SAVED_VIEW_VERSION,
+    };
+    const B: SavedView = {
+      name: "B",
+      search: "t.q=b",
+      version: SAVED_VIEW_VERSION,
+    };
+
+    /**
+     * A store that answers the way a server does: `save` REPLACES by name
+     * rather than appending, and `list` reads back what the store actually
+     * holds — so a fresh mount shows what reached the store, never what the
+     * previous hook remembered.
+     */
+    const makeServer = (initial: readonly SavedView[] = []) => {
+      const rows: SavedView[] = initial.map((row) => ({ ...row }));
+      return {
+        rows,
+        list: vi.fn(() => Promise.resolve(rows.map((row) => ({ ...row })))),
+        save: vi.fn((view: SavedView) => {
+          const at = rows.findIndex((row) => row.name === view.name);
+          if (at < 0) rows.push({ ...view });
+          else rows[at] = { ...view };
+          return Promise.resolve();
+        }),
+        remove: vi.fn((name: string) => {
+          const at = rows.findIndex((row) => row.name === name);
+          if (at >= 0) rows.splice(at, 1);
+          return Promise.resolve();
+        }),
+      };
+    };
+
+    const open = (store: SavedViewsStore) => {
+      const storage = fakeStorage();
+      const adapter = createMemoryAdapter("t.q=ali");
+      return renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          store,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+    };
+
+    /**
+     * A hook with the store's list already loaded. Mounting a second one is
+     * how these tests read the store back: a fresh hook starts empty and shows
+     * only what `list()` answers with, which is what a page reload does.
+     */
+    const opened = async (store: SavedViewsStore, count: number) => {
+      const { result } = open(store);
+      await waitFor(() => {
+        expect(result.current.views).toHaveLength(count);
+      });
+      return result;
+    };
+
+    it("leaves exactly one default when the default moves", async () => {
+      // Writing only the view that GAINED the flag left the other's flag in
+      // the store, so the next list() answered with two defaults and
+      // `defaultView` returned whichever the store happened to order first.
+      const store = makeServer([{ ...A, isDefault: true }, B]);
+      const result = await opened(store, 2);
+
+      act(() => result.current.setDefault("B"));
+      await waitFor(() => {
+        expect(store.save).toHaveBeenCalledTimes(2);
+      });
+      // Both ends of the switch: B gained the flag, A lost it.
+      expect(store.save).toHaveBeenCalledWith({ ...B, isDefault: true });
+      expect(store.save).toHaveBeenCalledWith(A);
+
+      const reloaded = await opened(store, 2);
+      expect(reloaded.current.views.filter((v) => v.isDefault)).toHaveLength(1);
+      expect(reloaded.current.defaultView?.name).toBe("B");
+    });
+
+    it("clears every stale default a store hands back, not just one", async () => {
+      // A store written by an older table can already hold two defaults.
+      // Setting a new one writes the cleared copy of each, so the list comes
+      // back inside the contract instead of staying broken.
+      const store = makeServer([
+        { ...A, isDefault: true },
+        { ...B, isDefault: true },
+        { name: "C", search: "t.q=c", version: SAVED_VIEW_VERSION },
+      ]);
+      const result = await opened(store, 3);
+
+      act(() => result.current.setDefault("C"));
+      await waitFor(() => {
+        expect(store.save).toHaveBeenCalledTimes(3);
+      });
+
+      const reloaded = await opened(store, 3);
+      expect(reloaded.current.views.filter((v) => v.isDefault)).toHaveLength(1);
+      expect(reloaded.current.defaultView?.name).toBe("C");
     });
   });
 
