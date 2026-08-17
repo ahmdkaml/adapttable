@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { AggregateName } from "../aggregate/aggregate";
 import { type UrlStateAdapter, useResolvedAdapter } from "../url/adapter";
+import { PARAM_PIVOT } from "../url/serialize";
 import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
 import type { PivotConfig, PivotMeasure } from "./pivotModel";
 
@@ -123,7 +124,7 @@ export function usePivotUrlState(
 
   const config = useMemo(() => {
     if (pending) return pending;
-    const raw = new URLSearchParams(search).get(`${ns}pivot`);
+    const raw = new URLSearchParams(search).get(`${ns}${PARAM_PIVOT}`);
     if (raw === null) return defaultConfig ?? EMPTY_PIVOT_CONFIG;
     return deserializePivot(raw);
   }, [pending, search, ns, defaultConfig]);
@@ -135,8 +136,8 @@ export function usePivotUrlState(
       const value = serializePivot(next);
       // An empty pivot writes no parameter: a URL should carry what someone
       // built, not restate the nothing the table starts with.
-      if (value === "") params.delete(`${ns}pivot`);
-      else params.set(`${ns}pivot`, value);
+      if (value === "") params.delete(`${ns}${PARAM_PIVOT}`);
+      else params.set(`${ns}${PARAM_PIVOT}`, value);
       resolved.setSearch(params.toString());
       setPending(null);
     },

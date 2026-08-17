@@ -10,9 +10,13 @@ import {
   PARAM_COL_ORDER,
   PARAM_COL_PINNED,
   PARAM_COL_WIDTHS,
+  PARAM_DENSITY,
+  PARAM_FILTER_TREE,
   PARAM_GROUP_BY,
+  PARAM_GROUP_CLOSED,
   PARAM_LIMIT,
   PARAM_PAGE,
+  PARAM_PIVOT,
   PARAM_ROW_PIN,
   PARAM_SEARCH,
   PARAM_SORT,
@@ -75,6 +79,13 @@ const BARE_PARAMS = [
   PARAM_COL_WIDTHS,
   PARAM_COL_GROUPS,
   PARAM_ROW_PIN,
+  // The advanced filter tree, collapsed groups, density and the pivot. A
+  // view that captured everything EXCEPT these looked like it worked and
+  // then quietly dropped the most laboriously built parts of the state.
+  PARAM_FILTER_TREE,
+  PARAM_GROUP_CLOSED,
+  PARAM_DENSITY,
+  PARAM_PIVOT,
 ];
 
 /** Whether a param key belongs to the table at namespace `ns`. */

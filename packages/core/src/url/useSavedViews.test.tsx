@@ -48,6 +48,53 @@ describe("useSavedViews", () => {
     expect(after.get("other.q")).toBe("keep");
   });
 
+  it("captures every piece of state the table can put in a URL", () => {
+    // The expensive parts are the ones a view was quietly dropping: an
+    // advanced filter tree, which groups are collapsed, the density, and the
+    // pivot. A view that restored everything else looked like it worked.
+    const full = [
+      "t.q=ali",
+      "t.sort=name:asc,team:desc",
+      "t.groupBy=team",
+      "t.groupClosed=core",
+      "t.ft=and(eq(team,core))",
+      "t.colHide=email",
+      "t.colPin=name:start",
+      "t.colOrder=name,team",
+      "t.colW=name:200",
+      "t.colGroupCollapse=contact",
+      "t.rowPin=3:top",
+      "t.density=compact",
+      "t.pivot=rows:team;sum:budget",
+      "t.f_team=core",
+      "t.page=2",
+      "t.limit=25",
+    ].join("&");
+    const adapter = createMemoryAdapter(full);
+    const storage = fakeStorage();
+    const { result } = renderHook(() =>
+      useSavedViews({
+        storageKey: "views",
+        storage,
+        urlAdapter: adapter,
+        urlKey: "t",
+      })
+    );
+
+    act(() => result.current.save("Everything"));
+    adapter.setSearch("");
+    act(() => result.current.apply("Everything"));
+
+    const after = new URLSearchParams(adapter.getSearch());
+    for (const pair of full.split("&")) {
+      const [key, value] = pair.split("=");
+      expect([key, after.get(key ?? "")]).toEqual([
+        key,
+        decodeURIComponent(value ?? ""),
+      ]);
+    }
+  });
+
   it("captures and re-applies the multi-sort chain exactly", () => {
     const adapter = createMemoryAdapter("t.sort=name%3Aasc%2Cage%3Adesc");
     const storage = fakeStorage();

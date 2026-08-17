@@ -14,6 +14,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
+import { PARAM_DENSITY } from "./serialize";
 
 /** The two layouts a table has. */
 export type Density = "comfortable" | "compact";
@@ -34,7 +35,7 @@ export interface UseDensityUrlStateResult {
 }
 
 function readDensity(params: URLSearchParams, ns: string): Density | undefined {
-  const raw = params.get(`${ns}density`);
+  const raw = params.get(`${ns}${PARAM_DENSITY}`);
   return raw === "compact" || raw === "comfortable" ? raw : undefined;
 }
 
@@ -76,9 +77,9 @@ export function useDensityUrlState(
       // The default writes no parameter: a URL should carry what someone
       // chose, not restate what the table would have done anyway.
       if (next === (defaultDensity ?? "comfortable")) {
-        params.delete(`${ns}density`);
+        params.delete(`${ns}${PARAM_DENSITY}`);
       } else {
-        params.set(`${ns}density`, next);
+        params.set(`${ns}${PARAM_DENSITY}`, next);
       }
       resolved.setSearch(params.toString());
       setPending(null);

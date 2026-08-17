@@ -61,6 +61,12 @@ export const PARAM_COL_GROUPS = "colGroupCollapse";
 /** Pinned rows: `rowPin=id1:top,id2:bottom`. */
 export const PARAM_ROW_PIN = "rowPin";
 
+/** Row density — a display choice, captured by saved views like the rest. */
+export const PARAM_DENSITY = "density";
+
+/** The pivot configuration. See `@adapttable/core/pivot`. */
+export const PARAM_PIVOT = "pivot";
+
 /** Read a 1-based page number, falling back when absent/invalid. */
 export function readPage(
   params: URLSearchParams,

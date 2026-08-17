@@ -4256,9 +4256,15 @@ setWidth)`.
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-Let users capture the table's current state — search, sort, page, filters,
-column layout — under a name and re-apply it later. One prop mounts a
-ready-made menu; a headless hook backs custom UIs.
+Let users capture the table's current state under a name and re-apply it
+later. One prop mounts a ready-made menu; a headless hook backs custom UIs.
+
+A view captures **everything the table can put in a URL**: search, the
+multi-sort chain, page and page size, the simple filters and the advanced
+filter tree, grouping and which groups are collapsed, the whole column layout
+(order, hidden, pinned, widths, collapsed column groups), pinned rows, density,
+and the [pivot configuration](./pivot.md). The parts that take longest to
+rebuild by hand are exactly the parts worth capturing.
 
 ## Example
 
