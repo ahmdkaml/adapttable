@@ -29,6 +29,9 @@ control via prop-getters.
 - **SSR & server components** — renders with no DOM; the client boundary is
   already in the build, so it drops straight into the Next.js App Router.
   [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
+- **A React-free half** (`@adapttable/core/query`) — the filter-tree and pivot
+  URL codecs on their own, so a route handler can decode a shared link in a
+  process with no React installed.
 - **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
 - **Filtering** — filter model, operators, chips and counts; bring your own predicate.
 - **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.

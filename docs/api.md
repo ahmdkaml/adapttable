@@ -874,6 +874,19 @@ everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 `URLSearchParams`; `ServerFilterValue` is one filter's value. See
 [server queries](./server-queries.md).
 
+**The query model without React.** `@adapttable/core/query` is the half of the
+model a backend needs and no more: the `ft=1.{…}` codec (`parseFilterTree`,
+`serializeFilterTree`, `isActiveFilterTree`, `FILTER_TREE_PARAM`,
+`FILTER_TREE_VERSION`), the `pivot=rows:…` codec (`serializePivot`,
+`deserializePivot`), `isFilterGroup` for walking a tree, and the types they
+speak in — `QueryCondition`, `QueryFilterGroup`, `SortLevel`, `SortDirection`,
+and the pivot pair `PivotConfig` (`rows`, `columns`, `measures`, `subtotals`,
+`grandTotals`) and `PivotMeasure` (a column `key`, an `agg`, an optional
+`label`). Every name is the same one `@adapttable/core` exports, from the same
+module; this entry only omits the hooks, so it carries no `"use client"`
+boundary and no React import and loads where React is not installed. See
+[server queries](./server-queries.md#decoding-a-parameter-yourself).
+
 **Formulas.** `buildFormulaColumns(specs)` from `@adapttable/core/formula`
 turns `FormulaColumnSpec`s into columns, returning a `FormulaColumnsResult`:
 the columns, the `errors` that would not parse, and any `cycles`. A value is a

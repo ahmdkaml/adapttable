@@ -98,6 +98,16 @@
         "default": "./dist/pivot.cjs"
       }
     },
+    "./query": {
+      "import": {
+        "types": "./dist/query.d.ts",
+        "default": "./dist/query.js"
+      },
+      "require": {
+        "types": "./dist/query.d.cts",
+        "default": "./dist/query.cjs"
+      }
+    },
     "./sparkline": {
       "import": {
         "types": "./dist/sparkline.d.ts",

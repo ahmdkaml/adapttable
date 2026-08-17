@@ -39,10 +39,10 @@ const DOCS_DIR = join(REPO_ROOT, "docs");
 const REFERENCE_PAGE = "api.md";
 
 /**
- * Every published package's export surface. Core has five entries — the
- * app-facing API, the `/adapter` builder tier, the `/xlsx` spreadsheet
- * writer, the `/pdf` print layout, and the `/sparkline` chart column —
- * and all of them are audited.
+ * Every published package's export surface. Core's entries are audited
+ * individually — the app-facing API, the `/adapter` builder tier, the `/xlsx`
+ * spreadsheet writer, the `/pdf` print layout, the `/sparkline` chart column,
+ * and `/query`, the React-free model a backend imports.
  * An entry that ships unaudited is exactly how an undocumented export
  * gets published.
  */
@@ -63,6 +63,7 @@ const SURFACES = readdirSync(join(REPO_ROOT, "packages"), {
             label: "core/sparkline",
             entry: join("core", "src", "sparkline.ts"),
           },
+          { label: "core/query", entry: join("core", "src", "query.ts") },
         ]
       : [{ label: pkg, entry: join(pkg, "src", "index.ts") }]
   );

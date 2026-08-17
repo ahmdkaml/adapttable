@@ -226,9 +226,13 @@ The parameter is compact and readable rather than JSON in a query string:
 ```
 
 `serializePivot` and `deserializePivot` are exported for saved views and
-anywhere else a configuration has to be stored. The round trip is tested, not
+anywhere else a `PivotConfig` has to be stored. The round trip is tested, not
 assumed, and a hand-edited value degrades to a simpler pivot instead of
 throwing — a URL is user input.
+
+Both are also on [`@adapttable/core/query`](./server-queries.md#decoding-a-parameter-yourself),
+the React-free entry, so a route handler can read the parameter a shared link
+carries without importing the engine or React.
 
 An empty pivot writes no parameter, and `urlKey` namespaces it so two tables
 can share one URL.

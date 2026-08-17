@@ -41,9 +41,8 @@ export {
   type PivotRow,
   type PivotRowKind,
 } from "./pivot/pivotModel";
+export { deserializePivot, serializePivot } from "./pivot/pivotUrlCodec";
 export {
-  deserializePivot,
-  serializePivot,
   usePivotUrlState,
   type UsePivotUrlStateOptions,
   type UsePivotUrlStateResult,

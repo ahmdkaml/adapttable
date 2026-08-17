@@ -106,5 +106,33 @@ a query string or `URLSearchParams` — plus a `QuerySchema`, and returns a
 a list of `QueryRejection` — each carrying the `param` it came from, the
 `value` that arrived, and the `reason` it was refused.
 
+## Decoding a parameter yourself
+
+`@adapttable/core/query` is the model without React — the encodings on their
+own, which is what this package is built on:
+
+```ts
+import { deserializePivot, parseFilterTree } from "@adapttable/core/query";
+
+const tree = parseFilterTree(params.get("ft"));
+const config = deserializePivot(params.get("pivot"));
+```
+
+It exports the `ft=1.{…}` codec (`parseFilterTree`, `serializeFilterTree`,
+`isActiveFilterTree`, `FILTER_TREE_PARAM`, `FILTER_TREE_VERSION`), the
+`pivot=rows:…` codec (`serializePivot`, `deserializePivot`), `isFilterGroup` for
+walking a tree, and the types those speak in — `QueryCondition`,
+`QueryFilterGroup`, `SortLevel`, `SortDirection`, `PivotConfig` and
+`PivotMeasure`.
+
+Every one of those names is also on `@adapttable/core`, from the same source
+module. The narrow entry leaves out the hooks, which is what lets it carry no
+`"use client"` boundary and no React import at all — so it loads in a process
+that has never installed React, and the encoding it reads is the same one the
+table wrote.
+
+Reach for it when you want the pieces; reach for `parseTableQuery` when you
+want the allowlist, which is almost always.
+
 Related: [data tiers](./data-tiers.md) · [URL state](./url-state.md) ·
 [filtering](./filtering.md) · [pivot tables](./pivot.md)
