@@ -81,9 +81,10 @@ export function ColumnSelectCheckboxChrome({
   return (
     <span
       // The span positions and reveals; the checkbox inside carries every bit
-      // of the semantics. Saying so is what lets it hold the two containment
+      // of the semantics. `none` — ARIA's current spelling of the
+      // presentational role — is what lets it hold the two containment
       // handlers below without pretending to be a control itself.
-      role="presentation"
+      role="none"
       data-adapttable-part="column-select"
       data-shown={shown ? "" : undefined}
       className={className}
