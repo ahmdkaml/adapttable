@@ -2854,6 +2854,17 @@ export function resolveRowHeight<TRow>(rowHeight: RowHeight<TRow> | undefined, r
 export function resolveRowStyle<TRow>(rowStyle: RowStyle<TRow> | undefined, rowHeight: RowHeight<TRow> | undefined, row: TRow, index: number): CSSProperties | undefined;
 
 // @public
+export function routerUrlAdapter(input: RouterUrlAdapterOptions): UrlStateAdapter;
+
+// @public
+export interface RouterUrlAdapterOptions {
+    navigate: (search: string, options: {
+        push: boolean;
+    }) => void;
+    search: string;
+}
+
+// @public
 export const ROW_DND_MIME = "application/x-adapttable-row";
 
 // @public
