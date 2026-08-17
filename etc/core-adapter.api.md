@@ -1772,6 +1772,87 @@ export type RowStyle<TRow> = (row: TRow, index: number) => CSSProperties | undef
 export function rowStyleSignature(style: CSSProperties | undefined): string;
 
 // @public
+export function SavedViewsPanelChrome(input: Readonly<SavedViewsPanelChromeProps>): JSX.Element;
+
+// @public
+export interface SavedViewsPanelChromeProps {
+    // (undocumented)
+    className?: string;
+    labels?: TableLabels;
+    onApply: (name: string) => void;
+    onMove: (name: string, delta: -1 | 1) => void;
+    onRemove: (name: string) => void;
+    onRename: (from: string, to: string) => void;
+    onSetDefault: (name: string) => void;
+    slots: SavedViewsPanelSlots;
+    views: readonly SavedView[];
+}
+
+// @public
+export interface SavedViewsPanelEmptyProps {
+    // (undocumented)
+    readonly message: string;
+}
+
+// @public
+export interface SavedViewsPanelInputProps {
+    readonly label: string;
+    // (undocumented)
+    readonly onCancel: () => void;
+    // (undocumented)
+    readonly onChange: (next: string) => void;
+    readonly onCommit: () => void;
+    readonly ref: (element: HTMLInputElement | null) => void;
+    // (undocumented)
+    readonly value: string;
+}
+
+// @public
+export interface SavedViewsPanelRowProps {
+    readonly "data-adapttable-part": "saved-view-row";
+    readonly applyLabel: string;
+    readonly defaultLabel: string;
+    readonly isDefault: boolean;
+    // (undocumented)
+    readonly moveDownLabel: string;
+    // (undocumented)
+    readonly moveUpLabel: string;
+    readonly name: ReactNode;
+    readonly onApply: () => void;
+    // (undocumented)
+    readonly onMoveDown?: () => void;
+    readonly onMoveUp?: () => void;
+    readonly onRemove?: () => void;
+    readonly onRename?: () => void;
+    readonly onSetDefault?: () => void;
+    readonly readOnly: boolean;
+    readonly readOnlyLabel: string;
+    // (undocumented)
+    readonly removeLabel: string;
+    // (undocumented)
+    readonly renameLabel: string;
+    // (undocumented)
+    readonly setDefaultLabel: string;
+}
+
+// @public
+export interface SavedViewsPanelSlots {
+    readonly Empty: (props: SavedViewsPanelEmptyProps) => ReactNode;
+    readonly Input: (props: SavedViewsPanelInputProps) => ReactNode;
+    readonly Row: (props: SavedViewsPanelRowProps) => ReactNode;
+    readonly Surface: (props: SavedViewsPanelSurfaceProps) => ReactNode;
+}
+
+// @public
+export interface SavedViewsPanelSurfaceProps {
+    readonly "data-adapttable-part": "saved-views-panel";
+    // (undocumented)
+    readonly children: ReactNode;
+    // (undocumented)
+    readonly className?: string;
+}
+
+// @public
 export function SearchIcon(): ReactElement;
 
 // @public

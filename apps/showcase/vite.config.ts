@@ -107,6 +107,7 @@ export default defineConfig({
         editing: page("./editing/index.html"),
         grouping: page("./grouping/index.html"),
         pivot: page("./pivot/index.html"),
+        "saved-views": page("./saved-views/index.html"),
         "export-pdf": page("./export-pdf/index.html"),
         "all-options": page("./all-options/index.html"),
         mobile: page("./mobile/index.html"),

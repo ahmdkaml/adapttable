@@ -103,6 +103,7 @@ export type DemoPage =
   | "editing"
   | "grouping"
   | "pivot"
+  | "saved-views"
   | "export-pdf"
   | "all-options"
   | "mobile"
@@ -123,6 +124,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "editing", label: "Editing", path: "editing" },
   { key: "grouping", label: "Grouping", path: "grouping" },
   { key: "pivot", label: "Pivot", path: "pivot" },
+  { key: "saved-views", label: "Saved views", path: "saved-views" },
   { key: "export-pdf", label: "PDF", path: "export-pdf" },
   { key: "mobile", label: "Mobile", path: "mobile" },
   { key: "rtl", label: "RTL", path: "rtl" },

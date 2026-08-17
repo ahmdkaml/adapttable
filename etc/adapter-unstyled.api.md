@@ -73,6 +73,7 @@ import { RowEditActionsProps } from '@adapttable/core/adapter';
 import { RowReorderButtonsProps } from '@adapttable/core/adapter';
 import { RowReorderHandleProps } from '@adapttable/core/adapter';
 import { SavedView } from '@adapttable/core';
+import { SavedViewsPanelChromeProps } from '@adapttable/core/adapter';
 import { SelectionStatsChromeProps } from '@adapttable/core/adapter';
 import { Slot } from '@adapttable/core';
 import { SortableValue } from '@adapttable/core';
@@ -620,6 +621,9 @@ export interface SavedViewsMenuProps {
     labels: SavedViewsLabels;
     options: UseSavedViewsOptions;
 }
+
+// @public
+export function SavedViewsPanel(props: Readonly<Omit<SavedViewsPanelChromeProps, "slots">>): JSX.Element;
 
 // @public
 export const SearchIcon: (p: Readonly<IconProps>) => JSX.Element;

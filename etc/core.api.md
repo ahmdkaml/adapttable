@@ -3078,11 +3078,31 @@ export function sameGridCell(a: GridCell | null, b: GridCell | null): boolean;
 export function sanitizeCountFilterParams<P extends Record<string, unknown>>(params: P, buckets: readonly string[]): P;
 
 // @public
+export const SAVED_VIEW_VERSION = 2;
+
+// @public
 export interface SavedView {
+    isDefault?: boolean;
     // (undocumented)
     name: string;
+    readOnly?: boolean;
     search: string;
+    version?: number;
+    visibility?: SavedViewVisibility;
 }
+
+// @public
+export type SavedViewMigration = (view: SavedView, from: number) => SavedView | null;
+
+// @public
+export interface SavedViewsStore {
+    list: () => Promise<readonly SavedView[]>;
+    remove: (name: string) => Promise<void>;
+    save: (view: SavedView) => Promise<void>;
+}
+
+// @public
+export type SavedViewVisibility = "private" | "team";
 
 // @public
 export function scalarFilterText(value: FilterValue): string;
@@ -3346,6 +3366,7 @@ export interface TableLabels {
     actions?: string;
     addRow?: string;
     allMatchingSelected?: (total: number) => string;
+    applyView?: string;
     autoSizeColumn?: string;
     autoSizeColumns?: string;
     boolAny?: string;
@@ -3371,6 +3392,7 @@ export interface TableLabels {
     contextMenu?: string;
     copyCells?: string;
     cutCells?: string;
+    defaultViewBadge?: string;
     deleteRow?: string;
     deleteRowConfirm?: string;
     deleteView?: string;
@@ -3448,6 +3470,8 @@ export interface TableLabels {
     moveRowDown?: string;
     moveRowUp?: string;
     moveStart?: string;
+    moveViewDown?: string;
+    moveViewUp?: string;
     nextPage?: string;
     // (undocumented)
     noData?: string;
@@ -3495,6 +3519,7 @@ export interface TableLabels {
     pivotRows?: string;
     previousPage?: string;
     print?: string;
+    readOnlyViewBadge?: string;
     redoEdit?: string;
     relLastN?: string;
     relNextN?: string;
@@ -3505,6 +3530,7 @@ export interface TableLabels {
     relTomorrow?: string;
     relYesterday?: string;
     removeFilter?: (label: string) => string;
+    renameView?: string;
     reorderRow?: string;
     resetColumn?: string;
     resetColumns?: string;
@@ -3537,6 +3563,7 @@ export interface TableLabels {
     selectionSum?: string;
     // (undocumented)
     selectRow?: string;
+    setDefaultView?: string;
     showAllColumns?: string;
     showColumn?: string;
     showing?: (range: {
@@ -4265,18 +4292,26 @@ export function useSavedViews(input: UseSavedViewsOptions): UseSavedViewsResult;
 
 // @public
 export interface UseSavedViewsOptions {
+    migrate?: SavedViewMigration;
     storage?: LayoutStorage;
     storageKey: string;
+    store?: SavedViewsStore;
     urlAdapter?: UrlStateAdapter;
     urlKey?: string;
     urlSync?: boolean;
+    visibility?: SavedViewVisibility;
 }
 
 // @public
 export interface UseSavedViewsResult {
     apply: (name: string) => void;
+    defaultView: SavedView | undefined;
+    move: (name: string, delta: -1 | 1) => void;
+    reload: () => void;
     remove: (name: string) => void;
+    rename: (from: string, to: string) => void;
     save: (name: string) => void;
+    setDefault: (name: string) => void;
     views: readonly SavedView[];
 }
 
