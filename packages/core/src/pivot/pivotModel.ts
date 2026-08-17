@@ -40,6 +40,18 @@ import {
 } from "../aggregate/aggregate";
 import { compareValues } from "../sort/compare";
 import type { ColumnDef, SortableValue } from "../types";
+import {
+  PIVOT_GRAND_TOTAL_KEY,
+  pivotLeafKey,
+  pivotPathKey,
+  pivotTotalLeafKey,
+} from "./pivotKeys";
+
+// Keys are built in `./pivotKeys`, which the server translator and the URL
+// codec share, so the three agree by construction rather than by copying. The
+// grand-total key is the one of them a host compares against, so the engine is
+// still where it is exported from.
+export { PIVOT_GRAND_TOTAL_KEY };
 
 /** The label a dimension value gets when the row has none. */
 export const PIVOT_BLANK = "—";
@@ -147,27 +159,6 @@ function dimensionLabel(value: SortableValue): string {
   return String(value);
 }
 
-/**
- * Separators for the composite keys below.
- *
- * A dimension label is arbitrary data — a team can be called "A / B" or
- * "Q1-Q2" — so any printable separator could turn up inside one and split a
- * key in the wrong place. Control characters cannot appear in a rendered
- * label, which makes them the only safe choice; they are written as escapes
- * so they are visible in this file rather than invisible in it.
- */
-const PATH_SEP = "\u0000";
-const MEASURE_SEP = "\u0001";
-const TOTAL_PREFIX = "\u0002";
-
-/** The key of the grand-total line, distinct from every real row path. */
-export const PIVOT_GRAND_TOTAL_KEY = `${TOTAL_PREFIX}grand`;
-
-/** A stable key for a path. */
-function pathKey(path: readonly string[]): string {
-  return path.join(PATH_SEP);
-}
-
 /** Resolve a row's value for one dimension, as a display label. */
 function dimensionOf<TRow>(
   row: TRow,
@@ -192,7 +183,7 @@ function distinctPaths<TRow>(
     const next: string[][] = [];
     const seen = new Map<string, Set<string>>();
     for (const row of rows) {
-      const prefix = pathKey(
+      const prefix = pivotPathKey(
         dimensions.slice(0, level).map((d) => dimensionOf(row, d, byKey))
       );
       let bucket = seen.get(prefix);
@@ -203,7 +194,9 @@ function distinctPaths<TRow>(
       bucket.add(dimensionOf(row, dimension, byKey));
     }
     for (const path of paths) {
-      const values = [...(seen.get(pathKey(path)) ?? [])].sort(compareValues);
+      const values = [...(seen.get(pivotPathKey(path)) ?? [])].sort(
+        compareValues
+      );
       for (const value of values) next.push([...path, value]);
     }
     paths = next;
@@ -255,7 +248,7 @@ function columnLeavesOf(
   for (const path of paths) {
     for (const measure of measures) {
       leaves.push({
-        key: `${pathKey(path)}${MEASURE_SEP}${measure.key}`,
+        key: pivotLeafKey(path, measure.key),
         path,
         measure,
         total: false,
@@ -267,7 +260,7 @@ function columnLeavesOf(
   if (grandTotals && hasColumnDimensions) {
     for (const measure of measures) {
       leaves.push({
-        key: `${TOTAL_PREFIX}total${MEASURE_SEP}${measure.key}`,
+        key: pivotTotalLeafKey(measure.key),
         path: [],
         measure,
         total: true,
@@ -317,7 +310,7 @@ function hiddenByCollapse(
   collapsed: ReadonlySet<string>
 ): boolean {
   for (let depth = 1; depth < path.length; depth++) {
-    if (collapsed.has(pathKey(path.slice(0, depth)))) return true;
+    if (collapsed.has(pivotPathKey(path.slice(0, depth)))) return true;
   }
   return false;
 }
@@ -433,7 +426,7 @@ function bodyRows<TRow>({
   ) => {
     const covered = rowsUnder(rows, path, dimensions, byKey);
     body.push({
-      key: pathKey(path),
+      key: pivotPathKey(path),
       path,
       depth,
       kind,
@@ -447,7 +440,7 @@ function bodyRows<TRow>({
     if (subtotals) {
       for (let depth = 1; depth < path.length; depth++) {
         const prefix = path.slice(0, depth);
-        const key = pathKey(prefix);
+        const key = pivotPathKey(prefix);
         if (emitted.has(key) || hiddenByCollapse(prefix, collapsed)) continue;
         emitted.add(key);
         push(prefix, depth - 1, "subtotal", prefix[depth - 1] ?? "");
