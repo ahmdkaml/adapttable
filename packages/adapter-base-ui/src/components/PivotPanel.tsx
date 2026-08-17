@@ -15,18 +15,24 @@ import { NativeSelect } from "./primitives";
 
 const slots: PivotPanelSlots = {
   Surface: ({ children, className, ...rest }: PivotPanelSurfaceProps) => (
-    <Flex className={className} {...rest}>
+    <Flex direction="column" gap="3" className={className} {...rest}>
       {children}
     </Flex>
   ),
+  // The fieldset groups the zone's fields for a screen reader; the adapter's
+  // card class gives it the same surface the table sits on instead of the
+  // browser's frame.
   Zone: ({ label, children, zone, ...rest }: PivotZoneProps) => (
     <fieldset
+      className="adapttable-card"
       data-pivot-zone={zone}
-      style={{ border: 0, padding: 0, margin: 0 }}
+      style={{ margin: 0, minInlineSize: 0 }}
       {...rest}
     >
       <legend>
-        <Text size="1">{label}</Text>
+        <Text size="1" color="gray">
+          {label}
+        </Text>
       </legend>
       <Flex direction="column" gap="1">
         {children}
@@ -44,8 +50,10 @@ const slots: PivotPanelSlots = {
     aggregation,
     ...rest
   }: PivotFieldProps) => (
-    <Flex {...rest}>
-      <Text size="2">{label}</Text>
+    <Flex gap="1" align="center" wrap="wrap" {...rest}>
+      <Text size="2" style={{ flex: "1 1 auto", minWidth: 0 }}>
+        {label}
+      </Text>
       {aggregation}
       <Button
         size="1"

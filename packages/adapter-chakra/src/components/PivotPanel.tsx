@@ -20,9 +20,30 @@ const slots: PivotPanelSlots = {
       {children}
     </Stack>
   ),
+  // `fieldset`/`legend` are how a screen reader learns which zone a field sits
+  // in. Chakra's reset strips the browser's frame with them, which leaves three
+  // unbounded lists — so the box comes back in Chakra's own tokens.
   Zone: ({ label, children, zone, ...rest }: PivotZoneProps) => (
-    <Stack as="fieldset" gap={1} data-pivot-zone={zone} {...rest}>
-      <Text as="legend" fontSize="xs" fontWeight="semibold" {...subtleText}>
+    <Stack
+      as="fieldset"
+      gap={1}
+      data-pivot-zone={zone}
+      borderWidth="1px"
+      borderColor="border"
+      borderRadius="md"
+      minInlineSize={0}
+      px={3}
+      pt={1}
+      pb={3}
+      {...rest}
+    >
+      <Text
+        as="legend"
+        fontSize="xs"
+        fontWeight="semibold"
+        px={1}
+        {...subtleText}
+      >
         {label}
       </Text>
       {children}

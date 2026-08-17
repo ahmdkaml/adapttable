@@ -17,8 +17,27 @@ const slots: PivotPanelSlots = {
       {children}
     </Stack>
   ),
+  // A zone is a group of fields and says so to a screen reader, which is what
+  // `fieldset`/`legend` are for — but a bare fieldset paints the browser's own
+  // square-cornered box, and the panel then looks like a form from 1999 beside
+  // a Mantine table. The theme's border, radius and spacing put it back in the
+  // kit.
   Zone: ({ label, children, zone, ...rest }: PivotZoneProps) => (
-    <Stack gap={4} component="fieldset" data-pivot-zone={zone} {...rest}>
+    <Stack
+      gap={4}
+      component="fieldset"
+      data-pivot-zone={zone}
+      p="xs"
+      pt={4}
+      style={{
+        margin: 0,
+        minInlineSize: 0,
+        border: "1px solid var(--mantine-color-default-border)",
+        borderRadius: "var(--mantine-radius-md)",
+        background: "var(--mantine-color-body)",
+      }}
+      {...rest}
+    >
       <Text component="legend" fz="xs" fw={600} tt="uppercase" c="dimmed">
         {label}
       </Text>

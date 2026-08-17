@@ -9,31 +9,36 @@ import {
   type PivotPanelSurfaceProps,
   type PivotZoneProps,
 } from "@adapttable/core/adapter";
-import { Button, Flex, Text } from "@radix-ui/themes";
+import { Button, Card, Flex, Text } from "@radix-ui/themes";
 
 import { NativeSelect } from "./primitives";
 
 const slots: PivotPanelSlots = {
   Surface: ({ children, className, ...rest }: PivotPanelSurfaceProps) => (
-    <Flex className={className} {...rest}>
+    <Flex direction="column" gap="3" className={className} {...rest}>
       {children}
     </Flex>
   ),
+  // The fieldset groups the zone's fields for a screen reader; the surface it
+  // sits on is Radix's own Card, so the box carries the theme's panel colour
+  // and radius instead of the browser's frame.
   Zone: ({ label, children, zone, ...rest }: PivotZoneProps) => (
-    <fieldset
-      data-pivot-zone={zone}
-      style={{ border: 0, padding: 0, margin: 0 }}
-      {...rest}
-    >
-      <legend>
-        <Text size="1" color="gray">
-          {label}
-        </Text>
-      </legend>
-      <Flex direction="column" gap="1">
-        {children}
-      </Flex>
-    </fieldset>
+    <Card asChild size="1">
+      <fieldset
+        data-pivot-zone={zone}
+        style={{ border: 0, margin: 0, minInlineSize: 0 }}
+        {...rest}
+      >
+        <legend>
+          <Text size="1" color="gray">
+            {label}
+          </Text>
+        </legend>
+        <Flex direction="column" gap="1">
+          {children}
+        </Flex>
+      </fieldset>
+    </Card>
   ),
   Field: ({
     label,
@@ -46,8 +51,10 @@ const slots: PivotPanelSlots = {
     aggregation,
     ...rest
   }: PivotFieldProps) => (
-    <Flex {...rest}>
-      <Text size="2">{label}</Text>
+    <Flex gap="1" align="center" wrap="wrap" {...rest}>
+      <Text size="2" style={{ flex: "1 1 auto", minWidth: 0 }}>
+        {label}
+      </Text>
       {aggregation}
       <Button
         size="1"
