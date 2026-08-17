@@ -288,9 +288,11 @@ export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
 }
 
 /**
- * Stable columns (keys + accessors) for the data hooks — locale-independent,
- * so sorting/keys never change with the language. The display columns
- * ({@link makeColumns}) add localized headers on top.
+ * Stable columns (keys + accessors) for the data hooks — keys and sort values
+ * never change with the language. The headers are the English captions, so a
+ * page that mounts this set directly (`/saved-views/`) has a table whose
+ * columns say what they hold; the display columns ({@link makeColumns}) put
+ * the localized captions and the rich cells on top.
  */
 export const BASE_COLUMNS: ColumnDef<Person>[] = [
   {
@@ -298,28 +300,28 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     accessor: (r) => r.name,
     sortValue: (r) => r.name,
     sortable: true,
-    header: "",
+    header: STRINGS.en.person,
   },
   {
     key: "status",
     accessor: (r) => personStatus(r),
     sortValue: (r) => personStatus(r),
     sortable: true,
-    header: "",
+    header: STRINGS.en.status,
   },
   {
     key: "timeline",
     accessor: (r) => formatDate(startDate(r)),
     sortValue: (r) => startDate(r).getTime(),
     sortable: true,
-    header: "",
+    header: STRINGS.en.timeline,
   },
   {
     key: "budget",
     accessor: (r) => formatMoney(budget(r)),
     sortValue: (r) => budget(r),
     sortable: true,
-    header: "",
+    header: STRINGS.en.budget,
   },
   // Utilization is derived, not stored — so it is declared once with
   // `computed` rather than written into `accessor` and repeated in
@@ -327,7 +329,7 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
   // number behind it.
   computed<Person, number>({
     key: "load",
-    header: "",
+    header: STRINGS.en.load,
     deps: (r) => [r.utilization, r.id],
     value: (r) => utilization(r),
     format: (value) => formatPercent(value),
