@@ -3,7 +3,7 @@ import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DataTable, shadcnClassNames } from "./index";
+import { DataTable, SavedViewsPanel, shadcnClassNames } from "./index";
 
 interface Row {
   id: string;
@@ -144,5 +144,36 @@ describe("@adapttable/shadcn", () => {
     const { getByText } = render(<CardHarness />);
 
     expect(getByText(/Ada · 1/)).toBeInTheDocument();
+  });
+
+  it("re-exports the panels, badge parts and all", () => {
+    // This preset's panels ARE the unstyled ones — native markup with the
+    // preset's classes — so the part names have to arrive with them rather
+    // than being a gap in the one kit that ships no panel source of its own.
+    const { container } = render(
+      <SavedViewsPanel
+        views={[
+          {
+            name: "Theirs",
+            search: "t.q=x",
+            visibility: "team",
+            readOnly: true,
+          },
+          { name: "Mine", search: "t.q=a", isDefault: true },
+        ]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-readonly"]')
+    ).toHaveTextContent("Read-only");
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-default"]')
+    ).toHaveTextContent("Default");
   });
 });

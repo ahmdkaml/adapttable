@@ -70,11 +70,19 @@ const slots: SavedViewsPanelSlots = {
         {name}
       </Text>
       {readOnly && (
-        <Badge size="sm" variant="outline">
+        <Badge
+          size="sm"
+          variant="outline"
+          data-adapttable-part="saved-view-readonly"
+        >
           {readOnlyLabel}
         </Badge>
       )}
-      {isDefault && <Badge size="sm">{defaultLabel}</Badge>}
+      {isDefault && (
+        <Badge size="sm" data-adapttable-part="saved-view-default">
+          {defaultLabel}
+        </Badge>
+      )}
       <Button size="xs" variant="outline" onClick={onApply}>
         {applyLabel}
       </Button>

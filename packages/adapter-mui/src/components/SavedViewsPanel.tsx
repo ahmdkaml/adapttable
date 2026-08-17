@@ -73,9 +73,20 @@ const slots: SavedViewsPanelSlots = {
         {name}
       </Typography>
       {readOnly && (
-        <Chip size="small" variant="outlined" label={readOnlyLabel} />
+        <Chip
+          size="small"
+          variant="outlined"
+          label={readOnlyLabel}
+          data-adapttable-part="saved-view-readonly"
+        />
       )}
-      {isDefault && <Chip size="small" label={defaultLabel} />}
+      {isDefault && (
+        <Chip
+          size="small"
+          label={defaultLabel}
+          data-adapttable-part="saved-view-default"
+        />
+      )}
       <Button size="small" onClick={onApply}>
         {applyLabel}
       </Button>

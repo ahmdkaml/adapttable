@@ -65,8 +65,12 @@ const slots: SavedViewsPanelSlots = {
   }: SavedViewsPanelRowProps) => (
     <Flex gap={4} align="center" {...rest}>
       <Typography.Text style={{ flex: 1 }}>{name}</Typography.Text>
-      {readOnly && <Tag>{readOnlyLabel}</Tag>}
-      {isDefault && <Tag>{defaultLabel}</Tag>}
+      {readOnly && (
+        <Tag data-adapttable-part="saved-view-readonly">{readOnlyLabel}</Tag>
+      )}
+      {isDefault && (
+        <Tag data-adapttable-part="saved-view-default">{defaultLabel}</Tag>
+      )}
       <Button size="small" onClick={onApply}>
         {applyLabel}
       </Button>

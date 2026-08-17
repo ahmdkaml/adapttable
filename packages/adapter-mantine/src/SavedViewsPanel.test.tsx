@@ -131,6 +131,23 @@ describe("SavedViewsPanel", () => {
     expect(screen.getByRole("button", { name: "Apply view" })).toBeEnabled();
   });
 
+  it("names the badge parts, so every kit is styleable the same way", () => {
+    // Part names are public contract, and the parity script only sees the ones
+    // a kit spells out in its own source — these two were adapter-unstyled's
+    // alone while all seven panels rendered the badges.
+    renderPanel([
+      { name: "Theirs", search: "t.q=x", visibility: "team", readOnly: true },
+      { name: "Mine", search: "t.q=a", isDefault: true },
+    ]);
+
+    expect(
+      document.querySelector('[data-adapttable-part="saved-view-readonly"]')
+    ).toHaveTextContent("Read-only");
+    expect(
+      document.querySelector('[data-adapttable-part="saved-view-default"]')
+    ).toHaveTextContent("Default");
+  });
+
   it("says so when nothing has been saved", () => {
     renderPanel([]);
 
