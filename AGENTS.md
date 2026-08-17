@@ -139,6 +139,11 @@ surface: the `DOCS` array in `scripts/build-llms-full.mjs` AND a link in
 
 - Each adapter demo renders only its own kit's components — mount the real
   `@adapttable/*` adapters, never cross-import kits, never mock the table.
+- A demo page is registered **once**, in `apps/showcase/pages.mjs`: Vite's
+  build inputs and the sitemap's `/demo/` URLs are both generated from that
+  manifest, and `pnpm check:sitemap` verifies the composed site against it in
+  the docs workflow. A page that must ship without being indexed — a redirect
+  stub — sets `indexable: false`.
 - Overlay contracts:
   - `filtersMode="popover"` (default) is a lightweight anchored card with
     **no backdrop**. It anchors under its trigger (flipping for RTL), closes
