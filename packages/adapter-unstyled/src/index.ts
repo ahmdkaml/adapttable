@@ -57,6 +57,7 @@ export {
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SavedViewsPanel } from "./components/SavedViewsPanel";
 export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export { cx } from "./cx";
 export { DataTable } from "./DataTable";

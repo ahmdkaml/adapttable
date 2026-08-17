@@ -56,10 +56,26 @@ and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
 `SavedViewsPanelEmptyProps`. `SavedViewsPanelChromeProps` is what the panel
 itself takes.
 
+Every adapter ships it pre-wired as `SavedViewsPanel`:
+
+```tsx
+import { SavedViewsPanel } from "@adapttable/mantine";
+
+<SavedViewsPanel
+  views={views}
+  onApply={apply}
+  onRename={rename}
+  onMove={move}
+  onSetDefault={setDefault}
+  onRemove={remove}
+/>;
+```
+
 Reordering is buttons rather than drag, because a list you can only reorder by
-dragging is a list some people cannot reorder. Renaming is an inline input
-rather than a dialog: the name is already on screen, and Escape abandons the
-edit without changing anything.
+dragging is a list some people cannot reorder. The move a row cannot make is
+disabled rather than removed, so the row does not jump as the list is
+reordered. Renaming is an inline input rather than a dialog: the name is
+already on screen, and Escape abandons the edit without changing anything.
 
 ## Example
 

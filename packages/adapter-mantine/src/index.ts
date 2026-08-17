@@ -9,6 +9,7 @@
  */
 
 export { PivotPanel } from "./components/PivotPanel";
+export { SavedViewsPanel } from "./components/SavedViewsPanel";
 export { DataTable } from "./DataTable";
 export type {
   DataTableClassNames,

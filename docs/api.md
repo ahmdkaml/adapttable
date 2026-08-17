@@ -841,6 +841,9 @@ movement, not less feedback.
 from your kit and pass `fields`, `config` and `onChange`. It is
 `PivotPanelChrome` with that kit's slots already filled.
 
+**`SavedViewsPanel`** is each adapter's pre-wired management panel — import it
+from your kit and pass the views plus the five handlers.
+
 **The saved-views management panel.** `SavedViewsPanelChrome` from
 `@adapttable/core/adapter` lists every saved view with its apply, rename,
 reorder, set-default and delete controls; `SavedViewsPanelChromeProps` takes

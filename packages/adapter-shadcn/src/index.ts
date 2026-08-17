@@ -11,6 +11,7 @@ export { DataTable } from "./DataTable";
 // The panel is native markup, so the preset's classes are the only
 // difference and re-exporting unstyled's is the whole implementation.
 export { PivotPanel } from "@adapttable/unstyled";
+export { SavedViewsPanel } from "@adapttable/unstyled";
 export * from "@adapttable/unstyled";
 
 /* Completed public surface (v2): every type a consumer's own code

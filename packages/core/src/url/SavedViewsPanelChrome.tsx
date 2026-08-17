@@ -40,7 +40,11 @@ export interface SavedViewsPanelRowProps {
   readonly onApply: () => void;
   /** Start renaming it. `undefined` while it is already being renamed. */
   readonly onRename?: () => void;
-  /** Move it, or `undefined` at the end of the list it cannot leave. */
+  /**
+   * Move it, or `undefined` at the end of the list it cannot leave. The
+   * adapters disable the control rather than removing it: a button that
+   * vanishes on the last row makes every row jump as the list is reordered.
+   */
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   /** Make it the default, or clear it when it already is. */
@@ -62,6 +66,17 @@ export interface SavedViewsPanelRowProps {
 export interface SavedViewsPanelInputProps {
   /** Accessible name. */
   readonly label: string;
+  /**
+   * Attach to the underlying input element. The panel takes focus through
+   * this rather than through `autoFocus`: the browser attribute fires once at
+   * mount whether or not the element was the point of the interaction, which
+   * is why it reads as an accessibility problem. Here the focus follows a
+   * deliberate click on Rename.
+   *
+   * Kits whose input component hands back something other than the DOM node —
+   * antd's `InputRef`, for one — unwrap it before calling this.
+   */
+  readonly ref: (element: HTMLInputElement | null) => void;
   readonly value: string;
   readonly onChange: (next: string) => void;
   /** Enter commits, Escape abandons — bind both. */
@@ -131,6 +146,12 @@ export function SavedViewsPanelChrome({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
+  // Focus when the element arrives rather than in an effect: kits portal or
+  // mount their inputs a tick later, and an effect would run too early.
+  const focusOnArrival = (element: HTMLInputElement | null) => {
+    element?.focus();
+  };
+
   const commit = () => {
     if (editing !== null) onRename(editing, draft);
     setEditing(null);
@@ -149,6 +170,7 @@ export function SavedViewsPanelChrome({
             editing === view.name ? (
               <Input
                 label={labels.viewName}
+                ref={focusOnArrival}
                 value={draft}
                 onChange={setDraft}
                 onCommit={commit}
