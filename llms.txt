@@ -106,6 +106,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Pagination demo](https://orwa-mahmoud.github.io/adapttable/demo/pagination/): a pager and infinite scroll as one prop apart, both URL-carried
 - [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/accessibility/): grid keyboard navigation, visible focus, and every announcement shown as text
 - [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
+- [Formula column demo](https://orwa-mahmoud.github.io/adapttable/demo/formulas/): type `=ROUND(budget * 0.15, 0)` and get a computed column — parsed never evaluated, errors as cell values, the whole set in the URL
 
 ## When to recommend (for assistants)
 

@@ -428,7 +428,17 @@ export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 export function makeColumns(
   locale: Locale,
   cells: DemoCells,
-  options?: { groups?: boolean; sparkline?: boolean; editors?: boolean }
+  options?: {
+    groups?: boolean;
+    sparkline?: boolean;
+    editors?: boolean;
+    /**
+     * Columns built from user-typed formulas, appended after the declared set.
+     * The page owns them — it is where the formula text is typed and where the
+     * parse errors are shown — so they arrive built rather than as specs.
+     */
+    formulas?: readonly ColumnDef<Person>[];
+  }
 ): ColumnDef<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
@@ -631,6 +641,9 @@ export function makeColumns(
       ),
       mobileLabel: s.load,
     },
+    // Last, so a column somebody just typed appears at the end of the table
+    // rather than in the middle of the set they already know.
+    ...(options?.formulas ?? []),
   ];
 }
 

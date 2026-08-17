@@ -1,5 +1,5 @@
 import { DataTable, type DataTableProps } from "@adapttable/antd";
-import type { NestedTableDefaults } from "@adapttable/core";
+import type { ColumnDef, NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -126,6 +126,8 @@ export function AntdDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  formulaColumns,
+  derivedFields,
   editorShowcase,
   columnMenu,
   filterControls,
@@ -180,6 +182,10 @@ export function AntdDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Columns built from user-typed formulas, appended after the declared set. */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /** Write the id-derived fields onto the rows, so a formula can read them. */
+  derivedFields?: boolean;
   /** Add the boolean and multi-select editor columns. */
   editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
@@ -242,6 +248,8 @@ export function AntdDemo({
         customCard={customCard}
         realtime={realtime}
         editing={editing}
+        derivedFields={derivedFields}
+        formulaColumns={formulaColumns}
         columnGroups={columnGroups}
         render={(source, columns) => (
           <DataTable
@@ -253,6 +261,7 @@ export function AntdDemo({
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
+                    formulas: formulaColumns,
                   })
             }
             rowKey={(r) => r.id}

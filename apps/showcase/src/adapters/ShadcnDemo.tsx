@@ -1,4 +1,4 @@
-import type { ColumnLayoutState } from "@adapttable/core";
+import type { ColumnDef, ColumnLayoutState } from "@adapttable/core";
 import { shadcnClassNames } from "@adapttable/shadcn";
 import type { DataTableProps } from "@adapttable/unstyled";
 
@@ -47,6 +47,8 @@ export function ShadcnDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  formulaColumns,
+  derivedFields,
   editorShowcase,
   exportCsv,
   columnMenu,
@@ -94,6 +96,10 @@ export function ShadcnDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Columns built from user-typed formulas, appended after the declared set. */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /** Write the id-derived fields onto the rows, so a formula can read them. */
+  derivedFields?: boolean;
   editorShowcase?: boolean;
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
@@ -153,6 +159,8 @@ export function ShadcnDemo({
       headerFilters={headerFilters}
       columnGroups={columnGroups}
       sparkline={sparkline}
+      formulaColumns={formulaColumns}
+      derivedFields={derivedFields}
       editorShowcase={editorShowcase}
       exportCsv={exportCsv}
       columnMenu={columnMenu}

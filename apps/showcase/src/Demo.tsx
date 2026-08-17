@@ -2,6 +2,7 @@ import type { GroupNode } from "@adapttable/core";
 import {
   applyRowPatchesWithLog,
   applyRowReorder,
+  type ColumnDef,
   type ColumnLayoutState,
   evaluateFilterTree,
   type MobileCardModel,
@@ -25,11 +26,13 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
 import {
   BASE_COLUMNS,
+  budget,
   DEMO_FILTER_RUNTIME,
   DEMO_GROUP_AGGREGATES,
   EDITING_DEFAULT_LAYOUT,
@@ -37,7 +40,9 @@ import {
   PEOPLE,
   type Person,
   personName,
+  personStatus,
   reportsTo,
+  utilization,
 } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
 
@@ -309,6 +314,33 @@ interface DataProps {
   realtime?: boolean;
   /** AND/OR builder — Feature Lab only. Live demo stays a simple form. */
   advancedFilters?: boolean;
+  /** Hand the rows their id-derived fields, so a formula can read them. */
+  derivedFields?: boolean;
+  /**
+   * The formula columns the table is rendering. The data hook needs them too:
+   * a click on a formula column's header sorts by a key only these columns
+   * know how to resolve.
+   */
+  formulaColumns?: readonly ColumnDef<Person>[];
+}
+
+/**
+ * The seed rows, with the id-derived fields written onto them.
+ *
+ * Most of the demo reads `status`, `budget` and `utilization` through a
+ * function, so a row carries one only after an edit materializes it. A formula
+ * reads FIELDS — `=budget * 0.15` asks the row for `budget` and gets `#NAME?`
+ * if it is not there — so a page that lets the reader type one hands the engine
+ * rows that actually carry them. The values are the same ones the accessors
+ * derive, so nothing on screen changes.
+ */
+function withDerivedFields(rows: readonly Person[]): Person[] {
+  return rows.map((row) => ({
+    ...row,
+    status: personStatus(row),
+    budget: budget(row),
+    utilization: utilization(row),
+  }));
 }
 
 /** The next free id, so an added row never collides with a seeded one. */
@@ -389,10 +421,14 @@ function Frontend({
   customCard,
   realtime,
   advancedFilters,
+  derivedFields,
+  formulaColumns,
 }: Readonly<DataProps>) {
   // Clone so cell edits never mutate the shared PEOPLE seed.
   const [data, setData] = useState<readonly Person[]>(() =>
-    PEOPLE.map((row) => ({ ...row }))
+    derivedFields
+      ? withDerivedFields(PEOPLE)
+      : PEOPLE.map((row) => ({ ...row }))
   );
   // The demo owns the data, so the demo is what knows which row changed —
   // exactly where a real app would flash it. Note there is no highlight prop
@@ -459,13 +495,23 @@ function Frontend({
     [flash]
   );
   const feed = useRealtimeFeed(realtime === true, setData);
+  const sourceColumns = useMemo(
+    () =>
+      formulaColumns && formulaColumns.length > 0
+        ? [...BASE_COLUMNS, ...formulaColumns]
+        : BASE_COLUMNS,
+    [formulaColumns]
+  );
   const source = useFrontendData<Person>({
     data,
     error: demoError(failure),
     // A retry that actually recovers: the demo's "server" answers on the
     // second ask, so the button is worth pressing.
     refetch: onRecover,
-    columns: BASE_COLUMNS,
+    // The formula columns join the stable set: a click on one of their headers
+    // sorts by a key only they can resolve, and a source that had never heard
+    // of the key would quietly sort by nothing.
+    columns: sourceColumns,
     arrayExtraKeys: DEMO_FILTER_RUNTIME.arrayExtraKeys,
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
@@ -662,6 +708,8 @@ export function DemoBody({
   customCard,
   realtime,
   columnGroups,
+  derivedFields,
+  formulaColumns,
 }: Readonly<{
   mode: DataMode;
   pageMode?: PageMode;
@@ -685,6 +733,10 @@ export function DemoBody({
   customCard?: boolean;
   realtime?: boolean;
   columnGroups?: boolean;
+  /** Hand the rows their id-derived fields, so a formula can read them. */
+  derivedFields?: boolean;
+  /** The formula columns the table renders, so the data hook can sort by them. */
+  formulaColumns?: readonly ColumnDef<Person>[];
 }>) {
   const advancedFilters = useAdvancedFilters();
   // Demos mounted WITH editing (the /editing page) keep email visible — it
@@ -740,6 +792,8 @@ export function DemoBody({
       customCard={customCard}
       realtime={realtime}
       advancedFilters={advancedFilters}
+      derivedFields={derivedFields}
+      formulaColumns={formulaColumns}
     />
   );
 }

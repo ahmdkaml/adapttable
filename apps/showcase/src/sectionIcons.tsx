@@ -77,3 +77,4 @@ export const Globe = make([
   "M3 12h18",
   "M12 3c2.5 2.4 4 5.6 4 9s-1.5 6.6-4 9c-2.5-2.4-4-5.6-4-9s1.5-6.6 4-9z",
 ]);
+export const Warning = make(["M12 4l9 16H3l9-16z", "M12 10v4", "M12 17.2v.1"]);

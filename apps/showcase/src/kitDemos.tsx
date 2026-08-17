@@ -1,4 +1,4 @@
-import type { ColumnLayoutState } from "@adapttable/core";
+import type { ColumnDef, ColumnLayoutState } from "@adapttable/core";
 import type { DataTableProps } from "@adapttable/mantine";
 import {
   type ComponentType,
@@ -52,6 +52,18 @@ export type KitDemoProps = Readonly<{
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /**
+   * Columns built from user-typed formulas, appended after the declared set.
+   * The page builds them, because the page is where the formula is typed and
+   * where a parse error has to be shown.
+   */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /**
+   * Write the id-derived fields (`status`, `budget`, `utilization`) onto the
+   * rows. A formula reads fields, not accessors, so `=budget * 0.15` needs a
+   * row that carries `budget`.
+   */
+  derivedFields?: boolean;
   /** Add the boolean and multi-select editor columns. */
   editorShowcase?: boolean;
   columnMenu?: boolean;

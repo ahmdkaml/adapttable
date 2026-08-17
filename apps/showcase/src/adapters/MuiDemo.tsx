@@ -1,4 +1,4 @@
-import type { NestedTableDefaults } from "@adapttable/core";
+import type { ColumnDef, NestedTableDefaults } from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable, type DataTableProps } from "@adapttable/mui";
 import {
@@ -133,6 +133,8 @@ export function MuiDemo({
   headerFilters,
   columnGroups,
   sparkline,
+  formulaColumns,
+  derivedFields,
   editorShowcase,
   exportCsv,
   columnMenu,
@@ -181,6 +183,10 @@ export function MuiDemo({
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
+  /** Columns built from user-typed formulas, appended after the declared set. */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /** Write the id-derived fields onto the rows, so a formula can read them. */
+  derivedFields?: boolean;
   /** Add the boolean and multi-select editor columns. */
   editorShowcase?: boolean;
   /** Show the Columns menu. Defaults to on unless the page is focused. */
@@ -243,6 +249,8 @@ export function MuiDemo({
         customCard={customCard}
         realtime={realtime}
         editing={editing}
+        derivedFields={derivedFields}
+        formulaColumns={formulaColumns}
         render={(source, columns) => (
           <DataTable
             source={source}
@@ -253,6 +261,7 @@ export function MuiDemo({
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
+                    formulas: formulaColumns,
                   })
             }
             rowKey={(r) => r.id}

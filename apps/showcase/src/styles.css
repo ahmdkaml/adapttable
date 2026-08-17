@@ -643,6 +643,124 @@ a {
 .pad-surface__body {
   padding: 14px;
 }
+/* ---------- the formulas page's own bar ----------
+   Host chrome, not table chrome: the table renders the columns it is handed,
+   and typing the formula belongs to the page the way a real app's formula bar
+   belongs to that app. Styled from the page tokens, so it follows dark mode
+   without knowing which kit is mounted. */
+.fx {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--page-border);
+  background: var(--page-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fx__form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fx__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+.fx__field--wide {
+  flex: 1 1 22rem;
+}
+.fx__field input {
+  min-height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 8px;
+}
+.fx__form button {
+  min-height: 34px;
+  padding: 0 13px;
+  color: var(--page-bg);
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+.fx__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fx__examples button {
+  padding: 4px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--ink-2);
+  background: var(--page-surface);
+  border: 1px dashed var(--page-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.fx__examples button:hover,
+.fx__form button:hover {
+  opacity: 0.85;
+}
+.fx__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fx__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 9px;
+  font-size: 12px;
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 999px;
+}
+.fx__chips code {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.fx__chips button {
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.fx__chips .fx__empty {
+  border-style: dashed;
+  color: var(--ink-2);
+}
+.fx__report {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .hint-row {
   display: flex;
   flex-wrap: wrap;
