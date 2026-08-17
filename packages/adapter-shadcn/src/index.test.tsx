@@ -176,4 +176,49 @@ describe("@adapttable/shadcn", () => {
       container.querySelector('[data-adapttable-part="saved-view-default"]')
     ).toHaveTextContent("Default");
   });
+
+  it("ships the saved-views panel pre-styled, like the table", () => {
+    // One import, one look: a panel mounted beside a shadcn table carries the
+    // preset without the app hand-wiring the class map.
+    const { container } = render(
+      <SavedViewsPanel
+        views={[{ name: "Mine", search: "t.q=a" }]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-adapttable-part="saved-views-panel"]')
+    ).toHaveClass(...shadcnClassNames.viewsPanel.split(" "));
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-row"]')
+    ).toHaveClass(...shadcnClassNames.viewsRow.split(" "));
+  });
+
+  it("merges panel overrides over the preset, per part", () => {
+    const { container } = render(
+      <SavedViewsPanel
+        views={[{ name: "Mine", search: "t.q=a" }]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+        classNames={{ viewsPanel: "custom-panel-xyz" }}
+      />
+    );
+
+    const panel = container.querySelector(
+      '[data-adapttable-part="saved-views-panel"]'
+    );
+    expect(panel).toHaveClass("custom-panel-xyz");
+    // The part that was not overridden keeps the preset.
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-row"]')
+    ).toHaveClass(...shadcnClassNames.viewsRow.split(" "));
+  });
 });

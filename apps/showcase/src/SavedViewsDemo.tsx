@@ -6,7 +6,12 @@ import { Suspense, useMemo, useState } from "react";
 import { cssVars } from "./cssVars";
 import { BASE_COLUMNS, PEOPLE, type Person } from "./data";
 import { KitSwitcher, readKitFromUrl } from "./kitDemos";
-import { KitProvider, kitSavedViewsPanel, kitTable } from "./kitProviders";
+import {
+  kitClassNames,
+  KitProvider,
+  kitSavedViewsPanel,
+  kitTable,
+} from "./kitProviders";
 import { SectionHead } from "./sections";
 import { ADAPTER_TOKENS } from "./themeTokens";
 
@@ -71,6 +76,9 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
   });
   const SavedViewsPanel = kitSavedViewsPanel(adapter);
   const Table = kitTable<Person>(adapter);
+  // The panel and the table take the same map: this page mounts both directly,
+  // so the Tailwind tab's look has to come from here.
+  const classNames = kitClassNames(adapter);
 
   return (
     <section className="sec shell" id="saved-views">
@@ -102,6 +110,7 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
                   onSetDefault={views.setDefault}
                   onRemove={views.remove}
                   labels={getLabels("en")}
+                  classNames={classNames}
                 />
               </Suspense>
               {migrated.length > 0 && (
@@ -119,6 +128,7 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
                   urlKey="sv"
                   savedViews={{ storageKey: "showcase-views", storage }}
                   labels={getLabels("en")}
+                  classNames={classNames}
                 />
               </Suspense>
             </div>

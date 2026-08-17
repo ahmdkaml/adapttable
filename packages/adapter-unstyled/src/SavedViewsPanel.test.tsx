@@ -152,4 +152,93 @@ describe("SavedViewsPanel", () => {
 
     expect(rows()).toHaveLength(0);
   });
+
+  it("honors the views* classes, so a preset styles it like the menu", () => {
+    // Native markup carries no look of its own: without this the panel is raw
+    // HTML beside a styled table, which is what a shadcn or Tailwind app sees.
+    render(
+      <SavedViewsPanel
+        views={VIEWS}
+        onApply={vi.fn()}
+        onRename={vi.fn()}
+        onMove={vi.fn()}
+        onSetDefault={vi.fn()}
+        onRemove={vi.fn()}
+        classNames={{
+          viewsPanel: "panel-class",
+          viewsRow: "row-class",
+          viewsItem: "item-class",
+          viewsDelete: "delete-class",
+        }}
+      />
+    );
+
+    expect(
+      document.querySelector('[data-adapttable-part="saved-views-panel"]')
+    ).toHaveClass("panel-class");
+    expect(rows()[0]).toHaveClass("row-class");
+    // Captioned controls take the menu's item class, the two arrows its
+    // compact one — the shapes those keys already describe.
+    for (const name of [
+      "Apply view",
+      "Rename view",
+      "Set as default",
+      "Delete view",
+    ]) {
+      expect(screen.getAllByRole("button", { name })[0]).toHaveClass(
+        "item-class"
+      );
+    }
+    for (const name of ["Move view up", "Move view down"]) {
+      expect(screen.getAllByRole("button", { name })[0]).toHaveClass(
+        "delete-class"
+      );
+    }
+  });
+
+  it("classes the rename box from the same map", () => {
+    render(
+      <SavedViewsPanel
+        views={VIEWS}
+        onApply={vi.fn()}
+        onRename={vi.fn()}
+        onMove={vi.fn()}
+        onSetDefault={vi.fn()}
+        onRemove={vi.fn()}
+        classNames={{ viewsInput: "input-class" }}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Rename view" })[0]!);
+
+    expect(screen.getByRole("textbox", { name: "View name" })).toHaveClass(
+      "input-class"
+    );
+  });
+
+  it("keeps the rename box mounted across keystrokes", () => {
+    // The slots read the map from context instead of closing over it. Closing
+    // over it makes them new component types on every render, and React
+    // remounts a subtree whose type changed — the caret would jump out of the
+    // box mid-word.
+    render(
+      <SavedViewsPanel
+        views={VIEWS}
+        onApply={vi.fn()}
+        onRename={vi.fn()}
+        onMove={vi.fn()}
+        onSetDefault={vi.fn()}
+        onRemove={vi.fn()}
+        classNames={{ viewsInput: "input-class" }}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Rename view" })[0]!);
+    const input = screen.getByRole("textbox", { name: "View name" });
+    input.focus();
+    fireEvent.change(input, { target: { value: "Ren" } });
+
+    expect(screen.getByRole("textbox", { name: "View name" })).toBe(input);
+    expect(input).toHaveFocus();
+  });
 });

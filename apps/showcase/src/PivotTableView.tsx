@@ -9,7 +9,7 @@ import { getLabels } from "@adapttable/i18n";
 import type { DataTableProps } from "@adapttable/mantine";
 import { Suspense, useMemo } from "react";
 
-import { kitTable } from "./kitProviders";
+import { kitClassNames, kitTable } from "./kitProviders";
 
 /**
  * A pivot, rendered by whichever kit the reader picked.
@@ -130,6 +130,7 @@ export function PivotTableView<TRow>({
           summaryRow={model.summaryRow}
           rowClassName={(row) => `pivot-line pivot-line--${row.kind}`}
           labels={labels}
+          classNames={kitClassNames(kit)}
           // A pivot's own state is the pivot — the axes, the measures and the
           // folds, which the page keeps in the URL. The table's search and
           // paging would only add a second namespace to the same address.

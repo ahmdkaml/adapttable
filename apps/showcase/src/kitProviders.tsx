@@ -8,8 +8,11 @@ import {
   PivotPanel,
   SavedViewsPanel,
 } from "@adapttable/mantine";
+import type { DataTableClassNames } from "@adapttable/unstyled";
 import { MantineProvider } from "@mantine/core";
 import { type ComponentType, lazy, type ReactNode, Suspense } from "react";
+
+import { tailwindClassNames } from "./adapters/tailwindClassNames";
 
 /**
  * Each kit's theme provider and `DataTable`, for pages that mount a table
@@ -180,10 +183,37 @@ export function kitTable<TRow>(
   return table as unknown as ComponentType<DataTableProps<TRow>>;
 }
 
-/** A panel every kit pre-wires: chrome from core, controls from the kit. */
-type PivotPanelComponent = ComponentType<Omit<PivotPanelChromeProps, "slots">>;
+/**
+ * The class map `kit` needs to look like itself, or `undefined` when the kit
+ * styles its own components.
+ *
+ * Only the utility-class kits answer with a map. `@adapttable/unstyled` renders
+ * native controls by contract, so the Tailwind tab's appearance IS this map;
+ * every other kit brings components that are already styled, and shadcn's own
+ * `DataTable` merges `shadcnClassNames` for itself.
+ *
+ * The counterpart to `kitTable`: a page that mounts a kit's table directly has
+ * to pass both, or the Tailwind tab shows raw HTML on that page while the
+ * adapter demos — which pass the map themselves — look right.
+ */
+export function kitClassNames(kit: string): DataTableClassNames | undefined {
+  return kit === "tailwind" ? tailwindClassNames : undefined;
+}
+
+/**
+ * A panel every kit pre-wires: chrome from core, controls from the kit.
+ *
+ * The unstyled family's panels take the class map for the same reason its
+ * table does — native markup carries no look of its own — and a kit that
+ * ignores the prop simply never reads it.
+ */
+type PivotPanelComponent = ComponentType<
+  Omit<PivotPanelChromeProps, "slots"> & { classNames?: DataTableClassNames }
+>;
 type SavedViewsPanelComponent = ComponentType<
-  Omit<SavedViewsPanelChromeProps, "slots">
+  Omit<SavedViewsPanelChromeProps, "slots"> & {
+    classNames?: DataTableClassNames;
+  }
 >;
 
 /**

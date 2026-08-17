@@ -8,10 +8,12 @@
  */
 export { shadcnClassNames } from "./classNames";
 export { DataTable } from "./DataTable";
-// The panel is native markup, so the preset's classes are the only
-// difference and re-exporting unstyled's is the whole implementation.
+// The panels are native markup, so the preset's classes are the only
+// difference: the saved-views panel honors the `views*` keys and comes
+// pre-wired below, the same way `DataTable` does. The pivot panel has no keys
+// in the class map yet, so unstyled's is still the whole implementation.
+export { SavedViewsPanel } from "./SavedViewsPanel";
 export { PivotPanel } from "@adapttable/unstyled";
-export { SavedViewsPanel } from "@adapttable/unstyled";
 export * from "@adapttable/unstyled";
 
 /* Completed public surface (v2): every type a consumer's own code

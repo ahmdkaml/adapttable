@@ -10,7 +10,7 @@ import { getLabels } from "@adapttable/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { KitSwitcher, readKitFromUrl } from "./kitDemos";
-import { KitProvider, kitTable } from "./kitProviders";
+import { kitClassNames, KitProvider, kitTable } from "./kitProviders";
 import { useNavHeight } from "./sections";
 
 interface BigPerson {
@@ -314,6 +314,7 @@ function ServerScaleTable({
         virtualizeColumns={virtualCols}
         estimateRowSize={48}
         rowHeight={variableHeight ? variableRowHeight : undefined}
+        classNames={kitClassNames(kit)}
         stickyHeader
         stickyTop={navHeight}
       />
@@ -507,6 +508,7 @@ function FrontendScaleTable({
           expandedIds={treeShape?.expandedIds}
           estimateRowSize={48}
           rowHeight={variableHeight ? variableRowHeight : undefined}
+          classNames={kitClassNames(kit)}
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.
           stickyHeader
