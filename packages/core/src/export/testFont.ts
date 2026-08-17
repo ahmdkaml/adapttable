@@ -314,7 +314,7 @@ function buildName(
     view.setUint16(at + 10, index * text.length * 2);
   });
   for (let i = 0; i < text.length * 2; i++) {
-    view.setUint16(stringsAt + i * 2, text.charCodeAt(i % text.length));
+    view.setUint16(stringsAt + i * 2, text.codePointAt(i % text.length) ?? 0);
   }
   return bytes;
 }
@@ -385,7 +385,7 @@ export function buildTestFont(spec: TestFontSpec): Uint8Array {
   tags.forEach((tag, index) => {
     const data = tables.get(tag) ?? new Uint8Array(0);
     const at = 12 + index * 16;
-    for (let i = 0; i < 4; i++) header.bytes[at + i] = tag.charCodeAt(i);
+    for (let i = 0; i < 4; i++) header.bytes[at + i] = tag.codePointAt(i) ?? 0;
     header.view.setUint32(at + 4, checksum(data));
     header.view.setUint32(at + 8, offset);
     header.view.setUint32(at + 12, data.byteLength);
