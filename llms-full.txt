@@ -5972,6 +5972,24 @@ is dormant these parts are never mounted.
 A few purely structural nodes (`scroll-box`, `virtual-spacer`, the skeleton
 internals) expose only the `data-adapttable-part` attribute.
 
+### The structural parts every adapter names
+
+Seven part names are guaranteed in **every** kit, on the same element in each —
+so one selector works whichever adapter an app mounts:
+
+| Part                        | Element                          |
+| --------------------------- | -------------------------------- |
+| `table` / `thead` / `tbody` | The `<table>` and its sections.  |
+| `row` / `cell`              | One body `<tr>` and one `<td>`.  |
+| `header-cell`               | One header `<th>`.               |
+| `toolbar`                   | The toolbar row above the table. |
+
+Two kit-specific shapes to know: antd owns its `<td>` for the selection column,
+so `selection-cell` sits on a wrapper one element inside it; and a bounded
+height makes antd split the grid into a header table and a body table, both
+named `table`. Everything else in the map above is per-adapter — a themed kit
+names what it renders.
+
 ## Slots
 
 Replace whole sub-components on any adapter:

@@ -54,6 +54,12 @@
  * longer applies — the part is named by every themed kit now, or unstyled
  * stopped emitting it — fails as well. A list of gaps that cannot shrink is a
  * list nobody trusts.
+ *
+ * All of that is comparative, and comparison has one blind spot left: a part
+ * every kit renders and NONE of them names looks like agreement. `table`,
+ * `thead` and `toolbar` sat in exactly that state. So above the comparison there
+ * is a positive list — {@link CONTRACT} — of the names an app is entitled to
+ * find in every kit, and a missing one fails on its own.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -81,11 +87,46 @@ const SHELL_KITS = [
  */
 const EXPECTED_GAPS = {
   "adapter-antd": {
-    cell: "antd's Table owns every body cell; there is no per-cell hook.",
     "filter-header-cell":
       "antd renders its own header row, so the filter cell is not ours to tag.",
   },
 };
+
+/**
+ * The structural contract: the seven names an app is entitled to find in EVERY
+ * kit that renders the shell (owner decision, 2026-08-16).
+ *
+ * The comparison this file was built for asks "does any kit disagree with the
+ * others", which is blind by construction to a part no kit names at all —
+ * `table`, `thead` and `toolbar` were rendered by six kits and named by none of
+ * them. This asks the opposite question, and a missing name fails.
+ */
+const CONTRACT = [
+  "row",
+  "cell",
+  "table",
+  "thead",
+  "tbody",
+  "toolbar",
+  "header-cell",
+];
+
+/**
+ * The kits the contract binds: the six themed shells plus adapter-unstyled,
+ * which builds the same shell out of native elements. adapter-shadcn renders
+ * adapter-unstyled and inherits every name from it, and adapter-bootstrap is
+ * the private minimal reference — it has no toolbar at all.
+ */
+const CONTRACT_KITS = [...SHELL_KITS, "adapter-unstyled"];
+
+/**
+ * Contract parts that arrive from one of core's prop-getters rather than a
+ * literal in the kit. The getter names the part once for every kit that spreads
+ * it, so a kit satisfies the contract by CALLING it — and each kit's
+ * `RowParts.test.tsx` asserts the name on the rendered DOM, which is the only
+ * place a spread can be proved.
+ */
+const CORE_GETTER_PARTS = { row: "getRowProps" };
 
 /**
  * Parts adapter-unstyled names because adapter-unstyled builds the thing.
@@ -198,11 +239,8 @@ const FALLBACK_ONLY = {
  */
 const UNNAMED_IN_KITS = {
   "table structure": [
-    "table",
-    "thead",
     "header-row",
     "footer",
-    "toolbar",
     "summary",
     "summary-row",
     "summary-cell",
@@ -266,6 +304,15 @@ function partsOf(pkg) {
     )) {
       found.add(match[1]);
     }
+    // A kit whose third-party component owns the element sets the name on it
+    // through a ref: Radix Themes' `Table.Root` renders the real `<table>`
+    // inside a ScrollArea and forwards loose props to the wrapper div, so the
+    // only way to name the same element every other kit names is `setAttribute`.
+    for (const match of text.matchAll(
+      /setAttribute\(\s*["']data-adapttable-part["']\s*,\s*["']([a-z0-9-]+)["']/g
+    )) {
+      found.add(match[1]);
+    }
   }
   return found;
 }
@@ -308,6 +355,56 @@ function corePartNames() {
   return found;
 }
 
+/** Whether a package's source calls one of core's prop-getters by name. */
+function callsCoreGetter(pkg, getter) {
+  const call = new RegExp(`\\b${getter}\\b`);
+  return sourceFiles(join(PACKAGES, pkg, "src")).some((file) =>
+    call.test(readFileSync(file, "utf8"))
+  );
+}
+
+/**
+ * How one kit accounts for one contract part: its own literal, a core
+ * prop-getter it spreads, an EXPECTED_GAPS entry — or nothing, which fails.
+ */
+function contractAccount(pkg, part, parts) {
+  if (parts.has(part)) return null;
+  const getter = CORE_GETTER_PARTS[part];
+  if (getter && callsCoreGetter(pkg, getter)) return null;
+  if (EXPECTED_GAPS[pkg]?.[part] !== undefined) return null;
+  return getter ? `neither names it nor calls ${getter}` : "not named";
+}
+
+/**
+ * The claim that core owns a contract name, checked for rot: a getter that stops
+ * emitting its part takes every kit down with it, so it fails here by name
+ * rather than as seven identical kit failures.
+ */
+function coreOwnershipFailures(coreParts) {
+  return Object.entries(CORE_GETTER_PARTS)
+    .filter(([part]) => !coreParts.has(part))
+    .map(([part, getter]) => ({
+      part,
+      pkg: "core",
+      why: `${getter} no longer emits it, so no kit spreads it`,
+    }));
+}
+
+/**
+ * The contract side of the check: every name in {@link CONTRACT}, in every kit
+ * the contract binds, accounted for.
+ */
+function contractFailures(byKit, coreParts) {
+  const failures = coreOwnershipFailures(coreParts);
+  for (const part of CONTRACT) {
+    for (const pkg of CONTRACT_KITS) {
+      const why = contractAccount(pkg, part, byKit.get(pkg));
+      if (why) failures.push({ part, pkg, why });
+    }
+  }
+  return failures;
+}
+
 /**
  * The unstyled-only side of the check: every name adapter-unstyled emits that
  * no themed kit does and core does not own has to be accounted for, and every
@@ -328,16 +425,25 @@ function unstyledOnlyFailures(unstyled, themed, core) {
   return { unaccounted: unaccounted.sort(), stale, unnamed: unnamed.size };
 }
 
-function main() {
-  const byKit = new Map(SHELL_KITS.map((pkg) => [pkg, partsOf(pkg)]));
-  // adapter-unstyled renders the native fallback for every piece of shared
-  // chrome, so a name it emits is shared by definition — the reference for
-  // telling "this kit's own part" from "a part the others forgot".
-  const shellParts = partsOf("adapter-unstyled");
-  const everyPart = new Set([...byKit.values()].flatMap((set) => [...set]));
+/** Report and exit, or return — every failure list is printed the same way. */
+function fail(count, headline, lines, advice) {
+  if (count === 0) return;
+  console.error(`\n${headline}\n`);
+  for (const line of lines) console.error(`  ${line}`);
+  console.error(`\n${advice}`);
+  process.exit(1);
+}
 
+/**
+ * The themed side of the check: a part some themed kits spell and others do not.
+ * Names core's prop-getters emit are skipped — they appear in no kit's source by
+ * design, so comparing spellings would report the kits that take it the shared
+ * way; the contract check owns those.
+ */
+function themedFailures(byKit, shellParts, everyPart) {
   const failures = [];
   for (const part of [...everyPart].sort()) {
+    if (CORE_GETTER_PARTS[part] !== undefined) continue;
     const missing = SHELL_KITS.filter(
       (pkg) =>
         !byKit.get(pkg).has(part) && EXPECTED_GAPS[pkg]?.[part] === undefined
@@ -348,65 +454,77 @@ function main() {
     // five simply never named. `cards` sat in exactly that state: antd and
     // unstyled emitted it, five kits rendered the list without naming it, and
     // treating "one kit" as "kit-specific" hid it.
-    const shared = shellParts.has(part);
-    if (!shared && missing.length === SHELL_KITS.length - 1) continue;
+    if (!shellParts.has(part) && missing.length === SHELL_KITS.length - 1) {
+      continue;
+    }
     failures.push({ part, missing });
   }
+  return failures;
+}
 
-  if (failures.length > 0) {
-    console.error(
-      `\n${failures.length} part(s) are rendered by some adapters and not others:\n`
-    );
-    for (const { part, missing } of failures) {
-      console.error(`  ${part} — missing from ${missing.join(", ")}`);
-    }
-    console.error(
-      "\nA part name is public contract: the same name lands on the same " +
-        "element in every kit that renders the thing. Add it where it is " +
-        "missing, or — if a kit genuinely cannot render it — add an " +
-        "EXPECTED_GAPS entry in scripts/check-parts-parity.mjs saying why."
-    );
-    process.exit(1);
-  }
-
+function main() {
+  const byKit = new Map(CONTRACT_KITS.map((pkg) => [pkg, partsOf(pkg)]));
+  // adapter-unstyled renders the native fallback for every piece of shared
+  // chrome, so a name it emits is shared by definition — the reference for
+  // telling "this kit's own part" from "a part the others forgot".
+  const shellParts = byKit.get("adapter-unstyled");
+  const everyPart = new Set(SHELL_KITS.flatMap((pkg) => [...byKit.get(pkg)]));
   const coreParts = corePartNames();
+
+  const contract = contractFailures(byKit, coreParts);
+  fail(
+    contract.length,
+    `${contract.length} structural contract part(s) are missing:`,
+    contract.map(({ part, pkg, why }) => `${part} — ${pkg}: ${why}`),
+    "These seven names are the structural contract (owner decision, " +
+      `2026-08-16): ${CONTRACT.join(" · ")}. Every kit that renders the ` +
+      "shell emits all seven — put the attribute on the element that kit " +
+      "renders, or route it through the core prop-getter every kit spreads."
+  );
+
+  const failures = themedFailures(byKit, shellParts, everyPart);
+  fail(
+    failures.length,
+    `${failures.length} part(s) are rendered by some adapters and not others:`,
+    failures.map(
+      ({ part, missing }) => `${part} — missing from ${missing.join(", ")}`
+    ),
+    "A part name is public contract: the same name lands on the same " +
+      "element in every kit that renders the thing. Add it where it is " +
+      "missing, or — if a kit genuinely cannot render it — add an " +
+      "EXPECTED_GAPS entry in scripts/check-parts-parity.mjs saying why."
+  );
+
   const { unaccounted, stale, unnamed } = unstyledOnlyFailures(
     shellParts,
     everyPart,
     coreParts
   );
 
-  if (unaccounted.length > 0) {
-    console.error(
-      `\n${unaccounted.length} part(s) are emitted by adapter-unstyled alone:\n`
-    );
-    for (const part of unaccounted) console.error(`  ${part}`);
-    console.error(
-      "\nA part the native fallback names and no themed kit does is either a " +
-        "widget only that adapter builds — add it to FALLBACK_ONLY in " +
-        "scripts/check-parts-parity.mjs with the reason — or the same element " +
-        "in six kits with a name in one, which is the defect this catches: " +
-        "add the name to every kit that renders it."
-    );
-    process.exit(1);
-  }
+  fail(
+    unaccounted.length,
+    `${unaccounted.length} part(s) are emitted by adapter-unstyled alone:`,
+    unaccounted,
+    "A part the native fallback names and no themed kit does is either a " +
+      "widget only that adapter builds — add it to FALLBACK_ONLY in " +
+      "scripts/check-parts-parity.mjs with the reason — or the same element " +
+      "in six kits with a name in one, which is the defect this catches: " +
+      "add the name to every kit that renders it."
+  );
 
-  if (stale.length > 0) {
-    console.error(
-      `\n${stale.length} accounted-for part(s) no longer match reality:\n`
-    );
-    for (const part of stale) console.error(`  ${part}`);
-    console.error(
-      "\nEach of these is listed in FALLBACK_ONLY or UNNAMED_IN_KITS in " +
-        "scripts/check-parts-parity.mjs, but the themed kits now name it (or " +
-        "adapter-unstyled no longer does). Remove the entry — a list of gaps " +
-        "that cannot shrink is a list nobody trusts."
-    );
-    process.exit(1);
-  }
+  fail(
+    stale.length,
+    `${stale.length} accounted-for part(s) no longer match reality:`,
+    stale,
+    "Each of these is listed in FALLBACK_ONLY or UNNAMED_IN_KITS in " +
+      "scripts/check-parts-parity.mjs, but the themed kits now name it (or " +
+      "adapter-unstyled no longer does). Remove the entry — a list of gaps " +
+      "that cannot shrink is a list nobody trusts."
+  );
 
   console.log(
-    `parts-parity: ${everyPart.size} part names agree across ${SHELL_KITS.length} adapters; ` +
+    `parts-parity: the ${CONTRACT.length} contract parts hold in ${CONTRACT_KITS.length} kits; ` +
+      `${everyPart.size} part names agree across ${SHELL_KITS.length} adapters; ` +
       `${coreParts.size} more come from core's chrome; ` +
       `${unnamed} structural parts are still unnamed outside adapter-unstyled.`
   );

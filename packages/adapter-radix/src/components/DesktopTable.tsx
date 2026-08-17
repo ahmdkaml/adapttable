@@ -913,6 +913,13 @@ export function DesktopTable<TRow>({
     (groupKey: string) => groupingRef.current?.collapsed.toggle(groupKey),
     []
   );
+  // Radix Themes' `Table.Root` renders `div > ScrollArea > table` and forwards
+  // loose props to that outer div, so the structural part cannot be spread onto
+  // the element it belongs on. The name goes on the real <table> through the
+  // root's ref — the same way core names the scroll box it does not render.
+  const nameTableElement = useCallback((node: HTMLDivElement | null) => {
+    node?.querySelector("table")?.setAttribute("data-adapttable-part", "table");
+  }, []);
 
   return (
     <Box
@@ -944,6 +951,7 @@ export function DesktopTable<TRow>({
           without this the columns stay left-to-right under an RTL locale
           while every other adapter mirrors. */}
       <Table.Root
+        ref={nameTableElement}
         size={size}
         variant="surface"
         dir={dir}
@@ -954,7 +962,7 @@ export function DesktopTable<TRow>({
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
       >
-        <Table.Header ref={theadRef}>
+        <Table.Header data-adapttable-part="thead" ref={theadRef}>
           {groupRows?.map((groups) => (
             <Table.Row key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.ColumnHeaderCell />}

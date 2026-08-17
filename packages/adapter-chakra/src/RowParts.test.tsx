@@ -73,4 +73,28 @@ describe("structural row parts (chakra)", () => {
       document.querySelector('[data-adapttable-part="header-cell"]')
     ).not.toBeNull();
   });
+
+  // The structural contract: the same seven names on the same elements in
+  // every kit, whatever each kit's own component tree looks like on the way
+  // down to the table.
+  it("names the table, its sections and the toolbar", () => {
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <DataTable
+          data={ROWS}
+          columns={COLS}
+          rowKey={(r) => r.id}
+          urlSync={false}
+        />
+      </ChakraProvider>
+    );
+    const part = (name: string) =>
+      document.querySelector(`[data-adapttable-part="${name}"]`);
+
+    expect(part("table")?.tagName).toBe("TABLE");
+    expect(part("thead")?.tagName).toBe("THEAD");
+    expect(part("tbody")?.tagName).toBe("TBODY");
+    expect(part("toolbar")).not.toBeNull();
+    expect(part("cell")?.tagName).toBe("TD");
+  });
 });

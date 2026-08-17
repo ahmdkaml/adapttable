@@ -229,7 +229,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Stack spacing={1.5}>
-        <Box className={classNames?.toolbar}>
+        <Box data-adapttable-part="toolbar" className={classNames?.toolbar}>
           <Toolbar
             {...toolbarProps}
             savedViewsMenu={savedViewsMenu}

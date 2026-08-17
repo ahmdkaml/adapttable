@@ -1212,6 +1212,7 @@ export function DesktopTable<TRow>({
       style={wrapperStyle}
     >
       <Table
+        data-adapttable-part="table"
         {...table.getTableProps()}
         {...gridFocus?.getGridProps()}
         className={className}
@@ -1237,7 +1238,11 @@ export function DesktopTable<TRow>({
           ...fittedTableStyle(fitColumns),
         }}
       >
-        <Table.Thead ref={theadRef} style={{ background: SURFACE }}>
+        <Table.Thead
+          data-adapttable-part="thead"
+          ref={theadRef}
+          style={{ background: SURFACE }}
+        >
           {groupRows?.map((groups) => (
             <Table.Tr key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.Th />}

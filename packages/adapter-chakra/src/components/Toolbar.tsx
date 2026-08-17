@@ -96,6 +96,7 @@ export function Toolbar<TRow>({
 
   return (
     <HStack
+      data-adapttable-part="toolbar"
       gap={2}
       flexWrap="wrap"
       rowGap={2}

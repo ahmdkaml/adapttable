@@ -912,7 +912,7 @@ export function DesktopTable<TRow>({
         {...gridFocus?.getGridProps()}
         tableStyle={fittedTableStyle(fitColumns)}
       >
-        <thead ref={theadRef}>
+        <thead data-adapttable-part="thead" ref={theadRef}>
           {groupRows?.map((groups) => (
             <Table.Row key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.ColumnHeaderCell />}

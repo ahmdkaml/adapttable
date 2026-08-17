@@ -105,6 +105,7 @@ export function Toolbar<TRow>({
 
   return (
     <Flex
+      data-adapttable-part="toolbar"
       gap="2"
       wrap="wrap"
       justify="between"

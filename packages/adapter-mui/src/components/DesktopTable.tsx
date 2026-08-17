@@ -980,13 +980,14 @@ export function DesktopTable<TRow>({
       sx={boxSx}
     >
       <Table
+        data-adapttable-part="table"
         size={size}
         aria-label={table.getTableProps()["aria-label"]}
         {...gridFocus?.getGridProps()}
         sx={minWidth > 0 ? { minWidth } : undefined}
         style={fittedTableStyle(fitColumns)}
       >
-        <TableHead ref={theadRef}>
+        <TableHead data-adapttable-part="thead" ref={theadRef}>
           {groupRows?.map((groups) => (
             // Decorative group rows. They deliberately skip the sticky `headSx`
             // treatment: sticking every header row at the same `top` would

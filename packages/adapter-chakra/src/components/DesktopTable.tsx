@@ -1113,6 +1113,7 @@ export function DesktopTable<TRow>({
       overflowY={maxHeight == null ? undefined : "auto"}
     >
       <Table.Root
+        data-adapttable-part="table"
         size={size}
         data-size={size}
         className={className}
@@ -1121,7 +1122,7 @@ export function DesktopTable<TRow>({
         {...gridFocus?.getGridProps()}
         style={fittedTableStyle(fitColumns)}
       >
-        <Table.Header ref={theadRef}>
+        <Table.Header data-adapttable-part="thead" ref={theadRef}>
           {groupRows?.map((groups) => (
             <Table.Row key={groups.map((cell) => cell.key).join("|")}>
               {expandable && <Table.ColumnHeader px={1} />}

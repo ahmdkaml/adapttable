@@ -474,7 +474,9 @@ export const Table = {
         data-size={size}
         {...rest}
       >
-        <table style={tableStyle}>{children}</table>
+        <table data-adapttable-part="table" style={tableStyle}>
+          {children}
+        </table>
       </div>
     );
   },

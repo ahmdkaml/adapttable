@@ -1077,32 +1077,35 @@ function DesktopTableBody<TRow>({
   else if (sticky) stickyHeaderOffset = sticky.offsetHeader ?? 0;
   const headerOffset =
     stickyHeaderOffset === undefined ? 0 : stickyHeaderOffset + headerHeight;
-  // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
-  // reach it through the `components` seam. Memoized: a new component identity
-  // here would remount the whole table on every render.
+  // antd owns the <table>, <thead> and <tbody> elements, so their part names —
+  // and `role="grid"` with the ARIA dimensions — reach them through the
+  // `components` seam. Memoized: a new component identity here would remount
+  // the whole table on every render.
   const gridEnabled = gridFocus?.enabled ?? false;
   const getGridProps = gridFocus?.getGridProps;
   // Depends on the GETTER, not the whole state: the announcement changes on
   // every focus move, and rebuilding `components` would remount antd's table and
   // throw away the focus this just placed.
   const pinArmed = rowPinning !== undefined;
-  const gridComponents = useMemo(
-    () =>
-      gridEnabled && getGridProps
-        ? { table: gridTableComponent(getGridProps()) }
-        : undefined,
-    [gridEnabled, getGridProps]
-  );
-  const components = useMemo(() => {
-    const header = pinArmed
-      ? { wrapper: pinnedTheadComponent(theadRef) }
-      : undefined;
-    return {
-      ...gridComponents,
-      ...(header ? { header } : {}),
+  const components = useMemo(
+    () => ({
+      table: tableComponent(
+        gridEnabled && getGridProps ? getGridProps() : undefined
+      ),
+      header: {
+        // A bounded height splits the grid into a header table and a body
+        // table, and antd resolves the header one through `header.table`. It
+        // carries the name; the grid role and its ARIA dimensions stay on the
+        // body table, where the rows are.
+        table: tableComponent(undefined),
+        // The header height is measured only for pinned rows, so the ref stays
+        // conditional; the name does not.
+        wrapper: theadComponent(pinArmed ? theadRef : undefined),
+      },
       body: { wrapper: TbodyWrapper },
-    };
-  }, [gridComponents, pinArmed, theadRef]);
+    }),
+    [gridEnabled, getGridProps, pinArmed, theadRef]
+  );
 
   return (
     <Table<GroupedDataRecord<TRow>>
@@ -1151,16 +1154,21 @@ function DesktopTableBody<TRow>({
 }
 
 /**
- * antd owns the `<table>` element, so `role="grid"` and the ARIA dimensions
- * reach it through the documented `components` seam rather than a spread.
+ * antd owns the `<table>` element, so its part name — plus `role="grid"` and
+ * the ARIA dimensions when cell navigation is armed — reaches it through the
+ * documented `components` seam rather than a spread. With a sticky or
+ * virtualized header antd splits the grid into a header table and a body table;
+ * both are tables of ours, and both carry the name.
  *
  * Built at module scope: a component declared inside another component is a new
  * type on every render, which remounts everything below it — here that would
  * mean losing the cell focus on every keystroke.
  */
-function gridTableComponent(gridProps: Record<string, unknown>) {
-  return function GridTable(tableProps: Record<string, unknown>) {
-    return <table {...tableProps} {...gridProps} />;
+function tableComponent(gridProps: Record<string, unknown> | undefined) {
+  return function AdaptTable(tableProps: Record<string, unknown>) {
+    return (
+      <table data-adapttable-part="table" {...tableProps} {...gridProps} />
+    );
   };
 }
 
@@ -1170,11 +1178,13 @@ function TbodyWrapper(
   return <tbody data-adapttable-part="tbody" {...props} />;
 }
 
-function pinnedTheadComponent(theadRef: Ref<HTMLTableSectionElement | null>) {
-  return function PinnedThead(
+function theadComponent(
+  theadRef: Ref<HTMLTableSectionElement | null> | undefined
+) {
+  return function AdaptThead(
     props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
   ) {
-    return <thead ref={theadRef} {...props} />;
+    return <thead data-adapttable-part="thead" ref={theadRef} {...props} />;
   };
 }
 
@@ -1852,7 +1862,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <AntdRowReorderAnnouncer rowReorder={c.rowReorder} />
       <FindBar find={find} labels={c.table.labels} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
-        <div className={classNames?.toolbar}>
+        <div data-adapttable-part="toolbar" className={classNames?.toolbar}>
           <Toolbar
             table={table}
             searchable={props.searchable !== false}

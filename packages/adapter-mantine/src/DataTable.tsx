@@ -267,6 +267,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <FindBar find={shell.find} labels={table.labels} />
       <Stack gap="xs">
         <Box
+          data-adapttable-part="toolbar"
           ref={toolbarRef}
           style={toolbarStyle(stickyToolbar, stickyTop)}
           className={classNames?.toolbar}
