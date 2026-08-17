@@ -178,7 +178,11 @@ export function deserializePivotState(raw: string | null): PivotUrlState {
     else if (head === SUBTOTALS) subtotals = body !== OFF;
     else if (head === GRAND_TOTALS) grandTotals = body !== OFF;
     else if (head === COLLAPSED) {
-      collapsed = body.split(COLLAPSED_SEP).map((key) => decodeCollapsed(key));
+      collapsed = body
+        .split(COLLAPSED_SEP)
+        // An empty entry — `hide:,EU` from a hand-edited URL — names no group.
+        .filter((key) => key !== "")
+        .map((key) => decodeCollapsed(key));
     } else if (isAggregateName(head)) measures.push({ key: body, agg: head });
   }
   return {

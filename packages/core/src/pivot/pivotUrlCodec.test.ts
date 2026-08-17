@@ -192,4 +192,10 @@ describe("the flags and the folded groups", () => {
     expect(state.config.rows).toEqual(["team"]);
     expect(state.collapsed).toEqual(["%E0%A4%A"]);
   });
+
+  it("drops an empty entry from a hand-edited folded list", () => {
+    const state = deserializePivotState("rows:team;hide:,EU,");
+
+    expect(state.collapsed).toEqual(["EU"]);
+  });
 });
