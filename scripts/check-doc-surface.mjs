@@ -39,34 +39,35 @@ const DOCS_DIR = join(REPO_ROOT, "docs");
 const REFERENCE_PAGE = "api.md";
 
 /**
- * Every published package's export surface. Core's entries are audited
- * individually — the app-facing API, the `/adapter` builder tier, the `/xlsx`
- * spreadsheet writer, the `/pdf` print layout, the `/sparkline` chart column,
- * and `/query`, the React-free model a backend imports.
- * An entry that ships unaudited is exactly how an undocumented export
- * gets published.
+ * Every published package's export surface, one audit per importable entry.
+ *
+ * The list is READ from each package's `exports` map rather than written here,
+ * because a hand-written list is a second place to remember: `/pivot` and
+ * `/formula` both shipped while this array still named five core entries, so
+ * every export behind them was invisible to the gate that exists to see them.
+ * Deriving it means a new subpath is audited the moment it is published.
+ * Non-JS conditions (`./styles.css`) and `./package.json` are not APIs.
  */
+function entriesOf(pkg) {
+  const manifest = JSON.parse(
+    readFileSync(join(REPO_ROOT, "packages", pkg, "package.json"), "utf8")
+  );
+  return Object.keys(manifest.exports ?? { ".": {} })
+    .filter((key) => key === "." || !key.slice(2).includes("."))
+    .sort()
+    .map((key) => ({
+      label: key === "." ? pkg : `${pkg}/${key.slice(2)}`,
+      entry: join(pkg, "src", key === "." ? "index.ts" : `${key.slice(2)}.ts`),
+    }));
+}
+
 const SURFACES = readdirSync(join(REPO_ROOT, "packages"), {
   withFileTypes: true,
 })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort()
-  .flatMap((pkg) =>
-    pkg === "core"
-      ? [
-          { label: "core", entry: join("core", "src", "index.ts") },
-          { label: "core/adapter", entry: join("core", "src", "adapter.ts") },
-          { label: "core/xlsx", entry: join("core", "src", "xlsx.ts") },
-          { label: "core/pdf", entry: join("core", "src", "pdf.ts") },
-          {
-            label: "core/sparkline",
-            entry: join("core", "src", "sparkline.ts"),
-          },
-          { label: "core/query", entry: join("core", "src", "query.ts") },
-        ]
-      : [{ label: pkg, entry: join(pkg, "src", "index.ts") }]
-  );
+  .flatMap(entriesOf);
 
 const docPages = readdirSync(DOCS_DIR)
   .filter((name) => name.endsWith(".md"))

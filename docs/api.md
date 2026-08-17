@@ -927,6 +927,56 @@ encoding on its own, exported from `@adapttable/core/formula` and from the
 React-free `@adapttable/core/query`; reading produces `FormulaColumnSpec`s and
 never evaluates anything. Saved views capture the parameter with the rest.
 
+**The pivot engine.** `pivot(rows, options)` from `@adapttable/core/pivot`
+returns a `PivotResult`: `columnTree`, a tree of `PivotColumnNode`s carrying
+each dimension value's `label`, `path`, header `span` and `children`;
+`columnLeaves`, the rendered columns left to right as `PivotColumnLeaf`es (a
+stable `key`, the column `path`, the `measure` shown in it, and `total` for the
+grand-total column); `rows`, the body as `PivotRow`s (`key`, `path`, `depth`,
+a `PivotRowKind` of `"leaf"` / `"subtotal"` / `"grandTotal"`, `label`, `cells`
+in `columnLeaves` order, and the `count` of source rows behind the line); and
+`rowDepth`, how many dimensions sit down the side. `PivotOptions` carries the
+`columns` — so dimension and measure values resolve through `sortValue` exactly
+as sorting and grouping do — a `format` for a computed cell, and the
+`collapsed` subtotal keys. A row with no value for a dimension buckets under
+`PIVOT_BLANK` instead of vanishing, and the grand-total line's key is
+`PIVOT_GRAND_TOTAL_KEY`. See [pivot tables](./pivot.md).
+
+**Editing a pivot configuration.** The panel's non-widget half, so every kit's
+buttons agree on what a move means. A `PivotField` is a column `key` plus the
+`label` to show it under, and `PIVOT_ZONES` lists the `PivotZone`s a field can
+sit in — `"rows"`, `"columns"`, `"measures"` — in panel order.
+`availableFields(fields, config)` is what no axis has claimed yet;
+`assignField(config, key, zone, index)` places a field (past the end appends,
+and a dimension leaves the other axis rather than pivoting twice);
+`removeField(config, zone, index)` takes one off; `moveField(config, zone,
+index, delta)` is the keyboard step within a zone; and `setMeasureAgg(config,
+index, agg)` changes what a measure computes. Each returns a new `PivotConfig`,
+starting from `EMPTY_PIVOT_CONFIG`. `isPivotReady(config)` is false while no
+measure has been chosen — a half-built configuration the panel shows and the
+table waits on, not an error. `measureLabel(measure, fields)` is the caption
+the panel and the column header share. See [pivot tables](./pivot.md).
+
+**Pivot state in the URL.** `usePivotUrlState({ urlAdapter, urlSync, urlKey,
+defaultConfig })` from `@adapttable/core/pivot` returns a
+`UsePivotUrlStateResult` — the `config` to hand both the panel and `pivot`, an
+`onConfigChange` that persists it, the folded `collapsed` set to pass as
+`pivot`'s `collapsed` option, and `onCollapsedChange`;
+`UsePivotUrlStateOptions` names the options. An empty pivot writes no
+parameter. See [URL state](./url-state.md).
+
+**Pivoting on the server.** `serverPivotResult(page, options)` from
+`@adapttable/core/pivot` turns a server's answer into the same `PivotResult`
+the local engine returns, so one rendering path serves both tiers. A
+`QueryPivotPage` is the column-dimension `columns` paths in display order, the
+body `rows`, and the `total` line when the server computed one; each
+`QueryPivotRow` is a row `path` (empty for the grand total), its `cells` in
+column-then-measure order, optional `totals` for the grand-total column, a
+`count`, and `subtotal` when the line totals the ones beneath it. Absent cells
+render empty rather than zero. `ServerPivotOptions` is the `config` that was
+sent — for the measures and their order — plus the same `format`. See
+[server queries](./server-queries.md).
+
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move
 fields between them; `PivotPanelChromeProps` takes the fields, the config and
