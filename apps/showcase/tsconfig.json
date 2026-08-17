@@ -8,11 +8,17 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    // `pages.mjs` — the page manifest Vite and the docs sitemap share — is
+    // plain JS so Node can import it without a build step. Reading it here
+    // types the generated Rollup input, and checking it holds its JSDoc to
+    // the same bar as the TypeScript around it.
+    "allowJs": true,
+    "checkJs": true,
     "resolveJsonModule": true,
     "types": ["vite/client"],
     "paths": {
       "@adapttable/core/pdf": ["../../packages/core/src/pdf.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "pages.mjs"]
 }

@@ -71,7 +71,8 @@ every commit (fast) and the full gate on every push:
 
 ```
 format:check → lint → lint:root → check:readmes → check:docsurface
-→ typecheck → test:coverage → build → publint → smoke:dist → budget
+→ check:parts → typecheck → test:coverage → test:scripts → build
+→ publint → smoke:dist → budget
 ```
 
 - **Coverage floors are enforced per package** — do not lower a threshold to
