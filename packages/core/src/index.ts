@@ -385,7 +385,11 @@ export {
   type UseColumnLayoutUrlStateResult,
 } from "./url/useColumnLayoutUrlState";
 export {
+  SAVED_VIEW_VERSION,
   type SavedView,
+  type SavedViewMigration,
+  type SavedViewsStore,
+  type SavedViewVisibility,
   useSavedViews,
   type UseSavedViewsOptions,
   type UseSavedViewsResult,

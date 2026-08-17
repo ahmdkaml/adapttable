@@ -30,6 +30,41 @@ naming the same view again clears it, and only one view can ever hold it.
 Every operation is a no-op on a name that is not there, so a management UI
 cannot get the list into a state the table will not accept.
 
+## Views outliving the table that saved them
+
+A saved view outlives the code that saved it — that is the point of saving one
+— so each carries the schema version it was written at, and the table upgrades
+what it reads.
+
+```tsx
+const views = useSavedViews({
+  storageKey: "people-views",
+  migrate: (view, from) => {
+    if (from < 2) {
+      // A column this table renamed since that view was saved.
+      return {
+        ...view,
+        search: view.search.replace("colHide=email", "colHide=contact"),
+      };
+    }
+    return view;
+  },
+});
+```
+
+`migrate` runs only for views behind `SAVED_VIEW_VERSION`, and is told which
+version each came from. Views saved before versioning existed have no number
+and are treated as version 1, which is what they are.
+
+Returning `null` drops a view. That is a real answer: a view whose columns no
+longer exist restores a table nobody asked for, and applying it silently is
+worse than losing it. A migration that throws costs that view alone — one bad
+entry in storage should not take the whole list with it.
+
+Loading happens on mount and when `storageKey` changes. A `store` or a
+`migrate` written inline changes identity on every render, so neither can be
+allowed to trigger a reload; call `reload()` when you want the list read again.
+
 ## Keeping views on a server
 
 `localStorage` is the zero-config default: a table that passes nothing keeps

@@ -844,6 +844,13 @@ from your kit and pass `fields`, `config` and `onChange`. It is
 **`SavedViewsPanel`** is each adapter's pre-wired management panel — import it
 from your kit and pass the views plus the five handlers.
 
+**Saved-view storage and versioning.** `useSavedViews` takes a
+`SavedViewsStore` (`list` / `save` / `remove`, all async) that replaces
+localStorage, a `SavedViewVisibility` (`"private"` | `"team"`) for new views,
+and a `SavedViewMigration` for views behind `SAVED_VIEW_VERSION`. Its result
+adds `rename`, `move`, `setDefault`, `defaultView` and `reload`. See
+[saved views](./saved-views.md).
+
 **The saved-views management panel.** `SavedViewsPanelChrome` from
 `@adapttable/core/adapter` lists every saved view with its apply, rename,
 reorder, set-default and delete controls; `SavedViewsPanelChromeProps` takes

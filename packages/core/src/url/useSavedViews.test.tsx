@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import * as env from "../utils/env";
 import { createMemoryAdapter } from "./adapter";
-import { type SavedView, useSavedViews } from "./useSavedViews";
+import {
+  SAVED_VIEW_VERSION,
+  type SavedView,
+  useSavedViews,
+} from "./useSavedViews";
 
 function fakeStorage(initial: Record<string, string> = {}) {
   const store = new Map(Object.entries(initial));
@@ -152,6 +156,26 @@ describe("useSavedViews", () => {
       });
     });
 
+    it("reads the list again on demand", async () => {
+      // Someone else changed a shared view. Loading is not keyed on the
+      // store's identity — that would re-fetch every render — so refreshing
+      // is something the host asks for.
+      const store = makeStore();
+      const { result } = mount(store);
+      await waitFor(() => {
+        expect(store.list).toHaveBeenCalledTimes(1);
+      });
+
+      await act(async () => {
+        await store.save({ name: "Theirs", search: "t.q=z" });
+        result.current.reload();
+      });
+
+      await waitFor(() => {
+        expect(result.current.views.map((v) => v.name)).toEqual(["Theirs"]);
+      });
+    });
+
     it("keeps the list on screen when a store save is rejected", async () => {
       // Optimistic on purpose: the user's view stays where they put it, and
       // a rejected write must not become an unhandled rejection that takes
@@ -237,6 +261,146 @@ describe("useSavedViews", () => {
     });
   });
 
+  describe("views saved by an older table", () => {
+    /**
+     * A view stored before versioning existed — the exact shape the old code
+     * wrote, kept verbatim so this test fails if reading it ever breaks.
+     */
+    const LEGACY_FIXTURE = JSON.stringify([
+      { name: "Q1 report", search: "t.q=ali&t.sortBy=name&t.colHide=email" },
+    ]);
+
+    it("loads a view saved before versioning existed", () => {
+      const storage = fakeStorage({ views: LEGACY_FIXTURE });
+      const adapter = createMemoryAdapter("");
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+
+      expect(result.current.views.map((v) => v.name)).toEqual(["Q1 report"]);
+
+      act(() => result.current.apply("Q1 report"));
+
+      const after = new URLSearchParams(adapter.getSearch());
+      expect(after.get("t.q")).toBe("ali");
+      expect(after.get("t.colHide")).toBe("email");
+    });
+
+    it("stamps the current version on what it read", () => {
+      const storage = fakeStorage({ views: LEGACY_FIXTURE });
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: createMemoryAdapter(""),
+          urlKey: "t",
+        })
+      );
+
+      expect(result.current.views[0]?.version).toBe(SAVED_VIEW_VERSION);
+    });
+
+    it("hands an old view to the host's migration, with its version", () => {
+      const storage = fakeStorage({ views: LEGACY_FIXTURE });
+      const migrate = vi.fn((view: SavedView) => ({
+        ...view,
+        // A column the table renamed since this view was saved.
+        search: view.search.replace("colHide=email", "colHide=contact"),
+      }));
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          migrate,
+          urlAdapter: createMemoryAdapter(""),
+          urlKey: "t",
+        })
+      );
+
+      expect(migrate).toHaveBeenCalledWith(expect.anything(), 1);
+      expect(result.current.views[0]?.search).toContain("colHide=contact");
+    });
+
+    it("drops a view the host says it cannot upgrade", () => {
+      // Restoring a table nobody asked for is worse than losing the view.
+      const storage = fakeStorage({ views: LEGACY_FIXTURE });
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          migrate: () => null,
+          urlAdapter: createMemoryAdapter(""),
+          urlKey: "t",
+        })
+      );
+
+      expect(result.current.views).toEqual([]);
+    });
+
+    it("loses only the view that fails, not the list", () => {
+      const storage = fakeStorage({
+        views: JSON.stringify([
+          { name: "Bad", search: "t.q=x" },
+          { name: "Good", search: "t.q=y", version: SAVED_VIEW_VERSION },
+        ]),
+      });
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          migrate: () => {
+            throw new Error("cannot read this one");
+          },
+          urlAdapter: createMemoryAdapter(""),
+          urlKey: "t",
+        })
+      );
+
+      expect(result.current.views.map((v) => v.name)).toEqual(["Good"]);
+    });
+
+    it("leaves a current view alone", () => {
+      const migrate = vi.fn();
+      const storage = fakeStorage({
+        views: JSON.stringify([
+          { name: "New", search: "t.q=x", version: SAVED_VIEW_VERSION },
+        ]),
+      });
+      renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          migrate,
+          urlAdapter: createMemoryAdapter(""),
+          urlKey: "t",
+        })
+      );
+
+      expect(migrate).not.toHaveBeenCalled();
+    });
+
+    it("saves at the current version", () => {
+      const storage = fakeStorage();
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: createMemoryAdapter("t.q=ali"),
+          urlKey: "t",
+        })
+      );
+
+      act(() => result.current.save("Fresh"));
+
+      expect(result.current.views[0]?.version).toBe(SAVED_VIEW_VERSION);
+    });
+  });
+
   describe("managing the list", () => {
     it("renames a view without moving it", () => {
       const { result } = managed();
@@ -306,6 +470,41 @@ describe("useSavedViews", () => {
       expect(result.current.views.filter((v) => v.isDefault)).toHaveLength(1);
     });
 
+    it("keeps the rest of a view when clearing its default flag", () => {
+      // Rebuilding the view from name and search dropped its version, its
+      // visibility and its read-only flag along with the default.
+      const storage = fakeStorage({
+        views: JSON.stringify([
+          {
+            name: "A",
+            search: "t.q=x",
+            version: SAVED_VIEW_VERSION,
+            visibility: "team",
+            isDefault: true,
+          },
+          { name: "B", search: "t.q=y", version: SAVED_VIEW_VERSION },
+        ]),
+      });
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: createMemoryAdapter("t.q=ali"),
+          urlKey: "t",
+        })
+      );
+
+      act(() => result.current.setDefault("B"));
+
+      const a = result.current.views.find((view) => view.name === "A");
+      expect(a).toEqual({
+        name: "A",
+        search: "t.q=x",
+        version: SAVED_VIEW_VERSION,
+        visibility: "team",
+      });
+    });
+
     it("clears the default when the same view is named again", () => {
       const { result } = managed();
       act(() => result.current.save("A"));
@@ -332,7 +531,12 @@ describe("useSavedViews", () => {
 
       const stored: unknown = JSON.parse(storage.getItem("views") ?? "[]");
       expect(stored).toEqual([
-        { name: "A", search: expect.any(String), isDefault: true },
+        {
+          name: "A",
+          search: expect.any(String),
+          version: SAVED_VIEW_VERSION,
+          isDefault: true,
+        },
       ]);
     });
   });
@@ -476,7 +680,11 @@ describe("useSavedViews", () => {
     const { result } = renderHook(() =>
       useSavedViews({ storageKey: "views", storage: good, urlAdapter: adapter })
     );
-    expect(result.current.views).toEqual([{ name: "x", search: "q=1" }]);
+    // Read at version 1 and stamped on the way in, which is what makes the
+    // next schema change able to tell old from new.
+    expect(result.current.views).toEqual([
+      { name: "x", search: "q=1", version: SAVED_VIEW_VERSION },
+    ]);
 
     const corrupt = fakeStorage({ views: "{not json" });
     const { result: r2 } = renderHook(() =>
@@ -513,7 +721,7 @@ describe("useSavedViews", () => {
     act(() => result.current.save("v"));
     expect(
       JSON.parse(globalThis.localStorage.getItem("views-default")!)
-    ).toEqual([{ name: "v", search: "q=z" }]);
+    ).toEqual([{ name: "v", search: "q=z", version: SAVED_VIEW_VERSION }]);
     globalThis.localStorage.removeItem("views-default");
   });
 

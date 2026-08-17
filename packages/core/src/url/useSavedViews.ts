@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { LayoutStorage } from "../columns/useColumnLayoutStorageState";
 import { safeLocalStorage } from "../utils/env";
@@ -41,6 +41,11 @@ export interface SavedView {
    */
   visibility?: SavedViewVisibility;
   /**
+   * The schema this view was written at. Absent means version 1 — the shape
+   * that predates versioning.
+   */
+  version?: number;
+  /**
    * Whether this reader may change it. A team view someone else owns arrives
    * read-only, and the panel must show it as such rather than offering
    * controls that will fail — a disabled control is information; a control
@@ -51,6 +56,29 @@ export interface SavedView {
 
 /** Who a saved view is for. */
 export type SavedViewVisibility = "private" | "team";
+
+/**
+ * The schema a view is written at today.
+ *
+ * A saved view outlives the code that saved it — that is the whole point of
+ * saving one — so it carries the version it was written at and the table
+ * upgrades what it reads. Views stored before versioning existed have no
+ * number and are treated as version 1, which is what they are.
+ */
+export const SAVED_VIEW_VERSION = 2;
+
+/**
+ * Bring one stored view up to date, or return `null` to drop it.
+ *
+ * Called for every view whose `version` is behind {@link SAVED_VIEW_VERSION},
+ * oldest first, after the built-in migration has run. Dropping is a real
+ * answer: a view whose columns no longer exist restores a table nobody asked
+ * for, and silently applying it is worse than losing it.
+ */
+export type SavedViewMigration = (
+  view: SavedView,
+  from: number
+) => SavedView | null;
 
 /**
  * Somewhere to keep views other than this browser.
@@ -83,6 +111,12 @@ export interface UseSavedViewsOptions {
   store?: SavedViewsStore;
   /** What `save` marks a new view as. Defaults to `"private"`. */
   visibility?: SavedViewVisibility;
+  /**
+   * Upgrade views saved by an older version of your table — renamed columns,
+   * retired filters. Runs after the built-in migration; return `null` to drop
+   * a view rather than restore a table nobody asked for.
+   */
+  migrate?: SavedViewMigration;
   /** The table's URL-state backend (same one the table uses). */
   urlAdapter?: UrlStateAdapter;
   /** The table's URL namespace — must match the table's `urlKey`. */
@@ -125,6 +159,14 @@ export interface UseSavedViewsResult {
   setDefault: (name: string) => void;
   /** The default view, when one is set. */
   defaultView: SavedView | undefined;
+  /**
+   * Read the list again — after someone else has changed a shared view, say.
+   * Loading happens on mount and when `storageKey` changes; a `store` or a
+   * `migrate` written inline changes identity on every render, so neither can
+   * be allowed to trigger it. Refreshing is therefore something the host asks
+   * for rather than something identity accidentally causes.
+   */
+  reload: () => void;
 }
 
 const BARE_PARAMS = [
@@ -153,6 +195,52 @@ const BARE_PARAMS = [
 ];
 
 /**
+ * Bring a view up to today's schema.
+ *
+ * Version 1 is everything saved before versioning existed. Its `search` is
+ * already the shape the table reads, so the built-in step is only the stamp —
+ * but the step exists so the NEXT change has somewhere to go, and so a host's
+ * `migrate` is handed a view whose version it can trust.
+ *
+ * @param view - The stored view, as it came off the wire or out of storage.
+ * @param migrate - The host's own upgrade, run after the built-in one.
+ * @returns The upgraded view, or `null` when it should be dropped.
+ */
+function migrateView(
+  view: SavedView,
+  migrate: SavedViewMigration | undefined
+): SavedView | null {
+  const from = view.version ?? 1;
+  if (from >= SAVED_VIEW_VERSION) return view;
+  const upgraded: SavedView = { ...view, version: SAVED_VIEW_VERSION };
+  if (!migrate) return upgraded;
+  return migrate(upgraded, from);
+}
+
+/**
+ * Every stored view, upgraded, with the ones the host dropped removed.
+ *
+ * A view that throws during migration is dropped rather than allowed to take
+ * the list down with it: one bad view in storage should cost that view, not
+ * every view.
+ */
+function migrateAll(
+  views: readonly SavedView[],
+  migrate: SavedViewMigration | undefined
+): SavedView[] {
+  const out: SavedView[] = [];
+  for (const view of views) {
+    try {
+      const upgraded = migrateView(view, migrate);
+      if (upgraded) out.push(upgraded);
+    } catch {
+      // Dropped: see above.
+    }
+  }
+  return out;
+}
+
+/**
  * A store that rejects leaves the list as the user last saw it rather than
  * throwing into a render. The alternative — an unhandled rejection — takes
  * the page down over a failed view save.
@@ -164,7 +252,9 @@ function swallow(): void {
 /** A view without its default flag, so the stored shape stays minimal. */
 function omitDefault(view: SavedView): SavedView {
   if (view.isDefault === undefined) return view;
-  return { name: view.name, search: view.search };
+  const next = { ...view };
+  delete next.isDefault;
+  return next;
 }
 
 /** Whether a param key belongs to the table at namespace `ns`. */
@@ -218,6 +308,7 @@ export function useSavedViews({
   storage,
   store,
   visibility = "private",
+  migrate,
   urlAdapter,
   urlKey,
   urlSync = true,
@@ -233,19 +324,32 @@ export function useSavedViews({
   // the initializer made the client's first render differ from the
   // server's whenever views were saved (hydration mismatch).
   const [views, setViews] = useState<SavedView[]>([]);
-  useEffect(() => {
-    if (store) return;
-    setViews(readStored(backend, storageKey));
-  }, [backend, storageKey, store]);
+  // The store and the migration are held rather than depended on: both are
+  // routinely written inline, and an effect keyed on their identity would
+  // re-run every render — a load loop the host has no way to see coming.
+  const latest = useRef({ store, migrate, backend, storageKey });
+  latest.current = { store, migrate, backend, storageKey };
+  const [reloads, setReloads] = useState(0);
+  const reload = useCallback(() => {
+    setReloads((n) => n + 1);
+  }, []);
 
   useEffect(() => {
+    const { store: s, migrate: m, backend: b, storageKey: k } = latest.current;
+    if (s) return undefined;
+    setViews(migrateAll(readStored(b, k), m));
+    return undefined;
+  }, [storageKey, reloads]);
+
+  useEffect(() => {
+    const { store, migrate } = latest.current;
     if (!store) return undefined;
     // A store's answer can arrive after the table has moved on; ignore a
     // reply that is no longer the one being waited for.
     let current = true;
     void store.list().then(
       (remote) => {
-        if (current) setViews([...remote]);
+        if (current) setViews(migrateAll(remote, migrate));
       },
       () => {
         // A store that cannot be reached leaves the list empty rather than
@@ -256,7 +360,7 @@ export function useSavedViews({
     return () => {
       current = false;
     };
-  }, [store]);
+  }, [storageKey, reloads]);
 
   const persist = useCallback(
     (next: SavedView[], changed?: SavedView, removed?: string) => {
@@ -282,6 +386,7 @@ export function useSavedViews({
       const view: SavedView = {
         name,
         search: captureTableParams(resolved.getSearch(), ns),
+        version: SAVED_VIEW_VERSION,
         ...(visibility === "private" ? {} : { visibility }),
       };
       persist([...views.filter((v) => v.name !== name), view], view);
@@ -388,5 +493,6 @@ export function useSavedViews({
     move,
     setDefault,
     defaultView: views.find((view) => view.isDefault),
+    reload,
   };
 }
