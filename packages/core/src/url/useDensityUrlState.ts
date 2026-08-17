@@ -11,13 +11,30 @@
  * controlled table's density is the host's business, and a URL that
  * silently overrode it would be a second source of truth.
  */
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { type UrlStateAdapter, useResolvedAdapter } from "./adapter";
 import { PARAM_DENSITY } from "./serialize";
 
 /** The two layouts a table has. */
 export type Density = "comfortable" | "compact";
+
+/**
+ * Trailing debounce for URL persistence, as the column-layout and formula hooks
+ * use. Reads stay instant through the optimistic overlay below; the write waits,
+ * which is what lets the overlay bridge a router whose navigation lands a tick
+ * later — clearing it in the same batch as the write leaves one render with the
+ * overlay gone and the URL not yet updated, so the table flicks back to the
+ * density the reader just left.
+ */
+export const DENSITY_URL_WRITE_DEBOUNCE_MS = 150;
 
 /** What {@link useDensityUrlState} needs. */
 export interface UseDensityUrlStateOptions {
@@ -58,8 +75,9 @@ export function useDensityUrlState(
     () => resolved.getSearch(),
     () => (urlAdapter ? urlAdapter.getSearch() : "")
   );
-  // The click that has not reached the URL yet.
+  // Optimistic overlay: the click that has not reached the URL yet.
   const [pending, setPending] = useState<Density | null>(null);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const density = useMemo(() => {
     if (pending) return pending;
@@ -70,9 +88,8 @@ export function useDensityUrlState(
     );
   }, [pending, search, ns, defaultDensity]);
 
-  const onDensityChange = useCallback(
+  const persist = useCallback(
     (next: Density) => {
-      setPending(next);
       const params = new URLSearchParams(resolved.getSearch());
       // The default writes no parameter: a URL should carry what someone
       // chose, not restate what the table would have done anyway.
@@ -82,9 +99,41 @@ export function useDensityUrlState(
         params.set(`${ns}${PARAM_DENSITY}`, next);
       }
       resolved.setSearch(params.toString());
-      setPending(null);
     },
     [resolved, ns, defaultDensity]
+  );
+
+  const onDensityChange = useCallback(
+    (next: Density) => {
+      setPending(next);
+      if (flushTimer.current) clearTimeout(flushTimer.current);
+      flushTimer.current = setTimeout(() => {
+        flushTimer.current = null;
+        persist(next);
+        setPending(null);
+      }, DENSITY_URL_WRITE_DEBOUNCE_MS);
+    },
+    [persist]
+  );
+
+  // Flush a pending choice on unmount, so a density chosen and navigated away
+  // from is not lost.
+  const latestRef = useRef<{
+    pending: Density | null;
+    persist: typeof persist;
+  }>({ pending, persist });
+  latestRef.current = { pending, persist };
+  useEffect(
+    () => () => {
+      if (flushTimer.current) {
+        clearTimeout(flushTimer.current);
+        // Invariant: a live timer implies a pending choice — the timeout clears
+        // the timer BEFORE it clears `pending`.
+        const { pending: last, persist: write } = latestRef.current;
+        write(last!);
+      }
+    },
+    []
   );
 
   return { density, onDensityChange };

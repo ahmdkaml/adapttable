@@ -3,16 +3,28 @@
  *
  * The encoding itself is tested in `pivotUrlCodec.test.ts`, which needs no
  * renderer. What is left here is the hook: reading the parameter, writing it
- * back, and the SSR rule it shares with the other URL hooks.
+ * back, the overlay that covers the gap until the write lands, and the SSR rule
+ * it shares with the other URL hooks.
  */
 import { act, renderHook } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMemoryAdapter } from "../url/adapter";
+import { createMemoryAdapter, type UrlStateAdapter } from "../url/adapter";
 import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
 import type { PivotConfig } from "./pivotModel";
-import { usePivotUrlState } from "./pivotUrlState";
+import { PIVOT_URL_WRITE_DEBOUNCE_MS, usePivotUrlState } from "./pivotUrlState";
+
+// The URL write is deferred past the batch that asked for it, so advance the
+// clock to observe one.
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+afterEach(() => vi.useRealTimers());
+
+function flushUrl() {
+  act(() => {
+    vi.advanceTimersByTime(PIVOT_URL_WRITE_DEBOUNCE_MS + 10);
+  });
+}
 
 describe("usePivotUrlState", () => {
   it("reads a configuration out of the URL", () => {
@@ -32,9 +44,70 @@ describe("usePivotUrlState", () => {
     act(() => {
       result.current.onConfigChange({ ...EMPTY_PIVOT_CONFIG, rows: ["team"] });
     });
+    flushUrl();
 
     expect(urlAdapter.getSearch()).toContain("pivot=rows%3Ateam");
     expect(result.current.config.rows).toEqual(["team"]);
+  });
+
+  it("reads optimistically before the URL write lands", () => {
+    // Deferred rather than same-batch: a router adapter whose write arrives a
+    // tick later would otherwise render one frame with the overlay already
+    // gone — the field the reader just moved jumping back to where it was.
+    const urlAdapter = createMemoryAdapter("");
+    const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
+
+    act(() => {
+      result.current.onConfigChange({ ...EMPTY_PIVOT_CONFIG, rows: ["team"] });
+    });
+
+    expect(result.current.config.rows).toEqual(["team"]);
+    expect(urlAdapter.getSearch()).toBe("");
+
+    flushUrl();
+
+    expect(urlAdapter.getSearch()).toContain("pivot=rows%3Ateam");
+    expect(result.current.config.rows).toEqual(["team"]);
+  });
+
+  it("coalesces a burst of moves into one trailing write", () => {
+    const adapter = createMemoryAdapter("");
+    const writes: string[] = [];
+    const spied: UrlStateAdapter = {
+      ...adapter,
+      setSearch: (search: string) => {
+        writes.push(search);
+        adapter.setSearch(search);
+      },
+    };
+    const { result } = renderHook(() =>
+      usePivotUrlState({ urlAdapter: spied })
+    );
+
+    act(() => {
+      // Somebody building a pivot, one keystroke per zone.
+      for (const rows of [["region"], ["region", "team"], ["team"]]) {
+        result.current.onConfigChange({ ...EMPTY_PIVOT_CONFIG, rows });
+      }
+    });
+    flushUrl();
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toContain("rows%3Ateam");
+  });
+
+  it("flushes a pending configuration on unmount so it is not lost", () => {
+    const urlAdapter = createMemoryAdapter("");
+    const { result, unmount } = renderHook(() =>
+      usePivotUrlState({ urlAdapter })
+    );
+
+    act(() => {
+      result.current.onConfigChange({ ...EMPTY_PIVOT_CONFIG, rows: ["team"] });
+    });
+    unmount();
+
+    expect(urlAdapter.getSearch()).toContain("pivot=rows%3Ateam");
   });
 
   it("removes the parameter when the pivot is cleared", () => {
@@ -44,6 +117,7 @@ describe("usePivotUrlState", () => {
     act(() => {
       result.current.onConfigChange(EMPTY_PIVOT_CONFIG);
     });
+    flushUrl();
 
     expect(urlAdapter.getSearch()).not.toContain("pivot");
   });
@@ -57,6 +131,7 @@ describe("usePivotUrlState", () => {
     act(() => {
       result.current.onConfigChange({ ...EMPTY_PIVOT_CONFIG, rows: ["team"] });
     });
+    flushUrl();
 
     expect(urlAdapter.getSearch()).toContain("left.pivot=");
   });

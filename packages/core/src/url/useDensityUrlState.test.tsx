@@ -4,12 +4,22 @@
  * The interesting rule is what does NOT get written: choosing the default
  * removes the parameter rather than restating it, so a shared link carries
  * what someone chose and nothing else.
+ *
+ * The URL write is deferred, so these advance the clock to see one. What the
+ * deferral buys is the render in between: the overlay covers the gap while a
+ * router's navigation is still in flight.
  */
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { UrlStateAdapter } from "./adapter";
-import { useDensityUrlState } from "./useDensityUrlState";
+import {
+  DENSITY_URL_WRITE_DEBOUNCE_MS,
+  useDensityUrlState,
+} from "./useDensityUrlState";
+
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+afterEach(() => vi.useRealTimers());
 
 function memoryAdapter(initial = ""): UrlStateAdapter & { search: string } {
   let search = initial;
@@ -28,6 +38,12 @@ function memoryAdapter(initial = ""): UrlStateAdapter & { search: string } {
       return () => listeners.delete(listener);
     },
   };
+}
+
+function flushUrl() {
+  act(() => {
+    vi.advanceTimersByTime(DENSITY_URL_WRITE_DEBOUNCE_MS + 10);
+  });
 }
 
 describe("useDensityUrlState", () => {
@@ -51,9 +67,67 @@ describe("useDensityUrlState", () => {
     act(() => {
       result.current.onDensityChange("compact");
     });
+    flushUrl();
 
     expect(urlAdapter.search).toContain("density=compact");
     expect(result.current.density).toBe("compact");
+  });
+
+  it("reads optimistically before the URL write lands", () => {
+    // Deferred rather than same-batch: a router adapter whose write arrives a
+    // tick later would otherwise render one frame with the overlay already
+    // gone, and the table would snap back to the density just left behind.
+    const urlAdapter = memoryAdapter();
+    const { result } = renderHook(() => useDensityUrlState({ urlAdapter }));
+    act(() => {
+      result.current.onDensityChange("compact");
+    });
+
+    expect(result.current.density).toBe("compact");
+    expect(urlAdapter.search).toBe("");
+
+    flushUrl();
+
+    expect(urlAdapter.search).toContain("density=compact");
+    expect(result.current.density).toBe("compact");
+  });
+
+  it("coalesces a burst of clicks into one trailing write", () => {
+    const adapter = memoryAdapter();
+    const writes: string[] = [];
+    const spied: UrlStateAdapter = {
+      ...adapter,
+      setSearch: (search: string) => {
+        writes.push(search);
+        adapter.setSearch(search);
+      },
+    };
+    const { result } = renderHook(() =>
+      useDensityUrlState({ urlAdapter: spied })
+    );
+    act(() => {
+      // Somebody clicking the chooser back and forth.
+      result.current.onDensityChange("compact");
+      result.current.onDensityChange("comfortable");
+      result.current.onDensityChange("compact");
+    });
+    flushUrl();
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toContain("density=compact");
+  });
+
+  it("flushes a pending choice on unmount so it is not lost", () => {
+    const urlAdapter = memoryAdapter();
+    const { result, unmount } = renderHook(() =>
+      useDensityUrlState({ urlAdapter })
+    );
+    act(() => {
+      result.current.onDensityChange("compact");
+    });
+    unmount();
+
+    expect(urlAdapter.search).toContain("density=compact");
   });
 
   it("removes the parameter when the default is chosen again", () => {
@@ -62,6 +136,7 @@ describe("useDensityUrlState", () => {
     act(() => {
       result.current.onDensityChange("comfortable");
     });
+    flushUrl();
 
     // A link should carry what someone chose, not restate what the table
     // would have done anyway.
@@ -79,12 +154,14 @@ describe("useDensityUrlState", () => {
     act(() => {
       result.current.onDensityChange("compact");
     });
+    flushUrl();
 
     expect(urlAdapter.search).not.toContain("density");
 
     act(() => {
       result.current.onDensityChange("comfortable");
     });
+    flushUrl();
 
     expect(urlAdapter.search).toContain("density=comfortable");
   });
@@ -102,6 +179,7 @@ describe("useDensityUrlState", () => {
     act(() => {
       result.current.onDensityChange("compact");
     });
+    flushUrl();
 
     expect(urlAdapter.search).toContain("sort=name");
     expect(urlAdapter.search).toContain("page=2");
@@ -125,6 +203,7 @@ describe("useDensityUrlState", () => {
     act(() => {
       result.current.onDensityChange("compact");
     });
+    flushUrl();
 
     expect(urlAdapter.search).toContain("left.density=compact");
   });

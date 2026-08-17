@@ -11,13 +11,30 @@
  * and writes through: a browser is only one end of a shared link, and the
  * other end is a server that never renders.
  */
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { type UrlStateAdapter, useResolvedAdapter } from "../url/adapter";
 import { PARAM_PIVOT } from "../url/serialize";
 import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
 import type { PivotConfig } from "./pivotModel";
 import { deserializePivot, serializePivot } from "./pivotUrlCodec";
+
+/**
+ * Trailing debounce for URL persistence, as the column-layout and formula hooks
+ * use. Reads stay instant through the optimistic overlay below; the write waits,
+ * which is what lets the overlay bridge a router whose navigation lands a tick
+ * later — clearing it in the same batch as the write leaves one render with the
+ * overlay gone and the URL not yet updated, so a field the reader just moved
+ * jumps back to where it was.
+ */
+export const PIVOT_URL_WRITE_DEBOUNCE_MS = 150;
 
 /** What {@link usePivotUrlState} needs. */
 export interface UsePivotUrlStateOptions {
@@ -53,8 +70,9 @@ export function usePivotUrlState(
     () => resolved.getSearch(),
     () => (urlAdapter ? urlAdapter.getSearch() : "")
   );
-  // The change that has not reached the URL yet.
+  // Optimistic overlay: the change that has not reached the URL yet.
   const [pending, setPending] = useState<PivotConfig | null>(null);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const config = useMemo(() => {
     if (pending) return pending;
@@ -63,9 +81,8 @@ export function usePivotUrlState(
     return deserializePivot(raw);
   }, [pending, search, ns, defaultConfig]);
 
-  const onConfigChange = useCallback(
+  const persist = useCallback(
     (next: PivotConfig) => {
-      setPending(next);
       const params = new URLSearchParams(resolved.getSearch());
       const value = serializePivot(next);
       // An empty pivot writes no parameter: a URL should carry what someone
@@ -73,9 +90,41 @@ export function usePivotUrlState(
       if (value === "") params.delete(`${ns}${PARAM_PIVOT}`);
       else params.set(`${ns}${PARAM_PIVOT}`, value);
       resolved.setSearch(params.toString());
-      setPending(null);
     },
     [resolved, ns]
+  );
+
+  const onConfigChange = useCallback(
+    (next: PivotConfig) => {
+      setPending(next);
+      if (flushTimer.current) clearTimeout(flushTimer.current);
+      flushTimer.current = setTimeout(() => {
+        flushTimer.current = null;
+        persist(next);
+        setPending(null);
+      }, PIVOT_URL_WRITE_DEBOUNCE_MS);
+    },
+    [persist]
+  );
+
+  // Flush a pending configuration on unmount, so the last move a reader made
+  // before navigating is not lost.
+  const latestRef = useRef<{
+    pending: PivotConfig | null;
+    persist: typeof persist;
+  }>({ pending, persist });
+  latestRef.current = { pending, persist };
+  useEffect(
+    () => () => {
+      if (flushTimer.current) {
+        clearTimeout(flushTimer.current);
+        // Invariant: a live timer implies a pending configuration — the timeout
+        // clears the timer BEFORE it clears `pending`.
+        const { pending: last, persist: write } = latestRef.current;
+        write(last!);
+      }
+    },
+    []
   );
 
   return { config, onConfigChange };
