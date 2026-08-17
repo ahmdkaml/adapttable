@@ -3,11 +3,11 @@ import {
   type ContextMenuChromeProps,
   type ContextMenuItemProps,
   type ContextMenuSlots,
-  type ContextMenuSurfaceProps,
 } from "@adapttable/core/adapter";
-import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 import type { DataTableClassNames } from "../types";
+import { ClassNamesProvider, useClassNames } from "./classNamesContext";
 
 /** The entries, as elements, for the keyboard walk below. */
 function entriesOf(root: HTMLElement | null): HTMLElement[] {
@@ -69,13 +69,43 @@ function Surface({
   );
 }
 
-function MenuSeparator({ className }: Readonly<{ className?: string }>) {
+function Item({ item, onSelect }: ContextMenuItemProps) {
+  const { contextMenuItem } = useClassNames();
   return (
-    <hr data-adapttable-part="context-menu-separator" className={className} />
+    <button
+      type="button"
+      role="menuitem"
+      tabIndex={-1}
+      disabled={item.disabled}
+      data-adapttable-part="context-menu-item"
+      data-danger={item.danger === true ? "" : undefined}
+      className={contextMenuItem}
+      onClick={onSelect}
+    >
+      {item.label}
+    </button>
   );
 }
 
-/** Unstyled context menu: semantic markup with class hooks, no styles. */
+function Separator() {
+  const { contextMenuSeparator } = useClassNames();
+  return (
+    <hr
+      data-adapttable-part="context-menu-separator"
+      className={contextMenuSeparator}
+    />
+  );
+}
+
+const slots: ContextMenuSlots = { Surface, Item, Separator };
+
+/**
+ * Unstyled context menu: semantic markup with class hooks, no styles.
+ *
+ * The slots read the class map from context, so their identity holds across
+ * renders — a menu that remounts loses the focus it just placed on its first
+ * entry — and each menu on a page still gets its own map.
+ */
 export function ContextMenu(
   props: Readonly<
     Omit<ContextMenuChromeProps, "slots"> & {
@@ -84,40 +114,13 @@ export function ContextMenu(
   >
 ) {
   const { classNames, ...rest } = props;
-  // Read out before the slots close over them: the lint rule reads a
-  // `props.classNames.x` inside a slot as an unvalidated prop of that slot.
-  const menuClass = classNames?.contextMenu;
-  const itemClass = classNames?.contextMenuItem;
-  const separatorClass = classNames?.contextMenuSeparator;
-  const slots = useMemo<ContextMenuSlots>(
-    () => ({
-      Surface: ({
-        label,
-        className,
-        onClose,
-        children,
-      }: ContextMenuSurfaceProps) => (
-        <Surface label={label} className={className} onClose={onClose}>
-          {children}
-        </Surface>
-      ),
-      Item: ({ item, onSelect }: ContextMenuItemProps) => (
-        <button
-          type="button"
-          role="menuitem"
-          tabIndex={-1}
-          disabled={item.disabled}
-          data-adapttable-part="context-menu-item"
-          data-danger={item.danger === true ? "" : undefined}
-          className={itemClass}
-          onClick={onSelect}
-        >
-          {item.label}
-        </button>
-      ),
-      Separator: () => <MenuSeparator className={separatorClass} />,
-    }),
-    [itemClass, separatorClass]
+  return (
+    <ClassNamesProvider classNames={classNames}>
+      <ContextMenuChrome
+        {...rest}
+        className={classNames?.contextMenu}
+        slots={slots}
+      />
+    </ClassNamesProvider>
   );
-  return <ContextMenuChrome {...rest} className={menuClass} slots={slots} />;
 }

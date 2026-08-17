@@ -6,9 +6,9 @@ import {
   type CommandPaletteSlots,
   type CommandPaletteSurfaceProps,
 } from "@adapttable/core/adapter";
-import { useMemo } from "react";
 
 import type { DataTableClassNames } from "../types";
+import { ClassNamesProvider, useClassNames } from "./classNamesContext";
 
 function Surface({ label, children, className }: CommandPaletteSurfaceProps) {
   return (
@@ -44,12 +44,54 @@ function Surface({ label, children, className }: CommandPaletteSurfaceProps) {
   );
 }
 
+function Input({ inputProps }: CommandPaletteInputProps) {
+  const { commandInput } = useClassNames();
+  const { onChange, ref, ...bind } = inputProps;
+  return (
+    <input
+      {...bind}
+      ref={ref}
+      className={commandInput}
+      onChange={(event) => {
+        onChange(event.target.value);
+      }}
+    />
+  );
+}
+
+function Item({ command, active, itemProps }: CommandPaletteItemProps) {
+  const { commandItem } = useClassNames();
+  return (
+    <button
+      type="button"
+      {...itemProps}
+      data-active={active || undefined}
+      disabled={command.disabled}
+      className={commandItem}
+    >
+      {command.label}
+    </button>
+  );
+}
+
+function Empty({ message }: Readonly<{ message: string }>) {
+  const { commandEmpty } = useClassNames();
+  return (
+    <p data-adapttable-part="command-empty" className={commandEmpty}>
+      {message}
+    </p>
+  );
+}
+
+const slots: CommandPaletteSlots = { Surface, Input, Item, Empty };
+
 /**
  * Unstyled command palette: semantic markup with class hooks, no styles.
  *
- * The slots close over the class map rather than reading it from a module
- * binding — two tables with different maps on one page would otherwise
- * share whichever rendered last.
+ * The slots read the class map from context rather than closing over it, so
+ * their component identity survives a re-render — a palette whose input
+ * remounts on every keystroke loses the caret — and two palettes with
+ * different maps on one page still get their own.
  */
 export function CommandPalette(
   props: Readonly<
@@ -59,49 +101,13 @@ export function CommandPalette(
   >
 ) {
   const { classNames, ...rest } = props;
-  const inputClass = classNames?.commandInput;
-  const itemClass = classNames?.commandItem;
-  const emptyClass = classNames?.commandEmpty;
-  const slots = useMemo<CommandPaletteSlots>(
-    () => ({
-      Surface,
-      Input: ({ inputProps }: CommandPaletteInputProps) => {
-        const { onChange, ref, ...bind } = inputProps;
-        return (
-          <input
-            {...bind}
-            ref={ref}
-            className={inputClass}
-            onChange={(event) => {
-              onChange(event.target.value);
-            }}
-          />
-        );
-      },
-      Item: ({ command, active, itemProps }: CommandPaletteItemProps) => (
-        <button
-          type="button"
-          {...itemProps}
-          data-active={active || undefined}
-          disabled={command.disabled}
-          className={itemClass}
-        >
-          {command.label}
-        </button>
-      ),
-      Empty: ({ message }: Readonly<{ message: string }>) => (
-        <p data-adapttable-part="command-empty" className={emptyClass}>
-          {message}
-        </p>
-      ),
-    }),
-    [emptyClass, inputClass, itemClass]
-  );
   return (
-    <CommandPaletteChrome
-      {...rest}
-      className={classNames?.commandPalette}
-      slots={slots}
-    />
+    <ClassNamesProvider classNames={classNames}>
+      <CommandPaletteChrome
+        {...rest}
+        className={classNames?.commandPalette}
+        slots={slots}
+      />
+    </ClassNamesProvider>
   );
 }
