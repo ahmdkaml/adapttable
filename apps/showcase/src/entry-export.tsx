@@ -9,7 +9,7 @@ import { PageShell } from "./PageShell";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PageShell active="export-pdf" root="..">
+    <PageShell active="export" root="..">
       {(dark) => <ExportPdfDemo dark={dark} />}
     </PageShell>
   </StrictMode>

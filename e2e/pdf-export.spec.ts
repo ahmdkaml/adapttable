@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * The /export-pdf/ demo is the live PDF export: `pdfWriter` plus
+ * The /export/ demo is the live PDF export: `pdfWriter` plus
  * `scope: "all"`, button caption `labels.exportFile("pdf")`. jsdom never
  * sees the browser download; this is the smoke that Export hands the user a
  * real PDF — `%PDF` magic, the PDF MIME, a `.pdf` name — and not an empty
@@ -20,8 +20,8 @@ const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46];
 const AMIRI_BYTES = 431_116;
 
 test.describe("pdf export", () => {
-  test("downloads a real PDF from /export-pdf/", async ({ page }) => {
-    await page.goto("/export-pdf/");
+  test("downloads a real PDF from /export/", async ({ page }) => {
+    await page.goto("/export/");
     await expect(
       page.getByRole("columnheader", { name: "Person" }).first()
     ).toBeVisible();
@@ -84,7 +84,7 @@ test.describe("pdf export", () => {
  * letters going out as typed.
  */
 test("embeds a subset font in the Arabic download", async ({ page }) => {
-  await page.goto("/export-pdf/");
+  await page.goto("/export/");
   await expect(
     page.getByRole("columnheader", { name: "Person" }).first()
   ).toBeVisible();
@@ -149,8 +149,10 @@ const KITS = [
 ] as const;
 
 for (const kit of KITS) {
-  test(`${kit}: offers the export button on the PDF page`, async ({ page }) => {
-    await page.goto("/export-pdf/");
+  test(`${kit}: offers the export button on the export page`, async ({
+    page,
+  }) => {
+    await page.goto("/export/");
     if (kit !== "mantine") {
       const tab = page.getByTestId(`adapter-${kit}`);
       await tab.scrollIntoViewIfNeeded();
@@ -163,3 +165,44 @@ for (const kit of KITS) {
     ).toBeVisible();
   });
 }
+
+/**
+ * The address this demo used to live at is published — in docs, in llms.txt,
+ * in whatever a reader bookmarked. GitHub Pages serves files, so the move is
+ * a document that carries the reader across rather than a 301. The test that
+ * matters is the reader's: open the old URL, arrive at the live demo.
+ */
+test.describe("the old /export-pdf/ address", () => {
+  test("carries a reader to /export/", async ({ page }) => {
+    await page.goto("/export-pdf/");
+    await page.waitForURL(/\/export\/$/);
+    await expect(
+      page.getByRole("columnheader", { name: "Person" }).first()
+    ).toBeVisible();
+  });
+
+  test("declares the new URL to a crawler without JavaScript", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    // Meta-refresh still fires with scripting off, so read the stub's own
+    // bytes rather than whatever the navigation settles on.
+    const html = await (await page.goto("/export-pdf/"))!.text();
+
+    expect(html).toContain('http-equiv="refresh"');
+    expect(html).toContain("url=../export/");
+    expect(html).toContain(
+      'href="https://orwa-mahmoud.github.io/adapttable/demo/export/"'
+    );
+
+    // Not thin content: a stub carrying one line of text reads as a soft 404,
+    // so it says what moved and where in real prose.
+    const words = (await page.locator("main").innerText()).split(/\s+/).length;
+    expect(words, `the stub serves only ${words} words`).toBeGreaterThan(40);
+
+    // And it mounts no demo — the bundle belongs to the page that moved.
+    expect(html).not.toContain("/src/entry-");
+    await context.close();
+  });
+});

@@ -133,7 +133,7 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
 
 for (const focused of [
   { name: "grouping", path: "/grouping/", exportName: /Export XLSX/ },
-  { name: "PDF", path: "/export-pdf/", exportName: /Export PDF/ },
+  { name: "export", path: "/export/", exportName: /Export PDF/ },
   { name: "mobile", path: "/mobile/", exportName: null },
   { name: "RTL", path: "/rtl/", exportName: null },
 ] as const) {

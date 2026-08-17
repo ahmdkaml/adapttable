@@ -15,7 +15,7 @@ const PAGES = [
   { path: "/columns/", name: "columns" },
   { path: "/editing/", name: "editing" },
   { path: "/grouping/", name: "grouping" },
-  { path: "/export-pdf/", name: "export and print" },
+  { path: "/export/", name: "export and print" },
   { path: "/mobile/", name: "mobile cards" },
   { path: "/rtl/", name: "RTL" },
   { path: "/scale/", name: "scale" },

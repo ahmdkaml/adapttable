@@ -24,6 +24,7 @@ const DEMO_PAGES = [
   "/demo/",
   "/demo/columns/",
   "/demo/editing/",
+  "/demo/export/",
   "/demo/formulas/",
   "/demo/grouping/",
   "/demo/mobile/",

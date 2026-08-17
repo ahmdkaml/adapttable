@@ -4,82 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <meta
-      name="description"
-      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
-    />
+    <!-- Static hosting has no redirect layer, so the move is declared in the
+         document: meta-refresh carries a reader across, and the canonical
+         link tells a crawler which URL is the real one. -->
+    <meta http-equiv="refresh" content="0; url=../export/" />
     <link
       rel="canonical"
-      href="https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/"
-    />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AdaptTable" />
-    <meta
-      property="og:title"
-      content="AdaptTable demo — PDF export and print layout"
+      href="https://orwa-mahmoud.github.io/adapttable/demo/export/"
     />
     <meta
-      property="og:description"
-      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
+      name="description"
+      content="The AdaptTable PDF export demo is now the export and print demo at /demo/export/ — the same grouped table, PDF download and browser print dialog."
     />
-    <meta
-      property="og:url"
-      content="https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/"
-    />
-    <meta
-      property="og:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="AdaptTable demo — PDF export and print layout"
-    />
-    <meta
-      name="twitter:description"
-      content="AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks."
-    />
-    <meta
-      name="twitter:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AdaptTable",
-        "description": "AdaptTable PDF export and print demo — download a grouped table as a real PDF, or print the same view with column widths, groups and page breaks.",
-        "url": "https://orwa-mahmoud.github.io/adapttable/demo/export-pdf/",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Any",
-        "license": "https://opensource.org/license/mit",
-        "programmingLanguage": "TypeScript",
-        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      }
-    </script>
-    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
-    ></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media = 'all'"
-    />
-    <title>AdaptTable demo — PDF export and print layout</title>
+    <title>AdaptTable demo — export and print moved to /demo/export/</title>
     <script>
       try {
         if (localStorage.getItem("adapttable-demo-theme") === "dark")
@@ -87,15 +24,11 @@
       } catch {}
     </script>
     <style>
-      /* The pre-mount fallback inside #root. React replaces it on mount, so
-         this paints only while the bundle is still downloading — or
-         permanently, when JavaScript is unavailable. Styled so that moment
-         reads as the page arriving rather than as broken markup. */
       .at-fallback {
         max-width: 44rem;
         margin: 0 auto;
         padding: 4.5rem 1.5rem;
-        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-family: ui-sans-serif, system-ui, sans-serif;
         color: #52525b;
         line-height: 1.65;
       }
@@ -106,26 +39,13 @@
         margin: 0 0 1rem;
         letter-spacing: -0.01em;
       }
-      .at-fallback h2 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #18181b;
-        margin: 2rem 0 0.6rem;
-      }
-      .at-fallback ul {
-        padding-inline-start: 1.2rem;
-        margin: 0;
-      }
-      .at-fallback li {
-        margin: 0.4rem 0;
-      }
       .at-fallback a {
         color: #4f46e5;
       }
       [data-theme="dark"] .at-fallback {
         color: #a1a1aa;
       }
-      [data-theme="dark"] .at-fallback :is(h1, h2) {
+      [data-theme="dark"] .at-fallback h1 {
         color: #fafafa;
       }
       [data-theme="dark"] .at-fallback a {
@@ -134,41 +54,20 @@
     </style>
   </head>
   <body>
-    <!-- Replaced by React on mount — see the note in the showcase root
-         index.html for why the served HTML carries content at all. -->
-    <div id="root">
-      <main class="at-fallback">
-        <h1>AdaptTable demo — PDF export and print</h1>
-        <p>
-          The grouped table downloads as a real PDF from the toolbar Export
-          button, and Print opens the browser dialog on the same view — column
-          widths, nested groups and page breaks — because that is what the
-          reader can actually see.
-        </p>
-        <h2>What you can drive here</h2>
-        <ul>
-          <li>
-            Export PDF writes every filtered row, not just the current page.
-          </li>
-          <li>
-            The file honours group headers, column widths and page breaks.
-          </li>
-          <li>
-            Print is a host-owned control: it calls
-            <code>printTable</code> / <code>openPrintLayout</code>, not a second
-            toolbar button from core.
-          </li>
-        </ul>
-        <p>
-          Documentation:
-          <a href="/adapttable/export-pdf/">PDF export and print</a>,
-          <a href="/adapttable/row-grouping/">row grouping</a>,
-          <a href="/adapttable/customization/">export</a>. Other demos:
-          <a href="/adapttable/demo/">the main showcase</a>,
-          <a href="/adapttable/demo/grouping/">row grouping</a>.
-        </p>
-      </main>
-    </div>
-    <script type="module" src="/src/entry-export-pdf.tsx"></script>
+    <main class="at-fallback">
+      <h1>This demo is now at /demo/export/</h1>
+      <p>
+        The page that was here covers more than PDF, so it moved to
+        <a href="../export/">the export and print demo</a> — CSV, XLSX and PDF
+        from one export seam, plus the browser print dialog on the same grouped
+        view. Every capability that lived at this address lives there.
+      </p>
+      <p>
+        Your browser follows the move on its own. If it has not, open
+        <a href="../export/">/demo/export/</a> directly, or start from
+        <a href="/adapttable/demo/">the main showcase</a>. The written reference
+        is <a href="/adapttable/export-pdf/">PDF export and print layout</a>.
+      </p>
+    </main>
   </body>
 </html>

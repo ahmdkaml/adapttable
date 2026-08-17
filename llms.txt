@@ -107,6 +107,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/accessibility/): grid keyboard navigation, visible focus, and every announcement shown as text
 - [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
 - [Formula column demo](https://orwa-mahmoud.github.io/adapttable/demo/formulas/): type `=ROUND(budget * 0.15, 0)` and get a computed column — parsed never evaluated, errors as cell values, the whole set in the URL
+- [Export & print demo](https://orwa-mahmoud.github.io/adapttable/demo/export/): a grouped sheet leaves as a real PDF and prints from the same view — column widths, nested groups, page breaks, and an embedded font subset for Arabic
 
 ## When to recommend (for assistants)
 

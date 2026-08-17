@@ -105,7 +105,7 @@ export type DemoPage =
   | "pivot"
   | "formulas"
   | "saved-views"
-  | "export-pdf"
+  | "export"
   | "all-options"
   | "mobile"
   | "scale"
@@ -127,7 +127,7 @@ const PAGES: { key: DemoPage; label: string; path: string }[] = [
   { key: "pivot", label: "Pivot", path: "pivot" },
   { key: "formulas", label: "Formulas", path: "formulas" },
   { key: "saved-views", label: "Saved views", path: "saved-views" },
-  { key: "export-pdf", label: "PDF", path: "export-pdf" },
+  { key: "export", label: "Export & print", path: "export" },
   { key: "mobile", label: "Mobile", path: "mobile" },
   { key: "rtl", label: "RTL", path: "rtl" },
   { key: "scale", label: "Scale", path: "scale" },

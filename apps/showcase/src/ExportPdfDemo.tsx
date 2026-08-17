@@ -162,7 +162,7 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 
   return (
-    <section className="sec shell" id="export-pdf">
+    <section className="sec shell" id="export">
       <SectionHead title="Download a PDF. Print a grouped view.">
         Pass <code>pdfWriter</code> on <code>exportCsv</code> and the toolbar
         says <strong>Export PDF</strong> — the same seam as CSV and XLSX,{" "}

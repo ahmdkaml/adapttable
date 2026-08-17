@@ -109,6 +109,9 @@ export default defineConfig({
         pivot: page("./pivot/index.html"),
         formulas: page("./formulas/index.html"),
         "saved-views": page("./saved-views/index.html"),
+        export: page("./export/index.html"),
+        // The old address, kept as a static meta-refresh stub so no published
+        // link 404s. It carries no bundle — it is HTML only.
         "export-pdf": page("./export-pdf/index.html"),
         "all-options": page("./all-options/index.html"),
         mobile: page("./mobile/index.html"),
