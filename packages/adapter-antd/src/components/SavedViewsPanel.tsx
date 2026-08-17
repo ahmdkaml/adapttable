@@ -46,7 +46,9 @@ const slots: SavedViewsPanelSlots = {
   Row: ({
     name,
     isDefault,
+    readOnly,
     defaultLabel,
+    readOnlyLabel,
     onApply,
     onRename,
     onMoveUp,
@@ -63,12 +65,13 @@ const slots: SavedViewsPanelSlots = {
   }: SavedViewsPanelRowProps) => (
     <Flex gap={4} align="center" {...rest}>
       <Typography.Text style={{ flex: 1 }}>{name}</Typography.Text>
+      {readOnly && <Tag>{readOnlyLabel}</Tag>}
       {isDefault && <Tag>{defaultLabel}</Tag>}
       <Button size="small" onClick={onApply}>
         {applyLabel}
       </Button>
-      {onRename && (
-        <Button size="small" onClick={onRename}>
+      {(onRename ?? readOnly) && (
+        <Button size="small" onClick={onRename} disabled={!onRename}>
           {renameLabel}
         </Button>
       )}
@@ -88,10 +91,10 @@ const slots: SavedViewsPanelSlots = {
       >
         {"\u2193"}
       </Button>
-      <Button size="small" onClick={onSetDefault}>
+      <Button size="small" onClick={onSetDefault} disabled={!onSetDefault}>
         {setDefaultLabel}
       </Button>
-      <Button size="small" onClick={onRemove}>
+      <Button size="small" onClick={onRemove} disabled={!onRemove}>
         {removeLabel}
       </Button>
     </Flex>

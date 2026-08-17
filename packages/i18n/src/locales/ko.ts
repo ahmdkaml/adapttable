@@ -58,6 +58,7 @@ export const ko: Required<TableLabels> = {
   moveViewDown: "아래로 이동",
   setDefaultView: "기본값으로 설정",
   defaultViewBadge: "기본값",
+  readOnlyViewBadge: "읽기 전용",
   loading: "로딩 중…",
   loadMore: "더 보기",
   filters: "필터",

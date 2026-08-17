@@ -58,6 +58,7 @@ export const fa: Required<TableLabels> = {
   moveViewDown: "انتقال به پایین",
   setDefaultView: "تنظیم به‌عنوان پیش‌فرض",
   defaultViewBadge: "پیش‌فرض",
+  readOnlyViewBadge: "فقط‌خواندنی",
   loading: "در حال بارگذاری…",
   loadMore: "بارگذاری بیشتر",
   filters: "فیلترها",

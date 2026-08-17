@@ -40,7 +40,9 @@ const slots: SavedViewsPanelSlots = {
   Row: ({
     name,
     isDefault,
+    readOnly,
     defaultLabel,
+    readOnlyLabel,
     onApply,
     onRename,
     onMoveUp,
@@ -57,14 +59,17 @@ const slots: SavedViewsPanelSlots = {
   }: SavedViewsPanelRowProps) => (
     <div {...rest}>
       <span>{name}</span>
+      {readOnly && (
+        <span data-adapttable-part="saved-view-readonly">{readOnlyLabel}</span>
+      )}
       {isDefault && (
         <span data-adapttable-part="saved-view-default">{defaultLabel}</span>
       )}
       <button type="button" onClick={onApply}>
         {applyLabel}
       </button>
-      {onRename && (
-        <button type="button" onClick={onRename}>
+      {(onRename ?? readOnly) && (
+        <button type="button" onClick={onRename} disabled={!onRename}>
           {renameLabel}
         </button>
       )}
@@ -84,10 +89,10 @@ const slots: SavedViewsPanelSlots = {
       >
         {"\u2193"}
       </button>
-      <button type="button" onClick={onSetDefault}>
+      <button type="button" onClick={onSetDefault} disabled={!onSetDefault}>
         {setDefaultLabel}
       </button>
-      <button type="button" onClick={onRemove}>
+      <button type="button" onClick={onRemove} disabled={!onRemove}>
         {removeLabel}
       </button>
     </div>

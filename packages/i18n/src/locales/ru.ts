@@ -61,6 +61,7 @@ export const ru: Required<TableLabels> = {
   moveViewDown: "Вниз",
   setDefaultView: "Сделать основным",
   defaultViewBadge: "Основное",
+  readOnlyViewBadge: "Только чтение",
   loading: "Загрузка…",
   loadMore: "Загрузить ещё",
   filters: "Фильтры",

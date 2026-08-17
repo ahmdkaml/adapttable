@@ -112,6 +112,24 @@ describe("SavedViewsPanel", () => {
     expect(handlers.onRename).toHaveBeenCalledWith("Mine", "Renamed");
   });
 
+  it("shows a read-only view as read-only, not as broken", () => {
+    // A shared view someone else owns: the controls are visibly disabled and
+    // the row says why. A control that silently does nothing is a bug the
+    // user gets blamed for.
+    renderPanel([
+      { name: "Theirs", search: "t.q=x", visibility: "team", readOnly: true },
+    ]);
+
+    expect(screen.getByText("Read-only")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename view" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Delete view" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Set as default" })
+    ).toBeDisabled();
+    // Applying someone else's view is still fine — that is the point of it.
+    expect(screen.getByRole("button", { name: "Apply view" })).toBeEnabled();
+  });
+
   it("says so when nothing has been saved", () => {
     renderPanel([]);
 

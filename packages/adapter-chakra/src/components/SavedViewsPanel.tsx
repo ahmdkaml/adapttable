@@ -48,7 +48,9 @@ const slots: SavedViewsPanelSlots = {
   Row: ({
     name,
     isDefault,
+    readOnly,
     defaultLabel,
+    readOnlyLabel,
     onApply,
     onRename,
     onMoveUp,
@@ -67,12 +69,22 @@ const slots: SavedViewsPanelSlots = {
       <Text fontSize="sm" flex="1">
         {name}
       </Text>
+      {readOnly && (
+        <Badge size="sm" variant="outline">
+          {readOnlyLabel}
+        </Badge>
+      )}
       {isDefault && <Badge size="sm">{defaultLabel}</Badge>}
       <Button size="xs" variant="outline" onClick={onApply}>
         {applyLabel}
       </Button>
-      {onRename && (
-        <Button size="xs" variant="outline" onClick={onRename}>
+      {(onRename ?? readOnly) && (
+        <Button
+          size="xs"
+          variant="outline"
+          onClick={onRename}
+          disabled={!onRename}
+        >
           {renameLabel}
         </Button>
       )}
@@ -94,10 +106,20 @@ const slots: SavedViewsPanelSlots = {
       >
         {"\u2193"}
       </Button>
-      <Button size="xs" variant="outline" onClick={onSetDefault}>
+      <Button
+        size="xs"
+        variant="outline"
+        onClick={onSetDefault}
+        disabled={!onSetDefault}
+      >
         {setDefaultLabel}
       </Button>
-      <Button size="xs" variant="outline" onClick={onRemove}>
+      <Button
+        size="xs"
+        variant="outline"
+        onClick={onRemove}
+        disabled={!onRemove}
+      >
         {removeLabel}
       </Button>
     </HStack>

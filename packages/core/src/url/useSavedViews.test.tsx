@@ -1,9 +1,9 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import * as env from "../utils/env";
 import { createMemoryAdapter } from "./adapter";
-import { useSavedViews } from "./useSavedViews";
+import { type SavedView, useSavedViews } from "./useSavedViews";
 
 function fakeStorage(initial: Record<string, string> = {}) {
   const store = new Map(Object.entries(initial));
@@ -64,6 +64,178 @@ describe("useSavedViews", () => {
 
   const names = (result: { current: { views: readonly { name: string }[] } }) =>
     result.current.views.map((view) => view.name);
+
+  describe("a store instead of this browser", () => {
+    const makeStore = (initial: SavedView[] = []) => {
+      const rows = [...initial];
+      return {
+        list: vi.fn(() => Promise.resolve([...rows])),
+        save: vi.fn((view: SavedView) => {
+          rows.push(view);
+          return Promise.resolve();
+        }),
+        remove: vi.fn((name: string) => {
+          const at = rows.findIndex((row) => row.name === name);
+          if (at >= 0) rows.splice(at, 1);
+          return Promise.resolve();
+        }),
+      };
+    };
+
+    const mount = (store: ReturnType<typeof makeStore>) => {
+      const adapter = createMemoryAdapter("t.q=ali");
+      const storage = fakeStorage();
+      return renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          store,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+    };
+
+    it("lists what the store returns", async () => {
+      const store = makeStore([{ name: "Team", search: "t.q=x" }]);
+      const { result } = mount(store);
+
+      await waitFor(() => {
+        expect(result.current.views.map((v) => v.name)).toEqual(["Team"]);
+      });
+    });
+
+    it("sends one view at a time, never the whole list", async () => {
+      // Sending the list back would overwrite what other people changed
+      // between the load and the save.
+      const store = makeStore();
+      const { result } = mount(store);
+      await waitFor(() => {
+        expect(store.list).toHaveBeenCalled();
+      });
+
+      act(() => result.current.save("Mine"));
+
+      await waitFor(() => {
+        expect(store.save).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "Mine" })
+        );
+      });
+    });
+
+    it("deletes through the store", async () => {
+      const store = makeStore([{ name: "Team", search: "t.q=x" }]);
+      const { result } = mount(store);
+      await waitFor(() => {
+        expect(result.current.views).toHaveLength(1);
+      });
+
+      act(() => result.current.remove("Team"));
+
+      await waitFor(() => {
+        expect(store.remove).toHaveBeenCalledWith("Team");
+      });
+    });
+
+    it("leaves the list empty when the store cannot be reached", async () => {
+      // A failed load must not throw into a render: the table still works,
+      // the views simply are not there.
+      const store = {
+        list: vi.fn(() => Promise.reject(new Error("offline"))),
+        save: vi.fn(() => Promise.resolve()),
+        remove: vi.fn(() => Promise.resolve()),
+      };
+      const { result } = mount(store);
+
+      await waitFor(() => {
+        expect(result.current.views).toEqual([]);
+      });
+    });
+
+    it("keeps the list on screen when a store save is rejected", async () => {
+      // Optimistic on purpose: the user's view stays where they put it, and
+      // a rejected write must not become an unhandled rejection that takes
+      // the page down over one failed save.
+      const store = {
+        list: vi.fn(() => Promise.resolve([])),
+        save: vi.fn(() => Promise.reject(new Error("denied"))),
+        remove: vi.fn(() => Promise.reject(new Error("denied"))),
+      };
+      const adapter = createMemoryAdapter("t.q=ali");
+      const storage = fakeStorage();
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          store,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+      await waitFor(() => {
+        expect(store.list).toHaveBeenCalled();
+      });
+
+      act(() => result.current.save("Mine"));
+      await waitFor(() => {
+        expect(store.save).toHaveBeenCalled();
+      });
+      expect(result.current.views.map((v) => v.name)).toEqual(["Mine"]);
+
+      act(() => result.current.remove("Mine"));
+      await waitFor(() => {
+        expect(store.remove).toHaveBeenCalled();
+      });
+      expect(result.current.views).toEqual([]);
+    });
+
+    it("stamps the visibility a new view is saved with", async () => {
+      const store = makeStore();
+      const adapter = createMemoryAdapter("t.q=ali");
+      const storage = fakeStorage();
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          store,
+          visibility: "team",
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+      await waitFor(() => {
+        expect(store.list).toHaveBeenCalled();
+      });
+
+      act(() => result.current.save("Shared"));
+
+      await waitFor(() => {
+        expect(store.save).toHaveBeenCalledWith(
+          expect.objectContaining({ visibility: "team" })
+        );
+      });
+    });
+
+    it("refuses to change a view this reader does not own", async () => {
+      // The panel disables the controls; the hook has to agree, or a
+      // disabled-looking UI would still be able to mutate through code.
+      const store = makeStore([
+        { name: "Theirs", search: "t.q=x", visibility: "team", readOnly: true },
+      ]);
+      const { result } = mount(store);
+      await waitFor(() => {
+        expect(result.current.views).toHaveLength(1);
+      });
+
+      act(() => result.current.rename("Theirs", "Mine"));
+      act(() => result.current.setDefault("Theirs"));
+      act(() => result.current.remove("Theirs"));
+
+      expect(result.current.views[0]?.name).toBe("Theirs");
+      expect(result.current.defaultView).toBeUndefined();
+      expect(store.remove).not.toHaveBeenCalled();
+    });
+  });
 
   describe("managing the list", () => {
     it("renames a view without moving it", () => {

@@ -58,6 +58,7 @@ export const ur: Required<TableLabels> = {
   moveViewDown: "نیچے لے جائیں",
   setDefaultView: "ڈیفالٹ بنائیں",
   defaultViewBadge: "ڈیفالٹ",
+  readOnlyViewBadge: "صرف پڑھنے کے لیے",
   loading: "لوڈ ہو رہا ہے…",
   loadMore: "مزید لوڈ کریں",
   filters: "فلٹرز",

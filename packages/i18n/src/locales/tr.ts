@@ -58,6 +58,7 @@ export const tr: Required<TableLabels> = {
   moveViewDown: "Aşağı taşı",
   setDefaultView: "Varsayılan yap",
   defaultViewBadge: "Varsayılan",
+  readOnlyViewBadge: "Salt okunur",
   loading: "Yükleniyor…",
   loadMore: "Daha fazla yükle",
   filters: "Filtreler",

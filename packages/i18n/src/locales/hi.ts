@@ -58,6 +58,7 @@ export const hi: Required<TableLabels> = {
   moveViewDown: "नीचे ले जाएँ",
   setDefaultView: "डिफ़ॉल्ट बनाएँ",
   defaultViewBadge: "डिफ़ॉल्ट",
+  readOnlyViewBadge: "केवल पढ़ने योग्य",
   loading: "लोड हो रहा है…",
   loadMore: "और लोड करें",
   filters: "फ़िल्टर",

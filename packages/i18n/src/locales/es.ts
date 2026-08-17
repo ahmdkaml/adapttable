@@ -58,6 +58,7 @@ export const es: Required<TableLabels> = {
   moveViewDown: "Bajar vista",
   setDefaultView: "Establecer como predeterminada",
   defaultViewBadge: "Predeterminada",
+  readOnlyViewBadge: "Solo lectura",
   loading: "Cargando…",
   loadMore: "Cargar más",
   filters: "Filtros",

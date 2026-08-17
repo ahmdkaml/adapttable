@@ -34,8 +34,17 @@ export interface SavedViewsPanelRowProps {
   readonly name: ReactNode;
   /** Whether this is the view the table opens with. */
   readonly isDefault: boolean;
+  /**
+   * Whether this reader may change it. A team view someone else owns is
+   * read-only, and the row must SHOW that: the controls arrive `undefined`,
+   * so a kit that renders them disabled says "not yours" rather than leaving
+   * a button that silently does nothing.
+   */
+  readonly readOnly: boolean;
   /** The badge caption for the default view. */
   readonly defaultLabel: string;
+  /** The badge caption for a view this reader cannot change. */
+  readonly readOnlyLabel: string;
   /** Apply it. */
   readonly onApply: () => void;
   /** Start renaming it. `undefined` while it is already being renamed. */
@@ -48,9 +57,9 @@ export interface SavedViewsPanelRowProps {
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
   /** Make it the default, or clear it when it already is. */
-  readonly onSetDefault: () => void;
+  readonly onSetDefault?: () => void;
   /** Delete it. */
-  readonly onRemove: () => void;
+  readonly onRemove?: () => void;
   /** Accessible names for the controls, already localized. */
   readonly applyLabel: string;
   readonly renameLabel: string;
@@ -152,6 +161,10 @@ export function SavedViewsPanelChrome({
     element?.focus();
   };
 
+  /** A handler, or `undefined` when this reader may not make that change. */
+  const allowed = (view: SavedView, run: () => void) =>
+    view.readOnly === true ? undefined : run;
+
   const commit = () => {
     if (editing !== null) onRename(editing, draft);
     setEditing(null);
@@ -165,7 +178,9 @@ export function SavedViewsPanelChrome({
           key={view.name}
           data-adapttable-part="saved-view-row"
           isDefault={view.isDefault === true}
+          readOnly={view.readOnly === true}
           defaultLabel={labels.defaultViewBadge}
+          readOnlyLabel={labels.readOnlyViewBadge}
           name={
             editing === view.name ? (
               <Input
@@ -188,31 +203,31 @@ export function SavedViewsPanelChrome({
           onRename={
             editing === view.name
               ? undefined
-              : () => {
+              : allowed(view, () => {
                   setEditing(view.name);
                   setDraft(view.name);
-                }
+                })
           }
           onMoveUp={
             index > 0
-              ? () => {
+              ? allowed(view, () => {
                   onMove(view.name, -1);
-                }
+                })
               : undefined
           }
           onMoveDown={
             index < views.length - 1
-              ? () => {
+              ? allowed(view, () => {
                   onMove(view.name, 1);
-                }
+                })
               : undefined
           }
-          onSetDefault={() => {
+          onSetDefault={allowed(view, () => {
             onSetDefault(view.name);
-          }}
-          onRemove={() => {
+          })}
+          onRemove={allowed(view, () => {
             onRemove(view.name);
-          }}
+          })}
           applyLabel={labels.applyView}
           renameLabel={labels.renameView}
           moveUpLabel={labels.moveViewUp}

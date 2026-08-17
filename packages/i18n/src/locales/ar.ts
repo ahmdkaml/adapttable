@@ -58,6 +58,7 @@ export const ar: Required<TableLabels> = {
   moveViewDown: "تحريك لأسفل",
   setDefaultView: "تعيين كافتراضي",
   defaultViewBadge: "افتراضي",
+  readOnlyViewBadge: "للقراءة فقط",
   loading: "جارٍ التحميل…",
   loadMore: "تحميل المزيد",
   filters: "عوامل التصفية",

@@ -47,7 +47,9 @@ const slots: SavedViewsPanelSlots = {
   Row: ({
     name,
     isDefault,
+    readOnly,
     defaultLabel,
+    readOnlyLabel,
     onApply,
     onRename,
     onMoveUp,
@@ -66,12 +68,17 @@ const slots: SavedViewsPanelSlots = {
       <Text size="2" style={{ flex: 1 }}>
         {name}
       </Text>
+      {readOnly && (
+        <Badge size="1" color="gray">
+          {readOnlyLabel}
+        </Badge>
+      )}
       {isDefault && <Badge size="1">{defaultLabel}</Badge>}
       <Button size="1" variant="soft" onClick={onApply}>
         {applyLabel}
       </Button>
-      {onRename && (
-        <Button size="1" variant="soft" onClick={onRename}>
+      {(onRename ?? readOnly) && (
+        <Button size="1" variant="soft" onClick={onRename} disabled={!onRename}>
           {renameLabel}
         </Button>
       )}
@@ -93,10 +100,15 @@ const slots: SavedViewsPanelSlots = {
       >
         {"\u2193"}
       </Button>
-      <Button size="1" variant="soft" onClick={onSetDefault}>
+      <Button
+        size="1"
+        variant="soft"
+        onClick={onSetDefault}
+        disabled={!onSetDefault}
+      >
         {setDefaultLabel}
       </Button>
-      <Button size="1" variant="soft" onClick={onRemove}>
+      <Button size="1" variant="soft" onClick={onRemove} disabled={!onRemove}>
         {removeLabel}
       </Button>
     </Flex>

@@ -35,6 +35,38 @@ export interface SavedView {
    * be true twice is not a default.
    */
   isDefault?: boolean;
+  /**
+   * Who the view is for. `"private"` is the default and needs no storage
+   * beyond this browser; `"team"` is one a store shares with other people.
+   */
+  visibility?: SavedViewVisibility;
+  /**
+   * Whether this reader may change it. A team view someone else owns arrives
+   * read-only, and the panel must show it as such rather than offering
+   * controls that will fail — a disabled control is information; a control
+   * that silently does nothing is a bug the user is blamed for.
+   */
+  readOnly?: boolean;
+}
+
+/** Who a saved view is for. */
+export type SavedViewVisibility = "private" | "team";
+
+/**
+ * Somewhere to keep views other than this browser.
+ *
+ * Async on purpose: the whole point is a server, and a synchronous interface
+ * would have to be faked by every implementation. `localStorage` remains the
+ * zero-config default, so a table that never passes a store keeps working
+ * offline with no server at all.
+ */
+export interface SavedViewsStore {
+  /** Every view this reader can see, in the order to show them. */
+  list: () => Promise<readonly SavedView[]>;
+  /** Create or replace one. */
+  save: (view: SavedView) => Promise<void>;
+  /** Delete one by name. */
+  remove: (name: string) => Promise<void>;
 }
 
 /** Options for {@link useSavedViews}. */
@@ -43,6 +75,14 @@ export interface UseSavedViewsOptions {
   storageKey: string;
   /** Storage backend. Defaults to `localStorage`; memory-only under SSR. */
   storage?: LayoutStorage;
+  /**
+   * Keep views somewhere other than this browser — a server, usually. Given
+   * one, it replaces `storage` entirely: two sources of truth for the same
+   * list is how a view comes back after being deleted.
+   */
+  store?: SavedViewsStore;
+  /** What `save` marks a new view as. Defaults to `"private"`. */
+  visibility?: SavedViewVisibility;
   /** The table's URL-state backend (same one the table uses). */
   urlAdapter?: UrlStateAdapter;
   /** The table's URL namespace — must match the table's `urlKey`. */
@@ -112,6 +152,15 @@ const BARE_PARAMS = [
   PARAM_PIVOT,
 ];
 
+/**
+ * A store that rejects leaves the list as the user last saw it rather than
+ * throwing into a render. The alternative — an unhandled rejection — takes
+ * the page down over a failed view save.
+ */
+function swallow(): void {
+  return undefined;
+}
+
 /** A view without its default flag, so the stored shape stays minimal. */
 function omitDefault(view: SavedView): SavedView {
   if (view.isDefault === undefined) return view;
@@ -167,6 +216,8 @@ function readStored(
 export function useSavedViews({
   storageKey,
   storage,
+  store,
+  visibility = "private",
   urlAdapter,
   urlKey,
   urlSync = true,
@@ -183,19 +234,47 @@ export function useSavedViews({
   // server's whenever views were saved (hydration mismatch).
   const [views, setViews] = useState<SavedView[]>([]);
   useEffect(() => {
+    if (store) return;
     setViews(readStored(backend, storageKey));
-  }, [backend, storageKey]);
+  }, [backend, storageKey, store]);
+
+  useEffect(() => {
+    if (!store) return undefined;
+    // A store's answer can arrive after the table has moved on; ignore a
+    // reply that is no longer the one being waited for.
+    let current = true;
+    void store.list().then(
+      (remote) => {
+        if (current) setViews([...remote]);
+      },
+      () => {
+        // A store that cannot be reached leaves the list empty rather than
+        // throwing into a render. The table still works; the views do not.
+        if (current) setViews([]);
+      }
+    );
+    return () => {
+      current = false;
+    };
+  }, [store]);
 
   const persist = useCallback(
-    (next: SavedView[]) => {
+    (next: SavedView[], changed?: SavedView, removed?: string) => {
       setViews(next);
+      if (store) {
+        // The store owns one view at a time, not the list: sending the whole
+        // list back would overwrite what other people changed meanwhile.
+        if (removed !== undefined) void store.remove(removed).catch(swallow);
+        if (changed) void store.save(changed).catch(swallow);
+        return;
+      }
       try {
         backend?.setItem(storageKey, JSON.stringify(next));
       } catch {
         // Storage may be full or denied — the in-memory list still works.
       }
     },
-    [backend, storageKey]
+    [backend, storageKey, store]
   );
 
   const save = useCallback(
@@ -203,10 +282,11 @@ export function useSavedViews({
       const view: SavedView = {
         name,
         search: captureTableParams(resolved.getSearch(), ns),
+        ...(visibility === "private" ? {} : { visibility }),
       };
-      persist([...views.filter((v) => v.name !== name), view]);
+      persist([...views.filter((v) => v.name !== name), view], view);
     },
-    [views, persist, resolved, ns]
+    [views, persist, resolved, ns, visibility]
   );
 
   const rename = useCallback(
@@ -216,11 +296,17 @@ export function useSavedViews({
       // Renaming onto an existing name would merge two views into one and
       // lose whichever lost the race. Refuse instead.
       if (views.some((view) => view.name === trimmed)) return;
-      if (!views.some((view) => view.name === from)) return;
+      const target = views.find((view) => view.name === from);
+      // A read-only view belongs to someone else. Refusing here means the
+      // panel's disabled controls and the hook agree, rather than the hook
+      // quietly accepting what the UI said was impossible.
+      if (!target || target.readOnly === true) return;
       persist(
         views.map((view) =>
           view.name === from ? { ...view, name: trimmed } : view
-        )
+        ),
+        { ...target, name: trimmed },
+        from
       );
     },
     [views, persist]
@@ -242,13 +328,17 @@ export function useSavedViews({
   const setDefault = useCallback(
     (name: string) => {
       if (!views.some((view) => view.name === name)) return;
+      const target = views.find((view) => view.name === name);
+      if (target?.readOnly === true) return;
+      // Toggling: naming the current default again clears it.
       const already = views.find((view) => view.isDefault)?.name === name;
+      const next: SavedView[] = views.map((view) => {
+        const isDefault = !already && view.name === name;
+        return isDefault ? { ...view, isDefault } : omitDefault(view);
+      });
       persist(
-        views.map((view) => {
-          // Toggling: naming the current default again clears it.
-          const isDefault = !already && view.name === name;
-          return isDefault ? { ...view, isDefault } : omitDefault(view);
-        })
+        next,
+        next.find((view) => view.name === name)
       );
     },
     [views, persist]
@@ -277,7 +367,15 @@ export function useSavedViews({
   );
 
   const remove = useCallback(
-    (name: string) => persist(views.filter((v) => v.name !== name)),
+    (name: string) => {
+      const target = views.find((view) => view.name === name);
+      if (!target || target.readOnly === true) return;
+      persist(
+        views.filter((v) => v.name !== name),
+        undefined,
+        name
+      );
+    },
     [views, persist]
   );
 

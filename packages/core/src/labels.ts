@@ -61,6 +61,7 @@ export const defaultLabels: Required<TableLabels> = {
   moveViewDown: "Move view down",
   setDefaultView: "Set as default",
   defaultViewBadge: "Default",
+  readOnlyViewBadge: "Read-only",
   loading: "Loading…",
   loadMore: "Load more",
   filters: "Filters",

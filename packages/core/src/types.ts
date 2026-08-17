@@ -502,6 +502,8 @@ export interface TableLabels {
   setDefaultView?: string;
   /** Marks the view the table opens with. */
   defaultViewBadge?: string;
+  /** Marks a shared view this reader cannot change. */
+  readOnlyViewBadge?: string;
   /** Banner: every row on this page is selected. */
   pageSelected?: (count: number) => string;
   /** Banner action: extend the selection to every matching row. */

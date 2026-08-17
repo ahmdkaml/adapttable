@@ -4284,6 +4284,43 @@ naming the same view again clears it, and only one view can ever hold it.
 Every operation is a no-op on a name that is not there, so a management UI
 cannot get the list into a state the table will not accept.
 
+## Keeping views on a server
+
+`localStorage` is the zero-config default: a table that passes nothing keeps
+working offline with no server at all. Pass a `store` and it takes over
+completely — two sources of truth for one list is how a view comes back after
+being deleted.
+
+```tsx
+const views = useSavedViews({
+  storageKey: "people-views",
+  visibility: "team", // what `save` marks a new view as
+  store: {
+    list: () => fetch("/api/views").then((r) => r.json()),
+    save: (view) =>
+      fetch("/api/views", { method: "POST", body: JSON.stringify(view) }),
+    remove: (name) => fetch(`/api/views/${name}`, { method: "DELETE" }),
+  },
+});
+```
+
+The store is asked for **one view at a time**, never the whole list: sending
+the list back would overwrite whatever other people changed between the load
+and the save. A store that cannot be reached leaves the list empty rather than
+throwing into a render — the table still works, the views simply are not there.
+
+### Views you may not change
+
+A view carries `visibility` (`"private"` or `"team"`) and `readOnly`. A team
+view someone else owns arrives read-only, and both halves honour it: the panel
+shows a **Read-only** badge with its rename, reorder, set-default and delete
+controls disabled, and the hook refuses those operations too. Applying it stays
+enabled, since that is the point of a shared view.
+
+Disabled rather than absent is deliberate. An absent control reads as "no such
+feature"; a disabled one reads as "not yours". A control that silently does
+nothing is a bug the user gets blamed for.
+
 ## The management panel
 
 The saved-views _menu_ answers "switch to a view". Keeping the list in order is

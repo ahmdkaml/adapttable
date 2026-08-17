@@ -58,6 +58,7 @@ export const zhTW: Required<TableLabels> = {
   moveViewDown: "下移",
   setDefaultView: "設為預設",
   defaultViewBadge: "預設",
+  readOnlyViewBadge: "唯讀",
   loading: "載入中…",
   loadMore: "載入更多",
   filters: "篩選",

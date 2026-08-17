@@ -58,6 +58,7 @@ export const zh: Required<TableLabels> = {
   moveViewDown: "下移",
   setDefaultView: "设为默认",
   defaultViewBadge: "默认",
+  readOnlyViewBadge: "只读",
   loading: "加载中…",
   loadMore: "加载更多",
   filters: "筛选",

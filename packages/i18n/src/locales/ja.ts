@@ -58,6 +58,7 @@ export const ja: Required<TableLabels> = {
   moveViewDown: "下へ移動",
   setDefaultView: "既定に設定",
   defaultViewBadge: "既定",
+  readOnlyViewBadge: "読み取り専用",
   loading: "読み込み中…",
   loadMore: "さらに読み込む",
   filters: "フィルター",

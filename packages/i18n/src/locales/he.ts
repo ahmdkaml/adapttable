@@ -58,6 +58,7 @@ export const he: Required<TableLabels> = {
   moveViewDown: "הזז למטה",
   setDefaultView: "הגדר כברירת מחדל",
   defaultViewBadge: "ברירת מחדל",
+  readOnlyViewBadge: "לקריאה בלבד",
   loading: "טוען…",
   loadMore: "טען עוד",
   filters: "מסננים",
