@@ -83,6 +83,11 @@ const views = useSavedViews({
     save: (view) =>
       fetch("/api/views", { method: "POST", body: JSON.stringify(view) }),
     remove: (name) => fetch(`/api/views/${name}`, { method: "DELETE" }),
+    reorder: (names) =>
+      fetch("/api/views/order", {
+        method: "PUT",
+        body: JSON.stringify(names),
+      }),
   },
 });
 ```
@@ -96,6 +101,22 @@ One gesture can be more than one write. Switching the default saves **two**
 views — the one that gains the flag and the one that loses it — because a
 cleared flag that never reached the store comes back set, and then two views
 claim to be the default.
+
+### Order
+
+`reorder` is where the list's order lives. Order belongs to the list rather than
+to any one view, so it has nowhere to go through `save`, and it travels as names
+so that persisting an order carries no view contents with it and cannot overwrite
+someone else's edit. It arrives after the same operation's own `save` and
+`remove` writes have landed, so a renamed view's new name is already known by
+the time its place in the list turns up.
+
+`reorder` is **optional**, and a store without it keeps working: `list`, `save`
+and `remove` carry saving, renaming, deleting and the default exactly as before.
+What such a store cannot do is remember an order — `move` reorders the list on
+screen for that session, and the next `list()` decides the order again, as does
+where a renamed view lands. Implement `reorder` when reordering has to survive a
+reload.
 
 ### Views you may not change
 

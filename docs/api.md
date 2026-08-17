@@ -848,8 +848,10 @@ from your kit and pass the views plus the five handlers.
 `SavedViewsStore` (`list` / `save` / `remove`, all async) that replaces
 localStorage, a `SavedViewVisibility` (`"private"` | `"team"`) for new views,
 and a `SavedViewMigration` for views behind `SAVED_VIEW_VERSION`. Its result
-adds `rename`, `move`, `setDefault`, `defaultView` and `reload`. See
-[saved views](./saved-views.md).
+adds `rename`, `move`, `setDefault`, `defaultView` and `reload`. A store's
+fourth member, `reorder(names)`, is optional and persists the list's order —
+without it a store keeps every other operation and `move` reorders for the
+session only. See [saved views](./saved-views.md).
 
 **The saved-views management panel.** `SavedViewsPanelChrome` from
 `@adapttable/core/adapter` lists every saved view with its apply, rename,

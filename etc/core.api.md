@@ -3109,6 +3109,7 @@ export type SavedViewMigration = (view: SavedView, from: number) => SavedView | 
 export interface SavedViewsStore {
     list: () => Promise<readonly SavedView[]>;
     remove: (name: string) => Promise<void>;
+    reorder?: (names: readonly string[]) => Promise<void>;
     save: (view: SavedView) => Promise<void>;
 }
 

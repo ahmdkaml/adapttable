@@ -95,6 +95,28 @@ export interface SavedViewsStore {
   save: (view: SavedView) => Promise<void>;
   /** Delete one by name. */
   remove: (name: string) => Promise<void>;
+  /**
+   * Persist the ORDER of the list — names only, in the order a later
+   * {@link SavedViewsStore.list} should answer with.
+   *
+   * Order belongs to the list, not to any one view, so it has nowhere to go
+   * through `save`. It travels as names rather than views for the same reason
+   * `save` takes one view at a time: a whole-list write would carry every
+   * view's contents with it and overwrite whatever someone else changed
+   * meanwhile. Names carry the ordering and nothing else.
+   *
+   * Optional, so a store written before this existed keeps compiling and
+   * keeps working — saving, renaming, removing and switching the default all
+   * go through `save` and `remove` as before. What such a store cannot do is
+   * remember an order: `move` reorders the list on screen for the session,
+   * and the next `list()` decides the order again. Implement this when
+   * reordering has to survive a reload.
+   *
+   * Called after the `save` and `remove` writes of the same operation have
+   * settled, so a rename's new name is already known by the time its place in
+   * the list arrives.
+   */
+  reorder?: (names: readonly string[]) => Promise<void>;
 }
 
 /** Options for {@link useSavedViews}. */
@@ -150,7 +172,9 @@ export interface UseSavedViewsResult {
   /**
    * Move a view one step through the list. Past either end does nothing
    * rather than wrapping, and a view this reader may not change does not move
-   * at all.
+   * at all. With a `store`, the new order reaches it through
+   * {@link SavedViewsStore.reorder}; a store without that member reorders for
+   * the session only.
    */
   move: (name: string, delta: -1 | 1) => void;
   /**
@@ -265,6 +289,8 @@ interface StoreWrites {
   readonly saved?: readonly SavedView[];
   /** A name whose stored copy must go. */
   readonly removed?: string;
+  /** Whether the list order changed, which `reorder` persists. */
+  readonly reordered?: boolean;
 }
 
 /** A view without its default flag, so the stored shape stays minimal. */
@@ -386,12 +412,24 @@ export function useSavedViews({
       if (store) {
         // The store owns one view at a time, not the list: sending the whole
         // list back would overwrite what other people changed meanwhile. So
-        // every stale view is written on its own.
+        // every stale view is written on its own, and the list's own property
+        // — its order — goes through `reorder` as names, carrying no view
+        // contents with it.
+        const written: Promise<void>[] = [];
         if (writes.removed !== undefined) {
-          void store.remove(writes.removed).catch(swallow);
+          written.push(store.remove(writes.removed).catch(swallow));
         }
         for (const view of writes.saved ?? []) {
-          void store.save(view).catch(swallow);
+          written.push(store.save(view).catch(swallow));
+        }
+        if (writes.reordered && store.reorder) {
+          const order = next.map((view) => view.name);
+          // Order goes last, once the writes it describes have settled: a
+          // rename reaches a store as a delete plus a save, and a store hearing
+          // the new name first in a reorder has nothing to order yet.
+          void Promise.all(written)
+            .then(() => store.reorder?.(order))
+            .catch(swallow);
         }
         return;
       }
@@ -435,7 +473,15 @@ export function useSavedViews({
         views.map((view) =>
           view.name === from ? { ...view, name: trimmed } : view
         ),
-        { saved: [{ ...target, name: trimmed }], removed: from }
+        {
+          saved: [{ ...target, name: trimmed }],
+          removed: from,
+          // A rename keeps the view's place, and to a store that place is new
+          // information: the view arrives there as a delete plus a save under
+          // a name the store has never seen, which it would otherwise file
+          // wherever new views go.
+          reordered: true,
+        }
       );
     },
     [views, persist]
@@ -455,7 +501,9 @@ export function useSavedViews({
       const next = [...views];
       next.splice(index, 1);
       next.splice(target, 0, moved);
-      persist(next);
+      // Nothing about either view changed — only where they sit — so this is
+      // the one operation with no per-view write at all.
+      persist(next, { reordered: true });
     },
     [views, persist]
   );

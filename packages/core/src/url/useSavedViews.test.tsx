@@ -561,9 +561,9 @@ describe("useSavedViews", () => {
 
     /**
      * A store that answers the way a server does: `save` REPLACES by name
-     * rather than appending, and `list` reads back what the store actually
-     * holds — so a fresh mount shows what reached the store, never what the
-     * previous hook remembered.
+     * rather than appending, `reorder` files the rows in the order it is given,
+     * and `list` reads back what the store actually holds — so a fresh mount
+     * shows what reached the store, never what the previous hook remembered.
      */
     const makeServer = (initial: readonly SavedView[] = []) => {
       const rows: SavedView[] = initial.map((row) => ({ ...row }));
@@ -581,8 +581,25 @@ describe("useSavedViews", () => {
           if (at >= 0) rows.splice(at, 1);
           return Promise.resolve();
         }),
+        reorder: vi.fn((names: readonly string[]) => {
+          rows.sort((a, b) => names.indexOf(a.name) - names.indexOf(b.name));
+          return Promise.resolve();
+        }),
       };
     };
+
+    /**
+     * The same server as a host wrote it before `reorder` existed — the
+     * compatibility case: an implementation with the three original members
+     * and nothing else.
+     */
+    const beforeReorder = (
+      server: ReturnType<typeof makeServer>
+    ): SavedViewsStore => ({
+      list: server.list,
+      save: server.save,
+      remove: server.remove,
+    });
 
     const open = (store: SavedViewsStore) => {
       const storage = fakeStorage();
@@ -652,6 +669,36 @@ describe("useSavedViews", () => {
       expect(reloaded.current.defaultView?.name).toBe("C");
     });
 
+    it("persists a move, so the order survives a reload", async () => {
+      // The move used to reach nothing at all: `persist` had no way to say the
+      // ORDER changed, so reordering worked on screen and vanished on reload.
+      const store = makeServer([A, B]);
+      const result = await opened(store, 2);
+
+      act(() => result.current.move("B", -1));
+      expect(names(result)).toEqual(["B", "A"]);
+      await waitFor(() => {
+        expect(store.reorder).toHaveBeenCalledWith(["B", "A"]);
+      });
+      // Order travels as names: no view's contents are rewritten by a move.
+      expect(store.save).not.toHaveBeenCalled();
+
+      const reloaded = await opened(store, 2);
+      expect(names(reloaded)).toEqual(["B", "A"]);
+    });
+
+    it("tells the store nothing when a move stops at the ends", async () => {
+      const store = makeServer([A, B]);
+      const result = await opened(store, 2);
+
+      act(() => result.current.move("A", -1));
+      act(() => result.current.move("B", 1));
+      act(() => result.current.move("ghost", 1));
+
+      expect(names(result)).toEqual(["A", "B"]);
+      expect(store.reorder).not.toHaveBeenCalled();
+    });
+
     it("refuses to move a view this reader does not own", async () => {
       // The panel disables a read-only row's move controls; the hook has to
       // agree, exactly as it does for rename, set-default and delete.
@@ -664,6 +711,77 @@ describe("useSavedViews", () => {
       act(() => result.current.move("Theirs", 1));
 
       expect(names(result)).toEqual(["Theirs", "B"]);
+      expect(store.reorder).not.toHaveBeenCalled();
+    });
+
+    it("keeps a renamed view in its place", async () => {
+      // A rename reaches a store as a delete plus a save under a name it has
+      // never seen, which files the view wherever new views go. The order goes
+      // with it, and only after those two writes have landed.
+      const store = makeServer([A, B]);
+      const result = await opened(store, 2);
+
+      act(() => result.current.rename("A", "Renamed"));
+      await waitFor(() => {
+        expect(store.reorder).toHaveBeenCalledWith(["Renamed", "B"]);
+      });
+
+      const reloaded = await opened(store, 2);
+      expect(names(reloaded)).toEqual(["Renamed", "B"]);
+    });
+
+    it("saves, renames, removes and switches the default through a store that cannot reorder", async () => {
+      // The compatibility case: `reorder` is optional, so an implementation
+      // written before it existed keeps working — including both writes of a
+      // default switch.
+      const server = makeServer([{ ...A, isDefault: true }, B]);
+      const store = beforeReorder(server);
+      const result = await opened(store, 2);
+
+      act(() => result.current.setDefault("B"));
+      await waitFor(() => {
+        expect(server.save).toHaveBeenCalledTimes(2);
+      });
+
+      act(() => result.current.rename("B", "Renamed"));
+      await waitFor(() => {
+        expect(server.remove).toHaveBeenCalledWith("B");
+      });
+
+      act(() => result.current.save("Fresh"));
+      await waitFor(() => {
+        expect(server.save).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "Fresh" })
+        );
+      });
+
+      act(() => result.current.remove("A"));
+      await waitFor(() => {
+        expect(server.remove).toHaveBeenCalledWith("A");
+      });
+
+      const reloaded = await opened(beforeReorder(server), 2);
+      expect(names(reloaded)).toEqual(["Renamed", "Fresh"]);
+      expect(reloaded.current.views.filter((v) => v.isDefault)).toHaveLength(1);
+      expect(reloaded.current.defaultView?.name).toBe("Renamed");
+    });
+
+    it("reorders on screen only when the store cannot keep an order", async () => {
+      // Predictable degradation rather than a silent one: the move lands where
+      // the user put it for the session, and the next list() decides again. A
+      // whole-list write is NOT the fallback — it would overwrite whatever
+      // someone else changed meanwhile.
+      const server = makeServer([A, B]);
+      const result = await opened(beforeReorder(server), 2);
+
+      act(() => result.current.move("B", -1));
+
+      expect(names(result)).toEqual(["B", "A"]);
+      expect(server.save).not.toHaveBeenCalled();
+      expect(server.remove).not.toHaveBeenCalled();
+
+      const reloaded = await opened(beforeReorder(server), 2);
+      expect(names(reloaded)).toEqual(["A", "B"]);
     });
   });
 
