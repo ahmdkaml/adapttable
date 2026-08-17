@@ -45,6 +45,7 @@ const DOCS = [
   "url-state.md",
   "export-pdf.md",
   "ssr-rsc.md",
+  "server-queries.md",
   "customization.md",
   "i18n-rtl.md",
   "api.md",

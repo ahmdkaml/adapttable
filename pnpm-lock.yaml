@@ -690,6 +690,12 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
 
+  packages/server:
+    dependencies:
+      '@adapttable/core':
+        specifier: workspace:^
+        version: link:../core
+
   starters/antd:
     dependencies:
       '@adapttable/antd':

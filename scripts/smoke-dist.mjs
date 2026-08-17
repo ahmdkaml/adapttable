@@ -60,12 +60,18 @@ function exportTargets(pkgJson) {
  *
  * Every hook-bearing entry needs the directive or a Next.js App Router build
  * fails on the first `useState` with an error that points at the application
- * rather than at us. `@adapttable/i18n` is the deliberate exception: it is
- * plain data and pure functions, so leaving the directive off is what keeps it
- * importable from a server component.
+ * rather than at us.
+ *
+ * Two packages are the deliberate exceptions, for the same reason from
+ * opposite ends: `@adapttable/i18n` is plain data and pure functions, and
+ * `@adapttable/server` runs in a route handler by definition. Marking either
+ * as a client module is what would break them — the directive is a boundary,
+ * and a boundary in the wrong place keeps code OUT of the place it belongs.
  */
+const SERVER_SAFE = new Set(["i18n", "server"]);
+
 function clientDirectiveExpectation(pkg) {
-  return pkg === "i18n" ? "absent" : "present";
+  return SERVER_SAFE.has(pkg) ? "absent" : "present";
 }
 
 /** Does this built file open with the `"use client"` directive? */
@@ -102,7 +108,7 @@ for (const pkg of LIB_PACKAGES) {
   }
 
   // The client-boundary directive: present on everything that ships hooks,
-  // deliberately absent on the one package meant to run on the server.
+  // deliberately absent on the packages meant to run on a server.
   const expectation = clientDirectiveExpectation(pkg);
   const runtimeEntries = targets
     .filter((target) => /\.(js|cjs|mjs)$/.test(target))

@@ -860,6 +860,14 @@ kit-supplied pieces — `SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`
 buttons, and renaming is an inline input that Escape abandons. See
 [saved views](./saved-views.md).
 
+**Server queries.** `parseTableQuery(input, schema)` from
+`@adapttable/server` validates a request against a `QuerySchema` and returns a
+`ServerTableQuery` — page, limit, offset, search, sort chain, grouping,
+filters, filter tree, pivot and cursor, plus a `QueryRejection[]` naming
+everything it refused. `QueryInput` is a `Request`, `URL`, query string or
+`URLSearchParams`; `ServerFilterValue` is one filter's value. See
+[server queries](./server-queries.md).
+
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move
 fields between them; `PivotPanelChromeProps` takes the fields, the config and
