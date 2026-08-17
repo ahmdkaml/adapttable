@@ -35,6 +35,7 @@ export const sidebar = [
       { label: "Row styling and heights", slug: "row-styling" },
       { label: "Row grouping", slug: "row-grouping" },
       { label: "Pivot tables", slug: "pivot" },
+      { label: "Formulas", slug: "formulas" },
       { label: "Server queries", slug: "server-queries" },
       { label: "Tree data", slug: "tree-data" },
       { label: "Column management", slug: "column-management" },
