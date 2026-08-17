@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { KitSwitcher, readKitFromUrl } from "./kitDemos";
 import { KitProvider, kitTable } from "./kitProviders";
+import { useNavHeight } from "./sections";
 
 interface BigPerson {
   id: number;
@@ -300,6 +301,7 @@ function ServerScaleTable({
     },
   });
   const Table = kitTable<BigPerson>(kit);
+  const navHeight = useNavHeight();
   return (
     <KitProvider kit={kit} dark={dark}>
       <Table
@@ -313,7 +315,7 @@ function ServerScaleTable({
         estimateRowSize={48}
         rowHeight={variableHeight ? variableRowHeight : undefined}
         stickyHeader
-        stickyTop={62}
+        stickyTop={navHeight}
       />
     </KitProvider>
   );
@@ -481,6 +483,7 @@ function FrontendScaleTable({
     defaults: { limit: all ? total : 500 },
   });
   const Table = kitTable<BigPerson>(kit);
+  const navHeight = useNavHeight();
   return (
     <KitProvider kit={kit} dark={dark}>
       {/* The benchmark reads these to know the burst finished and how long
@@ -507,7 +510,7 @@ function FrontendScaleTable({
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.
           stickyHeader
-          stickyTop={62}
+          stickyTop={navHeight}
           onCellEdit={
             edit
               ? (row, _key, nextValue) => {

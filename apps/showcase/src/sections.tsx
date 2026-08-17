@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { Check, External, Moon, Sun } from "./sectionIcons";
 
@@ -230,6 +230,31 @@ export function AppNav({
       </div>
     </header>
   );
+}
+
+/** The nav's own default height, and the offset before it is measured. */
+const NAV_HEIGHT = 63;
+
+/**
+ * How far down the page the sticky nav reaches, for a table that pins its
+ * header under it (`stickyTop`).
+ *
+ * Measured rather than written down: the page-tab strip wraps, so the bar takes
+ * a third line — 20px more — on a desktop narrower than 1140px, and a header
+ * pinned to a fixed 62px would slide under the nav there.
+ */
+export function useNavHeight(): number {
+  const [height, setHeight] = useState(NAV_HEIGHT);
+  useEffect(() => {
+    const nav = document.querySelector(".nav");
+    if (!nav) return;
+    const observer = new ResizeObserver(() => {
+      setHeight(Math.ceil(nav.getBoundingClientRect().height));
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
+  return height;
 }
 
 const DOCS_URL = "https://orwa-mahmoud.github.io/adapttable/";

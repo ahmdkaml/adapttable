@@ -87,18 +87,40 @@ a {
 .nav__inner {
   display: flex;
   align-items: center;
-  gap: 28px;
-  height: 62px;
+  gap: 24px;
+  /* `min-height`, not `height`: below 1140px the tab strip needs a third line,
+     and the bar grows for it instead of spilling out of it. */
+  min-height: 62px;
+  padding-block: 6px;
 }
+/* Eighteen destinations do not fit one row until roughly 1800px, so the strip
+   is the part that gives: `flex-wrap` drops its min-content width to its
+   widest single tab, which is what keeps the bar — and therefore the document —
+   inside every viewport instead of scrolling the page sideways. The metrics are
+   measured, not guessed: at this column gap the strip takes two lines from
+   1140px up, and two lines of tabs sit inside the 62px bar, so the sticky
+   chrome keeps its height on a normal desktop. */
 .nav__links {
   display: flex;
-  gap: 22px;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  column-gap: 12px;
+  row-gap: 2px;
   margin-inline-start: 14px;
+}
+/* The wordmark and the actions never absorb the deficit — only the strip that
+   can wrap does. */
+.nav__inner > .wm,
+.nav__right {
+  flex: 0 0 auto;
 }
 .nav__links a {
   color: var(--ink-2);
   font-size: 14px;
   font-weight: 500;
+  /* Each tab is one line; the strip wraps between tabs, never inside a label. */
+  white-space: nowrap;
   transition: color 0.15s;
 }
 .nav__links a:hover {
