@@ -380,6 +380,10 @@ export {
   type UrlStateAdapter,
 } from "./url/adapter";
 export {
+  routerUrlAdapter,
+  type RouterUrlAdapterOptions,
+} from "./url/routerAdapter";
+export {
   useColumnLayoutUrlState,
   type UseColumnLayoutUrlStateOptions,
   type UseColumnLayoutUrlStateResult,

@@ -76,27 +76,59 @@ interface UrlStateAdapter {
   when URL sync is disabled (the table still gets fully working local state).
 
 Pass a custom adapter as `urlAdapter` on any `<DataTable>` (the headless
-hooks call the option `adapter`). Router recipes:
+hooks call the option `adapter`).
+
+## Your router
+
+Every router recipe is the same shape: read the current query string, and
+navigate to a new one. `routerUrlAdapter` is that shape — its
+`RouterUrlAdapterOptions` are the router's current `search` and a `navigate` —
+so each router takes two lines instead of twelve — and it depends on no router, which is why it can
+ship at all.
+
+Memoize it on the search: the adapter is a value, and rebuilding it is how the
+table learns the route changed.
 
 ### react-router
 
 ```tsx
 import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import type { UrlStateAdapter } from "@adapttable/core";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { routerUrlAdapter } from "@adapttable/core";
 
-export function useReactRouterAdapter(): UrlStateAdapter {
+export function useReactRouterAdapter() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const location = useLocation();
   return useMemo(
-    () => ({
-      getSearch: () => location.search.replace(/^\?/, ""),
-      setSearch: (search, opts) =>
-        navigate({ search }, { replace: !opts?.push }),
-      // react-router re-renders on navigation; the hook re-reads getSearch.
-      subscribe: () => () => undefined,
-    }),
-    [location.search, navigate]
+    () =>
+      routerUrlAdapter({
+        search: params.toString(),
+        navigate: (search, { push }) =>
+          navigate({ search }, { replace: !push }),
+      }),
+    [params, navigate]
+  );
+}
+```
+
+### TanStack Router
+
+```tsx
+import { useMemo } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { routerUrlAdapter } from "@adapttable/core";
+
+export function useTanStackAdapter() {
+  const search = useRouterState({ select: (s) => s.location.searchStr });
+  const navigate = useNavigate();
+  return useMemo(
+    () =>
+      routerUrlAdapter({
+        search,
+        navigate: (next, { push }) =>
+          navigate({ to: ".", search: next, replace: !push }),
+      }),
+    [search, navigate]
   );
 }
 ```
@@ -107,22 +139,22 @@ export function useReactRouterAdapter(): UrlStateAdapter {
 "use client";
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { UrlStateAdapter } from "@adapttable/core";
+import { routerUrlAdapter } from "@adapttable/core";
 
-export function useNextAdapter(): UrlStateAdapter {
-  const router = useRouter();
-  const pathname = usePathname();
+export function useNextAdapter() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   return useMemo(
-    () => ({
-      getSearch: () => searchParams.toString(),
-      setSearch: (search, opts) => {
-        const url = search ? `${pathname}?${search}` : pathname;
-        if (opts?.push) router.push(url, { scroll: false });
-        else router.replace(url, { scroll: false });
-      },
-      subscribe: () => () => undefined,
-    }),
+    () =>
+      routerUrlAdapter({
+        search: searchParams.toString(),
+        navigate: (search, { push }) => {
+          const url = search ? `${pathname}?${search}` : pathname;
+          if (push) router.push(url, { scroll: false });
+          else router.replace(url, { scroll: false });
+        },
+      }),
     [searchParams, pathname, router]
   );
 }
@@ -136,6 +168,15 @@ export function useNextAdapter(): UrlStateAdapter {
   urlAdapter={useNextAdapter()}
 />
 ```
+
+`push` is opt-in throughout: the default is a replace, because a table's every
+keystroke is not a page anyone wants to walk back through.
+
+The adapter reports no external changes on purpose. A router re-renders its
+tree on navigation, so the hook holding the adapter runs again and reads the
+new search itself — subscribing would deliver the same change twice. The one
+way to hold it wrong is to pass a `search` that does not update, which is why
+it takes a value rather than a getter.
 
 ## Turning URL sync off
 

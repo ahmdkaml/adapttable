@@ -860,6 +860,12 @@ kit-supplied pieces — `SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`
 buttons, and renaming is an inline input that Escape abandons. See
 [saved views](./saved-views.md).
 
+**Your router's URL adapter.** `routerUrlAdapter(options)` builds a
+`UrlStateAdapter` from a router's current search string and its navigate;
+`RouterUrlAdapterOptions` is that pair. It depends on no router, so React
+Router, TanStack Router and Next.js all take two lines. See
+[URL state](./url-state.md).
+
 **Server queries.** `parseTableQuery(input, schema)` from
 `@adapttable/server` validates a request against a `QuerySchema` and returns a
 `ServerTableQuery` — page, limit, offset, search, sort chain, grouping,
