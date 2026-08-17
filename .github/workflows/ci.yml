@@ -177,6 +177,12 @@ jobs:
         if: needs.changes.outputs.dedupe != 'true'
         run: pnpm check:docsurface
 
+      # Reads packages/*/src only, so it follows the code steps rather than
+      # the doc guards: a docs-only diff cannot change which parts a kit names.
+      - name: Check every structural part is named in every kit
+        if: needs.changes.outputs.run-packages == 'true'
+        run: pnpm check:parts
+
       - name: Lint
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint
