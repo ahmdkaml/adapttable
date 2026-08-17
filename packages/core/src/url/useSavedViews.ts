@@ -29,6 +29,12 @@ export interface SavedView {
   name: string;
   /** The table-scoped query string (only this table's params). */
   search: string;
+  /**
+   * Whether this is the view the table opens with. At most one view carries
+   * it — setting it on another clears the first, because "default" that can
+   * be true twice is not a default.
+   */
+  isDefault?: boolean;
 }
 
 /** Options for {@link useSavedViews}. */
@@ -61,6 +67,24 @@ export interface UseSavedViewsResult {
   apply: (name: string) => void;
   /** Remove a saved view. */
   remove: (name: string) => void;
+  /**
+   * Rename a view, keeping its place in the list. A no-op when the name is
+   * unknown or the new name is taken — silently merging two views is how a
+   * rename loses one.
+   */
+  rename: (from: string, to: string) => void;
+  /**
+   * Move a view one step through the list. Past either end does nothing
+   * rather than wrapping.
+   */
+  move: (name: string, delta: -1 | 1) => void;
+  /**
+   * Make a view the default, or clear the default by passing its own name
+   * again. Only one view can hold it.
+   */
+  setDefault: (name: string) => void;
+  /** The default view, when one is set. */
+  defaultView: SavedView | undefined;
 }
 
 const BARE_PARAMS = [
@@ -87,6 +111,12 @@ const BARE_PARAMS = [
   PARAM_DENSITY,
   PARAM_PIVOT,
 ];
+
+/** A view without its default flag, so the stored shape stays minimal. */
+function omitDefault(view: SavedView): SavedView {
+  if (view.isDefault === undefined) return view;
+  return { name: view.name, search: view.search };
+}
 
 /** Whether a param key belongs to the table at namespace `ns`. */
 function ownsParam(key: string, ns: string): boolean {
@@ -179,6 +209,51 @@ export function useSavedViews({
     [views, persist, resolved, ns]
   );
 
+  const rename = useCallback(
+    (from: string, to: string) => {
+      const trimmed = to.trim();
+      if (trimmed === "" || from === trimmed) return;
+      // Renaming onto an existing name would merge two views into one and
+      // lose whichever lost the race. Refuse instead.
+      if (views.some((view) => view.name === trimmed)) return;
+      if (!views.some((view) => view.name === from)) return;
+      persist(
+        views.map((view) =>
+          view.name === from ? { ...view, name: trimmed } : view
+        )
+      );
+    },
+    [views, persist]
+  );
+
+  const move = useCallback(
+    (name: string, delta: -1 | 1) => {
+      const index = views.findIndex((view) => view.name === name);
+      const target = index + delta;
+      if (index < 0 || target < 0 || target >= views.length) return;
+      const next = [...views];
+      const [moved] = next.splice(index, 1);
+      if (moved) next.splice(target, 0, moved);
+      persist(next);
+    },
+    [views, persist]
+  );
+
+  const setDefault = useCallback(
+    (name: string) => {
+      if (!views.some((view) => view.name === name)) return;
+      const already = views.find((view) => view.isDefault)?.name === name;
+      persist(
+        views.map((view) => {
+          // Toggling: naming the current default again clears it.
+          const isDefault = !already && view.name === name;
+          return isDefault ? { ...view, isDefault } : omitDefault(view);
+        })
+      );
+    },
+    [views, persist]
+  );
+
   const apply = useCallback(
     (name: string) => {
       const view = views.find((v) => v.name === name);
@@ -206,5 +281,14 @@ export function useSavedViews({
     [views, persist]
   );
 
-  return { views, save, apply, remove };
+  return {
+    views,
+    save,
+    apply,
+    remove,
+    rename,
+    move,
+    setDefault,
+    defaultView: views.find((view) => view.isDefault),
+  };
 }

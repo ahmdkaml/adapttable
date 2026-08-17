@@ -48,6 +48,123 @@ describe("useSavedViews", () => {
     expect(after.get("other.q")).toBe("keep");
   });
 
+  const managed = (initial: Record<string, string> = {}) => {
+    const storage = fakeStorage(initial);
+    const adapter = createMemoryAdapter("t.q=ali");
+    const hook = renderHook(() =>
+      useSavedViews({
+        storageKey: "views",
+        storage,
+        urlAdapter: adapter,
+        urlKey: "t",
+      })
+    );
+    return { ...hook, storage, adapter };
+  };
+
+  const names = (result: { current: { views: readonly { name: string }[] } }) =>
+    result.current.views.map((view) => view.name);
+
+  describe("managing the list", () => {
+    it("renames a view without moving it", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+      act(() => result.current.save("B"));
+
+      act(() => result.current.rename("A", "Renamed"));
+
+      expect(names(result)).toEqual(["Renamed", "B"]);
+    });
+
+    it("refuses a rename that would merge two views", () => {
+      // Silently merging is how a rename loses one of them.
+      const { result } = managed();
+      act(() => result.current.save("A"));
+      act(() => result.current.save("B"));
+
+      act(() => result.current.rename("A", "B"));
+
+      expect(names(result)).toEqual(["A", "B"]);
+    });
+
+    it("ignores a rename to nothing, or of a view that is not there", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+
+      act(() => result.current.rename("A", "   "));
+      act(() => result.current.rename("ghost", "C"));
+
+      expect(names(result)).toEqual(["A"]);
+    });
+
+    it("moves a view one step, and stops at the ends", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+      act(() => result.current.save("B"));
+
+      act(() => result.current.move("B", -1));
+      expect(names(result)).toEqual(["B", "A"]);
+
+      act(() => result.current.move("B", -1));
+      expect(names(result)).toEqual(["B", "A"]);
+
+      act(() => result.current.move("A", 1));
+      expect(names(result)).toEqual(["B", "A"]);
+    });
+
+    it("ignores a move of a view that is not there", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+
+      act(() => result.current.move("ghost", 1));
+
+      expect(names(result)).toEqual(["A"]);
+    });
+
+    it("keeps at most one default", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+      act(() => result.current.save("B"));
+
+      act(() => result.current.setDefault("A"));
+      expect(result.current.defaultView?.name).toBe("A");
+
+      act(() => result.current.setDefault("B"));
+      expect(result.current.defaultView?.name).toBe("B");
+      expect(result.current.views.filter((v) => v.isDefault)).toHaveLength(1);
+    });
+
+    it("clears the default when the same view is named again", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+
+      act(() => result.current.setDefault("A"));
+      act(() => result.current.setDefault("A"));
+
+      expect(result.current.defaultView).toBeUndefined();
+    });
+
+    it("ignores a default for a view that is not there", () => {
+      const { result } = managed();
+      act(() => result.current.save("A"));
+
+      act(() => result.current.setDefault("ghost"));
+
+      expect(result.current.defaultView).toBeUndefined();
+    });
+
+    it("persists the whole managed list, default included", () => {
+      const { result, storage } = managed();
+      act(() => result.current.save("A"));
+      act(() => result.current.setDefault("A"));
+
+      const stored: unknown = JSON.parse(storage.getItem("views") ?? "[]");
+      expect(stored).toEqual([
+        { name: "A", search: expect.any(String), isDefault: true },
+      ]);
+    });
+  });
+
   it("captures every piece of state the table can put in a URL", () => {
     // The expensive parts are the ones a view was quietly dropping: an
     // advanced filter tree, which groups are collapsed, the density, and the

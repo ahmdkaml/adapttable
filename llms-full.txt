@@ -4266,6 +4266,24 @@ filter tree, grouping and which groups are collapsed, the whole column layout
 and the [pivot configuration](./pivot.md). The parts that take longest to
 rebuild by hand are exactly the parts worth capturing.
 
+## Managing the list
+
+`useSavedViews` returns the list plus the operations a management UI needs:
+
+```tsx
+const { views, save, apply, remove, rename, move, setDefault, defaultView } =
+  useSavedViews({ storageKey: "people-views" });
+```
+
+`rename(from, to)` keeps the view's place in the list, and refuses a name that
+is already taken — silently merging two views is how a rename loses one.
+`move(name, -1 | 1)` steps a view through the list and stops at either end
+rather than wrapping. `setDefault(name)` marks the view the table opens with;
+naming the same view again clears it, and only one view can ever hold it.
+
+Every operation is a no-op on a name that is not there, so a management UI
+cannot get the list into a state the table will not accept.
+
 ## Example
 
 ```tsx
