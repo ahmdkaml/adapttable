@@ -841,6 +841,15 @@ movement, not less feedback.
 from your kit and pass `fields`, `config` and `onChange`. It is
 `PivotPanelChrome` with that kit's slots already filled.
 
+**The saved-views management panel.** `SavedViewsPanelChrome` from
+`@adapttable/core/adapter` lists every saved view with its apply, rename,
+reorder, set-default and delete controls; `SavedViewsPanelChromeProps` takes
+the views and those five handlers. `SavedViewsPanelSlots` names the four
+kit-supplied pieces — `SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`,
+`SavedViewsPanelInputProps` and `SavedViewsPanelEmptyProps`. Reordering is
+buttons, and renaming is an inline input that Escape abandons. See
+[saved views](./saved-views.md).
+
 **The pivot configuration panel.** `PivotPanelChrome` from
 `@adapttable/core/adapter` renders the three zones and the controls that move
 fields between them; `PivotPanelChromeProps` takes the fields, the config and

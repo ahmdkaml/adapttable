@@ -345,6 +345,15 @@ export {
   type TreeToggleSlots,
 } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
+export {
+  SavedViewsPanelChrome,
+  type SavedViewsPanelChromeProps,
+  type SavedViewsPanelEmptyProps,
+  type SavedViewsPanelInputProps,
+  type SavedViewsPanelRowProps,
+  type SavedViewsPanelSlots,
+  type SavedViewsPanelSurfaceProps,
+} from "./url/SavedViewsPanelChrome";
 export { type SearchInputState } from "./useDataTable/useSearchInput";
 export {
   type DataTableShellProps,

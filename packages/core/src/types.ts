@@ -490,6 +490,18 @@ export interface TableLabels {
   viewName?: string;
   /** Delete-a-view action (suffixed with the view name). */
   deleteView?: string;
+  /** Rename a saved view. */
+  renameView?: string;
+  /** Apply a saved view to the table. */
+  applyView?: string;
+  /** Move a saved view one step earlier in the list. */
+  moveViewUp?: string;
+  /** Move a saved view one step later in the list. */
+  moveViewDown?: string;
+  /** Make a saved view the one the table opens with. */
+  setDefaultView?: string;
+  /** Marks the view the table opens with. */
+  defaultViewBadge?: string;
   /** Banner: every row on this page is selected. */
   pageSelected?: (count: number) => string;
   /** Banner action: extend the selection to every matching row. */

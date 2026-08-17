@@ -30,6 +30,37 @@ naming the same view again clears it, and only one view can ever hold it.
 Every operation is a no-op on a name that is not there, so a management UI
 cannot get the list into a state the table will not accept.
 
+## The management panel
+
+The saved-views _menu_ answers "switch to a view". Keeping the list in order is
+a different job, and putting both in one dropdown makes the common one harder —
+so management is a panel:
+
+```tsx
+import { SavedViewsPanelChrome } from "@adapttable/core/adapter";
+
+<SavedViewsPanelChrome
+  views={views}
+  onApply={apply}
+  onRename={rename}
+  onMove={move}
+  onSetDefault={setDefault}
+  onRemove={remove}
+  slots={slots}
+/>;
+```
+
+`SavedViewsPanelSlots` names the four kit-supplied pieces —
+`SavedViewsPanelSurfaceProps` (the body), `SavedViewsPanelRowProps` (one view
+and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
+`SavedViewsPanelEmptyProps`. `SavedViewsPanelChromeProps` is what the panel
+itself takes.
+
+Reordering is buttons rather than drag, because a list you can only reorder by
+dragging is a list some people cannot reorder. Renaming is an inline input
+rather than a dialog: the name is already on screen, and Escape abandons the
+edit without changing anything.
+
 ## Example
 
 ```tsx
