@@ -14,6 +14,7 @@
  * each caller re-discriminate by hand, which is precisely where a missed
  * check turns an error into a zero and a wrong total starts looking right.
  */
+import type { SortableValue } from "../types";
 import type { FormulaNode } from "./parse";
 
 /** The error values a formula can produce, spelled as a spreadsheet spells them. */
@@ -373,8 +374,34 @@ export function evaluateFormula(
 /** The function names the engine knows — for a formula bar's autocomplete. */
 export const FORMULA_FUNCTIONS: readonly string[] = Object.keys(FUNCTIONS);
 
-/** The number a value sorts by, for a formula column's `sortValue`. */
-export function formulaSortValue(value: FormulaValue): number {
-  const n = asNumber(value);
-  return n.kind === "number" ? n.value : 0;
+/**
+ * How a value sorts, for a formula column's `sortValue`.
+ *
+ * Each kind sorts as what it is: a number numerically, text as text, a boolean
+ * with FALSE before TRUE. A key is not the number a value could be coerced to —
+ * coercing text to a number gives every row in an `=UPPER(name)` column the
+ * same key, and a column where every key is equal is a column whose header
+ * does nothing when it is clicked.
+ *
+ * A blank and an error have no place in an ordering, so both come back as
+ * `null`: the table's comparator groups those at the END in either direction,
+ * which is where a spreadsheet leaves an error too. Ties among them keep the
+ * order the rows already had, so the grouping is deterministic rather than
+ * merely consistent-looking.
+ *
+ * @param value - The evaluated value.
+ * @returns The key the table's comparator orders by.
+ */
+export function formulaSortValue(value: FormulaValue): SortableValue {
+  switch (value.kind) {
+    case "number":
+      return value.value;
+    case "text":
+      return value.value;
+    case "boolean":
+      return value.value;
+    case "blank":
+    case "error":
+      return null;
+  }
 }

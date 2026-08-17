@@ -5,10 +5,14 @@
  * a formula that reads another formula, two that read each other, and one
  * that will not parse at all.
  */
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { useFrontendData } from "../source/useFrontendData";
+import type { ColumnDef } from "../types";
+import { createMemoryAdapter } from "../url/adapter";
 import { FORMULA_ERRORS } from "./evaluate";
-import { buildFormulaColumns } from "./formulaColumn";
+import { buildFormulaColumns, type FormulaColumnSpec } from "./formulaColumn";
 
 interface Row {
   id: string;
@@ -18,6 +22,39 @@ interface Row {
 }
 
 const ROW: Row = { id: "a", quantity: 3, unitPrice: 10, label: "Widget" };
+
+/**
+ * Three rows chosen so every ordering under test is wrong under some other
+ * rule: the labels sort differently from the ids, and `quantity * unitPrice`
+ * (9, 100, 10) sorts differently as numbers than as text.
+ */
+const ROWS: Row[] = [
+  { id: "1", quantity: 9, unitPrice: 1, label: "zeta" },
+  { id: "2", quantity: 10, unitPrice: 10, label: "alpha" },
+  { id: "3", quantity: 0, unitPrice: 10, label: "mu" },
+];
+
+/**
+ * The ids a table shows, sorted by a formula column through the real
+ * front-end pipeline — `useFrontendData` reading the same `sortValue` a
+ * clicked header reads, rather than the comparator called by hand.
+ */
+function sortedIds(
+  specs: readonly FormulaColumnSpec[],
+  search: string
+): string[] {
+  const { columns } = buildFormulaColumns<Row>(specs);
+  const { result } = renderHook(() =>
+    useFrontendData<Row>({
+      data: ROWS,
+      columns: columns as ColumnDef<Row>[],
+      urlAdapter: createMemoryAdapter(search),
+      paginationMode: "paged",
+      defaults: { limit: 10 },
+    })
+  );
+  return result.current.rows.map((row) => row.id);
+}
 
 /** What one column shows for a row. */
 const cell = (
@@ -123,6 +160,53 @@ describe("buildFormulaColumns", () => {
     ]);
 
     expect(columns[0]?.sortValue?.(ROW)).toBe(30);
+  });
+
+  it("sorts a text column alphabetically, through the table's own pipeline", () => {
+    // The bug: every text value collapsed to the sort key 0, so clicking the
+    // header of an `=UPPER(label)` column reordered nothing at all.
+    const specs = [{ key: "shout", formula: "=UPPER(label)" }];
+    expect(sortedIds(specs, "sortBy=shout&sortDir=asc")).toEqual([
+      "2",
+      "3",
+      "1",
+    ]);
+    expect(sortedIds(specs, "sortBy=shout&sortDir=desc")).toEqual([
+      "1",
+      "3",
+      "2",
+    ]);
+  });
+
+  it("groups the error rows at the end, whichever way the column is sorted", () => {
+    // Row 3 divides by zero. An error is not a value to order among values,
+    // and it is not a zero either — it goes to one end and stays there.
+    const specs = [{ key: "each", formula: "=unitPrice / quantity" }];
+    expect(sortedIds(specs, "sortBy=each&sortDir=asc")).toEqual([
+      "1",
+      "2",
+      "3",
+    ]);
+    expect(sortedIds(specs, "sortBy=each&sortDir=desc")).toEqual([
+      "2",
+      "1",
+      "3",
+    ]);
+  });
+
+  it("still sorts a numeric column as numbers, not as text", () => {
+    // 9, 100, 10 — the ordering text comparison would get wrong.
+    const specs = [{ key: "total", formula: "=quantity * unitPrice" }];
+    expect(sortedIds(specs, "sortBy=total&sortDir=asc")).toEqual([
+      "3",
+      "1",
+      "2",
+    ]);
+    expect(sortedIds(specs, "sortBy=total&sortDir=desc")).toEqual([
+      "2",
+      "1",
+      "3",
+    ]);
   });
 
   it("exports the value a spreadsheet can use", () => {

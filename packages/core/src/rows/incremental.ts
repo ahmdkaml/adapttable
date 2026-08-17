@@ -604,7 +604,14 @@ function resolveSortValue<TRow>(
 ): SortableValue {
   if (config.getSortValue) return config.getSortValue(row, key);
   const column = config.columns?.find((item) => item.key === key);
-  return column?.sortValue?.(row) ?? toSortable(column?.accessor?.(row));
+  // A column that declares `sortValue` owns its whole ordering, including the
+  // rows it answers `null` for — that answer means "this one has no place in
+  // the order", and the comparator groups those at the end. Reading the
+  // accessor for those rows instead would order one column by two different
+  // extractors at once: some rows by their value, the rest by their rendered
+  // text, with nothing on screen to say which row got which.
+  if (column?.sortValue) return column.sortValue(row);
+  return toSortable(column?.accessor?.(row));
 }
 
 function toSortable(value: unknown): SortableValue {

@@ -87,10 +87,19 @@ rendering of the data; it is a rendering of nobody having decided.
 
 ## Sorting and export
 
-A formula column sorts by the number its value stands for, not by its
-formatting, and exports the same value a spreadsheet would receive. Formatting
-is never applied to an error: showing `#DIV/0!` as `$#DIV/0!` would hide which
-cell went wrong.
+A formula column sorts by its **value**, never by the text in the cell. A
+number orders numerically however it is formatted, so `$1,240.00` cannot land
+before `$90.00`; `=UPPER(name)` orders alphabetically; a boolean puts `FALSE`
+before `TRUE`.
+
+A blank and an error have no place in an ordering, so both group at the **end**
+of the column — in either direction, the way a spreadsheet leaves an error —
+and rows tied there keep the order they already had. What matters is not the
+order among broken cells but that they collect somewhere predictable instead of
+being counted as zero and scattered among real values.
+
+Export receives the same value a spreadsheet would. Formatting is never applied
+to an error: showing `#DIV/0!` as `$#DIV/0!` would hide which cell went wrong.
 
 ## Building a formula bar
 

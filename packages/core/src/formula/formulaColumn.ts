@@ -201,10 +201,12 @@ export function buildFormulaColumns<TRow extends object>(
   const columns: ColumnDef<TRow>[] = specs.map((spec) => ({
     key: spec.key,
     header: spec.header ?? spec.key,
-    // The cell shows text; the comparator gets the number underneath it, so
+    // The cell shows text; the comparator gets the value underneath it, so
     // "$1,240.00" never sorts before "$90.00"; the export gets the text a
     // spreadsheet cell should hold.
     accessor: (row: TRow) => formatValue(cached(row, spec.key), spec.format),
+    // Sorts on the VALUE, never on the cell text: a number orders numerically
+    // however it is formatted, and text orders as text.
     sortValue: (row: TRow) => formulaSortValue(cached(row, spec.key)),
     exportValue: (row: TRow) => formatValue(cached(row, spec.key), spec.format),
     sortable: true,

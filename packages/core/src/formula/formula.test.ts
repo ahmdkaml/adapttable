@@ -263,10 +263,20 @@ describe("values", () => {
     expect(formulaDisplay(toFormulaValue(new Date(86400000)))).toBe("86400000");
   });
 
-  it("sorts by the number a value stands for", () => {
+  it("sorts each value as what it is, not as the number it coerces to", () => {
+    // The bug this locks out: coercing text to a number gave every row in an
+    // `=UPPER(name)` column the key 0, so clicking the header did nothing.
     expect(formulaSortValue(run("=quantity * 2"))).toBe(6);
-    expect(formulaSortValue(run("=name"))).toBe(0);
-    expect(formulaSortValue(run("=missing"))).toBe(0);
-    expect(formulaSortValue(run("=quantity > 1"))).toBe(1);
+    expect(formulaSortValue(run("=name"))).toBe("Ada");
+    expect(formulaSortValue(run("=UPPER(name)"))).toBe("ADA");
+    expect(formulaSortValue(run("=quantity > 1"))).toBe(true);
+    expect(formulaSortValue(run("=quantity > 9"))).toBe(false);
+  });
+
+  it("gives a blank and an error no place in the ordering", () => {
+    // `null` is the table comparator's "sorts last, either direction".
+    expect(formulaSortValue(run("=note"))).toBeNull();
+    expect(formulaSortValue(run("=missing"))).toBeNull();
+    expect(formulaSortValue(run("=quantity / discount"))).toBeNull();
   });
 });
