@@ -144,6 +144,23 @@ export function CommandPaletteChrome(
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const surface = useRef<HTMLDivElement | null>(null);
+
+  // Clicking away closes it — decided here, beside Escape, rather than by
+  // each kit hanging a handler on its scrim. A scrim that listens has to
+  // carry an ARIA role to justify the handler, and `presentation` is ignored
+  // on an element wrapping a dialog, so the markup ends up claiming
+  // something ARIA will not honour. A document listener needs no such claim.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (event: PointerEvent) => {
+      const node = surface.current;
+      if (node && !node.contains(event.target as Node)) onClose();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open, onClose]);
   const input = useRef<HTMLInputElement | null>(null);
   const opener = useRef<Element | null>(null);
   const listId = useId();
@@ -189,7 +206,7 @@ export function CommandPaletteChrome(
       // modal to the eye and not to the keyboard.
       const focusable = focusablesIn(surface.current);
       if (focusable.length === 0) return;
-      const at = focusable.findIndex((el) => el === document.activeElement);
+      const at = focusable.indexOf(document.activeElement as HTMLElement);
       const atEdge = event.shiftKey ? at === 0 : at === focusable.length - 1;
       if (!atEdge) return;
       event.preventDefault();

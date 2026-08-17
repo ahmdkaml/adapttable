@@ -264,7 +264,7 @@ function headerRow(table: ExportTable): string {
  * A font file as a `data:` URL.
  *
  * The bytes are turned into a string in chunks: spreading a whole font
- * into `String.fromCharCode` is hundreds of thousands of arguments in one
+ * into `String.fromCodePoint` is hundreds of thousands of arguments in one
  * call, which overflows the stack on every engine.
  */
 function fontDataUrl(font: Uint8Array | ArrayBuffer): string {
@@ -272,7 +272,7 @@ function fontDataUrl(font: Uint8Array | ArrayBuffer): string {
   const CHUNK = 0x8000;
   let binary = "";
   for (let at = 0; at < bytes.byteLength; at += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(at, at + CHUNK));
+    binary += String.fromCodePoint(...bytes.subarray(at, at + CHUNK));
   }
   return `data:font/ttf;base64,${btoa(binary)}`;
 }

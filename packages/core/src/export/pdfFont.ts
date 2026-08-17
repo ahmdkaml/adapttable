@@ -179,7 +179,7 @@ function subsetTag(name: string, glyphs: readonly number[]): string {
   }
   let tag = "";
   for (let i = 0; i < 6; i++) {
-    tag += String.fromCharCode(65 + (hash % 26));
+    tag += String.fromCodePoint(65 + (hash % 26));
     hash = Math.floor(hash / 26) + 1;
   }
   return tag;

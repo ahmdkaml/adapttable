@@ -10,12 +10,7 @@ import { useMemo } from "react";
 
 import type { DataTableClassNames } from "../types";
 
-function Surface({
-  label,
-  onClose,
-  children,
-  className,
-}: CommandPaletteSurfaceProps) {
+function Surface({ label, children, className }: CommandPaletteSurfaceProps) {
   return (
     <div
       // No part name: four kits paint this with their own Dialog's
@@ -30,14 +25,10 @@ function Surface({
         paddingTop: "12vh",
         zIndex: 1000,
       }}
-      // A presentational scrim, not a control: the dialog inside owns
-      // every interaction, and Escape closes from there. Clicking outside
-      // is a convenience, so it is a click on a non-interactive element by
-      // design rather than an unlabelled button.
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      // A scrim, not a control: the dialog inside owns every interaction and
+      // Escape closes from there. It carries no role at all — `presentation`
+      // is ignored on an element with focusable descendants, so declaring it
+      // over a dialog says something ARIA will not honour.
     >
       <div
         role="dialog"

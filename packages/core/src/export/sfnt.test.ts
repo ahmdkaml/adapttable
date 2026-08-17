@@ -27,7 +27,7 @@ function directoryEntry(bytes: Uint8Array, tag: string): number {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   for (let i = 0; i < view.getUint16(4); i++) {
     const at = 12 + i * 16;
-    const found = String.fromCharCode(...bytes.subarray(at, at + 4));
+    const found = String.fromCodePoint(...bytes.subarray(at, at + 4));
     if (found === tag) return at;
   }
   throw new Error(`no ${tag} table in the fixture`);

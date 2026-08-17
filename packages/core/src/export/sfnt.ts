@@ -90,7 +90,7 @@ function viewOf(bytes: Uint8Array): DataView {
 }
 
 function tagAt(bytes: Uint8Array, at: number): string {
-  return String.fromCharCode(
+  return String.fromCodePoint(
     bytes[at] ?? 0,
     bytes[at + 1] ?? 0,
     bytes[at + 2] ?? 0,
@@ -133,7 +133,7 @@ function readNameText(
   for (let at = 0; at < length; at += step) {
     const code =
       step === 2 ? view.getUint16(offset + at) : view.getUint8(offset + at);
-    if (code > 0x20 && code < 0x7f) name += String.fromCharCode(code);
+    if (code > 0x20 && code < 0x7f) name += String.fromCodePoint(code);
   }
   return name;
 }
