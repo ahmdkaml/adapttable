@@ -1400,6 +1400,76 @@ export interface PinOffset {
 }
 
 // @public
+export interface PivotAddProps {
+    readonly label: string;
+    readonly onAdd: (key: string) => void;
+    readonly options: readonly PivotField[];
+}
+
+// @public
+export interface PivotAggProps {
+    readonly label: string;
+    readonly onChange: (next: AggregateName) => void;
+    readonly options: readonly AggregateName[];
+    readonly value: AggregateName;
+}
+
+// @public
+export interface PivotFieldProps {
+    readonly "data-adapttable-part": "pivot-field";
+    readonly aggregation?: ReactNode;
+    readonly label: string;
+    // (undocumented)
+    readonly moveDownLabel: string;
+    readonly moveUpLabel: string;
+    readonly onMoveDown?: () => void;
+    readonly onMoveUp?: () => void;
+    readonly onRemove: () => void;
+    // (undocumented)
+    readonly removeLabel: string;
+}
+
+// @public
+export function PivotPanelChrome(input: Readonly<PivotPanelChromeProps>): JSX.Element;
+
+// @public
+export interface PivotPanelChromeProps {
+    // (undocumented)
+    className?: string;
+    config: PivotConfig;
+    fields: readonly PivotField[];
+    labels?: TableLabels;
+    onChange: (next: PivotConfig) => void;
+    slots: PivotPanelSlots;
+}
+
+// @public
+export interface PivotPanelSlots {
+    readonly Add: (props: PivotAddProps) => ReactNode;
+    readonly Agg: (props: PivotAggProps) => ReactNode;
+    readonly Field: (props: PivotFieldProps) => ReactNode;
+    readonly Surface: (props: PivotPanelSurfaceProps) => ReactNode;
+    readonly Zone: (props: PivotZoneProps) => ReactNode;
+}
+
+// @public
+export interface PivotPanelSurfaceProps {
+    readonly "data-adapttable-part": "pivot-panel";
+    // (undocumented)
+    readonly children: ReactNode;
+    // (undocumented)
+    readonly className?: string;
+}
+
+// @public
+export interface PivotZoneProps {
+    readonly "data-adapttable-part": "pivot-zone";
+    readonly children: ReactNode;
+    readonly label: string;
+    readonly zone: PivotZone;
+}
+
+// @public
 export const REORDER_COLUMN_WIDTH = 40;
 
 // @public

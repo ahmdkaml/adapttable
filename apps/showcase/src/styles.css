@@ -895,6 +895,52 @@ a {
   }
 }
 
+/* ---------- the pivot page ---------- */
+/* The panel beside the table, and a table that reads as a spreadsheet: the
+   subtotal and grand-total lines have to be distinguishable from the data
+   lines or the numbers are ambiguous. */
+.pivot-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .pivot-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pivot-table-wrap {
+  overflow-x: auto;
+}
+.pivot-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.pivot-table :is(th, td) {
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  padding: 6px 10px;
+  text-align: start;
+  white-space: nowrap;
+}
+.pivot-table td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.pivot-table thead th {
+  font-weight: 600;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.pivot-table tr[data-kind="subtotal"] {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+}
+.pivot-table tr[data-kind="grandTotal"] {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+}
+
 /* ---------- a host's own mobile card ---------- */
 /* What `renderCard` replaces the built-in stack with: the identity as a
    headline, the rest as a compact grid. */

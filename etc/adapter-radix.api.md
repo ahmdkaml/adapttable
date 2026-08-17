@@ -62,6 +62,7 @@ import { JSX } from 'react';
 import { PageSelector } from '@adapttable/core';
 import { PaginatedResponse } from '@adapttable/core';
 import { PaginationMode } from '@adapttable/core';
+import { PivotPanelChromeProps } from '@adapttable/core/adapter';
 import { ReactNode } from 'react';
 import { resolveFilterRegistry } from '@adapttable/core';
 import { RowAction } from '@adapttable/core';
@@ -263,6 +264,9 @@ export { PageSelector }
 export { PaginatedResponse }
 
 export { PaginationMode }
+
+// @public
+export function PivotPanel(props: Readonly<Omit<PivotPanelChromeProps, "slots">>): JSX.Element;
 
 // @public
 export type RadixAccentColor = "gray" | "gold" | "bronze" | "brown" | "yellow" | "amber" | "orange" | "tomato" | "red" | "ruby" | "crimson" | "pink" | "plum" | "purple" | "violet" | "iris" | "indigo" | "blue" | "cyan" | "teal" | "jade" | "green" | "grass" | "lime" | "mint" | "sky";

@@ -3485,6 +3485,14 @@ export interface TableLabels {
     pinStart?: string;
     pinToBottom?: string;
     pinToTop?: string;
+    pivotAdd?: string;
+    pivotAggregation?: string;
+    pivotColumns?: string;
+    pivotMeasures?: string;
+    pivotMoveDown?: string;
+    pivotMoveUp?: string;
+    pivotRemove?: string;
+    pivotRows?: string;
     previousPage?: string;
     print?: string;
     redoEdit?: string;

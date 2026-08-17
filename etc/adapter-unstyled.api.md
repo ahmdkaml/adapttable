@@ -64,6 +64,7 @@ import { JSX } from 'react';
 import { PageSelector } from '@adapttable/core';
 import { PaginatedResponse } from '@adapttable/core';
 import { PaginationMode } from '@adapttable/core';
+import { PivotPanelChromeProps } from '@adapttable/core/adapter';
 import { ReactNode } from 'react';
 import { ReactPortal } from 'react';
 import { resolveFilterRegistry } from '@adapttable/core';
@@ -580,6 +581,9 @@ export { PageSelector }
 export { PaginatedResponse }
 
 export { PaginationMode }
+
+// @public
+export function PivotPanel(props: Readonly<Omit<PivotPanelChromeProps, "slots">>): JSX.Element;
 
 export { resolveFilterRegistry }
 

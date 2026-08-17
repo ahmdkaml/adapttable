@@ -25,6 +25,7 @@ import { EditUnit } from '@adapttable/core';
 import { ExportCsvOptions } from '@adapttable/core';
 import { FILTER_TYPES } from '@adapttable/core';
 import { JSX } from 'react';
+import { PivotPanel } from '@adapttable/unstyled';
 import { TableQuery } from '@adapttable/core';
 import { UseServerDataOptions } from '@adapttable/core';
 import { UseTableDataOptions } from '@adapttable/core';
@@ -78,6 +79,8 @@ export { EditUnit }
 export { ExportCsvOptions }
 
 export { FILTER_TYPES }
+
+export { PivotPanel }
 
 // @public
 export const shadcnClassNames: {
