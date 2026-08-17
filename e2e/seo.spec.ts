@@ -26,6 +26,8 @@ const PAGES = [
   { path: "/accessibility/", name: "accessibility" },
   { path: "/realtime/", name: "realtime" },
   { path: "/formulas/", name: "formulas" },
+  { path: "/pivot/", name: "pivot" },
+  { path: "/saved-views/", name: "saved views" },
 ] as const;
 
 for (const { path, name } of PAGES) {
