@@ -100,6 +100,21 @@ const FIXTURES = [
     code: `export { pivot } from "PKG";`,
   },
   {
+    // The engine plus the mapping that renders it with an adapter's own
+    // table — the pair a host actually imports to put a pivot on screen.
+    // Measured 4.1 KB against the engine's 1.5, and 2.6 of that difference is
+    // the shared label set: the mapping reads its two grand-total captions
+    // from the same labels every table resolves, rather than shipping English
+    // of its own. This fixture bundles the entry with nothing else installed,
+    // so it counts that set in full; an app importing the table has already
+    // paid for it, and the mapping's own weight is under a kilobyte.
+    name: "core · pivot rendered",
+    pkg: "core",
+    entryFile: "pivot.js",
+    budgetKB: 5,
+    code: `export { pivot, pivotTableModel } from "PKG";`,
+  },
+  {
     // Same promise for the formula engine: a parser nobody imports is a
     // parser nobody pays for.
     name: "core · formula",

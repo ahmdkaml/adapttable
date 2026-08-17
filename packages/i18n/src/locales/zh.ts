@@ -194,6 +194,8 @@ export const zh: Required<TableLabels> = {
   pivotMoveUp: "上移",
   pivotMoveDown: "下移",
   pivotAggregation: "聚合",
+  pivotTotal: "合计",
+  pivotGrandTotal: "总计",
   gridCellPosition: (row, total) => `第 ${row} 行，共 ${total} 行`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `已选择第 ${fromRow} 至 ${toRow} 行、第 ${fromColumn} 至 ${toColumn} 列，共 ${cells} 个单元格`,

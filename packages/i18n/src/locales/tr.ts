@@ -198,6 +198,8 @@ export const tr: Required<TableLabels> = {
   pivotMoveUp: "Yukarı taşı",
   pivotMoveDown: "Aşağı taşı",
   pivotAggregation: "Toplama",
+  pivotTotal: "Toplam",
+  pivotGrandTotal: "Genel toplam",
   gridCellPosition: (row, total) => `${total} satırdan ${row}. satır`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `${fromRow}-${toRow} satırları, ${fromColumn}-${toColumn} sütunları seçildi, ${cells} hücre`,

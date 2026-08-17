@@ -200,6 +200,8 @@ export const ru: Required<TableLabels> = {
   pivotMoveUp: "Вверх",
   pivotMoveDown: "Вниз",
   pivotAggregation: "Агрегация",
+  pivotTotal: "Итого",
+  pivotGrandTotal: "Общий итог",
   gridCellPosition: (row, total) => `строка ${row} из ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Выбраны строки ${fromRow}–${toRow}, столбцы ${fromColumn}–${toColumn}, ячеек: ${cells}`,

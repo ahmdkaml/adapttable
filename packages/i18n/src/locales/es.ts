@@ -195,6 +195,8 @@ export const es: Required<TableLabels> = {
   pivotMoveUp: "Subir",
   pivotMoveDown: "Bajar",
   pivotAggregation: "Agregación",
+  pivotTotal: "Total",
+  pivotGrandTotal: "Total general",
   gridCellPosition: (row, total) => `fila ${row} de ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `Filas ${fromRow} a ${toRow}, columnas ${fromColumn} a ${toColumn} seleccionadas, ${cells} celdas`,

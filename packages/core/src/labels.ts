@@ -194,6 +194,8 @@ export const defaultLabels: Required<TableLabels> = {
   pivotMoveUp: "Move up",
   pivotMoveDown: "Move down",
   pivotAggregation: "Aggregation",
+  pivotTotal: "Total",
+  pivotGrandTotal: "Grand total",
   gridCellPosition: (row, total) => `row ${row} of ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `selected rows ${fromRow} to ${toRow}, columns ${fromColumn} to ${toColumn}, ${cells} cells`,

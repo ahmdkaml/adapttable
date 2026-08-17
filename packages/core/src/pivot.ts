@@ -14,6 +14,13 @@
  *   measures: [{ key: "amount", agg: "sum" }],
  * });
  * ```
+ *
+ * `pivotTableModel` turns that result into the props a `DataTable` takes, so
+ * the rendering is your kit's rather than your own markup:
+ *
+ * ```tsx
+ * <DataTable {...pivotTableModel(result)} />;
+ * ```
  */
 export {
   assignField,
@@ -41,6 +48,12 @@ export {
   type PivotRow,
   type PivotRowKind,
 } from "./pivot/pivotModel";
+export {
+  PIVOT_ROW_COLUMN_KEY,
+  type PivotTableModel,
+  pivotTableModel,
+  type PivotTableModelOptions,
+} from "./pivot/pivotTableModel";
 export {
   deserializePivot,
   deserializePivotState,

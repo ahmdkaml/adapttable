@@ -196,6 +196,8 @@ export const he: Required<TableLabels> = {
   pivotMoveUp: "הזז למעלה",
   pivotMoveDown: "הזז למטה",
   pivotAggregation: "צבירה",
+  pivotTotal: "סה״כ",
+  pivotGrandTotal: "סך הכול",
   gridCellPosition: (row, total) => `שורה ${row} מתוך ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `נבחרו שורות ${fromRow} עד ${toRow}, עמודות ${fromColumn} עד ${toColumn}, ${cells} תאים`,

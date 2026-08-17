@@ -195,6 +195,8 @@ export const fa: Required<TableLabels> = {
   pivotMoveUp: "انتقال به بالا",
   pivotMoveDown: "انتقال به پایین",
   pivotAggregation: "تجمیع",
+  pivotTotal: "مجموع",
+  pivotGrandTotal: "مجموع کل",
   gridCellPosition: (row, total) => `سطر ${row} از ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `سطرهای ${fromRow} تا ${toRow}، ستون‌های ${fromColumn} تا ${toColumn} انتخاب شد، ${cells} خانه`,

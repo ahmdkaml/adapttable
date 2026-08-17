@@ -678,6 +678,10 @@ export interface TableLabels {
   pivotMoveDown?: string;
   /** The aggregation chooser on a pivot measure. */
   pivotAggregation?: string;
+  /** Header over a pivot's grand-total column — "Total". */
+  pivotTotal?: string;
+  /** Caption on a pivot's grand-total line — "Grand total". */
+  pivotGrandTotal?: string;
   /** Accessible name for entering row edit mode. */
   editRow?: string;
   /** Accessible name for committing a row edit. */

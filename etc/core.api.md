@@ -3524,11 +3524,13 @@ export interface TableLabels {
     pivotAdd?: string;
     pivotAggregation?: string;
     pivotColumns?: string;
+    pivotGrandTotal?: string;
     pivotMeasures?: string;
     pivotMoveDown?: string;
     pivotMoveUp?: string;
     pivotRemove?: string;
     pivotRows?: string;
+    pivotTotal?: string;
     previousPage?: string;
     print?: string;
     readOnlyViewBadge?: string;

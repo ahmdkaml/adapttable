@@ -196,6 +196,8 @@ export const ar: Required<TableLabels> = {
   pivotMoveUp: "نقل لأعلى",
   pivotMoveDown: "نقل لأسفل",
   pivotAggregation: "التجميع",
+  pivotTotal: "الإجمالي",
+  pivotGrandTotal: "الإجمالي العام",
   gridCellPosition: (row, total) => `الصف ${row} من ${total}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `تم تحديد الصفوف ${fromRow} إلى ${toRow}، الأعمدة ${fromColumn} إلى ${toColumn}، ${cells} خلية`,

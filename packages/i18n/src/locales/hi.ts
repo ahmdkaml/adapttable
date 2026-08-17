@@ -197,6 +197,8 @@ export const hi: Required<TableLabels> = {
   pivotMoveUp: "ऊपर ले जाएँ",
   pivotMoveDown: "नीचे ले जाएँ",
   pivotAggregation: "समुच्चयन",
+  pivotTotal: "कुल",
+  pivotGrandTotal: "कुल योग",
   gridCellPosition: (row, total) => `${total} में से पंक्ति ${row}`,
   gridRangeSelection: ({ fromRow, toRow, fromColumn, toColumn, cells }) =>
     `पंक्तियाँ ${fromRow} से ${toRow}, स्तंभ ${fromColumn} से ${toColumn} चयनित, ${cells} सेल`,
