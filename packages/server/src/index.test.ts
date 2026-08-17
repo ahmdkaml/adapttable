@@ -6,15 +6,19 @@
  * leaves the browser, and the failure this prevents — a column name chosen by
  * the caller reaching a database — does not look like a bug until it does.
  */
-import type { QueryFilterGroup } from "@adapttable/core";
-import { serializeFilterTree } from "@adapttable/core";
+import {
+  type QueryFilterGroup,
+  serializeFilterTree,
+} from "@adapttable/core/query";
 import { describe, expect, it } from "vitest";
 
 import { parseTableQuery } from "./index";
 
 /**
  * A tree encoded the way the table encodes it — through core's own codec, so
- * this cannot drift from the format the browser actually writes.
+ * this cannot drift from the format the browser actually writes. Imported from
+ * the same React-free entry the source uses, so a test can never be the reason
+ * this package looks like it can reach a hook.
  */
 const treeParam = (tree: QueryFilterGroup) =>
   `?ft=${encodeURIComponent(serializeFilterTree(tree) ?? "")}`;

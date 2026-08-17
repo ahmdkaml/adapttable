@@ -12,6 +12,11 @@ stack trace in a log.
 npm install @adapttable/server
 ```
 
+That is the whole install. The package runs in a route handler by definition,
+so it holds no React: nothing in it renders, and nothing it imports does
+either. An Express or Fastify service with no React in the project can install
+it and parse.
+
 ## One call
 
 ```ts

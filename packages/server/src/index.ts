@@ -20,6 +20,13 @@
  * hands you a typed description of what was asked for, and what you do with
  * it is yours.
  *
+ * There is no React either. The codecs come from `@adapttable/core/query`, the
+ * entry built without a client boundary and without a hook in its graph, so a
+ * Node service that installs this installs a parser — not a UI library it will
+ * never render. The encoding is still the table's own, from the table's own
+ * source: shared at runtime rather than copied, because a parser that
+ * disagrees with the link it was sent is worse than no parser.
+ *
  * ```ts
  * // Next.js route handler, Remix loader, Server Action — all get a Request.
  * export async function GET(request: Request) {
@@ -31,13 +38,14 @@
  * @packageDocumentation
  */
 import {
+  deserializePivot,
   isFilterGroup,
   parseFilterTree,
+  type PivotConfig,
   type QueryFilterGroup,
   type SortDirection,
   type SortLevel,
-} from "@adapttable/core";
-import { deserializePivot, type PivotConfig } from "@adapttable/core/pivot";
+} from "@adapttable/core/query";
 
 /**
  * The table's own ceiling on a page size, mirrored rather than imported: it
