@@ -1,11 +1,15 @@
 /**
- * The pivot configuration in the URL, so a built pivot survives a reload and
- * can be sent to someone.
+ * The pivot state in the URL, so a built pivot survives a reload and can be
+ * sent to someone.
  *
  * A pivot is the most expensive table state there is to rebuild by hand —
  * two axes, an order on each, and a measure list — which makes it the state
  * most worth putting in a link. It sits alongside sort, filters and column
  * layout for exactly the reason those do.
+ *
+ * Everything a reader changed travels, not only the axes: the subtotal and
+ * grand-total switches, and which groups are folded. What someone sends is what
+ * they were looking at, or the link is of a different table.
  *
  * The encoding itself is in {@link ./pivotUrlCodec}, which this hook reads
  * and writes through: a browser is only one end of a shared link, and the
@@ -24,7 +28,11 @@ import { type UrlStateAdapter, useResolvedAdapter } from "../url/adapter";
 import { PARAM_PIVOT } from "../url/serialize";
 import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
 import type { PivotConfig } from "./pivotModel";
-import { deserializePivot, serializePivot } from "./pivotUrlCodec";
+import {
+  deserializePivotState,
+  type PivotUrlState,
+  serializePivotState,
+} from "./pivotUrlCodec";
 
 /**
  * Trailing debounce for URL persistence, as the column-layout and formula hooks
@@ -36,6 +44,9 @@ import { deserializePivot, serializePivot } from "./pivotUrlCodec";
  */
 export const PIVOT_URL_WRITE_DEBOUNCE_MS = 150;
 
+/** Nothing folded, with a stable identity so a read cannot churn a memo. */
+const NOTHING_COLLAPSED: readonly string[] = [];
+
 /** What {@link usePivotUrlState} needs. */
 export interface UsePivotUrlStateOptions {
   urlAdapter?: UrlStateAdapter;
@@ -45,23 +56,33 @@ export interface UsePivotUrlStateOptions {
   defaultConfig?: PivotConfig;
 }
 
-/** The controlled pair to hand the panel and the engine. */
+/** The controlled state to hand the panel and the engine. */
 export interface UsePivotUrlStateResult {
+  /** What to pivot, and how. Give it to the panel and to `pivot`. */
   config: PivotConfig;
+  /** Persist a new configuration. Wire to the panel's `onChange`. */
   onConfigChange: (next: PivotConfig) => void;
+  /**
+   * The folded subtotal lines, by key — `pivot`'s `collapsed` option, so the
+   * link and the rendering agree without the host holding a second copy.
+   */
+  collapsed: ReadonlySet<string>;
+  /** Persist a new folded set. Wire to whatever folds a subtotal line. */
+  onCollapsedChange: (next: ReadonlySet<string>) => void;
 }
 
 /**
- * Keep the pivot configuration in the URL.
+ * Keep the pivot state in the URL.
  *
  * @param options - See {@link UsePivotUrlStateOptions}.
- * @returns The configuration and the setter to give the panel.
+ * @returns The configuration, the folded set, and the setters for both.
  */
 export function usePivotUrlState(
   options: UsePivotUrlStateOptions = {}
 ): UsePivotUrlStateResult {
   const { urlAdapter, urlSync, urlKey, defaultConfig } = options;
   const ns = urlKey ? `${urlKey}.` : "";
+  const param = `${ns}${PARAM_PIVOT}`;
   const resolved = useResolvedAdapter(urlAdapter, urlSync ?? true);
   // Same SSR rule as the other URL hooks: only an explicit adapter is
   // trusted to be hydration-consistent.
@@ -71,31 +92,38 @@ export function usePivotUrlState(
     () => (urlAdapter ? urlAdapter.getSearch() : "")
   );
   // Optimistic overlay: the change that has not reached the URL yet.
-  const [pending, setPending] = useState<PivotConfig | null>(null);
+  const [pending, setPending] = useState<PivotUrlState | null>(null);
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const config = useMemo(() => {
+  const state = useMemo<PivotUrlState>(() => {
     if (pending) return pending;
-    const raw = new URLSearchParams(search).get(`${ns}${PARAM_PIVOT}`);
-    if (raw === null) return defaultConfig ?? EMPTY_PIVOT_CONFIG;
-    return deserializePivot(raw);
-  }, [pending, search, ns, defaultConfig]);
+    const raw = new URLSearchParams(search).get(param);
+    if (raw === null) {
+      return {
+        config: defaultConfig ?? EMPTY_PIVOT_CONFIG,
+        collapsed: NOTHING_COLLAPSED,
+      };
+    }
+    return deserializePivotState(raw);
+  }, [pending, search, param, defaultConfig]);
+
+  const collapsed = useMemo(() => new Set(state.collapsed), [state.collapsed]);
 
   const persist = useCallback(
-    (next: PivotConfig) => {
+    (next: PivotUrlState) => {
       const params = new URLSearchParams(resolved.getSearch());
-      const value = serializePivot(next);
+      const value = serializePivotState(next);
       // An empty pivot writes no parameter: a URL should carry what someone
       // built, not restate the nothing the table starts with.
-      if (value === "") params.delete(`${ns}${PARAM_PIVOT}`);
-      else params.set(`${ns}${PARAM_PIVOT}`, value);
+      if (value === "") params.delete(param);
+      else params.set(param, value);
       resolved.setSearch(params.toString());
     },
-    [resolved, ns]
+    [resolved, param]
   );
 
-  const onConfigChange = useCallback(
-    (next: PivotConfig) => {
+  const change = useCallback(
+    (next: PivotUrlState) => {
       setPending(next);
       if (flushTimer.current) clearTimeout(flushTimer.current);
       flushTimer.current = setTimeout(() => {
@@ -107,10 +135,27 @@ export function usePivotUrlState(
     [persist]
   );
 
-  // Flush a pending configuration on unmount, so the last move a reader made
-  // before navigating is not lost.
+  const onConfigChange = useCallback(
+    (next: PivotConfig) => {
+      // The folded keys ride along: a field moved on an axis does not unfold
+      // what the reader had folded, and a key whose group is gone simply
+      // matches nothing.
+      change({ config: next, collapsed: state.collapsed });
+    },
+    [change, state.collapsed]
+  );
+
+  const onCollapsedChange = useCallback(
+    (next: ReadonlySet<string>) => {
+      change({ config: state.config, collapsed: [...next] });
+    },
+    [change, state.config]
+  );
+
+  // Flush a pending change on unmount, so the last move a reader made before
+  // navigating is not lost.
   const latestRef = useRef<{
-    pending: PivotConfig | null;
+    pending: PivotUrlState | null;
     persist: typeof persist;
   }>({ pending, persist });
   latestRef.current = { pending, persist };
@@ -118,7 +163,7 @@ export function usePivotUrlState(
     () => () => {
       if (flushTimer.current) {
         clearTimeout(flushTimer.current);
-        // Invariant: a live timer implies a pending configuration — the timeout
+        // Invariant: a live timer implies a pending change — the timeout
         // clears the timer BEFORE it clears `pending`.
         const { pending: last, persist: write } = latestRef.current;
         write(last!);
@@ -127,5 +172,5 @@ export function usePivotUrlState(
     []
   );
 
-  return { config, onConfigChange };
+  return { config: state.config, onConfigChange, collapsed, onCollapsedChange };
 }

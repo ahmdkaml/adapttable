@@ -323,6 +323,32 @@ describe("useSavedViews", () => {
       expect(after.get("other.formula")).toBe("keep:=2");
     });
 
+    it("applies a view that predates the pivot switches, unchanged", () => {
+      // A view saved when the parameter carried only the axes and the measures
+      // is applied exactly as written: the switches it never mentioned stay the
+      // engine's defaults, and nothing is invented on the way in.
+      const storage = fakeStorage({
+        views: JSON.stringify([
+          { name: "Q1 pivot", search: "t.pivot=rows:team;sum:budget" },
+        ]),
+      });
+      const adapter = createMemoryAdapter("");
+      const { result } = renderHook(() =>
+        useSavedViews({
+          storageKey: "views",
+          storage,
+          urlAdapter: adapter,
+          urlKey: "t",
+        })
+      );
+
+      act(() => result.current.apply("Q1 pivot"));
+
+      expect(new URLSearchParams(adapter.getSearch()).get("t.pivot")).toBe(
+        "rows:team;sum:budget"
+      );
+    });
+
     it("stamps the current version on what it read", () => {
       const storage = fakeStorage({ views: LEGACY_FIXTURE });
       const { result } = renderHook(() =>
@@ -833,7 +859,9 @@ describe("useSavedViews", () => {
       "t.colGroupCollapse=contact",
       "t.rowPin=3:top",
       "t.density=compact",
-      "t.pivot=rows:team;sum:budget",
+      // The whole pivot state rides in the one parameter: the axes, the
+      // measures, the switches that are off, and the folded groups.
+      "t.pivot=rows:region,team;sum:budget;sub:0;grand:0;hide:EU/Alpha",
       "t.formula=total:%3Dquantity%20*%202:Total",
       "t.f_team=core",
       "t.page=2",

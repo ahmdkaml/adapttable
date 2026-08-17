@@ -38,10 +38,11 @@
  * @packageDocumentation
  */
 import {
-  deserializePivot,
+  deserializePivotState,
   isFilterGroup,
   parseFilterTree,
   type PivotConfig,
+  type PivotUrlState,
   type QueryFilterGroup,
   type SortDirection,
   type SortLevel,
@@ -103,8 +104,21 @@ export interface ServerTableQuery {
   filters: Readonly<Record<string, ServerFilterValue>>;
   /** The advanced filter tree, when one was sent and every column checked out. */
   filterTree?: QueryFilterGroup;
-  /** The pivot configuration, with unknown columns dropped. */
+  /**
+   * The pivot configuration, with unknown columns dropped — the axes, the
+   * measures, and whether subtotals and grand totals were asked for.
+   */
   pivot?: PivotConfig;
+  /**
+   * The folded pivot groups, by collapse key, when the link named any.
+   *
+   * These are dimension **values** rather than column names — a team, a region,
+   * a quarter — so no schema can vouch for them and none is applied: they are
+   * data, to be parameterised like a search term. A server that pivots can skip
+   * the rows under a folded group; one that does not can ignore them, since the
+   * table folds its own lines when it pivots locally.
+   */
+  pivotCollapsed?: readonly string[];
   /** The opaque cursor, in cursor mode. */
   cursor?: string;
   /**
@@ -222,7 +236,10 @@ export function parseTableQuery(
     ...(groupBy === undefined ? {} : { groupBy }),
     filters,
     ...(filterTree === undefined ? {} : { filterTree }),
-    ...(pivot === undefined ? {} : { pivot }),
+    ...(pivot === undefined ? {} : { pivot: pivot.config }),
+    ...(pivot === undefined || pivot.collapsed.length === 0
+      ? {}
+      : { pivotCollapsed: pivot.collapsed }),
     ...(cursor ? { cursor } : {}),
     rejected,
   };
@@ -350,14 +367,22 @@ function validTree(
   return tree;
 }
 
-/** The pivot configuration, minus any axis or measure outside the schema. */
+/**
+ * The pivot state, minus any axis or measure outside the schema.
+ *
+ * A column name is the part a schema can vouch for, so it is the part that gets
+ * filtered. Everything else the parameter carries is the client's own view of
+ * its own table — whether subtotals are shown, which groups are folded — and it
+ * travels through untouched, because there is nothing to check it against and
+ * dropping it would answer a different question than the one asked.
+ */
 function validPivot(
   raw: string | null,
   allowed: ReadonlySet<string>,
   refuse: Refuse
-): PivotConfig | undefined {
+): PivotUrlState | undefined {
   if (raw === null || raw === "") return undefined;
-  const config = deserializePivot(raw);
+  const { config, collapsed } = deserializePivotState(raw);
   const keep = (key: string, what: string) => {
     if (allowed.has(key)) return true;
     refuse("pivot", key, `not a ${what} column`);
@@ -371,5 +396,5 @@ function validPivot(
   if (rows.length === 0 && columns.length === 0 && measures.length === 0) {
     return undefined;
   }
-  return { rows, columns, measures };
+  return { config: { ...config, rows, columns, measures }, collapsed };
 }

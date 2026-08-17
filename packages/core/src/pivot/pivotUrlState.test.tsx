@@ -12,8 +12,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryAdapter, type UrlStateAdapter } from "../url/adapter";
 import { EMPTY_PIVOT_CONFIG } from "./pivotConfigModel";
-import type { PivotConfig } from "./pivotModel";
+import { pivot, type PivotConfig } from "./pivotModel";
 import { PIVOT_URL_WRITE_DEBOUNCE_MS, usePivotUrlState } from "./pivotUrlState";
+
+/** Rows whose region/team paths give two subtotal lines to fold. */
+const ROWS = [
+  { region: "EU", team: "Alpha", amount: 10 },
+  { region: "US", team: "Gamma", amount: 30 },
+];
 
 // The URL write is deferred past the batch that asked for it, so advance the
 // clock to observe one.
@@ -159,6 +165,81 @@ describe("usePivotUrlState", () => {
     }
 
     expect(renderToString(<Probe />)).toContain("rows=0");
+  });
+
+  it("keeps the switches and the folded groups in the same parameter", () => {
+    // The whole round trip, through the real hook: a reader turns subtotals off
+    // and folds two groups, and the link they send restores all three. The keys
+    // come from the engine, because those are the keys it matches against.
+    const urlAdapter = createMemoryAdapter("");
+    const config: PivotConfig = {
+      rows: ["region", "team"],
+      columns: [],
+      measures: [{ key: "amount", agg: "sum" }],
+      subtotals: false,
+      grandTotals: false,
+    };
+    const folded = pivot(ROWS, { ...config, subtotals: true })
+      .rows.filter((row) => row.kind === "subtotal")
+      .map((row) => row.key);
+    const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
+
+    act(() => {
+      result.current.onConfigChange(config);
+    });
+    act(() => {
+      result.current.onCollapsedChange(new Set(folded));
+    });
+    flushUrl();
+
+    expect(folded).toHaveLength(2);
+    const restored = renderHook(() => usePivotUrlState({ urlAdapter }));
+    expect(restored.result.current.config).toEqual(config);
+    expect([...restored.result.current.collapsed]).toEqual(folded);
+    // And the engine folds by them: the rendering the link restores is the
+    // rendering it was taken from.
+    expect(
+      pivot(ROWS, restored.result.current.config, {
+        collapsed: restored.result.current.collapsed,
+      }).rows.map((row) => row.key)
+    ).toEqual(
+      pivot(ROWS, config, { collapsed: new Set(folded) }).rows.map(
+        (row) => row.key
+      )
+    );
+  });
+
+  it("folds nothing until something says so", () => {
+    const urlAdapter = createMemoryAdapter("?pivot=rows:team;sum:amount");
+    const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
+
+    expect(result.current.collapsed.size).toBe(0);
+  });
+
+  it("keeps the folded set when a field moves", () => {
+    const urlAdapter = createMemoryAdapter("");
+    const { result } = renderHook(() => usePivotUrlState({ urlAdapter }));
+
+    act(() => {
+      result.current.onConfigChange({
+        ...EMPTY_PIVOT_CONFIG,
+        rows: ["region", "team"],
+      });
+    });
+    act(() => {
+      result.current.onCollapsedChange(new Set(["EU"]));
+    });
+    act(() => {
+      result.current.onConfigChange({
+        ...EMPTY_PIVOT_CONFIG,
+        rows: ["region", "team"],
+        columns: ["quarter"],
+      });
+    });
+    flushUrl();
+
+    expect([...result.current.collapsed]).toEqual(["EU"]);
+    expect(urlAdapter.getSearch()).toContain("hide%3AEU");
   });
 
   it("falls back to the given default while the URL is silent", () => {

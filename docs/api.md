@@ -871,8 +871,8 @@ Router, TanStack Router and Next.js all take two lines. See
 **Server queries.** `parseTableQuery(input, schema)` from
 `@adapttable/server` validates a request against a `QuerySchema` and returns a
 `ServerTableQuery` — page, limit, offset, search, sort chain, grouping,
-filters, filter tree, pivot and cursor, plus a `QueryRejection[]` naming
-everything it refused. `QueryInput` is a `Request`, `URL`, query string or
+filters, filter tree, pivot, the folded pivot groups in `pivotCollapsed`, and
+cursor, plus a `QueryRejection[]` naming everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 `URLSearchParams`; `ServerFilterValue` is one filter's value. See
 [server queries](./server-queries.md).
 
@@ -880,7 +880,9 @@ everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 model a backend needs and no more: the `ft=1.{…}` codec (`parseFilterTree`,
 `serializeFilterTree`, `isActiveFilterTree`, `FILTER_TREE_PARAM`,
 `FILTER_TREE_VERSION`), the `pivot=rows:…` codec (`serializePivot`,
-`deserializePivot`), the `formula=key:text` codec (`serializeFormulaColumns`,
+`deserializePivot`, plus `serializePivotState` / `deserializePivotState` for the
+whole `PivotUrlState` — the `config` and the folded `collapsed` keys), the
+`formula=key:text` codec (`serializeFormulaColumns`,
 `deserializeFormulaColumns`, `FormulaColumnSpec`), `isFilterGroup` for walking a
 tree, and the types they speak in — `QueryCondition`, `QueryFilterGroup`,
 `SortLevel`, `SortDirection`,

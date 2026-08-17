@@ -47,7 +47,13 @@ export {
   serializeFormulaColumns,
 } from "./formula/formulaUrlCodec";
 export type { PivotConfig, PivotMeasure } from "./pivot/pivotModel";
-export { deserializePivot, serializePivot } from "./pivot/pivotUrlCodec";
+export {
+  deserializePivot,
+  deserializePivotState,
+  type PivotUrlState,
+  serializePivot,
+  serializePivotState,
+} from "./pivot/pivotUrlCodec";
 export type { SortLevel } from "./sort/compare";
 export {
   isFilterGroup,

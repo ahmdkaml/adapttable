@@ -36,19 +36,20 @@ export async function GET(request: Request) {
 `URLSearchParams` — so Next.js route handlers, Remix loaders and Server
 Actions all work without an adapter — and returns a `ServerTableQuery`:
 
-| Field        | What it is                                                   |
-| ------------ | ------------------------------------------------------------ |
-| `page`       | 1-based, always at least 1                                   |
-| `limit`      | clamped to the schema's ceiling                              |
-| `offset`     | `(page - 1) * limit`, computed once so every caller does not |
-| `search`     | the free-text query, absent when there was none              |
-| `sort`       | the multi-sort chain, outermost first                        |
-| `groupBy`    | the grouping column, when the schema allows it               |
-| `filters`    | column filters, keyed by column                              |
-| `filterTree` | the advanced AND/OR tree                                     |
-| `pivot`      | the [pivot configuration](./pivot.md)                        |
-| `cursor`     | the opaque cursor, in cursor mode                            |
-| `rejected`   | everything it refused, and why                               |
+| Field            | What it is                                                   |
+| ---------------- | ------------------------------------------------------------ |
+| `page`           | 1-based, always at least 1                                   |
+| `limit`          | clamped to the schema's ceiling                              |
+| `offset`         | `(page - 1) * limit`, computed once so every caller does not |
+| `search`         | the free-text query, absent when there was none              |
+| `sort`           | the multi-sort chain, outermost first                        |
+| `groupBy`        | the grouping column, when the schema allows it               |
+| `filters`        | column filters, keyed by column                              |
+| `filterTree`     | the advanced AND/OR tree                                     |
+| `pivot`          | the [pivot configuration](./pivot.md)                        |
+| `pivotCollapsed` | the folded pivot groups, by collapse key                     |
+| `cursor`         | the opaque cursor, in cursor mode                            |
+| `rejected`       | everything it refused, and why                               |
 
 ## The schema is an allowlist
 
@@ -99,6 +100,14 @@ Sorting and pivoting are different: an unusable sort level or pivot field is
 dropped on its own, because losing one level of an ordering is a smaller lie
 than losing the ordering, and neither can widen anything.
 
+A pivot parameter carries more than column names — whether subtotals and grand
+totals are shown, and which groups are folded. Those are the client's view of
+its own table, so they arrive as sent: the schema filters the axes and the
+measures, and `pivot.subtotals`, `pivot.grandTotals` and `pivotCollapsed` pass
+through. The folded keys are dimension **values** rather than columns — a team,
+a region — so nothing can vouch for them and nothing pretends to: parameterise
+them like a search term.
+
 ## The types
 
 `parseTableQuery(input, schema)` takes a `QueryInput` — a `Request`, a `URL`,
@@ -107,9 +116,10 @@ a query string or `URLSearchParams` — plus a `QuerySchema`, and returns a
 
 `QuerySchema` is the allowlist: `columns`, `maxLimit`, `defaultLimit`,
 `urlKey`. `ServerTableQuery` is the table above, where `filters` values are
-`ServerFilterValue` (one string, or several for a checklist) and `rejected` is
-a list of `QueryRejection` — each carrying the `param` it came from, the
-`value` that arrived, and the `reason` it was refused.
+`ServerFilterValue` (one string, or several for a checklist), `pivotCollapsed`
+is absent rather than empty when nothing is folded, and `rejected` is a list of
+`QueryRejection` — each carrying the `param` it came from, the `value` that
+arrived, and the `reason` it was refused.
 
 ## Decoding a parameter yourself
 
@@ -125,10 +135,11 @@ const config = deserializePivot(params.get("pivot"));
 
 It exports the `ft=1.{…}` codec (`parseFilterTree`, `serializeFilterTree`,
 `isActiveFilterTree`, `FILTER_TREE_PARAM`, `FILTER_TREE_VERSION`), the
-`pivot=rows:…` codec (`serializePivot`, `deserializePivot`), `isFilterGroup` for
-walking a tree, and the types those speak in — `QueryCondition`,
-`QueryFilterGroup`, `SortLevel`, `SortDirection`, `PivotConfig` and
-`PivotMeasure`.
+`pivot=rows:…` codec (`serializePivot`, `deserializePivot`, and
+`serializePivotState` / `deserializePivotState` for the folded groups as well),
+`isFilterGroup` for walking a tree, and the types those speak in —
+`QueryCondition`, `QueryFilterGroup`, `SortLevel`, `SortDirection`,
+`PivotConfig`, `PivotMeasure` and `PivotUrlState`.
 
 Every one of those names is also on `@adapttable/core`, from the same source
 module. The narrow entry leaves out the hooks, which is what lets it carry no

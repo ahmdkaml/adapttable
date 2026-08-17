@@ -3662,7 +3662,9 @@ const result = pivot(sales, config, { collapsed: new Set(["EU"]) });
 ```
 
 A subtotal line's `key` is its collapse key. Collapsing changes what is shown
-and never what is computed: the grand total is the same number either way.
+and never what is computed: the grand total is the same number either way. Those
+keys are what [the URL carries](#in-the-url), so a folded group travels with the
+link.
 
 Turn either off with `subtotals: false` / `grandTotals: false`. The grand-total
 **column** only appears when something splits the columns — without column
@@ -3780,17 +3782,25 @@ The wire format is small on purpose — a `QueryPivotPage`:
   // One entry per PATH, not per rendered column: the measures multiply them.
   columns: [["EU", "Q1"], ["EU", "Q2"], ["US", "Q1"]],
   rows: [
-    { path: ["EU"], cells: [30, 20, 0], subtotal: true },
-    { path: ["EU", "Alpha"], cells: [30, 20, 0], count: 12 },
+    { path: ["EU"], cells: [30, 20, 0], totals: [50], subtotal: true },
+    { path: ["EU", "Alpha"], cells: [30, 20, 0], totals: [50], count: 12 },
   ],
-  total: { path: [], cells: [30, 20, 10] },
+  total: { path: [], cells: [30, 20, 10], totals: [60] },
 }
 ```
 
-`count`, `subtotal` and `total` are optional: a server that can pivot but not
-count, or that has no subtotals, should not have to send empty fields to say
-so. A cell the server omits is an empty cell, never a zero — the same rule the
-local engine follows for a value that will not add up.
+`count`, `subtotal`, `totals` and `total` are optional: a server that can pivot
+but not count, or that has no subtotals, should not have to send empty fields to
+say so. A cell the server omits is an empty cell, never a zero — the same rule
+the local engine follows for a value that will not add up.
+
+The grand-total **column** follows the local rule: it is there when
+`grandTotals` is on, which is the default, and something splits the columns. Its
+values are each line's `totals`, one per measure, because that column is
+arithmetic rather than shape — summing sums is not how an average or a minimum
+totals, so core does not guess it. Send `totals` and the column carries numbers;
+omit it and the column is empty, like any other cell nobody sent; ask for
+`grandTotals: false` and there is no column at all.
 
 ## In the URL
 
@@ -3799,9 +3809,12 @@ axes, an order on each, and a measure list — which makes it the state most
 worth putting in a link:
 
 ```tsx
-import { usePivotUrlState } from "@adapttable/core/pivot";
+import { pivot, usePivotUrlState } from "@adapttable/core/pivot";
 
-const { config, onConfigChange } = usePivotUrlState();
+const { config, onConfigChange, collapsed, onCollapsedChange } =
+  usePivotUrlState();
+
+const result = pivot(rows, config, { collapsed });
 
 <PivotPanel fields={fields} config={config} onChange={onConfigChange} />;
 ```
@@ -3809,20 +3822,34 @@ const { config, onConfigChange } = usePivotUrlState();
 The parameter is compact and readable rather than JSON in a query string:
 
 ```
-?pivot=rows:region,team;cols:quarter;sum:amount;count:amount
+?pivot=rows:region,team;cols:quarter;sum:amount;count:amount;sub:0;hide:EU/Alpha
 ```
 
+Everything a reader can change travels: the two axes, the measures, the
+subtotal and grand-total switches (`sub:0`, `grand:0`) and which groups are
+folded (`hide:`). A link that carried the axes alone would reopen showing
+numbers its sender had switched off, or lines they had folded away.
+
+Only departures are written. Both switches default to on, so a parameter says
+so by staying silent — which is also what makes the encoding backward
+compatible: a link or a saved view from before those fields existed says
+nothing about them and reads back exactly as it always did. A folded path is
+percent-encoded per dimension value, so a team called `A/B` cannot split a path
+in the wrong place, and `collapsed` hands straight to the engine.
+
 `serializePivot` and `deserializePivot` are exported for saved views and
-anywhere else a `PivotConfig` has to be stored. The round trip is tested, not
+anywhere else a `PivotConfig` has to be stored; `serializePivotState` and
+`deserializePivotState` are the same encoding including the folded set, as a
+`PivotUrlState` (`config` and `collapsed`). The round trip is tested, not
 assumed, and a hand-edited value degrades to a simpler pivot instead of
 throwing — a URL is user input.
 
-Both are also on [`@adapttable/core/query`](./server-queries.md#decoding-a-parameter-yourself),
+All four are also on [`@adapttable/core/query`](./server-queries.md#decoding-a-parameter-yourself),
 the React-free entry, so a route handler can read the parameter a shared link
 carries without importing the engine or React.
 
-An empty pivot writes no parameter, and `urlKey` namespaces it so two tables
-can share one URL.
+An empty pivot writes no parameter — folds included, since there is nothing to
+fold — and `urlKey` namespaces it so two tables can share one URL.
 
 A custom aggregator has no URL form, so a measure carrying one keeps working
 in memory and is left out of the link. Writing `sum` instead would quietly
@@ -5580,19 +5607,20 @@ export async function GET(request: Request) {
 `URLSearchParams` — so Next.js route handlers, Remix loaders and Server
 Actions all work without an adapter — and returns a `ServerTableQuery`:
 
-| Field        | What it is                                                   |
-| ------------ | ------------------------------------------------------------ |
-| `page`       | 1-based, always at least 1                                   |
-| `limit`      | clamped to the schema's ceiling                              |
-| `offset`     | `(page - 1) * limit`, computed once so every caller does not |
-| `search`     | the free-text query, absent when there was none              |
-| `sort`       | the multi-sort chain, outermost first                        |
-| `groupBy`    | the grouping column, when the schema allows it               |
-| `filters`    | column filters, keyed by column                              |
-| `filterTree` | the advanced AND/OR tree                                     |
-| `pivot`      | the [pivot configuration](./pivot.md)                        |
-| `cursor`     | the opaque cursor, in cursor mode                            |
-| `rejected`   | everything it refused, and why                               |
+| Field            | What it is                                                   |
+| ---------------- | ------------------------------------------------------------ |
+| `page`           | 1-based, always at least 1                                   |
+| `limit`          | clamped to the schema's ceiling                              |
+| `offset`         | `(page - 1) * limit`, computed once so every caller does not |
+| `search`         | the free-text query, absent when there was none              |
+| `sort`           | the multi-sort chain, outermost first                        |
+| `groupBy`        | the grouping column, when the schema allows it               |
+| `filters`        | column filters, keyed by column                              |
+| `filterTree`     | the advanced AND/OR tree                                     |
+| `pivot`          | the [pivot configuration](./pivot.md)                        |
+| `pivotCollapsed` | the folded pivot groups, by collapse key                     |
+| `cursor`         | the opaque cursor, in cursor mode                            |
+| `rejected`       | everything it refused, and why                               |
 
 ## The schema is an allowlist
 
@@ -5643,6 +5671,14 @@ Sorting and pivoting are different: an unusable sort level or pivot field is
 dropped on its own, because losing one level of an ordering is a smaller lie
 than losing the ordering, and neither can widen anything.
 
+A pivot parameter carries more than column names — whether subtotals and grand
+totals are shown, and which groups are folded. Those are the client's view of
+its own table, so they arrive as sent: the schema filters the axes and the
+measures, and `pivot.subtotals`, `pivot.grandTotals` and `pivotCollapsed` pass
+through. The folded keys are dimension **values** rather than columns — a team,
+a region — so nothing can vouch for them and nothing pretends to: parameterise
+them like a search term.
+
 ## The types
 
 `parseTableQuery(input, schema)` takes a `QueryInput` — a `Request`, a `URL`,
@@ -5651,9 +5687,10 @@ a query string or `URLSearchParams` — plus a `QuerySchema`, and returns a
 
 `QuerySchema` is the allowlist: `columns`, `maxLimit`, `defaultLimit`,
 `urlKey`. `ServerTableQuery` is the table above, where `filters` values are
-`ServerFilterValue` (one string, or several for a checklist) and `rejected` is
-a list of `QueryRejection` — each carrying the `param` it came from, the
-`value` that arrived, and the `reason` it was refused.
+`ServerFilterValue` (one string, or several for a checklist), `pivotCollapsed`
+is absent rather than empty when nothing is folded, and `rejected` is a list of
+`QueryRejection` — each carrying the `param` it came from, the `value` that
+arrived, and the `reason` it was refused.
 
 ## Decoding a parameter yourself
 
@@ -5669,10 +5706,11 @@ const config = deserializePivot(params.get("pivot"));
 
 It exports the `ft=1.{…}` codec (`parseFilterTree`, `serializeFilterTree`,
 `isActiveFilterTree`, `FILTER_TREE_PARAM`, `FILTER_TREE_VERSION`), the
-`pivot=rows:…` codec (`serializePivot`, `deserializePivot`), `isFilterGroup` for
-walking a tree, and the types those speak in — `QueryCondition`,
-`QueryFilterGroup`, `SortLevel`, `SortDirection`, `PivotConfig` and
-`PivotMeasure`.
+`pivot=rows:…` codec (`serializePivot`, `deserializePivot`, and
+`serializePivotState` / `deserializePivotState` for the folded groups as well),
+`isFilterGroup` for walking a tree, and the types those speak in —
+`QueryCondition`, `QueryFilterGroup`, `SortLevel`, `SortDirection`,
+`PivotConfig`, `PivotMeasure` and `PivotUrlState`.
 
 Every one of those names is also on `@adapttable/core`, from the same source
 module. The narrow entry leaves out the hooks, which is what lets it carry no
@@ -7562,8 +7600,8 @@ Router, TanStack Router and Next.js all take two lines. See
 **Server queries.** `parseTableQuery(input, schema)` from
 `@adapttable/server` validates a request against a `QuerySchema` and returns a
 `ServerTableQuery` — page, limit, offset, search, sort chain, grouping,
-filters, filter tree, pivot and cursor, plus a `QueryRejection[]` naming
-everything it refused. `QueryInput` is a `Request`, `URL`, query string or
+filters, filter tree, pivot, the folded pivot groups in `pivotCollapsed`, and
+cursor, plus a `QueryRejection[]` naming everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 `URLSearchParams`; `ServerFilterValue` is one filter's value. See
 [server queries](./server-queries.md).
 
@@ -7571,7 +7609,9 @@ everything it refused. `QueryInput` is a `Request`, `URL`, query string or
 model a backend needs and no more: the `ft=1.{…}` codec (`parseFilterTree`,
 `serializeFilterTree`, `isActiveFilterTree`, `FILTER_TREE_PARAM`,
 `FILTER_TREE_VERSION`), the `pivot=rows:…` codec (`serializePivot`,
-`deserializePivot`), the `formula=key:text` codec (`serializeFormulaColumns`,
+`deserializePivot`, plus `serializePivotState` / `deserializePivotState` for the
+whole `PivotUrlState` — the `config` and the folded `collapsed` keys), the
+`formula=key:text` codec (`serializeFormulaColumns`,
 `deserializeFormulaColumns`, `FormulaColumnSpec`), `isFilterGroup` for walking a
 tree, and the types they speak in — `QueryCondition`, `QueryFilterGroup`,
 `SortLevel`, `SortDirection`,

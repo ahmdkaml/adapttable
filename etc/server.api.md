@@ -44,6 +44,7 @@ export interface ServerTableQuery {
     offset: number;
     page: number;
     pivot?: PivotConfig;
+    pivotCollapsed?: readonly string[];
     rejected: readonly QueryRejection[];
     search?: string;
     sort: readonly SortLevel[];

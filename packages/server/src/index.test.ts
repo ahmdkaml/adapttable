@@ -180,6 +180,38 @@ describe("parseTableQuery", () => {
       const query = parseTableQuery("?pivot=rows:secret", schema);
 
       expect(query.pivot).toBeUndefined();
+      expect(query.pivotCollapsed).toBeUndefined();
+    });
+
+    it("keeps the switches and the folded groups a link carried", () => {
+      // A schema vouches for column names. The rest is the client's view of its
+      // own table, and answering with subtotals it asked to hide would answer a
+      // different question.
+      const query = parseTableQuery(
+        "?pivot=rows:team;sum:budget;sub:0;grand:0;hide:EU/Alpha",
+        schema
+      );
+
+      expect(query.pivot?.subtotals).toBe(false);
+      expect(query.pivot?.grandTotals).toBe(false);
+      expect(query.pivotCollapsed).toHaveLength(1);
+      // The key names the path it folds. Its separator is a control
+      // character, written here as a code point so this file stays text.
+      expect(query.pivotCollapsed?.[0]?.split(String.fromCodePoint(0))).toEqual(
+        ["EU", "Alpha"]
+      );
+      expect(query.rejected).toEqual([]);
+    });
+
+    it("reads a pivot parameter from before those fields existed", () => {
+      const query = parseTableQuery("?pivot=rows:team;sum:budget", schema);
+
+      expect(query.pivot).toEqual({
+        rows: ["team"],
+        columns: [],
+        measures: [{ key: "budget", agg: "sum" }],
+      });
+      expect(query.pivotCollapsed).toBeUndefined();
     });
   });
 

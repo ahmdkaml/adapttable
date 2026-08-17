@@ -75,7 +75,9 @@ const result = pivot(sales, config, { collapsed: new Set(["EU"]) });
 ```
 
 A subtotal line's `key` is its collapse key. Collapsing changes what is shown
-and never what is computed: the grand total is the same number either way.
+and never what is computed: the grand total is the same number either way. Those
+keys are what [the URL carries](#in-the-url), so a folded group travels with the
+link.
 
 Turn either off with `subtotals: false` / `grandTotals: false`. The grand-total
 **column** only appears when something splits the columns — without column
@@ -220,9 +222,12 @@ axes, an order on each, and a measure list — which makes it the state most
 worth putting in a link:
 
 ```tsx
-import { usePivotUrlState } from "@adapttable/core/pivot";
+import { pivot, usePivotUrlState } from "@adapttable/core/pivot";
 
-const { config, onConfigChange } = usePivotUrlState();
+const { config, onConfigChange, collapsed, onCollapsedChange } =
+  usePivotUrlState();
+
+const result = pivot(rows, config, { collapsed });
 
 <PivotPanel fields={fields} config={config} onChange={onConfigChange} />;
 ```
@@ -230,20 +235,34 @@ const { config, onConfigChange } = usePivotUrlState();
 The parameter is compact and readable rather than JSON in a query string:
 
 ```
-?pivot=rows:region,team;cols:quarter;sum:amount;count:amount
+?pivot=rows:region,team;cols:quarter;sum:amount;count:amount;sub:0;hide:EU/Alpha
 ```
 
+Everything a reader can change travels: the two axes, the measures, the
+subtotal and grand-total switches (`sub:0`, `grand:0`) and which groups are
+folded (`hide:`). A link that carried the axes alone would reopen showing
+numbers its sender had switched off, or lines they had folded away.
+
+Only departures are written. Both switches default to on, so a parameter says
+so by staying silent — which is also what makes the encoding backward
+compatible: a link or a saved view from before those fields existed says
+nothing about them and reads back exactly as it always did. A folded path is
+percent-encoded per dimension value, so a team called `A/B` cannot split a path
+in the wrong place, and `collapsed` hands straight to the engine.
+
 `serializePivot` and `deserializePivot` are exported for saved views and
-anywhere else a `PivotConfig` has to be stored. The round trip is tested, not
+anywhere else a `PivotConfig` has to be stored; `serializePivotState` and
+`deserializePivotState` are the same encoding including the folded set, as a
+`PivotUrlState` (`config` and `collapsed`). The round trip is tested, not
 assumed, and a hand-edited value degrades to a simpler pivot instead of
 throwing — a URL is user input.
 
-Both are also on [`@adapttable/core/query`](./server-queries.md#decoding-a-parameter-yourself),
+All four are also on [`@adapttable/core/query`](./server-queries.md#decoding-a-parameter-yourself),
 the React-free entry, so a route handler can read the parameter a shared link
 carries without importing the engine or React.
 
-An empty pivot writes no parameter, and `urlKey` namespaces it so two tables
-can share one URL.
+An empty pivot writes no parameter — folds included, since there is nothing to
+fold — and `urlKey` namespaces it so two tables can share one URL.
 
 A custom aggregator has no URL form, so a measure carrying one keeps working
 in memory and is left out of the link. Writing `sum` instead would quietly
