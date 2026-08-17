@@ -4,9 +4,9 @@
 
 ```ts
 
-import { PivotConfig } from '@adapttable/core/pivot';
-import { QueryFilterGroup } from '@adapttable/core';
-import { SortLevel } from '@adapttable/core';
+import { PivotConfig } from '@adapttable/core/query';
+import { QueryFilterGroup } from '@adapttable/core/query';
+import { SortLevel } from '@adapttable/core/query';
 
 // @public
 export function parseTableQuery(input: QueryInput, schema: QuerySchema): ServerTableQuery;
