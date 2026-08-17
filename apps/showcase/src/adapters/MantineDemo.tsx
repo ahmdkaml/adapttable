@@ -103,6 +103,7 @@ export function MantineDemo({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   forceMobile,
   exportCsv,
   headerFilters,
@@ -154,6 +155,7 @@ export function MantineDemo({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
@@ -245,6 +247,7 @@ export function MantineDemo({
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
+            columnSelectionCheckbox={columnSelectionCheckbox}
             statusBar={statusBar}
             contextMenu={contextMenu}
             densityChooser={densityChooser}

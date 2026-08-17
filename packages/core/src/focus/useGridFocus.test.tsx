@@ -65,11 +65,14 @@ function Grid(props: {
   onFind?: () => void;
   /** Columns a paste is allowed to write into. */
   editable?: boolean;
+  /** Offer the per-column header checkbox. */
+  headerCheckbox?: boolean;
 }) {
   const rows = props.rows ?? makeRows(3);
   const columns = props.editable === true ? EDITABLE : COLUMNS;
   const focus = useGridFocus<Row>({
     enabled: props.enabled ?? true,
+    headerCheckbox: props.headerCheckbox,
     rowCount: props.rowCount ?? rows.length,
     columns,
     rows,
@@ -101,6 +104,21 @@ function Grid(props: {
                 })}
               >
                 {column.key}
+                {focus.columnCheckbox && (
+                  <button
+                    type="button"
+                    data-checkbox={column.key}
+                    aria-pressed={focus.isColumnSelected(col)}
+                    onClick={(event) => {
+                      // What core's chrome does for a kit: keep the click off
+                      // the header, then toggle.
+                      event.stopPropagation();
+                      focus.toggleColumn(col);
+                    }}
+                  >
+                    select
+                  </button>
+                )}
               </th>
             ))}
           </tr>
@@ -568,6 +586,95 @@ describe("useGridFocus — the column-select gesture never fights sorting", () =
       ctrlKey: true,
     });
     expect(document.querySelector("data")?.getAttribute("value")).toBe("4");
+  });
+});
+
+describe("useGridFocus — the header checkbox into the same selection", () => {
+  const box = (key: string) =>
+    document.querySelector<HTMLElement>(`[data-checkbox="${key}"]`);
+
+  it("stays off until the host asks for it", () => {
+    render(<Grid rows={makeRows(4)} />);
+
+    expect(box("name")).toBeNull();
+  });
+
+  it("stays off with cell navigation off, whatever the host asked for", () => {
+    render(<Grid rows={makeRows(4)} enabled={false} headerCheckbox />);
+
+    // There is no selection to select into, so a control for it would be a
+    // control that does nothing.
+    expect(box("name")).toBeNull();
+  });
+
+  it("selects the loaded rows of its column", () => {
+    render(<Grid rows={makeRows(4)} rowCount={1000} headerCheckbox />);
+
+    fireEvent.click(box("name")!);
+
+    expect(selectionSize()).toBe("4");
+    expect(box("name")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("clears on a second toggle", () => {
+    render(<Grid rows={makeRows(4)} headerCheckbox />);
+
+    fireEvent.click(box("name")!);
+    fireEvent.click(box("name")!);
+
+    // Nothing selected is the only state one checkbox can return to.
+    expect(selection()).toBe("none");
+    expect(box("name")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("moves the selection when a second column is ticked", () => {
+    render(<Grid rows={makeRows(4)} headerCheckbox />);
+
+    fireEvent.click(box("name")!);
+    fireEvent.click(box("team")!);
+
+    expect(selectionSize()).toBe("4");
+    expect(box("name")).toHaveAttribute("aria-pressed", "false");
+    expect(box("team")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("reads as unchecked for a column inside a wider rectangle", () => {
+    render(<Grid rows={makeRows(4)} headerCheckbox />);
+
+    // Two columns selected by the gesture: neither box may claim the
+    // selection is its own column.
+    fireEvent.click(document.querySelectorAll<HTMLElement>("th")[0]!);
+    fireEvent.click(document.querySelectorAll<HTMLElement>("th")[1]!, {
+      ctrlKey: true,
+    });
+
+    expect(selectionSize()).toBe("8");
+    expect(box("name")).toHaveAttribute("aria-pressed", "false");
+    expect(box("team")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("reads as unchecked for a rectangle that does not span every row", () => {
+    render(<Grid rows={makeRows(4)} headerCheckbox />);
+    cellAt(0, 0)!.focus();
+
+    // One column, two rows. Saying that column is selected would tell the
+    // reader a copy covers rows it does not.
+    fireEvent.keyDown(cellAt(0, 0)!, { key: "ArrowDown", shiftKey: true });
+
+    expect(selectionSize()).toBe("2");
+    expect(box("name")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("reaches the same selection the Ctrl/Cmd gesture does", () => {
+    render(<Grid rows={makeRows(4)} headerCheckbox />);
+
+    fireEvent.click(box("team")!);
+    const viaCheckbox = selection();
+
+    fireEvent.click(box("team")!);
+    fireEvent.click(document.querySelectorAll<HTMLElement>("th")[1]!);
+
+    expect(selection()).toBe(viaCheckbox);
   });
 });
 

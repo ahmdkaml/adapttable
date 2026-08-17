@@ -82,6 +82,7 @@ export const hi: Required<TableLabels> = {
   actions: "क्रियाएँ",
   selectAll: "सभी चुनें",
   selectRow: "पंक्ति चुनें",
+  selectColumn: "स्तंभ चुनें",
   cancel: "रद्द करें",
   retry: "पुनः प्रयास करें",
   errorTitle: "कुछ गलत हो गया",

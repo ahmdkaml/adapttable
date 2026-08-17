@@ -246,6 +246,7 @@ export interface DataTableClassNames {
     columnMenuTitle?: string;
     // (undocumented)
     columnMenuVisibility?: string;
+    columnSelect?: string;
     commandEmpty?: string;
     commandInput?: string;
     commandItem?: string;

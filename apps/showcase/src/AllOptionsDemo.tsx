@@ -400,6 +400,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const [contextMenu, setContextMenu] = useState<OnOff>("off");
   const [palette, setPalette] = useState<OnOff>("off");
   const [printButton, setPrintButton] = useState<OnOff>("off");
+  const [columnSelect, setColumnSelect] = useState<OnOff>("off");
   const [chrome, setChrome] = useState<OnOff>("off");
   const [highlight, setHighlight] = useState<OnOff>("off");
   const [failure, setFailure] = useState<Failure>("off");
@@ -463,6 +464,12 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
       ? "Grouping by team and status over the full set is 480 subtotal groups, and building them locks the page at this size."
       : undefined);
   const editingReason = clientOnlyReason ?? wholeSetWriteReason;
+  // Column selection is part of cell navigation, which this page arms with an
+  // editing mode — so the checkbox has nothing to select into until one is on.
+  const columnSelectReason =
+    editingMode === "off"
+      ? "Turn on an editing mode first — the checkbox selects into the cell grid."
+      : undefined;
   const flashReason = flashReasonFor(editingMode, rowMutations);
   // The retry the error state offers has to do something, or the demo is
   // showing a button that lies.
@@ -792,6 +799,12 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       onChange={(next) => customize(setPrintButton, next)}
                     />
                     <Toggle
+                      label="Column checkboxes"
+                      value={columnSelect}
+                      disabledOn={columnSelectReason}
+                      onChange={(next) => customize(setColumnSelect, next)}
+                    />
+                    <Toggle
                       label="Density & fullscreen"
                       value={chrome}
                       onChange={(next) => customize(setChrome, next)}
@@ -951,6 +964,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                         commandPalette={palette === "on"}
                         onPrint={printLabTable}
                         printButton={printButton === "on"}
+                        columnSelectionCheckbox={columnSelect === "on"}
                         undoRedoButtons={undoRedo === "on"}
                         sidePanel={sidePanel}
                         animate={motion === "on"}

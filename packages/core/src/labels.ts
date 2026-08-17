@@ -85,6 +85,7 @@ export const defaultLabels: Required<TableLabels> = {
   actions: "Actions",
   selectAll: "Select all",
   selectRow: "Select row",
+  selectColumn: "Select column",
   cancel: "Cancel",
   retry: "Retry",
   errorTitle: "Something went wrong",

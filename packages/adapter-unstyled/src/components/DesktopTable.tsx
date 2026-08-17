@@ -25,6 +25,7 @@ import {
 import {
   type BodyCell,
   cellsForRow,
+  columnSelectLabel,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   fittedTableStyle,
@@ -62,6 +63,7 @@ import { Fragment, memo, useCallback, useMemo, useRef } from "react";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
+import { ColumnSelectCheckbox } from "./ColumnSelectCheckbox";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandButton } from "./ExpandToggle";
 import { FillHandle } from "./FillHandle";
@@ -1102,6 +1104,14 @@ export function DesktopTable<TRow>({
                   </button>
                 ) : (
                   <span title={column.headerTooltip}>{headerCaption}</span>
+                )}
+                {gridFocus?.columnCheckbox === true && (
+                  <ColumnSelectCheckbox
+                    label={columnSelectLabel(labels.selectColumn, column)}
+                    checked={gridFocus.isColumnSelected(headerIndex)}
+                    onToggle={() => gridFocus.toggleColumn(headerIndex)}
+                    className={classNames.columnSelect}
+                  />
                 )}
                 {column.headerActions ? (
                   <span

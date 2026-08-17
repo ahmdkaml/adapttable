@@ -85,6 +85,7 @@ export const ru: Required<TableLabels> = {
   actions: "Действия",
   selectAll: "Выбрать всё",
   selectRow: "Выбрать строку",
+  selectColumn: "Выбрать столбец",
   cancel: "Отмена",
   retry: "Повторить",
   errorTitle: "Что-то пошло не так",

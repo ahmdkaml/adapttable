@@ -83,6 +83,7 @@ export const pt: Required<TableLabels> = {
   actions: "Ações",
   selectAll: "Selecionar tudo",
   selectRow: "Selecionar linha",
+  selectColumn: "Selecionar coluna",
   cancel: "Cancelar",
   retry: "Tentar novamente",
   errorTitle: "Algo deu errado",

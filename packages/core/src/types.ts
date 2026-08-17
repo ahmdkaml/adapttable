@@ -551,6 +551,11 @@ export interface TableLabels {
   actions?: string;
   selectAll?: string;
   selectRow?: string;
+  /**
+   * Accessible name for the header checkbox that selects a column
+   * (`columnSelectionCheckbox`). The column's own name is appended.
+   */
+  selectColumn?: string;
   cancel?: string;
   retry?: string;
   errorTitle?: string;

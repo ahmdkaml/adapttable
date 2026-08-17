@@ -82,6 +82,7 @@ export const zhTW: Required<TableLabels> = {
   actions: "操作",
   selectAll: "全選",
   selectRow: "選取列",
+  selectColumn: "選取欄",
   cancel: "取消",
   retry: "重試",
   errorTitle: "發生錯誤",

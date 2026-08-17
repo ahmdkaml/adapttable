@@ -264,6 +264,8 @@ function Harness(props: {
       editHistory
       undoRedoButtons
       printButton
+      cellNavigation
+      columnSelectionCheckbox
       statusBar
       commandPalette
       densityChooser
@@ -647,6 +649,7 @@ const KEYS = [
   "thead",
   "headerRow",
   "headerCell",
+  "columnSelect",
   "filterHeaderRow",
   "filterHeaderCell",
   "filterHeaderInput",

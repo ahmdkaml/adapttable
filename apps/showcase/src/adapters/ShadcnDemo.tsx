@@ -44,6 +44,7 @@ export function ShadcnDemo({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   headerFilters,
   columnGroups,
   sparkline,
@@ -94,6 +95,7 @@ export function ShadcnDemo({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
@@ -149,6 +151,7 @@ export function ShadcnDemo({
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
+      columnSelectionCheckbox={columnSelectionCheckbox}
       statusBar={statusBar}
       contextMenu={contextMenu}
       densityChooser={densityChooser}

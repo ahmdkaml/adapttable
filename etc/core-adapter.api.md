@@ -427,6 +427,37 @@ export interface ColumnRowDragProps {
 }
 
 // @public
+export function ColumnSelectCheckboxChrome(input: Readonly<ColumnSelectCheckboxChromeProps>): JSX.Element;
+
+// @public
+export interface ColumnSelectCheckboxChromeProps {
+    readonly checked: boolean;
+    readonly className?: string;
+    readonly label: string;
+    readonly onToggle: () => void;
+    readonly slots: ColumnSelectSlots;
+}
+
+// @public
+export interface ColumnSelectCheckboxProps {
+    readonly checked: boolean;
+    readonly label: string;
+    readonly onToggle: () => void;
+}
+
+// @public
+export function columnSelectLabel(label: string | undefined, column: {
+    header?: ReactNode;
+    key: string;
+}): string;
+
+// @public
+export interface ColumnSelectSlots {
+    // (undocumented)
+    readonly Checkbox: (props: ColumnSelectCheckboxProps) => ReactNode;
+}
+
+// @public
 export function columnSizeStyle<TRow>(column: ColumnDef<TRow>, shares?: Readonly<Record<string, number>>, userWidth?: number): CSSProperties | undefined;
 
 // @public
@@ -1470,7 +1501,7 @@ export interface PivotZoneProps {
 }
 
 // @public
-export function printToolbar<TRow>(wanted: boolean | undefined, onPrint: (() => void) | undefined, labels: TableLabels): Partial<ToolbarChromeProps<TRow>>;
+export function printToolbar(wanted: boolean | undefined, onPrint: (() => void) | undefined, labels: TableLabels): PrintToolbar;
 
 // @public
 export const REORDER_COLUMN_WIDTH = 40;
@@ -2371,26 +2402,26 @@ export function useDataTableShell<TRow>(props: DataTableShellProps<TRow>, render
         onAddRow: (() => void) | undefined;
         addRowLabel: string;
         density?: "comfortable" | "compact";
-        onDensityChange?: (next: "comfortable" | "compact") => void;
-        onToggleFullscreen?: () => void;
+        onDensityChange?: ((next: "comfortable" | "compact") => void) | undefined;
+        onToggleFullscreen?: (() => void) | undefined;
         isFullscreen?: boolean;
-        table: UseDataTableResult<TRow> | UseDataTableResult<unknown>;
+        onPrint?: (() => void) | undefined;
+        printLabel?: string;
+        table: UseDataTableResult<TRow>;
         searchable: boolean;
         searchPlaceholder: string;
         sortByOptions: SortByOption[];
         toolbar: ReactNode;
         toolbarSlots: ToolbarSlots;
-        onUndo?: () => void;
-        onRedo?: () => void;
-        canUndo?: boolean;
-        canRedo?: boolean;
-        undoLabel?: string;
-        redoLabel?: string;
-        onPrint?: () => void;
-        printLabel?: string;
+        onUndo?: (() => void) | undefined;
+        onRedo?: (() => void) | undefined;
+        canUndo?: boolean | undefined;
+        canRedo?: boolean | undefined;
+        undoLabel?: string | undefined;
+        redoLabel?: string | undefined;
         filtersOpen?: boolean | undefined;
         onToggleFilters?: (() => void) | undefined;
-        onFiltersTriggerPointerDown?: () => void;
+        onFiltersTriggerPointerDown?: (() => void) | undefined;
         savedViewsMenu?: ReactNode;
         columnMenu?: ReactNode;
     };

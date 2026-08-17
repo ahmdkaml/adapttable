@@ -82,6 +82,7 @@ export const ar: Required<TableLabels> = {
   actions: "إجراءات",
   selectAll: "تحديد الكل",
   selectRow: "تحديد الصف",
+  selectColumn: "تحديد العمود",
   cancel: "إلغاء",
   retry: "إعادة المحاولة",
   errorTitle: "حدث خطأ ما",

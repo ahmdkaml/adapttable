@@ -82,6 +82,7 @@ export const fa: Required<TableLabels> = {
   actions: "اقدامات",
   selectAll: "انتخاب همه",
   selectRow: "انتخاب ردیف",
+  selectColumn: "انتخاب ستون",
   cancel: "لغو",
   retry: "تلاش دوباره",
   errorTitle: "مشکلی پیش آمد",

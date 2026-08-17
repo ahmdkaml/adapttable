@@ -210,6 +210,13 @@ export {
   type FindSearchProps,
 } from "./find/FindBar";
 export {
+  ColumnSelectCheckboxChrome,
+  type ColumnSelectCheckboxChromeProps,
+  type ColumnSelectCheckboxProps,
+  columnSelectLabel,
+  type ColumnSelectSlots,
+} from "./focus/ColumnSelectCheckbox";
+export {
   FillHandleChrome,
   type FillHandleChromeProps,
   type FillHandleSlotProps,

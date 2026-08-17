@@ -759,6 +759,19 @@ export interface BaseDataTableProps<TRow> {
    * are a list, not a grid, and keep their list semantics.
    */
   cellNavigation?: boolean;
+  /**
+   * Offer a checkbox in every column header that selects that column.
+   * Defaults to false, and needs {@link cellNavigation} to do anything.
+   *
+   * Ctrl/Cmd+click on a header already selects a column, and that gesture is
+   * unchanged. It is also unreachable on a touch device — there is no Ctrl key
+   * to hold — and undiscoverable to anyone who has not been told about it. This
+   * is the same selection behind a control a finger can hit and a screen reader
+   * can name. On a hovering pointer it holds its space and fades in on hover or
+   * focus, so a wide header row is not a row of checkboxes; where there is no
+   * hover it is always visible.
+   */
+  columnSelectionCheckbox?: boolean;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
   /**

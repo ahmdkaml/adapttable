@@ -122,6 +122,10 @@ export const shadcnClassNames = {
   table: "w-full border-collapse text-sm",
   headerCell:
     "border-b border-border bg-card px-3 py-2.5 text-start font-medium text-muted-foreground [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
+  // Small, quiet, and sitting inside a header caption — it takes the muted
+  // foreground and no box of its own.
+  columnSelect:
+    "ms-1 inline-flex items-center align-middle text-muted-foreground",
   sortButton:
     "inline-flex items-center gap-1 font-medium hover:text-foreground",
   row: "border-b border-border last:border-0 hover:bg-muted/50 data-[selected]:bg-accent data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_hsl(var(--primary))] data-[drop=after]:shadow-[inset_0_-2px_0_0_hsl(var(--primary))]",

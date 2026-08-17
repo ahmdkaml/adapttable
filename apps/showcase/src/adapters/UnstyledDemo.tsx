@@ -260,6 +260,7 @@ export function UnstyledDemo({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   headerFilters,
   columnGroups,
   sparkline,
@@ -310,6 +311,7 @@ export function UnstyledDemo({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
@@ -365,6 +367,7 @@ export function UnstyledDemo({
       realtime={realtime}
       editing={editing}
       cellNavigation={cellNavigation ?? editing}
+      columnSelectionCheckbox={columnSelectionCheckbox}
       statusBar={statusBar}
       contextMenu={contextMenu}
       densityChooser={densityChooser}

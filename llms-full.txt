@@ -2989,6 +2989,36 @@ A column selection covers the **loaded** rows. With 500 of 100,000 rows in hand
 that is 500 cells, not 100,000 — the table never claims rows the browser has
 never seen, because a copy or an export would then invent them.
 
+### The header checkbox
+
+`columnSelectionCheckbox` adds a checkbox to every column header that selects
+that column. The gesture above is unchanged; this is the same state reached two
+ways it cannot be. A touchscreen has no Ctrl key to hold, and a gesture nothing
+announces is a gesture nobody finds — so the control is what a finger taps and
+what a screen reader reads, named `labels.selectColumn` plus the column's own
+name ("Select column: Team", translated in all seventeen locales).
+
+```tsx
+<DataTable cellNavigation columnSelectionCheckbox … />
+```
+
+It needs `cellNavigation`, because that is what makes a selection exist at all;
+either prop alone renders nothing. Ticking selects the column, unticking clears
+— nothing selected is the only state one checkbox can return to, since a
+rectangle cannot lose a column out of its middle. A box reads as checked only
+when the selection is exactly its column: inside a wider rectangle it stays
+clear rather than saying the selection is one column when it is four.
+
+Where the pointer can hover, the box holds its space and fades in on hover or
+focus, so a wide header row is not a row of checkboxes and the layout never
+moves; a selected column keeps its box on screen either way. Where there is no
+hover — a touchscreen — it is always visible.
+
+The control is `data-adapttable-part="column-select"` (`columnSelect` in
+`classNames`), and it is each kit's own checkbox: core owns the layout, the
+name, and keeping the click off the header underneath it, which would otherwise
+sort the column the same click just selected.
+
 Whenever the rectangle changes, the live region says what it now covers —
 `"selected rows 1 to 2, columns 1 to 2, 4 cells"` — through
 `labels.gridRangeSelection`, translated in all seventeen locales. A single cell
@@ -7480,6 +7510,18 @@ RTL swap). `sameGridCell` compares addresses. `GRID_CELL_ATTR` /
 cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
 live region and come from `@adapttable/core/adapter`. See
 [cell navigation](./cell-navigation.md).
+
+**The column-selection checkbox.** `columnSelectionCheckbox` adds a checkbox to
+every column header that selects that column — the touch and screen-reader path
+into the same state Ctrl/Cmd+click reaches. `GridFocusState` resolves it:
+`columnCheckbox` is true when the option and `cellNavigation` both are,
+`isColumnSelected(col)` answers whether the selection is exactly that column,
+and `toggleColumn(col)` selects it or clears. The control is core chrome with a
+kit checkbox in it — `ColumnSelectCheckboxChrome` /
+`ColumnSelectCheckboxChromeProps` / `ColumnSelectCheckboxProps` /
+`ColumnSelectSlots` from `@adapttable/core/adapter`, with
+`columnSelectLabel(label, column)` composing `labels.selectColumn` and the
+column's name. See [cell navigation](./cell-navigation.md).
 
 **Cell range selection.** Shift with a movement key or a shift-click extends a
 rectangle from its anchor. `CellRange` is the pair of corners and

@@ -1391,6 +1391,7 @@ function useAntdGridState<TRow>(
   });
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
+    headerCheckbox: props.columnSelectionCheckbox === true,
     rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
     columns: c.columnLayout.visibleColumns,
     rows: c.source.rows,

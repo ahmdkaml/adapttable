@@ -120,6 +120,7 @@ export function ChakraDemo({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   headerFilters,
   columnGroups,
   sparkline,
@@ -172,6 +173,7 @@ export function ChakraDemo({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
@@ -263,6 +265,7 @@ export function ChakraDemo({
               rowKey={(r) => r.id}
               nestedTable={nested ? nestedOrders : undefined}
               cellNavigation={cellNavigation ?? editing}
+              columnSelectionCheckbox={columnSelectionCheckbox}
               statusBar={statusBar}
               contextMenu={contextMenu}
               densityChooser={densityChooser}

@@ -26,6 +26,7 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  columnSelectLabel,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
   type HeaderGroupCell,
@@ -45,6 +46,7 @@ import type {
 } from "react";
 
 import { isDangerColor } from "./colors";
+import { ColumnSelectCheckbox } from "./components/ColumnSelectCheckbox";
 import { EditableDataCell } from "./components/EditableCell";
 import { FillHandle } from "./components/FillHandle";
 import {
@@ -646,6 +648,13 @@ export function buildColumns<TRow>({
                   typeof sortIndex === "number" ? sortIndex : undefined,
               })
             )}
+            {gridFocus?.columnCheckbox === true ? (
+              <ColumnSelectCheckbox
+                label={columnSelectLabel(labels.selectColumn, column)}
+                checked={gridFocus.isColumnSelected(columnIndex)}
+                onToggle={() => gridFocus.toggleColumn(columnIndex)}
+              />
+            ) : null}
             {column.headerActions ? (
               <span data-adapttable-part="header-actions">
                 {column.headerActions}

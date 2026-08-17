@@ -96,6 +96,8 @@ export type KitDemoProps = Readonly<{
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /** Arrow-key cell navigation and Shift+arrow range selection. */
   cellNavigation?: boolean;
+  /** A checkbox in every column header that selects the column. */
+  columnSelectionCheckbox?: boolean;
   /** The toolbar Export button's configuration. */
   exportCsv?: DataTableProps<Person>["exportCsv"];
   forceMobile?: boolean;

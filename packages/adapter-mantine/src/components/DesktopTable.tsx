@@ -26,6 +26,7 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  columnSelectLabel,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   fittedTableStyle,
@@ -76,6 +77,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 import { type Density, DENSITY_SPACING } from "../density";
 import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 import { HAIRLINE, SURFACE } from "../surface";
+import { ColumnSelectCheckbox } from "./ColumnSelectCheckbox";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { FillHandle } from "./FillHandle";
@@ -207,6 +209,7 @@ function HeaderCell<TRow>({
   stickyStyle,
   resizeHandle,
   columnProps,
+  columnSelect,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
@@ -214,6 +217,8 @@ function HeaderCell<TRow>({
   resizeHandle?: ReactNode;
   /** Cell-navigation props for this header — column selection. */
   columnProps?: Record<string, unknown>;
+  /** The column-selection checkbox, when the table asked for one. */
+  columnSelect?: ReactNode;
 }>) {
   // The part name is added here rather than taken from the prop-getter:
   // the kits that pull only `aria-sort` out of it would not get one, so the
@@ -246,6 +251,7 @@ function HeaderCell<TRow>({
     return (
       <Table.Th {...cellProps} style={headerStyle}>
         <span title={column.headerTooltip}>{caption}</span>
+        {columnSelect}
         {actions}
         {resizeHandle}
       </Table.Th>
@@ -283,6 +289,7 @@ function HeaderCell<TRow>({
           </Badge>
         )}
       </Group>
+      {columnSelect}
       {actions}
       {resizeHandle}
     </Table.Th>
@@ -1317,6 +1324,15 @@ export function DesktopTable<TRow>({
                 columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
                   sortable: column.sortable,
                 })}
+                columnSelect={
+                  gridFocus?.columnCheckbox === true ? (
+                    <ColumnSelectCheckbox
+                      label={columnSelectLabel(labels.selectColumn, column)}
+                      checked={gridFocus.isColumnSelected(headerIndex)}
+                      onToggle={() => gridFocus.toggleColumn(headerIndex)}
+                    />
+                  ) : undefined
+                }
               />
             ))}
             {showActions && (

@@ -650,6 +650,18 @@ cell in the DOM. `GridFocusAnnouncer` / `GridFocusAnnouncerProps` render the
 live region and come from `@adapttable/core/adapter`. See
 [cell navigation](./cell-navigation.md).
 
+**The column-selection checkbox.** `columnSelectionCheckbox` adds a checkbox to
+every column header that selects that column — the touch and screen-reader path
+into the same state Ctrl/Cmd+click reaches. `GridFocusState` resolves it:
+`columnCheckbox` is true when the option and `cellNavigation` both are,
+`isColumnSelected(col)` answers whether the selection is exactly that column,
+and `toggleColumn(col)` selects it or clears. The control is core chrome with a
+kit checkbox in it — `ColumnSelectCheckboxChrome` /
+`ColumnSelectCheckboxChromeProps` / `ColumnSelectCheckboxProps` /
+`ColumnSelectSlots` from `@adapttable/core/adapter`, with
+`columnSelectLabel(label, column)` composing `labels.selectColumn` and the
+column's name. See [cell navigation](./cell-navigation.md).
+
 **Cell range selection.** Shift with a movement key or a shift-click extends a
 rectangle from its anchor. `CellRange` is the pair of corners and
 `CellRangeBounds` the sorted edges; `cellRangeBounds` sorts a range dragged up

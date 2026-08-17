@@ -154,6 +154,7 @@ export function UnstyledLike({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   headerFilters,
   columnGroups,
   sparkline,
@@ -206,6 +207,7 @@ export function UnstyledLike({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
@@ -297,6 +299,7 @@ export function UnstyledLike({
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
+            columnSelectionCheckbox={columnSelectionCheckbox}
             statusBar={statusBar}
             contextMenu={contextMenu}
             densityChooser={densityChooser}

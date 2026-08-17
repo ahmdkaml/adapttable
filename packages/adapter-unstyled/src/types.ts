@@ -232,6 +232,8 @@ export interface DataTableClassNames {
   thead?: string;
   headerRow?: string;
   headerCell?: string;
+  /** The header checkbox that selects a column (`columnSelectionCheckbox`). */
+  columnSelect?: string;
   /** Compact per-column filter row under the header. */
   filterHeaderRow?: string;
   /** One cell in the header filter row. */

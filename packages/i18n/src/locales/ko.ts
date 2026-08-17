@@ -82,6 +82,7 @@ export const ko: Required<TableLabels> = {
   actions: "작업",
   selectAll: "모두 선택",
   selectRow: "행 선택",
+  selectColumn: "열 선택",
   cancel: "취소",
   retry: "다시 시도",
   errorTitle: "문제가 발생했습니다",

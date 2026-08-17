@@ -108,6 +108,7 @@ export interface BaseDataTableProps<TRow> {
     collapsibleColumnGroups?: boolean;
     columnLayout?: ColumnLayoutState;
     columns: ColumnDef<TRow>[];
+    columnSelectionCheckbox?: boolean;
     commandPalette?: boolean | CommandPaletteOptions;
     confirm?: ConfirmHandler;
     confirmDeleteRow?: boolean;
@@ -1921,6 +1922,7 @@ export function gridFocusMoveForKey(press: GridKeyPress, dir?: Direction): GridF
 export interface GridFocusState {
     active: GridCell | null;
     announcement: string;
+    columnCheckbox: boolean;
     copyCells: (cell?: GridCell, cut?: boolean) => void;
     enabled: boolean;
     fillHandleCell: GridCell | null;
@@ -1936,9 +1938,11 @@ export interface GridFocusState {
     getGridProps: () => Record<string, unknown>;
     getRowProps: (rowIndex: number) => Record<string, unknown>;
     getRowPropsAt: (windowIndex: number) => Record<string, unknown>;
+    isColumnSelected: (col: number) => boolean;
     range: CellRange | null;
     selectColumn: (col: number, extend?: boolean) => void;
     selectRange: (range: CellRange | null) => void;
+    toggleColumn: (col: number) => void;
 }
 
 // @public
@@ -3571,6 +3575,7 @@ export interface TableLabels {
     // (undocumented)
     selectAll?: string;
     selectAllMatching?: (total: number) => string;
+    selectColumn?: string;
     selectedCount?: (count: number) => string;
     selectionAverage?: string;
     selectionCount?: string;
@@ -4141,6 +4146,7 @@ export interface UseGridFocusOptions<TRow> {
     dir?: Direction;
     enabled: boolean;
     firstRowIndex?: number;
+    headerCheckbox?: boolean;
     isCoveredCell?: (cell: GridCell) => boolean;
     labels?: TableLabels;
     matchKeys?: ReadonlySet<string>;

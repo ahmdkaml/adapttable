@@ -82,6 +82,7 @@ export const he: Required<TableLabels> = {
   actions: "פעולות",
   selectAll: "בחר הכול",
   selectRow: "בחר שורה",
+  selectColumn: "בחר עמודה",
   cancel: "ביטול",
   retry: "נסה שוב",
   errorTitle: "משהו השתבש",

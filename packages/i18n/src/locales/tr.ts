@@ -82,6 +82,7 @@ export const tr: Required<TableLabels> = {
   actions: "İşlemler",
   selectAll: "Tümünü seç",
   selectRow: "Satırı seç",
+  selectColumn: "Sütunu seç",
   cancel: "İptal",
   retry: "Yeniden dene",
   errorTitle: "Bir şeyler ters gitti",

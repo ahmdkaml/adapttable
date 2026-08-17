@@ -121,6 +121,7 @@ export function AntdDemo({
   realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   wide,
   exportCsv,
   headerFilters,
@@ -172,6 +173,7 @@ export function AntdDemo({
   realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
   /**
@@ -269,6 +271,7 @@ export function AntdDemo({
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
             cellNavigation={cellNavigation ?? editing}
+            columnSelectionCheckbox={columnSelectionCheckbox}
             statusBar={statusBar}
             contextMenu={contextMenu}
             densityChooser={densityChooser}

@@ -213,6 +213,7 @@ export function useDataTableShell<TRow>(
   );
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
+    headerCheckbox: props.columnSelectionCheckbox === true,
     rowCount: Math.max(
       chrome.source.total,
       windowStart + chrome.source.rows.length

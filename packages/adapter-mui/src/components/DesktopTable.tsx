@@ -27,6 +27,7 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  columnSelectLabel,
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
@@ -93,6 +94,7 @@ import {
   type Theme,
 } from "@mui/material";
 
+import { ColumnSelectCheckbox } from "./ColumnSelectCheckbox";
 import { EditableDataCell } from "./EditableCell";
 import { GroupHeaderRow } from "./GroupHeader";
 
@@ -1083,6 +1085,14 @@ export function DesktopTable<TRow>({
                   {column.headerActions}
                 </span>
               ) : null;
+              const columnSelect =
+                gridFocus?.columnCheckbox === true ? (
+                  <ColumnSelectCheckbox
+                    label={columnSelectLabel(labels.selectColumn, column)}
+                    checked={gridFocus.isColumnSelected(headerIndex)}
+                    onToggle={() => gridFocus.toggleColumn(headerIndex)}
+                  />
+                ) : null;
               return (
                 <TableCell
                   key={column.key}
@@ -1120,6 +1130,7 @@ export function DesktopTable<TRow>({
                   ) : (
                     <span title={column.headerTooltip}>{caption}</span>
                   )}
+                  {columnSelect}
                   {actions}
                   {setWidth && (
                     <Box

@@ -82,6 +82,7 @@ export const ja: Required<TableLabels> = {
   actions: "操作",
   selectAll: "すべて選択",
   selectRow: "行を選択",
+  selectColumn: "列を選択",
   cancel: "キャンセル",
   retry: "再試行",
   errorTitle: "問題が発生しました",

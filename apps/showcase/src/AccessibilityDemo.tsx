@@ -68,7 +68,11 @@ export function AccessibilityDemo({ dark }: Readonly<{ dark: boolean }>) {
         at a time, with a visible ring wherever it lands. Every move, sort,
         filter and edit is announced through a live region — the part of a table
         a sighted reader normally cannot check, so this page repeats it below in
-        plain text as it happens.
+        plain text as it happens. <code>columnSelectionCheckbox</code> adds the
+        other way into a column selection: Ctrl/Cmd+click on a header needs a
+        modifier key a touchscreen does not have, so each header also carries a
+        checkbox that names its column — visible on hover or focus here, always
+        visible where there is no pointer to hover with.
       </SectionHead>
       <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
       <div className="pad-surface">
@@ -81,6 +85,9 @@ export function AccessibilityDemo({ dark }: Readonly<{ dark: boolean }>) {
           </span>
           <span className="hint">
             <Check size={12} /> every announcement appears in the transcript
+          </span>
+          <span className="hint">
+            <Check size={12} /> hover a header to select its whole column
           </span>
         </div>
         <div
@@ -97,6 +104,7 @@ export function AccessibilityDemo({ dark }: Readonly<{ dark: boolean }>) {
                 dark={dark}
                 urlKey="a11y"
                 cellNavigation
+                columnSelectionCheckbox
                 focused
               />
             </Suspense>

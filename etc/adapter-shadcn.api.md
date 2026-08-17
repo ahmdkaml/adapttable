@@ -99,6 +99,7 @@ export const shadcnClassNames: {
     exportCsvButton: string;
     undoButton: string;
     redoButton: string;
+    printButton: string;
     densityToggle: string;
     fullscreenToggle: string;
     commandPalette: string;
@@ -148,6 +149,7 @@ export const shadcnClassNames: {
     filtersDone: string;
     table: string;
     headerCell: string;
+    columnSelect: string;
     sortButton: string;
     row: string;
     cell: string;

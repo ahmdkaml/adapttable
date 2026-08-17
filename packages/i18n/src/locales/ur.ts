@@ -82,6 +82,7 @@ export const ur: Required<TableLabels> = {
   actions: "اقدامات",
   selectAll: "سب منتخب کریں",
   selectRow: "قطار منتخب کریں",
+  selectColumn: "کالم منتخب کریں",
   cancel: "منسوخ",
   retry: "دوبارہ کوشش",
   errorTitle: "کچھ غلط ہو گیا",

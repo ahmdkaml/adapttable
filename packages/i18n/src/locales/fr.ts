@@ -82,6 +82,7 @@ export const fr: Required<TableLabels> = {
   actions: "Actions",
   selectAll: "Tout sélectionner",
   selectRow: "Sélectionner la ligne",
+  selectColumn: "Sélectionner la colonne",
   cancel: "Annuler",
   retry: "Réessayer",
   errorTitle: "Une erreur s'est produite",
