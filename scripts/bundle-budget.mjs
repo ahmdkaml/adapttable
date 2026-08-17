@@ -108,6 +108,32 @@ const FIXTURES = [
     budgetKB: 6,
     code: `export { buildFormulaColumns } from "PKG";`,
   },
+  {
+    // The React-free half of the model, which a backend imports instead of the
+    // table: the filter-tree and pivot URL codecs and nothing else. Measured
+    // 0.5 KB. The absences carry the promise — `useState` is the load-bearing
+    // one, because an entry that names a hook has a React peer no route handler
+    // can satisfy, and `PIVOT_BLANK` says the codec did not drag the engine in
+    // behind it.
+    name: "core · query",
+    pkg: "core",
+    entryFile: "query.js",
+    budgetKB: 1,
+    code: `export { parseFilterTree, deserializePivot } from "PKG";`,
+    absent: ["useState", "useSyncExternalStore", "PIVOT_BLANK", "toCsv"],
+  },
+  {
+    // What a route handler pays to parse and validate a shared link: measured
+    // 1.5 KB, the parser plus the codecs it reads through `@adapttable/core/query`.
+    // React is external in every fixture here, so an accidental React import
+    // would not show as bytes — the graph walk in `scripts/smoke-dist.mjs` is
+    // what enforces its absence, and these markers are the cheap second look.
+    name: "server · parse a query",
+    pkg: "server",
+    budgetKB: 2,
+    code: `export { parseTableQuery } from "PKG";`,
+    absent: ["useState", "PIVOT_BLANK", "toCsv"],
+  },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.
   //

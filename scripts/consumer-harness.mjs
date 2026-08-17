@@ -12,8 +12,9 @@
  *   3. Types under moduleResolution node16 / nodenext / bundler (tsc ×3)
  *   4. The same install resolves under pnpm as well as npm
  *   5. Adapter CSS ships and is non-empty (base-ui styles.css)
- *   6. A Vite production build of a real table                (vite build)
- *   7. A Next.js App Router build whose prerender renders rows (next build)
+ *   6. `@adapttable/server` parses a query in a backend with NO React
+ *   7. A Vite production build of a real table                (vite build)
+ *   8. A Next.js App Router build whose prerender renders rows (next build)
  *
  * Monorepo tests can never see these failures: they resolve source, not
  * `exports` maps, tarball file lists, or bundler resolution rules.
@@ -23,6 +24,7 @@
  */
 import { execFileSync } from "node:child_process";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -132,9 +134,12 @@ function main() {
   const OVERRIDES = Object.fromEntries(
     Object.entries(tarballs).map(([name, file]) => [name, `file:${file}`])
   );
-  const PNPM_OVERRIDES = `packages: []\noverrides:\n${Object.entries(tarballs)
-    .map(([name, file]) => `  "${name}": "file:${file}"`)
-    .join("\n")}\n`;
+  // pnpm 10+ reads its settings from here rather than `.npmrc`, so a scratch
+  // app that needs one states it in the same file as the overrides.
+  const pnpmWorkspace = (settings = "") =>
+    `packages: []\n${settings}overrides:\n${Object.entries(tarballs)
+      .map(([name, file]) => `  "${name}": "file:${file}"`)
+      .join("\n")}\n`;
 
   // ── 1–5. Resolution scratch: ESM, CJS, tsc ×3, pnpm, CSS ─────────────
   const resDir = scratch("resolution");
@@ -282,7 +287,7 @@ export type Probe<T> = { columns: ColumnDef<T>[]; source?: TableSource<T> };
     join(pnpmDir, "package.json"),
     readFileSync(join(resDir, "package.json"))
   );
-  writeFileSync(join(pnpmDir, "pnpm-workspace.yaml"), PNPM_OVERRIDES);
+  writeFileSync(join(pnpmDir, "pnpm-workspace.yaml"), pnpmWorkspace());
   writeFileSync(
     join(pnpmDir, "esm.mjs"),
     readFileSync(join(resDir, "esm.mjs"))
@@ -297,7 +302,146 @@ export type Probe<T> = { columns: ColumnDef<T>[]; source?: TableSource<T> };
   run(process.execPath, ["esm.mjs"], pnpmDir, "ESM import under pnpm");
   console.log("ok");
 
-  // ── 6. Vite production build ──────────────────────────────────────────
+  // ── 6. A backend with no React at all ─────────────────────────────────
+  //
+  // Every scratch app above has React, because every one of them renders a
+  // table. `@adapttable/server` renders nothing: it reads a query string inside
+  // a route handler, and the Express or Fastify service that installs it may
+  // have no React in the project and no intention of adding any. So this app
+  // installs the server tarball on its own and runs a real parse.
+  //
+  // `autoInstallPeers: false` is the point. npm and pnpm both install a missing
+  // peer for you, which is exactly what hid this: `@adapttable/core` declares
+  // React as a non-optional peer, so the package manager quietly puts React on
+  // disk and the import resolves — in the harness. Turning that off is what
+  // makes the scratch app the backend it claims to be, and what lets this step
+  // see an `ERR_MODULE_NOT_FOUND` the day something in the server's graph
+  // reaches a hook again.
+  const nodeDir = scratch("node");
+  writeFileSync(
+    join(nodeDir, "package.json"),
+    JSON.stringify(
+      {
+        name: "consumer-node",
+        version: "0.0.0",
+        private: true,
+        type: "module",
+        dependencies: { ...SERVER },
+      },
+      null,
+      2
+    )
+  );
+  writeFileSync(
+    join(nodeDir, "pnpm-workspace.yaml"),
+    pnpmWorkspace("autoInstallPeers: false\nstrictPeerDependencies: false\n")
+  );
+
+  // One query carrying every part of the contract that needs decoding — the
+  // sort chain, a column filter, the versioned filter tree, the pivot — plus
+  // two things the schema does not allow, so the allowlist is exercised and
+  // not merely imported.
+  const PARSE_ASSERTIONS = `const params = new URLSearchParams({
+  page: "3",
+  limit: "10",
+  q: "ada",
+  sort: "team:desc,secret:asc",
+  f_team: "ops",
+  f_password: "x",
+  ft: \`1.\${JSON.stringify({
+    combinator: "and",
+    conditions: [
+      { key: "team", op: "eq", value: "ops" },
+      { combinator: "or", conditions: [{ key: "amount", op: "gt", value: 5 }] },
+    ],
+  })}\`,
+  pivot: "rows:team;cols:quarter;sum:amount",
+});
+
+const query = parseTableQuery(\`https://example.test/api?\${params}\`, {
+  columns: ["team", "amount", "quarter"],
+});
+
+const wrong = [];
+const check = (what, ok) => {
+  if (!ok) wrong.push(what);
+};
+check("paging", query.page === 3 && query.limit === 10 && query.offset === 20);
+check("search", query.search === "ada");
+check(
+  "sort chain",
+  query.sort.length === 1 &&
+    query.sort[0].key === "team" &&
+    query.sort[0].dir === "desc"
+);
+check("column filter", query.filters.team === "ops");
+check("filter tree", query.filterTree?.conditions.length === 2);
+check(
+  "pivot",
+  query.pivot?.rows[0] === "team" &&
+    query.pivot?.columns[0] === "quarter" &&
+    query.pivot?.measures[0].agg === "sum"
+);
+// The allowlist is the reason the package exists: a column the schema never
+// named must be reported, not passed through to a query.
+check(
+  "rejects an unknown filter column",
+  query.rejected.some((r) => r.param === "f_password")
+);
+check(
+  "rejects an unknown sort column",
+  query.rejected.some((r) => r.param === "sort" && r.value === "secret")
+);
+if (wrong.length > 0)
+  throw new Error(\`server parse wrong in a React-free app: \${wrong.join(", ")}\`);
+`;
+  writeFileSync(
+    join(nodeDir, "parse.mjs"),
+    `import { parseTableQuery } from "@adapttable/server";\n\n${PARSE_ASSERTIONS}console.log("react-free esm ok");\n`
+  );
+  writeFileSync(
+    join(nodeDir, "parse.cjs"),
+    `const { parseTableQuery } = require("@adapttable/server");\n\n${PARSE_ASSERTIONS}console.log("react-free cjs ok");\n`
+  );
+
+  process.stdout.write("pnpm install (server alone, no peers) … ");
+  run(
+    process.execPath,
+    [PNPM_CLI, "install", "--no-frozen-lockfile"],
+    nodeDir,
+    "pnpm install (react-free)"
+  );
+  console.log("ok");
+
+  process.stdout.write("no React on disk … ");
+  const nodeModules = join(nodeDir, "node_modules");
+  const reactCopies = [
+    ...(existsSync(join(nodeModules, "react")) ? ["node_modules/react"] : []),
+    // pnpm's real installs live in the store, and the link above is only made
+    // for a direct dependency — a transitive React would show up here only.
+    ...readdirSync(join(nodeModules, ".pnpm"))
+      .filter((entry) => /^react@/.test(entry))
+      .map((entry) => `node_modules/.pnpm/${entry}`),
+  ];
+  if (reactCopies.length > 0) {
+    console.error(
+      `\n✗ the React-free scratch app installed React anyway:\n  ` +
+        reactCopies.join("\n  ") +
+        `\n  A backend that installs @adapttable/server must not need it.`
+    );
+    process.exit(1);
+  }
+  console.log("ok");
+
+  process.stdout.write("server parses a query without React (ESM) … ");
+  run(process.execPath, ["parse.mjs"], nodeDir, "react-free ESM parse");
+  console.log("ok");
+
+  process.stdout.write("server parses a query without React (CJS) … ");
+  run(process.execPath, ["parse.cjs"], nodeDir, "react-free CJS parse");
+  console.log("ok");
+
+  // ── 7. Vite production build ──────────────────────────────────────────
   const viteDir = scratch("vite");
   mkdirSync(join(viteDir, "src"), { recursive: true });
   writeFileSync(
@@ -356,7 +500,7 @@ createRoot(document.getElementById("root")!).render(
   }
   console.log("ok");
 
-  // ── 7. Next.js App Router build + prerender ───────────────────────────
+  // ── 8. Next.js App Router build + prerender ───────────────────────────
   const nextDir = scratch("next");
   mkdirSync(join(nextDir, "app"), { recursive: true });
   writeFileSync(
