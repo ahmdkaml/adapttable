@@ -100,6 +100,21 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 ## Demo
 
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/): every adapter on one dataset
+
+The demo is adapter-first: each kit has a landing page, and twelve feature pages
+under it at `/demo/<kit>/<feature>/` — e.g. `/demo/antd/pivot/`,
+`/demo/shadcn/filtering/`. The features are saved-views, pivot, formulas,
+editing, tree, mobile-cards, scale, columns, filtering, export, selection and
+grouping.
+
+- [AdaptTable for Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/): a data table that renders as Mantine, because it is built from Mantine
+- [AdaptTable for MUI](https://orwa-mahmoud.github.io/adapttable/demo/mui/): a Material data table, drawn by MUI's own components
+- [AdaptTable for Chakra](https://orwa-mahmoud.github.io/adapttable/demo/chakra/): a Chakra data table, with Chakra's controls throughout
+- [AdaptTable for Ant Design](https://orwa-mahmoud.github.io/adapttable/demo/antd/): an Ant Design data table, in Ant Design's own controls
+- [AdaptTable for Radix](https://orwa-mahmoud.github.io/adapttable/demo/radix/): a Radix Themes data table, accent token and all
+- [AdaptTable for Base UI](https://orwa-mahmoud.github.io/adapttable/demo/base-ui/): a Base UI data table — their primitives, your tokens
+- [AdaptTable for shadcn/ui](https://orwa-mahmoud.github.io/adapttable/demo/shadcn/): a shadcn/ui data table, styled by the classes you already own
+- [AdaptTable for Tailwind](https://orwa-mahmoud.github.io/adapttable/demo/tailwind/): native controls and no opinions — every class is yours
 - [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
 - [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
 - [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/selection/): id-based row selection that survives paging, plus bulk actions over it
