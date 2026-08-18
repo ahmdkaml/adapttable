@@ -42,7 +42,6 @@ import {
   ControlPanel,
   DemoFallback,
   KitSwitcher,
-  readKitFromUrl,
   Segmented,
 } from "./kitDemos";
 import { kitPivotPanel, KitProvider, kitSavedViewsPanel } from "./kitProviders";
@@ -325,7 +324,7 @@ function compatibilityNoteFor(
 /** The Lab's pivot state: what the docked builder edits, and the folds. */
 function useLabPivot() {
   const { config, onConfigChange, collapsed, onCollapsedChange } =
-    usePivotUrlState({ urlKey: "lab" });
+    usePivotUrlState({ urlKey: "lab", urlSync: false });
   const onToggleFold = (key: string) => {
     const next = new Set(collapsed);
     if (!next.delete(key)) next.add(key);
@@ -378,7 +377,7 @@ function LabRows({
 }
 
 export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [adapter, setAdapter] = useState(readKitFromUrl);
+  const [adapter, setAdapter] = useState("mantine");
   const [controlsOpen, setControlsOpen] = useState(false);
   const [recipe, setRecipe] = useState<Recipe | null>("baseline");
   const [filterSet, setFilterSet] = useState<"live" | "kitchen">("live");

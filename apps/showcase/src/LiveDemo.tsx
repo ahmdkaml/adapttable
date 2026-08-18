@@ -50,7 +50,12 @@ export function LiveDemo({ dark }: Readonly<{ dark: boolean }>) {
         skin.
       </SectionHead>
 
-      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
+      <KitSwitcher
+        adapter={adapter}
+        dark={dark}
+        onChange={setAdapter}
+        urlSync
+      />
 
       <TrialCta />
 

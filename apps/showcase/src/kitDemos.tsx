@@ -199,9 +199,8 @@ export function DemoFallback() {
   );
 }
 
-/** The kit lives in the URL (`?kit=mui`) so docs, posts and teammates can
- * link straight to a specific adapter. Unknown/missing values fall back
- * to Mantine. */
+/** The live demo at `/` is the only page that reads `?kit=`. Unknown or
+ * missing values fall back to Mantine. */
 export function readKitFromUrl(): string {
   if (typeof window === "undefined") return "mantine";
   const kit = new URLSearchParams(window.location.search).get("kit");
@@ -212,10 +211,13 @@ export function KitSwitcher({
   adapter,
   dark,
   onChange,
+  urlSync = false,
 }: Readonly<{
   adapter: string;
   dark: boolean;
   onChange: (key: string) => void;
+  /** Write `?kit=` so a link opens this adapter. Live demo only. */
+  urlSync?: boolean;
 }>) {
   return (
     <div className="adapterbar">
@@ -228,10 +230,12 @@ export function KitSwitcher({
           aria-pressed={adapter === a.key}
           style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
           onClick={() => {
-            const url = new URL(window.location.href);
-            if (a.key === "mantine") url.searchParams.delete("kit");
-            else url.searchParams.set("kit", a.key);
-            window.history.replaceState(null, "", url);
+            if (urlSync) {
+              const url = new URL(window.location.href);
+              if (a.key === "mantine") url.searchParams.delete("kit");
+              else url.searchParams.set("kit", a.key);
+              window.history.replaceState(null, "", url);
+            }
             startTransition(() => onChange(a.key));
           }}
         >

@@ -86,9 +86,7 @@ test("Feature Lab options open as an edge drawer and close from its backdrop", a
   ).toHaveAttribute("aria-expanded", "false");
 });
 
-test("Feature Lab keeps its URL state separate from the live demo", async ({
-  page,
-}) => {
+test("Feature Lab does not write table state to the URL", async ({ page }) => {
   await page.goto("/all-options/");
   await openFeatureControls(page);
   await page
@@ -97,8 +95,9 @@ test("Feature Lab keeps its URL state separate from the live demo", async ({
     .click();
   await page.getByRole("button", { name: "Close options" }).click();
   await page.getByRole("searchbox", { name: "Person" }).fill("Ada");
-  await expect(page).toHaveURL(/lab\.f_name=/);
-  await expect(page).not.toHaveURL(/live\.f_name=/);
+  await page.getByTestId("adapter-mui").click();
+  await expect(page.locator('[data-adapter="mui"]')).toBeVisible();
+  await expect(page).toHaveURL(/\/all-options\/$/);
 });
 
 test("Feature Lab recipes change the configuration instead of acting as labels", async ({

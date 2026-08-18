@@ -290,9 +290,8 @@ export const demoConfirm: ConfirmHandler = (request: ConfirmRequest) => {
  * the menu has no table `urlKey` to inherit its namespace from. The storage
  * key is scoped the same way, so each demo keeps its own views — and every
  * adapter on a page shares one key, so a view saved under Mantine is there
- * when you switch to MUI. Kit feature pages keep views in memory
- * (`urlSync: false`); only the live demo and Feature Lab write them
- * to the address bar.
+ * when you switch to MUI. Only the live demo writes views to the address
+ * bar (`urlSync`); Feature Lab and kit pages do not.
  */
 export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
   return {
@@ -304,12 +303,11 @@ export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
 
 /**
  * Table query/layout hits the address bar only on the live demo
- * (`urlKey="live"`, the `/` page) and Feature Lab (`"lab"`). Adapter
- * feature pages stay off so sorting a column-groups table does not
- * rewrite the URL. The live demo's look and feel stays as it is.
+ * (`urlKey="live"`, the `/` page). Feature Lab and adapter feature
+ * pages stay off so interacting does not rewrite the URL.
  */
 export function demoUrlSync(urlKey?: string): boolean {
-  return urlKey === "live" || urlKey === "lab";
+  return urlKey === "live";
 }
 
 /**

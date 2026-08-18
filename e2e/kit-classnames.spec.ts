@@ -31,7 +31,13 @@ for (const path of SWITCHER_PAGES) {
     test(`${path} · ${kit}: the table carries the kit's classes`, async ({
       page,
     }) => {
-      await page.goto(`${path}?kit=${kit}`);
+      if (path === "/") {
+        await page.goto(`/?kit=${kit}`);
+      } else {
+        await page.goto(path);
+        await page.getByTestId(`adapter-${kit}`).click();
+        await expect(page).not.toHaveURL(/[?&]kit=/);
+      }
       const root = tableRoot(page);
       await expect(root).toBeVisible();
 
